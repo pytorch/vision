@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.ops.deform_conv &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.ops.deform_conv &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -288,7 +317,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">init</span>
 <span class="kn">from</span> <span class="nn">torch.nn.parameter</span> <span class="kn">import</span> <span class="n">Parameter</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules.utils</span> <span class="kn">import</span> <span class="n">_pair</span>
-<span class="kn">from</span> <span class="nn">torch.jit.annotations</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span>
 
 
@@ -300,11 +329,17 @@
     <span class="n">stride</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
     <span class="n">dilation</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Performs Deformable Convolution, described in Deformable Convolutional Networks</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs Deformable Convolution v2, described in</span>
+<span class="sd">    `Deformable ConvNets v2: More Deformable, Better Results</span>
+<span class="sd">    &lt;https://arxiv.org/abs/1811.11168&gt;`__ if :attr:`mask` is not ``None`` and</span>
+<span class="sd">    Performs Deformable Convolution, described in</span>
+<span class="sd">    `Deformable Convolutional Networks</span>
+<span class="sd">    &lt;https://arxiv.org/abs/1703.06211&gt;`__ if :attr:`mask` is ``None``.</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor</span>
 <span class="sd">        offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,</span>
 <span class="sd">            out_height, out_width]): offsets to be applied for each position in the</span>
@@ -316,6 +351,9 @@
 <span class="sd">        padding (int or Tuple[int, int]): height/width of padding of zeroes around</span>
 <span class="sd">            each image. Default: 0</span>
 <span class="sd">        dilation (int or Tuple[int, int]): the spacing between kernel elements. Default: 1</span>
+<span class="sd">        mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,</span>
+<span class="sd">            out_height, out_width]): masks to be applied for each position in the</span>
+<span class="sd">            convolution kernel. Default: None</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution</span>
@@ -325,11 +363,12 @@
 <span class="sd">        &gt;&gt;&gt; input = torch.rand(4, 3, 10, 10)</span>
 <span class="sd">        &gt;&gt;&gt; kh, kw = 3, 3</span>
 <span class="sd">        &gt;&gt;&gt; weight = torch.rand(5, 3, kh, kw)</span>
-<span class="sd">        &gt;&gt;&gt; # offset should have the same spatial size as the output</span>
+<span class="sd">        &gt;&gt;&gt; # offset and mask should have the same spatial size as the output</span>
 <span class="sd">        &gt;&gt;&gt; # of the convolution. In this case, for an input of 10, stride of 1</span>
 <span class="sd">        &gt;&gt;&gt; # and kernel size of 3, without padding, the output size is 8</span>
 <span class="sd">        &gt;&gt;&gt; offset = torch.rand(4, 2 * kh * kw, 8, 8)</span>
-<span class="sd">        &gt;&gt;&gt; out = deform_conv2d(input, offset, weight)</span>
+<span class="sd">        &gt;&gt;&gt; mask = torch.rand(4, kh * kw, 8, 8)</span>
+<span class="sd">        &gt;&gt;&gt; out = deform_conv2d(input, offset, weight, mask=mask)</span>
 <span class="sd">        &gt;&gt;&gt; print(out.shape)</span>
 <span class="sd">        &gt;&gt;&gt; # returns</span>
 <span class="sd">        &gt;&gt;&gt;  torch.Size([4, 5, 8, 8])</span>
@@ -337,6 +376,12 @@
 
     <span class="n">_assert_has_ops</span><span class="p">()</span>
     <span class="n">out_channels</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">use_mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">bias</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">bias</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
@@ -360,18 +405,21 @@
         <span class="nb">input</span><span class="p">,</span>
         <span class="n">weight</span><span class="p">,</span>
         <span class="n">offset</span><span class="p">,</span>
+        <span class="n">mask</span><span class="p">,</span>
         <span class="n">bias</span><span class="p">,</span>
         <span class="n">stride_h</span><span class="p">,</span> <span class="n">stride_w</span><span class="p">,</span>
         <span class="n">pad_h</span><span class="p">,</span> <span class="n">pad_w</span><span class="p">,</span>
         <span class="n">dil_h</span><span class="p">,</span> <span class="n">dil_w</span><span class="p">,</span>
         <span class="n">n_weight_grps</span><span class="p">,</span>
-        <span class="n">n_offset_grps</span><span class="p">)</span></div>
+        <span class="n">n_offset_grps</span><span class="p">,</span>
+        <span class="n">use_mask</span><span class="p">,)</span></div>
 
 
 <div class="viewcode-block" id="DeformConv2d"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.DeformConv2d">[docs]</a><span class="k">class</span> <span class="nc">DeformConv2d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See deform_conv2d</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -410,21 +458,25 @@
 
     <span class="k">def</span> <span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">init</span><span class="o">.</span><span class="n">kaiming_uniform_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">fan_in</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">init</span><span class="o">.</span><span class="n">_calculate_fan_in_and_fan_out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
             <span class="n">bound</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fan_in</span><span class="p">)</span>
             <span class="n">init</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="o">-</span><span class="n">bound</span><span class="p">,</span> <span class="n">bound</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Arguments:</span>
+<span class="sd">        Args:</span>
 <span class="sd">            input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor</span>
 <span class="sd">            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,</span>
 <span class="sd">                out_height, out_width]): offsets to be applied for each position in the</span>
 <span class="sd">                convolution kernel.</span>
+<span class="sd">            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,</span>
+<span class="sd">                out_height, out_width]): masks to be applied for each position in the</span>
+<span class="sd">                convolution kernel.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">deform_conv2d</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
-                             <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dilation</span><span class="p">)</span>
+                             <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dilation</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span>
@@ -488,7 +540,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -645,10 +697,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -668,13 +716,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

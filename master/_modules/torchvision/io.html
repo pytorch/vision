@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.io &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.io &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -300,19 +329,27 @@
     <span class="n">write_video</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.image</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">read_image</span><span class="p">,</span>
     <span class="n">decode_image</span><span class="p">,</span>
+    <span class="n">decode_jpeg</span><span class="p">,</span>
+    <span class="n">decode_png</span><span class="p">,</span>
     <span class="n">encode_jpeg</span><span class="p">,</span>
-    <span class="n">write_jpeg</span><span class="p">,</span>
     <span class="n">encode_png</span><span class="p">,</span>
+    <span class="n">read_file</span><span class="p">,</span>
+    <span class="n">read_image</span><span class="p">,</span>
+    <span class="n">write_file</span><span class="p">,</span>
+    <span class="n">write_jpeg</span><span class="p">,</span>
     <span class="n">write_png</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <span class="k">if</span> <span class="n">_HAS_VIDEO_OPT</span><span class="p">:</span>
+
     <span class="k">def</span> <span class="nf">_has_video_opt</span><span class="p">():</span>
         <span class="k">return</span> <span class="kc">True</span>
+
+
 <span class="k">else</span><span class="p">:</span>
+
     <span class="k">def</span> <span class="nf">_has_video_opt</span><span class="p">():</span>
         <span class="k">return</span> <span class="kc">False</span>
 
@@ -370,15 +407,24 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="s2">&quot;video&quot;</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_has_video_opt</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Not compiled with video_reader support&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Not compiled with video_reader support, &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;to enable video_reader support, please install &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;ffmpeg (version 4.2 is currently supported) and&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;build torchvision from source.&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">Video</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
 
 <div class="viewcode-block" id="VideoReader.__next__"><a class="viewcode-back" href="../../io.html#torchvision.io.VideoReader.__next__">[docs]</a>    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Decodes and returns the next frame of the current stream</span>
+        <span class="sd">&quot;&quot;&quot;Decodes and returns the next frame of the current stream.</span>
+<span class="sd">        Frames are encoded as a dict with mandatory</span>
+<span class="sd">        data and pts fields, where data is a tensor, and pts is a</span>
+<span class="sd">        presentation timestamp of the frame expressed in seconds</span>
+<span class="sd">        as a float.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            (dict): a dictionary with fields ``data`` and ``pts``</span>
-<span class="sd">            containing decoded frame and corresponding timestamp</span>
+<span class="sd">            (dict): a dictionary and containing decoded frame (``data``)</span>
+<span class="sd">            and corresponding timestamp (``pts``) in seconds</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">frame</span><span class="p">,</span> <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
@@ -447,11 +493,15 @@
     <span class="s2">&quot;_read_video_meta_data&quot;</span><span class="p">,</span>
     <span class="s2">&quot;VideoMetaData&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Timebase&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;read_image&quot;</span><span class="p">,</span>
     <span class="s2">&quot;decode_image&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;decode_jpeg&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;decode_png&quot;</span><span class="p">,</span>
     <span class="s2">&quot;encode_jpeg&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;write_jpeg&quot;</span><span class="p">,</span>
     <span class="s2">&quot;encode_png&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;read_file&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;read_image&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;write_file&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;write_jpeg&quot;</span><span class="p">,</span>
     <span class="s2">&quot;write_png&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Video&quot;</span><span class="p">,</span>
 <span class="p">]</span>
@@ -505,7 +555,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -662,10 +712,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -685,13 +731,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

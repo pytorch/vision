@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.transforms.transforms &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.transforms.transforms &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -289,7 +318,6 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -298,21 +326,15 @@
     <span class="n">accimage</span> <span class="o">=</span> <span class="kc">None</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span> <span class="nn">.functional</span> <span class="kn">import</span> <span class="n">InterpolationMode</span><span class="p">,</span> <span class="n">_interpolation_modes_from_int</span>
+
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Compose&quot;</span><span class="p">,</span> <span class="s2">&quot;ToTensor&quot;</span><span class="p">,</span> <span class="s2">&quot;PILToTensor&quot;</span><span class="p">,</span> <span class="s2">&quot;ConvertImageDtype&quot;</span><span class="p">,</span> <span class="s2">&quot;ToPILImage&quot;</span><span class="p">,</span> <span class="s2">&quot;Normalize&quot;</span><span class="p">,</span> <span class="s2">&quot;Resize&quot;</span><span class="p">,</span> <span class="s2">&quot;Scale&quot;</span><span class="p">,</span>
            <span class="s2">&quot;CenterCrop&quot;</span><span class="p">,</span> <span class="s2">&quot;Pad&quot;</span><span class="p">,</span> <span class="s2">&quot;Lambda&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomApply&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomChoice&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomOrder&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomCrop&quot;</span><span class="p">,</span>
            <span class="s2">&quot;RandomHorizontalFlip&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomVerticalFlip&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomResizedCrop&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomSizedCrop&quot;</span><span class="p">,</span> <span class="s2">&quot;FiveCrop&quot;</span><span class="p">,</span> <span class="s2">&quot;TenCrop&quot;</span><span class="p">,</span>
            <span class="s2">&quot;LinearTransformation&quot;</span><span class="p">,</span> <span class="s2">&quot;ColorJitter&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomRotation&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomAffine&quot;</span><span class="p">,</span> <span class="s2">&quot;Grayscale&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomGrayscale&quot;</span><span class="p">,</span>
-           <span class="s2">&quot;RandomPerspective&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomErasing&quot;</span><span class="p">,</span> <span class="s2">&quot;GaussianBlur&quot;</span><span class="p">]</span>
-
-<span class="n">_pil_interpolation_to_str</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">Image</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">:</span> <span class="s1">&#39;PIL.Image.NEAREST&#39;</span><span class="p">,</span>
-    <span class="n">Image</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">:</span> <span class="s1">&#39;PIL.Image.BILINEAR&#39;</span><span class="p">,</span>
-    <span class="n">Image</span><span class="o">.</span><span class="n">BICUBIC</span><span class="p">:</span> <span class="s1">&#39;PIL.Image.BICUBIC&#39;</span><span class="p">,</span>
-    <span class="n">Image</span><span class="o">.</span><span class="n">LANCZOS</span><span class="p">:</span> <span class="s1">&#39;PIL.Image.LANCZOS&#39;</span><span class="p">,</span>
-    <span class="n">Image</span><span class="o">.</span><span class="n">HAMMING</span><span class="p">:</span> <span class="s1">&#39;PIL.Image.HAMMING&#39;</span><span class="p">,</span>
-    <span class="n">Image</span><span class="o">.</span><span class="n">BOX</span><span class="p">:</span> <span class="s1">&#39;PIL.Image.BOX&#39;</span><span class="p">,</span>
-<span class="p">}</span>
+           <span class="s2">&quot;RandomPerspective&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomErasing&quot;</span><span class="p">,</span> <span class="s2">&quot;GaussianBlur&quot;</span><span class="p">,</span> <span class="s2">&quot;InterpolationMode&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomInvert&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomPosterize&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;RandomSolarize&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomAdjustSharpness&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomAutocontrast&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomEqualize&quot;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="Compose"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Compose">[docs]</a><span class="k">class</span> <span class="nc">Compose</span><span class="p">:</span>
@@ -412,6 +434,7 @@
 
 <div class="viewcode-block" id="ConvertImageDtype"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.ConvertImageDtype">[docs]</a><span class="k">class</span> <span class="nc">ConvertImageDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert a tensor image to the given ``dtype`` and scale the values accordingly</span>
+<span class="sd">    This function does not support PIL Image.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dtype (torch.dtype): Desired data type of the output</span>
@@ -477,6 +500,7 @@
 
 <div class="viewcode-block" id="Normalize"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Normalize">[docs]</a><span class="k">class</span> <span class="nc">Normalize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Normalize a tensor image with mean and standard deviation.</span>
+<span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``</span>
 <span class="sd">    channels, this transform will normalize each channel of the input</span>
 <span class="sd">    ``torch.*Tensor`` i.e.,</span>
@@ -514,7 +538,7 @@
 
 <div class="viewcode-block" id="Resize"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Resize">[docs]</a><span class="k">class</span> <span class="nc">Resize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Resize the input image to the given size.</span>
-<span class="sd">    The image can be a PIL Image or a torch Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    Args:</span>
@@ -523,20 +547,31 @@
 <span class="sd">            smaller edge of the image will be matched to this number.</span>
 <span class="sd">            i.e, if height &gt; width, then image will be rescaled to</span>
 <span class="sd">            (size * height / width, size).</span>
-<span class="sd">            In torchscript mode padding as single int is not supported, use a tuple or</span>
-<span class="sd">            list of length 1: ``[size, ]``.</span>
-<span class="sd">        interpolation (int, optional): Desired interpolation enum defined by `filters`_.</span>
-<span class="sd">            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``</span>
-<span class="sd">            and ``PIL.Image.BICUBIC`` are supported.</span>
+<span class="sd">            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
+<span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
+<span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.</span>
+<span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and</span>
+<span class="sd">            ``InterpolationMode.BICUBIC`` are supported.</span>
+<span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">Image</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Size should be int or sequence. Got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">size</span><span class="p">)))</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If size is a sequence, it should have 1 or 2 values&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+
+        <span class="c1"># Backward compatibility with integer value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument interpolation should be of type InterpolationMode instead of int. &quot;</span>
+                <span class="s2">&quot;Please, use InterpolationMode enum.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
 
 <div class="viewcode-block" id="Resize.forward"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Resize.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
@@ -550,7 +585,7 @@
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">interpolate_str</span> <span class="o">=</span> <span class="n">_pil_interpolation_to_str</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">]</span>
+        <span class="n">interpolate_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(size=</span><span class="si">{0}</span><span class="s1">, interpolation=</span><span class="si">{1}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolate_str</span><span class="p">)</span></div>
 
 
@@ -566,13 +601,13 @@
 
 <div class="viewcode-block" id="CenterCrop"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.CenterCrop">[docs]</a><span class="k">class</span> <span class="nc">CenterCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crops the given image at the center.</span>
-<span class="sd">    The image can be a PIL Image or a torch Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        size (sequence or int): Desired output size of the crop. If size is an</span>
 <span class="sd">            int instead of sequence like (h, w), a square crop (size, size) is</span>
-<span class="sd">            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</span>
+<span class="sd">            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
@@ -595,21 +630,22 @@
 
 <div class="viewcode-block" id="Pad"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Pad">[docs]</a><span class="k">class</span> <span class="nc">Pad</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Pad the given image on all sides with the given &quot;pad&quot; value.</span>
-<span class="sd">    The image can be a PIL Image or a torch Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        padding (int or tuple or list): Padding on each border. If a single int is provided this</span>
-<span class="sd">            is used to pad all borders. If tuple of length 2 is provided this is the padding</span>
-<span class="sd">            on left/right and top/bottom respectively. If a tuple of length 4 is provided</span>
+<span class="sd">        padding (int or sequence): Padding on each border. If a single int is provided this</span>
+<span class="sd">            is used to pad all borders. If sequence of length 2 is provided this is the padding</span>
+<span class="sd">            on left/right and top/bottom respectively. If a sequence of length 4 is provided</span>
 <span class="sd">            this is the padding for the left, top, right and bottom borders respectively.</span>
-<span class="sd">            In torchscript mode padding as single int is not supported, use a tuple or</span>
-<span class="sd">            list of length 1: ``[padding, ]``.</span>
-<span class="sd">        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of</span>
+<span class="sd">            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.</span>
+<span class="sd">        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of</span>
 <span class="sd">            length 3, it is used to fill R, G, B channels respectively.</span>
-<span class="sd">            This value is only used when the padding_mode is constant</span>
+<span class="sd">            This value is only used when the padding_mode is constant.</span>
+<span class="sd">            Only number is supported for torch Tensor.</span>
+<span class="sd">            Only int or str or tuple value is supported for PIL Image.</span>
 <span class="sd">        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.</span>
-<span class="sd">            Default is constant. Mode symmetric is not yet supported for Tensor inputs.</span>
+<span class="sd">            Default is constant.</span>
 
 <span class="sd">            - constant: pads with a constant value, this value is specified with fill</span>
 
@@ -683,7 +719,7 @@
     <span class="sd">&quot;&quot;&quot;Base class for a list of transformations with randomness</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        transforms (list or tuple): list of transformations</span>
+<span class="sd">        transforms (sequence): list of transformations</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transforms</span><span class="p">):</span>
@@ -719,7 +755,7 @@
 <span class="sd">        `lambda` functions or ``PIL.Image``.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        transforms (list or tuple or torch.nn.Module): list of transformations</span>
+<span class="sd">        transforms (sequence or torch.nn.Module): list of transformations</span>
 <span class="sd">        p (float): probability</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -766,29 +802,28 @@
 
 <div class="viewcode-block" id="RandomCrop"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomCrop">[docs]</a><span class="k">class</span> <span class="nc">RandomCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image at a random location.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
-<span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
-<span class="sd">    dimensions</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        size (sequence or int): Desired output size of the crop. If size is an</span>
 <span class="sd">            int instead of sequence like (h, w), a square crop (size, size) is</span>
-<span class="sd">            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</span>
+<span class="sd">            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</span>
 <span class="sd">        padding (int or sequence, optional): Optional padding on each border</span>
 <span class="sd">            of the image. Default is None. If a single int is provided this</span>
-<span class="sd">            is used to pad all borders. If tuple of length 2 is provided this is the padding</span>
-<span class="sd">            on left/right and top/bottom respectively. If a tuple of length 4 is provided</span>
+<span class="sd">            is used to pad all borders. If sequence of length 2 is provided this is the padding</span>
+<span class="sd">            on left/right and top/bottom respectively. If a sequence of length 4 is provided</span>
 <span class="sd">            this is the padding for the left, top, right and bottom borders respectively.</span>
-<span class="sd">            In torchscript mode padding as single int is not supported, use a tuple or</span>
-<span class="sd">            list of length 1: ``[padding, ]``.</span>
+<span class="sd">            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.</span>
 <span class="sd">        pad_if_needed (boolean): It will pad the image if smaller than the</span>
 <span class="sd">            desired size to avoid raising an exception. Since cropping is done</span>
 <span class="sd">            after padding, the padding seems to be done at a random offset.</span>
-<span class="sd">        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of</span>
+<span class="sd">        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of</span>
 <span class="sd">            length 3, it is used to fill R, G, B channels respectively.</span>
-<span class="sd">            This value is only used when the padding_mode is constant</span>
+<span class="sd">            This value is only used when the padding_mode is constant.</span>
+<span class="sd">            Only number is supported for torch Tensor.</span>
+<span class="sd">            Only int or str or tuple value is supported for PIL Image.</span>
 <span class="sd">        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.</span>
-<span class="sd">            Mode symmetric is not yet supported for Tensor inputs.</span>
 
 <span class="sd">             - constant: pads with a constant value, this value is specified with fill</span>
 
@@ -875,7 +910,7 @@
 
 <div class="viewcode-block" id="RandomHorizontalFlip"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomHorizontalFlip">[docs]</a><span class="k">class</span> <span class="nc">RandomHorizontalFlip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Horizontally flip the given image randomly with a given probability.</span>
-<span class="sd">    The image can be a PIL Image or a torch Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
 <span class="sd">    dimensions</span>
 
@@ -905,7 +940,7 @@
 
 <div class="viewcode-block" id="RandomVerticalFlip"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomVerticalFlip">[docs]</a><span class="k">class</span> <span class="nc">RandomVerticalFlip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Vertically flip the given image randomly with a given probability.</span>
-<span class="sd">    The image can be a PIL Image or a torch Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
 <span class="sd">    dimensions</span>
 
@@ -935,25 +970,34 @@
 
 <div class="viewcode-block" id="RandomPerspective"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomPerspective">[docs]</a><span class="k">class</span> <span class="nc">RandomPerspective</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Performs a random perspective transformation of the given image with a given probability.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        distortion_scale (float): argument to control the degree of distortion and ranges from 0 to 1.</span>
 <span class="sd">            Default is 0.5.</span>
 <span class="sd">        p (float): probability of the image being transformed. Default is 0.5.</span>
-<span class="sd">        interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and</span>
-<span class="sd">            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.</span>
-<span class="sd">        fill (n-tuple or int or float): Pixel fill value for area outside the rotated</span>
-<span class="sd">            image. If int or float, the value is used for all bands respectively. Default is 0.</span>
-<span class="sd">            This option is only available for ``pillow&gt;=5.0.0``. This option is not supported for Tensor</span>
-<span class="sd">            input. Fill value for the area outside the transform in the output image is always 0.</span>
-
+<span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
+<span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.</span>
+<span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.</span>
+<span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
+<span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
+<span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
+<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distortion_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">Image</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distortion_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+        <span class="c1"># Backward compatibility with integer value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument interpolation should be of type InterpolationMode instead of int. &quot;</span>
+                <span class="s2">&quot;Please, use InterpolationMode enum.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">distortion_scale</span> <span class="o">=</span> <span class="n">distortion_scale</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
@@ -966,10 +1010,18 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Randomly transformed image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">fill</span><span class="p">)]</span> <span class="o">*</span> <span class="n">F</span><span class="o">.</span><span class="n">_get_image_num_channels</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fill</span><span class="p">]</span>
+
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">_get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
             <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">distortion_scale</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span></div>
 
 <div class="viewcode-block" id="RandomPerspective.get_params"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomPerspective.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
@@ -1013,7 +1065,7 @@
 
 <div class="viewcode-block" id="RandomResizedCrop"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomResizedCrop">[docs]</a><span class="k">class</span> <span class="nc">RandomResizedCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image to random size and aspect ratio.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    A crop of random size (default: of 0.08 to 1.0) of the original size and a random</span>
@@ -1024,15 +1076,19 @@
 <span class="sd">    Args:</span>
 <span class="sd">        size (int or sequence): expected output size of each edge. If size is an</span>
 <span class="sd">            int instead of sequence like (h, w), a square output size ``(size, size)`` is</span>
-<span class="sd">            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</span>
-<span class="sd">        scale (tuple of float): range of size of the origin size cropped</span>
-<span class="sd">        ratio (tuple of float): range of aspect ratio of the origin aspect ratio cropped.</span>
-<span class="sd">        interpolation (int): Desired interpolation enum defined by `filters`_.</span>
-<span class="sd">            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``</span>
-<span class="sd">            and ``PIL.Image.BICUBIC`` are supported.</span>
+<span class="sd">            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</span>
+<span class="sd">            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
+<span class="sd">        scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.</span>
+<span class="sd">        ratio (tuple of float): aspect ratio range of the cropped image before resizing.</span>
+<span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
+<span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.</span>
+<span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and</span>
+<span class="sd">            ``InterpolationMode.BICUBIC`` are supported.</span>
+<span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">ratio</span><span class="o">=</span><span class="p">(</span><span class="mf">3.</span> <span class="o">/</span> <span class="mf">4.</span><span class="p">,</span> <span class="mf">4.</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">),</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">Image</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">ratio</span><span class="o">=</span><span class="p">(</span><span class="mf">3.</span> <span class="o">/</span> <span class="mf">4.</span><span class="p">,</span> <span class="mf">4.</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">),</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">_setup_size</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Please provide only two dimensions (h, w) for size.&quot;</span><span class="p">)</span>
 
@@ -1042,6 +1098,14 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Ratio should be a sequence&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scale</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ratio</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ratio</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Scale and ratio should be of kind (min, max)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Backward compatibility with integer value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument interpolation should be of type InterpolationMode instead of int. &quot;</span>
+                <span class="s2">&quot;Please, use InterpolationMode enum.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
@@ -1107,7 +1171,7 @@
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resized_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">interpolate_str</span> <span class="o">=</span> <span class="n">_pil_interpolation_to_str</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">]</span>
+        <span class="n">interpolate_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(size=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;, scale=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">))</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;, ratio=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">))</span>
@@ -1127,7 +1191,7 @@
 
 <div class="viewcode-block" id="FiveCrop"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.FiveCrop">[docs]</a><span class="k">class</span> <span class="nc">FiveCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image into four corners and the central crop.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
 <span class="sd">    dimensions</span>
 
@@ -1139,7 +1203,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">         size (sequence or int): Desired output size of the crop. If size is an ``int``</span>
 <span class="sd">            instead of sequence like (h, w), a square crop of size (size, size) is made.</span>
-<span class="sd">            If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</span>
+<span class="sd">            If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">         &gt;&gt;&gt; transform = Compose([</span>
@@ -1174,7 +1238,7 @@
 <div class="viewcode-block" id="TenCrop"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.TenCrop">[docs]</a><span class="k">class</span> <span class="nc">TenCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image into four corners and the central crop plus the flipped version of</span>
 <span class="sd">    these (horizontal flipping is used by default).</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
 <span class="sd">    dimensions</span>
 
@@ -1186,7 +1250,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        size (sequence or int): Desired output size of the crop. If size is an</span>
 <span class="sd">            int instead of sequence like (h, w), a square crop (size, size) is</span>
-<span class="sd">            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</span>
+<span class="sd">            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</span>
 <span class="sd">        vertical_flip (bool): Use vertical flipping instead of horizontal</span>
 
 <span class="sd">    Example:</span>
@@ -1223,6 +1287,7 @@
 <div class="viewcode-block" id="LinearTransformation"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.LinearTransformation">[docs]</a><span class="k">class</span> <span class="nc">LinearTransformation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transform a tensor image with a square transformation matrix and a mean_vector computed</span>
 <span class="sd">    offline.</span>
+<span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and</span>
 <span class="sd">    subtract mean_vector from it which is then followed by computing the dot</span>
 <span class="sd">    product with the transformation matrix and then reshaping the tensor to its</span>
@@ -1288,7 +1353,10 @@
 
 
 <div class="viewcode-block" id="ColorJitter"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.ColorJitter">[docs]</a><span class="k">class</span> <span class="nc">ColorJitter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Randomly change the brightness, contrast and saturation of an image.</span>
+    <span class="sd">&quot;&quot;&quot;Randomly change the brightness, contrast, saturation and hue of an image.</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
+<span class="sd">    If img is PIL Image, mode &quot;1&quot;, &quot;L&quot;, &quot;I&quot;, &quot;F&quot; and modes with transparency (alpha channel) are not supported.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        brightness (float or tuple of float (min, max)): How much to jitter brightness.</span>
@@ -1334,38 +1402,35 @@
         <span class="k">return</span> <span class="n">value</span>
 
 <div class="viewcode-block" id="ColorJitter.get_params"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.ColorJitter.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
-    <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">brightness</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">saturation</span><span class="p">,</span> <span class="n">hue</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get a randomized transform to be applied on image.</span>
+    <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">brightness</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+                   <span class="n">contrast</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+                   <span class="n">saturation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+                   <span class="n">hue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+                   <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the parameters for the randomized transform to be applied on image.</span>
 
-<span class="sd">        Arguments are same as that of __init__.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            brightness (tuple of float (min, max), optional): The range from which the brightness_factor is chosen</span>
+<span class="sd">                uniformly. Pass None to turn off the transformation.</span>
+<span class="sd">            contrast (tuple of float (min, max), optional): The range from which the contrast_factor is chosen</span>
+<span class="sd">                uniformly. Pass None to turn off the transformation.</span>
+<span class="sd">            saturation (tuple of float (min, max), optional): The range from which the saturation_factor is chosen</span>
+<span class="sd">                uniformly. Pass None to turn off the transformation.</span>
+<span class="sd">            hue (tuple of float (min, max), optional): The range from which the hue_factor is chosen uniformly.</span>
+<span class="sd">                Pass None to turn off the transformation.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Transform which randomly adjusts brightness, contrast and</span>
-<span class="sd">            saturation in a random order.</span>
+<span class="sd">            tuple: The parameters used to apply the randomized transform</span>
+<span class="sd">            along with their random order.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">transforms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">fn_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">brightness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">brightness_factor</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">brightness</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">brightness</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Lambda</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">)))</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">brightness</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">brightness</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">brightness</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">contrast</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">contrast</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">contrast</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">saturation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">saturation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">saturation</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">hue</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">hue</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hue</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 
-        <span class="k">if</span> <span class="n">contrast</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">contrast_factor</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">contrast</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">contrast</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Lambda</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">)))</span>
-
-        <span class="k">if</span> <span class="n">saturation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">saturation_factor</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">saturation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">saturation</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Lambda</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">)))</span>
-
-        <span class="k">if</span> <span class="n">hue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">hue_factor</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">hue</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hue</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Lambda</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">)))</span>
-
-        <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">transforms</span><span class="p">)</span>
-        <span class="n">transform</span> <span class="o">=</span> <span class="n">Compose</span><span class="p">(</span><span class="n">transforms</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">transform</span></div>
+        <span class="k">return</span> <span class="n">fn_idx</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span></div>
 
 <div class="viewcode-block" id="ColorJitter.forward"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.ColorJitter.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1375,26 +1440,17 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Color jittered image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">fn_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">fn_idx</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">,</span> <span class="n">hue_factor</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">brightness</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">contrast</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">saturation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hue</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">fn_id</span> <span class="ow">in</span> <span class="n">fn_idx</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">brightness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">brightness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">brightness</span>
-                <span class="n">brightness_factor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">brightness</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">brightness</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">brightness_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">contrast</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">contrast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">contrast</span>
-                <span class="n">contrast_factor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">contrast</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">contrast</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">contrast_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">saturation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">saturation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saturation</span>
-                <span class="n">saturation_factor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">saturation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">saturation</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">saturation_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">hue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">hue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hue</span>
-                <span class="n">hue_factor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">hue</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hue</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">hue_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">img</span></div>
@@ -1410,34 +1466,51 @@
 
 <div class="viewcode-block" id="RandomRotation"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomRotation">[docs]</a><span class="k">class</span> <span class="nc">RandomRotation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Rotate the image by angle.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        degrees (sequence or float or int): Range of degrees to select from.</span>
+<span class="sd">        degrees (sequence or number): Range of degrees to select from.</span>
 <span class="sd">            If degrees is a number instead of sequence like (min, max), the range of degrees</span>
 <span class="sd">            will be (-degrees, +degrees).</span>
-<span class="sd">        resample (int, optional): An optional resampling filter. See `filters`_ for more information.</span>
-<span class="sd">            If omitted, or if the image has mode &quot;1&quot; or &quot;P&quot;, it is set to PIL.Image.NEAREST.</span>
-<span class="sd">            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.</span>
+<span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
+<span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.</span>
+<span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.</span>
+<span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
 <span class="sd">        expand (bool, optional): Optional expansion flag.</span>
 <span class="sd">            If true, expands the output to make it large enough to hold the entire rotated image.</span>
 <span class="sd">            If false or omitted, make the output image the same size as the input image.</span>
 <span class="sd">            Note that the expand flag assumes rotation around the center and no translation.</span>
-<span class="sd">        center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.</span>
+<span class="sd">        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.</span>
 <span class="sd">            Default is the center of the image.</span>
-<span class="sd">        fill (n-tuple or int or float): Pixel fill value for area outside the rotated</span>
-<span class="sd">            image. If int or float, the value is used for all bands respectively.</span>
-<span class="sd">            Defaults to 0 for all bands. This option is only available for Pillow&gt;=5.2.0.</span>
-<span class="sd">            This option is not supported for Tensor input. Fill value for the area outside the transform in the output</span>
-<span class="sd">            image is always 0.</span>
+<span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the rotated</span>
+<span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
+<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.2.0``.</span>
+<span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
+<span class="sd">            Please use `arg`:interpolation: instead.</span>
 
 <span class="sd">    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span>
+
+        <span class="c1"># Backward compatibility with integer value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument interpolation should be of type InterpolationMode instead of int. &quot;</span>
+                <span class="s2">&quot;Please, use InterpolationMode enum.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">degrees</span> <span class="o">=</span> <span class="n">_setup_angle</span><span class="p">(</span><span class="n">degrees</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;degrees&quot;</span><span class="p">,</span> <span class="n">req_sizes</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">))</span>
 
         <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1445,7 +1518,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">center</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">=</span> <span class="n">resample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expand</span> <span class="o">=</span> <span class="n">expand</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
@@ -1467,12 +1540,20 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Rotated image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">fill</span><span class="p">)]</span> <span class="o">*</span> <span class="n">F</span><span class="o">.</span><span class="n">_get_image_num_channels</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fill</span><span class="p">]</span>
         <span class="n">angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)</span></div>
+
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">interpolate_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(degrees=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">)</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;, resample=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">)</span>
+        <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;, interpolation=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interpolate_str</span><span class="p">)</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;, expand=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expand</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;, center=</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
@@ -1484,11 +1565,11 @@
 
 <div class="viewcode-block" id="RandomAffine"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomAffine">[docs]</a><span class="k">class</span> <span class="nc">RandomAffine</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Random affine transformation of the image keeping center invariant.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        degrees (sequence or float or int): Range of degrees to select from.</span>
+<span class="sd">        degrees (sequence or number): Range of degrees to select from.</span>
 <span class="sd">            If degrees is a number instead of sequence like (min, max), the range of degrees</span>
 <span class="sd">            will be (-degrees, +degrees). Set to 0 to deactivate rotations.</span>
 <span class="sd">        translate (tuple, optional): tuple of maximum absolute fraction for horizontal</span>
@@ -1497,25 +1578,53 @@
 <span class="sd">            randomly sampled in the range -img_height * b &lt; dy &lt; img_height * b. Will not translate by default.</span>
 <span class="sd">        scale (tuple, optional): scaling factor interval, e.g (a, b), then scale is</span>
 <span class="sd">            randomly sampled from the range a &lt;= scale &lt;= b. Will keep original scale by default.</span>
-<span class="sd">        shear (sequence or float or int, optional): Range of degrees to select from.</span>
+<span class="sd">        shear (sequence or number, optional): Range of degrees to select from.</span>
 <span class="sd">            If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)</span>
-<span class="sd">            will be applied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the</span>
-<span class="sd">            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,</span>
+<span class="sd">            will be applied. Else if shear is a sequence of 2 values a shear parallel to the x axis in the</span>
+<span class="sd">            range (shear[0], shear[1]) will be applied. Else if shear is a sequence of 4 values,</span>
 <span class="sd">            a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.</span>
 <span class="sd">            Will not apply shear by default.</span>
-<span class="sd">        resample (int, optional): An optional resampling filter. See `filters`_ for more information.</span>
-<span class="sd">            If omitted, or if the image has mode &quot;1&quot; or &quot;P&quot;, it is set to ``PIL.Image.NEAREST``.</span>
-<span class="sd">            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.</span>
-<span class="sd">        fillcolor (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area</span>
-<span class="sd">            outside the transform in the output image (Pillow&gt;=5.0.0). This option is not supported for Tensor</span>
-<span class="sd">            input. Fill value for the area outside the transform in the output image is always 0.</span>
+<span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
+<span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.</span>
+<span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.</span>
+<span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
+<span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
+<span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
+<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
+<span class="sd">        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.</span>
+<span class="sd">            Please use `arg`:fill: instead.</span>
+<span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
+<span class="sd">            Please use `arg`:interpolation: instead.</span>
 
 <span class="sd">    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">translate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shear</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fillcolor</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">translate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shear</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">fillcolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span>
+
+        <span class="c1"># Backward compatibility with integer value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument interpolation should be of type InterpolationMode instead of int. &quot;</span>
+                <span class="s2">&quot;Please, use InterpolationMode enum.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fillcolor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead&quot;</span>
+            <span class="p">)</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="n">fillcolor</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">degrees</span> <span class="o">=</span> <span class="n">_setup_angle</span><span class="p">(</span><span class="n">degrees</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;degrees&quot;</span><span class="p">,</span> <span class="n">req_sizes</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">))</span>
 
         <span class="k">if</span> <span class="n">translate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1537,8 +1646,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shear</span> <span class="o">=</span> <span class="n">shear</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">=</span> <span class="n">resample</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fillcolor</span> <span class="o">=</span> <span class="n">fillcolor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillcolor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
 <div class="viewcode-block" id="RandomAffine.get_params"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomAffine.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span>
@@ -1585,11 +1694,18 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Affine transformed image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">fill</span><span class="p">)]</span> <span class="o">*</span> <span class="n">F</span><span class="o">.</span><span class="n">_get_image_num_channels</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fill</span><span class="p">]</span>
 
         <span class="n">img_size</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">_get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
         <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shear</span><span class="p">,</span> <span class="n">img_size</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="o">*</span><span class="n">ret</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">,</span> <span class="n">fillcolor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fillcolor</span><span class="p">)</span></div>
+
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="o">*</span><span class="n">ret</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{name}</span><span class="s1">(degrees=</span><span class="si">{degrees}</span><span class="s1">&#39;</span>
@@ -1599,21 +1715,20 @@
             <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, scale=</span><span class="si">{scale}</span><span class="s1">&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shear</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, shear=</span><span class="si">{shear}</span><span class="s1">&#39;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, resample=</span><span class="si">{resample}</span><span class="s1">&#39;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillcolor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, fillcolor=</span><span class="si">{fillcolor}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">!=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, interpolation=</span><span class="si">{interpolation}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, fill=</span><span class="si">{fill}</span><span class="s1">&#39;</span>
         <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;)&#39;</span>
         <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-        <span class="n">d</span><span class="p">[</span><span class="s1">&#39;resample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pil_interpolation_to_str</span><span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;resample&#39;</span><span class="p">]]</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">&#39;interpolation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
         <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">**</span><span class="n">d</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Grayscale"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Grayscale">[docs]</a><span class="k">class</span> <span class="nc">Grayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert image to grayscale.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
-<span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading</span>
-<span class="sd">    dimensions</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        num_output_channels (int): (1 or 3) number of channels desired for output image</span>
@@ -1645,9 +1760,8 @@
 
 <div class="viewcode-block" id="RandomGrayscale"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomGrayscale">[docs]</a><span class="k">class</span> <span class="nc">RandomGrayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Randomly convert image to grayscale with a probability of p (default 0.1).</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
-<span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading</span>
-<span class="sd">    dimensions</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        p (float): probability that image should be converted to grayscale.</span>
@@ -1682,7 +1796,8 @@
 
 
 <div class="viewcode-block" id="RandomErasing"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomErasing">[docs]</a><span class="k">class</span> <span class="nc">RandomErasing</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Randomly selects a rectangle region in an image and erases its pixels.</span>
+    <span class="sd">&quot;&quot;&quot; Randomly selects a rectangle region in an torch Tensor image and erases its pixels.</span>
+<span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    &#39;Random Erasing Data Augmentation&#39; by Zhong et al. See https://arxiv.org/abs/1708.04896</span>
 
 <span class="sd">    Args:</span>
@@ -1738,8 +1853,8 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            img (Tensor): Tensor image to be erased.</span>
-<span class="sd">            scale (tuple or list): range of proportion of erased area against input image.</span>
-<span class="sd">            ratio (tuple or list): range of aspect ratio of erased area.</span>
+<span class="sd">            scale (sequence): range of proportion of erased area against input image.</span>
+<span class="sd">            ratio (sequence): range of aspect ratio of erased area.</span>
 <span class="sd">            value (list, optional): erasing value. If None, it is interpreted as &quot;random&quot;</span>
 <span class="sd">                (erasing each pixel with random values). If ``len(value)`` is 1, it is interpreted as a number,</span>
 <span class="sd">                i.e. ``value[0]``.</span>
@@ -1804,9 +1919,8 @@
 
 <div class="viewcode-block" id="GaussianBlur"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.GaussianBlur">[docs]</a><span class="k">class</span> <span class="nc">GaussianBlur</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Blurs image with randomly chosen Gaussian blur.</span>
-<span class="sd">    The image can be a PIL Image or a Tensor, in which case it is expected</span>
-<span class="sd">    to have [..., C, H, W] shape, where ... means an arbitrary number of leading</span>
-<span class="sd">    dimensions</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        kernel_size (int or sequence): Size of the Gaussian kernel.</span>
@@ -1899,6 +2013,192 @@
         <span class="n">_check_sequence_input</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">req_sizes</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">RandomInvert</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inverts the colors of the given image randomly with a given probability.</span>
+<span class="sd">    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,</span>
+<span class="sd">    where ... means it can have an arbitrary number of leading dimensions.</span>
+<span class="sd">    If img is PIL Image, it is expected to be in mode &quot;L&quot; or &quot;RGB&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (float): probability of the image being color inverted. Default value is 0.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (PIL Image or Tensor): Image to be inverted.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PIL Image or Tensor: Randomly color inverted image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(p=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">RandomPosterize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Posterize the image randomly with a given probability by reducing the</span>
+<span class="sd">    number of bits for each color channel. If the image is torch Tensor, it should be of type torch.uint8,</span>
+<span class="sd">    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
+<span class="sd">    If img is PIL Image, it is expected to be in mode &quot;L&quot; or &quot;RGB&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bits (int): number of bits to keep for each channel (0-8)</span>
+<span class="sd">        p (float): probability of the image being color inverted. Default value is 0.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bits</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bits</span> <span class="o">=</span> <span class="n">bits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (PIL Image or Tensor): Image to be posterized.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PIL Image or Tensor: Randomly posterized image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">posterize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(bits=</span><span class="si">{}</span><span class="s1">,p=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">RandomSolarize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Solarize the image randomly with a given probability by inverting all pixel</span>
+<span class="sd">    values above a threshold. If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,</span>
+<span class="sd">    where ... means it can have an arbitrary number of leading dimensions.</span>
+<span class="sd">    If img is PIL Image, it is expected to be in mode &quot;L&quot; or &quot;RGB&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        threshold (float): all pixels equal or above this value are inverted.</span>
+<span class="sd">        p (float): probability of the image being color inverted. Default value is 0.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (PIL Image or Tensor): Image to be solarized.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PIL Image or Tensor: Randomly solarized image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">solarize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(threshold=</span><span class="si">{}</span><span class="s1">,p=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">RandomAdjustSharpness</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adjust the sharpness of the image randomly with a given probability. If the image is torch Tensor,</span>
+<span class="sd">    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sharpness_factor (float):  How much to adjust the sharpness. Can be</span>
+<span class="sd">            any non negative number. 0 gives a blurred image, 1 gives the</span>
+<span class="sd">            original image while 2 increases the sharpness by a factor of 2.</span>
+<span class="sd">        p (float): probability of the image being color inverted. Default value is 0.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span> <span class="o">=</span> <span class="n">sharpness_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (PIL Image or Tensor): Image to be sharpened.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PIL Image or Tensor: Randomly sharpened image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_sharpness</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(sharpness_factor=</span><span class="si">{}</span><span class="s1">,p=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">RandomAutocontrast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Autocontrast the pixels of the given image randomly with a given probability.</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
+<span class="sd">    If img is PIL Image, it is expected to be in mode &quot;L&quot; or &quot;RGB&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (float): probability of the image being autocontrasted. Default value is 0.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (PIL Image or Tensor): Image to be autocontrasted.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PIL Image or Tensor: Randomly autocontrasted image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(p=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">RandomEqualize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Equalize the histogram of the given image randomly with a given probability.</span>
+<span class="sd">    If the image is torch Tensor, it is expected</span>
+<span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
+<span class="sd">    If img is PIL Image, it is expected to be in mode &quot;P&quot;, &quot;L&quot; or &quot;RGB&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (float): probability of the image being equalized. Default value is 0.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (PIL Image or Tensor): Image to be equalized.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            PIL Image or Tensor: Randomly equalized image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">equalize</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(p=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
 </pre></div>
 
              </article>
@@ -1949,7 +2249,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -2106,10 +2406,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -2129,13 +2425,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

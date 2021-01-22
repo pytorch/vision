@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.models.detection.mask_rcnn &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.models.detection.mask_rcnn &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -283,17 +312,15 @@
   <h1>Source code for torchvision.models.detection.mask_rcnn</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 
-<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">misc_nn_ops</span>
 <span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">MultiScaleRoIAlign</span>
 
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 
 <span class="kn">from</span> <span class="nn">.faster_rcnn</span> <span class="kn">import</span> <span class="n">FasterRCNN</span>
-<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">resnet_fpn_backbone</span>
+<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">resnet_fpn_backbone</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;MaskRCNN&quot;</span><span class="p">,</span> <span class="s2">&quot;maskrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
@@ -330,7 +357,7 @@
 <span class="sd">          obtain the final segmentation masks, the soft masks can be thresholded, generally</span>
 <span class="sd">          with a value of 0.5 (mask &gt;= 0.5)</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        backbone (nn.Module): the network used to compute the features for the model.</span>
 <span class="sd">            It should contain a out_channels attribute, which indicates the number of output</span>
 <span class="sd">            channels that each feature map has (and it should be the same for all feature maps).</span>
@@ -360,6 +387,8 @@
 <span class="sd">            for computing the loss</span>
 <span class="sd">        rpn_positive_fraction (float): proportion of positive anchors in a mini-batch during training</span>
 <span class="sd">            of the RPN</span>
+<span class="sd">        rpn_score_thresh (float): during inference, only return proposals with a classification score</span>
+<span class="sd">            greater than rpn_score_thresh</span>
 <span class="sd">        box_roi_pool (MultiScaleRoIAlign): the module which crops and resizes the feature maps in</span>
 <span class="sd">            the locations indicated by the bounding boxes</span>
 <span class="sd">        box_head (nn.Module): module that takes the cropped feature maps as input</span>
@@ -443,6 +472,7 @@
                  <span class="n">rpn_nms_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
                  <span class="n">rpn_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">rpn_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
                  <span class="n">rpn_batch_size_per_image</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">rpn_positive_fraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">rpn_score_thresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
                  <span class="c1"># Box parameters</span>
                  <span class="n">box_roi_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">box_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">box_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">box_score_thresh</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">box_nms_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">box_detections_per_img</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
@@ -489,6 +519,7 @@
             <span class="n">rpn_nms_thresh</span><span class="p">,</span>
             <span class="n">rpn_fg_iou_thresh</span><span class="p">,</span> <span class="n">rpn_bg_iou_thresh</span><span class="p">,</span>
             <span class="n">rpn_batch_size_per_image</span><span class="p">,</span> <span class="n">rpn_positive_fraction</span><span class="p">,</span>
+            <span class="n">rpn_score_thresh</span><span class="p">,</span>
             <span class="c1"># Box parameters</span>
             <span class="n">box_roi_pool</span><span class="p">,</span> <span class="n">box_head</span><span class="p">,</span> <span class="n">box_predictor</span><span class="p">,</span>
             <span class="n">box_score_thresh</span><span class="p">,</span> <span class="n">box_nms_thresh</span><span class="p">,</span> <span class="n">box_detections_per_img</span><span class="p">,</span>
@@ -504,7 +535,7 @@
 <span class="k">class</span> <span class="nc">MaskRCNNHeads</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">dilation</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Arguments:</span>
+<span class="sd">        Args:</span>
 <span class="sd">            in_channels (int): number of input channels</span>
 <span class="sd">            layers (list): feature dimensions of each FCN layer</span>
 <span class="sd">            dilation (int): dilation rate of kernel</span>
@@ -548,7 +579,7 @@
 
 
 <div class="viewcode-block" id="maskrcnn_resnet50_fpn"><a class="viewcode-back" href="../../../../models.html#torchvision.models.detection.maskrcnn_resnet50_fpn">[docs]</a><span class="k">def</span> <span class="nf">maskrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                          <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                          <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.</span>
 
@@ -590,18 +621,17 @@
 <span class="sd">        &gt;&gt;&gt; # optionally, if you want to export the model to ONNX:</span>
 <span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, &quot;mask_rcnn.onnx&quot;, opset_version = 11)</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
-<span class="sd">        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet</span>
 <span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet</span>
 <span class="sd">        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.</span>
 <span class="sd">            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">trainable_backbone_layers</span> <span class="o">&lt;=</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">trainable_backbone_layers</span> <span class="o">&gt;=</span> <span class="mi">0</span>
-    <span class="c1"># dont freeze any layers if pretrained model or backbone is not used</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">):</span>
-        <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span>
+        <span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="c1"># no need to download the backbone if pretrained is set</span>
         <span class="n">pretrained_backbone</span> <span class="o">=</span> <span class="kc">False</span>
@@ -611,6 +641,7 @@
         <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="s1">&#39;maskrcnn_resnet50_fpn_coco&#39;</span><span class="p">],</span>
                                               <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="n">overwrite_eps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>
 </pre></div>
 
@@ -662,7 +693,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -819,10 +850,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -842,13 +869,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

@@ -1039,4 +1039,20 @@ $("#tutorial-cards p").each(function(index, item) {
     }
 });
 
+// Jump back to top on pagination click
+
+$(document).on("click", ".page", function() {
+    $('html, body').animate(
+      {scrollTop: $("#dropdown-filter-tags").position().top},
+      'slow'
+    );
+});
+
+var link = $("a[href='intermediate/speech_command_recognition_with_torchaudio.html']");
+
+if (link.text() == "SyntaxError") {
+    console.log("There is an issue with the intermediate/speech_command_recognition_with_torchaudio.html menu item.");
+    link.text("Speech Command Recognition with torchaudio");
+}
+
 },{"jquery":"jquery"}]},{},[1,2,3,4,5,6,7,8,9,10,"pytorch-sphinx-theme"]);

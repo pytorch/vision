@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.models.detection.retinanet &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.models.detection.retinanet &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -286,23 +315,23 @@
 <span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.jit.annotations</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
 
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_utils</span> <span class="k">as</span> <span class="n">det_utils</span>
 <span class="kn">from</span> <span class="nn">.anchor_utils</span> <span class="kn">import</span> <span class="n">AnchorGenerator</span>
 <span class="kn">from</span> <span class="nn">.transform</span> <span class="kn">import</span> <span class="n">GeneralizedRCNNTransform</span>
-<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">resnet_fpn_backbone</span>
+<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">resnet_fpn_backbone</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
 <span class="kn">from</span> <span class="nn">...ops.feature_pyramid_network</span> <span class="kn">import</span> <span class="n">LastLevelP6P7</span>
 <span class="kn">from</span> <span class="nn">...ops</span> <span class="kn">import</span> <span class="n">sigmoid_focal_loss</span>
 <span class="kn">from</span> <span class="nn">...ops</span> <span class="kn">import</span> <span class="n">boxes</span> <span class="k">as</span> <span class="n">box_ops</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;RetinaNet&quot;</span><span class="p">,</span> <span class="s2">&quot;retinanet_resnet50_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RetinaNet&quot;</span><span class="p">,</span> <span class="s2">&quot;retinanet_resnet50_fpn&quot;</span>
 <span class="p">]</span>
 
 
@@ -317,7 +346,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A regression and classification head for use in RetinaNet.</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): number of channels of the input feature</span>
 <span class="sd">        num_anchors (int): number of anchors to be predicted</span>
 <span class="sd">        num_classes (int): number of classes to be predicted</span>
@@ -347,7 +376,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A classification head for use in RetinaNet.</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): number of channels of the input feature</span>
 <span class="sd">        num_anchors (int): number of anchors to be predicted</span>
 <span class="sd">        num_classes (int): number of classes to be predicted</span>
@@ -389,21 +418,16 @@
             <span class="c1"># determine only the foreground</span>
             <span class="n">foreground_idxs_per_image</span> <span class="o">=</span> <span class="n">matched_idxs_per_image</span> <span class="o">&gt;=</span> <span class="mi">0</span>
             <span class="n">num_foreground</span> <span class="o">=</span> <span class="n">foreground_idxs_per_image</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="c1"># no matched_idxs means there were no annotations in this image</span>
-            <span class="c1"># TODO: enable support for images without annotations that works on distributed</span>
-            <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>  <span class="c1"># matched_idxs_per_image.numel() == 0:</span>
-                <span class="n">gt_classes_target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cls_logits_per_image</span><span class="p">)</span>
-                <span class="n">valid_idxs_per_image</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cls_logits_per_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># create the target classification</span>
-                <span class="n">gt_classes_target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cls_logits_per_image</span><span class="p">)</span>
-                <span class="n">gt_classes_target</span><span class="p">[</span>
-                    <span class="n">foreground_idxs_per_image</span><span class="p">,</span>
-                    <span class="n">targets_per_image</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">][</span><span class="n">matched_idxs_per_image</span><span class="p">[</span><span class="n">foreground_idxs_per_image</span><span class="p">]]</span>
-                <span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
 
-                <span class="c1"># find indices for which anchors should be ignored</span>
-                <span class="n">valid_idxs_per_image</span> <span class="o">=</span> <span class="n">matched_idxs_per_image</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BETWEEN_THRESHOLDS</span>
+            <span class="c1"># create the target classification</span>
+            <span class="n">gt_classes_target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cls_logits_per_image</span><span class="p">)</span>
+            <span class="n">gt_classes_target</span><span class="p">[</span>
+                <span class="n">foreground_idxs_per_image</span><span class="p">,</span>
+                <span class="n">targets_per_image</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">][</span><span class="n">matched_idxs_per_image</span><span class="p">[</span><span class="n">foreground_idxs_per_image</span><span class="p">]]</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+            <span class="c1"># find indices for which anchors should be ignored</span>
+            <span class="n">valid_idxs_per_image</span> <span class="o">=</span> <span class="n">matched_idxs_per_image</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BETWEEN_THRESHOLDS</span>
 
             <span class="c1"># compute the classification loss</span>
             <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigmoid_focal_loss</span><span class="p">(</span>
@@ -437,7 +461,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A regression head for use in RetinaNet.</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): number of channels of the input feature</span>
 <span class="sd">        num_anchors (int): number of anchors to be predicted</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -473,23 +497,12 @@
 
         <span class="k">for</span> <span class="n">targets_per_image</span><span class="p">,</span> <span class="n">bbox_regression_per_image</span><span class="p">,</span> <span class="n">anchors_per_image</span><span class="p">,</span> <span class="n">matched_idxs_per_image</span> <span class="ow">in</span> \
                 <span class="nb">zip</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">bbox_regression</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">matched_idxs</span><span class="p">):</span>
-            <span class="c1"># no matched_idxs means there were no annotations in this image</span>
-            <span class="c1"># TODO enable support for images without annotations with distributed support</span>
-            <span class="c1"># if matched_idxs_per_image.numel() == 0:</span>
-            <span class="c1">#     continue</span>
-
-            <span class="c1"># get the targets corresponding GT for each proposal</span>
-            <span class="c1"># NB: need to clamp the indices because we can have a single</span>
-            <span class="c1"># GT in the image, and matched_idxs can be -2, which goes</span>
-            <span class="c1"># out of bounds</span>
-            <span class="n">matched_gt_boxes_per_image</span> <span class="o">=</span> <span class="n">targets_per_image</span><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">][</span><span class="n">matched_idxs_per_image</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
-
             <span class="c1"># determine only the foreground indices, ignore the rest</span>
-            <span class="n">foreground_idxs_per_image</span> <span class="o">=</span> <span class="n">matched_idxs_per_image</span> <span class="o">&gt;=</span> <span class="mi">0</span>
-            <span class="n">num_foreground</span> <span class="o">=</span> <span class="n">foreground_idxs_per_image</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">foreground_idxs_per_image</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">matched_idxs_per_image</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">num_foreground</span> <span class="o">=</span> <span class="n">foreground_idxs_per_image</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
 
             <span class="c1"># select only the foreground boxes</span>
-            <span class="n">matched_gt_boxes_per_image</span> <span class="o">=</span> <span class="n">matched_gt_boxes_per_image</span><span class="p">[</span><span class="n">foreground_idxs_per_image</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">matched_gt_boxes_per_image</span> <span class="o">=</span> <span class="n">targets_per_image</span><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">][</span><span class="n">matched_idxs_per_image</span><span class="p">[</span><span class="n">foreground_idxs_per_image</span><span class="p">]]</span>
             <span class="n">bbox_regression_per_image</span> <span class="o">=</span> <span class="n">bbox_regression_per_image</span><span class="p">[</span><span class="n">foreground_idxs_per_image</span><span class="p">,</span> <span class="p">:]</span>
             <span class="n">anchors_per_image</span> <span class="o">=</span> <span class="n">anchors_per_image</span><span class="p">[</span><span class="n">foreground_idxs_per_image</span><span class="p">,</span> <span class="p">:]</span>
 
@@ -550,7 +563,7 @@
 <span class="sd">        - labels (Int64Tensor[N]): the predicted labels for each image</span>
 <span class="sd">        - scores (Tensor[N]): the scores for each prediction</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        backbone (nn.Module): the network used to compute the features for the model.</span>
 <span class="sd">            It should contain an out_channels attribute, which indicates the number of output</span>
 <span class="sd">            channels that each feature map has (and it should be the same for all feature maps).</span>
@@ -574,6 +587,7 @@
 <span class="sd">            considered as positive during training.</span>
 <span class="sd">        bg_iou_thresh (float): maximum IoU between the anchor and the GT box so that they can be</span>
 <span class="sd">            considered as negative during training.</span>
+<span class="sd">        topk_candidates (int): Number of best detections to keep before NMS.</span>
 
 <span class="sd">    Example:</span>
 
@@ -622,7 +636,8 @@
                  <span class="n">score_thresh</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
                  <span class="n">nms_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
                  <span class="n">detections_per_img</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
-                 <span class="n">fg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bg_iou_thresh</span><span class="o">=</span><span class="mf">0.4</span><span class="p">):</span>
+                 <span class="n">fg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bg_iou_thresh</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+                 <span class="n">topk_candidates</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;out_channels&quot;</span><span class="p">):</span>
@@ -665,6 +680,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">score_thresh</span> <span class="o">=</span> <span class="n">score_thresh</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nms_thresh</span> <span class="o">=</span> <span class="n">nms_thresh</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">detections_per_img</span> <span class="o">=</span> <span class="n">detections_per_img</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topk_candidates</span> <span class="o">=</span> <span class="n">topk_candidates</span>
 
         <span class="c1"># used only on torchscript mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_has_warned</span> <span class="o">=</span> <span class="kc">False</span>
@@ -682,7 +698,7 @@
         <span class="n">matched_idxs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">anchors_per_image</span><span class="p">,</span> <span class="n">targets_per_image</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">anchors</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">targets_per_image</span><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">matched_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
+                <span class="n">matched_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">anchors_per_image</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
                 <span class="k">continue</span>
 
             <span class="n">match_quality_matrix</span> <span class="o">=</span> <span class="n">box_ops</span><span class="o">.</span><span class="n">box_iou</span><span class="p">(</span><span class="n">targets_per_image</span><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">],</span> <span class="n">anchors_per_image</span><span class="p">)</span>
@@ -691,83 +707,69 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">head_outputs</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">matched_idxs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">postprocess_detections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_outputs</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">image_shapes</span><span class="p">):</span>
-        <span class="c1"># type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -&gt; List[Dict[str, Tensor]]</span>
-        <span class="c1"># TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?</span>
+        <span class="c1"># type: (Dict[str, List[Tensor]], List[List[Tensor]], List[Tuple[int, int]]) -&gt; List[Dict[str, Tensor]]</span>
+        <span class="n">class_logits</span> <span class="o">=</span> <span class="n">head_outputs</span><span class="p">[</span><span class="s1">&#39;cls_logits&#39;</span><span class="p">]</span>
+        <span class="n">box_regression</span> <span class="o">=</span> <span class="n">head_outputs</span><span class="p">[</span><span class="s1">&#39;bbox_regression&#39;</span><span class="p">]</span>
 
-        <span class="n">class_logits</span> <span class="o">=</span> <span class="n">head_outputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;cls_logits&#39;</span><span class="p">)</span>
-        <span class="n">box_regression</span> <span class="o">=</span> <span class="n">head_outputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;bbox_regression&#39;</span><span class="p">)</span>
-        <span class="n">other_outputs</span> <span class="o">=</span> <span class="n">head_outputs</span>
+        <span class="n">num_images</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_shapes</span><span class="p">)</span>
 
-        <span class="n">device</span> <span class="o">=</span> <span class="n">class_logits</span><span class="o">.</span><span class="n">device</span>
-        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">class_logits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">detections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">class_logits</span><span class="p">)</span>
-
-        <span class="c1"># create labels for each score</span>
-        <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-        <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-
-        <span class="n">detections</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]],</span> <span class="p">[])</span>
-
-        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">box_regression_per_image</span><span class="p">,</span> <span class="n">scores_per_image</span><span class="p">,</span> <span class="n">labels_per_image</span><span class="p">,</span> <span class="n">anchors_per_image</span><span class="p">,</span> <span class="n">image_shape</span><span class="p">)</span> <span class="ow">in</span> \
-                <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">box_regression</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">image_shapes</span><span class="p">)):</span>
-
-            <span class="n">boxes_per_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_coder</span><span class="o">.</span><span class="n">decode_single</span><span class="p">(</span><span class="n">box_regression_per_image</span><span class="p">,</span> <span class="n">anchors_per_image</span><span class="p">)</span>
-            <span class="n">boxes_per_image</span> <span class="o">=</span> <span class="n">box_ops</span><span class="o">.</span><span class="n">clip_boxes_to_image</span><span class="p">(</span><span class="n">boxes_per_image</span><span class="p">,</span> <span class="n">image_shape</span><span class="p">)</span>
-
-            <span class="n">other_outputs_per_image</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">index</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">other_outputs</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_images</span><span class="p">):</span>
+            <span class="n">box_regression_per_image</span> <span class="o">=</span> <span class="p">[</span><span class="n">br</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">br</span> <span class="ow">in</span> <span class="n">box_regression</span><span class="p">]</span>
+            <span class="n">logits_per_image</span> <span class="o">=</span> <span class="p">[</span><span class="n">cl</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">class_logits</span><span class="p">]</span>
+            <span class="n">anchors_per_image</span><span class="p">,</span> <span class="n">image_shape</span> <span class="o">=</span> <span class="n">anchors</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">image_shapes</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
             <span class="n">image_boxes</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">image_scores</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">image_labels</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">image_other_outputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]],</span> <span class="p">{})</span>
 
-            <span class="k">for</span> <span class="n">class_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_classes</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">box_regression_per_level</span><span class="p">,</span> <span class="n">logits_per_level</span><span class="p">,</span> <span class="n">anchors_per_level</span> <span class="ow">in</span> \
+                    <span class="nb">zip</span><span class="p">(</span><span class="n">box_regression_per_image</span><span class="p">,</span> <span class="n">logits_per_image</span><span class="p">,</span> <span class="n">anchors_per_image</span><span class="p">):</span>
+                <span class="n">num_classes</span> <span class="o">=</span> <span class="n">logits_per_level</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
                 <span class="c1"># remove low scoring boxes</span>
-                <span class="n">inds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">scores_per_image</span><span class="p">[:,</span> <span class="n">class_index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_thresh</span><span class="p">)</span>
-                <span class="n">boxes_per_class</span><span class="p">,</span> <span class="n">scores_per_class</span><span class="p">,</span> <span class="n">labels_per_class</span> <span class="o">=</span> \
-                    <span class="n">boxes_per_image</span><span class="p">[</span><span class="n">inds</span><span class="p">],</span> <span class="n">scores_per_image</span><span class="p">[</span><span class="n">inds</span><span class="p">,</span> <span class="n">class_index</span><span class="p">],</span> <span class="n">labels_per_image</span><span class="p">[</span><span class="n">inds</span><span class="p">,</span> <span class="n">class_index</span><span class="p">]</span>
-                <span class="n">other_outputs_per_class</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">inds</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">other_outputs_per_image</span><span class="p">]</span>
-
-                <span class="c1"># remove empty boxes</span>
-                <span class="n">keep</span> <span class="o">=</span> <span class="n">box_ops</span><span class="o">.</span><span class="n">remove_small_boxes</span><span class="p">(</span><span class="n">boxes_per_class</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
-                <span class="n">boxes_per_class</span><span class="p">,</span> <span class="n">scores_per_class</span><span class="p">,</span> <span class="n">labels_per_class</span> <span class="o">=</span> \
-                    <span class="n">boxes_per_class</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">scores_per_class</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">labels_per_class</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
-                <span class="n">other_outputs_per_class</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">keep</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">other_outputs_per_class</span><span class="p">]</span>
-
-                <span class="c1"># non-maximum suppression, independently done per class</span>
-                <span class="n">keep</span> <span class="o">=</span> <span class="n">box_ops</span><span class="o">.</span><span class="n">nms</span><span class="p">(</span><span class="n">boxes_per_class</span><span class="p">,</span> <span class="n">scores_per_class</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nms_thresh</span><span class="p">)</span>
+                <span class="n">scores_per_level</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">logits_per_level</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+                <span class="n">keep_idxs</span> <span class="o">=</span> <span class="n">scores_per_level</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_thresh</span>
+                <span class="n">scores_per_level</span> <span class="o">=</span> <span class="n">scores_per_level</span><span class="p">[</span><span class="n">keep_idxs</span><span class="p">]</span>
+                <span class="n">topk_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">keep_idxs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
                 <span class="c1"># keep only topk scoring predictions</span>
-                <span class="n">keep</span> <span class="o">=</span> <span class="n">keep</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">detections_per_img</span><span class="p">]</span>
-                <span class="n">boxes_per_class</span><span class="p">,</span> <span class="n">scores_per_class</span><span class="p">,</span> <span class="n">labels_per_class</span> <span class="o">=</span> \
-                    <span class="n">boxes_per_class</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">scores_per_class</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="n">labels_per_class</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
-                <span class="n">other_outputs_per_class</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">keep</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">other_outputs_per_class</span><span class="p">]</span>
+                <span class="n">num_topk</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topk_candidates</span><span class="p">,</span> <span class="n">topk_idxs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">scores_per_level</span><span class="p">,</span> <span class="n">idxs</span> <span class="o">=</span> <span class="n">scores_per_level</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">num_topk</span><span class="p">)</span>
+                <span class="n">topk_idxs</span> <span class="o">=</span> <span class="n">topk_idxs</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
 
-                <span class="n">image_boxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">boxes_per_class</span><span class="p">)</span>
-                <span class="n">image_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores_per_class</span><span class="p">)</span>
-                <span class="n">image_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels_per_class</span><span class="p">)</span>
+                <span class="n">anchor_idxs</span> <span class="o">=</span> <span class="n">topk_idxs</span> <span class="o">//</span> <span class="n">num_classes</span>
+                <span class="n">labels_per_level</span> <span class="o">=</span> <span class="n">topk_idxs</span> <span class="o">%</span> <span class="n">num_classes</span>
 
-                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">other_outputs_per_class</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">image_other_outputs</span><span class="p">:</span>
-                        <span class="n">image_other_outputs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="n">image_other_outputs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="n">boxes_per_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_coder</span><span class="o">.</span><span class="n">decode_single</span><span class="p">(</span><span class="n">box_regression_per_level</span><span class="p">[</span><span class="n">anchor_idxs</span><span class="p">],</span>
+                                                               <span class="n">anchors_per_level</span><span class="p">[</span><span class="n">anchor_idxs</span><span class="p">])</span>
+                <span class="n">boxes_per_level</span> <span class="o">=</span> <span class="n">box_ops</span><span class="o">.</span><span class="n">clip_boxes_to_image</span><span class="p">(</span><span class="n">boxes_per_level</span><span class="p">,</span> <span class="n">image_shape</span><span class="p">)</span>
+
+                <span class="n">image_boxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">boxes_per_level</span><span class="p">)</span>
+                <span class="n">image_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scores_per_level</span><span class="p">)</span>
+                <span class="n">image_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels_per_level</span><span class="p">)</span>
+
+            <span class="n">image_boxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_boxes</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">image_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_scores</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">image_labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_labels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># non-maximum suppression</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="n">box_ops</span><span class="o">.</span><span class="n">batched_nms</span><span class="p">(</span><span class="n">image_boxes</span><span class="p">,</span> <span class="n">image_scores</span><span class="p">,</span> <span class="n">image_labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nms_thresh</span><span class="p">)</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="n">keep</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">detections_per_img</span><span class="p">]</span>
 
             <span class="n">detections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s1">&#39;boxes&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_boxes</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-                <span class="s1">&#39;scores&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_scores</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-                <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_labels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                <span class="s1">&#39;boxes&#39;</span><span class="p">:</span> <span class="n">image_boxes</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span>
+                <span class="s1">&#39;scores&#39;</span><span class="p">:</span> <span class="n">image_scores</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span>
+                <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="n">image_labels</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span>
             <span class="p">})</span>
-
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">image_other_outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">detections</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)})</span>
 
         <span class="k">return</span> <span class="n">detections</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -&gt; Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Arguments:</span>
+<span class="sd">        Args:</span>
 <span class="sd">            images (list[Tensor]): images to be processed</span>
 <span class="sd">            targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)</span>
 
@@ -795,7 +797,7 @@
                                      <span class="s2">&quot;Tensor, got </span><span class="si">{:}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">boxes</span><span class="p">)))</span>
 
         <span class="c1"># get the original image sizes</span>
-        <span class="n">original_image_sizes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="p">[])</span>
+        <span class="n">original_image_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
@@ -833,22 +835,37 @@
         <span class="n">anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_generator</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
 
         <span class="n">losses</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">detections</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]],</span> <span class="p">[])</span>
+        <span class="n">detections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
             <span class="c1"># compute the losses</span>
             <span class="n">losses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">head_outputs</span><span class="p">,</span> <span class="n">anchors</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># recover level sizes</span>
+            <span class="n">num_anchors_per_level</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">features</span><span class="p">]</span>
+            <span class="n">HW</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">num_anchors_per_level</span><span class="p">:</span>
+                <span class="n">HW</span> <span class="o">+=</span> <span class="n">v</span>
+            <span class="n">HWA</span> <span class="o">=</span> <span class="n">head_outputs</span><span class="p">[</span><span class="s1">&#39;cls_logits&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">HWA</span> <span class="o">//</span> <span class="n">HW</span>
+            <span class="n">num_anchors_per_level</span> <span class="o">=</span> <span class="p">[</span><span class="n">hw</span> <span class="o">*</span> <span class="n">A</span> <span class="k">for</span> <span class="n">hw</span> <span class="ow">in</span> <span class="n">num_anchors_per_level</span><span class="p">]</span>
+
+            <span class="c1"># split outputs per level</span>
+            <span class="n">split_head_outputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">head_outputs</span><span class="p">:</span>
+                <span class="n">split_head_outputs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">head_outputs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">num_anchors_per_level</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">split_anchors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">num_anchors_per_level</span><span class="p">))</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">]</span>
+
             <span class="c1"># compute the detections</span>
-            <span class="n">detections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_detections</span><span class="p">(</span><span class="n">head_outputs</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">images</span><span class="o">.</span><span class="n">image_sizes</span><span class="p">)</span>
+            <span class="n">detections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_detections</span><span class="p">(</span><span class="n">split_head_outputs</span><span class="p">,</span> <span class="n">split_anchors</span><span class="p">,</span> <span class="n">images</span><span class="o">.</span><span class="n">image_sizes</span><span class="p">)</span>
             <span class="n">detections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">postprocess</span><span class="p">(</span><span class="n">detections</span><span class="p">,</span> <span class="n">images</span><span class="o">.</span><span class="n">image_sizes</span><span class="p">,</span> <span class="n">original_image_sizes</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_warned</span><span class="p">:</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;RetinaNet always returns a (Losses, Detections) tuple in scripting&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_has_warned</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="n">detections</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">losses</span><span class="p">,</span> <span class="n">detections</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eager_outputs</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="n">detections</span><span class="p">)</span>
 
 
@@ -859,7 +876,7 @@
 
 
 <div class="viewcode-block" id="retinanet_resnet50_fpn"><a class="viewcode-back" href="../../../../models.html#torchvision.models.detection.retinanet_resnet50_fpn">[docs]</a><span class="k">def</span> <span class="nf">retinanet_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                           <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                           <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RetinaNet model with a ResNet-50-FPN backbone.</span>
 
@@ -892,21 +909,29 @@
 <span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
 
-<span class="sd">    Arguments:</span>
+<span class="sd">    Args:</span>
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet</span>
+<span class="sd">        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.</span>
+<span class="sd">            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span>
+        <span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="c1"># no need to download the backbone if pretrained is set</span>
         <span class="n">pretrained_backbone</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="c1"># skip P2 because it generates too many anchors (according to their paper)</span>
-    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet_fpn_backbone</span><span class="p">(</span><span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="p">,</span>
-                                   <span class="n">returned_layers</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">extra_blocks</span><span class="o">=</span><span class="n">LastLevelP6P7</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet_fpn_backbone</span><span class="p">(</span><span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">returned_layers</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+                                   <span class="n">extra_blocks</span><span class="o">=</span><span class="n">LastLevelP6P7</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">trainable_layers</span><span class="o">=</span><span class="n">trainable_backbone_layers</span><span class="p">)</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">RetinaNet</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="s1">&#39;retinanet_resnet50_fpn_coco&#39;</span><span class="p">],</span>
                                               <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="n">overwrite_eps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>
 </pre></div>
 
@@ -958,7 +983,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -1115,10 +1140,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -1138,13 +1159,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.models.mnasnet &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.models.mnasnet &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -284,8 +313,10 @@
 <span></span><span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MNASNet&#39;</span><span class="p">,</span> <span class="s1">&#39;mnasnet0_5&#39;</span><span class="p">,</span> <span class="s1">&#39;mnasnet0_75&#39;</span><span class="p">,</span> <span class="s1">&#39;mnasnet1_0&#39;</span><span class="p">,</span> <span class="s1">&#39;mnasnet1_3&#39;</span><span class="p">]</span>
 
@@ -305,8 +336,15 @@
 
 <span class="k">class</span> <span class="nc">_InvertedResidual</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_ch</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">expansion_factor</span><span class="p">,</span>
-                 <span class="n">bn_momentum</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">in_ch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">out_ch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">expansion_factor</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">bn_momentum</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">_InvertedResidual</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">stride</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="k">assert</span> <span class="n">kernel_size</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
@@ -326,15 +364,15 @@
             <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">mid_ch</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">out_ch</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="n">bn_momentum</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_residual</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">+</span> <span class="nb">input</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_stack</span><span class="p">(</span><span class="n">in_ch</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">exp_factor</span><span class="p">,</span> <span class="n">repeats</span><span class="p">,</span>
-           <span class="n">bn_momentum</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_stack</span><span class="p">(</span><span class="n">in_ch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_ch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">exp_factor</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">repeats</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+           <span class="n">bn_momentum</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot; Creates a stack of inverted residuals. &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">repeats</span> <span class="o">&gt;=</span> <span class="mi">1</span>
     <span class="c1"># First one has no skip, because feature map size changes.</span>
@@ -348,7 +386,7 @@
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="o">*</span><span class="n">remaining</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_round_to_multiple_of</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">divisor</span><span class="p">,</span> <span class="n">round_up_bias</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_round_to_multiple_of</span><span class="p">(</span><span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">divisor</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">round_up_bias</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot; Asymmetric rounding to make `val` divisible by `divisor`. With default</span>
 <span class="sd">    bias, will round up, unless the number is no more than 10% greater than the</span>
 <span class="sd">    smaller divisible value, i.e. (83, 8) -&gt; 80, but (84, 8) -&gt; 88. &quot;&quot;&quot;</span>
@@ -357,7 +395,7 @@
     <span class="k">return</span> <span class="n">new_val</span> <span class="k">if</span> <span class="n">new_val</span> <span class="o">&gt;=</span> <span class="n">round_up_bias</span> <span class="o">*</span> <span class="n">val</span> <span class="k">else</span> <span class="n">new_val</span> <span class="o">+</span> <span class="n">divisor</span>
 
 
-<span class="k">def</span> <span class="nf">_get_depths</span><span class="p">(</span><span class="n">alpha</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_get_depths</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot; Scales tensor depths as in reference MobileNet code, prefers rouding up</span>
 <span class="sd">    rather than down. &quot;&quot;&quot;</span>
     <span class="n">depths</span> <span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">320</span><span class="p">]</span>
@@ -367,18 +405,23 @@
 <span class="k">class</span> <span class="nc">MNASNet</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; MNASNet, as described in https://arxiv.org/pdf/1807.11626.pdf. This</span>
 <span class="sd">    implements the B1 variant of the model.</span>
-<span class="sd">    &gt;&gt;&gt; model = MNASNet(1000, 1.0)</span>
+<span class="sd">    &gt;&gt;&gt; model = MNASNet(1.0, num_classes=1000)</span>
 <span class="sd">    &gt;&gt;&gt; x = torch.rand(1, 3, 224, 224)</span>
 <span class="sd">    &gt;&gt;&gt; y = model(x)</span>
 <span class="sd">    &gt;&gt;&gt; y.dim()</span>
-<span class="sd">    1</span>
+<span class="sd">    2</span>
 <span class="sd">    &gt;&gt;&gt; y.nelement()</span>
 <span class="sd">    1000</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Version 2 adds depth scaling in the initial stages of the network.</span>
     <span class="n">_version</span> <span class="o">=</span> <span class="mi">2</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MNASNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">alpha</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
@@ -413,13 +456,13 @@
                                         <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">1280</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_weights</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># Equivalent to global avgpool and removing H and W dimensions.</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span>
@@ -434,8 +477,8 @@
                                          <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">)</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_load_from_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">local_metadata</span><span class="p">,</span> <span class="n">strict</span><span class="p">,</span>
-                              <span class="n">missing_keys</span><span class="p">,</span> <span class="n">unexpected_keys</span><span class="p">,</span> <span class="n">error_msgs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_load_from_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">local_metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                              <span class="n">missing_keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">unexpected_keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">error_msgs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">version</span> <span class="o">=</span> <span class="n">local_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">version</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 
@@ -475,7 +518,7 @@
             <span class="n">unexpected_keys</span><span class="p">,</span> <span class="n">error_msgs</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_load_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">progress</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_load_pretrained</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_MODEL_URLS</span> <span class="ow">or</span> <span class="n">_MODEL_URLS</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;No checkpoint is available for model type </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model_name</span><span class="p">))</span>
@@ -484,10 +527,11 @@
         <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">checkpoint_url</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
 
 
-<div class="viewcode-block" id="mnasnet0_5"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet0_5">[docs]</a><span class="k">def</span> <span class="nf">mnasnet0_5</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 0.5 from</span>
+<div class="viewcode-block" id="mnasnet0_5"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet0_5">[docs]</a><span class="k">def</span> <span class="nf">mnasnet0_5</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MNASNet</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 0.5 from</span>
 <span class="sd">    `&quot;MnasNet: Platform-Aware Neural Architecture Search for Mobile&quot;</span>
 <span class="sd">    &lt;https://arxiv.org/pdf/1807.11626.pdf&gt;`_.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
@@ -498,10 +542,11 @@
     <span class="k">return</span> <span class="n">model</span></div>
 
 
-<div class="viewcode-block" id="mnasnet0_75"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet0_75">[docs]</a><span class="k">def</span> <span class="nf">mnasnet0_75</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 0.75 from</span>
+<div class="viewcode-block" id="mnasnet0_75"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet0_75">[docs]</a><span class="k">def</span> <span class="nf">mnasnet0_75</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MNASNet</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 0.75 from</span>
 <span class="sd">    `&quot;MnasNet: Platform-Aware Neural Architecture Search for Mobile&quot;</span>
 <span class="sd">    &lt;https://arxiv.org/pdf/1807.11626.pdf&gt;`_.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
@@ -512,10 +557,11 @@
     <span class="k">return</span> <span class="n">model</span></div>
 
 
-<div class="viewcode-block" id="mnasnet1_0"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet1_0">[docs]</a><span class="k">def</span> <span class="nf">mnasnet1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 1.0 from</span>
+<div class="viewcode-block" id="mnasnet1_0"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet1_0">[docs]</a><span class="k">def</span> <span class="nf">mnasnet1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MNASNet</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 1.0 from</span>
 <span class="sd">    `&quot;MnasNet: Platform-Aware Neural Architecture Search for Mobile&quot;</span>
 <span class="sd">    &lt;https://arxiv.org/pdf/1807.11626.pdf&gt;`_.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
@@ -526,10 +572,11 @@
     <span class="k">return</span> <span class="n">model</span></div>
 
 
-<div class="viewcode-block" id="mnasnet1_3"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet1_3">[docs]</a><span class="k">def</span> <span class="nf">mnasnet1_3</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 1.3 from</span>
+<div class="viewcode-block" id="mnasnet1_3"><a class="viewcode-back" href="../../../models.html#torchvision.models.mnasnet1_3">[docs]</a><span class="k">def</span> <span class="nf">mnasnet1_3</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MNASNet</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;MNASNet with depth multiplier of 1.3 from</span>
 <span class="sd">    `&quot;MnasNet: Platform-Aware Neural Architecture Search for Mobile&quot;</span>
 <span class="sd">    &lt;https://arxiv.org/pdf/1807.11626.pdf&gt;`_.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
@@ -588,7 +635,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -745,10 +792,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -768,13 +811,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

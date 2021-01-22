@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.datasets &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.datasets &mdash; Torchvision master documentation</title>
   
 
   
@@ -79,21 +79,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -109,22 +95,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -138,10 +169,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -164,7 +193,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -287,7 +316,7 @@
 <p>All datasets are subclasses of <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code>
 i.e, they have <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> and <code class="docutils literal notranslate"><span class="pre">__len__</span></code> methods implemented.
 Hence, they can all be passed to a <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataLoader</span></code>
-which can load multiple samples parallelly using <code class="docutils literal notranslate"><span class="pre">torch.multiprocessing</span></code> workers.
+which can load multiple samples in parallel using <code class="docutils literal notranslate"><span class="pre">torch.multiprocessing</span></code> workers.
 For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">imagenet_data</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">ImageNet</span><span class="p">(</span><span class="s1">&#39;path/to/imagenet_root/&#39;</span><span class="p">)</span>
 <span class="n">data_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">imagenet_data</span><span class="p">,</span>
@@ -633,11 +662,11 @@ and returns a transformed version.</li>
 <dd><p>A generic data loader where the samples are arranged in this way:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="n">xxx</span><span class="o">.</span><span class="n">ext</span>
 <span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="n">xxy</span><span class="o">.</span><span class="n">ext</span>
-<span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">ext</span>
+<span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">ext</span>
 
 <span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="mf">123.</span><span class="n">ext</span>
 <span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="n">nsdf3</span><span class="o">.</span><span class="n">ext</span>
-<span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">ext</span>
+<span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">ext</span>
 </pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -913,11 +942,11 @@ audio(Tensor[K, L]): the audio frames, where <cite>K</cite> is the number of cha
 <dd><p>A generic data loader where the images are arranged in this way:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxx</span><span class="o">.</span><span class="n">png</span>
 <span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxy</span><span class="o">.</span><span class="n">png</span>
-<span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">png</span>
+<span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">png</span>
 
 <span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="mf">123.</span><span class="n">png</span>
 <span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="n">nsdf3</span><span class="o">.</span><span class="n">png</span>
-<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">png</span>
+<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">png</span>
 </pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1776,7 +1805,7 @@ and returns a transformed version.</li>
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'./',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -1933,10 +1962,6 @@ and returns a transformed version.</li>
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -1956,13 +1981,65 @@ and returns a transformed version.</li>
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

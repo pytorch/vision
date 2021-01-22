@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.utils &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.utils &mdash; Torchvision master documentation</title>
   
 
   
@@ -77,21 +77,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -107,22 +93,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -136,10 +167,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -162,7 +191,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -282,21 +311,27 @@
               
   <h1>Source code for torchvision.utils</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">BinaryIO</span>
-<span class="kn">import</span> <span class="nn">io</span>
 <span class="kn">import</span> <span class="nn">pathlib</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="n">irange</span> <span class="o">=</span> <span class="nb">range</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">ImageFont</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;make_grid&quot;</span><span class="p">,</span> <span class="s2">&quot;save_image&quot;</span><span class="p">,</span> <span class="s2">&quot;draw_bounding_boxes&quot;</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="make_grid"><a class="viewcode-back" href="../../utils.html#torchvision.utils.make_grid">[docs]</a><span class="k">def</span> <span class="nf">make_grid</span><span class="p">(</span>
+<div class="viewcode-block" id="make_grid"><a class="viewcode-back" href="../../utils.html#torchvision.utils.make_grid">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">make_grid</span><span class="p">(</span>
     <span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">nrow</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="nb">range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">scale_each</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">pad_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Make a grid of images.</span>
 
@@ -308,7 +343,7 @@
 <span class="sd">        padding (int, optional): amount of padding. Default: ``2``.</span>
 <span class="sd">        normalize (bool, optional): If True, shift the image to the range (0, 1),</span>
 <span class="sd">            by the min and max values specified by :attr:`range`. Default: ``False``.</span>
-<span class="sd">        range (tuple, optional): tuple (min, max) where min and max are numbers,</span>
+<span class="sd">        value_range (tuple, optional): tuple (min, max) where min and max are numbers,</span>
 <span class="sd">            then these numbers are used to normalize the image. By default, min and max</span>
 <span class="sd">            are computed from the tensor.</span>
 <span class="sd">        scale_each (bool, optional): If ``True``, scale each image in the batch of</span>
@@ -321,7 +356,12 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="ow">or</span>
             <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensor</span><span class="p">))):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;tensor or list of tensors expected, got </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">tensor</span><span class="p">)))</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;tensor or list of tensors expected, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;range&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">warning</span> <span class="o">=</span> <span class="s2">&quot;range will be deprecated, please use value_range instead.&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
+        <span class="n">value_range</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;range&quot;</span><span class="p">]</span>
 
     <span class="c1"># if list of tensors, convert to a 4D mini-batch Tensor</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -339,25 +379,25 @@
 
     <span class="k">if</span> <span class="n">normalize</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>  <span class="c1"># avoid modifying tensor in-place</span>
-        <span class="k">if</span> <span class="nb">range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">),</span> \
-                <span class="s2">&quot;range has to be a tuple (min, max) if specified. min and max are numbers&quot;</span>
+        <span class="k">if</span> <span class="n">value_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value_range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">),</span> \
+                <span class="s2">&quot;value_range has to be a tuple (min, max) if specified. min and max are numbers&quot;</span>
 
-        <span class="k">def</span> <span class="nf">norm_ip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">):</span>
-            <span class="n">img</span><span class="o">.</span><span class="n">clamp_</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="nb">max</span><span class="p">)</span>
-            <span class="n">img</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="o">-</span><span class="nb">min</span><span class="p">)</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="nb">max</span> <span class="o">-</span> <span class="nb">min</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">norm_ip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">):</span>
+            <span class="n">img</span><span class="o">.</span><span class="n">clamp_</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="n">low</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">high</span><span class="p">)</span>
+            <span class="n">img</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">low</span><span class="p">)</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">high</span> <span class="o">-</span> <span class="n">low</span><span class="p">,</span> <span class="mf">1e-5</span><span class="p">))</span>
 
-        <span class="k">def</span> <span class="nf">norm_range</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">range</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">norm_ip</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">def</span> <span class="nf">norm_range</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value_range</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">norm_ip</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">value_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">norm_ip</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
 
         <span class="k">if</span> <span class="n">scale_each</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensor</span><span class="p">:</span>  <span class="c1"># loop over mini-batch dimension</span>
-                <span class="n">norm_range</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">range</span><span class="p">)</span>
+                <span class="n">norm_range</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value_range</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">norm_range</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">range</span><span class="p">)</span>
+            <span class="n">norm_range</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">value_range</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -370,8 +410,8 @@
     <span class="n">num_channels</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">grid</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">new_full</span><span class="p">((</span><span class="n">num_channels</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">ymaps</span> <span class="o">+</span> <span class="n">padding</span><span class="p">,</span> <span class="n">width</span> <span class="o">*</span> <span class="n">xmaps</span> <span class="o">+</span> <span class="n">padding</span><span class="p">),</span> <span class="n">pad_value</span><span class="p">)</span>
     <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">irange</span><span class="p">(</span><span class="n">ymaps</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">irange</span><span class="p">(</span><span class="n">xmaps</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ymaps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">xmaps</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;=</span> <span class="n">nmaps</span><span class="p">:</span>
                 <span class="k">break</span>
             <span class="c1"># Tensor.copy_() is a valid method but seems to be missing from the stubs</span>
@@ -383,16 +423,13 @@
     <span class="k">return</span> <span class="n">grid</span></div>
 
 
-<div class="viewcode-block" id="save_image"><a class="viewcode-back" href="../../utils.html#torchvision.utils.save_image">[docs]</a><span class="k">def</span> <span class="nf">save_image</span><span class="p">(</span>
+<div class="viewcode-block" id="save_image"><a class="viewcode-back" href="../../utils.html#torchvision.utils.save_image">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">save_image</span><span class="p">(</span>
     <span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">fp</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">BinaryIO</span><span class="p">],</span>
-    <span class="n">nrow</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
-    <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="nb">range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">scale_each</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">pad_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Save a given Tensor into an image file.</span>
 
@@ -404,13 +441,67 @@
 <span class="sd">            If a file object was used instead of a filename, this parameter should always be used.</span>
 <span class="sd">        **kwargs: Other arguments are documented in ``make_grid``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-    <span class="n">grid</span> <span class="o">=</span> <span class="n">make_grid</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">nrow</span><span class="o">=</span><span class="n">nrow</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span> <span class="n">pad_value</span><span class="o">=</span><span class="n">pad_value</span><span class="p">,</span>
-                     <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="nb">range</span><span class="p">,</span> <span class="n">scale_each</span><span class="o">=</span><span class="n">scale_each</span><span class="p">)</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">make_grid</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="c1"># Add 0.5 after unnormalizing to [0, 255] to round to nearest integer</span>
     <span class="n">ndarr</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
     <span class="n">im</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">ndarr</span><span class="p">)</span>
     <span class="n">im</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="draw_bounding_boxes"><a class="viewcode-back" href="../../utils.html#torchvision.utils.draw_bounding_boxes">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">draw_bounding_boxes</span><span class="p">(</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">colors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">font</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">font_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Draws bounding boxes on given image.</span>
+<span class="sd">    The values of the input image should be uint8 between 0 and 255.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        image (Tensor): Tensor of shape (C x H x W)</span>
+<span class="sd">        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that</span>
+<span class="sd">            the boxes are absolute coordinates with respect to the image. In other words: `0 &lt;= xmin &lt; xmax &lt; W` and</span>
+<span class="sd">            `0 &lt;= ymin &lt; ymax &lt; H`.</span>
+<span class="sd">        labels (List[str]): List containing the labels of bounding boxes.</span>
+<span class="sd">        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can</span>
+<span class="sd">            be represented as `str` or `Tuple[int, int, int]`.</span>
+<span class="sd">        width (int): Width of bounding box.</span>
+<span class="sd">        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may</span>
+<span class="sd">            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,</span>
+<span class="sd">            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.</span>
+<span class="sd">        font_size (int): The requested font size in points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tensor expected, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tensor uint8 expected, got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pass individual images, not batches&quot;</span><span class="p">)</span>
+
+    <span class="n">ndarr</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">img_to_draw</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">ndarr</span><span class="p">)</span>
+
+    <span class="n">img_boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
+    <span class="n">txt_font</span> <span class="o">=</span> <span class="n">ImageFont</span><span class="o">.</span><span class="n">load_default</span><span class="p">()</span> <span class="k">if</span> <span class="n">font</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ImageFont</span><span class="o">.</span><span class="n">truetype</span><span class="p">(</span><span class="n">font</span><span class="o">=</span><span class="n">font</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">font_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bbox</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">img_boxes</span><span class="p">):</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">colors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">draw</span><span class="o">.</span><span class="n">text</span><span class="p">((</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="n">txt_font</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">))</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
 </pre></div>
 
              </article>
@@ -461,7 +552,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'../../',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -618,10 +709,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -641,13 +728,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

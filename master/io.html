@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.io &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.io &mdash; Torchvision master documentation</title>
   
 
   
@@ -79,21 +79,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -109,22 +95,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -138,10 +169,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -164,7 +193,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -351,7 +380,7 @@ presentation timestamps for each one of the frames in the video.</li>
 
 <dl class="function">
 <dt id="torchvision.io.write_video">
-<code class="descclassname">torchvision.io.</code><code class="descname">write_video</code><span class="sig-paren">(</span><em>filename: str, video_array: torch.Tensor, fps: float, video_codec: str = 'libx264', options: Union[Dict[str, Any], NoneType] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/io/video.html#write_video"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.write_video" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.io.</code><code class="descname">write_video</code><span class="sig-paren">(</span><em>filename: str, video_array: torch.Tensor, fps: float, video_codec: str = 'libx264', options: Union[Dict[str, Any], NoneType] = None, audio_array: Union[torch.Tensor, NoneType] = None, audio_fps: Union[float, NoneType] = None, audio_codec: Union[str, NoneType] = None, audio_options: Union[Dict[str, Any], NoneType] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/io/video.html#write_video"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.write_video" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes a 4d tensor in [T, H, W, C] format in a video file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -360,7 +389,14 @@ presentation timestamps for each one of the frames in the video.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – path where the video will be saved</li>
 <li><strong>video_array</strong> (<em>Tensor</em><em>[</em><em>T</em><em>, </em><em>H</em><em>, </em><em>W</em><em>, </em><em>C</em><em>]</em>) – tensor containing the individual frames, as a uint8 tensor in [T, H, W, C] format</li>
-<li><strong>fps</strong> (<em>Number</em>) – frames per second</li>
+<li><strong>fps</strong> (<em>Number</em>) – video frames per second</li>
+<li><strong>video_codec</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – the name of the video codec, i.e. “libx264”, “h264”, etc.</li>
+<li><strong>options</strong> (<em>Dict</em>) – dictionary containing options to be passed into the PyAV video stream</li>
+<li><strong>audio_array</strong> (<em>Tensor</em><em>[</em><em>C</em><em>, </em><em>N</em><em>]</em>) – tensor containing the audio, where C is the number of channels and N is the
+number of samples</li>
+<li><strong>audio_fps</strong> (<em>Number</em>) – audio sample rate, typically 44100 or 48000</li>
+<li><strong>audio_codec</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – the name of the audio codec, i.e. “mp3”, “aac”, etc.</li>
+<li><strong>audio_options</strong> (<em>Dict</em>) – dictionary containing options to be passed into the PyAV audio stream</li>
 </ul>
 </td>
 </tr>
@@ -439,13 +475,17 @@ Currently available options include <code class="docutils literal notranslate"><
 <dl class="method">
 <dt id="torchvision.io.VideoReader.__next__">
 <code class="descname">__next__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io.html#VideoReader.__next__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.VideoReader.__next__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decodes and returns the next frame of the current stream</p>
+<dd><p>Decodes and returns the next frame of the current stream.
+Frames are encoded as a dict with mandatory
+data and pts fields, where data is a tensor, and pts is a
+presentation timestamp of the frame expressed in seconds
+as a float.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dictionary with fields <code class="docutils literal notranslate"><span class="pre">data</span></code> and <code class="docutils literal notranslate"><span class="pre">pts</span></code>
-containing decoded frame and corresponding timestamp</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dictionary and containing decoded frame (<code class="docutils literal notranslate"><span class="pre">data</span></code>)
+and corresponding timestamp (<code class="docutils literal notranslate"><span class="pre">pts</span></code>) in seconds</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)">dict</a>)</td>
 </tr>
@@ -522,7 +562,7 @@ of that type and returns it.</td>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision</span>
 <span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;path to a test video&quot;</span>
 <span class="c1"># Constructor allocates memory and a threaded decoder</span>
-<span class="c1"># instance per video. At the momet it takes two arguments:</span>
+<span class="c1"># instance per video. At the moment it takes two arguments:</span>
 <span class="c1"># path to the video file, and a wanted stream.</span>
 <span class="n">reader</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">VideoReader</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">)</span>
 
@@ -548,18 +588,28 @@ of that type and returns it.</td>
 <h2>Image<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="torchvision.io.read_image">
-<code class="descclassname">torchvision.io.</code><code class="descname">read_image</code><span class="sig-paren">(</span><em>path: str</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#read_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.read_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.io.</code><code class="descname">read_image</code><span class="sig-paren">(</span><em>path: str</em>, <em>mode: torchvision.io.image.ImageReadMode = &lt;ImageReadMode.UNCHANGED: 0&gt;</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#read_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.read_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads a JPEG or PNG image into a 3 dimensional RGB Tensor.
+Optionally converts the image to the desired format.
 The values of the output tensor are uint8 between 0 and 255.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – path of the JPEG or PNG image.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – path of the JPEG or PNG image.</li>
+<li><strong>mode</strong> (<em>ImageReadMode</em>) – the read mode used for optionally converting the image.
+Default: <cite>ImageReadMode.UNCHANGED</cite>.
+See <cite>ImageReadMode</cite> class for more information on various
+available modes.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>output</strong></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>output</strong></p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Tensor[3, image_height, image_width]</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[image_channels, image_height, image_width]</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -567,20 +617,30 @@ The values of the output tensor are uint8 between 0 and 255.</p>
 
 <dl class="function">
 <dt id="torchvision.io.decode_image">
-<code class="descclassname">torchvision.io.</code><code class="descname">decode_image</code><span class="sig-paren">(</span><em>input: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#decode_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.decode_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.io.</code><code class="descname">decode_image</code><span class="sig-paren">(</span><em>input: torch.Tensor</em>, <em>mode: torchvision.io.image.ImageReadMode = &lt;ImageReadMode.UNCHANGED: 0&gt;</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#decode_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.decode_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detects whether an image is a JPEG or PNG and performs the appropriate
 operation to decode the image into a 3 dimensional RGB Tensor.</p>
-<p>The values of the output tensor are uint8 between 0 and 255.</p>
+<p>Optionally converts the image to the desired format.
+The values of the output tensor are uint8 between 0 and 255.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input</strong> (<em>Tensor</em>) – a one dimensional uint8 tensor containing the raw bytes of the
-PNG or JPEG image.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input</strong> (<em>Tensor</em>) – a one dimensional uint8 tensor containing the raw bytes of the
+PNG or JPEG image.</li>
+<li><strong>mode</strong> (<em>ImageReadMode</em>) – the read mode used for optionally converting the image.
+Default: <cite>ImageReadMode.UNCHANGED</cite>.
+See <cite>ImageReadMode</cite> class for more information on various
+available modes.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>output</strong></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>output</strong></p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Tensor[3, image_height, image_width]</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[image_channels, image_height, image_width]</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -750,7 +810,7 @@ between 0 and 9. Default: 6</li>
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'./',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -907,10 +967,6 @@ between 0 and 9. Default: 6</li>
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -930,13 +986,65 @@ between 0 and 9. Default: 6</li>
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

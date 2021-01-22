@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.utils &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.utils &mdash; Torchvision master documentation</title>
   
 
   
@@ -78,21 +78,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -108,22 +94,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -137,10 +168,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -163,7 +192,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -285,7 +314,7 @@
 <h1>torchvision.utils<a class="headerlink" href="#torchvision-utils" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="torchvision.utils.make_grid">
-<code class="descclassname">torchvision.utils.</code><code class="descname">make_grid</code><span class="sig-paren">(</span><em>tensor: Union[torch.Tensor, List[torch.Tensor]], nrow: int = 8, padding: int = 2, normalize: bool = False, range: Union[Tuple[int, int], NoneType] = None, scale_each: bool = False, pad_value: int = 0</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#make_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.make_grid" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.utils.</code><code class="descname">make_grid</code><span class="sig-paren">(</span><em>tensor: Union[torch.Tensor, List[torch.Tensor]], nrow: int = 8, padding: int = 2, normalize: bool = False, value_range: Union[Tuple[int, int], NoneType] = None, scale_each: bool = False, pad_value: int = 0, **kwargs</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#make_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.make_grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a grid of images.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -299,7 +328,7 @@ The final grid size is <code class="docutils literal notranslate"><span class="p
 <li><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – amount of padding. Default: <code class="docutils literal notranslate"><span class="pre">2</span></code>.</li>
 <li><strong>normalize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, shift the image to the range (0, 1),
 by the min and max values specified by <code class="xref py py-attr docutils literal notranslate"><span class="pre">range</span></code>. Default: <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
-<li><strong>range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>, </em><em>optional</em>) – tuple (min, max) where min and max are numbers,
+<li><strong>value_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>, </em><em>optional</em>) – tuple (min, max) where min and max are numbers,
 then these numbers are used to normalize the image. By default, min and max
 are computed from the tensor.</li>
 <li><strong>scale_each</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, scale each image in the batch of
@@ -316,7 +345,7 @@ images separately rather than the (min, max) over all images. Default: <code cla
 
 <dl class="function">
 <dt id="torchvision.utils.save_image">
-<code class="descclassname">torchvision.utils.</code><code class="descname">save_image</code><span class="sig-paren">(</span><em>tensor: Union[torch.Tensor, List[torch.Tensor]], fp: Union[str, pathlib.Path, BinaryIO], nrow: int = 8, padding: int = 2, normalize: bool = False, range: Union[Tuple[int, int], NoneType] = None, scale_each: bool = False, pad_value: int = 0, format: Union[str, NoneType] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/utils.html#save_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.save_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.utils.</code><code class="descname">save_image</code><span class="sig-paren">(</span><em>tensor: Union[torch.Tensor, List[torch.Tensor]], fp: Union[str, pathlib.Path, BinaryIO], normalize: bool = False, format: Union[str, NoneType] = None, **kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/utils.html#save_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.save_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a given Tensor into an image file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -329,6 +358,35 @@ saves the tensor as a grid of images by calling <code class="docutils literal no
 <li><strong>format</strong> (<em>Optional</em>) – If omitted, the format to use is determined from the filename extension.
 If a file object was used instead of a filename, this parameter should always be used.</li>
 <li><strong>**kwargs</strong> – Other arguments are documented in <code class="docutils literal notranslate"><span class="pre">make_grid</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.utils.draw_bounding_boxes">
+<code class="descclassname">torchvision.utils.</code><code class="descname">draw_bounding_boxes</code><span class="sig-paren">(</span><em>image: torch.Tensor, boxes: torch.Tensor, labels: Union[List[str], NoneType] = None, colors: Union[List[Union[str, Tuple[int, int, int]]], NoneType] = None, width: int = 1, font: Union[str, NoneType] = None, font_size: int = 10</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#draw_bounding_boxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.draw_bounding_boxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws bounding boxes on given image.
+The values of the input image should be uint8 between 0 and 255.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>image</strong> (<em>Tensor</em>) – Tensor of shape (C x H x W)</li>
+<li><strong>bboxes</strong> (<em>Tensor</em>) – Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+the boxes are absolute coordinates with respect to the image. In other words: <cite>0 &lt;= xmin &lt; xmax &lt; W</cite> and
+<cite>0 &lt;= ymin &lt; ymax &lt; H</cite>.</li>
+<li><strong>labels</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – List containing the labels of bounding boxes.</li>
+<li><strong>colors</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – List containing the colors of bounding boxes. The colors can
+be represented as <cite>str</cite> or <cite>Tuple[int, int, int]</cite>.</li>
+<li><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Width of bounding box.</li>
+<li><strong>font</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – A filename containing a TrueType font. If the file is not found in this filename, the loader may
+also search in other directories, such as the <cite>fonts/</cite> directory on Windows or <cite>/Library/Fonts/</cite>,
+<cite>/System/Library/Fonts/</cite> and <cite>~/Library/Fonts/</cite> on macOS.</li>
+<li><strong>font_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – The requested font size in points.</li>
 </ul>
 </td>
 </tr>
@@ -397,7 +455,7 @@ If a file object was used instead of a filename, this parameter should always be
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'./',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -554,10 +612,6 @@ If a file object was used instead of a filename, this parameter should always be
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -577,13 +631,65 @@ If a file object was used instead of a filename, this parameter should always be
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.transforms &mdash; Torchvision 0.8.1 documentation</title>
+  <title>torchvision.transforms &mdash; Torchvision master documentation</title>
   
 
   
@@ -79,21 +79,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -109,22 +95,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -138,10 +169,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -164,7 +193,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -367,7 +396,7 @@ Please, see the note below.</p>
 <dt id="torchvision.transforms.CenterCrop">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">CenterCrop</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#CenterCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.CenterCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crops the given image at the center.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -375,7 +404,7 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size of the crop. If size is an
 int instead of sequence like (h, w), a square crop (size, size) is
-made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</td>
+made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</td>
 </tr>
 </tbody>
 </table>
@@ -401,7 +430,10 @@ made. If provided a tuple or list of length 1, it will be interpreted as (size[0
 <dl class="class">
 <dt id="torchvision.transforms.ColorJitter">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">ColorJitter</code><span class="sig-paren">(</span><em>brightness=0</em>, <em>contrast=0</em>, <em>saturation=0</em>, <em>hue=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#ColorJitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.ColorJitter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Randomly change the brightness, contrast and saturation of an image.</p>
+<dd><p>Randomly change the brightness, contrast, saturation and hue of an image.
+If the image is torch Tensor, it is expected
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions.
+If img is PIL Image, mode “1”, “L”, “I”, “F” and modes with transparency (alpha channel) are not supported.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -443,15 +475,30 @@ Should have 0&lt;= hue &lt;= 0.5 or -0.5 &lt;= min &lt;= max &lt;= 0.5.</li>
 
 <dl class="staticmethod">
 <dt id="torchvision.transforms.ColorJitter.get_params">
-<em class="property">static </em><code class="descname">get_params</code><span class="sig-paren">(</span><em>brightness</em>, <em>contrast</em>, <em>saturation</em>, <em>hue</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#ColorJitter.get_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.ColorJitter.get_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a randomized transform to be applied on image.</p>
-<p>Arguments are same as that of __init__.</p>
+<em class="property">static </em><code class="descname">get_params</code><span class="sig-paren">(</span><em>brightness: Union[List[float], NoneType], contrast: Union[List[float], NoneType], saturation: Union[List[float], NoneType], hue: Union[List[float], NoneType]</em><span class="sig-paren">)</span> &#x2192; Tuple[torch.Tensor, Union[float, NoneType], Union[float, NoneType], Union[float, NoneType], Union[float, NoneType]]<a class="reference internal" href="_modules/torchvision/transforms/transforms.html#ColorJitter.get_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.ColorJitter.get_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the parameters for the randomized transform to be applied on image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Transform which randomly adjusts brightness, contrast and
-saturation in a random order.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>brightness</strong> (<em>tuple of python:float</em><em> (</em><em>min</em><em>, </em><em>max</em><em>)</em><em>, </em><em>optional</em>) – The range from which the brightness_factor is chosen
+uniformly. Pass None to turn off the transformation.</li>
+<li><strong>contrast</strong> (<em>tuple of python:float</em><em> (</em><em>min</em><em>, </em><em>max</em><em>)</em><em>, </em><em>optional</em>) – The range from which the contrast_factor is chosen
+uniformly. Pass None to turn off the transformation.</li>
+<li><strong>saturation</strong> (<em>tuple of python:float</em><em> (</em><em>min</em><em>, </em><em>max</em><em>)</em><em>, </em><em>optional</em>) – The range from which the saturation_factor is chosen
+uniformly. Pass None to turn off the transformation.</li>
+<li><strong>hue</strong> (<em>tuple of python:float</em><em> (</em><em>min</em><em>, </em><em>max</em><em>)</em><em>, </em><em>optional</em>) – The range from which the hue_factor is chosen uniformly.
+Pass None to turn off the transformation.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The parameters used to apply the randomized transform
+along with their random order.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -463,7 +510,7 @@ saturation in a random order.</td>
 <dt id="torchvision.transforms.FiveCrop">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">FiveCrop</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#FiveCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.FiveCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image into four corners and the central crop.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading
 dimensions</p>
 <div class="admonition note">
@@ -478,7 +525,7 @@ this.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size of the crop. If size is an <code class="docutils literal notranslate"><span class="pre">int</span></code>
 instead of sequence like (h, w), a square crop of size (size, size) is made.
-If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</td>
+If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</td>
 </tr>
 </tbody>
 </table>
@@ -515,9 +562,8 @@ If provided a tuple or list of length 1, it will be interpreted as (size[0], siz
 <dt id="torchvision.transforms.Grayscale">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">Grayscale</code><span class="sig-paren">(</span><em>num_output_channels=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Grayscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.Grayscale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert image to grayscale.
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, 3, H, W] shape, where … means an arbitrary number of leading
-dimensions</p>
+If the image is torch Tensor, it is expected
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -561,24 +607,25 @@ dimensions</p>
 <dt id="torchvision.transforms.Pad">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">Pad</code><span class="sig-paren">(</span><em>padding</em>, <em>fill=0</em>, <em>padding_mode='constant'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.Pad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pad the given image on all sides with the given “pad” value.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a>) – Padding on each border. If a single int is provided this
-is used to pad all borders. If tuple of length 2 is provided this is the padding
-on left/right and top/bottom respectively. If a tuple of length 4 is provided
+<li><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>sequence</em>) – Padding on each border. If a single int is provided this
+is used to pad all borders. If sequence of length 2 is provided this is the padding
+on left/right and top/bottom respectively. If a sequence of length 4 is provided
 this is the padding for the left, top, right and bottom borders respectively.
-In torchscript mode padding as single int is not supported, use a tuple or
-list of length 1: <code class="docutils literal notranslate"><span class="pre">[padding,</span> <span class="pre">]</span></code>.</li>
-<li><strong>fill</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a>) – Pixel fill value for constant fill. Default is 0. If a tuple of
+In torchscript mode padding as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[padding,</span> <span class="pre">]</span></code>.</li>
+<li><strong>fill</strong> (<em>number</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a>) – Pixel fill value for constant fill. Default is 0. If a tuple of
 length 3, it is used to fill R, G, B channels respectively.
-This value is only used when the padding_mode is constant</li>
+This value is only used when the padding_mode is constant.
+Only number is supported for torch Tensor.
+Only int or str or tuple value is supported for PIL Image.</li>
 <li><strong>padding_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – <p>Type of padding. Should be: constant, edge, reflect or symmetric.
-Default is constant. Mode symmetric is not yet supported for Tensor inputs.</p>
+Default is constant.</p>
 <ul>
 <li>constant: pads with a constant value, this value is specified with fill</li>
 <li>edge: pads with the last value at the edge of the image</li>
@@ -618,16 +665,16 @@ will result in [2, 1, 1, 2, 3, 4, 4, 3]</div></blockquote>
 
 <dl class="class">
 <dt id="torchvision.transforms.RandomAffine">
-<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomAffine</code><span class="sig-paren">(</span><em>degrees</em>, <em>translate=None</em>, <em>scale=None</em>, <em>shear=None</em>, <em>resample=0</em>, <em>fillcolor=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomAffine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomAffine" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomAffine</code><span class="sig-paren">(</span><em>degrees</em>, <em>translate=None</em>, <em>scale=None</em>, <em>shear=None</em>, <em>interpolation=&lt;InterpolationMode.NEAREST: 'nearest'&gt;</em>, <em>fill=0</em>, <em>fillcolor=None</em>, <em>resample=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomAffine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomAffine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Random affine transformation of the image keeping center invariant.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>degrees</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Range of degrees to select from.
+<li><strong>degrees</strong> (<em>sequence</em><em> or </em><em>number</em>) – Range of degrees to select from.
 If degrees is a number instead of sequence like (min, max), the range of degrees
 will be (-degrees, +degrees). Set to 0 to deactivate rotations.</li>
 <li><strong>translate</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>, </em><em>optional</em>) – tuple of maximum absolute fraction for horizontal
@@ -636,18 +683,23 @@ is randomly sampled in the range -img_width * a &lt; dx &lt; img_width * a and v
 randomly sampled in the range -img_height * b &lt; dy &lt; img_height * b. Will not translate by default.</li>
 <li><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>, </em><em>optional</em>) – scaling factor interval, e.g (a, b), then scale is
 randomly sampled from the range a &lt;= scale &lt;= b. Will keep original scale by default.</li>
-<li><strong>shear</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – Range of degrees to select from.
+<li><strong>shear</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Range of degrees to select from.
 If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
-will be applied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
-range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
+will be applied. Else if shear is a sequence of 2 values a shear parallel to the x axis in the
+range (shear[0], shear[1]) will be applied. Else if shear is a sequence of 4 values,
 a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
 Will not apply shear by default.</li>
-<li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – An optional resampling filter. See <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a> for more information.
-If omitted, or if the image has mode “1” or “P”, it is set to <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>.
-If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> are supported.</li>
-<li><strong>fillcolor</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Optional fill color (Tuple for RGB Image and int for grayscale) for the area
-outside the transform in the output image (Pillow&gt;=5.0.0). This option is not supported for Tensor
-input. Fill value for the area outside the transform in the output image is always 0.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
+image. If given a number, the value is used for all bands respectively.
+If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
+<li><strong>fillcolor</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
+Please use <a href="#id1"><span class="problematic" id="id2">`arg`:fill:</span></a> instead.</li>
+<li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
+Please use <a href="#id3"><span class="problematic" id="id4">`arg`:interpolation:</span></a> instead.</li>
 </ul>
 </td>
 </tr>
@@ -708,7 +760,7 @@ transforms as shown below:</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>transforms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><em>torch.nn.Module</em>) – list of transformations</li>
+<li><strong>transforms</strong> (<em>sequence</em><em> or </em><em>torch.nn.Module</em>) – list of transformations</li>
 <li><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability</li>
 </ul>
 </td>
@@ -721,9 +773,8 @@ transforms as shown below:</p>
 <dt id="torchvision.transforms.RandomCrop">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomCrop</code><span class="sig-paren">(</span><em>size</em>, <em>padding=None</em>, <em>pad_if_needed=False</em>, <em>fill=0</em>, <em>padding_mode='constant'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image at a random location.
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading
-dimensions</p>
+If the image is torch Tensor, it is expected
+to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -731,24 +782,23 @@ dimensions</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size of the crop. If size is an
 int instead of sequence like (h, w), a square crop (size, size) is
-made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</li>
+made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</li>
 <li><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>sequence</em><em>, </em><em>optional</em>) – Optional padding on each border
 of the image. Default is None. If a single int is provided this
-is used to pad all borders. If tuple of length 2 is provided this is the padding
-on left/right and top/bottom respectively. If a tuple of length 4 is provided
+is used to pad all borders. If sequence of length 2 is provided this is the padding
+on left/right and top/bottom respectively. If a sequence of length 4 is provided
 this is the padding for the left, top, right and bottom borders respectively.
-In torchscript mode padding as single int is not supported, use a tuple or
-list of length 1: <code class="docutils literal notranslate"><span class="pre">[padding,</span> <span class="pre">]</span></code>.</li>
+In torchscript mode padding as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[padding,</span> <span class="pre">]</span></code>.</li>
 <li><strong>pad_if_needed</strong> (<em>boolean</em>) – It will pad the image if smaller than the
 desired size to avoid raising an exception. Since cropping is done
 after padding, the padding seems to be done at a random offset.</li>
-<li><strong>fill</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a>) – Pixel fill value for constant fill. Default is 0. If a tuple of
+<li><strong>fill</strong> (<em>number</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a>) – Pixel fill value for constant fill. Default is 0. If a tuple of
 length 3, it is used to fill R, G, B channels respectively.
-This value is only used when the padding_mode is constant</li>
-<li><strong>padding_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – <p>Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-Mode symmetric is not yet supported for Tensor inputs.</p>
-<blockquote>
-<div><ul>
+This value is only used when the padding_mode is constant.
+Only number is supported for torch Tensor.
+Only int or str or tuple value is supported for PIL Image.</li>
+<li><strong>padding_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – <p>Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.</p>
+<ul>
 <li>constant: pads with a constant value, this value is specified with fill</li>
 <li>edge: pads with the last value on the edge of the image</li>
 <li>reflect: pads with reflection of image (without repeating the last value on the edge)<blockquote>
@@ -760,7 +810,6 @@ will result in [3, 2, 1, 2, 3, 4, 3, 2]</div></blockquote>
 will result in [2, 1, 1, 2, 3, 4, 4, 3]</div></blockquote>
 </li>
 </ul>
-</div></blockquote>
 </li>
 </ul>
 </td>
@@ -814,9 +863,8 @@ will result in [2, 1, 1, 2, 3, 4, 4, 3]</div></blockquote>
 <dt id="torchvision.transforms.RandomGrayscale">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomGrayscale</code><span class="sig-paren">(</span><em>p=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomGrayscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomGrayscale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Randomly convert image to grayscale with a probability of p (default 0.1).
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, 3, H, W] shape, where … means an arbitrary number of leading
-dimensions</p>
+If the image is torch Tensor, it is expected
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -855,7 +903,7 @@ with probability (1-p).
 <dt id="torchvision.transforms.RandomHorizontalFlip">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomHorizontalFlip</code><span class="sig-paren">(</span><em>p=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomHorizontalFlip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomHorizontalFlip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Horizontally flip the given image randomly with a given probability.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading
 dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -887,9 +935,9 @@ dimensions</p>
 
 <dl class="class">
 <dt id="torchvision.transforms.RandomPerspective">
-<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomPerspective</code><span class="sig-paren">(</span><em>distortion_scale=0.5</em>, <em>p=0.5</em>, <em>interpolation=2</em>, <em>fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomPerspective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomPerspective" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomPerspective</code><span class="sig-paren">(</span><em>distortion_scale=0.5</em>, <em>p=0.5</em>, <em>interpolation=&lt;InterpolationMode.BILINEAR: 'bilinear'&gt;</em>, <em>fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomPerspective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomPerspective" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs a random perspective transformation of the given image with a given probability.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -899,12 +947,13 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <li><strong>distortion_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – argument to control the degree of distortion and ranges from 0 to 1.
 Default is 0.5.</li>
 <li><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability of the image being transformed. Default is 0.5.</li>
-<li><strong>interpolation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Interpolation type. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> and
-<code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> are supported. Default, <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> for PIL images and Tensors.</li>
-<li><strong>fill</strong> (<em>n-tuple</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Pixel fill value for area outside the rotated
-image. If int or float, the value is used for all bands respectively. Default is 0.
-This option is only available for <code class="docutils literal notranslate"><span class="pre">pillow&gt;=5.0.0</span></code>. This option is not supported for Tensor
-input. Fill value for the area outside the transform in the output image is always 0.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
+image. If given a number, the value is used for all bands respectively.
+If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -954,9 +1003,9 @@ List containing [top-left, top-right, bottom-right, bottom-left] of the transfor
 
 <dl class="class">
 <dt id="torchvision.transforms.RandomResizedCrop">
-<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomResizedCrop</code><span class="sig-paren">(</span><em>size</em>, <em>scale=(0.08</em>, <em>1.0)</em>, <em>ratio=(0.75</em>, <em>1.3333333333333333)</em>, <em>interpolation=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomResizedCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomResizedCrop" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomResizedCrop</code><span class="sig-paren">(</span><em>size</em>, <em>scale=(0.08</em>, <em>1.0)</em>, <em>ratio=(0.75</em>, <em>1.3333333333333333)</em>, <em>interpolation=&lt;InterpolationMode.BILINEAR: 'bilinear'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomResizedCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomResizedCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image to random size and aspect ratio.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <p>A crop of random size (default: of 0.08 to 1.0) of the original size and a random
 aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
@@ -969,12 +1018,15 @@ This is popularly used to train the Inception networks.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>sequence</em>) – expected output size of each edge. If size is an
 int instead of sequence like (h, w), a square output size <code class="docutils literal notranslate"><span class="pre">(size,</span> <span class="pre">size)</span></code> is
-made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</li>
-<li><strong>scale</strong> (<em>tuple of python:float</em>) – range of size of the origin size cropped</li>
-<li><strong>ratio</strong> (<em>tuple of python:float</em>) – range of aspect ratio of the origin aspect ratio cropped.</li>
-<li><strong>interpolation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired interpolation enum defined by <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a>.
-Default is <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>
-and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUBIC</span></code> are supported.</li>
+made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+In torchscript mode size as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[size,</span> <span class="pre">]</span></code>.</li>
+<li><strong>scale</strong> (<em>tuple of python:float</em>) – scale range of the cropped image before resizing, relatively to the origin image.</li>
+<li><strong>ratio</strong> (<em>tuple of python:float</em>) – aspect ratio range of the cropped image before resizing.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> and
+<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BICUBIC</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
 </ul>
 </td>
 </tr>
@@ -1031,32 +1083,33 @@ and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUB
 
 <dl class="class">
 <dt id="torchvision.transforms.RandomRotation">
-<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomRotation</code><span class="sig-paren">(</span><em>degrees</em>, <em>resample=False</em>, <em>expand=False</em>, <em>center=None</em>, <em>fill=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomRotation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomRotation</code><span class="sig-paren">(</span><em>degrees</em>, <em>interpolation=&lt;InterpolationMode.NEAREST: 'nearest'&gt;</em>, <em>expand=False</em>, <em>center=None</em>, <em>fill=None</em>, <em>resample=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomRotation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotate the image by angle.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>degrees</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Range of degrees to select from.
+<li><strong>degrees</strong> (<em>sequence</em><em> or </em><em>number</em>) – Range of degrees to select from.
 If degrees is a number instead of sequence like (min, max), the range of degrees
 will be (-degrees, +degrees).</li>
-<li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – An optional resampling filter. See <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a> for more information.
-If omitted, or if the image has mode “1” or “P”, it is set to PIL.Image.NEAREST.
-If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> are supported.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
 <li><strong>expand</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Optional expansion flag.
 If true, expands the output to make it large enough to hold the entire rotated image.
 If false or omitted, make the output image the same size as the input image.
 Note that the expand flag assumes rotation around the center and no translation.</li>
-<li><strong>center</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>, </em><em>optional</em>) – Optional center of rotation, (x, y). Origin is the upper left corner.
+<li><strong>center</strong> (<em>sequence</em><em>, </em><em>optional</em>) – Optional center of rotation, (x, y). Origin is the upper left corner.
 Default is the center of the image.</li>
-<li><strong>fill</strong> (<em>n-tuple</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Pixel fill value for area outside the rotated
-image. If int or float, the value is used for all bands respectively.
-Defaults to 0 for all bands. This option is only available for Pillow&gt;=5.2.0.
-This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-image is always 0.</li>
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the rotated
+image. If given a number, the value is used for all bands respectively.
+If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.2.0</span></code>.</li>
+<li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
+Please use <a href="#id5"><span class="problematic" id="id6">`arg`:interpolation:</span></a> instead.</li>
 </ul>
 </td>
 </tr>
@@ -1107,7 +1160,7 @@ image is always 0.</li>
 <dt id="torchvision.transforms.RandomVerticalFlip">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomVerticalFlip</code><span class="sig-paren">(</span><em>p=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomVerticalFlip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomVerticalFlip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Vertically flip the given image randomly with a given probability.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading
 dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1139,9 +1192,9 @@ dimensions</p>
 
 <dl class="class">
 <dt id="torchvision.transforms.Resize">
-<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">Resize</code><span class="sig-paren">(</span><em>size</em>, <em>interpolation=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.Resize" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">Resize</code><span class="sig-paren">(</span><em>size</em>, <em>interpolation=&lt;InterpolationMode.BILINEAR: 'bilinear'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.Resize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resize the input image to the given size.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1153,11 +1206,12 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 smaller edge of the image will be matched to this number.
 i.e, if height &gt; width, then image will be rescaled to
 (size * height / width, size).
-In torchscript mode padding as single int is not supported, use a tuple or
-list of length 1: <code class="docutils literal notranslate"><span class="pre">[size,</span> <span class="pre">]</span></code>.</li>
-<li><strong>interpolation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – Desired interpolation enum defined by <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a>.
-Default is <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>
-and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUBIC</span></code> are supported.</li>
+In torchscript mode size as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[size,</span> <span class="pre">]</span></code>.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> and
+<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BICUBIC</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
 </ul>
 </td>
 </tr>
@@ -1193,7 +1247,7 @@ and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUB
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">TenCrop</code><span class="sig-paren">(</span><em>size</em>, <em>vertical_flip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#TenCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.TenCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image into four corners and the central crop plus the flipped version of
 these (horizontal flipping is used by default).
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading
 dimensions</p>
 <div class="admonition note">
@@ -1209,7 +1263,7 @@ this.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size of the crop. If size is an
 int instead of sequence like (h, w), a square crop (size, size) is
-made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</li>
+made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</li>
 <li><strong>vertical_flip</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Use vertical flipping instead of horizontal</li>
 </ul>
 </td>
@@ -1249,9 +1303,8 @@ made. If provided a tuple or list of length 1, it will be interpreted as (size[0
 <dt id="torchvision.transforms.GaussianBlur">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">GaussianBlur</code><span class="sig-paren">(</span><em>kernel_size</em>, <em>sigma=(0.1</em>, <em>2.0)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#GaussianBlur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.GaussianBlur" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blurs image with randomly chosen Gaussian blur.
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, C, H, W] shape, where … means an arbitrary number of leading
-dimensions</p>
+If the image is torch Tensor, it is expected
+to have […, C, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1339,6 +1392,7 @@ given range.</li>
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">LinearTransformation</code><span class="sig-paren">(</span><em>transformation_matrix</em>, <em>mean_vector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#LinearTransformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.LinearTransformation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transform a tensor image with a square transformation matrix and a mean_vector computed
 offline.
+This transform does not support PIL Image.
 Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
 subtract mean_vector from it which is then followed by computing the dot
 product with the transformation matrix and then reshaping the tensor to its
@@ -1384,6 +1438,7 @@ perform SVD on this matrix and pass it as transformation_matrix.</dd>
 <dt id="torchvision.transforms.Normalize">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">Normalize</code><span class="sig-paren">(</span><em>mean</em>, <em>std</em>, <em>inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Normalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.Normalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normalize a tensor image with mean and standard deviation.
+This transform does not support PIL Image.
 Given mean: <code class="docutils literal notranslate"><span class="pre">(mean[1],...,mean[n])</span></code> and std: <code class="docutils literal notranslate"><span class="pre">(std[1],..,std[n])</span></code> for <code class="docutils literal notranslate"><span class="pre">n</span></code>
 channels, this transform will normalize each channel of the input
 <code class="docutils literal notranslate"><span class="pre">torch.*Tensor</span></code> i.e.,
@@ -1427,7 +1482,8 @@ channels, this transform will normalize each channel of the input
 <dl class="class">
 <dt id="torchvision.transforms.RandomErasing">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomErasing</code><span class="sig-paren">(</span><em>p=0.5</em>, <em>scale=(0.02</em>, <em>0.33)</em>, <em>ratio=(0.3</em>, <em>3.3)</em>, <em>value=0</em>, <em>inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomErasing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomErasing" title="Permalink to this definition">¶</a></dt>
-<dd><p>Randomly selects a rectangle region in an image and erases its pixels.
+<dd><p>Randomly selects a rectangle region in an torch Tensor image and erases its pixels.
+This transform does not support PIL Image.
 ‘Random Erasing Data Augmentation’ by Zhong et al. See <a class="reference external" href="https://arxiv.org/abs/1708.04896">https://arxiv.org/abs/1708.04896</a></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1486,8 +1542,8 @@ If a str of ‘random’, erasing each pixel with random values.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>Tensor</em>) – Tensor image to be erased.</li>
-<li><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a>) – range of proportion of erased area against input image.</li>
-<li><strong>ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a>) – range of aspect ratio of erased area.</li>
+<li><strong>scale</strong> (<em>sequence</em>) – range of proportion of erased area against input image.</li>
+<li><strong>ratio</strong> (<em>sequence</em>) – range of aspect ratio of erased area.</li>
 <li><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>, </em><em>optional</em>) – erasing value. If None, it is interpreted as “random”
 (erasing each pixel with random values). If <code class="docutils literal notranslate"><span class="pre">len(value)</span></code> is 1, it is interpreted as a number,
 i.e. <code class="docutils literal notranslate"><span class="pre">value[0]</span></code>.</li>
@@ -1509,7 +1565,8 @@ i.e. <code class="docutils literal notranslate"><span class="pre">value[0]</span
 <dl class="class">
 <dt id="torchvision.transforms.ConvertImageDtype">
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">ConvertImageDtype</code><span class="sig-paren">(</span><em>dtype: torch.dtype</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/transforms/transforms.html#ConvertImageDtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.ConvertImageDtype" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly</p>
+<dd><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly
+This function does not support PIL Image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1633,16 +1690,24 @@ you can use a functional transform to build transform classes with custom behavi
 <span class="n">rotation_transform</span> <span class="o">=</span> <span class="n">MyRotationTransform</span><span class="p">(</span><span class="n">angles</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>
 </pre></div>
 </div>
-<span class="target" id="module-torchvision.transforms.functional"></span><dl class="function">
+<span class="target" id="module-torchvision.transforms.functional"></span><dl class="class">
+<dt id="torchvision.transforms.functional.InterpolationMode">
+<em class="property">class </em><code class="descclassname">torchvision.transforms.functional.</code><code class="descname">InterpolationMode</code><a class="reference internal" href="_modules/torchvision/transforms/functional.html#InterpolationMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.InterpolationMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolation modes</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.transforms.functional.adjust_brightness">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">adjust_brightness</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>brightness_factor: float</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#adjust_brightness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.adjust_brightness" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adjust brightness of an Image.</p>
+<dd><p>Adjust brightness of an image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be adjusted.</li>
+<li><strong>img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,</strong> (<em>If</em>) – </li>
+<li><strong>... means it can have an arbitrary number of leading dimensions.</strong> (<em>where</em>) – </li>
 <li><strong>brightness_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – How much to adjust the brightness. Can be
 any non negative number. 0 gives a black image, 1 gives the
 original image while 2 increases the brightness by a factor of 2.</li>
@@ -1662,13 +1727,15 @@ original image while 2 increases the brightness by a factor of 2.</li>
 <dl class="function">
 <dt id="torchvision.transforms.functional.adjust_contrast">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">adjust_contrast</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>contrast_factor: float</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#adjust_contrast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.adjust_contrast" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adjust contrast of an Image.</p>
+<dd><p>Adjust contrast of an image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be adjusted.</li>
+<li><strong>img is torch Tensor, it is expected to be in [..., 3, H, W] format,</strong> (<em>If</em>) – </li>
+<li><strong>... means it can have an arbitrary number of leading dimensions.</strong> (<em>where</em>) – </li>
 <li><strong>contrast_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – How much to adjust the contrast. Can be any
 non negative number. 0 gives a solid gray image, 1 gives the
 original image while 2 increases the contrast by a factor of 2.</li>
@@ -1700,6 +1767,9 @@ based on the following equation:</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – PIL Image to be adjusted.</li>
+<li><strong>img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,</strong> (<em>If</em>) – </li>
+<li><strong>... means it can have an arbitrary number of leading dimensions.</strong> (<em>where</em>) – </li>
+<li><strong>img is PIL Image, modes with transparency</strong> (<em>If</em>) – </li>
 <li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Non negative real number, same as <span class="math notranslate nohighlight">\(\gamma\)</span> in the equation.
 gamma larger than 1 make the shadows darker,
 while gamma smaller than 1 make dark regions lighter.</li>
@@ -1733,6 +1803,9 @@ interval <cite>[-0.5, 0.5]</cite>.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be adjusted.</li>
+<li><strong>img is torch Tensor, it is expected to be in [..., 3, H, W] format,</strong> (<em>If</em>) – </li>
+<li><strong>... means it can have an arbitrary number of leading dimensions.</strong> (<em>where</em>) – </li>
+<li><strong>img is PIL Image mode &quot;1&quot;, &quot;L&quot;, &quot;I&quot;, &quot;F&quot; and modes with transparency</strong> (<em>If</em>) – </li>
 <li><strong>hue_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – How much to shift the hue channel. Should be in
 [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
 HSV space in positive and negative direction respectively.
@@ -1761,6 +1834,8 @@ with complementary colors while 0 gives the original image.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be adjusted.</li>
+<li><strong>img is torch Tensor, it is expected to be in [..., 3, H, W] format,</strong> (<em>If</em>) – </li>
+<li><strong>... means it can have an arbitrary number of leading dimensions.</strong> (<em>where</em>) – </li>
 <li><strong>saturation_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – How much to adjust the saturation. 0 will
 give a black and white image, 1 will give the original image while
 2 will enhance the saturation by a factor of 2.</li>
@@ -1778,10 +1853,38 @@ give a black and white image, 1 will give the original image while
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.transforms.functional.adjust_sharpness">
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">adjust_sharpness</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>sharpness_factor: float</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#adjust_sharpness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.adjust_sharpness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjust the sharpness of an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be adjusted.</li>
+<li><strong>img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,</strong> (<em>If</em>) – </li>
+<li><strong>... means it can have an arbitrary number of leading dimensions.</strong> (<em>where</em>) – </li>
+<li><strong>sharpness_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – How much to adjust the sharpness. Can be
+any non negative number. 0 gives a blurred image, 1 gives the
+original image while 2 increases the sharpness by a factor of 2.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Sharpness adjusted image.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">PIL Image or Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.transforms.functional.affine">
-<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">affine</code><span class="sig-paren">(</span><em>img: torch.Tensor, angle: float, translate: List[int], scale: float, shear: List[float], resample: int = 0, fillcolor: Union[int, NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#affine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.affine" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">affine</code><span class="sig-paren">(</span><em>img: torch.Tensor, angle: float, translate: List[int], scale: float, shear: List[float], interpolation: torchvision.transforms.functional.InterpolationMode = &lt;InterpolationMode.NEAREST: 'nearest'&gt;, fill: Union[List[float], NoneType] = None, resample: Union[int, NoneType] = None, fillcolor: Union[List[float], NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#affine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.affine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply affine transformation on the image keeping image center invariant.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1789,18 +1892,25 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – image to transform.</li>
-<li><strong>angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – rotation angle in degrees between -180 and 180, clockwise direction.</li>
-<li><strong>translate</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><em>tuple of python:integers</em>) – horizontal and vertical translations (post-rotation translation)</li>
+<li><strong>angle</strong> (<em>number</em>) – rotation angle in degrees between -180 and 180, clockwise direction.</li>
+<li><strong>translate</strong> (<em>sequence of python:integers</em>) – horizontal and vertical translations (post-rotation translation)</li>
 <li><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – overall scale</li>
-<li><strong>shear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a>) – shear angle value in degrees between -180 to 180, clockwise direction.
-If a tuple of list is specified, the first value corresponds to a shear parallel to the x axis, while
+<li><strong>shear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><em>sequence</em>) – shear angle value in degrees between -180 to 180, clockwise direction.
+If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
 the second value corresponds to a shear parallel to the y axis.</li>
-<li><strong>resample</strong> (<code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> or <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> or <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUBIC</span></code>, optional) – An optional resampling filter. See <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a> for more information.
-If omitted, or if the image is PIL Image and has mode “1” or “P”, it is set to <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>.
-If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> are supported.</li>
-<li><strong>fillcolor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Optional fill color for the area outside the transform in the output image (Pillow&gt;=5.0.0).
-This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-image is always 0.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
+image. If given a number, the value is used for all bands respectively.
+In torchscript mode single int/float value is not supported, please use a sequence
+of length 1: <code class="docutils literal notranslate"><span class="pre">[value,</span> <span class="pre">]</span></code>.
+If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
+<li><strong>fillcolor</strong> (<em>sequence</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – deprecated argument and will be removed since v0.10.0.
+Please use <a href="#id8"><span class="problematic" id="id9">`arg`:fill:</span></a> instead.</li>
+<li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
+Please use <a href="#id10"><span class="problematic" id="id11">`arg`:interpolation:</span></a> instead.</li>
 </ul>
 </td>
 </tr>
@@ -1815,10 +1925,33 @@ image is always 0.</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.transforms.functional.autocontrast">
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">autocontrast</code><span class="sig-paren">(</span><em>img: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#autocontrast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.autocontrast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximize contrast of an image by remapping its
+pixels per channel so that the lowest becomes black and the lightest
+becomes white.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image on which autocontrast is applied.
+If img is torch Tensor, it is expected to be in […, 1 or 3, H, W] format,
+where … means it can have an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “L” or “RGB”.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An image that was autocontrasted.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">PIL Image or Tensor</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.transforms.functional.center_crop">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">center_crop</code><span class="sig-paren">(</span><em>img: torch.Tensor, output_size: List[int]</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#center_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.center_crop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crops the given image at the center.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1826,7 +1959,7 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be cropped.</li>
-<li><strong>output_size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – (height, width) of the crop box. If int or sequence with single int
+<li><strong>output_size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – (height, width) of the crop box. If int or sequence with single int,
 it is used for both directions.</li>
 </ul>
 </td>
@@ -1844,7 +1977,8 @@ it is used for both directions.</li>
 <dl class="function">
 <dt id="torchvision.transforms.functional.convert_image_dtype">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">convert_image_dtype</code><span class="sig-paren">(</span><em>image: torch.Tensor</em>, <em>dtype: torch.dtype = torch.float32</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#convert_image_dtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.convert_image_dtype" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly</p>
+<dd><p>Convert a tensor image to the given <code class="docutils literal notranslate"><span class="pre">dtype</span></code> and scale the values accordingly
+This function does not support PIL Image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1885,9 +2019,8 @@ of the integer <code class="docutils literal notranslate"><span class="pre">dtyp
 <dt id="torchvision.transforms.functional.crop">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">crop</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>top: int</em>, <em>left: int</em>, <em>height: int</em>, <em>width: int</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.crop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image at specified location and output size.
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading
-dimensions</p>
+If the image is torch Tensor, it is expected
+to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1912,9 +2045,33 @@ dimensions</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.transforms.functional.equalize">
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">equalize</code><span class="sig-paren">(</span><em>img: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#equalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.equalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equalize the histogram of an image by applying
+a non-linear mapping to the input in order to create a uniform
+distribution of grayscale values in the output.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image on which equalize is applied.
+If img is torch Tensor, it is expected to be in […, 1 or 3, H, W] format,
+where … means it can have an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “P”, “L” or “RGB”.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An image that was equalized.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">PIL Image or Tensor</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.transforms.functional.erase">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">erase</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>i: int</em>, <em>j: int</em>, <em>h: int</em>, <em>w: int</em>, <em>v: torch.Tensor</em>, <em>inplace: bool = False</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#erase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.erase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Erase the input Tensor Image with given value.</p>
+<dd><p>Erase the input Tensor Image with given value.
+This transform does not support PIL Image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1944,7 +2101,7 @@ dimensions</p>
 <dt id="torchvision.transforms.functional.five_crop">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">five_crop</code><span class="sig-paren">(</span><em>img: torch.Tensor, size: List[int]</em><span class="sig-paren">)</span> &#x2192; Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]<a class="reference internal" href="_modules/torchvision/transforms/functional.html#five_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.five_crop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image into four corners and the central crop.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -1959,7 +2116,7 @@ mismatch in the number of inputs and targets your <code class="docutils literal 
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be cropped.</li>
 <li><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size of the crop. If size is an
 int instead of sequence like (h, w), a square crop (size, size) is
-made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</li>
+made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</li>
 </ul>
 </td>
 </tr>
@@ -1981,9 +2138,9 @@ made. If provided a tuple or list of length 1, it will be interpreted as (size[0
 <dl class="function">
 <dt id="torchvision.transforms.functional.gaussian_blur">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">gaussian_blur</code><span class="sig-paren">(</span><em>img: torch.Tensor, kernel_size: List[int], sigma: Union[List[float], NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#gaussian_blur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.gaussian_blur" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Gaussian blurring on the img by given kernel.
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+<dd><p>Performs Gaussian blurring on the image by given kernel.
+If the image is torch Tensor, it is expected
+to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1992,14 +2149,13 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be blurred</li>
 <li><strong>kernel_size</strong> (<em>sequence of python:ints</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Gaussian kernel size. Can be a sequence of integers
 like <code class="docutils literal notranslate"><span class="pre">(kx,</span> <span class="pre">ky)</span></code> or a single integer for square kernels.
-In torchscript mode kernel_size as single int is not supported, use a tuple or
-list of length 1: <code class="docutils literal notranslate"><span class="pre">[ksize,</span> <span class="pre">]</span></code>.</li>
+In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[ksize,</span> <span class="pre">]</span></code>.</li>
 <li><strong>sigma</strong> (<em>sequence of python:floats</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em>, </em><em>optional</em>) – Gaussian kernel standard deviation. Can be a
 sequence of floats like <code class="docutils literal notranslate"><span class="pre">(sigma_x,</span> <span class="pre">sigma_y)</span></code> or a single float to define the
 same sigma in both X/Y directions. If None, then it is computed using
 <code class="docutils literal notranslate"><span class="pre">kernel_size</span></code> as <code class="docutils literal notranslate"><span class="pre">sigma</span> <span class="pre">=</span> <span class="pre">0.3</span> <span class="pre">*</span> <span class="pre">((kernel_size</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">*</span> <span class="pre">0.5</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">+</span> <span class="pre">0.8</span></code>.
 Default, None. In torchscript mode sigma as single float is
-not supported, use a tuple or list of length 1: <code class="docutils literal notranslate"><span class="pre">[sigma,</span> <span class="pre">]</span></code>.</li>
+not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[sigma,</span> <span class="pre">]</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -2016,14 +2172,14 @@ not supported, use a tuple or list of length 1: <code class="docutils literal no
 <dl class="function">
 <dt id="torchvision.transforms.functional.hflip">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">hflip</code><span class="sig-paren">(</span><em>img: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#hflip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.hflip" title="Permalink to this definition">¶</a></dt>
-<dd><p>Horizontally flip the given PIL Image or Tensor.</p>
+<dd><p>Horizontally flip the given image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be flipped. If img
 is a Tensor, it is expected to be in […, H, W] format,
-where … means it can have an arbitrary number of trailing
+where … means it can have an arbitrary number of leading
 dimensions.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Horizontally flipped image.</td>
@@ -2035,9 +2191,31 @@ dimensions.</td>
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.transforms.functional.invert">
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">invert</code><span class="sig-paren">(</span><em>img: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#invert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.invert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invert the colors of an RGB/grayscale image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to have its colors inverted.
+If img is torch Tensor, it is expected to be in […, 1 or 3, H, W] format,
+where … means it can have an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “L” or “RGB”.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Color inverted image.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">PIL Image or Tensor</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.transforms.functional.normalize">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">normalize</code><span class="sig-paren">(</span><em>tensor: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#normalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.normalize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Normalize a tensor image with mean and standard deviation.</p>
+<dd><p>Normalize a tensor image with mean and standard deviation.
+This transform does not support PIL Image.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This transform acts out of place by default, i.e., it does not mutates the input tensor.</p>
@@ -2069,7 +2247,7 @@ dimensions.</td>
 <dt id="torchvision.transforms.functional.pad">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">pad</code><span class="sig-paren">(</span><em>img: torch.Tensor, padding: List[int], fill: int = 0, padding_mode: str = 'constant'</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.pad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pad the given image on all sides with the given “pad” value.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2077,17 +2255,17 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be padded.</li>
-<li><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a>) – Padding on each border. If a single int is provided this
-is used to pad all borders. If tuple of length 2 is provided this is the padding
-on left/right and top/bottom respectively. If a tuple of length 4 is provided
+<li><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>sequence</em>) – Padding on each border. If a single int is provided this
+is used to pad all borders. If sequence of length 2 is provided this is the padding
+on left/right and top/bottom respectively. If a sequence of length 4 is provided
 this is the padding for the left, top, right and bottom borders respectively.
-In torchscript mode padding as single int is not supported, use a tuple or
-list of length 1: <code class="docutils literal notranslate"><span class="pre">[padding,</span> <span class="pre">]</span></code>.</li>
-<li><strong>fill</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a>) – Pixel fill value for constant fill. Default is 0. If a tuple of
-length 3, it is used to fill R, G, B channels respectively.
-This value is only used when the padding_mode is constant. Only int value is supported for Tensors.</li>
-<li><strong>padding_mode</strong> – <p>Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-Mode symmetric is not yet supported for Tensor inputs.</p>
+In torchscript mode padding as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[padding,</span> <span class="pre">]</span></code>.</li>
+<li><strong>fill</strong> (<em>number</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a>) – Pixel fill value for constant fill. Default is 0.
+If a tuple of length 3, it is used to fill R, G, B channels respectively.
+This value is only used when the padding_mode is constant.
+Only number is supported for torch Tensor.
+Only int or str or tuple value is supported for PIL Image.</li>
+<li><strong>padding_mode</strong> – <p>Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.</p>
 <ul>
 <li>constant: pads with a constant value, this value is specified with fill</li>
 <li>edge: pads with the last value on the edge of the image</li>
@@ -2116,9 +2294,9 @@ will result in [2, 1, 1, 2, 3, 4, 4, 3]</div></blockquote>
 
 <dl class="function">
 <dt id="torchvision.transforms.functional.perspective">
-<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">perspective</code><span class="sig-paren">(</span><em>img: torch.Tensor, startpoints: List[List[int]], endpoints: List[List[int]], interpolation: int = 2, fill: Union[int, NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#perspective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.perspective" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">perspective</code><span class="sig-paren">(</span><em>img: torch.Tensor, startpoints: List[List[int]], endpoints: List[List[int]], interpolation: torchvision.transforms.functional.InterpolationMode = &lt;InterpolationMode.BILINEAR: 'bilinear'&gt;, fill: Union[List[float], NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#perspective"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.perspective" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform perspective transform of the given image.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2130,12 +2308,15 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <code class="docutils literal notranslate"><span class="pre">[top-left,</span> <span class="pre">top-right,</span> <span class="pre">bottom-right,</span> <span class="pre">bottom-left]</span></code> of the original image.</li>
 <li><strong>endpoints</strong> (<em>list of list of python:ints</em>) – List containing four lists of two integers corresponding to four corners
 <code class="docutils literal notranslate"><span class="pre">[top-left,</span> <span class="pre">top-right,</span> <span class="pre">bottom-right,</span> <span class="pre">bottom-left]</span></code> of the transformed image.</li>
-<li><strong>interpolation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Interpolation type. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> and
-<code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> are supported. Default, <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> for PIL images and Tensors.</li>
-<li><strong>fill</strong> (<em>n-tuple</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Pixel fill value for area outside the rotated
-image. If int or float, the value is used for all bands respectively.
-This option is only available for <code class="docutils literal notranslate"><span class="pre">pillow&gt;=5.0.0</span></code>. This option is not supported for Tensor
-input. Fill value for the area outside the transform in the output image is always 0.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
+image. If given a number, the value is used for all bands respectively.
+In torchscript mode single int/float value is not supported, please use a sequence
+of length 1: <code class="docutils literal notranslate"><span class="pre">[value,</span> <span class="pre">]</span></code>.
+If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -2152,7 +2333,8 @@ input. Fill value for the area outside the transform in the output image is alwa
 <dl class="function">
 <dt id="torchvision.transforms.functional.pil_to_tensor">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">pil_to_tensor</code><span class="sig-paren">(</span><em>pic</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/functional.html#pil_to_tensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.pil_to_tensor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.</p>
+<dd><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.
+This function does not support torchscript.</p>
 <p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">PILToTensor</span></code> for more details.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2169,10 +2351,38 @@ input. Fill value for the area outside the transform in the output image is alwa
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.transforms.functional.posterize">
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">posterize</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>bits: int</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#posterize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.posterize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Posterize an image by reducing the number of bits for each color channel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to have its colors posterized.
+If img is torch Tensor, it should be of type torch.uint8 and
+it is expected to be in […, 1 or 3, H, W] format, where … means
+it can have an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “L” or “RGB”.</li>
+<li><strong>bits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – The number of bits to keep for each channel (0-8).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Posterized image.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">PIL Image or Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.transforms.functional.resize">
-<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">resize</code><span class="sig-paren">(</span><em>img: torch.Tensor, size: List[int], interpolation: int = 2</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.resize" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">resize</code><span class="sig-paren">(</span><em>img: torch.Tensor, size: List[int], interpolation: torchvision.transforms.functional.InterpolationMode = &lt;InterpolationMode.BILINEAR: 'bilinear'&gt;</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.resize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resize the input image to the given size.
-The image can be a PIL Image or a torch Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2185,11 +2395,12 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 the smaller edge of the image will be matched to this number maintaining
 the aspect ratio. i.e, if height &gt; width, then image will be rescaled to
 <span class="math notranslate nohighlight">\(\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)\)</span>.
-In torchscript mode size as single int is not supported, use a tuple or
-list of length 1: <code class="docutils literal notranslate"><span class="pre">[size,</span> <span class="pre">]</span></code>.</li>
-<li><strong>interpolation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – Desired interpolation enum defined by <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a>.
-Default is <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>
-and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUBIC</span></code> are supported.</li>
+In torchscript mode size as single int is not supported, use a sequence of length 1: <code class="docutils literal notranslate"><span class="pre">[size,</span> <span class="pre">]</span></code>.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>.
+Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>,
+<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> and <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BICUBIC</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
 </ul>
 </td>
 </tr>
@@ -2205,9 +2416,9 @@ and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUB
 
 <dl class="function">
 <dt id="torchvision.transforms.functional.resized_crop">
-<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">resized_crop</code><span class="sig-paren">(</span><em>img: torch.Tensor, top: int, left: int, height: int, width: int, size: List[int], interpolation: int = 2</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#resized_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.resized_crop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">resized_crop</code><span class="sig-paren">(</span><em>img: torch.Tensor, top: int, left: int, height: int, width: int, size: List[int], interpolation: torchvision.transforms.functional.InterpolationMode = &lt;InterpolationMode.BILINEAR: 'bilinear'&gt;</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#resized_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.resized_crop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image and resize it to desired size.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <p>Notably used in <a class="reference internal" href="#torchvision.transforms.RandomResizedCrop" title="torchvision.transforms.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -2221,9 +2432,11 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <li><strong>height</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Height of the crop box.</li>
 <li><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Width of the crop box.</li>
 <li><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size. Same semantics as <code class="docutils literal notranslate"><span class="pre">resize</span></code>.</li>
-<li><strong>interpolation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – Desired interpolation enum defined by <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a>.
-Default is <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code>
-and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUBIC</span></code> are supported.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>.
+Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>. If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>,
+<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> and <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BICUBIC</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
 </ul>
 </td>
 </tr>
@@ -2241,8 +2454,8 @@ and <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUB
 <dt id="torchvision.transforms.functional.rgb_to_grayscale">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">rgb_to_grayscale</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>num_output_channels: int = 1</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#rgb_to_grayscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.rgb_to_grayscale" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RGB image to grayscale version of image.
-The image can be a PIL Image or a Tensor, in which case it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+If the image is torch Tensor, it is expected
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Please, note that this method supports only RGB images as input. For inputs in other color spaces,
@@ -2276,9 +2489,9 @@ please, consider using meth:<cite>~torchvision.transforms.functional.to_grayscal
 
 <dl class="function">
 <dt id="torchvision.transforms.functional.rotate">
-<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">rotate</code><span class="sig-paren">(</span><em>img: torch.Tensor, angle: float, resample: int = 0, expand: bool = False, center: Union[List[int], NoneType] = None, fill: Union[int, NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#rotate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.rotate" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">rotate</code><span class="sig-paren">(</span><em>img: torch.Tensor, angle: float, interpolation: torchvision.transforms.functional.InterpolationMode = &lt;InterpolationMode.NEAREST: 'nearest'&gt;, expand: bool = False, center: Union[List[int], NoneType] = None, fill: Union[List[float], NoneType] = None, resample: Union[int, NoneType] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#rotate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.rotate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotate the image by angle.
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2286,24 +2499,53 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – image to be rotated.</li>
-<li><strong>angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – rotation angle value in degrees, counter-clockwise.</li>
-<li><strong>resample</strong> (<code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code> or <code class="docutils literal notranslate"><span class="pre">PIL.Image.BILINEAR</span></code> or <code class="docutils literal notranslate"><span class="pre">PIL.Image.BICUBIC</span></code>, optional) – An optional resampling filter. See <a class="reference external" href="https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters">filters</a> for more information.
-If omitted, or if the image has mode “1” or “P”, it is set to <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>.</li>
+<li><strong>angle</strong> (<em>number</em>) – rotation angle value in degrees, counter-clockwise.</li>
+<li><strong>interpolation</strong> (<a class="reference internal" href="#torchvision.transforms.functional.InterpolationMode" title="torchvision.transforms.functional.InterpolationMode"><em>InterpolationMode</em></a>) – Desired interpolation enum defined by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>.
+If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
+For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
 <li><strong>expand</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – Optional expansion flag.
 If true, expands the output image to make it large enough to hold the entire rotated image.
 If false or omitted, make the output image the same size as the input image.
 Note that the expand flag assumes rotation around the center and no translation.</li>
-<li><strong>center</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>, </em><em>optional</em>) – Optional center of rotation. Origin is the upper left corner.
+<li><strong>center</strong> (<em>sequence</em><em>, </em><em>optional</em>) – Optional center of rotation. Origin is the upper left corner.
 Default is the center of the image.</li>
-<li><strong>fill</strong> (<em>n-tuple</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Pixel fill value for area outside the rotated
-image. If int or float, the value is used for all bands respectively.
-Defaults to 0 for all bands. This option is only available for <code class="docutils literal notranslate"><span class="pre">pillow&gt;=5.2.0</span></code>.
-This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-image is always 0.</li>
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
+image. If given a number, the value is used for all bands respectively.
+In torchscript mode single int/float value is not supported, please use a sequence
+of length 1: <code class="docutils literal notranslate"><span class="pre">[value,</span> <span class="pre">]</span></code>.
+If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.2.0</span></code>.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Rotated image.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">PIL Image or Tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.transforms.functional.solarize">
+<code class="descclassname">torchvision.transforms.functional.</code><code class="descname">solarize</code><span class="sig-paren">(</span><em>img: torch.Tensor</em>, <em>threshold: float</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#solarize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.solarize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solarize an RGB/grayscale image by inverting all pixel values above a threshold.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to have its colors inverted.
+If img is torch Tensor, it is expected to be in […, 1 or 3, H, W] format,
+where … means it can have an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “L” or “RGB”.</li>
+<li><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – All pixels equal or above this value are inverted.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Solarized image.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">PIL Image or Tensor</p>
@@ -2319,7 +2561,7 @@ image is always 0.</li>
 <dd><p>Generate ten cropped images from the given image.
 Crop the given image into four corners and the central crop plus the
 flipped version of these (horizontal flipping is used by default).
-The image can be a PIL Image or a Tensor, in which case it is expected
+If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -2334,7 +2576,7 @@ mismatch in the number of inputs and targets your <code class="docutils literal 
 <li><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be cropped.</li>
 <li><strong>size</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Desired output size of the crop. If size is an
 int instead of sequence like (h, w), a square crop (size, size) is
-made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).</li>
+made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</li>
 <li><strong>vertical_flip</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – Use vertical flipping instead of horizontal</li>
 </ul>
 </td>
@@ -2358,14 +2600,15 @@ center crop and same for the flipped image.</p>
 <dl class="function">
 <dt id="torchvision.transforms.functional.to_grayscale">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">to_grayscale</code><span class="sig-paren">(</span><em>img</em>, <em>num_output_channels=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/functional.html#to_grayscale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.to_grayscale" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.</p>
+<dd><p>Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
+This transform does not support torch Tensor.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>img</strong> (<em>PIL Image</em>) – PIL Image to be converted to grayscale.</li>
-<li><strong>num_output_channels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of channels of the output image. Value can be 1 or 3. Default, 1.</li>
+<li><strong>num_output_channels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of channels of the output image. Value can be 1 or 3. Default is 1.</li>
 </ul>
 </td>
 </tr>
@@ -2388,7 +2631,7 @@ center crop and same for the flipped image.</p>
 <dl class="function">
 <dt id="torchvision.transforms.functional.to_pil_image">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">to_pil_image</code><span class="sig-paren">(</span><em>pic</em>, <em>mode=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/functional.html#to_pil_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.to_pil_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a tensor or an ndarray to PIL Image.</p>
+<dd><p>Convert a tensor or an ndarray to PIL Image. This function does not support torchscript.</p>
 <p>See <a class="reference internal" href="#torchvision.transforms.ToPILImage" title="torchvision.transforms.ToPILImage"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToPILImage</span></code></a> for more details.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2417,8 +2660,9 @@ center crop and same for the flipped image.</p>
 <dl class="function">
 <dt id="torchvision.transforms.functional.to_tensor">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">to_tensor</code><span class="sig-paren">(</span><em>pic</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/functional.html#to_tensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.to_tensor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> to tensor.</p>
-<p>See <code class="docutils literal notranslate"><span class="pre">ToTensor</span></code> for more details.</p>
+<dd><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> to tensor.
+This function does not support torchscript.</p>
+<p>See <a class="reference internal" href="#torchvision.transforms.ToTensor" title="torchvision.transforms.ToTensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToTensor</span></code></a> for more details.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2436,19 +2680,19 @@ center crop and same for the flipped image.</p>
 <dl class="function">
 <dt id="torchvision.transforms.functional.vflip">
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">vflip</code><span class="sig-paren">(</span><em>img: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#vflip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.vflip" title="Permalink to this definition">¶</a></dt>
-<dd><p>Vertically flip the given PIL Image or torch Tensor.</p>
+<dd><p>Vertically flip the given image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – Image to be flipped. If img
 is a Tensor, it is expected to be in […, H, W] format,
-where … means it can have an arbitrary number of trailing
+where … means it can have an arbitrary number of leading
 dimensions.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Vertically flipped image.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">PIL Image</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">PIL Image or Tensor</td>
 </tr>
 </tbody>
 </table>
@@ -2528,7 +2772,7 @@ dimensions.</td>
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'./',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -2685,10 +2929,6 @@ dimensions.</td>
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -2708,13 +2948,65 @@ dimensions.</td>
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>

@@ -21,7 +21,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; Torchvision 0.8.1 documentation</title>
+  <title>Index &mdash; Torchvision master documentation</title>
   
 
   
@@ -78,21 +78,7 @@
           </li>
 
           <li>
-            <div class="ecosystem-dropdown">
-              <a id="dropdownMenuButton" data-toggle="ecosystem-dropdown">
-                Ecosystem
-              </a>
-              <div class="ecosystem-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/hub"">
-                  <span class=dropdown-title>Models (Beta)</span>
-                  <p>Discover, publish, and reuse pre-trained models</p>
-                </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
-                  <span class=dropdown-title>Tools & Libraries</span>
-                  <p>Explore the ecosystem of tools and libraries</p>
-                </a>
-              </div>
-            </div>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
           <li>
@@ -108,22 +94,67 @@
           </li>
 
           <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
           </li>
 
           <li>
-            <div class="resources-dropdown">
-              <a id="resourcesDropdownButton" data-toggle="resources-dropdown">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
                 Resources
               </a>
               <div class="resources-dropdown-menu">
-                <a class="nav-dropdown-item" href="https://pytorch.org/resources"">
-                  <span class=dropdown-title>Developer Resources</span>
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
                   <p>Find resources and get questions answered</p>
                 </a>
-                <a class="nav-dropdown-item" href="https://pytorch.org/features">
-                  <span class=dropdown-title>About</span>
-                  <p>Learn about PyTorch’s features and capabilities</p>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
                 </a>
               </div>
             </div>
@@ -137,10 +168,8 @@
 
       <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
     </div>
-
   </div>
 </div>
-
 
 <body class="pytorch-body">
 
@@ -163,7 +192,7 @@
               
               
                 <div class="version">
-                  0.8.0
+                  master (0.9.0a0+26e0395 )
                 </div>
               
             
@@ -361,15 +390,19 @@
 </li>
       <li><a href="transforms.html#torchvision.transforms.functional.adjust_gamma">adjust_gamma() (in module torchvision.transforms.functional)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="transforms.html#torchvision.transforms.functional.adjust_hue">adjust_hue() (in module torchvision.transforms.functional)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="transforms.html#torchvision.transforms.functional.adjust_saturation">adjust_saturation() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_sharpness">adjust_sharpness() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="transforms.html#torchvision.transforms.functional.affine">affine() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="models.html#torchvision.models.alexnet">alexnet() (in module torchvision.models)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.autocontrast">autocontrast() (in module torchvision.transforms.functional)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -451,6 +484,8 @@
 </li>
       <li><a href="models.html#torchvision.models.densenet201">densenet201() (in module torchvision.models)</a>
 </li>
+      <li><a href="utils.html#torchvision.utils.draw_bounding_boxes">draw_bounding_boxes() (in module torchvision.utils)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -465,6 +500,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="io.html#torchvision.io.encode_png">encode_png() (in module torchvision.io)</a>
 </li>
+      <li><a href="transforms.html#torchvision.transforms.functional.equalize">equalize() (in module torchvision.transforms.functional)</a>
+</li>
       <li><a href="transforms.html#torchvision.transforms.functional.erase">erase() (in module torchvision.transforms.functional)</a>
 </li>
   </ul></td>
@@ -476,6 +513,10 @@
       <li><a href="datasets.html#torchvision.datasets.FakeData">FakeData (class in torchvision.datasets)</a>
 </li>
       <li><a href="datasets.html#torchvision.datasets.FashionMNIST">FashionMNIST (class in torchvision.datasets)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn">fasterrcnn_mobilenet_v3_large_320_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn">fasterrcnn_mobilenet_v3_large_fpn() (in module torchvision.models.detection)</a>
 </li>
       <li><a href="models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn">fasterrcnn_resnet50_fpn() (in module torchvision.models.detection)</a>
 </li>
@@ -593,11 +634,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datasets.html#torchvision.datasets.ImageFolder">ImageFolder (class in torchvision.datasets)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datasets.html#torchvision.datasets.ImageNet">ImageNet (class in torchvision.datasets)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models.html#torchvision.models.inception_v3">inception_v3() (in module torchvision.models)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.InterpolationMode">InterpolationMode (class in torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.invert">invert() (in module torchvision.transforms.functional)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -643,15 +688,19 @@
 </li>
       <li><a href="models.html#torchvision.models.mnasnet0_75">mnasnet0_75() (in module torchvision.models)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models.html#torchvision.models.mnasnet1_0">mnasnet1_0() (in module torchvision.models)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models.html#torchvision.models.mnasnet1_3">mnasnet1_3() (in module torchvision.models)</a>
 </li>
       <li><a href="datasets.html#torchvision.datasets.MNIST">MNIST (class in torchvision.datasets)</a>
 </li>
       <li><a href="models.html#torchvision.models.mobilenet_v2">mobilenet_v2() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mobilenet_v3_large">mobilenet_v3_large() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mobilenet_v3_small">mobilenet_v3_small() (in module torchvision.models)</a>
 </li>
       <li><a href="ops.html#torchvision.ops.MultiScaleRoIAlign">MultiScaleRoIAlign (class in torchvision.ops)</a>
 </li>
@@ -696,6 +745,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datasets.html#torchvision.datasets.Places365">Places365 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.posterize">posterize() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="ops.html#torchvision.ops.ps_roi_align">ps_roi_align() (in module torchvision.ops)</a>
 </li>
@@ -815,15 +866,19 @@
 </li>
       <li><a href="index.html#torchvision.set_video_backend">set_video_backend() (in module torchvision)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models.html#torchvision.models.shufflenet_v2_x0_5">shufflenet_v2_x0_5() (in module torchvision.models)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models.html#torchvision.models.shufflenet_v2_x1_0">shufflenet_v2_x1_0() (in module torchvision.models)</a>
 </li>
       <li><a href="models.html#torchvision.models.shufflenet_v2_x1_5">shufflenet_v2_x1_5() (in module torchvision.models)</a>
 </li>
       <li><a href="models.html#torchvision.models.shufflenet_v2_x2_0">shufflenet_v2_x2_0() (in module torchvision.models)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.sigmoid_focal_loss">sigmoid_focal_loss() (in module torchvision.ops)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.solarize">solarize() (in module torchvision.transforms.functional)</a>
 </li>
       <li><a href="models.html#torchvision.models.squeezenet1_0">squeezenet1_0() (in module torchvision.models)</a>
 </li>
@@ -974,7 +1029,7 @@
        <script type="text/javascript">
            var DOCUMENTATION_OPTIONS = {
                URL_ROOT:'./',
-               VERSION:'0.8.1',
+               VERSION:'master',
                LANGUAGE:'None',
                COLLAPSE_INDEX:false,
                FILE_SUFFIX:'.html',
@@ -1131,10 +1186,6 @@
           </li>
 
           <li>
-            <a href="https://pytorch.org/features">Features</a>
-          </li>
-
-          <li>
             <a href="https://pytorch.org/ecosystem">Ecosystem</a>
           </li>
 
@@ -1154,13 +1205,65 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
-            <a href="https://pytorch.org/docs/stable/index.html">Docs</a>
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
           </li>
 
-          <li>
-            <a href="https://pytorch.org/resources">Resources</a>
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
           </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
 
           <li>
             <a href="https://github.com/pytorch/pytorch">Github</a>
