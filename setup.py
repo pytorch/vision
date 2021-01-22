@@ -329,7 +329,8 @@ def get_extensions():
             image_include += [nvjpeg_include]
 
     image_path = os.path.join(extensions_dir, 'io', 'image')
-    image_src = glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+    image_src = (glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+                 + glob.glob(os.path.join(image_path, 'cuda', '*.cpp')))
 
     if png_found or jpeg_found:
         ext_modules.append(extension(
