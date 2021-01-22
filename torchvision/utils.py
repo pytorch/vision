@@ -114,7 +114,7 @@ def save_image(
 ) -> None:
     """Save a given Tensor into an image file.
 
-    Args:
+    Arguments:
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
             saves the tensor as a grid of images by calling ``make_grid``.
         fp (string or file object): A filename or a file object
