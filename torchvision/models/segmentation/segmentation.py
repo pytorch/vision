@@ -16,14 +16,19 @@ model_urls = {
 }
 
 
-def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True):
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained_backbone,
-        replace_stride_with_dilation=[False, True, True])
+def _segm_model(name, backbone_name, num_classes, aux, pretrained_backbone=True):
+    if 'resnet' in backbone_name:
+        backbone = resnet.__dict__[backbone_name](
+            pretrained=pretrained_backbone,
+            replace_stride_with_dilation=[False, True, True])
+        out_layer = 'layer4'
+        aux_layer = 'layer3'
+    else:
+        raise NotImplementedError('backbone {} is not supported as of now'.format(backbone_name))
 
-    return_layers = {'layer4': 'out'}
+    return_layers = {out_layer: 'out'}
     if aux:
-        return_layers['layer3'] = 'aux'
+        return_layers[aux_layer] = 'aux'
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None
@@ -46,7 +51,7 @@ def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True
 def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss, **kwargs):
     if pretrained:
         aux_loss = True
-    model = _segm_resnet(arch_type, backbone, num_classes, aux_loss, **kwargs)
+    model = _segm_model(arch_type, backbone, num_classes, aux_loss, **kwargs)
     if pretrained:
         arch = arch_type + '_' + backbone + '_coco'
         model_url = model_urls[arch]
