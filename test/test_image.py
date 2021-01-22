@@ -78,7 +78,13 @@ class ImageTester(unittest.TestCase):
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_decode_jpeg_cuda(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.load(img_path.replace('jpg', 'pth'))
+            with Image.open(img_path) as img:
+                img_pil = torch.from_numpy(np.array(img))
+
+            if len(img_pil.shape) != 3 or img_pil.shape[2] != 3:
+                # only RGB supported so far
+                continue
+
             img_pil = img_pil.permute(2, 0, 1)
             data = read_file(img_path)
             img_nvjpeg = torch.ops.image.decode_jpeg_cuda(data)
@@ -87,7 +93,8 @@ class ImageTester(unittest.TestCase):
             # Image.fromarray(img_nvjpeg.permute(1,2,0).cpu().numpy()).save('/tmp/im.png')
             # Image.fromarray(img_pil.permute(1,2,0).cpu().numpy()).save('/tmp/impil.png')
 
-            self.assertTrue((img_pil.float() - img_nvjpeg.cpu().float()).abs().mean() < 1.5)
+            # Some difference expected between jpeg implementations
+            self.assertTrue((img_pil.float() - img_nvjpeg.cpu().float()).abs().mean() < 2.)
 
     def test_damaged_images(self):
         # Test image with bad Huffman encoding (should not raise)
