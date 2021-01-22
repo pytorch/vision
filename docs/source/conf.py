@@ -48,6 +48,8 @@ extensions = [
 ]
 
 napoleon_use_ivar = True
+napoleon_numpy_docstring = False
+napoleon_google_docstring = True
 
 googleanalytics_id = 'UA-90545585-1'
 googleanalytics_enabled = True
