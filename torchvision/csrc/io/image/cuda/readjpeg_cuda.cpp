@@ -1,11 +1,10 @@
 #include "readjpeg_cuda.h"
 
-#include <ATen/ATen.h>
 #include <string>
 
 #if !NVJPEG_FOUND
 
-torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
+torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
       false, "decodeJPEG_cuda: torchvision not compiled with nvJPEG support");
 }
@@ -23,7 +22,7 @@ void init_nvjpegImage(nvjpegImage_t& img) {
   }
 }
 
-torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
+torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -68,15 +67,50 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
       widths,
       heights);
 
-  TORCH_CHECK(
-      info_status == NVJPEG_STATUS_SUCCESS,
-      "nvjpegGetImageInfo failed: ",
-      info_status);
+  if (info_status != NVJPEG_STATUS_SUCCESS) {
+    nvjpegJpegStateDestroy(nvjpeg_state);
+    TORCH_CHECK(false, "nvjpegGetImageInfo failed: ", info_status);
+  }
 
-  TORCH_CHECK(components == 3, "Only RGB for now");
+  if (subsampling == NVJPEG_CSS_UNKNOWN) {
+    nvjpegJpegStateDestroy(nvjpeg_state);
+    TORCH_CHECK(false, "Unknown NVJPEG chroma subsampling");
+  }
 
   int width = widths[0];
   int height = heights[0];
+
+  nvjpegOutputFormat_t outputFormat;
+  int outputComponents;
+
+  switch (mode) {
+    case IMAGE_READ_MODE_UNCHANGED:
+      if (components == 1) {
+        outputFormat = NVJPEG_OUTPUT_Y;
+        outputComponents = 1;
+      } else if (components == 3) {
+        outputFormat = NVJPEG_OUTPUT_RGB;
+        outputComponents = 3;
+      } else {
+        TORCH_CHECK(
+            false, "The provided mode is not supported for JPEG files on GPU");
+      }
+      break;
+    case IMAGE_READ_MODE_GRAY:
+      // This will do 0.299*R + 0.587*G + 0.114*B like opencv
+      // TODO check if that is the same as libjpeg
+      outputFormat = NVJPEG_OUTPUT_Y;
+      outputComponents = 1;
+      break;
+    case IMAGE_READ_MODE_RGB:
+      outputFormat = NVJPEG_OUTPUT_RGB;
+      outputComponents = 3;
+      break;
+    default:
+      // CMYK as input might work with nvjpegDecodeParamsSetAllowCMYK()
+      TORCH_CHECK(
+          false, "The provided mode is not supported for JPEG files on GPU");
+  }
 
   // nvjpegImage_t is a struct with
   // - an array of pointers to each channel
@@ -87,10 +121,10 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
 
   // TODO device selection
   auto tensor = torch::empty(
-      {int64_t(components), int64_t(height), int64_t(width)},
+      {int64_t(outputComponents), int64_t(height), int64_t(width)},
       torch::dtype(torch::kU8).device(torch::kCUDA));
 
-  for (int c = 0; c < 3; c++) {
+  for (int c = 0; c < outputComponents; c++) {
     outImage.channel[c] = tensor[c].data_ptr<uint8_t>();
     outImage.pitch[c] = width;
   }
@@ -102,17 +136,17 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
       nvjpeg_state,
       datap,
       data.numel(),
-      NVJPEG_OUTPUT_RGB,
+      outputFormat,
       &outImage,
       /*stream=*/0);
+
+  // Destroy the state
+  nvjpegJpegStateDestroy(nvjpeg_state);
 
   TORCH_CHECK(
       decode_status == NVJPEG_STATUS_SUCCESS,
       "nvjpegDecode failed: ",
       decode_status);
-
-  // Destroy the state
-  nvjpegJpegStateDestroy(nvjpeg_state);
 
   return tensor;
 }
