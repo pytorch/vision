@@ -317,7 +317,7 @@ def get_extensions():
 
     # Locating nvjpeg
     # Should be included in CUDA_HOME
-    nvjpeg_found = extension is CUDAExtension
+    nvjpeg_found = extension is CUDAExtension and os.path.exists(os.path.join(CUDA_HOME, 'include', 'nvjpeg.h'))
 
     print('NVJPEG found: {0}'.format(nvjpeg_found))
     image_macros += [('NVJPEG_FOUND', str(int(nvjpeg_found)))]
