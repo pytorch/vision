@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+26e0395 )
+                  master (0.9.0a0+5977143 )
                 </div>
               
             
@@ -415,11 +415,11 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional uint8 tensor containing</span>
-<span class="sd">    the raw bytes of the PNG image.</span>
+<span class="sd">            the raw bytes of the PNG image.</span>
 <span class="sd">        mode (ImageReadMode): the read mode used for optionally</span>
-<span class="sd">    converting the image. Default: `ImageReadMode.UNCHANGED`.</span>
-<span class="sd">    See `ImageReadMode` class for more information on various</span>
-<span class="sd">    available modes.</span>
+<span class="sd">            converting the image. Default: `ImageReadMode.UNCHANGED`.</span>
+<span class="sd">            See `ImageReadMode` class for more information on various</span>
+<span class="sd">            available modes.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
@@ -433,18 +433,14 @@
 <span class="sd">    Takes an input tensor in CHW layout and returns a buffer with the contents</span>
 <span class="sd">    of its corresponding PNG file.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input: Tensor[channels, image_height, image_width]</span>
-<span class="sd">        int8 image tensor of `c` channels, where `c` must 3 or 1.</span>
-<span class="sd">    compression_level: int</span>
-<span class="sd">        Compression factor for the resulting file, it must be a number</span>
-<span class="sd">        between 0 and 9. Default: 6</span>
+<span class="sd">    Args:</span>
+<span class="sd">        input (Tensor[channels, image_height, image_width]): int8 image tensor of</span>
+<span class="sd">            `c` channels, where `c` must 3 or 1.</span>
+<span class="sd">        compression_level (int): Compression factor for the resulting file, it must be a number</span>
+<span class="sd">            between 0 and 9. Default: 6</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    output: Tensor[1]</span>
-<span class="sd">        A one dimensional int8 tensor that contains the raw bytes of the</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the</span>
 <span class="sd">        PNG file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">)</span>
@@ -456,15 +452,12 @@
 <span class="sd">    Takes an input tensor in CHW layout (or HW in the case of grayscale images)</span>
 <span class="sd">    and saves it in a PNG file.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input: Tensor[channels, image_height, image_width]</span>
-<span class="sd">        int8 image tensor of `c` channels, where `c` must be 1 or 3.</span>
-<span class="sd">    filename: str</span>
-<span class="sd">        Path to save the image.</span>
-<span class="sd">    compression_level: int</span>
-<span class="sd">        Compression factor for the resulting file, it must be a number</span>
-<span class="sd">        between 0 and 9. Default: 6</span>
+<span class="sd">    Args:</span>
+<span class="sd">        input (Tensor[channels, image_height, image_width]): int8 image tensor of</span>
+<span class="sd">            `c` channels, where `c` must be 1 or 3.</span>
+<span class="sd">        filename (str): Path to save the image.</span>
+<span class="sd">        compression_level (int): Compression factor for the resulting file, it must be a number</span>
+<span class="sd">            between 0 and 9. Default: 6</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">)</span>
     <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
@@ -478,11 +471,11 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional uint8 tensor containing</span>
-<span class="sd">    the raw bytes of the JPEG image.</span>
+<span class="sd">            the raw bytes of the JPEG image.</span>
 <span class="sd">        mode (ImageReadMode): the read mode used for optionally</span>
-<span class="sd">    converting the image. Default: `ImageReadMode.UNCHANGED`.</span>
-<span class="sd">    See `ImageReadMode` class for more information on various</span>
-<span class="sd">    available modes.</span>
+<span class="sd">            converting the image. Default: `ImageReadMode.UNCHANGED`.</span>
+<span class="sd">            See `ImageReadMode` class for more information on various</span>
+<span class="sd">            available modes.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
@@ -496,19 +489,15 @@
 <span class="sd">    Takes an input tensor in CHW layout and returns a buffer with the contents</span>
 <span class="sd">    of its corresponding JPEG file.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input: Tensor[channels, image_height, image_width])</span>
-<span class="sd">        int8 image tensor of `c` channels, where `c` must be 1 or 3.</span>
-<span class="sd">    quality: int</span>
-<span class="sd">        Quality of the resulting JPEG file, it must be a number between</span>
-<span class="sd">        1 and 100. Default: 75</span>
+<span class="sd">    Args:</span>
+<span class="sd">        input (Tensor[channels, image_height, image_width])): int8 image tensor of</span>
+<span class="sd">            `c` channels, where `c` must be 1 or 3.</span>
+<span class="sd">        quality (int): Quality of the resulting JPEG file, it must be a number between</span>
+<span class="sd">            1 and 100. Default: 75</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    output: Tensor[1]</span>
-<span class="sd">        A one dimensional int8 tensor that contains the raw bytes of the</span>
-<span class="sd">        JPEG file.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the</span>
+<span class="sd">            JPEG file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">quality</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Image quality should be a positive number &#39;</span>
@@ -522,15 +511,12 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Takes an input tensor in CHW layout and saves it in a JPEG file.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input: Tensor[channels, image_height, image_width]</span>
-<span class="sd">        int8 image tensor of `c` channels, where `c` must be 1 or 3.</span>
-<span class="sd">    filename: str</span>
-<span class="sd">        Path to save the image.</span>
-<span class="sd">    quality: int</span>
-<span class="sd">        Quality of the resulting JPEG file, it must be a number</span>
-<span class="sd">        between 1 and 100. Default: 75</span>
+<span class="sd">    Args:</span>
+<span class="sd">        input (Tensor[channels, image_height, image_width]): int8 image tensor of `c`</span>
+<span class="sd">            channels, where `c` must be 1 or 3.</span>
+<span class="sd">        filename (str): Path to save the image.</span>
+<span class="sd">        quality (int): Quality of the resulting JPEG file, it must be a number</span>
+<span class="sd">            between 1 and 100. Default: 75</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">encode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span>
     <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
@@ -544,20 +530,16 @@
 <span class="sd">    Optionally converts the image to the desired format.</span>
 <span class="sd">    The values of the output tensor are uint8 between 0 and 255.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input: Tensor</span>
-<span class="sd">        a one dimensional uint8 tensor containing the raw bytes of the</span>
-<span class="sd">        PNG or JPEG image.</span>
-<span class="sd">    mode: ImageReadMode</span>
-<span class="sd">        the read mode used for optionally converting the image.</span>
-<span class="sd">        Default: `ImageReadMode.UNCHANGED`.</span>
-<span class="sd">        See `ImageReadMode` class for more information on various</span>
-<span class="sd">        available modes.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the</span>
+<span class="sd">            PNG or JPEG image.</span>
+<span class="sd">        mode (ImageReadMode): the read mode used for optionally converting the image.</span>
+<span class="sd">            Default: `ImageReadMode.UNCHANGED`.</span>
+<span class="sd">            See `ImageReadMode` class for more information on various</span>
+<span class="sd">            available modes.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    output: Tensor[image_channels, image_height, image_width]</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_image</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span></div>
@@ -569,19 +551,15 @@
 <span class="sd">    Optionally converts the image to the desired format.</span>
 <span class="sd">    The values of the output tensor are uint8 between 0 and 255.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path: str</span>
-<span class="sd">        path of the JPEG or PNG image.</span>
-<span class="sd">    mode: ImageReadMode</span>
-<span class="sd">        the read mode used for optionally converting the image.</span>
-<span class="sd">        Default: `ImageReadMode.UNCHANGED`.</span>
-<span class="sd">        See `ImageReadMode` class for more information on various</span>
-<span class="sd">        available modes.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): path of the JPEG or PNG image.</span>
+<span class="sd">        mode (ImageReadMode): the read mode used for optionally converting the image.</span>
+<span class="sd">            Default: `ImageReadMode.UNCHANGED`.</span>
+<span class="sd">            See `ImageReadMode` class for more information on various</span>
+<span class="sd">            available modes.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    output: Tensor[image_channels, image_height, image_width]</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">decode_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>

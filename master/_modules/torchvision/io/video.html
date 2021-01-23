@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+26e0395 )
+                  master (0.9.0a0+5977143 )
                 </div>
               
             
@@ -377,27 +377,18 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Writes a 4d tensor in [T, H, W, C] format in a video file</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    filename : str</span>
-<span class="sd">        path where the video will be saved</span>
-<span class="sd">    video_array : Tensor[T, H, W, C]</span>
-<span class="sd">        tensor containing the individual frames, as a uint8 tensor in [T, H, W, C] format</span>
-<span class="sd">    fps : Number</span>
-<span class="sd">        video frames per second</span>
-<span class="sd">    video_codec : str</span>
-<span class="sd">        the name of the video codec, i.e. &quot;libx264&quot;, &quot;h264&quot;, etc.</span>
-<span class="sd">    options : Dict</span>
-<span class="sd">        dictionary containing options to be passed into the PyAV video stream</span>
-<span class="sd">    audio_array : Tensor[C, N]</span>
-<span class="sd">        tensor containing the audio, where C is the number of channels and N is the</span>
-<span class="sd">        number of samples</span>
-<span class="sd">    audio_fps : Number</span>
-<span class="sd">        audio sample rate, typically 44100 or 48000</span>
-<span class="sd">    audio_codec : str</span>
-<span class="sd">        the name of the audio codec, i.e. &quot;mp3&quot;, &quot;aac&quot;, etc.</span>
-<span class="sd">    audio_options : Dict</span>
-<span class="sd">        dictionary containing options to be passed into the PyAV audio stream</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): path where the video will be saved</span>
+<span class="sd">        video_array (Tensor[T, H, W, C]): tensor containing the individual frames,</span>
+<span class="sd">            as a uint8 tensor in [T, H, W, C] format</span>
+<span class="sd">        fps (Number): video frames per second</span>
+<span class="sd">        video_codec (str): the name of the video codec, i.e. &quot;libx264&quot;, &quot;h264&quot;, etc.</span>
+<span class="sd">        options (Dict): dictionary containing options to be passed into the PyAV video stream</span>
+<span class="sd">        audio_array (Tensor[C, N]): tensor containing the audio, where C is the number of channels</span>
+<span class="sd">            and N is the number of samples</span>
+<span class="sd">        audio_fps (Number): audio sample rate, typically 44100 or 48000</span>
+<span class="sd">        audio_codec (str): the name of the audio codec, i.e. &quot;mp3&quot;, &quot;aac&quot;, etc.</span>
+<span class="sd">        audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_check_av_available</span><span class="p">()</span>
     <span class="n">video_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">video_array</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
@@ -565,29 +556,21 @@
 <span class="sd">    Reads a video from a file, returning both the video frames as well as</span>
 <span class="sd">    the audio frames</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    filename : str</span>
-<span class="sd">        path to the video file</span>
-<span class="sd">    start_pts : int if pts_unit = &#39;pts&#39;, optional</span>
-<span class="sd">        float / Fraction if pts_unit = &#39;sec&#39;, optional</span>
-<span class="sd">        the start presentation time of the video</span>
-<span class="sd">    end_pts : int if pts_unit = &#39;pts&#39;, optional</span>
-<span class="sd">        float / Fraction if pts_unit = &#39;sec&#39;, optional</span>
-<span class="sd">        the end presentation time</span>
-<span class="sd">    pts_unit : str, optional</span>
-<span class="sd">        unit in which start_pts and end_pts values will be interpreted, either &#39;pts&#39; or &#39;sec&#39;. Defaults to &#39;pts&#39;.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): path to the video file</span>
+<span class="sd">        start_pts (int if pts_unit = &#39;pts&#39;, float / Fraction if pts_unit = &#39;sec&#39;, optional):</span>
+<span class="sd">            The start presentation time of the video</span>
+<span class="sd">        end_pts (int if pts_unit = &#39;pts&#39;, float / Fraction if pts_unit = &#39;sec&#39;, optional):</span>
+<span class="sd">            The end presentation time</span>
+<span class="sd">        pts_unit (str, optional): unit in which start_pts and end_pts values will be interpreted,</span>
+<span class="sd">            either &#39;pts&#39; or &#39;sec&#39;. Defaults to &#39;pts&#39;.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    vframes : Tensor[T, H, W, C]</span>
-<span class="sd">        the `T` video frames</span>
-<span class="sd">    aframes : Tensor[K, L]</span>
-<span class="sd">        the audio frames, where `K` is the number of channels and `L` is the</span>
-<span class="sd">        number of points</span>
-<span class="sd">    info : Dict</span>
-<span class="sd">        metadata for the video and audio. Can contain the fields video_fps (float)</span>
-<span class="sd">        and audio_fps (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        vframes (Tensor[T, H, W, C]): the `T` video frames</span>
+<span class="sd">        aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the</span>
+<span class="sd">            number of points</span>
+<span class="sd">        info (Dict): metadata for the video and audio. Can contain the fields video_fps (float)</span>
+<span class="sd">            and audio_fps (int)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">get_video_backend</span>
@@ -682,20 +665,15 @@
 
 <span class="sd">    Note that the function decodes the whole video frame-by-frame.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    filename : str</span>
-<span class="sd">        path to the video file</span>
-<span class="sd">    pts_unit : str, optional</span>
-<span class="sd">        unit in which timestamp values will be returned either &#39;pts&#39; or &#39;sec&#39;. Defaults to &#39;pts&#39;.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): path to the video file</span>
+<span class="sd">        pts_unit (str, optional): unit in which timestamp values will be returned</span>
+<span class="sd">            either &#39;pts&#39; or &#39;sec&#39;. Defaults to &#39;pts&#39;.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    pts : List[int] if pts_unit = &#39;pts&#39;</span>
-<span class="sd">        List[Fraction] if pts_unit = &#39;sec&#39;</span>
-<span class="sd">        presentation timestamps for each one of the frames in the video.</span>
-<span class="sd">    video_fps : float, optional</span>
-<span class="sd">        the frame rate for the video</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pts (List[int] if pts_unit = &#39;pts&#39;, List[Fraction] if pts_unit = &#39;sec&#39;):</span>
+<span class="sd">            presentation timestamps for each one of the frames in the video.</span>
+<span class="sd">        video_fps (float, optional): the frame rate for the video</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">get_video_backend</span>

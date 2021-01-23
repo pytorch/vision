@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+26e0395 )
+                  master (0.9.0a0+5977143 )
                 </div>
               
             
@@ -338,17 +338,20 @@ to the behavior of argsort in PyTorch when repeated values are present.</p>
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em><em>)</em>) – boxes to perform NMS on. They
 are expected to be in (x1, y1, x2, y2) format</li>
 <li><strong>scores</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – scores for each one of the boxes</li>
-<li><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – discards all overlapping
-boxes with IoU &gt; iou_threshold</li>
+<li><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – discards all overlapping boxes with IoU &gt; iou_threshold</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>keep</strong> – int64 tensor with the indices
-of the elements that have been kept
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>int64 tensor with the indices</dt>
+<dd><p class="first last">of the elements that have been kept
 by NMS, sorted in decreasing order of scores</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">keep (Tensor)</p>
 </td>
 </tr>
 </tbody>
@@ -370,17 +373,20 @@ will not be applied between elements of different categories.</p>
 are expected to be in (x1, y1, x2, y2) format</li>
 <li><strong>scores</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – scores for each one of the boxes</li>
 <li><strong>idxs</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – indices of the categories for each one of the boxes.</li>
-<li><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – discards all overlapping boxes
-with IoU &gt; iou_threshold</li>
+<li><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – discards all overlapping boxes with IoU &gt; iou_threshold</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>keep</strong> – int64 tensor with the indices of
-the elements that have been kept by NMS, sorted
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>int64 tensor with the indices of</dt>
+<dd><p class="first last">the elements that have been kept by NMS, sorted
 in decreasing order of scores</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">keep (Tensor)</p>
 </td>
 </tr>
 </tbody>
