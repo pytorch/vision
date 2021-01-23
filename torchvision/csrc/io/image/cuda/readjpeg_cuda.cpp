@@ -92,6 +92,7 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
         outputFormat = NVJPEG_OUTPUT_RGB;
         outputComponents = 3;
       } else {
+        nvjpegJpegStateDestroy(nvjpeg_state);
         TORCH_CHECK(
             false, "The provided mode is not supported for JPEG files on GPU");
       }
@@ -108,6 +109,7 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
       break;
     default:
       // CMYK as input might work with nvjpegDecodeParamsSetAllowCMYK()
+      nvjpegJpegStateDestroy(nvjpeg_state);
       TORCH_CHECK(
           false, "The provided mode is not supported for JPEG files on GPU");
   }
