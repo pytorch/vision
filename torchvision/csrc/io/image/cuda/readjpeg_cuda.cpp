@@ -11,13 +11,15 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
 
 #else
 
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
 #include <nvjpeg.h>
 
 static nvjpegHandle_t nvjpeg_handle = nullptr;
 
 void init_nvjpegImage(nvjpegImage_t& img) {
   for (int c = 0; c < NVJPEG_MAX_COMPONENT; c++) {
-    img.channel[c] = NULL;
+    img.channel[c] = nullptr;
     img.pitch[c] = 0;
   }
 }
@@ -131,8 +133,8 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
     outImage.pitch[c] = width;
   }
 
-  // TODO torch cuda stream support
-  // TODO output besides RGB
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   nvjpegStatus_t decode_status = nvjpegDecode(
       nvjpeg_handle,
       nvjpeg_state,
@@ -140,7 +142,7 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
       data.numel(),
       outputFormat,
       &outImage,
-      /*stream=*/0);
+      stream);
 
   // Destroy the state
   nvjpegJpegStateDestroy(nvjpeg_state);
