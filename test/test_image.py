@@ -80,8 +80,8 @@ class ImageTester(unittest.TestCase):
         conversion = [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB]
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             if Image.open(img_path).mode == 'CMYK':
-                    # not supported
-                    continue
+                # not supported
+                continue
             for mode in conversion:
                 data = read_file(img_path)
                 img_ljpeg = decode_image(data, mode=mode)
