@@ -85,21 +85,22 @@ class ModelTester(TestCase):
                 self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name, dev):
+        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
-        model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
+        model = models.segmentation.__dict__[name](num_classes=2, pretrained_backbone=False)
         model.eval().to(device=dev)
-        input_shape = (1, 3, 300, 300)
+        input_shape = (1, 3, 64, 64)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
+        self.assertExpected(out["out"].cpu(), prec=0.1, strip_suffix=f"_{dev}")
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
-                self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
+                self.assertExpected(out["out"].cpu(), prec=0.1, strip_suffix=f"_{dev}")
 
     def _test_detection_model(self, name, dev):
         set_rng_seed(0)
