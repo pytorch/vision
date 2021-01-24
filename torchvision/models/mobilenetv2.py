@@ -18,10 +18,6 @@ def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> 
     It ensures that all layers have a channel number that is divisible by 8
     It can be seen here:
     https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
-    :param v:
-    :param divisor:
-    :param min_value:
-    :return:
     """
     if min_value is None:
         min_value = divisor
@@ -53,6 +49,7 @@ class ConvBNActivation(nn.Sequential):
             norm_layer(out_planes),
             activation_layer(inplace=True)
         )
+        self.out_channels = out_planes
 
 
 # necessary for backwards compatibility
@@ -90,6 +87,8 @@ class InvertedResidual(nn.Module):
             norm_layer(oup),
         ])
         self.conv = nn.Sequential(*layers)
+        self.out_channels = oup
+        self.is_strided = stride > 1
 
     def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:

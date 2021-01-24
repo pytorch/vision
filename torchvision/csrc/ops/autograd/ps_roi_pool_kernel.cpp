@@ -53,11 +53,12 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
         input_shape[2],
         input_shape[3]);
 
-    return {grad_in,
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable()};
+    return {
+        grad_in,
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable()};
   }
 };
 
@@ -139,8 +140,12 @@ at::Tensor ps_roi_pool_backward_autograd(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("ps_roi_pool", ps_roi_pool_autograd);
-  m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_autograd);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::ps_roi_pool"),
+      TORCH_FN(ps_roi_pool_autograd));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_ps_roi_pool_backward"),
+      TORCH_FN(ps_roi_pool_backward_autograd));
 }
 
 } // namespace ops

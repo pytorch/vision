@@ -471,8 +471,8 @@ def read_sn3_pascalvincent_tensor(path: Union[str, IO], strict: bool = True) -> 
     magic = get_int(data[0:4])
     nd = magic % 256
     ty = magic // 256
-    assert nd >= 1 and nd <= 3
-    assert ty >= 8 and ty <= 14
+    assert 1 <= nd <= 3
+    assert 8 <= ty <= 14
     m = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1): 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))

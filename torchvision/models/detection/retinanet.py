@@ -12,14 +12,14 @@ from ..utils import load_state_dict_from_url
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .transform import GeneralizedRCNNTransform
-from .backbone_utils import resnet_fpn_backbone
+from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 
 
 __all__ = [
-    "RetinaNet", "retinanet_resnet50_fpn",
+    "RetinaNet", "retinanet_resnet50_fpn"
 ]
 
 
@@ -34,7 +34,7 @@ class RetinaNetHead(nn.Module):
     """
     A regression and classification head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
@@ -64,7 +64,7 @@ class RetinaNetClassificationHead(nn.Module):
     """
     A classification head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
@@ -149,7 +149,7 @@ class RetinaNetRegressionHead(nn.Module):
     """
     A regression head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
     """
@@ -251,7 +251,7 @@ class RetinaNet(nn.Module):
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores for each prediction
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -457,7 +457,7 @@ class RetinaNet(nn.Module):
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
-        Arguments:
+        Args:
             images (list[Tensor]): images to be processed
             targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
 
@@ -564,7 +564,7 @@ model_urls = {
 
 
 def retinanet_resnet50_fpn(pretrained=False, progress=True,
-                           num_classes=91, pretrained_backbone=True, **kwargs):
+                           num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
     """
     Constructs a RetinaNet model with a ResNet-50-FPN backbone.
 
@@ -597,16 +597,23 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
+
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
     # skip P2 because it generates too many anchors (according to their paper)
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone,
-                                   returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256))
+    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, returned_layers=[2, 3, 4],
+                                   extra_blocks=LastLevelP6P7(256, 256), trainable_layers=trainable_backbone_layers)
     model = RetinaNet(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['retinanet_resnet50_fpn_coco'],

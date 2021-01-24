@@ -1,6 +1,5 @@
 from PIL import Image
 from os.path import join
-import os
 from typing import Any, Callable, List, Optional, Tuple
 from .vision import VisionDataset
 from .utils import download_and_extract_archive, check_integrity, list_dir, list_files

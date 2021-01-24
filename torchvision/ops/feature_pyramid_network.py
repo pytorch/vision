@@ -10,7 +10,7 @@ class ExtraFPNBlock(nn.Module):
     """
     Base class for the extra block in the FPN.
 
-    Arguments:
+    Args:
         results (List[Tensor]): the result of the FPN
         x (List[Tensor]): the original feature maps
         names (List[str]): the names for each one of the
@@ -41,7 +41,7 @@ class FeaturePyramidNetwork(nn.Module):
     The input to the model is expected to be an OrderedDict[Tensor], containing
     the feature maps on top of which the FPN will be added.
 
-    Arguments:
+    Args:
         in_channels_list (list[int]): number of channels for each feature map that
             is passed to the module
         out_channels (int): number of channels of the FPN representation
@@ -99,9 +99,7 @@ class FeaturePyramidNetwork(nn.Module):
         This is equivalent to self.inner_blocks[idx](x),
         but torchscript doesn't support this yet
         """
-        num_blocks = 0
-        for m in self.inner_blocks:
-            num_blocks += 1
+        num_blocks = len(self.inner_blocks)
         if idx < 0:
             idx += num_blocks
         i = 0
@@ -117,9 +115,7 @@ class FeaturePyramidNetwork(nn.Module):
         This is equivalent to self.layer_blocks[idx](x),
         but torchscript doesn't support this yet
         """
-        num_blocks = 0
-        for m in self.layer_blocks:
-            num_blocks += 1
+        num_blocks = len(self.layer_blocks)
         if idx < 0:
             idx += num_blocks
         i = 0
@@ -134,7 +130,7 @@ class FeaturePyramidNetwork(nn.Module):
         """
         Computes the FPN for a set of feature maps.
 
-        Arguments:
+        Args:
             x (OrderedDict[Tensor]): feature maps for each feature level.
 
         Returns:

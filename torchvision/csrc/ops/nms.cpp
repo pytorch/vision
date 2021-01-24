@@ -16,7 +16,8 @@ at::Tensor nms(
 }
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
 }
 
 } // namespace ops

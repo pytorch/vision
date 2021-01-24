@@ -9,7 +9,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root
+    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root, widerface_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -139,6 +139,26 @@ class Tester(unittest.TestCase):
             dataset = torchvision.datasets.ImageNet(root, split='val')
             self.generic_classification_dataset_test(dataset)
 
+    @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    def test_widerface(self, mock_check_integrity):
+        mock_check_integrity.return_value = True
+        with widerface_root() as root:
+            dataset = torchvision.datasets.WIDERFace(root, split='train')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.WIDERFace(root, split='val')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.WIDERFace(root, split='test')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
     @mock.patch('torchvision.datasets.cifar.check_integrity')
     @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
     def test_cifar10(self, mock_ext_check, mock_int_check):
@@ -264,12 +284,15 @@ class Tester(unittest.TestCase):
 
     @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
     def test_ucf101(self):
+        cached_meta_data = None
         with ucf101_root() as (root, ann_root):
             for split in {True, False}:
                 for fold in range(1, 4):
                     for length in {10, 15, 20}:
-                        dataset = torchvision.datasets.UCF101(
-                            root, ann_root, length, fold=fold, train=split)
+                        dataset = torchvision.datasets.UCF101(root, ann_root, length, fold=fold, train=split,
+                                                              num_workers=2, _precomputed_metadata=cached_meta_data)
+                        if cached_meta_data is None:
+                            cached_meta_data = dataset.metadata
                         self.assertGreater(len(dataset), 0)
 
                         video, audio, label = dataset[0]

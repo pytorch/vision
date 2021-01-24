@@ -20,23 +20,16 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     not guaranteed to be the same between CPU and GPU. This is similar
     to the behavior of argsort in PyTorch when repeated values are present.
 
-    Parameters
-    ----------
-    boxes : Tensor[N, 4])
-        boxes to perform NMS on. They
-        are expected to be in (x1, y1, x2, y2) format
-    scores : Tensor[N]
-        scores for each one of the boxes
-    iou_threshold : float
-        discards all overlapping
-        boxes with IoU > iou_threshold
+    Args:
+        boxes (Tensor[N, 4])): boxes to perform NMS on. They
+            are expected to be in (x1, y1, x2, y2) format
+        scores (Tensor[N]): scores for each one of the boxes
+        iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
 
-    Returns
-    -------
-    keep : Tensor
-        int64 tensor with the indices
-        of the elements that have been kept
-        by NMS, sorted in decreasing order of scores
+    Returns:
+        keep (Tensor): int64 tensor with the indices
+            of the elements that have been kept
+            by NMS, sorted in decreasing order of scores
     """
     _assert_has_ops()
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
@@ -55,25 +48,17 @@ def batched_nms(
     Each index value correspond to a category, and NMS
     will not be applied between elements of different categories.
 
-    Parameters
-    ----------
-    boxes : Tensor[N, 4]
-        boxes where NMS will be performed. They
-        are expected to be in (x1, y1, x2, y2) format
-    scores : Tensor[N]
-        scores for each one of the boxes
-    idxs : Tensor[N]
-        indices of the categories for each one of the boxes.
-    iou_threshold : float
-        discards all overlapping boxes
-        with IoU > iou_threshold
+    Args:
+        boxes (Tensor[N, 4]): boxes where NMS will be performed. They
+            are expected to be in (x1, y1, x2, y2) format
+        scores (Tensor[N]): scores for each one of the boxes
+        idxs (Tensor[N]): indices of the categories for each one of the boxes.
+        iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
 
-    Returns
-    -------
-    keep : Tensor
-        int64 tensor with the indices of
-        the elements that have been kept by NMS, sorted
-        in decreasing order of scores
+    Returns:
+        keep (Tensor): int64 tensor with the indices of
+            the elements that have been kept by NMS, sorted
+            in decreasing order of scores
     """
     if boxes.numel() == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
@@ -93,7 +78,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     Remove boxes which contains at least one side smaller than min_size.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
         min_size (float): minimum size
 
@@ -111,7 +96,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
     Clip boxes so that they lie inside an image of size `size`.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
         size (Tuple[height, width]): size of the image
 
@@ -148,7 +133,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     'cxcywh' : boxes are represented via centre, width and height, cx, cy being center of box, w, h
     being width and height.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes which will be converted.
         in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh'].
         out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh']
@@ -190,7 +175,7 @@ def box_area(boxes: Tensor) -> Tensor:
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2) coordinates.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
             are expected to be in (x1, y1, x2, y2) format
 
@@ -208,7 +193,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
+    Args:
         boxes1 (Tensor[N, 4])
         boxes2 (Tensor[M, 4])
 
@@ -235,7 +220,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
+    Args:
         boxes1 (Tensor[N, 4])
         boxes2 (Tensor[M, 4])
 
