@@ -52,7 +52,6 @@ test:
     - scipy
     - av =8.0.1
     - ca-certificates
-    {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
 
 
 about:
