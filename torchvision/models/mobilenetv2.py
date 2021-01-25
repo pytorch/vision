@@ -88,7 +88,7 @@ class InvertedResidual(nn.Module):
         ])
         self.conv = nn.Sequential(*layers)
         self.out_channels = oup
-        self.is_strided = stride > 1
+        self._is_cn = stride > 1
 
     def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
