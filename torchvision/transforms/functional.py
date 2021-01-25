@@ -979,9 +979,9 @@ def affine(
             of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:fill: instead.
+            Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     Returns:
         PIL Image or Tensor: Transformed image.

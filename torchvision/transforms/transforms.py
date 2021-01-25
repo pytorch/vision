@@ -1175,7 +1175,7 @@ class RandomRotation(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1280,9 +1280,9 @@ class RandomAffine(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:fill: instead.
+            Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
