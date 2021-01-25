@@ -23,7 +23,18 @@
 import torch
 import torchvision
 import pytorch_sphinx_theme
+from sphinxcontrib import googleanalytics
 
+
+# Wrap sphinxcontrib-googleanalytics setup() function to avoid a Sphinx warning:
+# "WARNING: extension ‘sphinxcontrib.googleanalytics’ returned an unsupported
+# object from its setup() function; it should return None or a metadata
+# dictionary"
+_googleanalytics_setup_original = googleanalytics.setup
+def _googleanalytics_setup_wrapper(app):
+    _googleanalytics_setup_original(app)
+    return {"version": "0.1"}
+googleanalytics.setup = _googleanalytics_setup_wrapper
 
 # -- General configuration ------------------------------------------------
 
