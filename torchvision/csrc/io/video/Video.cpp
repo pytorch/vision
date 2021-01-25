@@ -311,8 +311,8 @@ std::tuple<torch::Tensor, double> Video::Next() {
     // currently not supporting other formats (will do soon)
 
     out.payload.reset();
-  } else if (res == 61) {
-    LOG(INFO) << "Decoder ran out of frames (error 61)\n";
+  } else if (res == ENODATA) {
+    LOG(INFO) << "Decoder ran out of frames (ENODATA)\n";
   } else {
     LOG(ERROR) << "Decoder failed with ERROR_CODE " << res;
   }
