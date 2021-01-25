@@ -4,10 +4,11 @@ from .. import mobilenetv3
 from .. import resnet
 from .deeplabv3 import DeepLabHead, DeepLabV3
 from .fcn import FCN, FCNHead
+from .lraspp import LRASPP
 
 
 __all__ = ['fcn_resnet50', 'fcn_resnet101', 'fcn_mobilenet_v3_large', 'deeplabv3_resnet50', 'deeplabv3_resnet101',
-           'deeplabv3_mobilenet_v3_large']
+           'deeplabv3_mobilenet_v3_large', 'lraspp_mobilenet_v3_large']
 
 
 model_urls = {
@@ -17,6 +18,7 @@ model_urls = {
     'deeplabv3_resnet50_coco': 'https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth',
     'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth',
     'deeplabv3_mobilenet_v3_large_coco': None,
+    'lraspp_mobilenet_v3_large_coco': None,
 }
 
 
@@ -69,13 +71,34 @@ def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss
         aux_loss = True
     model = _segm_model(arch_type, backbone, num_classes, aux_loss, **kwargs)
     if pretrained:
-        arch = arch_type + '_' + backbone + '_coco'
-        model_url = model_urls[arch]
-        if model_url is None:
-            raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
-        else:
-            state_dict = load_state_dict_from_url(model_url, progress=progress)
-            model.load_state_dict(state_dict)
+        _load_weights(model, arch_type, backbone, progress)
+    return model
+
+
+def _load_weights(model, arch_type, backbone, progress):
+    arch = arch_type + '_' + backbone + '_coco'
+    model_url = model_urls[arch]
+    if model_url is None:
+        raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
+    else:
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
+        model.load_state_dict(state_dict)
+
+
+def _segm_lraspp_mobilenetv3(backbone_name, num_classes, pretrained_backbone=True):
+    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, _dilated=True).features
+
+    # Gather the indeces of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
+    low_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
+    high_pos = stage_indices[-1]  # use C5 which has output_stride = 16
+    low_channels = backbone[low_pos].out_channels
+    high_channels = backbone[high_pos].out_channels
+
+    backbone = IntermediateLayerGetter(backbone, return_layers={str(low_pos): 'low', str(high_pos): 'high'})
+
+    model = LRASPP(backbone, low_channels, high_channels, num_classes)
     return model
 
 
@@ -161,3 +184,24 @@ def deeplabv3_mobilenet_v3_large(pretrained=False, progress=True,
         aux_loss (bool): If True, it uses an auxiliary loss
     """
     return _load_model('deeplabv3', 'mobilenet_v3_large', pretrained, progress, num_classes, aux_loss, **kwargs)
+
+
+def lraspp_mobilenet_v3_large(pretrained=False, progress=True, num_classes=21, **kwargs):
+    """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
+            contains the same classes as Pascal VOC
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+    """
+    if kwargs.pop("aux_loss", False):
+        raise NotImplementedError('This model does not use auxiliary loss')
+
+    backbone_name = 'mobilenet_v3_large'
+    model = _segm_lraspp_mobilenetv3(backbone_name, num_classes, **kwargs)
+
+    if pretrained:
+        _load_weights(model, 'lraspp', backbone_name, progress)
+
+    return model

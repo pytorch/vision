@@ -65,6 +65,7 @@ autocast_flaky_numerics = (
     "fcn_resnet50",
     "fcn_resnet101",
     "fcn_mobilenet_v3_large",
+    "lraspp_mobilenet_v3_large",
 )
 
 
