@@ -38,14 +38,16 @@ class ConvBNActivation(nn.Sequential):
         groups: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         activation_layer: Optional[Callable[..., nn.Module]] = None,
+        dilation: int = 1,
     ) -> None:
-        padding = (kernel_size - 1) // 2
+        padding = (kernel_size - 1) // 2 * dilation
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         if activation_layer is None:
             activation_layer = nn.ReLU6
         super(ConvBNReLU, self).__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
+            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, dilation=dilation, groups=groups,
+                      bias=False),
             norm_layer(out_planes),
             activation_layer(inplace=True)
         )

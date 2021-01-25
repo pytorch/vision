@@ -1,6 +1,6 @@
 from .._utils import IntermediateLayerGetter
 from ..utils import load_state_dict_from_url
-from .. import mobilenet
+from .. import mobilenetv3
 from .. import resnet
 from .deeplabv3 import DeepLabHead, DeepLabV3
 from .fcn import FCN, FCNHead
@@ -29,16 +29,16 @@ def _segm_model(name, backbone_name, num_classes, aux, pretrained_backbone=True)
         out_inplanes = 2048
         aux_layer = 'layer3'
         aux_inplanes = 1024
-    elif 'mobilenet' in backbone_name:
-        backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained_backbone).features
+    elif 'mobilenet_v3' in backbone_name:
+        backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, _dilated=True).features
 
         # Gather the indeces of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
         # The first and last blocks are always included because they are the C0 (conv1) and Cn.
         stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
-        out_pos = stage_indices[-1]
+        out_pos = stage_indices[-1]  # use C5 which has output_stride = 16
         out_layer = str(out_pos)
         out_inplanes = backbone[out_pos].out_channels
-        aux_pos = stage_indices[-2]
+        aux_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
         aux_layer = str(aux_pos)
         aux_inplanes = backbone[aux_pos].out_channels
     else:
