@@ -67,7 +67,7 @@ def set_video_backend(backend):
 
     .. note::
         Building with FFMPEG is disabled by default in the latest master. If you want to use the 'video_reader'
-        backend, please compile torchvision from source and using NO_FFMPEG=0 flag.
+        backend, please compile torchvision from source.
     """
     global _video_backend
     if backend not in ["pyav", "video_reader"]:
