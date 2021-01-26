@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import os
 import sys
@@ -79,6 +80,15 @@ class Tester(unittest.TestCase):
             img_bytes = Image.open(fp)
             self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
                             'Pixel Image not stored in file object')
+    
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    def test_save_image_normalize_deprecated(self):
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            t = torch.rand(1, 3, 1, 1)
+            with warnings.catch_warnings(record=True) as w:
+                utils.save_image(t, f.name, normalize=False)
+                assert len(w) == 1
+                assert "The normalize parameter should not be set" in str(w[0])
 
     def test_draw_boxes(self):
         img = torch.full((3, 100, 100), 255, dtype=torch.uint8)

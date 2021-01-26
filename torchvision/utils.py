@@ -115,7 +115,7 @@ def make_grid(
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
-    normalize: bool = False,
+    normalize: Union[bool, str] = 'deprecated',
     format: Optional[str] = None,
     **kwargs
 ) -> None:
@@ -125,11 +125,17 @@ def save_image(
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
             saves the tensor as a grid of images by calling ``make_grid``.
         fp (string or file object): A filename or a file object
+        normalize (bool): This parameter has no effect and is deprecated. It should not be set.
         format(Optional):  If omitted, the format to use is determined from the filename extension.
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
 
+    if normalize != 'deprecated':
+        warnings.warn(
+            "The normalize parameter should not be set. It has no effect and it is "
+            "deprecated. It will be remove in future versions."
+        )
     grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
@@ -154,7 +160,7 @@ def draw_bounding_boxes(
 
     Args:
         image (Tensor): Tensor of shape (C x H x W)
-        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
