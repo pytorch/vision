@@ -307,9 +307,9 @@ public class CameraActivity extends AppCompatActivity {
 
         final int color = 0xff000000 | ((ri << 6) & 0xff0000) | ((gi >> 2) & 0xff00) | ((bi >> 10) & 0xff);
         mInputTensorBitmap.setPixel(x, y, color);
-        inputTensorBuffer.put(0 * channelSize + y * tensorSize + x, clamp0255(ri >> 10));
-        inputTensorBuffer.put(1 * channelSize + y * tensorSize + x, clamp0255(gi >> 10));
-        inputTensorBuffer.put(2 * channelSize + y * tensorSize + x, clamp0255(bi >> 10));
+        inputTensorBuffer.put(0 * channelSize + y * tensorSize + x, clamp0255(ri >> 10) / 255.f);
+        inputTensorBuffer.put(1 * channelSize + y * tensorSize + x, clamp0255(gi >> 10) / 255.f);
+        inputTensorBuffer.put(2 * channelSize + y * tensorSize + x, clamp0255(bi >> 10) / 255.f);
       }
     }
   }
