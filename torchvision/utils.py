@@ -115,7 +115,7 @@ def make_grid(
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
-    normalize: [bool] = False,
+    normalize: bool = False,
     format: Optional[str] = None,
     **kwargs
 ) -> None:
