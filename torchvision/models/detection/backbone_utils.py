@@ -88,7 +88,6 @@ def resnet_fpn_backbone(
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names. By
             default a ``LastLevelMaxPool`` is used.
-        
     """
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained,

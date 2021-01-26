@@ -79,7 +79,7 @@ class Tester(unittest.TestCase):
             img_bytes = Image.open(fp)
             self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
                             'Pixel Image not stored in file object')
-    
+
     def test_draw_boxes(self):
         img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
         boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
