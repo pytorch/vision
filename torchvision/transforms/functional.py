@@ -985,6 +985,7 @@ def affine(
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
+            :arg:`should warn`
 
     Returns:
         PIL Image or Tensor: Transformed image.
