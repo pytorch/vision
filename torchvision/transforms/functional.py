@@ -384,7 +384,9 @@ def scale(*args, **kwargs):
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
+    at most 3 leading dimensions for mode edge,
+    and an arbitrary number of leading dimensions for mode constant
 
     Args:
         img (PIL Image or Tensor): Image to be padded.
@@ -402,7 +404,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value on the edge of the image
+            - edge: pads with the last value on the edge of the image,
+                    if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
             - reflect: pads with reflection of image (without repeating the last value on the edge)
 
