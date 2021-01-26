@@ -161,8 +161,8 @@ def draw_bounding_boxes(
         labels (List[str]): List containing the labels of bounding boxes.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
-        fill (List[Union[str, Tuple[int, int, int, int]]]): List containing the colors of bounding boxes. The colors can
-            be represented as `str` or `Tuple[int, int, int, int]`.
+        fill (List[Union[str, Tuple[int, int, int, int]]]): List containing the colors to fill bounding boxse.
+            The colors can be represented as `str` or `Tuple[int, int, int, int]`.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
