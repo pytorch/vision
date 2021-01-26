@@ -143,6 +143,7 @@ def draw_bounding_boxes(
     boxes: torch.Tensor,
     labels: Optional[List[str]] = None,
     colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    fill: Optional[List[Union[str, Tuple[int, int, int, int]]]] = None,
     width: int = 1,
     font: Optional[str] = None,
     font_size: int = 10
@@ -151,7 +152,7 @@ def draw_bounding_boxes(
     """
     Draws bounding boxes on given image.
     The values of the input image should be uint8 between 0 and 255.
-
+    Resulting Tensor should be saved as PNG image.
     Args:
         image (Tensor): Tensor of shape (C x H x W)
         bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
@@ -160,6 +161,8 @@ def draw_bounding_boxes(
         labels (List[str]): List containing the labels of bounding boxes.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
+        fill (List[Union[str, Tuple[int, int, int, int]]]): List containing the colors of bounding boxes. The colors can
+            be represented as `str` or `Tuple[int, int, int, int]`.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
@@ -179,12 +182,13 @@ def draw_bounding_boxes(
 
     img_boxes = boxes.to(torch.int64).tolist()
 
-    draw = ImageDraw.Draw(img_to_draw)
+    draw = ImageDraw.Draw(img_to_draw, "RGBA")
+
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     for i, bbox in enumerate(img_boxes):
         color = None if colors is None else colors[i]
-        draw.rectangle(bbox, width=width, outline=color)
+        draw.rectangle(bbox, width=width, outline=color, fill=fill)
 
         if labels is not None:
             draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
