@@ -1234,7 +1234,9 @@ class RandomRotation(torch.nn.Module):
         """
         fill = self.fill
         if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
+            if fill is None:
+                fill = [.0] * F._get_image_num_channels(img)
+            elif isinstance(fill, (int, float)):
                 fill = [float(fill)] * F._get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
