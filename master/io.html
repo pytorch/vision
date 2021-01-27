@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+faf6d47 )
+                  master (0.9.0a0+7a3d123 )
                 </div>
               
             
@@ -336,17 +336,9 @@ either ‘pts’ or ‘sec’. Defaults to ‘pts’.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>the <cite>T</cite> video frames
-aframes (Tensor[K, L]): the audio frames, where <cite>K</cite> is the number of channels and <cite>L</cite> is the</p>
-<blockquote>
-<div><p>number of points</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>info (Dict): metadata for the video and audio. Can contain the fields video_fps (float)</dt>
-<dd><p class="first last">and audio_fps (int)</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the <cite>T</cite> video frames
+aframes (Tensor[K, L]): the audio frames, where <cite>K</cite> is the number of channels and <cite>L</cite> is the number of points
+info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">vframes (Tensor[T, H, W, C])</p>
@@ -427,7 +419,6 @@ container.</p>
 point, and returns a single frame:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision</span>
 <span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;path_to_a_test_video&quot;</span>
-
 <span class="n">reader</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">VideoReader</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">)</span>
 <span class="n">reader</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
 <span class="n">frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
@@ -708,7 +699,7 @@ of its corresponding PNG file.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of
 <cite>c</cite> channels, where <cite>c</cite> must 3 or 1.</li>
 <li><strong>compression_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Compression factor for the resulting file, it must be a number
@@ -716,12 +707,19 @@ between 0 and 9. Default: 6</li>
 </ul>
 </td>
 </tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>A one dimensional int8 tensor that contains the raw bytes of the</dt>
+<dd><p class="first last">PNG file.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[1]</p>
+</td>
+</tr>
 </tbody>
 </table>
-<p>Returns:
-output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the</p>
-<blockquote>
-<div>PNG file.</div></blockquote>
 </dd></dl>
 
 <dl class="function">

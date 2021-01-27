@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+faf6d47 )
+                  master (0.9.0a0+7a3d123 )
                 </div>
               
             
@@ -342,10 +342,12 @@
 <span class="sd">            and returns a transformed version.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        video (Tensor[T, H, W, C]): the `T` video frames</span>
-<span class="sd">        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels</span>
-<span class="sd">            and `L` is the number of points</span>
-<span class="sd">        label (int): class of the video clip</span>
+<span class="sd">        tuple: A 3-tuple with the following entries:</span>
+
+<span class="sd">            - video (Tensor[T, H, W, C]): the `T` video frames</span>
+<span class="sd">            - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels</span>
+<span class="sd">              and `L` is the number of points</span>
+<span class="sd">            - label (int): class of the video clip</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">frames_per_clip</span><span class="p">,</span> <span class="n">step_between_clips</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">frame_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>

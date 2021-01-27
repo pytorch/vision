@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+faf6d47 )
+                  master (0.9.0a0+7a3d123 )
                 </div>
               
             
@@ -363,28 +363,33 @@
 <span class="sd">    Example:</span>
 <span class="sd">        The following examples creates a :mod:`VideoReader` object, seeks into 2s</span>
 <span class="sd">        point, and returns a single frame::</span>
-<span class="sd">                import torchvision</span>
-<span class="sd">                video_path = &quot;path_to_a_test_video&quot;</span>
 
-<span class="sd">                reader = torchvision.io.VideoReader(video_path, &quot;video&quot;)</span>
-<span class="sd">                reader.seek(2.0)</span>
-<span class="sd">                frame = next(reader)</span>
+<span class="sd">            import torchvision</span>
+<span class="sd">            video_path = &quot;path_to_a_test_video&quot;</span>
+<span class="sd">            reader = torchvision.io.VideoReader(video_path, &quot;video&quot;)</span>
+<span class="sd">            reader.seek(2.0)</span>
+<span class="sd">            frame = next(reader)</span>
 
 <span class="sd">        :mod:`VideoReader` implements the iterable API, which makes it suitable to</span>
 <span class="sd">        using it in conjunction with :mod:`itertools` for more advanced reading.</span>
 <span class="sd">        As such, we can use a :mod:`VideoReader` instance inside for loops::</span>
+
 <span class="sd">            reader.seek(2)</span>
 <span class="sd">            for frame in reader:</span>
 <span class="sd">                frames.append(frame[&#39;data&#39;])</span>
 <span class="sd">            # additionally, `seek` implements a fluent API, so we can do</span>
 <span class="sd">            for frame in reader.seek(2):</span>
 <span class="sd">                frames.append(frame[&#39;data&#39;])</span>
+
 <span class="sd">        With :mod:`itertools`, we can read all frames between 2 and 5 seconds with the</span>
 <span class="sd">        following code::</span>
+
 <span class="sd">            for frame in itertools.takewhile(lambda x: x[&#39;pts&#39;] &lt;= 5, reader.seek(2)):</span>
 <span class="sd">                frames.append(frame[&#39;data&#39;])</span>
+
 <span class="sd">        and similarly, reading 10 frames after the 2s timestamp can be achieved</span>
 <span class="sd">        as follows::</span>
+
 <span class="sd">            for frame in itertools.islice(reader.seek(2), 10):</span>
 <span class="sd">                frames.append(frame[&#39;data&#39;])</span>
 

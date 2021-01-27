@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+faf6d47 )
+                  master (0.9.0a0+7a3d123 )
                 </div>
               
             
@@ -620,6 +620,7 @@
 
 <span class="sd">    During training, the model expects both the input tensors, as well as a targets (list of dictionary),</span>
 <span class="sd">    containing:</span>
+
 <span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``</span>
 <span class="sd">          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``</span>
 <span class="sd">        - labels (``Int64Tensor[N]``): the class label for each ground-truth box</span>
@@ -630,6 +631,7 @@
 <span class="sd">    During inference, the model requires only the input tensors, and returns the post-processed</span>
 <span class="sd">    predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as</span>
 <span class="sd">    follows:</span>
+
 <span class="sd">        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``</span>
 <span class="sd">          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``</span>
 <span class="sd">        - labels (``Int64Tensor[N]``): the predicted labels for each image</span>

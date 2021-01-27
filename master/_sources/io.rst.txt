@@ -18,7 +18,7 @@ Video
 
 
 Fine-grained video API
--------------------
+----------------------
 
 In addition to the :mod:`read_video` function, we provide a high-performance 
 lower-level API for more fine-grained control compared to the :mod:`read_video` function.

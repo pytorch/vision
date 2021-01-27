@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+faf6d47 )
+                  master (0.9.0a0+7a3d123 )
                 </div>
               
             
@@ -329,12 +329,15 @@
 <span class="sd">        target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,</span>
 <span class="sd">            or ``landmarks``. Can also be a list to output a tuple with all specified target types.</span>
 <span class="sd">            The targets represent:</span>
-<span class="sd">                ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes</span>
-<span class="sd">                ``identity`` (int): label for each person (data points with the same identity are the same person)</span>
-<span class="sd">                ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)</span>
-<span class="sd">                ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,</span>
-<span class="sd">                    righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)</span>
+
+<span class="sd">                - ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes</span>
+<span class="sd">                - ``identity`` (int): label for each person (data points with the same identity are the same person)</span>
+<span class="sd">                - ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)</span>
+<span class="sd">                - ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,</span>
+<span class="sd">                  righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)</span>
+
 <span class="sd">            Defaults to ``attr``. If empty, ``None`` will be returned as target.</span>
+
 <span class="sd">        transform (callable, optional): A function/transform that  takes in an PIL image</span>
 <span class="sd">            and returns a transformed version. E.g, ``transforms.ToTensor``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>

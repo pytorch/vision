@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+faf6d47 )
+                  master (0.9.0a0+7a3d123 )
                 </div>
               
             
@@ -608,7 +608,9 @@ to have […, 3, H, W] shape, where … means an arbitrary number of leading dim
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">Pad</code><span class="sig-paren">(</span><em>padding</em>, <em>fill=0</em>, <em>padding_mode='constant'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.Pad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pad the given image on all sides with the given “pad” value.
 If the image is torch Tensor, it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+to have […, H, W] shape, where … means at most 2 leading dimensions for mode reflect and symmetric,
+at most 3 leading dimensions for mode edge,
+and an arbitrary number of leading dimensions for mode constant</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -628,7 +630,11 @@ Only int or str or tuple value is supported for PIL Image.</li>
 Default is constant.</p>
 <ul>
 <li>constant: pads with a constant value, this value is specified with fill</li>
-<li>edge: pads with the last value at the edge of the image</li>
+<li><dl class="first docutils">
+<dt>edge: pads with the last value at the edge of the image,</dt>
+<dd>if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2</dd>
+</dl>
+</li>
 <li>reflect: pads with reflection of image without repeating the last value on the edge<blockquote>
 <div>For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
 will result in [3, 2, 1, 2, 3, 4, 3, 2]</div></blockquote>
@@ -697,9 +703,9 @@ For backward compatibility integer values (e.g. <code class="docutils literal no
 image. If given a number, the value is used for all bands respectively.
 If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
 <li><strong>fillcolor</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
-Please use <a href="#id1"><span class="problematic" id="id2">`arg`:fill:</span></a> instead.</li>
+Please use the <code class="docutils literal notranslate"><span class="pre">fill</span></code> parameter instead.</li>
 <li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
-Please use <a href="#id3"><span class="problematic" id="id4">`arg`:interpolation:</span></a> instead.</li>
+Please use the <code class="docutils literal notranslate"><span class="pre">interpolation</span></code> parameter instead.</li>
 </ul>
 </td>
 </tr>
@@ -774,7 +780,8 @@ transforms as shown below:</p>
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomCrop</code><span class="sig-paren">(</span><em>size</em>, <em>padding=None</em>, <em>pad_if_needed=False</em>, <em>fill=0</em>, <em>padding_mode='constant'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop the given image at a random location.
 If the image is torch Tensor, it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+to have […, H, W] shape, where … means an arbitrary number of leading dimensions,
+but if non-constant padding is used, the input is expected to have at most 2 leading dimensions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1109,7 +1116,7 @@ Default is the center of the image.</li>
 image. If given a number, the value is used for all bands respectively.
 If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.2.0</span></code>.</li>
 <li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
-Please use <a href="#id5"><span class="problematic" id="id6">`arg`:interpolation:</span></a> instead.</li>
+Please use the <code class="docutils literal notranslate"><span class="pre">interpolation</span></code> parameter instead.</li>
 </ul>
 </td>
 </tr>
@@ -1908,9 +1915,9 @@ In torchscript mode single int/float value is not supported, please use a sequen
 of length 1: <code class="docutils literal notranslate"><span class="pre">[value,</span> <span class="pre">]</span></code>.
 If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
 <li><strong>fillcolor</strong> (<em>sequence</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – deprecated argument and will be removed since v0.10.0.
-Please use <a href="#id8"><span class="problematic" id="id9">`arg`:fill:</span></a> instead.</li>
+Please use the <code class="docutils literal notranslate"><span class="pre">fill</span></code> parameter instead.</li>
 <li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
-Please use <a href="#id10"><span class="problematic" id="id11">`arg`:interpolation:</span></a> instead.</li>
+Please use the <code class="docutils literal notranslate"><span class="pre">interpolation</span></code> parameter instead.</li>
 </ul>
 </td>
 </tr>
@@ -2248,7 +2255,9 @@ This transform does not support PIL Image.</p>
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">pad</code><span class="sig-paren">(</span><em>img: torch.Tensor, padding: List[int], fill: int = 0, padding_mode: str = 'constant'</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.pad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pad the given image on all sides with the given “pad” value.
 If the image is torch Tensor, it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+to have […, H, W] shape, where … means at most 2 leading dimensions for mode reflect and symmetric,
+at most 3 leading dimensions for mode edge,
+and an arbitrary number of leading dimensions for mode constant</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2268,7 +2277,11 @@ Only int or str or tuple value is supported for PIL Image.</li>
 <li><strong>padding_mode</strong> – <p>Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.</p>
 <ul>
 <li>constant: pads with a constant value, this value is specified with fill</li>
-<li>edge: pads with the last value on the edge of the image</li>
+<li><dl class="first docutils">
+<dt>edge: pads with the last value on the edge of the image,</dt>
+<dd>if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2</dd>
+</dl>
+</li>
 <li>reflect: pads with reflection of image (without repeating the last value on the edge)<blockquote>
 <div>padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
 will result in [3, 2, 1, 2, 3, 4, 3, 2]</div></blockquote>
