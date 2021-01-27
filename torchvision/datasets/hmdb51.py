@@ -37,10 +37,12 @@ class HMDB51(VisionDataset):
             and returns a transformed version.
 
     Returns:
-        video (Tensor[T, H, W, C]): the `T` video frames
-        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        label (int): class of the video clip
+        tuple: A 3-tuple with the following entries:
+
+            - video (Tensor[T, H, W, C]): The `T` video frames
+            - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+              and `L` is the number of points
+            - label (int): class of the video clip
     """
 
     data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"

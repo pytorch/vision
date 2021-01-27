@@ -319,7 +319,9 @@ class CenterCrop(torch.nn.Module):
 class Pad(torch.nn.Module):
     """Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
+    at most 3 leading dimensions for mode edge,
+    and an arbitrary number of leading dimensions for mode constant
 
     Args:
         padding (int or sequence): Padding on each border. If a single int is provided this
@@ -337,7 +339,8 @@ class Pad(torch.nn.Module):
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value at the edge of the image
+            - edge: pads with the last value at the edge of the image,
+                    if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
             - reflect: pads with reflection of image without repeating the last value on the edge
 
@@ -491,7 +494,8 @@ class RandomChoice(RandomTransforms):
 class RandomCrop(torch.nn.Module):
     """Crop the given image at a random location.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions,
+    but if non-constant padding is used, the input is expected to have at most 2 leading dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
@@ -1175,7 +1179,7 @@ class RandomRotation(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1280,9 +1284,9 @@ class RandomAffine(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:fill: instead.
+            Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 

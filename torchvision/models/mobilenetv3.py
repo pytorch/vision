@@ -38,7 +38,7 @@ class SqueezeExcitation(nn.Module):
 class InvertedResidualConfig:
 
     def __init__(self, input_channels: int, kernel: int, expanded_channels: int, out_channels: int, use_se: bool,
-                 activation: str, stride: int, width_mult: float):
+                 activation: str, stride: int, dilation: int, width_mult: float):
         self.input_channels = self.adjust_channels(input_channels, width_mult)
         self.kernel = kernel
         self.expanded_channels = self.adjust_channels(expanded_channels, width_mult)
@@ -46,6 +46,7 @@ class InvertedResidualConfig:
         self.use_se = use_se
         self.use_hs = activation == "HS"
         self.stride = stride
+        self.dilation = dilation
 
     @staticmethod
     def adjust_channels(channels: int, width_mult: float):
@@ -70,9 +71,10 @@ class InvertedResidual(nn.Module):
                                            norm_layer=norm_layer, activation_layer=activation_layer))
 
         # depthwise
+        stride = 1 if cnf.dilation > 1 else cnf.stride
         layers.append(ConvBNActivation(cnf.expanded_channels, cnf.expanded_channels, kernel_size=cnf.kernel,
-                                       stride=cnf.stride, groups=cnf.expanded_channels, norm_layer=norm_layer,
-                                       activation_layer=activation_layer))
+                                       stride=stride, dilation=cnf.dilation, groups=cnf.expanded_channels,
+                                       norm_layer=norm_layer, activation_layer=activation_layer))
         if cnf.use_se:
             layers.append(SqueezeExcitation(cnf.expanded_channels))
 
@@ -82,7 +84,7 @@ class InvertedResidual(nn.Module):
 
         self.block = nn.Sequential(*layers)
         self.out_channels = cnf.out_channels
-        self.is_strided = cnf.stride > 1
+        self._is_cn = cnf.stride > 1
 
     def forward(self, input: Tensor) -> Tensor:
         result = self.block(input)
@@ -194,8 +196,7 @@ def _mobilenet_v3(
     return model
 
 
-def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, reduced_tail: bool = False,
-                       **kwargs: Any) -> MobileNetV3:
+def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
     """
     Constructs a large MobileNetV3 architecture from
     `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
@@ -203,40 +204,38 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, reduced_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        reduced_tail (bool): If True, reduces the channel counts of all feature layers
-            between C4 and C5 by 2. It is used to reduce the channel redundancy in the
-            backbone for Detection and Segmentation.
     """
+    # non-public config parameters
+    reduce_divider = 2 if kwargs.pop('_reduced_tail', False) else 1
+    dilation = 2 if kwargs.pop('_dilated', False) else 1
     width_mult = 1.0
+
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
     adjust_channels = partial(InvertedResidualConfig.adjust_channels, width_mult=width_mult)
 
-    reduce_divider = 2 if reduced_tail else 1
-
     inverted_residual_setting = [
-        bneck_conf(16, 3, 16, 16, False, "RE", 1),
-        bneck_conf(16, 3, 64, 24, False, "RE", 2),  # C1
-        bneck_conf(24, 3, 72, 24, False, "RE", 1),
-        bneck_conf(24, 5, 72, 40, True, "RE", 2),  # C2
-        bneck_conf(40, 5, 120, 40, True, "RE", 1),
-        bneck_conf(40, 5, 120, 40, True, "RE", 1),
-        bneck_conf(40, 3, 240, 80, False, "HS", 2),  # C3
-        bneck_conf(80, 3, 200, 80, False, "HS", 1),
-        bneck_conf(80, 3, 184, 80, False, "HS", 1),
-        bneck_conf(80, 3, 184, 80, False, "HS", 1),
-        bneck_conf(80, 3, 480, 112, True, "HS", 1),
-        bneck_conf(112, 3, 672, 112, True, "HS", 1),
-        bneck_conf(112, 5, 672, 160 // reduce_divider, True, "HS", 2),  # C4
-        bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1),
-        bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1),
+        bneck_conf(16, 3, 16, 16, False, "RE", 1, 1),
+        bneck_conf(16, 3, 64, 24, False, "RE", 2, 1),  # C1
+        bneck_conf(24, 3, 72, 24, False, "RE", 1, 1),
+        bneck_conf(24, 5, 72, 40, True, "RE", 2, 1),  # C2
+        bneck_conf(40, 5, 120, 40, True, "RE", 1, 1),
+        bneck_conf(40, 5, 120, 40, True, "RE", 1, 1),
+        bneck_conf(40, 3, 240, 80, False, "HS", 2, 1),  # C3
+        bneck_conf(80, 3, 200, 80, False, "HS", 1, 1),
+        bneck_conf(80, 3, 184, 80, False, "HS", 1, 1),
+        bneck_conf(80, 3, 184, 80, False, "HS", 1, 1),
+        bneck_conf(80, 3, 480, 112, True, "HS", 1, 1),
+        bneck_conf(112, 3, 672, 112, True, "HS", 1, 1),
+        bneck_conf(112, 5, 672, 160 // reduce_divider, True, "HS", 2, dilation),  # C4
+        bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1, dilation),
+        bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1, dilation),
     ]
     last_channel = adjust_channels(1280 // reduce_divider)  # C5
 
     return _mobilenet_v3("mobilenet_v3_large", inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
 
 
-def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, reduced_tail: bool = False,
-                       **kwargs: Any) -> MobileNetV3:
+def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
     """
     Constructs a small MobileNetV3 architecture from
     `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
@@ -244,28 +243,27 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, reduced_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        reduced_tail (bool): If True, reduces the channel counts of all feature layers
-            between C4 and C5 by 2. It is used to reduce the channel redundancy in the
-            backbone for Detection and Segmentation.
     """
+    # non-public config parameters
+    reduce_divider = 2 if kwargs.pop('_reduced_tail', False) else 1
+    dilation = 2 if kwargs.pop('_dilated', False) else 1
     width_mult = 1.0
+
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
     adjust_channels = partial(InvertedResidualConfig.adjust_channels, width_mult=width_mult)
 
-    reduce_divider = 2 if reduced_tail else 1
-
     inverted_residual_setting = [
-        bneck_conf(16, 3, 16, 16, True, "RE", 2),  # C1
-        bneck_conf(16, 3, 72, 24, False, "RE", 2),  # C2
-        bneck_conf(24, 3, 88, 24, False, "RE", 1),
-        bneck_conf(24, 5, 96, 40, True, "HS", 2),  # C3
-        bneck_conf(40, 5, 240, 40, True, "HS", 1),
-        bneck_conf(40, 5, 240, 40, True, "HS", 1),
-        bneck_conf(40, 5, 120, 48, True, "HS", 1),
-        bneck_conf(48, 5, 144, 48, True, "HS", 1),
-        bneck_conf(48, 5, 288, 96 // reduce_divider, True, "HS", 2),  # C4
-        bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1),
-        bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1),
+        bneck_conf(16, 3, 16, 16, True, "RE", 2, 1),  # C1
+        bneck_conf(16, 3, 72, 24, False, "RE", 2, 1),  # C2
+        bneck_conf(24, 3, 88, 24, False, "RE", 1, 1),
+        bneck_conf(24, 5, 96, 40, True, "HS", 2, 1),  # C3
+        bneck_conf(40, 5, 240, 40, True, "HS", 1, 1),
+        bneck_conf(40, 5, 240, 40, True, "HS", 1, 1),
+        bneck_conf(40, 5, 120, 48, True, "HS", 1, 1),
+        bneck_conf(48, 5, 144, 48, True, "HS", 1, 1),
+        bneck_conf(48, 5, 288, 96 // reduce_divider, True, "HS", 2, dilation),  # C4
+        bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1, dilation),
+        bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1, dilation),
     ]
     last_channel = adjust_channels(1024 // reduce_divider)  # C5
 
