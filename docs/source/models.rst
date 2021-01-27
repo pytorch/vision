@@ -271,7 +271,8 @@ The models subpackage contains definitions for the following model
 architectures for semantic segmentation:
 
 - `FCN ResNet50, ResNet101 <https://arxiv.org/abs/1411.4038>`_
-- `DeepLabV3 ResNet50, ResNet101 <https://arxiv.org/abs/1706.05587>`_
+- `DeepLabV3 ResNet50, ResNet101, MobileNetV3-Large <https://arxiv.org/abs/1706.05587>`_
+- `LR-ASPP MobileNetV3-Large <https://arxiv.org/abs/1905.02244>`_
 
 As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
@@ -298,6 +299,8 @@ FCN ResNet50                      60.5           91.4
 FCN ResNet101                     63.7           91.9
 DeepLabV3 ResNet50                66.4           92.4
 DeepLabV3 ResNet101               67.4           92.4
+DeepLabV3 MobileNetV3-Large       60.3           91.2
+LR-ASPP MobileNetV3-Large         57.9           91.2
 ================================  =============  ====================
 
 
@@ -313,6 +316,13 @@ DeepLabV3
 
 .. autofunction:: torchvision.models.segmentation.deeplabv3_resnet50
 .. autofunction:: torchvision.models.segmentation.deeplabv3_resnet101
+.. autofunction:: torchvision.models.segmentation.deeplabv3_mobilenet_v3_large
+
+
+LR-ASPP
+-------
+
+.. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
 
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
