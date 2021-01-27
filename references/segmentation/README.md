@@ -34,10 +34,10 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py --lr 0.
 
 ## deeplabv3_mobilenet_v3_large
 ```
-sbatch launch_job.sh --dataset coco -b 4 --model deeplabv3_mobilenet_v3_large --aux-loss --wd 0.000001
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py --dataset coco -b 4 --model deeplabv3_mobilenet_v3_large --aux-loss --wd 0.000001
 ```
 
 ## lraspp_mobilenet_v3_large
 ```
-sbatch launch_job.sh --dataset coco -b 4 --model lraspp_mobilenet_v3_large --wd 0.000001
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py --dataset coco -b 4 --model lraspp_mobilenet_v3_large --wd 0.000001
 ```
