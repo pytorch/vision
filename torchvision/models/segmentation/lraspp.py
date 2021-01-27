@@ -10,7 +10,9 @@ __all__ = ["LRASPP"]
 
 class LRASPP(nn.Module):
     """
-    Implements a Lite R-ASPP Network for semantic segmentation.
+    Implements a Lite R-ASPP Network for semantic segmentation from
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_.
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
