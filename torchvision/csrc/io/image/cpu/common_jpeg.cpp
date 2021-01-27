@@ -1,4 +1,4 @@
-#include "jpegcommon.h"
+#include "common_jpeg.h"
 
 namespace vision {
 namespace image {

@@ -1,7 +1,7 @@
-#include "read_image_impl.h"
+#include "decode_image.h"
 
-#include "readjpeg_impl.h"
-#include "readpng_impl.h"
+#include "decode_jpeg.h"
+#include "decode_png.h"
 
 namespace vision {
 namespace image {
@@ -20,9 +20,9 @@ torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
   const uint8_t png_signature[4] = {137, 80, 78, 71}; // == "\211PNG"
 
   if (memcmp(jpeg_signature, datap, 3) == 0) {
-    return decodeJPEG(data, mode);
+    return decode_jpeg(data, mode);
   } else if (memcmp(png_signature, datap, 4) == 0) {
-    return decodePNG(data, mode);
+    return decode_png(data, mode);
   } else {
     TORCH_CHECK(
         false,

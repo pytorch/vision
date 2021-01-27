@@ -1,6 +1,6 @@
-#include "writejpeg_impl.h"
+#include "encode_jpeg.h"
 
-#include "jpegcommon.h"
+#include "common_jpeg.h"
 
 namespace vision {
 namespace image {
@@ -9,14 +9,14 @@ using namespace detail;
 
 #if !JPEG_FOUND
 
-torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
+torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   TORCH_CHECK(
-      false, "encodeJPEG: torchvision not compiled with libjpeg support");
+      false, "encode_jpeg: torchvision not compiled with libjpeg support");
 }
 
 #else
 
-torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
+torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling
   struct jpeg_compress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;

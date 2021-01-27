@@ -1,5 +1,5 @@
-#include "readjpeg_impl.h"
-#include "jpegcommon.h"
+#include "decode_jpeg.h"
+#include "common_jpeg.h"
 
 namespace vision {
 namespace image {
@@ -7,9 +7,9 @@ namespace image {
 using namespace detail;
 
 #if !JPEG_FOUND
-torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
-      false, "decodeJPEG: torchvision not compiled with libjpeg support");
+      false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
 #else
 
@@ -73,7 +73,7 @@ static void torch_jpeg_set_source_mgr(
 
 } // namespace
 
-torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
