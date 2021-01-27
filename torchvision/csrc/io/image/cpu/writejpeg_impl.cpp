@@ -8,7 +8,7 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
 }
 
 #else
-#include "../jpegcommon.h"
+#include "jpegcommon.h"
 
 torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling

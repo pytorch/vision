@@ -1,10 +1,5 @@
 #pragma once
 
-// clang-format off
-#include <cstdio>
-#include <cstddef>
-// clang-format on
-
 #if JPEG_FOUND
 #include <jpeglib.h>
 #include <setjmp.h>

@@ -6,7 +6,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
 #else
-#include "../jpegcommon.h"
+#include "jpegcommon.h"
 
 struct torch_jpeg_mgr {
   struct jpeg_source_mgr pub;
