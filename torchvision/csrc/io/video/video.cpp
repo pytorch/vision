@@ -160,7 +160,7 @@ Video::Video(std::string videoPath, std::string stream) {
   Video::_getDecoderParams(
       0, // video start
       0, // headerOnly
-      get<0>(current_stream), // stream info - remove that
+      std::get<0>(current_stream), // stream info - remove that
       long(-1), // stream_id parsed from info above change to -2
       true // read all streams
   );
@@ -210,9 +210,9 @@ Video::Video(std::string videoPath, std::string stream) {
 
   succeeded = Video::setCurrentStream(stream);
   LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
-  if (get<1>(current_stream) != -1) {
+  if (std::get<1>(current_stream) != -1) {
     LOG(INFO)
-        << "Stream index set to " << get<1>(current_stream)
+        << "Stream index set to " << std::get<1>(current_stream)
         << ". If you encounter trouble, consider switching it to automatic stream discovery. \n";
   }
 } // video
@@ -230,8 +230,8 @@ bool Video::setCurrentStream(std::string stream = "video") {
   _getDecoderParams(
       ts, // video start
       0, // headerOnly
-      get<0>(current_stream), // stream
-      long(get<1>(
+      std::get<0>(current_stream), // stream
+      long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       false // read all streams
   );
@@ -254,8 +254,8 @@ void Video::Seek(double ts) {
   _getDecoderParams(
       ts, // video start
       0, // headerOnly
-      get<0>(current_stream), // stream
-      long(get<1>(
+      std::get<0>(current_stream), // stream
+      long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       false // read all streams
   );
