@@ -14,11 +14,12 @@ __all__ = ['fcn_resnet50', 'fcn_resnet101', 'fcn_mobilenet_v3_large', 'deeplabv3
 model_urls = {
     'fcn_resnet50_coco': 'https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth',
     'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth',
-    'fcn_mobilenet_v3_large_coco': None,
+    'fcn_mobilenet_v3_large_coco': 'https://download.pytorch.org/models/fcn_mobilenet_v3_large-7191edb4.pth',
     'deeplabv3_resnet50_coco': 'https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth',
     'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth',
-    'deeplabv3_mobilenet_v3_large_coco': None,
-    'lraspp_mobilenet_v3_large_coco': None,
+    'deeplabv3_mobilenet_v3_large_coco':
+        'https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth',
+    'lraspp_mobilenet_v3_large_coco': 'https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth',
 }
 
 
@@ -77,7 +78,7 @@ def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss
 
 def _load_weights(model, arch_type, backbone, progress):
     arch = arch_type + '_' + backbone + '_coco'
-    model_url = model_urls[arch]
+    model_url = model_urls.get(arch, None)
     if model_url is None:
         raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
     else:
