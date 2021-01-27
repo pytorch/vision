@@ -368,6 +368,7 @@ class ONNXExporterTester(unittest.TestCase):
         test_images = [image2]
         return images, test_images
 
+    @unittest.skip  # Skip until pytorch/vision#3251 is fixed and pytorch/pytorch#50910 is merged.
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
@@ -419,6 +420,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2.eq(out_trace2))
 
+    @unittest.skip  # Skip until pytorch/vision#3251 is fixed and pytorch/pytorch#50910 is merged.
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
@@ -469,6 +471,7 @@ class ONNXExporterTester(unittest.TestCase):
         assert torch.all(out2[0].eq(out_trace2[0]))
         assert torch.all(out2[1].eq(out_trace2[1]))
 
+    @unittest.skip  # Skip until pytorch/vision#3251 is fixed and pytorch/pytorch#50910 is merged.
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
