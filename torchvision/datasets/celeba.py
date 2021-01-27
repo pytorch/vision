@@ -17,12 +17,15 @@ class CelebA(VisionDataset):
         target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,
             or ``landmarks``. Can also be a list to output a tuple with all specified target types.
             The targets represent:
-                ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
-                ``identity`` (int): label for each person (data points with the same identity are the same person)
-                ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
-                ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
-                    righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
+
+                - ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
+                - ``identity`` (int): label for each person (data points with the same identity are the same person)
+                - ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
+                - ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
+                  righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
+
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
+
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
