@@ -35,10 +35,12 @@ class UCF101(VisionDataset):
             and returns a transformed version.
 
     Returns:
-        video (Tensor[T, H, W, C]): the `T` video frames
-        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        label (int): class of the video clip
+        tuple: A 3-tuple with the following entries:
+
+            - video (Tensor[T, H, W, C]): the `T` video frames
+            -  audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+               and `L` is the number of points
+            - label (int): class of the video clip
     """
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,

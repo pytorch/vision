@@ -318,7 +318,7 @@ class QMNIST(MNIST):
     """`QMNIST <https://github.com/facebookresearch/qmnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset whose ``processed''
+        root (string): Root directory of dataset whose ``processed``
             subdir contains torch binary files with the datasets.
         what (string,optional): Can be 'train', 'test', 'test10k',
             'test50k', or 'nist' for respectively the mnist compatible
@@ -342,7 +342,6 @@ class QMNIST(MNIST):
         train (bool,optional,compatibility): When argument 'what' is
             not specified, this boolean decides whether to load the
             training set ot the testing set.  Default: True.
-
     """
 
     subsets = {

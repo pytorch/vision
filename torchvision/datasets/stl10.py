@@ -18,7 +18,7 @@ class STL10(VisionDataset):
             Accordingly dataset is selected.
         folds (int, optional): One of {0-9} or None.
             For training, loads one of the 10 pre-defined folds of 1k samples for the
-             standard evaluation procedure. If no value is passed, loads the 5k samples.
+            standard evaluation procedure. If no value is passed, loads the 5k samples.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -26,7 +26,6 @@ class STL10(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-
     """
     base_folder = 'stl10_binary'
     url = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"

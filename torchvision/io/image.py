@@ -126,8 +126,8 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
             between 0 and 9. Default: 6
 
     Returns:
-    output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
-        PNG file.
+        Tensor[1]: A one dimensional int8 tensor that contains the raw bytes of the
+            PNG file.
     """
     output = torch.ops.image.encode_png(input, compression_level)
     return output

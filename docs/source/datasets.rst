@@ -155,7 +155,7 @@ MNIST
 .. autoclass:: MNIST
 
 Omniglot
-~~~~~~
+~~~~~~~~
 
 .. autoclass:: Omniglot
 
