@@ -1,4 +1,4 @@
-#include "VideoReader.h"
+#include "video_reader.h"
 
 #include <Python.h>
 
