@@ -1,6 +1,8 @@
 #pragma once
 
 #if JPEG_FOUND
+#include <stdio.h>
+
 #include <jpeglib.h>
 #include <setjmp.h>
 #endif

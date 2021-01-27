@@ -1,4 +1,5 @@
 #include "writejpeg_impl.h"
+
 #include "jpegcommon.h"
 
 namespace vision {
