@@ -1,13 +1,6 @@
 #include "VideoReader.h"
-#include <ATen/ATen.h>
-#include <Python.h>
-#include <c10/util/Logging.h>
-#include <exception>
-#include "memory_buffer.h"
-#include "sync_decoder.h"
 
-using namespace std;
-using namespace ffmpeg;
+#include <Python.h>
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
@@ -17,6 +10,9 @@ PyMODINIT_FUNC PyInit_video_reader(void) {
   return NULL;
 }
 #endif
+
+using namespace std;
+using namespace ffmpeg;
 
 namespace video_reader {
 

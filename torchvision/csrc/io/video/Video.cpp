@@ -1,9 +1,6 @@
 #include "Video.h"
-#include <c10/util/Logging.h>
-#include <torch/script.h>
-#include "defs.h"
-#include "memory_buffer.h"
-#include "sync_decoder.h"
+
+#include <regex>
 
 using namespace std;
 using namespace ffmpeg;
@@ -319,3 +316,12 @@ std::tuple<torch::Tensor, double> Video::Next() {
 
   return std::make_tuple(outFrame, frame_pts_s);
 }
+
+static auto registerVideo =
+    torch::class_<Video>("torchvision", "Video")
+        .def(torch::init<std::string, std::string>())
+        .def("get_current_stream", &Video::getCurrentStream)
+        .def("set_current_stream", &Video::setCurrentStream)
+        .def("get_metadata", &Video::getStreamMetadata)
+        .def("seek", &Video::Seek)
+        .def("next", &Video::Next);

@@ -1,3 +1,5 @@
 #pragma once
 
-#include <torch/script.h>
+#include <torch/types.h>
+#include "../decoder/memory_buffer.h"
+#include "../decoder/sync_decoder.h"
