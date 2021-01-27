@@ -1,4 +1,4 @@
-#include "readjpeg_cpu.h"
+#include "readjpeg_impl.h"
 
 #if !JPEG_FOUND
 torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {

@@ -1,4 +1,4 @@
-#include "readpng_cpu.h"
+#include "readpng_impl.h"
 
 #if !PNG_FOUND
 torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
