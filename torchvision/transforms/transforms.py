@@ -673,8 +673,8 @@ class RandomPerspective(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
-            image. If given a number, the value is used for all bands respectively.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
@@ -1175,8 +1175,8 @@ class RandomRotation(torch.nn.Module):
             Note that the expand flag assumes rotation around the center and no translation.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or number, optional): Pixel fill value for the area outside the rotated
-            image. If given a number, the value is used for all bands respectively.
+        fill (sequence or number): Pixel fill value for the area outside the rotated
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
@@ -1282,8 +1282,8 @@ class RandomAffine(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
-            image. If given a number, the value is used for all bands respectively.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
