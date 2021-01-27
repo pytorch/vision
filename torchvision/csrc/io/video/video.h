@@ -8,6 +8,9 @@
 
 using namespace ffmpeg;
 
+namespace vision {
+namespace video {
+
 struct Video : torch::CustomClassHolder {
   std::tuple<std::string, long> current_stream; // stream type, id
   // global video metadata
@@ -50,3 +53,6 @@ struct Video : torch::CustomClassHolder {
   DecoderParameters params;
 
 }; // struct Video
+
+} // namespace video
+} // namespace vision

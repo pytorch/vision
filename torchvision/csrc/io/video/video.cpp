@@ -2,8 +2,10 @@
 
 #include <regex>
 
-using namespace std;
-using namespace ffmpeg;
+namespace vision {
+namespace video {
+
+namespace {
 
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
@@ -89,6 +91,8 @@ std::tuple<std::string, long> _parseStream(const std::string& streamString) {
   }
   return std::make_tuple(type_, index_);
 }
+
+} // namespace
 
 void Video::_getDecoderParams(
     double videoStartS,
@@ -325,3 +329,6 @@ static auto registerVideo =
         .def("get_metadata", &Video::getStreamMetadata)
         .def("seek", &Video::Seek)
         .def("next", &Video::Next);
+
+} // namespace video
+} // namespace vision
