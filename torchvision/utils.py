@@ -185,7 +185,6 @@ def draw_bounding_boxes(
 
     if fill:
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
-        fill = colors + [100]
 
     else:
         draw = ImageDraw.Draw(img_to_draw)
@@ -195,9 +194,10 @@ def draw_bounding_boxes(
     for i, bbox in enumerate(img_boxes):
         color = None if colors is None else colors[i]
         if fill:
-            draw.rectangle(bbox, width=width, outline=colors, fill=colors)
+            fill_color = color + [100]
+            draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
         else:
-            draw.rectangle(bbox, width=width, outline=colors)
+            draw.rectangle(bbox, width=width, outline=color)
 
         if labels is not None:
             draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
