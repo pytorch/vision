@@ -693,7 +693,9 @@ class RandomPerspective(torch.nn.Module):
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
 
-        if not isinstance(fill, (Sequence, numbers.Number)):
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
             raise TypeError("Fill should be either a sequence or a number.")
 
         self.fill = fill
@@ -1217,7 +1219,9 @@ class RandomRotation(torch.nn.Module):
         self.resample = self.interpolation = interpolation
         self.expand = expand
 
-        if not isinstance(fill, (Sequence, numbers.Number)):
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
             raise TypeError("Fill should be either a sequence or a number.")
 
         self.fill = fill
@@ -1242,9 +1246,7 @@ class RandomRotation(torch.nn.Module):
         """
         fill = self.fill
         if isinstance(img, Tensor):
-            if fill is None:
-                fill = [.0] * F._get_image_num_channels(img)
-            elif isinstance(fill, (int, float)):
+            if isinstance(fill, (int, float)):
                 fill = [float(fill)] * F._get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
@@ -1350,7 +1352,9 @@ class RandomAffine(torch.nn.Module):
 
         self.resample = self.interpolation = interpolation
 
-        if not isinstance(fill, (Sequence, numbers.Number)):
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
             raise TypeError("Fill should be either a sequence or a number.")
 
         self.fillcolor = self.fill = fill
