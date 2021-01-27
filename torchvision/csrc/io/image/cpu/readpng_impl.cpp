@@ -1,12 +1,14 @@
 #include "readpng_impl.h"
+#include "pngcommon.h"
+
+namespace vision {
+namespace image {
 
 #if !PNG_FOUND
 torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
 }
 #else
-#include <png.h>
-#include <setjmp.h>
 
 torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
@@ -160,4 +162,7 @@ torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});
 }
-#endif // PNG_FOUND
+#endif
+
+} // namespace image
+} // namespace vision

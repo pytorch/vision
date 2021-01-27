@@ -1,4 +1,8 @@
 #include "writejpeg_impl.h"
+#include "pngcommon.h"
+
+namespace vision {
+namespace image {
 
 #if !PNG_FOUND
 
@@ -7,8 +11,8 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
 }
 
 #else
-#include <png.h>
-#include <setjmp.h>
+
+namespace {
 
 struct torch_mem_encode {
   char* buffer;
@@ -58,6 +62,8 @@ void torch_png_write_data(
   memcpy(p->buffer + p->size, data, length);
   p->size += length;
 }
+
+} // namespace
 
 torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
   // Define compression structures and error handling
@@ -171,3 +177,6 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
 }
 
 #endif
+
+} // namespace image
+} // namespace vision

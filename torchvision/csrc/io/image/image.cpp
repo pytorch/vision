@@ -11,6 +11,9 @@ PyMODINIT_FUNC PyInit_image(void) {
 }
 #endif
 
+namespace vision {
+namespace image {
+
 static auto registry = torch::RegisterOperators()
                            .op("image::decode_png", &decodePNG)
                            .op("image::encode_png", &encodePNG)
@@ -19,3 +22,6 @@ static auto registry = torch::RegisterOperators()
                            .op("image::read_file", &read_file)
                            .op("image::write_file", &write_file)
                            .op("image::decode_image", &decode_image);
+
+} // namespace image
+} // namespace vision

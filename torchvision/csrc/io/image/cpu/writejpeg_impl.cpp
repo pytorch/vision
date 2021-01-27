@@ -1,4 +1,10 @@
 #include "writejpeg_impl.h"
+#include "jpegcommon.h"
+
+namespace vision {
+namespace image {
+
+using namespace detail;
 
 #if !JPEG_FOUND
 
@@ -8,7 +14,6 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
 }
 
 #else
-#include "jpegcommon.h"
 
 torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling
@@ -98,3 +103,6 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   return outTensor;
 }
 #endif
+
+} // namespace image
+} // namespace vision

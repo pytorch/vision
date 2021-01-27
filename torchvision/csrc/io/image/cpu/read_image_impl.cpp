@@ -3,6 +3,9 @@
 #include "readjpeg_impl.h"
 #include "readpng_impl.h"
 
+namespace vision {
+namespace image {
+
 torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
@@ -27,3 +30,6 @@ torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
         "are currently supported.");
   }
 }
+
+} // namespace image
+} // namespace vision
