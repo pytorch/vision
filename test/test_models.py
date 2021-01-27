@@ -64,7 +64,6 @@ autocast_flaky_numerics = (
     "deeplabv3_mobilenet_v3_large",
     "fcn_resnet50",
     "fcn_resnet101",
-    "fcn_mobilenet_v3_large",
     "lraspp_mobilenet_v3_large",
 )
 

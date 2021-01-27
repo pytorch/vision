@@ -7,14 +7,13 @@ from .fcn import FCN, FCNHead
 from .lraspp import LRASPP
 
 
-__all__ = ['fcn_resnet50', 'fcn_resnet101', 'fcn_mobilenet_v3_large', 'deeplabv3_resnet50', 'deeplabv3_resnet101',
+__all__ = ['fcn_resnet50', 'fcn_resnet101', 'deeplabv3_resnet50', 'deeplabv3_resnet101',
            'deeplabv3_mobilenet_v3_large', 'lraspp_mobilenet_v3_large']
 
 
 model_urls = {
     'fcn_resnet50_coco': 'https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth',
     'fcn_resnet101_coco': 'https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth',
-    'fcn_mobilenet_v3_large_coco': 'https://download.pytorch.org/models/fcn_mobilenet_v3_large-7191edb4.pth',
     'deeplabv3_resnet50_coco': 'https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth',
     'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth',
     'deeplabv3_mobilenet_v3_large_coco':
@@ -129,20 +128,6 @@ def fcn_resnet101(pretrained=False, progress=True,
         aux_loss (bool): If True, it uses an auxiliary loss
     """
     return _load_model('fcn', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
-
-
-def fcn_mobilenet_v3_large(pretrained=False, progress=True,
-                           num_classes=21, aux_loss=None, **kwargs):
-    """Constructs a Fully-Convolutional Network model with a MobileNetV3-Large backbone.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
-    """
-    return _load_model('fcn', 'mobilenet_v3_large', pretrained, progress, num_classes, aux_loss, **kwargs)
 
 
 def deeplabv3_resnet50(pretrained=False, progress=True,
