@@ -1,4 +1,4 @@
-#include "writejpeg_cpu.h"
+#include "writejpeg_impl.h"
 
 #if !JPEG_FOUND
 

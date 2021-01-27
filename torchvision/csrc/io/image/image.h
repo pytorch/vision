@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cpu/read_image_cpu.h"
-#include "cpu/read_write_file_cpu.h"
-#include "cpu/readjpeg_cpu.h"
-#include "cpu/readpng_cpu.h"
-#include "cpu/writejpeg_cpu.h"
-#include "cpu/writepng_cpu.h"
+#include "cpu/read_image_impl.h"
+#include "cpu/read_write_file_impl.h"
+#include "cpu/readjpeg_impl.h"
+#include "cpu/readpng_impl.h"
+#include "cpu/writejpeg_impl.h"
+#include "cpu/writepng_impl.h"
