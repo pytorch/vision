@@ -1186,7 +1186,7 @@ class RandomRotation(torch.nn.Module):
     """
 
     def __init__(
-        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
+        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0, resample=None
     ):
         super().__init__()
         if resample is not None:
