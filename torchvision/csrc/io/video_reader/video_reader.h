@@ -5,7 +5,7 @@
 namespace vision {
 namespace video_reader {
 
-torch::List<torch::Tensor> readVideoFromMemory(
+torch::List<torch::Tensor> read_video_from_memory(
     torch::Tensor input_video,
     double seekFrameMargin,
     int64_t getPtsOnly,
@@ -26,7 +26,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen);
 
-torch::List<torch::Tensor> readVideoFromFile(
+torch::List<torch::Tensor> read_video_from_file(
     std::string videoPath,
     double seekFrameMargin,
     int64_t getPtsOnly,
@@ -47,9 +47,9 @@ torch::List<torch::Tensor> readVideoFromFile(
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen);
 
-torch::List<torch::Tensor> probeVideoFromMemory(torch::Tensor input_video);
+torch::List<torch::Tensor> probe_video_from_memory(torch::Tensor input_video);
 
-torch::List<torch::Tensor> probeVideoFromFile(std::string videoPath);
+torch::List<torch::Tensor> probe_video_from_file(std::string videoPath);
 
 } // namespace video_reader
 } // namespace vision

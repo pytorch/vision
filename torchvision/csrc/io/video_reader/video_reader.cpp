@@ -564,7 +564,7 @@ torch::List<torch::Tensor> probeVideo(
 
 } // namespace
 
-torch::List<torch::Tensor> readVideoFromMemory(
+torch::List<torch::Tensor> read_video_from_memory(
     torch::Tensor input_video,
     double seekFrameMargin,
     int64_t getPtsOnly,
@@ -608,7 +608,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
       audioTimeBaseDen);
 }
 
-torch::List<torch::Tensor> readVideoFromFile(
+torch::List<torch::Tensor> read_video_from_file(
     std::string videoPath,
     double seekFrameMargin,
     int64_t getPtsOnly,
@@ -653,20 +653,20 @@ torch::List<torch::Tensor> readVideoFromFile(
       audioTimeBaseDen);
 }
 
-torch::List<torch::Tensor> probeVideoFromMemory(torch::Tensor input_video) {
+torch::List<torch::Tensor> probe_video_from_memory(torch::Tensor input_video) {
   return probeVideo(false, input_video, "");
 }
 
-torch::List<torch::Tensor> probeVideoFromFile(std::string videoPath) {
+torch::List<torch::Tensor> probe_video_from_file(std::string videoPath) {
   torch::Tensor dummy_input_video = torch::ones({0});
   return probeVideo(true, dummy_input_video, videoPath);
 }
 
 TORCH_LIBRARY_FRAGMENT(video_reader, m) {
-  m.def("read_video_from_memory", readVideoFromMemory);
-  m.def("read_video_from_file", readVideoFromFile);
-  m.def("probe_video_from_memory", probeVideoFromMemory);
-  m.def("probe_video_from_file", probeVideoFromFile);
+  m.def("read_video_from_memory", read_video_from_memory);
+  m.def("read_video_from_file", read_video_from_file);
+  m.def("probe_video_from_memory", probe_video_from_memory);
+  m.def("probe_video_from_file", probe_video_from_file);
 }
 
 } // namespace video_reader
