@@ -1,20 +1,15 @@
 #pragma once
 
-#include <map>
-#include <regex>
-#include <string>
-#include <vector>
+#include <torch/types.h>
 
-#include <ATen/ATen.h>
-#include <c10/util/Logging.h>
-#include <torch/script.h>
-
-#include <exception>
-#include "defs.h"
-#include "memory_buffer.h"
-#include "sync_decoder.h"
+#include "../decoder/defs.h"
+#include "../decoder/memory_buffer.h"
+#include "../decoder/sync_decoder.h"
 
 using namespace ffmpeg;
+
+namespace vision {
+namespace video {
 
 struct Video : torch::CustomClassHolder {
   std::tuple<std::string, long> current_stream; // stream type, id
@@ -58,3 +53,6 @@ struct Video : torch::CustomClassHolder {
   DecoderParameters params;
 
 }; // struct Video
+
+} // namespace video
+} // namespace vision
