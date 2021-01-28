@@ -5,13 +5,10 @@
 
 #include <jpeglib.h>
 #include <setjmp.h>
-#endif
 
 namespace vision {
 namespace image {
 namespace detail {
-
-#if JPEG_FOUND
 
 static const JOCTET EOI_BUFFER[1] = {JPEG_EOI};
 struct torch_jpeg_error_mgr {
@@ -23,8 +20,8 @@ struct torch_jpeg_error_mgr {
 using torch_jpeg_error_ptr = struct torch_jpeg_error_mgr*;
 void torch_jpeg_error_exit(j_common_ptr cinfo);
 
-#endif
-
 } // namespace detail
 } // namespace image
 } // namespace vision
+
+#endif

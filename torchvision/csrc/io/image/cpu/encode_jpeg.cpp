@@ -5,8 +5,6 @@
 namespace vision {
 namespace image {
 
-using namespace detail;
-
 #if !JPEG_FOUND
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
@@ -15,6 +13,8 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 }
 
 #else
+
+using namespace detail;
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling

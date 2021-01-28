@@ -4,14 +4,14 @@
 namespace vision {
 namespace image {
 
-using namespace detail;
-
 #if !JPEG_FOUND
 torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
       false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
 #else
+
+using namespace detail;
 
 namespace {
 
