@@ -1,14 +1,20 @@
-#include "writejpeg_cpu.h"
+#include "encode_jpeg.h"
+
+#include "common_png.h"
+
+namespace vision {
+namespace image {
 
 #if !PNG_FOUND
 
-torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
-  TORCH_CHECK(false, "encodePNG: torchvision not compiled with libpng support");
+torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
+  TORCH_CHECK(
+      false, "encode_png: torchvision not compiled with libpng support");
 }
 
 #else
-#include <png.h>
-#include <setjmp.h>
+
+namespace {
 
 struct torch_mem_encode {
   char* buffer;
@@ -59,7 +65,9 @@ void torch_png_write_data(
   p->size += length;
 }
 
-torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
+} // namespace
+
+torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   // Define compression structures and error handling
   png_structp png_write;
   png_infop info_ptr;
@@ -171,3 +179,6 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
 }
 
 #endif
+
+} // namespace image
+} // namespace vision

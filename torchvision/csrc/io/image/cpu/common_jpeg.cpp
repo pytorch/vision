@@ -1,6 +1,10 @@
-#if JPEG_FOUND
-#include "jpegcommon.h"
+#include "common_jpeg.h"
 
+namespace vision {
+namespace image {
+namespace detail {
+
+#if JPEG_FOUND
 void torch_jpeg_error_exit(j_common_ptr cinfo) {
   /* cinfo->err really points to a torch_jpeg_error_mgr struct, so coerce
    * pointer */
@@ -16,3 +20,7 @@ void torch_jpeg_error_exit(j_common_ptr cinfo) {
   longjmp(myerr->setjmp_buffer, 1);
 }
 #endif
+
+} // namespace detail
+} // namespace image
+} // namespace vision
