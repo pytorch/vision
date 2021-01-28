@@ -7,13 +7,12 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
-from torchvision import transforms as T
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
+import presets
 import utils
 
 from scheduler import WarmupMultiStepLR
-from transforms import ConvertBHWCtoBCHW, ConvertBCHWtoCBHW
 
 try:
     from apex import amp
@@ -112,21 +111,11 @@ def main(args):
     print("Loading data")
     traindir = os.path.join(args.data_path, args.train_dir)
     valdir = os.path.join(args.data_path, args.val_dir)
-    normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
-                            std=[0.22803, 0.22145, 0.216989])
 
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    transform_train = torchvision.transforms.Compose([
-        ConvertBHWCtoBCHW(),
-        T.ConvertImageDtype(torch.float32),
-        T.Resize((128, 171)),
-        T.RandomHorizontalFlip(),
-        normalize,
-        T.RandomCrop((112, 112)),
-        ConvertBCHWtoCBHW()
-    ])
+    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print("Loading dataset_train from {}".format(cache_path))
@@ -154,14 +143,7 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    transform_test = torchvision.transforms.Compose([
-        ConvertBHWCtoBCHW(),
-        T.ConvertImageDtype(torch.float32),
-        T.Resize((128, 171)),
-        normalize,
-        T.CenterCrop((112, 112)),
-        ConvertBCHWtoCBHW()
-    ])
+    transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print("Loading dataset_test from {}".format(cache_path))

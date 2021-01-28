@@ -6,8 +6,8 @@ import torch
 import torch.utils.data
 from torch import nn
 import torchvision
-from torchvision import transforms
 
+import presets
 import utils
 
 try:
@@ -82,8 +82,7 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    resize_size, crop_size = (342, 299) if args.model == 'inception_v3' else (256, 224)
 
     print("Loading training data")
     st = time.time()
@@ -93,22 +92,10 @@ def load_data(traindir, valdir, args):
         print("Loading dataset_train from {}".format(cache_path))
         dataset, _ = torch.load(cache_path)
     else:
-        trans = [
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-        ]
-        if args.auto_augment is not None:
-            aa_policy = transforms.AutoAugmentPolicy(args.auto_augment)
-            trans.append(transforms.AutoAugment(policy=aa_policy))
-        trans.extend([
-            transforms.ToTensor(),
-            normalize,
-        ])
-        if args.random_erase > 0:
-            trans.append(transforms.RandomErasing(p=args.random_erase))
         dataset = torchvision.datasets.ImageFolder(
             traindir,
-            transforms.Compose(trans))
+            presets.ClassificationPresetTrain(crop_size=crop_size, auto_augment_policy=args.auto_augment,
+                                              random_erase_prob=args.random_erase))
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
@@ -124,12 +111,7 @@ def load_data(traindir, valdir, args):
     else:
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ]))
+            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size))
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
