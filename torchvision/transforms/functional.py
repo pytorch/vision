@@ -981,7 +981,7 @@ def affine(
             In torchscript mode single int/float value is not supported, please use a sequence
             of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
-        fillcolor (sequence, numbers.Number): deprecated argument and will be removed since v0.10.0.
+        fillcolor (sequence or number): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
