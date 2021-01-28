@@ -5,8 +5,8 @@ from transforms import ConvertBHWCtoBCHW, ConvertBCHWtoCBHW
 
 
 class VideoClassificationPresetTrain:
-    def __init__(self, resize_size, crop_size, hflip_prob=0.5, mean=(0.43216, 0.394666, 0.37645),
-                 std=(0.22803, 0.22145, 0.216989)):
+    def __init__(self, resize_size, crop_size, mean=(0.43216, 0.394666, 0.37645), std=(0.22803, 0.22145, 0.216989),
+                 hflip_prob=0.5):
         trans = [
             ConvertBHWCtoBCHW(),
             transforms.ConvertImageDtype(torch.float32),
