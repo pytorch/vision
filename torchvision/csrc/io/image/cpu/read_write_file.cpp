@@ -1,9 +1,17 @@
-#include "read_write_file_cpu.h"
+#include "read_write_file.h"
+
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#endif
 
+namespace vision {
+namespace image {
+
+#ifdef _WIN32
+namespace {
 std::wstring utf8_decode(const std::string& str) {
   if (str.empty()) {
     return std::wstring();
@@ -21,6 +29,7 @@ std::wstring utf8_decode(const std::string& str) {
       size_needed);
   return wstrTo;
 }
+} // namespace
 #endif
 
 torch::Tensor read_file(const std::string& filename) {
@@ -90,3 +99,6 @@ void write_file(const std::string& filename, torch::Tensor& data) {
   fwrite(fileBytes, sizeof(uint8_t), data.numel(), outfile);
   fclose(outfile);
 }
+
+} // namespace image
+} // namespace vision
