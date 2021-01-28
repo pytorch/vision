@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+7a3d123 )
+                  master (0.9.0a0+7c8f660 )
                 </div>
               
             
@@ -312,12 +312,15 @@
   <h1>Source code for torchvision.models.segmentation.segmentation</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">IntermediateLayerGetter</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">mobilenetv3</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">resnet</span>
 <span class="kn">from</span> <span class="nn">.deeplabv3</span> <span class="kn">import</span> <span class="n">DeepLabHead</span><span class="p">,</span> <span class="n">DeepLabV3</span>
 <span class="kn">from</span> <span class="nn">.fcn</span> <span class="kn">import</span> <span class="n">FCN</span><span class="p">,</span> <span class="n">FCNHead</span>
+<span class="kn">from</span> <span class="nn">.lraspp</span> <span class="kn">import</span> <span class="n">LRASPP</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fcn_resnet50&#39;</span><span class="p">,</span> <span class="s1">&#39;fcn_resnet101&#39;</span><span class="p">,</span> <span class="s1">&#39;deeplabv3_resnet50&#39;</span><span class="p">,</span> <span class="s1">&#39;deeplabv3_resnet101&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fcn_resnet50&#39;</span><span class="p">,</span> <span class="s1">&#39;fcn_resnet101&#39;</span><span class="p">,</span> <span class="s1">&#39;deeplabv3_resnet50&#39;</span><span class="p">,</span> <span class="s1">&#39;deeplabv3_resnet101&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;deeplabv3_mobilenet_v3_large&#39;</span><span class="p">,</span> <span class="s1">&#39;lraspp_mobilenet_v3_large&#39;</span><span class="p">]</span>
 
 
 <span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
@@ -325,30 +328,50 @@
     <span class="s1">&#39;fcn_resnet101_coco&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth&#39;</span><span class="p">,</span>
     <span class="s1">&#39;deeplabv3_resnet50_coco&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth&#39;</span><span class="p">,</span>
     <span class="s1">&#39;deeplabv3_resnet101_coco&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;deeplabv3_mobilenet_v3_large_coco&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;lraspp_mobilenet_v3_large_coco&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 
 
-<span class="k">def</span> <span class="nf">_segm_resnet</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">backbone_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">](</span>
-        <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained_backbone</span><span class="p">,</span>
-        <span class="n">replace_stride_with_dilation</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">_segm_model</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">backbone_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="s1">&#39;resnet&#39;</span> <span class="ow">in</span> <span class="n">backbone_name</span><span class="p">:</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">](</span>
+            <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained_backbone</span><span class="p">,</span>
+            <span class="n">replace_stride_with_dilation</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span>
+        <span class="n">out_layer</span> <span class="o">=</span> <span class="s1">&#39;layer4&#39;</span>
+        <span class="n">out_inplanes</span> <span class="o">=</span> <span class="mi">2048</span>
+        <span class="n">aux_layer</span> <span class="o">=</span> <span class="s1">&#39;layer3&#39;</span>
+        <span class="n">aux_inplanes</span> <span class="o">=</span> <span class="mi">1024</span>
+    <span class="k">elif</span> <span class="s1">&#39;mobilenet_v3&#39;</span> <span class="ow">in</span> <span class="n">backbone_name</span><span class="p">:</span>
+        <span class="n">backbone</span> <span class="o">=</span> <span class="n">mobilenetv3</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">](</span><span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">_dilated</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">features</span>
 
-    <span class="n">return_layers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;layer4&#39;</span><span class="p">:</span> <span class="s1">&#39;out&#39;</span><span class="p">}</span>
+        <span class="c1"># Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.</span>
+        <span class="c1"># The first and last blocks are always included because they are the C0 (conv1) and Cn.</span>
+        <span class="n">stage_indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;_is_cn&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">out_pos</span> <span class="o">=</span> <span class="n">stage_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># use C5 which has output_stride = 16</span>
+        <span class="n">out_layer</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">out_pos</span><span class="p">)</span>
+        <span class="n">out_inplanes</span> <span class="o">=</span> <span class="n">backbone</span><span class="p">[</span><span class="n">out_pos</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span>
+        <span class="n">aux_pos</span> <span class="o">=</span> <span class="n">stage_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># use C2 here which has output_stride = 8</span>
+        <span class="n">aux_layer</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">aux_pos</span><span class="p">)</span>
+        <span class="n">aux_inplanes</span> <span class="o">=</span> <span class="n">backbone</span><span class="p">[</span><span class="n">aux_pos</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;backbone </span><span class="si">{}</span><span class="s1"> is not supported as of now&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backbone_name</span><span class="p">))</span>
+
+    <span class="n">return_layers</span> <span class="o">=</span> <span class="p">{</span><span class="n">out_layer</span><span class="p">:</span> <span class="s1">&#39;out&#39;</span><span class="p">}</span>
     <span class="k">if</span> <span class="n">aux</span><span class="p">:</span>
-        <span class="n">return_layers</span><span class="p">[</span><span class="s1">&#39;layer3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;aux&#39;</span>
+        <span class="n">return_layers</span><span class="p">[</span><span class="n">aux_layer</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;aux&#39;</span>
     <span class="n">backbone</span> <span class="o">=</span> <span class="n">IntermediateLayerGetter</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">return_layers</span><span class="o">=</span><span class="n">return_layers</span><span class="p">)</span>
 
     <span class="n">aux_classifier</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">aux</span><span class="p">:</span>
-        <span class="n">inplanes</span> <span class="o">=</span> <span class="mi">1024</span>
-        <span class="n">aux_classifier</span> <span class="o">=</span> <span class="n">FCNHead</span><span class="p">(</span><span class="n">inplanes</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
+        <span class="n">aux_classifier</span> <span class="o">=</span> <span class="n">FCNHead</span><span class="p">(</span><span class="n">aux_inplanes</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
 
     <span class="n">model_map</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;deeplabv3&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">DeepLabHead</span><span class="p">,</span> <span class="n">DeepLabV3</span><span class="p">),</span>
         <span class="s1">&#39;fcn&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">FCNHead</span><span class="p">,</span> <span class="n">FCN</span><span class="p">),</span>
     <span class="p">}</span>
-    <span class="n">inplanes</span> <span class="o">=</span> <span class="mi">2048</span>
-    <span class="n">classifier</span> <span class="o">=</span> <span class="n">model_map</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">](</span><span class="n">inplanes</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
+    <span class="n">classifier</span> <span class="o">=</span> <span class="n">model_map</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">](</span><span class="n">out_inplanes</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
     <span class="n">base_model</span> <span class="o">=</span> <span class="n">model_map</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">base_model</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">aux_classifier</span><span class="p">)</span>
@@ -358,15 +381,36 @@
 <span class="k">def</span> <span class="nf">_load_model</span><span class="p">(</span><span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="n">aux_loss</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">_segm_resnet</span><span class="p">(</span><span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">_segm_model</span><span class="p">(</span><span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="n">arch</span> <span class="o">=</span> <span class="n">arch_type</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">backbone</span> <span class="o">+</span> <span class="s1">&#39;_coco&#39;</span>
-        <span class="n">model_url</span> <span class="o">=</span> <span class="n">model_urls</span><span class="p">[</span><span class="n">arch</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">model_url</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;pretrained </span><span class="si">{}</span><span class="s1"> is not supported as of now&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arch</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+        <span class="n">_load_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">progress</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<span class="k">def</span> <span class="nf">_load_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">progress</span><span class="p">):</span>
+    <span class="n">arch</span> <span class="o">=</span> <span class="n">arch_type</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">backbone</span> <span class="o">+</span> <span class="s1">&#39;_coco&#39;</span>
+    <span class="n">model_url</span> <span class="o">=</span> <span class="n">model_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">model_url</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;pretrained </span><span class="si">{}</span><span class="s1"> is not supported as of now&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arch</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_segm_lraspp_mobilenetv3</span><span class="p">(</span><span class="n">backbone_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">mobilenetv3</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">](</span><span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">_dilated</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">features</span>
+
+    <span class="c1"># Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.</span>
+    <span class="c1"># The first and last blocks are always included because they are the C0 (conv1) and Cn.</span>
+    <span class="n">stage_indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s2">&quot;_is_cn&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">low_pos</span> <span class="o">=</span> <span class="n">stage_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># use C2 here which has output_stride = 8</span>
+    <span class="n">high_pos</span> <span class="o">=</span> <span class="n">stage_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># use C5 which has output_stride = 16</span>
+    <span class="n">low_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="p">[</span><span class="n">low_pos</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span>
+    <span class="n">high_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="p">[</span><span class="n">high_pos</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span>
+
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">IntermediateLayerGetter</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">return_layers</span><span class="o">=</span><span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">low_pos</span><span class="p">):</span> <span class="s1">&#39;low&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">high_pos</span><span class="p">):</span> <span class="s1">&#39;high&#39;</span><span class="p">})</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">LRASPP</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">low_channels</span><span class="p">,</span> <span class="n">high_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span>
 
 
@@ -378,6 +422,8 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
 <span class="sd">            contains the same classes as Pascal VOC</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        aux_loss (bool): If True, it uses an auxiliary loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_load_model</span><span class="p">(</span><span class="s1">&#39;fcn&#39;</span><span class="p">,</span> <span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -390,6 +436,8 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
 <span class="sd">            contains the same classes as Pascal VOC</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        aux_loss (bool): If True, it uses an auxiliary loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_load_model</span><span class="p">(</span><span class="s1">&#39;fcn&#39;</span><span class="p">,</span> <span class="s1">&#39;resnet101&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -402,6 +450,8 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
 <span class="sd">            contains the same classes as Pascal VOC</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        aux_loss (bool): If True, it uses an auxiliary loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_load_model</span><span class="p">(</span><span class="s1">&#39;deeplabv3&#39;</span><span class="p">,</span> <span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -414,8 +464,45 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
 <span class="sd">            contains the same classes as Pascal VOC</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        aux_loss (bool): If True, it uses an auxiliary loss</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_load_model</span><span class="p">(</span><span class="s1">&#39;deeplabv3&#39;</span><span class="p">,</span> <span class="s1">&#39;resnet101&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="deeplabv3_mobilenet_v3_large"><a class="viewcode-back" href="../../../../models.html#torchvision.models.segmentation.deeplabv3_mobilenet_v3_large">[docs]</a><span class="k">def</span> <span class="nf">deeplabv3_mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="n">num_classes</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
+<span class="sd">            contains the same classes as Pascal VOC</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">        aux_loss (bool): If True, it uses an auxiliary loss</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_load_model</span><span class="p">(</span><span class="s1">&#39;deeplabv3&#39;</span><span class="p">,</span> <span class="s1">&#39;mobilenet_v3_large&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lraspp_mobilenet_v3_large"><a class="viewcode-back" href="../../../../models.html#torchvision.models.segmentation.lraspp_mobilenet_v3_large">[docs]</a><span class="k">def</span> <span class="nf">lraspp_mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
+<span class="sd">            contains the same classes as Pascal VOC</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;aux_loss&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;This model does not use auxiliary loss&#39;</span><span class="p">)</span>
+
+    <span class="n">backbone_name</span> <span class="o">=</span> <span class="s1">&#39;mobilenet_v3_large&#39;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">_segm_lraspp_mobilenetv3</span><span class="p">(</span><span class="n">backbone_name</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+        <span class="n">_load_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;lraspp&#39;</span><span class="p">,</span> <span class="n">backbone_name</span><span class="p">,</span> <span class="n">progress</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
 </pre></div>
 
              </article>

@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+7a3d123 )
+                  master (0.9.0a0+7c8f660 )
                 </div>
               
             
@@ -1121,7 +1121,7 @@ was trained on ImageNet. Default: <em>False</em></li>
 <h3>MobileNet v3<a class="headerlink" href="#mobilenet-v3" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="torchvision.models.mobilenet_v3_large">
-<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>reduced_tail: bool = False</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv3.MobileNetV3<a class="reference internal" href="_modules/torchvision/models/mobilenetv3.html#mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv3.MobileNetV3<a class="reference internal" href="_modules/torchvision/models/mobilenetv3.html#mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a large MobileNetV3 architecture from
 <a class="reference external" href="https://arxiv.org/abs/1905.02244">“Searching for MobileNetV3”</a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1131,9 +1131,6 @@ was trained on ImageNet. Default: <em>False</em></li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
 <li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
-<li><strong>reduced_tail</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, reduces the channel counts of all feature layers
-between C4 and C5 by 2. It is used to reduce the channel redundancy in the
-backbone for Detection and Segmentation.</li>
 </ul>
 </td>
 </tr>
@@ -1143,7 +1140,7 @@ backbone for Detection and Segmentation.</li>
 
 <dl class="function">
 <dt id="torchvision.models.mobilenet_v3_small">
-<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v3_small</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>reduced_tail: bool = False</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv3.MobileNetV3<a class="reference internal" href="_modules/torchvision/models/mobilenetv3.html#mobilenet_v3_small"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v3_small" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v3_small</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv3.MobileNetV3<a class="reference internal" href="_modules/torchvision/models/mobilenetv3.html#mobilenet_v3_small"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v3_small" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a small MobileNetV3 architecture from
 <a class="reference external" href="https://arxiv.org/abs/1905.02244">“Searching for MobileNetV3”</a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1153,9 +1150,6 @@ backbone for Detection and Segmentation.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
 <li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
-<li><strong>reduced_tail</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, reduces the channel counts of all feature layers
-between C4 and C5 by 2. It is used to reduce the channel redundancy in the
-backbone for Detection and Segmentation.</li>
 </ul>
 </td>
 </tr>
@@ -1340,7 +1334,8 @@ channels, and in Wide ResNet-50-2 has 2048-1024-2048.</p>
 architectures for semantic segmentation:</p>
 <ul class="simple">
 <li><a class="reference external" href="https://arxiv.org/abs/1411.4038">FCN ResNet50, ResNet101</a></li>
-<li><a class="reference external" href="https://arxiv.org/abs/1706.05587">DeepLabV3 ResNet50, ResNet101</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1706.05587">DeepLabV3 ResNet50, ResNet101, MobileNetV3-Large</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1905.02244">LR-ASPP MobileNetV3-Large</a></li>
 </ul>
 <p>As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> and then normalized using
@@ -1387,6 +1382,14 @@ in order:</p>
 <td>67.4</td>
 <td>92.4</td>
 </tr>
+<tr class="row-even"><td>DeepLabV3 MobileNetV3-Large</td>
+<td>60.3</td>
+<td>91.2</td>
+</tr>
+<tr class="row-odd"><td>LR-ASPP MobileNetV3-Large</td>
+<td>57.9</td>
+<td>91.2</td>
+</tr>
 </tbody>
 </table>
 <div class="section" id="fully-convolutional-networks">
@@ -1403,6 +1406,8 @@ in order:</p>
 <li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
 contains the same classes as Pascal VOC</li>
 <li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
 </ul>
 </td>
 </tr>
@@ -1422,6 +1427,8 @@ contains the same classes as Pascal VOC</li>
 <li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
 contains the same classes as Pascal VOC</li>
 <li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
 </ul>
 </td>
 </tr>
@@ -1444,6 +1451,8 @@ contains the same classes as Pascal VOC</li>
 <li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
 contains the same classes as Pascal VOC</li>
 <li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
 </ul>
 </td>
 </tr>
@@ -1463,6 +1472,52 @@ contains the same classes as Pascal VOC</li>
 <li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
 contains the same classes as Pascal VOC</li>
 <li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.segmentation.deeplabv3_mobilenet_v3_large">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">deeplabv3_mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>aux_loss=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#deeplabv3_mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.deeplabv3_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="lr-aspp">
+<h3>LR-ASPP<a class="headerlink" href="#lr-aspp" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.segmentation.lraspp_mobilenet_v3_large">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">lraspp_mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#lraspp_mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.lraspp_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
 </ul>
 </td>
 </tr>
@@ -2207,6 +2262,7 @@ images because it assumes the video is 4d.</p>
 <li><a class="reference internal" href="#semantic-segmentation">Semantic Segmentation</a><ul>
 <li><a class="reference internal" href="#fully-convolutional-networks">Fully Convolutional Networks</a></li>
 <li><a class="reference internal" href="#deeplabv3">DeepLabV3</a></li>
+<li><a class="reference internal" href="#lr-aspp">LR-ASPP</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a><ul>
