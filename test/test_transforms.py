@@ -183,7 +183,7 @@ class Tester(unittest.TestCase):
 
         # assert fill being either a Sequence or a Number
         with self.assertRaises(TypeError):
-            transforms.RandomPerspective(fill=NotImplemented)
+            transforms.RandomPerspective(fill={})
         
         t = transforms.RandomPerspective(fill=None)
         self.assertTrue(t.fill == 0)
@@ -1541,7 +1541,7 @@ class Tester(unittest.TestCase):
 
         # assert fill being either a Sequence or a Number
         with self.assertRaises(TypeError):
-            transforms.RandomRotation(0, fill=NotImplemented)
+            transforms.RandomRotation(0, fill={})
         
         t = transforms.RandomRotation(0, fill=None)
         self.assertTrue(t.fill == 0)
@@ -1590,7 +1590,7 @@ class Tester(unittest.TestCase):
 
         # assert fill being either a Sequence or a Number
         with self.assertRaises(TypeError):
-            transforms.RandomAffine(0, fill=NotImplemented)
+            transforms.RandomAffine(0, fill={})
         
         t = transforms.RandomAffine(0, fill=None)
         self.assertTrue(t.fill == 0)
