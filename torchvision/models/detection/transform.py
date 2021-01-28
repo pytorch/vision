@@ -3,7 +3,7 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 import torchvision
-from typing import List, Tuple, Dict, Optional
+from typing import Sequence, List, Tuple, Dict, Optional
 
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
@@ -68,7 +68,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def __init__(self, min_size, max_size, image_mean, image_std):
         super(GeneralizedRCNNTransform, self).__init__()
-        if not isinstance(min_size, (list, tuple)):
+        if not isinstance(min_size, Sequence):
             min_size = (min_size,)
         self.min_size = min_size
         self.max_size = max_size

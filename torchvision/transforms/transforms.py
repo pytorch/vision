@@ -355,7 +355,7 @@ class Pad(torch.nn.Module):
 
     def __init__(self, padding, fill=0, padding_mode="constant"):
         super().__init__()
-        if not isinstance(padding, (numbers.Number, tuple, list)):
+        if not isinstance(padding, (numbers.Number, Sequence)):
             raise TypeError("Got inappropriate padding arg")
 
         if not isinstance(fill, (numbers.Number, str, tuple)):
@@ -705,7 +705,7 @@ class RandomPerspective(torch.nn.Module):
 
         fill = self.fill
         if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
+            if isinstance(fill, numbers.Number):
                 fill = [float(fill)] * F._get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
@@ -1081,11 +1081,11 @@ class ColorJitter(torch.nn.Module):
             value = [center - float(value), center + float(value)]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
-        elif isinstance(value, (tuple, list)) and len(value) == 2:
+        elif isinstance(value, Sequence) and len(value) == 2:
             if not bound[0] <= value[0] <= value[1] <= bound[1]:
                 raise ValueError("{} values should be between {}".format(name, bound))
         else:
-            raise TypeError("{} should be a single number or a list/tuple with lenght 2.".format(name))
+            raise TypeError("{} should be a single number or a sequence with lenght 2.".format(name))
 
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
@@ -1234,7 +1234,7 @@ class RandomRotation(torch.nn.Module):
         """
         fill = self.fill
         if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
+            if isinstance(fill, numbers.Number):
                 fill = [float(fill)] * F._get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
@@ -1388,7 +1388,7 @@ class RandomAffine(torch.nn.Module):
         """
         fill = self.fill
         if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
+            if isinstance(fill, numbers.Number):
                 fill = [float(fill)] * F._get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
@@ -1516,13 +1516,13 @@ class RandomErasing(torch.nn.Module):
 
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False):
         super().__init__()
-        if not isinstance(value, (numbers.Number, str, tuple, list)):
+        if not isinstance(value, (numbers.Number, str, Sequence)):
             raise TypeError("Argument value should be either a number or str or a sequence")
         if isinstance(value, str) and value != "random":
             raise ValueError("If value is str, it should be 'random'")
-        if not isinstance(scale, (tuple, list)):
+        if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
-        if not isinstance(ratio, (tuple, list)):
+        if not isinstance(ratio, Sequence):
             raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
@@ -1589,7 +1589,7 @@ class RandomErasing(torch.nn.Module):
         if torch.rand(1) < self.p:
 
             # cast self.value to script acceptable type
-            if isinstance(self.value, (int, float)):
+            if isinstance(self.value, numbers.Number):
                 value = [self.value, ]
             elif isinstance(self.value, str):
                 value = None
@@ -1641,7 +1641,7 @@ class GaussianBlur(torch.nn.Module):
             if not 0. < sigma[0] <= sigma[1]:
                 raise ValueError("sigma values should be positive and of the form (min, max).")
         else:
-            raise ValueError("sigma should be a single number or a list/tuple with length 2.")
+            raise ValueError("sigma should be a single number or a sequence with length 2.")
 
         self.sigma = sigma
 

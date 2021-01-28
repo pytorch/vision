@@ -8,7 +8,7 @@ from PIL import Image
 
 import torch
 from torch import Tensor
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Sequence, Any, Optional
 
 try:
     import accimage
@@ -463,7 +463,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     """
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
-    elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
+    elif isinstance(output_size, Sequence) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
 
     image_width, image_height = _get_image_size(img)
@@ -643,7 +643,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
-    elif isinstance(size, (tuple, list)) and len(size) == 1:
+    elif isinstance(size, Sequence) and len(size) == 1:
         size = (size[0], size[0])
 
     if len(size) != 2:
@@ -690,7 +690,7 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
-    elif isinstance(size, (tuple, list)) and len(size) == 1:
+    elif isinstance(size, Sequence) and len(size) == 1:
         size = (size[0], size[0])
 
     if len(size) != 2:
@@ -930,10 +930,10 @@ def rotate(
         )
         interpolation = _interpolation_modes_from_int(interpolation)
 
-    if not isinstance(angle, (int, float)):
-        raise TypeError("Argument angle should be int or float")
+    if not isinstance(angle, numbers.Number):
+        raise TypeError("Argument angle should be a number")
 
-    if center is not None and not isinstance(center, (list, tuple)):
+    if center is not None and not isinstance(center, Sequence):
         raise TypeError("Argument center should be a sequence")
 
     if not isinstance(interpolation, InterpolationMode):
@@ -981,7 +981,7 @@ def affine(
             In torchscript mode single int/float value is not supported, please use a sequence
             of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
-        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
+        fillcolor (sequence, numbers.Number): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
@@ -1009,10 +1009,10 @@ def affine(
         )
         fill = fillcolor
 
-    if not isinstance(angle, (int, float)):
-        raise TypeError("Argument angle should be int or float")
+    if not isinstance(angle, numbers.Number):
+        raise TypeError("Argument angle should be a number")
 
-    if not isinstance(translate, (list, tuple)):
+    if not isinstance(translate, Sequence):
         raise TypeError("Argument translate should be a sequence")
 
     if len(translate) != 2:
@@ -1021,7 +1021,7 @@ def affine(
     if scale <= 0.0:
         raise ValueError("Argument scale should be positive")
 
-    if not isinstance(shear, (numbers.Number, (list, tuple))):
+    if not isinstance(shear, (numbers.Number, Sequence)):
         raise TypeError("Shear should be either a single value or a sequence of two values")
 
     if not isinstance(interpolation, InterpolationMode):
@@ -1152,7 +1152,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
     """
-    if not isinstance(kernel_size, (int, list, tuple)):
+    if not isinstance(kernel_size, (int, Sequence)):
         raise TypeError('kernel_size should be int or a sequence of integers. Got {}'.format(type(kernel_size)))
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
@@ -1165,11 +1165,11 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     if sigma is None:
         sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
 
-    if sigma is not None and not isinstance(sigma, (int, float, list, tuple)):
+    if sigma is not None and not isinstance(sigma, (numbers.Number, Sequence)):
         raise TypeError('sigma should be either float or sequence of floats. Got {}'.format(type(sigma)))
-    if isinstance(sigma, (int, float)):
+    if isinstance(sigma, numbers.Number):
         sigma = [float(sigma), float(sigma)]
-    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
+    if isinstance(sigma, Sequence) and len(sigma) == 1:
         sigma = [sigma[0], sigma[0]]
     if len(sigma) != 2:
         raise ValueError('If sigma is a sequence, its length should be 2. Got {}'.format(len(sigma)))

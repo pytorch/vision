@@ -1,4 +1,5 @@
 import math
+import numbers
 import torch
 
 from enum import Enum
@@ -188,7 +189,7 @@ class AutoAugment(torch.nn.Module):
         """
         fill = self.fill
         if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
+            if isinstance(fill, numbers.Number):
                 fill = [float(fill)] * F._get_image_num_channels(img)
             elif fill is not None:
                 fill = [float(f) for f in fill]

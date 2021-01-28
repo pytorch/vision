@@ -1,10 +1,11 @@
+import numbers
 import warnings
 
 import torch
 from torch import Tensor
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import BroadcastingList2
-from typing import Optional, Tuple, List
+from typing import Optional, Sequence, Tuple, List
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
@@ -404,9 +405,9 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     _assert_image_tensor(img)
 
-    if not isinstance(padding, (int, tuple, list)):
+    if not isinstance(padding, (int, Sequence)):
         raise TypeError("Got inappropriate padding arg")
-    if not isinstance(fill, (int, float)):
+    if not isinstance(fill, numbers.Number):
         raise TypeError("Got inappropriate fill arg")
     if not isinstance(padding_mode, str):
         raise TypeError("Got inappropriate padding_mode arg")
@@ -474,7 +475,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 def resize(img: Tensor, size: List[int], interpolation: str = "bilinear") -> Tensor:
     _assert_image_tensor(img)
 
-    if not isinstance(size, (int, tuple, list)):
+    if not isinstance(size, (int, Sequence)):
         raise TypeError("Got inappropriate size arg")
     if not isinstance(interpolation, str):
         raise TypeError("Got inappropriate interpolation arg")
@@ -486,8 +487,8 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear") -> Ten
         size = list(size)
 
     if isinstance(size, list) and len(size) not in [1, 2]:
-        raise ValueError("Size must be an int or a 1 or 2 element tuple/list, not a "
-                         "{} element tuple/list".format(len(size)))
+        raise ValueError("Size must be an int or a 1 or 2 element sequence, not a "
+                         "{} element sequence".format(len(size)))
 
     w, h = _get_image_size(img)
 
@@ -545,12 +546,12 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fill is not None and not isinstance(fill, (int, float, tuple, list)):
-        warnings.warn("Argument fill should be either int, float, tuple or list")
+    if fill is not None and not isinstance(fill, (numbers.Number, Sequence)):
+        warnings.warn("Argument fill should be a number or sequence")
 
     # Check fill
     num_channels = _get_image_num_channels(img)
-    if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
+    if isinstance(fill, Sequence) and (len(fill) > 1 and len(fill) != num_channels):
         msg = ("The number of elements in 'fill' cannot broadcast to match the number of "
                "channels of the image ({} != {})")
         raise ValueError(msg.format(len(fill), num_channels))
@@ -608,7 +609,7 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        len_fill = len(fill) if isinstance(fill, (tuple, list)) else 1
+        len_fill = len(fill) if isinstance(fill, Sequence) else 1
         fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
         if mode == 'nearest':
             mask = mask < 0.5

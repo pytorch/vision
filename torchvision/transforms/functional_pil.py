@@ -125,7 +125,7 @@ def pad(img, padding, fill=0, padding_mode="constant"):
     if not _is_pil_image(img):
         raise TypeError("img should be PIL Image. Got {}".format(type(img)))
 
-    if not isinstance(padding, (numbers.Number, tuple, list)):
+    if not isinstance(padding, (numbers.Number, Sequence)):
         raise TypeError("Got inappropriate padding arg")
     if not isinstance(fill, (numbers.Number, str, tuple)):
         raise TypeError("Got inappropriate fill arg")
@@ -244,9 +244,9 @@ def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
     num_bands = len(img.getbands())
     if fill is None:
         fill = 0
-    if isinstance(fill, (int, float)) and num_bands > 1:
+    if isinstance(fill, numbers.Number) and num_bands > 1:
         fill = tuple([fill] * num_bands)
-    if isinstance(fill, (list, tuple)):
+    if isinstance(fill, Sequence):
         if len(fill) != num_bands:
             msg = ("The number of elements in 'fill' does not match the number of "
                    "bands of the image ({} != {})")

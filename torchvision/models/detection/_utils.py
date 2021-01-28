@@ -2,7 +2,7 @@ import math
 
 import torch
 from torch import Tensor
-from typing import List, Tuple
+from typing import Sequence, List, Tuple
 
 from torchvision.ops.misc import FrozenBatchNorm2d
 
@@ -166,7 +166,7 @@ class BoxCoder(object):
 
     def decode(self, rel_codes, boxes):
         # type: (Tensor, List[Tensor]) -> Tensor
-        assert isinstance(boxes, (list, tuple))
+        assert isinstance(boxes, Sequence)
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)

@@ -2,7 +2,7 @@
 import torch
 from torch import nn, Tensor
 
-from typing import List, Optional, Dict
+from typing import Sequence, List, Optional, Dict
 from .image_list import ImageList
 
 
@@ -39,10 +39,10 @@ class AnchorGenerator(nn.Module):
     ):
         super(AnchorGenerator, self).__init__()
 
-        if not isinstance(sizes[0], (list, tuple)):
+        if not isinstance(sizes[0], Sequence):
             # TODO change this
             sizes = tuple((s,) for s in sizes)
-        if not isinstance(aspect_ratios[0], (list, tuple)):
+        if not isinstance(aspect_ratios[0], Sequence):
             aspect_ratios = (aspect_ratios,) * len(sizes)
 
         assert len(sizes) == len(aspect_ratios)
