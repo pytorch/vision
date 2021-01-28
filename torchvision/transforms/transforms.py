@@ -673,8 +673,8 @@ class RandomPerspective(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
-            image. If given a number, the value is used for all bands respectively.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
@@ -692,6 +692,12 @@ class RandomPerspective(torch.nn.Module):
 
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
         self.fill = fill
 
     def forward(self, img):
@@ -1175,8 +1181,8 @@ class RandomRotation(torch.nn.Module):
             Note that the expand flag assumes rotation around the center and no translation.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or number, optional): Pixel fill value for the area outside the rotated
-            image. If given a number, the value is used for all bands respectively.
+        fill (sequence or number): Pixel fill value for the area outside the rotated
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
@@ -1186,7 +1192,7 @@ class RandomRotation(torch.nn.Module):
     """
 
     def __init__(
-        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
+        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0, resample=None
     ):
         super().__init__()
         if resample is not None:
@@ -1212,6 +1218,12 @@ class RandomRotation(torch.nn.Module):
 
         self.resample = self.interpolation = interpolation
         self.expand = expand
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
         self.fill = fill
 
     @staticmethod
@@ -1280,8 +1292,8 @@ class RandomAffine(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
-            image. If given a number, the value is used for all bands respectively.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
@@ -1339,6 +1351,12 @@ class RandomAffine(torch.nn.Module):
             self.shear = shear
 
         self.resample = self.interpolation = interpolation
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
         self.fillcolor = self.fill = fill
 
     @staticmethod
