@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+7c8f660 )
+                  master (0.9.0a0+ef7ef06 )
                 </div>
               
             
@@ -985,8 +985,8 @@
 <span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.</span>
 <span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.</span>
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
-<span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
-<span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
+<span class="sd">        fill (sequence or number): Pixel fill value for the area outside the transformed</span>
+<span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1004,6 +1004,12 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">distortion_scale</span> <span class="o">=</span> <span class="n">distortion_scale</span>
+
+        <span class="k">if</span> <span class="n">fill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Fill should be either a sequence or a number.&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
 <div class="viewcode-block" id="RandomPerspective.forward"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomPerspective.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
@@ -1487,8 +1493,8 @@
 <span class="sd">            Note that the expand flag assumes rotation around the center and no translation.</span>
 <span class="sd">        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.</span>
 <span class="sd">            Default is the center of the image.</span>
-<span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the rotated</span>
-<span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
+<span class="sd">        fill (sequence or number): Pixel fill value for the area outside the rotated</span>
+<span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.2.0``.</span>
 <span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
 <span class="sd">            Please use the ``interpolation`` parameter instead.</span>
@@ -1498,7 +1504,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1524,6 +1530,12 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expand</span> <span class="o">=</span> <span class="n">expand</span>
+
+        <span class="k">if</span> <span class="n">fill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Fill should be either a sequence or a number.&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
 <div class="viewcode-block" id="RandomRotation.get_params"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomRotation.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
@@ -1592,8 +1604,8 @@
 <span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.</span>
 <span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.</span>
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
-<span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
-<span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
+<span class="sd">        fill (sequence or number): Pixel fill value for the area outside the transformed</span>
+<span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
 <span class="sd">        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.</span>
 <span class="sd">            Please use the ``fill`` parameter instead.</span>
@@ -1651,6 +1663,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">shear</span> <span class="o">=</span> <span class="n">shear</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">resample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
+
+        <span class="k">if</span> <span class="n">fill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Fill should be either a sequence or a number.&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">fillcolor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
 <div class="viewcode-block" id="RandomAffine.get_params"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.RandomAffine.get_params">[docs]</a>    <span class="nd">@staticmethod</span>

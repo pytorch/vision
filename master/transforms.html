@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+7c8f660 )
+                  master (0.9.0a0+ef7ef06 )
                 </div>
               
             
@@ -699,8 +699,8 @@ Will not apply shear by default.</li>
 <code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>.
 If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
 For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
-<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
-image. If given a number, the value is used for all bands respectively.
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em>) – Pixel fill value for the area outside the transformed
+image. Default is <code class="docutils literal notranslate"><span class="pre">0</span></code>. If given a number, the value is used for all bands respectively.
 If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
 <li><strong>fillcolor</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
 Please use the <code class="docutils literal notranslate"><span class="pre">fill</span></code> parameter instead.</li>
@@ -958,8 +958,8 @@ Default is 0.5.</li>
 <code class="xref py py-class docutils literal notranslate"><span class="pre">torchvision.transforms.InterpolationMode</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code>.
 If input is Tensor, only <code class="docutils literal notranslate"><span class="pre">InterpolationMode.NEAREST</span></code>, <code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> are supported.
 For backward compatibility integer values (e.g. <code class="docutils literal notranslate"><span class="pre">PIL.Image.NEAREST</span></code>) are still acceptable.</li>
-<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the transformed
-image. If given a number, the value is used for all bands respectively.
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em>) – Pixel fill value for the area outside the transformed
+image. Default is <code class="docutils literal notranslate"><span class="pre">0</span></code>. If given a number, the value is used for all bands respectively.
 If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.0.0</span></code>.</li>
 </ul>
 </td>
@@ -1090,7 +1090,7 @@ For backward compatibility integer values (e.g. <code class="docutils literal no
 
 <dl class="class">
 <dt id="torchvision.transforms.RandomRotation">
-<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomRotation</code><span class="sig-paren">(</span><em>degrees</em>, <em>interpolation=&lt;InterpolationMode.NEAREST: 'nearest'&gt;</em>, <em>expand=False</em>, <em>center=None</em>, <em>fill=None</em>, <em>resample=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomRotation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">RandomRotation</code><span class="sig-paren">(</span><em>degrees</em>, <em>interpolation=&lt;InterpolationMode.NEAREST: 'nearest'&gt;</em>, <em>expand=False</em>, <em>center=None</em>, <em>fill=0</em>, <em>resample=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.RandomRotation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotate the image by angle.
 If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
@@ -1112,8 +1112,8 @@ If false or omitted, make the output image the same size as the input image.
 Note that the expand flag assumes rotation around the center and no translation.</li>
 <li><strong>center</strong> (<em>sequence</em><em>, </em><em>optional</em>) – Optional center of rotation, (x, y). Origin is the upper left corner.
 Default is the center of the image.</li>
-<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em><em>, </em><em>optional</em>) – Pixel fill value for the area outside the rotated
-image. If given a number, the value is used for all bands respectively.
+<li><strong>fill</strong> (<em>sequence</em><em> or </em><em>number</em>) – Pixel fill value for the area outside the rotated
+image. Default is <code class="docutils literal notranslate"><span class="pre">0</span></code>. If given a number, the value is used for all bands respectively.
 If input is PIL Image, the options is only available for <code class="docutils literal notranslate"><span class="pre">Pillow&gt;=5.2.0</span></code>.</li>
 <li><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
 Please use the <code class="docutils literal notranslate"><span class="pre">interpolation</span></code> parameter instead.</li>
