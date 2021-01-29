@@ -263,6 +263,53 @@ MNASNet
 .. autofunction:: mnasnet1_0
 .. autofunction:: mnasnet1_3
 
+Quantized Models
+----------------
+
+The following architectures provide support for INT8 quantized models. You can get
+a model with random weights by calling its constructor:
+
+.. code:: python
+
+    import torchvision.models as models
+    googlenet = models.quantization.googlenet()
+    inception_v3 = models.quantization.inception_v3()
+    mobilenet_v2 = models.quantization.mobilenet_v2()
+    mobilenet_v3_large = models.quantization.mobilenet_v3_large()
+    mobilenet_v3_small = models.quantization.mobilenet_v3_small()
+    resnet18 = models.quantization.resnet18()
+    resnet50 = models.quantization.resnet50()
+    resnext101_32x8d = models.quantization.resnext101_32x8d()
+    shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
+    shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
+    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
+    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
+
+Obtaining a pre-trained quantized model can be done with a few lines of code:
+
+.. code:: python
+
+    import torchvision.models as models
+    model = models.quantization.mobilenet_v2(pretrained=True, quantize=True)
+    model.eval()
+    # run the model with quantized inputs and weights
+    out = model(torch.rand(1, 3, 224, 224))
+
+We provide pre-trained quantized weights for the following models:
+
+================================  =============  =============
+Model                             Acc@1          Acc@5
+================================  =============  =============
+MobileNet V2                      71.658         90.150
+MobileNet V3 Large                TODO           TODO
+ShuffleNet V2                     68.360         87.582
+ResNet 18                         69.494         88.882
+ResNet 50                         75.920         92.814
+ResNext 101 32x8d                 78.986         94.480
+Inception V3                      77.176         93.354
+GoogleNet                         69.826         89.404
+================================  =============  =============
+
 
 Semantic Segmentation
 =====================
