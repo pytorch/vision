@@ -153,7 +153,7 @@ def draw_bounding_boxes(
 
     Args:
         image (Tensor): Tensor of shape (C x H x W)
-        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
