@@ -69,6 +69,7 @@ def _segm_model(name, backbone_name, num_classes, aux, pretrained_backbone=True)
 def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss, **kwargs):
     if pretrained:
         aux_loss = True
+        kwargs["pretrained_backbone"] = False
     model = _segm_model(arch_type, backbone, num_classes, aux_loss, **kwargs)
     if pretrained:
         _load_weights(model, arch_type, backbone, progress)
