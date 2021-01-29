@@ -120,6 +120,16 @@ jobs:
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
 
+  docstring_parameters_sync:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user pydocstyle
+            pydocstyle
+
   clang_format:
     docker:
       - image: circleci/python:3.7
@@ -1167,6 +1177,7 @@ workflows:
           - build_docs
       - python_lint
       - python_type_check
+      - docstring_parameters_sync
       - clang_format
       - torchhub_test
       - torch_onnx_test
@@ -1283,6 +1294,7 @@ workflows:
       - circleci_consistency
       - python_lint
       - python_type_check
+      - docstring_parameters_sync
       - clang_format
       - torchhub_test
       - torch_onnx_test

@@ -153,8 +153,8 @@ def deeplabv3_resnet101(pretrained=False, progress=True,
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
+        num_classes (int): The number of classes
+        aux_loss (bool): If True, include an auxiliary classifier
     """
     return _load_model('deeplabv3', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
 
