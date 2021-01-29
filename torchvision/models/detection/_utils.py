@@ -86,6 +86,7 @@ def encode_boxes(reference_boxes, proposals, weights):
     Args:
         reference_boxes (Tensor): reference boxes
         proposals (Tensor): boxes to be encoded
+        weights (Tensor[4]): the weights for ``(x, y, w, h)``
     """
 
     # perform some unpacking to make it JIT-fusion friendly
