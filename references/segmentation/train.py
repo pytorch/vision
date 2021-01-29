@@ -8,7 +8,7 @@ from torch import nn
 import torchvision
 
 from coco_utils import get_coco
-import transforms as T
+import presets
 import utils
 
 
@@ -30,18 +30,7 @@ def get_transform(train):
     base_size = 520
     crop_size = 480
 
-    min_size = int((0.5 if train else 1.0) * base_size)
-    max_size = int((2.0 if train else 1.0) * base_size)
-    transforms = []
-    transforms.append(T.RandomResize(min_size, max_size))
-    if train:
-        transforms.append(T.RandomHorizontalFlip(0.5))
-        transforms.append(T.RandomCrop(crop_size))
-    transforms.append(T.ToTensor())
-    transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406],
-                                  std=[0.229, 0.224, 0.225]))
-
-    return T.Compose(transforms)
+    return presets.SegmentationPresetTrain(base_size, crop_size) if train else presets.SegmentationPresetEval(base_size)
 
 
 def criterion(inputs, target):
