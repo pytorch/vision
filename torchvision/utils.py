@@ -115,7 +115,6 @@ def make_grid(
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
-    normalize: bool = False,
     format: Optional[str] = None,
     **kwargs
 ) -> None:
@@ -125,14 +124,12 @@ def save_image(
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
             saves the tensor as a grid of images by calling ``make_grid``.
         fp (string or file object): A filename or a file object
-        normalize (bool, optional): If True, shift the image to the range (0, 1),
-            by the min and max values specified by :attr:`range`. Default: ``False``.
         format(Optional):  If omitted, the format to use is determined from the filename extension.
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
 
-    grid = make_grid(tensor, normalize=normalize, **kwargs)
+    grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
