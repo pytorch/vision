@@ -70,6 +70,45 @@ class Tester(unittest.TestCase):
         self.assertGreater(sum2, sum1,
                            "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
 
+    def test_center_crop_2(self):
+        """ Tests when center crop size is larger than image size, along any dimension"""
+        even_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
+        odd_image_size = (even_image_size[0] + 1, even_image_size[1] + 1)
+        input_image_sizes = [even_image_size, even_image_size, odd_image_size, odd_image_size]
+
+        even_crop_size = (even_image_size[0] + 2 * random.randint(5, 10),
+                          even_image_size[1] + 2 * random.randint(5, 10))
+        odd_crop_size = (odd_image_size[0] + 2 * random.randint(5, 10) + 1,
+                         odd_image_size[1] + 2 * random.randint(5, 10) + 1)
+        crop_sizes = [even_crop_size, odd_crop_size, even_crop_size, odd_crop_size]
+
+        for input_image_size, crop_size in zip(input_image_sizes, crop_sizes):
+            img = torch.ones(3, *input_image_size)
+
+            # Test both transforms, one with PIL input and one with tensor
+            output_pil = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.CenterCrop(crop_size),
+                transforms.ToTensor()],
+            )(img)
+            self.assertEqual(output_pil.size()[1:3], crop_size,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
+            output_tensor = transforms.CenterCrop(crop_size)(img)
+            self.assertEqual(output_tensor.size()[1:3], crop_size,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
+            # Ensure output for PIL and Tensor are equal
+            self.assertEqual((output_tensor - output_pil).sum(), 0,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
+            # Check if content in center of cropped output is original image.
+            top = (crop_size[0] - input_image_size[0]) // 2
+            left = (crop_size[1] - input_image_size[1]) // 2
+            cropped_output = output_pil[:, top:top + input_image_size[0], left:left + input_image_size[1]]
+            self.assertEqual((cropped_output - img).sum(), 0,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
     def test_five_crop(self):
         to_pil_image = transforms.ToPILImage()
         h = random.randint(5, 25)
