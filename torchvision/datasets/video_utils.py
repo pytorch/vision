@@ -229,6 +229,7 @@ class VideoClips(object):
         Args:
             num_frames (int): number of frames for the clip
             step (int): distance between two clips
+            frame_rate (int, optional): The frame rate
         """
         self.num_frames = num_frames
         self.step = step
