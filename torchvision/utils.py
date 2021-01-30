@@ -200,7 +200,7 @@ def draw_bounding_boxes(
             elif isinstance(color, str):
                 # This will automatically raise Error if rgb cannot be parsed.
                 fill_color = ImageColor.getrgb(color) + (100,)
-            elif isinstance(color, Tuple):
+            elif isinstance(color, tuple):
                 fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
         else:
