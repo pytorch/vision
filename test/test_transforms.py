@@ -29,7 +29,7 @@ GRACE_HOPPER = get_file_path_2(
 
 class Tester(unittest.TestCase):
 
-    def test_crop(self):
+    def test_center_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
         oheight = random.randint(5, (height - 2) / 2) * 2
