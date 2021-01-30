@@ -4,8 +4,7 @@ import torch
 import math
 import warnings
 import numpy as np
-from PIL import Image, ImageDraw
-from PIL import ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageColor
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
 
@@ -152,7 +151,7 @@ def draw_bounding_boxes(
     """
     Draws bounding boxes on given image.
     The values of the input image should be uint8 between 0 and 255.
-    If filled Resulting Tensor should be saved as PNG image.
+    If filled, Resulting Tensor should be saved as PNG image.
 
     Args:
         image (Tensor): Tensor of shape (C x H x W)
@@ -162,8 +161,7 @@ def draw_bounding_boxes(
         labels (List[str]): List containing the labels of bounding boxes.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
-        fill (bool): If true fills the bounding box with specified color
-            The colors can be represented as `str` or `Tuple[int, int, int, int]`.
+        fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
@@ -192,9 +190,19 @@ def draw_bounding_boxes(
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     for i, bbox in enumerate(img_boxes):
-        color = None if colors is None else colors[i]
+        if colors is None:
+            color = None
+        else:
+            color = colors[i]
+
         if fill:
-            fill_color = color + [100]
+            if color is None:
+                fill_color = (255, 255, 255, 100)
+            elif isinstance(color, str):
+                # This will automatically raise Error if rgb cannot be parsed.
+                fill_color = ImageColor.getrgb(color) + (100,)
+            elif isinstance(color, Tuple):
+                fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
         else:
             draw.rectangle(bbox, width=width, outline=color)
