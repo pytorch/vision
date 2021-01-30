@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+ef7ef06 )
+                  master (0.9.0a0+081f354 )
                 </div>
               
             
@@ -381,6 +381,7 @@
 <span class="k">def</span> <span class="nf">_load_model</span><span class="p">(</span><span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="n">aux_loss</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">_segm_model</span><span class="p">(</span><span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="n">_load_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">arch_type</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">progress</span><span class="p">)</span>
@@ -464,8 +465,8 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which</span>
 <span class="sd">            contains the same classes as Pascal VOC</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
-<span class="sd">        num_classes (int): number of output classes of the model (including the background)</span>
-<span class="sd">        aux_loss (bool): If True, it uses an auxiliary loss</span>
+<span class="sd">        num_classes (int): The number of classes</span>
+<span class="sd">        aux_loss (bool): If True, include an auxiliary classifier</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_load_model</span><span class="p">(</span><span class="s1">&#39;deeplabv3&#39;</span><span class="p">,</span> <span class="s1">&#39;resnet101&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">aux_loss</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 

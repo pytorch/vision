@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+ef7ef06 )
+                  master (0.9.0a0+081f354 )
                 </div>
               
             
@@ -427,7 +427,6 @@
 <span class="k">def</span> <span class="nf">save_image</span><span class="p">(</span>
     <span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">fp</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Text</span><span class="p">,</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">BinaryIO</span><span class="p">],</span>
-    <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -466,7 +465,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        image (Tensor): Tensor of shape (C x H x W)</span>
-<span class="sd">        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that</span>
+<span class="sd">        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that</span>
 <span class="sd">            the boxes are absolute coordinates with respect to the image. In other words: `0 &lt;= xmin &lt; xmax &lt; W` and</span>
 <span class="sd">            `0 &lt;= ymin &lt; ymax &lt; H`.</span>
 <span class="sd">        labels (List[str]): List containing the labels of bounding boxes.</span>

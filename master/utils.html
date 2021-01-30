@@ -192,7 +192,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+ef7ef06 )
+                  master (0.9.0a0+081f354 )
                 </div>
               
             
@@ -345,7 +345,7 @@ images separately rather than the (min, max) over all images. Default: <code cla
 
 <dl class="function">
 <dt id="torchvision.utils.save_image">
-<code class="descclassname">torchvision.utils.</code><code class="descname">save_image</code><span class="sig-paren">(</span><em>tensor: Union[torch.Tensor, List[torch.Tensor]], fp: Union[str, pathlib.Path, BinaryIO], normalize: bool = False, format: Union[str, NoneType] = None, **kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/utils.html#save_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.save_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.utils.</code><code class="descname">save_image</code><span class="sig-paren">(</span><em>tensor: Union[torch.Tensor, List[torch.Tensor]], fp: Union[str, pathlib.Path, BinaryIO], format: Union[str, NoneType] = None, **kwargs</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/utils.html#save_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.save_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a given Tensor into an image file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -376,7 +376,7 @@ The values of the input image should be uint8 between 0 and 255.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>image</strong> (<em>Tensor</em>) – Tensor of shape (C x H x W)</li>
-<li><strong>bboxes</strong> (<em>Tensor</em>) – Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+<li><strong>boxes</strong> (<em>Tensor</em>) – Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
 the boxes are absolute coordinates with respect to the image. In other words: <cite>0 &lt;= xmin &lt; xmax &lt; W</cite> and
 <cite>0 &lt;= ymin &lt; ymax &lt; H</cite>.</li>
 <li><strong>labels</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – List containing the labels of bounding boxes.</li>
