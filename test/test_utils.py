@@ -96,6 +96,21 @@ class Tester(unittest.TestCase):
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         self.assertTrue(torch.equal(result, expected))
 
+    def test_draw_segmentation_masks(self):
+        img = torch.full((3, 20, 20), 255, dtype=torch.uint8)
+        colors = ["green", "#FF00FF", (0, 255, 0), "red"]
+        labels = ["a", "b", "c", "d"]
+        boxes = torch.tensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20]])
+        result = utils.draw_segmentation_masks(img, boxes, labels=labels, colors=colors)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_segm_masks_util.png")
+        if not os.path.exists(path):
+            res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+            res.save(path)
+
+        expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+        self.assertTrue(torch.equal(result, expected))
+
 
 if __name__ == '__main__':
     unittest.main()

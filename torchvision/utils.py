@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from PIL import ImageFont
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks"]
 
 
 @torch.no_grad()
@@ -187,5 +187,58 @@ def draw_bounding_boxes(
 
         if labels is not None:
             draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
+
+
+@torch.no_grad()
+def draw_segmentation_masks(
+    image: torch.Tensor,
+    masks: torch.Tensor,
+    labels: Optional[List[str]] = None,
+    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    font: Optional[str] = None,
+    font_size: int = 10
+) -> torch.Tensor:
+
+    """
+    Draws segmentation masks on given image.
+    The values of the input image should be uint8 between 0 and 255.
+
+    Args:
+        image (Tensor): Tensor of shape (C x H x W)
+        masks (Tensor): Tensor of shape (H, W). Each containing predicted class.
+        labels (List[str]): List containing the labels of masks.
+        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
+            be represented as `str` or `Tuple[int, int, int]`.
+        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
+            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
+            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
+        font_size (int): The requested font size in points.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"Tensor expected, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+
+    ndarr = image.permute(1, 2, 0).numpy()
+    img_to_draw = Image.fromarray(ndarr)
+
+    img_preds = masks.to(torch.int64).tolist()
+
+    draw = ImageDraw.Draw(img_to_draw)
+    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
+
+    for i in range(len(img_preds)):
+        for j in range(len(img_preds)):
+            draw.point((i, j), fill=colors[img_preds[i][j]])
+
+    if labels is not None:
+        # Should we plot the text ?
+        # draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+        pass
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
