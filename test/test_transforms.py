@@ -1,3 +1,4 @@
+import itertools
 import os
 import torch
 import torchvision.transforms as transforms
@@ -74,16 +75,18 @@ class Tester(unittest.TestCase):
         """ Tests when center crop size is larger than image size, along any dimension"""
         even_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
         odd_image_size = (even_image_size[0] + 1, even_image_size[1] + 1)
-        input_image_sizes = [even_image_size, even_image_size, odd_image_size, odd_image_size]
 
-        even_crop_size = (even_image_size[0] + 2 * random.randint(5, 10),
-                          even_image_size[1] + 2 * random.randint(5, 10))
-        odd_crop_size = (odd_image_size[0] + 2 * random.randint(5, 10),
-                         odd_image_size[1] + 2 * random.randint(5, 10))
-        crop_sizes = [even_crop_size, odd_crop_size, even_crop_size, odd_crop_size]
+        # Since height is independent of width, we can ignore images with odd height and even width and vice-versa.
+        input_image_sizes = [even_image_size, odd_image_size]
 
-        for input_image_size, crop_size in zip(input_image_sizes, crop_sizes):
+        # Get different crop sizes
+        delta = random.choice((1, 3, 5))
+        crop_size_delta = [-2 * delta, -delta, 0, delta, 2 * delta]
+        crop_size_params = itertools.product(input_image_sizes, crop_size_delta, crop_size_delta)
+
+        for (input_image_size, delta_height, delta_width) in crop_size_params:
             img = torch.ones(3, *input_image_size)
+            crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
 
             # Test both transforms, one with PIL input and one with tensor
             output_pil = transforms.Compose([
@@ -102,11 +105,28 @@ class Tester(unittest.TestCase):
             self.assertEqual((output_tensor - output_pil).sum(), 0,
                              "image_size: {} crop_size: {}".format(input_image_size, crop_size))
 
-            # Check if content in center of cropped output is original image.
-            top = (crop_size[0] - input_image_size[0]) // 2
-            left = (crop_size[1] - input_image_size[1]) // 2
-            cropped_output = output_pil[:, top:top + input_image_size[0], left:left + input_image_size[1]]
-            self.assertEqual((cropped_output - img).sum(), 0,
+            # Check if content in center of both image and cropped output is same.
+            center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
+            crop_center_tl, input_center_tl = [0, 0], [0, 0]
+            for index in range(2):
+                if crop_size[index] > input_image_size[index]:
+                    crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
+                else:
+                    input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
+
+            output_center = output_pil[
+                :,
+                crop_center_tl[0]:crop_center_tl[0] + center_size[0],
+                crop_center_tl[1]:crop_center_tl[1] + center_size[1]
+            ]
+
+            img_center = img[
+                :,
+                input_center_tl[0]:input_center_tl[0] + center_size[0],
+                input_center_tl[1]:input_center_tl[1] + center_size[1]
+            ]
+
+            self.assertEqual((output_center - img_center).sum(), 0,
                              "image_size: {} crop_size: {}".format(input_image_size, crop_size))
 
     def test_five_crop(self):
