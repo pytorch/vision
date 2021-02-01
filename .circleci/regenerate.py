@@ -43,6 +43,10 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                             btype, os_type, python_version, cu_version,
                             unicode, prefix, upload, filter_branch=fb)
 
+    if not filter_branch:
+        # Build on every pull request, but upload only on nightly and tags
+        w += build_doc_job(None)
+        w += upload_doc_job('nightly')
     return indent(indentation, w)
 
 
@@ -63,6 +67,31 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
             w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
+
+
+def build_doc_job(filter_branch):
+    job = {
+        "name": "build_docs",
+        "python_version": "3.7",
+        "requires": ["binary_linux_wheel_py3.7_cpu", ],
+    }
+
+    if filter_branch:
+        job["filters"] = gen_filter_branch_tree(filter_branch)
+    return [{"build_docs": job}]
+
+
+def upload_doc_job(filter_branch):
+    job = {
+        "name": "upload_docs",
+        "context": "org-member",
+        "python_version": "3.7",
+        "requires": ["build_docs", ],
+    }
+
+    if filter_branch:
+        job["filters"] = gen_filter_branch_tree(filter_branch)
+    return [{"upload_docs": job}]
 
 
 manylinux_images = {
