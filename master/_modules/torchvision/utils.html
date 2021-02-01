@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+fb89010 )
+                  master (0.9.0a0+5db25f1 )
                 </div>
               
             
@@ -316,8 +316,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">ImageFont</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span><span class="p">,</span> <span class="n">ImageFont</span><span class="p">,</span> <span class="n">ImageColor</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;make_grid&quot;</span><span class="p">,</span> <span class="s2">&quot;save_image&quot;</span><span class="p">,</span> <span class="s2">&quot;draw_bounding_boxes&quot;</span><span class="p">]</span>
 
@@ -454,6 +453,7 @@
     <span class="n">boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">colors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">font</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">font_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
@@ -462,6 +462,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Draws bounding boxes on given image.</span>
 <span class="sd">    The values of the input image should be uint8 between 0 and 255.</span>
+<span class="sd">    If filled, Resulting Tensor should be saved as PNG image.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        image (Tensor): Tensor of shape (C x H x W)</span>
@@ -471,6 +472,7 @@
 <span class="sd">        labels (List[str]): List containing the labels of bounding boxes.</span>
 <span class="sd">        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can</span>
 <span class="sd">            be represented as `str` or `Tuple[int, int, int]`.</span>
+<span class="sd">        fill (bool): If `True` fills the bounding box with specified color.</span>
 <span class="sd">        width (int): Width of bounding box.</span>
 <span class="sd">        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may</span>
 <span class="sd">            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,</span>
@@ -490,12 +492,31 @@
 
     <span class="n">img_boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-    <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">,</span> <span class="s2">&quot;RGBA&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
+
     <span class="n">txt_font</span> <span class="o">=</span> <span class="n">ImageFont</span><span class="o">.</span><span class="n">load_default</span><span class="p">()</span> <span class="k">if</span> <span class="n">font</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ImageFont</span><span class="o">.</span><span class="n">truetype</span><span class="p">(</span><span class="n">font</span><span class="o">=</span><span class="n">font</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">font_size</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bbox</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">img_boxes</span><span class="p">):</span>
-        <span class="n">color</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">colors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">colors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">fill_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="c1"># This will automatically raise Error if rgb cannot be parsed.</span>
+                <span class="n">fill_color</span> <span class="o">=</span> <span class="n">ImageColor</span><span class="o">.</span><span class="n">getrgb</span><span class="p">(</span><span class="n">color</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">100</span><span class="p">,)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">fill_color</span> <span class="o">=</span> <span class="n">color</span> <span class="o">+</span> <span class="p">(</span><span class="mi">100</span><span class="p">,)</span>
+            <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill_color</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">draw</span><span class="o">.</span><span class="n">text</span><span class="p">((</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="n">txt_font</span><span class="p">)</span>

@@ -192,7 +192,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+fb89010 )
+                  master (0.9.0a0+5db25f1 )
                 </div>
               
             
@@ -367,9 +367,10 @@ If a file object was used instead of a filename, this parameter should always be
 
 <dl class="function">
 <dt id="torchvision.utils.draw_bounding_boxes">
-<code class="descclassname">torchvision.utils.</code><code class="descname">draw_bounding_boxes</code><span class="sig-paren">(</span><em>image: torch.Tensor, boxes: torch.Tensor, labels: Union[List[str], NoneType] = None, colors: Union[List[Union[str, Tuple[int, int, int]]], NoneType] = None, width: int = 1, font: Union[str, NoneType] = None, font_size: int = 10</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#draw_bounding_boxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.draw_bounding_boxes" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchvision.utils.</code><code class="descname">draw_bounding_boxes</code><span class="sig-paren">(</span><em>image: torch.Tensor, boxes: torch.Tensor, labels: Union[List[str], NoneType] = None, colors: Union[List[Union[str, Tuple[int, int, int]]], NoneType] = None, fill: Union[bool, NoneType] = False, width: int = 1, font: Union[str, NoneType] = None, font_size: int = 10</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#draw_bounding_boxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.draw_bounding_boxes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws bounding boxes on given image.
-The values of the input image should be uint8 between 0 and 255.</p>
+The values of the input image should be uint8 between 0 and 255.
+If filled, Resulting Tensor should be saved as PNG image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -382,6 +383,7 @@ the boxes are absolute coordinates with respect to the image. In other words: <c
 <li><strong>labels</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>]</em>) – List containing the labels of bounding boxes.</li>
 <li><strong>colors</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – List containing the colors of bounding boxes. The colors can
 be represented as <cite>str</cite> or <cite>Tuple[int, int, int]</cite>.</li>
+<li><strong>fill</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If <cite>True</cite> fills the bounding box with specified color.</li>
 <li><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Width of bounding box.</li>
 <li><strong>font</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – A filename containing a TrueType font. If the file is not found in this filename, the loader may
 also search in other directories, such as the <cite>fonts/</cite> directory on Windows or <cite>/Library/Fonts/</cite>,
