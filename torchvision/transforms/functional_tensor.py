@@ -918,10 +918,12 @@ def equalize(img: Tensor) -> Tensor:
     # luts (lookup tables) is a ...xCx265 tensor
 
     img = img.to(torch.int64)
+    num_channels = img.shape[-3]
     if img.ndim == 3:
-        return _remap_single_image(img, luts)
-    else:  # more than one image
-        imgs = img
-        return torch.stack([
-            _remap_single_image(img, luts) for (img, luts) in zip(imgs, luts)
-        ])
+        idx_channels = torch.arange(0, num_channels, device=img.device)[:, None, None]
+        return luts[idx_channels, img].to(torch.uint8)
+    else:
+        batch_size = img.shape[0]
+        idx_batch = torch.arange(0, batch_size, device=img.device)[:, None, None, None]
+        idx_channels = torch.arange(0, num_channels, device=img.device)[None, :, None, None]
+        return luts[idx_batch, idx_channels, img].to(torch.uint8)
