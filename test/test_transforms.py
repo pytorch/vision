@@ -78,8 +78,8 @@ class Tester(unittest.TestCase):
 
         even_crop_size = (even_image_size[0] + 2 * random.randint(5, 10),
                           even_image_size[1] + 2 * random.randint(5, 10))
-        odd_crop_size = (odd_image_size[0] + 2 * random.randint(5, 10) + 1,
-                         odd_image_size[1] + 2 * random.randint(5, 10) + 1)
+        odd_crop_size = (odd_image_size[0] + 2 * random.randint(5, 10),
+                         odd_image_size[1] + 2 * random.randint(5, 10))
         crop_sizes = [even_crop_size, odd_crop_size, even_crop_size, odd_crop_size]
 
         for input_image_size, crop_size in zip(input_image_sizes, crop_sizes):
