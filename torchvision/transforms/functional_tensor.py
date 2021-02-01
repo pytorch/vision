@@ -904,10 +904,10 @@ def equalize(img: Tensor) -> Tensor:
 
     # img is a ...xCxHxW tensor
     # temp is a ...xCxHxWx256 tensor
-    temp =  img[..., None] == torch.arange(0, 256, dtype=torch.uint8, device=img.device)
+    temp = img[..., None] == torch.arange(0, 256, dtype=torch.uint8, device=img.device)
     height_dim, width_dim = -3, -2
     hist = temp.sum(dim=[height_dim, width_dim])
-    
+
     step = (hist.sum(dim=-1) - hist[..., -1]) // 255
     step = step[..., None]
     if (step == 0).all():
