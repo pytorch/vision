@@ -221,6 +221,18 @@ def qmnist():
     )
 
 
+def omniglot():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.Omniglot(".", background=background, download=True),
+                name=f"Omniglot, {'background' if background else 'evaluation'}",
+            )
+            for background in (True, False)
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -246,6 +258,7 @@ def make_parametrize_kwargs(download_configs):
             kmnist(),
             emnist(),
             qmnist(),
+            omniglot(),
         )
     )
 )
