@@ -239,6 +239,7 @@ def loadRes(self, resFile):
     """
     Load result file and return a result api object.
     Args:
+        self (obj): coco object with ground truth annotations
         resFile (str): file name of result file
     Returns:
     res (obj): result api object

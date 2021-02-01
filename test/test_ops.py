@@ -549,7 +549,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         out_channels = 2
         kernel_size = (3, 2)
         groups = 2
-        tol = 1e-3 if dtype is torch.half else 1e-5
+        tol = 2e-3 if dtype is torch.half else 1e-5
 
         layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
                                  dilation=dilation, groups=groups).to(device=x.device, dtype=dtype)
@@ -651,7 +651,6 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_autocast(self):
-        set_rng_seed(0)
         for dtype in (torch.float, torch.half):
             with torch.cuda.amp.autocast():
                 self._test_forward(torch.device("cuda"), False, dtype=dtype)
