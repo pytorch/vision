@@ -208,6 +208,19 @@ def emnist():
     return collect_download_configs(lambda: datasets.EMNIST(".", split="byclass", download=True), name="EMNIST")
 
 
+def qmnist():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.QMNIST(".", what=what, download=True),
+                name=f"QMNIST, {what}",
+                download_url_location=".mnist",
+            )
+            for what in ("train", "test", "nist")
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -232,6 +245,7 @@ def make_parametrize_kwargs(download_configs):
             fashion_mnist(),
             kmnist(),
             emnist(),
+            qmnist(),
         )
     )
 )
