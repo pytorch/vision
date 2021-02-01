@@ -885,12 +885,6 @@ def autocontrast(img: Tensor) -> Tensor:
     return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 
 
-def _remap_single_image(img, luts):
-    return torch.stack([
-        channel_values[channel_indices] for (channel_values, channel_indices) in zip(luts, img)
-    ]).to(torch.uint8)
-
-
 def equalize(img: Tensor) -> Tensor:
 
     _assert_image_tensor(img)
