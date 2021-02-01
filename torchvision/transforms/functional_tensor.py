@@ -885,22 +885,10 @@ def autocontrast(img: Tensor) -> Tensor:
     return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 
 
-def _scale_channel(img_chan):
-    hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
-
-    nonzero_hist = hist[hist != 0]
-    step = nonzero_hist[:-1].sum() // 255
-    if step == 0:
-        return img_chan
-
-    lut = (torch.cumsum(hist, 0) + (step // 2)) // step
-    lut = torch.nn.functional.pad(lut, [1, 0])[:-1].clamp(0, 255)
-
-    return lut[img_chan.to(torch.int64)].to(torch.uint8)
-
-
-def _equalize_single_image(img: Tensor) -> Tensor:
-    return torch.stack([_scale_channel(img[c]) for c in range(img.size(0))])
+def _remap_single_image(img, luts):
+    return torch.stack([
+        channel_values[channel_indices] for (channel_values, channel_indices) in zip(luts, img)
+    ]).to(torch.uint8)
 
 
 def equalize(img: Tensor) -> Tensor:
@@ -914,7 +902,26 @@ def equalize(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    if img.ndim == 3:
-        return _equalize_single_image(img)
+    # img is a ...xCxHxW tensor
+    # temp is a ...xCxHxWx256 tensor
+    temp =  img[..., None] == torch.arange(0, 256, dtype=torch.uint8, device=img.device)
+    height_dim, width_dim = -3, -2
+    hist = temp.sum(dim=[height_dim, width_dim])
+    
+    step = (hist.sum(dim=-1) - hist[..., -1]) // 255
+    step = step[..., None]
+    if (step == 0).all():
+        return img
 
-    return torch.stack([_equalize_single_image(x) for x in img])
+    luts = (torch.cumsum(hist, dim=-1) + (step // 2)) // step
+    luts = torch.nn.functional.pad(luts, [1, 0])[..., :-1].clamp(0, 255)
+    # luts (lookup tables) is a ...xCx265 tensor
+
+    img = img.to(torch.int64)
+    if img.ndim == 3:
+        return _remap_single_image(img, luts)
+    else:  # more than one image
+        imgs = img
+        return torch.stack([
+            _remap_single_image(img, luts) for (img, luts) in zip(imgs, luts)
+        ])
