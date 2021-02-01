@@ -246,6 +246,14 @@ def phototour():
     )
 
 
+def sbdataset():
+    return collect_download_configs(
+        lambda: datasets.SBDataset(".", download=True),
+        name=f"SBDataset",
+        download_url_location=".voc",
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -273,6 +281,7 @@ def make_parametrize_kwargs(download_configs):
             qmnist(),
             omniglot(),
             phototour(),
+            sbdataset(),
         )
     )
 )
