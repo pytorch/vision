@@ -290,6 +290,19 @@ def svhn():
     )
 
 
+def usps():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.USPS(".", train=train, download=True),
+                name=f"USPS, {'train' if train else 'test'}",
+                download_url_location=".usps",
+            )
+            for train in (True, False)
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -322,6 +335,7 @@ def make_parametrize_kwargs(download_configs):
             semeion(),
             stl10(),
             svhn(),
+            usps(),
         )
     )
 )
