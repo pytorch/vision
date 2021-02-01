@@ -254,6 +254,14 @@ def sbdataset():
     )
 
 
+def sbu():
+    return collect_download_configs(
+        lambda: datasets.SBU(".", download=True),
+        name=f"SBU",
+        download_url_location=".sbu",
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -282,6 +290,7 @@ def make_parametrize_kwargs(download_configs):
             omniglot(),
             phototour(),
             sbdataset(),
+            sbu(),
         )
     )
 )
