@@ -203,6 +203,11 @@ def kmnist():
     return collect_download_configs(lambda: datasets.KMNIST(".", download=True), name="KMNIST")
 
 
+def emnist():
+    # the 'split' argument can be any valid one, since everything is downloaded anyway
+    return collect_download_configs(lambda: datasets.EMNIST(".", split="byclass", download=True), name="EMNIST")
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -226,6 +231,7 @@ def make_parametrize_kwargs(download_configs):
             mnist(),
             fashion_mnist(),
             kmnist(),
+            emnist(),
         )
     )
 )
