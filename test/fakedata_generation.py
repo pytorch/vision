@@ -21,7 +21,7 @@ def mnist_root(num_images, cls_name):
         return torch.tensor(v, dtype=torch.int32).numpy().tobytes()[::-1]
 
     def _make_image_file(filename, num_images):
-        img = torch.randint(0, 255, size=(28 * 28 * num_images,), dtype=torch.uint8)
+        img = torch.randint(0, 256, size=(28 * 28 * num_images,), dtype=torch.uint8)
         with open(filename, "wb") as f:
             f.write(_encode(2051))  # magic header
             f.write(_encode(num_images))
@@ -167,6 +167,73 @@ def imagenet_root():
         _make_train_archive(root)
         _make_val_archive(root)
         _make_devkit_archive(root)
+
+        yield root
+
+
+@contextlib.contextmanager
+def widerface_root():
+    """
+    Generates a dataset with the following folder structure and returns the path root:
+    <root>
+        └── widerface
+            ├── wider_face_split
+            ├── WIDER_train
+            ├── WIDER_val
+            └── WIDER_test
+
+    The dataset consist of
+      1 image for each dataset split (train, val, test) and annotation files
+      for each split
+    """
+
+    def _make_image(file):
+        PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
+
+    def _make_train_archive(root):
+        extracted_dir = os.path.join(root, 'WIDER_train', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_1.jpg'))
+
+    def _make_val_archive(root):
+        extracted_dir = os.path.join(root, 'WIDER_val', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_2.jpg'))
+
+    def _make_test_archive(root):
+        extracted_dir = os.path.join(root, 'WIDER_test', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_3.jpg'))
+
+    def _make_annotations_archive(root):
+        train_bbox_contents = '0--Parade/0_Parade_marchingband_1_1.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n'
+        val_bbox_contents = '0--Parade/0_Parade_marchingband_1_2.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n'
+        test_filelist_contents = '0--Parade/0_Parade_marchingband_1_3.jpg\n'
+        extracted_dir = os.path.join(root, 'wider_face_split')
+        os.mkdir(extracted_dir)
+
+        # bbox training file
+        bbox_file = os.path.join(extracted_dir, "wider_face_train_bbx_gt.txt")
+        with open(bbox_file, "w") as txt_file:
+            txt_file.write(train_bbox_contents)
+
+        # bbox validation file
+        bbox_file = os.path.join(extracted_dir, "wider_face_val_bbx_gt.txt")
+        with open(bbox_file, "w") as txt_file:
+            txt_file.write(val_bbox_contents)
+
+        # test filelist file
+        filelist_file = os.path.join(extracted_dir, "wider_face_test_filelist.txt")
+        with open(filelist_file, "w") as txt_file:
+            txt_file.write(test_filelist_contents)
+
+    with get_tmp_dir() as root:
+        root_base = os.path.join(root, "widerface")
+        os.mkdir(root_base)
+        _make_train_archive(root_base)
+        _make_val_archive(root_base)
+        _make_test_archive(root_base)
+        _make_annotations_archive(root_base)
 
         yield root
 

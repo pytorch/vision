@@ -1,9 +1,8 @@
 from collections import namedtuple
 import warnings
 import torch
-import torch.nn as nn
+from torch import nn, Tensor
 import torch.nn.functional as F
-from torch import Tensor
 from .utils import load_state_dict_from_url
 from typing import Callable, Any, Optional, Tuple, List
 
@@ -17,7 +16,7 @@ model_urls = {
 }
 
 InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
-InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Optional[torch.Tensor]}
+InceptionOutputs.__annotations__ = {'logits': Tensor, 'aux_logits': Optional[Tensor]}
 
 # Script annotations failed with _GoogleNetOutputs = namedtuple ...
 # _InceptionOutputs set here for backwards compat
@@ -171,7 +170,7 @@ class Inception3(nn.Module):
         # N x 768 x 17 x 17
         x = self.Mixed_6e(x)
         # N x 768 x 17 x 17
-        aux = torch.jit.annotate(Optional[Tensor], None)
+        aux: Optional[Tensor] = None
         if self.AuxLogits is not None:
             if self.training:
                 aux = self.AuxLogits(x)

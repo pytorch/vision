@@ -20,10 +20,24 @@ You must modify the following flags:
 
 Except otherwise noted, all models have been trained on 8x V100 GPUs. 
 
-### Faster R-CNN
+### Faster R-CNN ResNet-50 FPN
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco --model fasterrcnn_resnet50_fpn --epochs 26\
+    --lr-steps 16 22 --aspect-ratio-group-factor 3
+```
+
+### Faster R-CNN MobileNetV3-Large FPN
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --dataset coco --model fasterrcnn_mobilenet_v3_large_fpn --epochs 26\
+    --lr-steps 16 22 --aspect-ratio-group-factor 3
+```
+
+### Faster R-CNN MobileNetV3-Large 320 FPN
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --dataset coco --model fasterrcnn_mobilenet_v3_large_320_fpn --epochs 26\
     --lr-steps 16 22 --aspect-ratio-group-factor 3
 ```
 

@@ -51,28 +51,33 @@ class VideoReader:
     Example:
         The following examples creates a :mod:`VideoReader` object, seeks into 2s
         point, and returns a single frame::
-                import torchvision
-                video_path = "path_to_a_test_video"
 
-                reader = torchvision.io.VideoReader(video_path, "video")
-                reader.seek(2.0)
-                frame = next(reader)
+            import torchvision
+            video_path = "path_to_a_test_video"
+            reader = torchvision.io.VideoReader(video_path, "video")
+            reader.seek(2.0)
+            frame = next(reader)
 
         :mod:`VideoReader` implements the iterable API, which makes it suitable to
         using it in conjunction with :mod:`itertools` for more advanced reading.
         As such, we can use a :mod:`VideoReader` instance inside for loops::
+
             reader.seek(2)
             for frame in reader:
                 frames.append(frame['data'])
             # additionally, `seek` implements a fluent API, so we can do
             for frame in reader.seek(2):
                 frames.append(frame['data'])
+
         With :mod:`itertools`, we can read all frames between 2 and 5 seconds with the
         following code::
+
             for frame in itertools.takewhile(lambda x: x['pts'] <= 5, reader.seek(2)):
                 frames.append(frame['data'])
+
         and similarly, reading 10 frames after the 2s timestamp can be achieved
         as follows::
+
             for frame in itertools.islice(reader.seek(2), 10):
                 frames.append(frame['data'])
 

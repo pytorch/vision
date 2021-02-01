@@ -27,3 +27,4 @@ gen.yml
 .idea/
 *.orig
 *-checkpoint.ipynb
+*.venv

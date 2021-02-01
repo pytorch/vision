@@ -53,6 +53,16 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
      --lr-step-size 1 --lr-gamma 0.98
 ```
 
+
+### MobileNetV3 Large
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+     --model mobilenet_v3_large --epochs 600 --opt rmsprop --batch-size 128 --lr 0.064\ 
+     --wd 0.00001 --lr-step-size 2 --lr-gamma 0.973 --auto-augment imagenet --random-erase 0.2
+```
+
+Then we averaged the parameters of the last 3 checkpoints that improved the Acc@1. See [#3182](https://github.com/pytorch/vision/pull/3182) for details.
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).
 
@@ -114,22 +124,9 @@ Training converges at about 10 epochs.
 For post training quant, device is set to CPU. For training, the device is set to CUDA
 
 ### Command to evaluate quantized models using the pre-trained weights:
-For all quantized models except inception_v3:
+For all quantized models:
 ```
 python references/classification/train_quantization.py  --data-path='imagenet_full_size/' \
     --device='cpu' --test-only --backend='fbgemm' --model='<model_name>'
-```
-
-For inception_v3, since it expects tensors with a size of N x 3 x 299 x 299, before running above command,
-need to change the input size of dataset_test in train.py to:
-```
-dataset_test = torchvision.datasets.ImageFolder(
-    valdir,
-    transforms.Compose([
-        transforms.Resize(342),
-        transforms.CenterCrop(299),
-        transforms.ToTensor(),
-        normalize,
-    ]))
 ```
 

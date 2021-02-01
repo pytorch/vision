@@ -1,4 +1,3 @@
-import glob
 import os
 
 from .utils import list_dir
@@ -36,10 +35,12 @@ class UCF101(VisionDataset):
             and returns a transformed version.
 
     Returns:
-        video (Tensor[T, H, W, C]): the `T` video frames
-        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        label (int): class of the video clip
+        tuple: A 3-tuple with the following entries:
+
+            - video (Tensor[T, H, W, C]): the `T` video frames
+            -  audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+               and `L` is the number of points
+            - label (int): class of the video clip
     """
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
@@ -71,14 +72,17 @@ class UCF101(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
         )
-        self.video_clips_metadata = video_clips.metadata
+        # we bookkeep the full version of video clips because we want to be able
+        # to return the meta data of full version rather than the subset version of
+        # video clips
+        self.full_video_clips = video_clips
         self.indices = self._select_fold(video_list, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
 
     @property
     def metadata(self):
-        return self.video_clips_metadata
+        return self.full_video_clips.metadata
 
     def _select_fold(self, video_list, annotation_path, fold, train):
         name = "train" if train else "test"

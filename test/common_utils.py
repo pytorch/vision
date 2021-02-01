@@ -9,6 +9,7 @@ import io
 import torch
 import warnings
 import __main__
+import random
 
 from numbers import Number
 from torch._six import string_classes
@@ -30,9 +31,14 @@ def get_tmp_dir(src=None, **kwargs):
         shutil.rmtree(tmp_dir)
 
 
+def set_rng_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
+
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
-# TEST_WITH_SLOW = True  # TODO: Delete this line once there is a PYTORCH_TEST_WITH_SLOW aware CI job
 
 
 parser = argparse.ArgumentParser(add_help=False)
@@ -332,13 +338,13 @@ def freeze_rng_state():
 class TransformsTester(unittest.TestCase):
 
     def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
+        tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
         return tensor, pil_img
 
     def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
         batch_tensor = torch.randint(
-            0, 255,
+            0, 256,
             (num_samples, channels, height, width),
             dtype=torch.uint8,
             device=device
