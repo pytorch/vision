@@ -277,6 +277,19 @@ def stl10():
     )
 
 
+def svhn():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.SVHN(".", split=split, download=True),
+                name=f"SVHN, {split}",
+                download_url_location=".svhn",
+            )
+            for split in ("train", "test", "extra")
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -308,6 +321,7 @@ def make_parametrize_kwargs(download_configs):
             sbu(),
             semeion(),
             stl10(),
+            svhn(),
         )
     )
 )
