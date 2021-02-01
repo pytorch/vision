@@ -233,6 +233,19 @@ def omniglot():
     )
 
 
+def phototour():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.PhotoTour(".", name=name, download=True),
+                name=f"PhotoTour, {name}",
+                download_url_location=".phototour",
+            )
+            for name in ("notredame_harris", "yosemite_harris", "liberty_harris", "notredame", "yosemite", "liberty")
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -259,6 +272,7 @@ def make_parametrize_kwargs(download_configs):
             emnist(),
             qmnist(),
             omniglot(),
+            phototour(),
         )
     )
 )
