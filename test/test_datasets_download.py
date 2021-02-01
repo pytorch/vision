@@ -270,6 +270,13 @@ def semeion():
     )
 
 
+def stl10():
+    return collect_download_configs(
+        lambda: datasets.STL10(".", download=True),
+        name=f"STL10",
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -300,6 +307,7 @@ def make_parametrize_kwargs(download_configs):
             sbdataset(),
             sbu(),
             semeion(),
+            stl10(),
         )
     )
 )
