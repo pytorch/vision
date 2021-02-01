@@ -262,6 +262,14 @@ def sbu():
     )
 
 
+def semeion():
+    return collect_download_configs(
+        lambda: datasets.SEMEION(".", download=True),
+        name=f"SEMEION",
+        download_url_location=".semeion",
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -291,6 +299,7 @@ def make_parametrize_kwargs(download_configs):
             phototour(),
             sbdataset(),
             sbu(),
+            semeion(),
         )
     )
 )
