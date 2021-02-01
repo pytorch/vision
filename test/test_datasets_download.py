@@ -175,7 +175,7 @@ def cifar10():
 
 
 def cifar100():
-    return collect_download_configs(lambda: datasets.CIFAR10(".", download=True), name="CIFAR100")
+    return collect_download_configs(lambda: datasets.CIFAR100(".", download=True), name="CIFAR100")
 
 
 def voc():
