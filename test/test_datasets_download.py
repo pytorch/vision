@@ -4,7 +4,7 @@ import time
 import unittest.mock
 from datetime import datetime
 from os import path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 
@@ -113,6 +113,8 @@ def retry(fn, times=1, wait=5.0):
 def assert_server_response_ok():
     try:
         yield
+    except URLError as error:
+        raise AssertionError(f"The request timed out.") from error
     except HTTPError as error:
         raise AssertionError(f"The server returned {error.code}: {error.reason}.") from error
 
@@ -120,14 +122,14 @@ def assert_server_response_ok():
 def assert_url_is_accessible(url):
     request = Request(url, headers=dict(method="HEAD"))
     with assert_server_response_ok():
-        urlopen(request)
+        urlopen(request, timeout=5.0)
 
 
 def assert_file_downloads_correctly(url, md5):
     with get_tmp_dir() as root:
         file = path.join(root, path.basename(url))
         with assert_server_response_ok():
-            with urlopen(url) as response, open(file, "wb") as fh:
+            with urlopen(url, timeout=5.0) as response, open(file, "wb") as fh:
                 fh.write(response.read())
 
         assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
