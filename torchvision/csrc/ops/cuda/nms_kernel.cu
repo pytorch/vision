@@ -101,11 +101,7 @@ at::Tensor nms_kernel(
       " and ",
       scores.size(0))
 
-#if defined(WITH_CUDA) || defined(WITH_HIP)
   at::cuda::CUDAGuard device_guard(dets.device());
-#else
-  TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
 
   if (dets.numel() == 0) {
     return at::empty({0}, dets.options().dtype(at::kLong));

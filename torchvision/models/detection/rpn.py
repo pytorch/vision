@@ -141,7 +141,7 @@ class RegionProposalNetwork(torch.nn.Module):
                  fg_iou_thresh, bg_iou_thresh,
                  batch_size_per_image, positive_fraction,
                  #
-                 pre_nms_top_n, post_nms_top_n, nms_thresh):
+                 pre_nms_top_n, post_nms_top_n, nms_thresh, score_thresh=0.0):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
@@ -163,6 +163,7 @@ class RegionProposalNetwork(torch.nn.Module):
         self._pre_nms_top_n = pre_nms_top_n
         self._post_nms_top_n = post_nms_top_n
         self.nms_thresh = nms_thresh
+        self.score_thresh = score_thresh
         self.min_size = 1e-3
 
     def pre_nms_top_n(self):
@@ -251,17 +252,29 @@ class RegionProposalNetwork(torch.nn.Module):
         levels = levels[batch_idx, top_n_idx]
         proposals = proposals[batch_idx, top_n_idx]
 
+        objectness_prob = torch.sigmoid(objectness)
+
         final_boxes = []
         final_scores = []
-        for boxes, scores, lvl, img_shape in zip(proposals, objectness, levels, image_shapes):
+        for boxes, scores, lvl, img_shape in zip(proposals, objectness_prob, levels, image_shapes):
             boxes = box_ops.clip_boxes_to_image(boxes, img_shape)
+
+            # remove small boxes
             keep = box_ops.remove_small_boxes(boxes, self.min_size)
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
+            # remove low scoring boxes
+            # use >= for Backwards compatibility
+            keep = torch.where(scores >= self.score_thresh)[0]
+            boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
             # non-maximum suppression, independently done per level
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh)
+
             # keep only topk scoring predictions
             keep = keep[:self.post_nms_top_n()]
             boxes, scores = boxes[keep], scores[keep]
+
             final_boxes.append(boxes)
             final_scores.append(scores)
         return final_boxes, final_scores

@@ -41,8 +41,6 @@ class SEMEION(VisionDataset):
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
 
-        self.data = []
-        self.labels = []
         fp = os.path.join(self.root, self.filename)
         data = np.loadtxt(fp)
         # convert value to 8 bit unsigned integer

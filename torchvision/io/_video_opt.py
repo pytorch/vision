@@ -181,64 +181,50 @@ def _read_video_from_file(
     Reads a video from a file, returning both the video frames as well as
     the audio frames
 
-    Args
-    ----------
-    filename : str
-        path to the video file
-    seek_frame_margin: double, optional
-        seeking frame in the stream is imprecise. Thus, when video_start_pts
-        is specified, we seek the pts earlier by seek_frame_margin seconds
-    read_video_stream: int, optional
-        whether read video stream. If yes, set to 1. Otherwise, 0
-    video_width/video_height/video_min_dimension/video_max_dimension: int
-        together decide the size of decoded frames
-        - When video_width = 0, video_height = 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the original frame resolution
-        - When video_width = 0, video_height = 0, video_min_dimension != 0,
-            and video_max_dimension = 0, keep the aspect ratio and resize the
-            frame so that shorter edge size is video_min_dimension
-        - When video_width = 0, video_height = 0, video_min_dimension = 0,
-            and video_max_dimension != 0, keep the aspect ratio and resize
-            the frame so that longer edge size is video_max_dimension
-        - When video_width = 0, video_height = 0, video_min_dimension != 0,
-            and video_max_dimension != 0, resize the frame so that shorter
-            edge size is video_min_dimension, and longer edge size is
-            video_max_dimension. The aspect ratio may not be preserved
-        - When video_width = 0, video_height != 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the aspect ratio and resize
-            the frame so that frame video_height is $video_height
-        - When video_width != 0, video_height == 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the aspect ratio and resize
-            the frame so that frame video_width is $video_width
-        - When video_width != 0, video_height != 0, video_min_dimension = 0,
-            and video_max_dimension = 0, resize the frame so that frame
-            video_width and  video_height are set to $video_width and
-            $video_height, respectively
-    video_pts_range : list(int), optional
-        the start and end presentation timestamp of video stream
-    video_timebase: Fraction, optional
-        a Fraction rational number which denotes timebase in video stream
-    read_audio_stream: int, optional
-        whether read audio stream. If yes, set to 1. Otherwise, 0
-    audio_samples: int, optional
-        audio sampling rate
-    audio_channels: int optional
-        audio channels
-    audio_pts_range : list(int), optional
-        the start and end presentation timestamp of audio stream
-    audio_timebase: Fraction, optional
-        a Fraction rational number which denotes time base in audio stream
+    Args:
+    filename (str): path to the video file
+    seek_frame_margin (double, optional): seeking frame in the stream is imprecise. Thus,
+        when video_start_pts is specified, we seek the pts earlier by seek_frame_margin seconds
+    read_video_stream (int, optional): whether read video stream. If yes, set to 1. Otherwise, 0
+    video_width/video_height/video_min_dimension/video_max_dimension (int): together decide
+        the size of decoded frames:
+
+            - When video_width = 0, video_height = 0, video_min_dimension = 0,
+                and video_max_dimension = 0, keep the original frame resolution
+            - When video_width = 0, video_height = 0, video_min_dimension != 0,
+                and video_max_dimension = 0, keep the aspect ratio and resize the
+                frame so that shorter edge size is video_min_dimension
+            - When video_width = 0, video_height = 0, video_min_dimension = 0,
+                and video_max_dimension != 0, keep the aspect ratio and resize
+                the frame so that longer edge size is video_max_dimension
+            - When video_width = 0, video_height = 0, video_min_dimension != 0,
+                and video_max_dimension != 0, resize the frame so that shorter
+                edge size is video_min_dimension, and longer edge size is
+                video_max_dimension. The aspect ratio may not be preserved
+            - When video_width = 0, video_height != 0, video_min_dimension = 0,
+                and video_max_dimension = 0, keep the aspect ratio and resize
+                the frame so that frame video_height is $video_height
+            - When video_width != 0, video_height == 0, video_min_dimension = 0,
+                and video_max_dimension = 0, keep the aspect ratio and resize
+                the frame so that frame video_width is $video_width
+            - When video_width != 0, video_height != 0, video_min_dimension = 0,
+                and video_max_dimension = 0, resize the frame so that frame
+                video_width and  video_height are set to $video_width and
+                $video_height, respectively
+    video_pts_range (list(int), optional): the start and end presentation timestamp of video stream
+    video_timebase (Fraction, optional): a Fraction rational number which denotes timebase in video stream
+    read_audio_stream (int, optional): whether read audio stream. If yes, set to 1. Otherwise, 0
+    audio_samples (int, optional): audio sampling rate
+    audio_channels (int optional): audio channels
+    audio_pts_range (list(int), optional): the start and end presentation timestamp of audio stream
+    audio_timebase (Fraction, optional): a Fraction rational number which denotes time base in audio stream
 
     Returns
-    -------
-    vframes : Tensor[T, H, W, C]
-        the `T` video frames
-    aframes : Tensor[L, K]
-        the audio frames, where `L` is the number of points and
+        vframes (Tensor[T, H, W, C]): the `T` video frames
+        aframes (Tensor[L, K]): the audio frames, where `L` is the number of points and
             `K` is the number of audio_channels
-    info : Dict
-        metadata for the video and audio. Can contain the fields video_fps (float)
-        and audio_fps (int)
+        info (Dict): metadata for the video and audio. Can contain the fields video_fps (float)
+            and audio_fps (int)
     """
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
@@ -303,7 +289,7 @@ def _read_video_timestamps_from_file(filename):
         1,  # audio_timebase_den
     )
     _vframes, vframe_pts, vtimebase, vfps, vduration, \
-        _aframes, aframe_pts, atimebase, asample_rate, aduration = (result)
+        _aframes, aframe_pts, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
@@ -345,60 +331,50 @@ def _read_video_from_memory(
     the audio frames
     This function is torchscriptable.
 
-    Args
-    ----------
-    video_data : data type could be 1) torch.Tensor, dtype=torch.int8 or 2) python bytes
+    Args:
+    video_data (data type could be 1) torch.Tensor, dtype=torch.int8 or 2) python bytes):
         compressed video content stored in either 1) torch.Tensor 2) python bytes
-    seek_frame_margin: double, optional
-        seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
-        we seek the pts earlier by seek_frame_margin seconds
-    read_video_stream: int, optional
-        whether read video stream. If yes, set to 1. Otherwise, 0
-    video_width/video_height/video_min_dimension/video_max_dimension: int
-        together decide the size of decoded frames
-        - When video_width = 0, video_height = 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the original frame resolution
-        - When video_width = 0, video_height = 0, video_min_dimension != 0,
-            and video_max_dimension = 0, keep the aspect ratio and resize the
-            frame so that shorter edge size is video_min_dimension
-        - When video_width = 0, video_height = 0, video_min_dimension = 0,
-            and video_max_dimension != 0, keep the aspect ratio and resize
-            the frame so that longer edge size is video_max_dimension
-        - When video_width = 0, video_height = 0, video_min_dimension != 0,
-            and video_max_dimension != 0, resize the frame so that shorter
-            edge size is video_min_dimension, and longer edge size is
-            video_max_dimension. The aspect ratio may not be preserved
-        - When video_width = 0, video_height != 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the aspect ratio and resize
-            the frame so that frame video_height is $video_height
-        - When video_width != 0, video_height == 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the aspect ratio and resize
-            the frame so that frame video_width is $video_width
-        - When video_width != 0, video_height != 0, video_min_dimension = 0,
-            and video_max_dimension = 0, resize the frame so that frame
-            video_width and  video_height are set to $video_width and
-            $video_height, respectively
-    video_pts_range : list(int), optional
-        the start and end presentation timestamp of video stream
-    video_timebase_numerator / video_timebase_denominator: optional
-        a rational number which denotes timebase in video stream
-    read_audio_stream: int, optional
-        whether read audio stream. If yes, set to 1. Otherwise, 0
-    audio_samples: int, optional
-        audio sampling rate
-    audio_channels: int optional
-        audio audio_channels
-    audio_pts_range : list(int), optional
-        the start and end presentation timestamp of audio stream
-    audio_timebase_numerator / audio_timebase_denominator: optional
+    seek_frame_margin (double, optional): seeking frame in the stream is imprecise.
+        Thus, when video_start_pts is specified, we seek the pts earlier by seek_frame_margin seconds
+    read_video_stream (int, optional): whether read video stream. If yes, set to 1. Otherwise, 0
+    video_width/video_height/video_min_dimension/video_max_dimension (int): together decide
+        the size of decoded frames:
+
+            - When video_width = 0, video_height = 0, video_min_dimension = 0,
+                and video_max_dimension = 0, keep the original frame resolution
+            - When video_width = 0, video_height = 0, video_min_dimension != 0,
+                and video_max_dimension = 0, keep the aspect ratio and resize the
+                frame so that shorter edge size is video_min_dimension
+            - When video_width = 0, video_height = 0, video_min_dimension = 0,
+                and video_max_dimension != 0, keep the aspect ratio and resize
+                the frame so that longer edge size is video_max_dimension
+            - When video_width = 0, video_height = 0, video_min_dimension != 0,
+                and video_max_dimension != 0, resize the frame so that shorter
+                edge size is video_min_dimension, and longer edge size is
+                video_max_dimension. The aspect ratio may not be preserved
+            - When video_width = 0, video_height != 0, video_min_dimension = 0,
+                and video_max_dimension = 0, keep the aspect ratio and resize
+                the frame so that frame video_height is $video_height
+            - When video_width != 0, video_height == 0, video_min_dimension = 0,
+                and video_max_dimension = 0, keep the aspect ratio and resize
+                the frame so that frame video_width is $video_width
+            - When video_width != 0, video_height != 0, video_min_dimension = 0,
+                and video_max_dimension = 0, resize the frame so that frame
+                video_width and  video_height are set to $video_width and
+                $video_height, respectively
+    video_pts_range (list(int), optional): the start and end presentation timestamp of video stream
+    video_timebase_numerator / video_timebase_denominator (float, optional): a rational
+        number which denotes timebase in video stream
+    read_audio_stream (int, optional): whether read audio stream. If yes, set to 1. Otherwise, 0
+    audio_samples (int, optional): audio sampling rate
+    audio_channels (int optional): audio audio_channels
+    audio_pts_range (list(int), optional): the start and end presentation timestamp of audio stream
+    audio_timebase_numerator / audio_timebase_denominator (float, optional):
         a rational number which denotes time base in audio stream
 
-    Returns
-    -------
-    vframes : Tensor[T, H, W, C]
-        the `T` video frames
-    aframes : Tensor[L, K]
-        the audio frames, where `L` is the number of points and
+    Returns:
+        vframes (Tensor[T, H, W, C]): the `T` video frames
+        aframes (Tensor[L, K]): the audio frames, where `L` is the number of points and
             `K` is the number of channels
     """
 

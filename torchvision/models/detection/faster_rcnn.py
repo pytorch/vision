@@ -1,10 +1,7 @@
-from collections import OrderedDict
-
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
@@ -15,11 +12,12 @@ from .generalized_rcnn import GeneralizedRCNN
 from .rpn import RPNHead, RegionProposalNetwork
 from .roi_heads import RoIHeads
 from .transform import GeneralizedRCNNTransform
-from .backbone_utils import resnet_fpn_backbone, _validate_resnet_trainable_layers
+from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mobilenet_backbone
 
 
 __all__ = [
-    "FasterRCNN", "fasterrcnn_resnet50_fpn",
+    "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_320_fpn",
+    "fasterrcnn_mobilenet_v3_large_fpn"
 ]
 
 
@@ -79,6 +77,8 @@ class FasterRCNN(GeneralizedRCNN):
             for computing the loss
         rpn_positive_fraction (float): proportion of positive anchors in a mini-batch during training
             of the RPN
+        rpn_score_thresh (float): during inference, only return proposals with a classification score
+            greater than rpn_score_thresh
         box_roi_pool (MultiScaleRoIAlign): the module which crops and resizes the feature maps in
             the locations indicated by the bounding boxes
         box_head (nn.Module): module that takes the cropped feature maps as input
@@ -153,6 +153,7 @@ class FasterRCNN(GeneralizedRCNN):
                  rpn_nms_thresh=0.7,
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
                  rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
+                 rpn_score_thresh=0.0,
                  # Box parameters
                  box_roi_pool=None, box_head=None, box_predictor=None,
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
@@ -197,7 +198,8 @@ class FasterRCNN(GeneralizedRCNN):
             rpn_anchor_generator, rpn_head,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
-            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
+            score_thresh=rpn_score_thresh)
 
         if box_roi_pool is None:
             box_roi_pool = MultiScaleRoIAlign(
@@ -287,6 +289,10 @@ class FastRCNNPredictor(nn.Module):
 model_urls = {
     'fasterrcnn_resnet50_fpn_coco':
         'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
+    'fasterrcnn_mobilenet_v3_large_320_fpn_coco':
+        'https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth',
+    'fasterrcnn_mobilenet_v3_large_fpn_coco':
+        'https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth'
 }
 
 
@@ -302,6 +308,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
+
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
           between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
@@ -312,6 +319,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows:
+
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
           between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the predicted labels for each image
@@ -344,14 +352,13 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
-    # check default parameters and by default set it to 3 if possible
-    trainable_backbone_layers = _validate_resnet_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers)
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
 
     if pretrained:
         # no need to download the backbone if pretrained is set
@@ -364,3 +371,94 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         model.load_state_dict(state_dict)
         overwrite_eps(model, 0.0)
     return model
+
+
+def _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=False, progress=True, num_classes=91,
+                                       pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
+
+    if pretrained:
+        pretrained_backbone = False
+    backbone = mobilenet_backbone("mobilenet_v3_large", pretrained_backbone, True,
+                                  trainable_layers=trainable_backbone_layers)
+
+    anchor_sizes = ((32, 64, 128, 256, 512, ), ) * 3
+    aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+
+    model = FasterRCNN(backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
+                       **kwargs)
+    if pretrained:
+        if model_urls.get(weights_name, None) is None:
+            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
+        model.load_state_dict(state_dict)
+    return model
+
+
+def fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
+                                          trainable_backbone_layers=None, **kwargs):
+    """
+    Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
+    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
+
+    Example::
+
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> predictions = model(x)
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+    """
+    weights_name = "fasterrcnn_mobilenet_v3_large_320_fpn_coco"
+    defaults = {
+        "min_size": 320,
+        "max_size": 640,
+        "rpn_pre_nms_top_n_test": 150,
+        "rpn_post_nms_top_n_test": 150,
+        "rpn_score_thresh": 0.05,
+    }
+
+    kwargs = {**defaults, **kwargs}
+    return _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=pretrained, progress=progress,
+                                              num_classes=num_classes, pretrained_backbone=pretrained_backbone,
+                                              trainable_backbone_layers=trainable_backbone_layers, **kwargs)
+
+
+def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
+                                      trainable_backbone_layers=None, **kwargs):
+    """
+    Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
+
+    Example::
+
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> predictions = model(x)
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+    """
+    weights_name = "fasterrcnn_mobilenet_v3_large_fpn_coco"
+    defaults = {
+        "rpn_score_thresh": 0.05,
+    }
+
+    kwargs = {**defaults, **kwargs}
+    return _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=pretrained, progress=progress,
+                                              num_classes=num_classes, pretrained_backbone=pretrained_backbone,
+                                              trainable_backbone_layers=trainable_backbone_layers, **kwargs)

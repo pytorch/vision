@@ -1,3 +1,4 @@
+import itertools
 import os
 import torch
 import torchvision.transforms as transforms
@@ -29,7 +30,7 @@ GRACE_HOPPER = get_file_path_2(
 
 class Tester(unittest.TestCase):
 
-    def test_crop(self):
+    def test_center_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
         oheight = random.randint(5, (height - 2) / 2) * 2
@@ -69,6 +70,64 @@ class Tester(unittest.TestCase):
                            "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
         self.assertGreater(sum2, sum1,
                            "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
+
+    def test_center_crop_2(self):
+        """ Tests when center crop size is larger than image size, along any dimension"""
+        even_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
+        odd_image_size = (even_image_size[0] + 1, even_image_size[1] + 1)
+
+        # Since height is independent of width, we can ignore images with odd height and even width and vice-versa.
+        input_image_sizes = [even_image_size, odd_image_size]
+
+        # Get different crop sizes
+        delta = random.choice((1, 3, 5))
+        crop_size_delta = [-2 * delta, -delta, 0, delta, 2 * delta]
+        crop_size_params = itertools.product(input_image_sizes, crop_size_delta, crop_size_delta)
+
+        for (input_image_size, delta_height, delta_width) in crop_size_params:
+            img = torch.ones(3, *input_image_size)
+            crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
+
+            # Test both transforms, one with PIL input and one with tensor
+            output_pil = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.CenterCrop(crop_size),
+                transforms.ToTensor()],
+            )(img)
+            self.assertEqual(output_pil.size()[1:3], crop_size,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
+            output_tensor = transforms.CenterCrop(crop_size)(img)
+            self.assertEqual(output_tensor.size()[1:3], crop_size,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
+            # Ensure output for PIL and Tensor are equal
+            self.assertEqual((output_tensor - output_pil).sum(), 0,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
+
+            # Check if content in center of both image and cropped output is same.
+            center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
+            crop_center_tl, input_center_tl = [0, 0], [0, 0]
+            for index in range(2):
+                if crop_size[index] > input_image_size[index]:
+                    crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
+                else:
+                    input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
+
+            output_center = output_pil[
+                :,
+                crop_center_tl[0]:crop_center_tl[0] + center_size[0],
+                crop_center_tl[1]:crop_center_tl[1] + center_size[1]
+            ]
+
+            img_center = img[
+                :,
+                input_center_tl[0]:input_center_tl[0] + center_size[0],
+                input_center_tl[1]:input_center_tl[1] + center_size[1]
+            ]
+
+            self.assertEqual((output_center - img_center).sum(), 0,
+                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
 
     def test_five_crop(self):
         to_pil_image = transforms.ToPILImage()
@@ -180,6 +239,14 @@ class Tester(unittest.TestCase):
                                torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
 
     def test_randomperspective_fill(self):
+
+        # assert fill being either a Sequence or a Number
+        with self.assertRaises(TypeError):
+            transforms.RandomPerspective(fill={})
+
+        t = transforms.RandomPerspective(fill=None)
+        self.assertTrue(t.fill == 0)
+
         height = 100
         width = 100
         img = torch.ones(3, height, width)
@@ -1531,6 +1598,13 @@ class Tester(unittest.TestCase):
             transforms.RandomRotation([-0.7])
             transforms.RandomRotation([-0.7, 0, 0.7])
 
+        # assert fill being either a Sequence or a Number
+        with self.assertRaises(TypeError):
+            transforms.RandomRotation(0, fill={})
+
+        t = transforms.RandomRotation(0, fill=None)
+        self.assertTrue(t.fill == 0)
+
         t = transforms.RandomRotation(10)
         angle = t.get_params(t.degrees)
         self.assertTrue(angle > -10 and angle < 10)
@@ -1572,6 +1646,13 @@ class Tester(unittest.TestCase):
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
+
+        # assert fill being either a Sequence or a Number
+        with self.assertRaises(TypeError):
+            transforms.RandomAffine(0, fill={})
+
+        t = transforms.RandomAffine(0, fill=None)
+        self.assertTrue(t.fill == 0)
 
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         img = F.to_pil_image(x)
