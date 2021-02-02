@@ -261,7 +261,7 @@ def phototour():
 def sbdataset():
     return collect_download_configs(
         lambda: datasets.SBDataset(".", download=True),
-        name=f"SBDataset",
+        name="SBDataset",
         file="voc",
     )
 
@@ -269,7 +269,7 @@ def sbdataset():
 def sbu():
     return collect_download_configs(
         lambda: datasets.SBU(".", download=True),
-        name=f"SBU",
+        name="SBU",
         file="sbu",
     )
 
@@ -277,7 +277,7 @@ def sbu():
 def semeion():
     return collect_download_configs(
         lambda: datasets.SEMEION(".", download=True),
-        name=f"SEMEION",
+        name="SEMEION",
         file="semeion",
     )
 
@@ -285,7 +285,7 @@ def semeion():
 def stl10():
     return collect_download_configs(
         lambda: datasets.STL10(".", download=True),
-        name=f"STL10",
+        name="STL10",
     )
 
 
@@ -318,7 +318,7 @@ def usps():
 def celeba():
     return collect_download_configs(
         lambda: datasets.CelebA(".", download=True),
-        name=f"CelebA",
+        name="CelebA",
         file="celeba",
     )
 
@@ -326,7 +326,7 @@ def celeba():
 def widerface():
     return collect_download_configs(
         lambda: datasets.WIDERFace(".", download=True),
-        name=f"WIDERFace",
+        name="WIDERFace",
         file="widerface",
     )
 
