@@ -239,8 +239,6 @@ def draw_segmentation_masks(
         raise ValueError("Pass individual images, not batches")
 
     img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize(image.size()[1:])
-    # ndarr = image.permute(1, 2, 0).numpy()
-    # img_to_draw = Image.fromarray(ndarr)
 
     if colors is None:
         palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
@@ -260,11 +258,6 @@ def draw_segmentation_masks(
                 color_list.append(color)
 
         color_arr = np.array(color_list).astype("uint8")
-        # print(color_list)
-        # print(color_arr)
 
     img_to_draw.putpalette(color_arr)
-    # print(img_to_draw)
-    # print(color_arr)
-    # return torch.from_numpy(np.array(img_to_draw))
     return torch.from_numpy(np.array(img_to_draw)).unsqueeze_(0).repeat(3, 1, 1)
