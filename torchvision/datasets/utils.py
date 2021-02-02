@@ -2,6 +2,7 @@ import os
 import os.path
 import hashlib
 import gzip
+import re
 import tarfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar
 import zipfile
@@ -57,8 +58,6 @@ def _get_redirect_url(url: str, max_hops: int = 10) -> str:
 
 
 def _get_google_drive_file_id(url: str) -> Optional[str]:
-    import re
-
     pattern = re.compile(
         '(?:(?:(?:http)s?://)?(?:(?:docs)|(?:drive))\\.(?:google)\\.(?:com))(?P<request>.*)',
         re.IGNORECASE
