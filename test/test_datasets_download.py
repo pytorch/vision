@@ -315,6 +315,14 @@ def usps():
     )
 
 
+def celeba():
+    return collect_download_configs(
+        lambda: datasets.CelebA(".", download=True),
+        name=f"CelebA",
+        file="celeba",
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -348,6 +356,7 @@ def make_parametrize_kwargs(download_configs):
             stl10(),
             svhn(),
             usps(),
+            celeba(),
         )
     )
 )
