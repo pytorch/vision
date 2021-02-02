@@ -114,7 +114,7 @@ def assert_server_response_ok():
     try:
         yield
     except URLError as error:
-        raise AssertionError(f"The request timed out.") from error
+        raise AssertionError("The request timed out.") from error
     except HTTPError as error:
         raise AssertionError(f"The server returned {error.code}: {error.reason}.") from error
 
