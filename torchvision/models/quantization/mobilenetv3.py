@@ -1,17 +1,18 @@
+import torch
 from torch import nn, Tensor
 from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.mobilenetv3 import InvertedResidual, InvertedResidualConfig, ConvBNActivation, MobileNetV3,\
     SqueezeExcitation, model_urls, _mobilenet_v3_conf
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
-from typing import Any, List
-from .utils import _replace_relu, quantize_model
+from typing import Any, List, Optional
+from .utils import _replace_relu
 
 
 __all__ = ['QuantizableMobileNetV3', 'mobilenet_v3_large', 'mobilenet_v3_small']
 
-# TODO: Add URLs
 quant_model_urls = {
-    'mobilenet_v3_large_qnnpack': None,
+    'mobilenet_v3_large_qnnpack':
+        "https://github.com/datumbox/torchvision-models/raw/main/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
     'mobilenet_v3_small_qnnpack': None,
 }
 
@@ -69,6 +70,18 @@ class QuantizableMobileNetV3(MobileNetV3):
                 m.fuse_model()
 
 
+def _load_weights(
+    arch: str,
+    model: QuantizableMobileNetV3,
+    model_url: Optional[str],
+    progress: bool,
+):
+    if model_url is None:
+        raise ValueError("No checkpoint is available for {}".format(arch))
+    state_dict = load_state_dict_from_url(model_url, progress=progress)
+    model.load_state_dict(state_dict)
+
+
 def _mobilenet_v3_model(
     arch: str,
     inverted_residual_setting: List[InvertedResidualConfig],
@@ -83,17 +96,18 @@ def _mobilenet_v3_model(
 
     if quantize:
         backend = 'qnnpack'
-        quantize_model(model, backend)
-        model_url = quant_model_urls.get(arch + '_' + backend, None)
-    else:
-        assert pretrained in [True, False]
-        model_url = model_urls.get(arch, None)
 
-    if pretrained:
-        if model_url is None:
-            raise ValueError("No checkpoint is available for {}".format(arch))
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-        model.load_state_dict(state_dict)
+        model.fuse_model()
+        model.qconfig = torch.quantization.get_default_qat_qconfig(backend)
+        torch.quantization.prepare_qat(model, inplace=True)
+
+        if pretrained:
+            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress)
+
+        torch.quantization.convert(model, inplace=True)
+    else:
+        if pretrained:
+            _load_weights(arch, model, model_urls.get(arch, None), progress)
 
     return model
 
