@@ -290,7 +290,8 @@ class Scale(Resize):
 class CenterCrop(torch.nn.Module):
     """Crops the given image at the center.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
