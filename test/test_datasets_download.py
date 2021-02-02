@@ -199,6 +199,10 @@ def fashion_mnist():
     return collect_download_configs(lambda: datasets.FashionMNIST(".", download=True), name="FashionMNIST")
 
 
+def kmnist():
+    return collect_download_configs(lambda: datasets.KMNIST(".", download=True), name="KMNIST")
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -221,6 +225,7 @@ def make_parametrize_kwargs(download_configs):
             # voc(),
             mnist(),
             fashion_mnist(),
+            kmnist(),
         )
     )
 )
