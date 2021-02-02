@@ -195,6 +195,10 @@ def mnist():
     return collect_download_configs(lambda: datasets.MNIST(".", download=True), name="MNIST")
 
 
+def fashion_mnist():
+    return collect_download_configs(lambda: datasets.FashionMNIST(".", download=True), name="FashionMNIST")
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -216,6 +220,7 @@ def make_parametrize_kwargs(download_configs):
             # The VOC download server is unstable. See https://github.com/pytorch/vision/issues/2953 for details.
             # voc(),
             mnist(),
+            fashion_mnist(),
         )
     )
 )
