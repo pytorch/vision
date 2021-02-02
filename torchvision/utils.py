@@ -238,7 +238,7 @@ def draw_segmentation_masks(
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
 
-    img_to_draw = Image.fromarray(masks.byte().cpu().numpy())
+    img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize(image.size()[1:])
     # ndarr = image.permute(1, 2, 0).numpy()
     # img_to_draw = Image.fromarray(ndarr)
 
