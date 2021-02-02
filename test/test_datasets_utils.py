@@ -102,7 +102,6 @@ class Tester(unittest.TestCase):
 
         mock.assert_called_once_with(id, root, filename, md5)
 
-
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_zip(self):
         with get_tmp_dir() as temp_dir:
