@@ -11,7 +11,7 @@ from urllib.request import urlopen, Request
 import pytest
 
 from torchvision import datasets
-from torchvision.datasets.utils import download_url, check_integrity
+from torchvision.datasets.utils import download_url, check_integrity, download_file_from_google_drive
 
 from common_utils import get_tmp_dir
 from fakedata_generation import places365_root
@@ -48,33 +48,45 @@ urlopen = limit_requests_per_time()(urlopen)
 @contextlib.contextmanager
 def log_download_attempts(
     urls_and_md5s=None,
+    file="utils",
     patch=True,
-    download_url_location=".utils",
-    patch_auxiliaries=None,
+    mock_auxiliaries=None,
 ):
+    def add_mock(stack, name, file, **kwargs):
+        try:
+            return stack.enter_context(unittest.mock.patch(f"torchvision.datasets.{file}.{name}", **kwargs))
+        except AttributeError as error:
+            if file != "utils":
+                return add_mock(stack, name, "utils", **kwargs)
+            else:
+                raise pytest.UsageError from error
+
     if urls_and_md5s is None:
         urls_and_md5s = set()
-    if download_url_location.startswith("."):
-        download_url_location = f"torchvision.datasets{download_url_location}"
-    if patch_auxiliaries is None:
-        patch_auxiliaries = patch
+    if mock_auxiliaries is None:
+        mock_auxiliaries = patch
 
     with contextlib.ExitStack() as stack:
-        download_url_mock = stack.enter_context(
-            unittest.mock.patch(
-                f"{download_url_location}.download_url",
-                wraps=None if patch else download_url,
-            )
+        url_mock = add_mock(stack, "download_url", file, wraps=None if patch else download_url)
+        google_drive_mock = add_mock(
+            stack, "download_file_from_google_drive", file, wraps=None if patch else download_file_from_google_drive
         )
-        if patch_auxiliaries:
-            # download_and_extract_archive
-            stack.enter_context(unittest.mock.patch("torchvision.datasets.utils.extract_archive"))
+
+        if mock_auxiliaries:
+            add_mock(stack, "extract_archive", file)
+
         try:
             yield urls_and_md5s
         finally:
-            for args, kwargs in download_url_mock.call_args_list:
+            for args, kwargs in url_mock.call_args_list:
                 url = args[0]
                 md5 = args[-1] if len(args) == 4 else kwargs.get("md5")
+                urls_and_md5s.add((url, md5))
+
+            for args, kwargs in google_drive_mock.call_args_list:
+                id = args[0]
+                url = f"https://drive.google.com/file/d/{id}"
+                md5 = args[3] if len(args) == 4 else kwargs.get("md5")
                 urls_and_md5s.add((url, md5))
 
 
@@ -184,7 +196,7 @@ def voc():
             collect_download_configs(
                 lambda: datasets.VOCSegmentation(".", year=year, download=True),
                 name=f"VOC, {year}",
-                download_url_location=".voc",
+                file="voc",
             )
             for year in ("2007", "2007-test", "2008", "2009", "2010", "2011", "2012")
         ]
@@ -214,7 +226,7 @@ def qmnist():
             collect_download_configs(
                 lambda: datasets.QMNIST(".", what=what, download=True),
                 name=f"QMNIST, {what}",
-                download_url_location=".mnist",
+                file="mnist",
             )
             for what in ("train", "test", "nist")
         ]
@@ -239,7 +251,7 @@ def phototour():
             collect_download_configs(
                 lambda: datasets.PhotoTour(".", name=name, download=True),
                 name=f"PhotoTour, {name}",
-                download_url_location=".phototour",
+                file="phototour",
             )
             for name in ("notredame_harris", "yosemite_harris", "liberty_harris", "notredame", "yosemite", "liberty")
         ]
@@ -250,7 +262,7 @@ def sbdataset():
     return collect_download_configs(
         lambda: datasets.SBDataset(".", download=True),
         name=f"SBDataset",
-        download_url_location=".voc",
+        file="voc",
     )
 
 
@@ -258,7 +270,7 @@ def sbu():
     return collect_download_configs(
         lambda: datasets.SBU(".", download=True),
         name=f"SBU",
-        download_url_location=".sbu",
+        file="sbu",
     )
 
 
@@ -266,7 +278,7 @@ def semeion():
     return collect_download_configs(
         lambda: datasets.SEMEION(".", download=True),
         name=f"SEMEION",
-        download_url_location=".semeion",
+        file="semeion",
     )
 
 
@@ -283,7 +295,7 @@ def svhn():
             collect_download_configs(
                 lambda: datasets.SVHN(".", split=split, download=True),
                 name=f"SVHN, {split}",
-                download_url_location=".svhn",
+                file="svhn",
             )
             for split in ("train", "test", "extra")
         ]
@@ -296,7 +308,7 @@ def usps():
             collect_download_configs(
                 lambda: datasets.USPS(".", train=train, download=True),
                 name=f"USPS, {'train' if train else 'test'}",
-                download_url_location=".usps",
+                file="usps",
             )
             for train in (True, False)
         ]
