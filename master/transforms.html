@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+5db25f1 )
+                  master (0.9.0a0+2a64a10 )
                 </div>
               
             
@@ -397,7 +397,8 @@ Please, see the note below.</p>
 <em class="property">class </em><code class="descclassname">torchvision.transforms.</code><code class="descname">CenterCrop</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#CenterCrop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.CenterCrop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crops the given image at the center.
 If the image is torch Tensor, it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+to have […, H, W] shape, where … means an arbitrary number of leading dimensions.
+If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1959,7 +1960,8 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</td>
 <code class="descclassname">torchvision.transforms.functional.</code><code class="descname">center_crop</code><span class="sig-paren">(</span><em>img: torch.Tensor, output_size: List[int]</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/transforms/functional.html#center_crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.transforms.functional.center_crop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crops the given image at the center.
 If the image is torch Tensor, it is expected
-to have […, H, W] shape, where … means an arbitrary number of leading dimensions</p>
+to have […, H, W] shape, where … means an arbitrary number of leading dimensions.
+If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

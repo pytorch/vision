@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+5db25f1 )
+                  master (0.9.0a0+2a64a10 )
                 </div>
               
             
@@ -602,7 +602,8 @@
 <div class="viewcode-block" id="CenterCrop"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.CenterCrop">[docs]</a><span class="k">class</span> <span class="nc">CenterCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crops the given image at the center.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
-<span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
+<span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
+<span class="sd">    If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        size (sequence or int): Desired output size of the crop. If size is an</span>
