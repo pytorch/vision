@@ -142,7 +142,7 @@ def collect_download_configs(dataset_loader, name=None, **kwargs):
     try:
         with log_download_attempts(urls_and_md5s=urls_and_md5s, **kwargs):
             dataset = dataset_loader()
-    except Exception as err:
+    except Exception:
         dataset = None
 
     if name is None and dataset is not None:
@@ -193,6 +193,7 @@ def voc():
 
 def mnist():
     return collect_download_configs(lambda: datasets.MNIST(".", download=True), name="MNIST")
+
 
 def make_parametrize_kwargs(download_configs):
     argvalues = []
