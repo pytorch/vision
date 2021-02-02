@@ -64,18 +64,19 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
     )
     match = pattern.match(url)
 
-    file_id = None
-    if match is not None:
-        request = match.groupdict().get('request')
-        if request is not None:
-            request, *query = request.split('?')
-            if query and 'id=' in query[0]:
-                query = [kv for q in query for kv in q.split('&')]
-                query = filter(lambda kv: '=' in kv, query)
-                query = {k: v for k, v in map(lambda kv: kv.split('='), query)}
-                file_id = query.get('id')
-            else:
-                *_, file_id, _ = request.split('/')
+    if match is None:
+        return None
+
+    request = match.groupdict().get('request')
+    if request is not None:
+        request, *query = request.split('?')
+        if query and 'id=' in query[0]:
+            query = [kv for q in query for kv in q.split('&')]
+            query = filter(lambda kv: '=' in kv, query)
+            query = {k: v for k, v in map(lambda kv: kv.split('='), query)}
+            file_id = query.get('id')
+        else:
+            *_, file_id, _ = request.split('/')
 
     return file_id
 
