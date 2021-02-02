@@ -64,7 +64,11 @@ def _get_google_drive_file_id(url: str) -> Optional[AnyStr]:
     if re.match(r"(drive|docs)[.]google[.]com", parts.netloc) is None:
         return None
 
-    return re.match(r"/file/d/(?P<id>[^/]*)", parts.path).group("id")
+    match = re.match(r"/file/d/(?P<id>[^/]*)", parts.path)
+    if match is None:
+        return None
+
+    return match.group("id")
 
 
 def download_url(
