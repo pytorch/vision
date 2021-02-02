@@ -4,7 +4,7 @@ import hashlib
 import gzip
 import re
 import tarfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar
+from typing import Any, AnyStr, Callable, List, Iterable, Optional, TypeVar
 from urllib.parse import urlparse
 import zipfile
 
@@ -58,7 +58,7 @@ def _get_redirect_url(url: str, max_hops: int = 10) -> str:
         raise RecursionError(f"Too many redirects: {max_hops + 1})")
 
 
-def _get_google_drive_file_id(url: str) -> Optional[str]:
+def _get_google_drive_file_id(url: str) -> Optional[AnyStr]:
     parts = urlparse(url)
 
     if re.match(r"(drive|docs)[.]google[.]com", parts.netloc) is None:
