@@ -3,6 +3,7 @@ import sys
 import tempfile
 import torchvision.datasets.utils as utils
 import unittest
+import unittest.mock
 import zipfile
 import tarfile
 import gzip
@@ -48,6 +49,18 @@ class Tester(unittest.TestCase):
         with self.assertRaises(RecursionError):
             utils._get_redirect_url(url, max_hops=0)
 
+    def test_get_google_drive_file_id(self):
+        url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
+        expected = "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45"
+
+        actual = utils._get_google_drive_file_id(url)
+        assert actual == expected
+
+    def test_get_google_drive_file_id_invalid_url(self):
+        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
+
+        assert utils._get_google_drive_file_id(url) is None
+
     def test_download_url(self):
         with get_tmp_dir() as temp_dir:
             url = "http://github.com/pytorch/vision/archive/master.zip"
@@ -75,6 +88,19 @@ class Tester(unittest.TestCase):
             url = "http://github.com/pytorch/vision/archive/this_doesnt_exist.zip"
             with self.assertRaises(URLError):
                 utils.download_url(url, temp_dir)
+
+    @unittest.mock.patch("torchvision.datasets.utils.download_file_from_google_drive")
+    def test_download_url_dispatch_download_from_google_drive(self, mock):
+        url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
+
+        id = "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45"
+        filename = "filename"
+        md5 = "md5"
+
+        with get_tmp_dir() as root:
+            utils.download_url(url, root, filename, md5)
+
+        mock.assert_called_once_with(id, root, filename, md5)
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_zip(self):
