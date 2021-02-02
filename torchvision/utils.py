@@ -216,10 +216,7 @@ def draw_bounding_boxes(
 def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
-    labels: Optional[List[str]] = None,
     colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
-    font: Optional[str] = None,
-    font_size: int = 10
 ) -> torch.Tensor:
 
     """
@@ -232,10 +229,6 @@ def draw_segmentation_masks(
         labels (List[str]): List containing the labels of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
-        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
-            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
-            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
-        font_size (int): The requested font size in points.
     """
 
     if not isinstance(image, torch.Tensor):
@@ -245,21 +238,26 @@ def draw_segmentation_masks(
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
 
-    ndarr = image.permute(1, 2, 0).numpy()
-    img_to_draw = Image.fromarray(ndarr)
+    img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize(image.size)
 
-    img_preds = masks.to(torch.int64).tolist()
+    if colors is None:
+        palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
+        colors = torch.as_tensor([i for i in range(21)])[:, None] * palette
+        color_arr = (colors % 255).numpy().astype("uint8")
 
-    draw = ImageDraw.Draw(img_to_draw)
-    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
+    else:
+        color_list = []
+        for color in colors:
+            if isinstance(color, str):
+                # This will automatically raise Error if rgb cannot be parsed.
+                fill_color = ImageColor.getrgb(color)  # + (100,)
+                color_list.append(fill_color)
+            elif isinstance(color, tuple):
+                # fill_color = color + (100,)
+                # Use the given colors list and create ndarray of colors.
+                color_list.append(color)
 
-    for i in range(len(img_preds)):
-        for j in range(len(img_preds)):
-            draw.point((i, j), fill=colors[img_preds[i][j]])
+        color_arr = np.array(color_list).astype("uint8")
 
-    if labels is not None:
-        # Should we plot the text ?
-        # draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
-        pass
-
+    img_to_draw.putpalette(color_arr)
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
