@@ -133,6 +133,6 @@ For post training quant, device is set to CPU. For training, the device is set t
 ### Command to evaluate quantized models using the pre-trained weights:
 
 ```
-python train_quantization.py --device='cpu' --test-only --backend='fbgemm' --model='<model_name>'
+python train_quantization.py --device='cpu' --test-only --backend='<backend>' --model='<model_name>'
 ```
 

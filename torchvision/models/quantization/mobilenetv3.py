@@ -12,7 +12,7 @@ __all__ = ['QuantizableMobileNetV3', 'mobilenet_v3_large', 'mobilenet_v3_small']
 
 quant_model_urls = {
     'mobilenet_v3_large_qnnpack':
-        "https://github.com/datumbox/torchvision-models/raw/main/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
+        "https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
     'mobilenet_v3_small_qnnpack': None,
 }
 
