@@ -242,8 +242,8 @@ def draw_segmentation_masks(
 
     if colors is None:
         palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-        colors = torch.as_tensor([i for i in range(21)])[:, None] * palette
-        color_arr = (colors % 255).numpy().astype("uint8")
+        colors_t = torch.as_tensor([i for i in range(21)])[:, None] * palette
+        color_arr = (colors_t % 255).numpy().astype("uint8")
 
     else:
         color_list = []
