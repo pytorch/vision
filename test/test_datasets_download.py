@@ -323,6 +323,14 @@ def celeba():
     )
 
 
+def widerface():
+    return collect_download_configs(
+        lambda: datasets.WIDERFace(".", download=True),
+        name=f"WIDERFace",
+        file="widerface",
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -357,6 +365,7 @@ def make_parametrize_kwargs(download_configs):
             svhn(),
             usps(),
             celeba(),
+            widerface(),
         )
     )
 )
