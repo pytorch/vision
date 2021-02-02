@@ -1,13 +1,9 @@
-#include "VideoReader.h"
-#include <ATen/ATen.h>
-#include <Python.h>
-#include <c10/util/Logging.h>
-#include <exception>
-#include "memory_buffer.h"
-#include "sync_decoder.h"
+#include "video_reader.h"
 
-using namespace std;
-using namespace ffmpeg;
+#include <Python.h>
+
+#include "../decoder/memory_buffer.h"
+#include "../decoder/sync_decoder.h"
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
@@ -18,7 +14,12 @@ PyMODINIT_FUNC PyInit_video_reader(void) {
 }
 #endif
 
+using namespace ffmpeg;
+
+namespace vision {
 namespace video_reader {
+
+namespace {
 
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
@@ -417,95 +418,6 @@ torch::List<torch::Tensor> readVideo(
   return result;
 }
 
-torch::List<torch::Tensor> readVideoFromMemory(
-    torch::Tensor input_video,
-    double seekFrameMargin,
-    int64_t getPtsOnly,
-    int64_t readVideoStream,
-    int64_t width,
-    int64_t height,
-    int64_t minDimension,
-    int64_t maxDimension,
-    int64_t videoStartPts,
-    int64_t videoEndPts,
-    int64_t videoTimeBaseNum,
-    int64_t videoTimeBaseDen,
-    int64_t readAudioStream,
-    int64_t audioSamples,
-    int64_t audioChannels,
-    int64_t audioStartPts,
-    int64_t audioEndPts,
-    int64_t audioTimeBaseNum,
-    int64_t audioTimeBaseDen) {
-  return readVideo(
-      false,
-      input_video,
-      "", // videoPath
-      seekFrameMargin,
-      getPtsOnly,
-      readVideoStream,
-      width,
-      height,
-      minDimension,
-      maxDimension,
-      videoStartPts,
-      videoEndPts,
-      videoTimeBaseNum,
-      videoTimeBaseDen,
-      readAudioStream,
-      audioSamples,
-      audioChannels,
-      audioStartPts,
-      audioEndPts,
-      audioTimeBaseNum,
-      audioTimeBaseDen);
-}
-
-torch::List<torch::Tensor> readVideoFromFile(
-    std::string videoPath,
-    double seekFrameMargin,
-    int64_t getPtsOnly,
-    int64_t readVideoStream,
-    int64_t width,
-    int64_t height,
-    int64_t minDimension,
-    int64_t maxDimension,
-    int64_t videoStartPts,
-    int64_t videoEndPts,
-    int64_t videoTimeBaseNum,
-    int64_t videoTimeBaseDen,
-    int64_t readAudioStream,
-    int64_t audioSamples,
-    int64_t audioChannels,
-    int64_t audioStartPts,
-    int64_t audioEndPts,
-    int64_t audioTimeBaseNum,
-    int64_t audioTimeBaseDen) {
-  torch::Tensor dummy_input_video = torch::ones({0});
-  return readVideo(
-      true,
-      dummy_input_video,
-      videoPath,
-      seekFrameMargin,
-      getPtsOnly,
-      readVideoStream,
-      width,
-      height,
-      minDimension,
-      maxDimension,
-      videoStartPts,
-      videoEndPts,
-      videoTimeBaseNum,
-      videoTimeBaseDen,
-      readAudioStream,
-      audioSamples,
-      audioChannels,
-      audioStartPts,
-      audioEndPts,
-      audioTimeBaseNum,
-      audioTimeBaseDen);
-}
-
 torch::List<torch::Tensor> probeVideo(
     bool isReadFile,
     const torch::Tensor& input_video,
@@ -650,20 +562,112 @@ torch::List<torch::Tensor> probeVideo(
   return result;
 }
 
-torch::List<torch::Tensor> probeVideoFromMemory(torch::Tensor input_video) {
+} // namespace
+
+torch::List<torch::Tensor> read_video_from_memory(
+    torch::Tensor input_video,
+    double seekFrameMargin,
+    int64_t getPtsOnly,
+    int64_t readVideoStream,
+    int64_t width,
+    int64_t height,
+    int64_t minDimension,
+    int64_t maxDimension,
+    int64_t videoStartPts,
+    int64_t videoEndPts,
+    int64_t videoTimeBaseNum,
+    int64_t videoTimeBaseDen,
+    int64_t readAudioStream,
+    int64_t audioSamples,
+    int64_t audioChannels,
+    int64_t audioStartPts,
+    int64_t audioEndPts,
+    int64_t audioTimeBaseNum,
+    int64_t audioTimeBaseDen) {
+  return readVideo(
+      false,
+      input_video,
+      "", // videoPath
+      seekFrameMargin,
+      getPtsOnly,
+      readVideoStream,
+      width,
+      height,
+      minDimension,
+      maxDimension,
+      videoStartPts,
+      videoEndPts,
+      videoTimeBaseNum,
+      videoTimeBaseDen,
+      readAudioStream,
+      audioSamples,
+      audioChannels,
+      audioStartPts,
+      audioEndPts,
+      audioTimeBaseNum,
+      audioTimeBaseDen);
+}
+
+torch::List<torch::Tensor> read_video_from_file(
+    std::string videoPath,
+    double seekFrameMargin,
+    int64_t getPtsOnly,
+    int64_t readVideoStream,
+    int64_t width,
+    int64_t height,
+    int64_t minDimension,
+    int64_t maxDimension,
+    int64_t videoStartPts,
+    int64_t videoEndPts,
+    int64_t videoTimeBaseNum,
+    int64_t videoTimeBaseDen,
+    int64_t readAudioStream,
+    int64_t audioSamples,
+    int64_t audioChannels,
+    int64_t audioStartPts,
+    int64_t audioEndPts,
+    int64_t audioTimeBaseNum,
+    int64_t audioTimeBaseDen) {
+  torch::Tensor dummy_input_video = torch::ones({0});
+  return readVideo(
+      true,
+      dummy_input_video,
+      videoPath,
+      seekFrameMargin,
+      getPtsOnly,
+      readVideoStream,
+      width,
+      height,
+      minDimension,
+      maxDimension,
+      videoStartPts,
+      videoEndPts,
+      videoTimeBaseNum,
+      videoTimeBaseDen,
+      readAudioStream,
+      audioSamples,
+      audioChannels,
+      audioStartPts,
+      audioEndPts,
+      audioTimeBaseNum,
+      audioTimeBaseDen);
+}
+
+torch::List<torch::Tensor> probe_video_from_memory(torch::Tensor input_video) {
   return probeVideo(false, input_video, "");
 }
 
-torch::List<torch::Tensor> probeVideoFromFile(std::string videoPath) {
+torch::List<torch::Tensor> probe_video_from_file(std::string videoPath) {
   torch::Tensor dummy_input_video = torch::ones({0});
   return probeVideo(true, dummy_input_video, videoPath);
 }
 
-} // namespace video_reader
-
 TORCH_LIBRARY_FRAGMENT(video_reader, m) {
-  m.def("read_video_from_memory", video_reader::readVideoFromMemory);
-  m.def("read_video_from_file", video_reader::readVideoFromFile);
-  m.def("probe_video_from_memory", video_reader::probeVideoFromMemory);
-  m.def("probe_video_from_file", video_reader::probeVideoFromFile);
+  m.def("read_video_from_memory", read_video_from_memory);
+  m.def("read_video_from_file", read_video_from_file);
+  m.def("probe_video_from_memory", probe_video_from_memory);
+  m.def("probe_video_from_file", probe_video_from_file);
 }
+
+} // namespace video_reader
+} // namespace vision
