@@ -105,6 +105,7 @@ def _mobilenet_v3_model(
             _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress)
 
         torch.quantization.convert(model, inplace=True)
+        model.eval()
     else:
         if pretrained:
             _load_weights(arch, model, model_urls.get(arch, None), progress)
