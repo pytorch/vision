@@ -101,14 +101,34 @@ For Mobilenet-v2, the model was trained with quantization aware training, the se
 9. momentum: 0.9
 10. lr_step_size:30
 11. lr_gamma: 0.1
+12. weight-decay: 0.0001
 
 ```
-python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantization.py --model='mobilenetv2'
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantization.py --model='mobilenet_v2'
 ```
 
 Training converges at about 10 epochs.
 
-For post training quant, device is set to CPU. For training, the device is set to CUDA
+For Mobilenet-v3 Large, the model was trained with quantization aware training, the settings used are:
+1. num_workers: 16
+2. batch_size: 32
+3. eval_batch_size: 128
+4. backend: 'qnnpack'
+5. learning-rate: 0.001
+6. num_epochs: 90
+7. num_observer_update_epochs:4
+8. num_batch_norm_update_epochs:3
+9. momentum: 0.9
+10. lr_step_size:30
+11. lr_gamma: 0.1
+12. weight-decay: 0.00001
+
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantization.py --model='mobilenet_v3_large' \
+    --wd 0.00001 --lr 0.001
+```
+
+For post training quant, device is set to CPU. For training, the device is set to CUDA.
 
 ### Command to evaluate quantized models using the pre-trained weights:
 
