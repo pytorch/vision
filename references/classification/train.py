@@ -92,10 +92,12 @@ def load_data(traindir, valdir, args):
         print("Loading dataset_train from {}".format(cache_path))
         dataset, _ = torch.load(cache_path)
     else:
+        auto_augment_policy = getattr(args, "auto_augment", None)
+        random_erase_prob = getattr(args, "random_erase", 0.0)
         dataset = torchvision.datasets.ImageFolder(
             traindir,
-            presets.ClassificationPresetTrain(crop_size=crop_size, auto_augment_policy=args.auto_augment,
-                                              random_erase_prob=args.random_erase))
+            presets.ClassificationPresetTrain(crop_size=crop_size, auto_augment_policy=auto_augment_policy,
+                                              random_erase_prob=random_erase_prob))
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
