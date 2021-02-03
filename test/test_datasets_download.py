@@ -255,7 +255,9 @@ def phototour():
                 name=f"PhotoTour, {name}",
                 file="phototour",
             )
-            for name in ("notredame_harris", "yosemite_harris", "liberty_harris", "notredame", "yosemite", "liberty")
+            # The names postfixed with '_harris' point to the domain 'matthewalunbrown.com'. For some reason all
+            # requests timeout from within CI. They are disabled until this is resolved.
+            for name in ("notredame", "yosemite", "liberty")  # "notredame_harris", "yosemite_harris", "liberty_harris"
         ]
     )
 
@@ -346,28 +348,28 @@ def make_parametrize_kwargs(download_configs):
 @pytest.mark.parametrize(
     **make_parametrize_kwargs(
         itertools.chain(
-            places365(),
-            caltech101(),
-            caltech256(),
-            cifar10(),
-            cifar100(),
+            # places365(),
+            # caltech101(),
+            # caltech256(),
+            # cifar10(),
+            # cifar100(),
             # The VOC download server is unstable. See https://github.com/pytorch/vision/issues/2953 for details.
             # voc(),
-            mnist(),
-            fashion_mnist(),
-            kmnist(),
-            emnist(),
-            qmnist(),
-            omniglot(),
+            # mnist(),
+            # fashion_mnist(),
+            # kmnist(),
+            # emnist(),
+            # qmnist(),
+            # omniglot(),
             phototour(),
-            sbdataset(),
-            sbu(),
-            semeion(),
-            stl10(),
-            svhn(),
-            usps(),
-            celeba(),
-            widerface(),
+            # sbdataset(),
+            # sbu(),
+            # semeion(),
+            # stl10(),
+            # svhn(),
+            # usps(),
+            # celeba(),
+            # widerface(),
         )
     )
 )
