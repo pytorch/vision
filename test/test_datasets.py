@@ -28,7 +28,7 @@ except ImportError:
     HAS_PYAV = False
 
 
-class Tester(unittest.TestCase):
+class DatasetTestcase(unittest.TestCase):
     def generic_classification_dataset_test(self, dataset, num_images=1):
         self.assertEqual(len(dataset), num_images)
         img, target = dataset[0]
@@ -41,6 +41,8 @@ class Tester(unittest.TestCase):
         self.assertTrue(isinstance(img, PIL.Image.Image))
         self.assertTrue(isinstance(target, PIL.Image.Image))
 
+
+class Tester(DatasetTestcase):
     def test_imagefolder(self):
         # TODO: create the fake data on-the-fly
         FAKEDATA_DIR = get_file_path_2(
