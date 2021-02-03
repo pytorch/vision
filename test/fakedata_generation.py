@@ -13,6 +13,47 @@ from torchvision.io.video import write_video
 import unittest.mock
 import hashlib
 from distutils import dir_util
+import re
+
+
+def mock_class_attribute(stack, target, new):
+    mock = unittest.mock.patch(target, new_callable=unittest.mock.PropertyMock, return_value=new)
+    stack.enter_context(mock)
+    return mock
+
+
+def compute_md5(file):
+    with open(file, "rb") as fh:
+        return hashlib.md5(fh.read()).hexdigest()
+
+
+def make_tar(root, name, *files, compression=None):
+    ext = ".tar"
+    mode = "w"
+    if compression is not None:
+        ext = f"{ext}.{compression}"
+        mode = f"{mode}:{compression}"
+
+    name = os.path.splitext(name)[0] + ext
+    archive = os.path.join(root, name)
+
+    with tarfile.open(archive, mode) as fh:
+        for file in files:
+            fh.add(os.path.join(root, file), arcname=file)
+
+    return name, compute_md5(archive)
+
+def clean_dir(root, *keep):
+    pattern = re.compile(f"({f')|('.join(keep)})")
+    for file_or_dir in os.listdir(root):
+        if pattern.search(file_or_dir):
+            continue
+
+        file_or_dir = os.path.join(root, file_or_dir)
+        if os.path.isfile(file_or_dir):
+            os.remove(file_or_dir)
+        else:
+            dir_util.remove_tree(file_or_dir)
 
 
 @contextlib.contextmanager
@@ -385,7 +426,7 @@ def ucf101_root():
 
 
 @contextlib.contextmanager
-def places365_root(split="train-standard", small=False, extract_images=True):
+def places365_root(split="train-standard", small=False):
     VARIANTS = {
         "train-standard": "standard",
         "train-challenge": "challenge",
@@ -425,15 +466,6 @@ def places365_root(split="train-standard", small=False, extract_images=True):
     def mock_target(attr, partial="torchvision.datasets.places365.Places365"):
         return f"{partial}.{attr}"
 
-    def mock_class_attribute(stack, attr, new):
-        mock = unittest.mock.patch(mock_target(attr), new_callable=unittest.mock.PropertyMock, return_value=new)
-        stack.enter_context(mock)
-        return mock
-
-    def compute_md5(file):
-        with open(file, "rb") as fh:
-            return hashlib.md5(fh.read()).hexdigest()
-
     def make_txt(root, name, seq):
         file = os.path.join(root, name)
         with open(file, "w") as fh:
@@ -451,37 +483,20 @@ def places365_root(split="train-standard", small=False, extract_images=True):
         os.makedirs(os.path.dirname(file), exist_ok=True)
         PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(file)
 
-    def make_tar(root, name, *files, remove_files=True):
-        name = f"{os.path.splitext(name)[0]}.tar"
-        archive = os.path.join(root, name)
-
-        with tarfile.open(archive, "w") as fh:
-            for file in files:
-                fh.add(os.path.join(root, file), arcname=file)
-
-        if remove_files:
-            for file in [os.path.join(root, file) for file in files]:
-                if os.path.isdir(file):
-                    dir_util.remove_tree(file)
-                else:
-                    os.remove(file)
-
-        return name, compute_md5(archive)
-
     def make_devkit_archive(stack, root, split):
         archive = DEVKITS[split]
         files = []
 
         meta = make_categories_txt(root, CATEGORIES)
-        mock_class_attribute(stack, "_CATEGORIES_META", meta)
+        mock_class_attribute(stack, mock_target("_CATEGORIES_META"), meta)
         files.append(meta[0])
 
         meta = {split: make_file_list_txt(root, FILE_LISTS[split])}
-        mock_class_attribute(stack, "_FILE_LIST_META", meta)
+        mock_class_attribute(stack, mock_target("_FILE_LIST_META"), meta)
         files.extend([item[0] for item in meta.values()])
 
         meta = {VARIANTS[split]: make_tar(root, archive, *files)}
-        mock_class_attribute(stack, "_DEVKIT_META", meta)
+        mock_class_attribute(stack, mock_target("_DEVKIT_META"), meta)
 
     def make_images_archive(stack, root, split, small):
         archive, folder_default, folder_renamed = IMAGES[(split, small)]
@@ -493,7 +508,7 @@ def places365_root(split="train-standard", small=False, extract_images=True):
             make_image(os.path.join(root, folder_default, image), image_size)
 
         meta = {(split, small): make_tar(root, archive, folder_default)}
-        mock_class_attribute(stack, "_IMAGES_META", meta)
+        mock_class_attribute(stack, mock_target("_IMAGES_META"), meta)
 
         return [(os.path.join(root, folder_renamed, image), idx) for image, idx in zip(images, idcs)]
 
@@ -501,12 +516,10 @@ def places365_root(split="train-standard", small=False, extract_images=True):
         make_devkit_archive(stack, root, split)
         class_to_idx = dict(CATEGORIES_CONTENT)
         classes = list(class_to_idx.keys())
-        data = {"class_to_idx": class_to_idx, "classes": classes}
 
-        if extract_images:
-            data["imgs"] = make_images_archive(stack, root, split, small)
-        else:
-            stack.enter_context(unittest.mock.patch(mock_target("download_images")))
-            data["imgs"] = None
+        data = {"class_to_idx": class_to_idx, "classes": classes}
+        data["imgs"] = make_images_archive(stack, root, split, small)
+
+        clean_dir(root, ".tar$")
 
         yield root, data

@@ -354,7 +354,7 @@ class Tester(unittest.TestCase):
     def test_places365_devkit_no_download(self):
         for split in ("train-standard", "train-challenge", "val"):
             with self.subTest(split=split):
-                with places365_root(split=split, extract_images=False) as places365:
+                with places365_root(split=split) as places365:
                     root, data = places365
 
                     with self.assertRaises(RuntimeError):
@@ -383,7 +383,7 @@ class Tester(unittest.TestCase):
                 torchvision.datasets.Places365(root, split=split, small=small, download=True)
 
     def test_places365_repr_smoke(self):
-        with places365_root(extract_images=False) as places365:
+        with places365_root() as places365:
             root, data = places365
 
             dataset = torchvision.datasets.Places365(root, download=True)
