@@ -1972,7 +1972,7 @@ class Tester(unittest.TestCase):
 
         count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
         count_smaller_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio < 1])
-        self.assertAlmostEqual(count_bigger_then_ones / trial, count_smaller_then_ones / trial, 2)
+        self.assertAlmostEqual(count_bigger_then_ones / trial, count_smaller_then_ones / trial, 1)
 
 
 if __name__ == '__main__':
