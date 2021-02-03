@@ -19,7 +19,7 @@ jobs:
         run: sudo apt install traceroute
 
       - name: Ping problematic server
-        run: ping matthewalunbrown.com
+        run: ping -c 3 -w 30 matthewalunbrown.com
 
       - name: Traceroute probelmatic server
         run: traceroute matthewalunbrown.com
