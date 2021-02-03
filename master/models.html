@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+2a64a10 )
+                  master (0.9.0a0+18a3e29 )
                 </div>
               
             
@@ -1327,6 +1327,82 @@ channels, and in Wide ResNet-50-2 has 2048-1024-2048.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="quantized-models">
+<h3>Quantized Models<a class="headerlink" href="#quantized-models" title="Permalink to this headline">¶</a></h3>
+<p>The following architectures provide support for INT8 quantized models. You can get
+a model with random weights by calling its constructor:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
+<span class="n">googlenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">googlenet</span><span class="p">()</span>
+<span class="n">inception_v3</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">inception_v3</span><span class="p">()</span>
+<span class="n">mobilenet_v2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">()</span>
+<span class="n">mobilenet_v3_large</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">()</span>
+<span class="n">mobilenet_v3_small</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v3_small</span><span class="p">()</span>
+<span class="n">resnet18</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
+<span class="n">resnet50</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">resnet50</span><span class="p">()</span>
+<span class="n">resnext101_32x8d</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">resnext101_32x8d</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x0_5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x0_5</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x1_0</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x1_0</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x1_5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x1_5</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x2_0</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x2_0</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Obtaining a pre-trained quantized model can be done with a few lines of code:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">quantize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="c1"># run the model with quantized inputs and weights</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We provide pre-trained quantized weights for the following models:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="22%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Model</th>
+<th class="head">Acc&#64;1</th>
+<th class="head">Acc&#64;5</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>MobileNet V2</td>
+<td>71.658</td>
+<td>90.150</td>
+</tr>
+<tr class="row-odd"><td>MobileNet V3 Large</td>
+<td>73.004</td>
+<td>90.858</td>
+</tr>
+<tr class="row-even"><td>ShuffleNet V2</td>
+<td>68.360</td>
+<td>87.582</td>
+</tr>
+<tr class="row-odd"><td>ResNet 18</td>
+<td>69.494</td>
+<td>88.882</td>
+</tr>
+<tr class="row-even"><td>ResNet 50</td>
+<td>75.920</td>
+<td>92.814</td>
+</tr>
+<tr class="row-odd"><td>ResNext 101 32x8d</td>
+<td>78.986</td>
+<td>94.480</td>
+</tr>
+<tr class="row-even"><td>Inception V3</td>
+<td>77.176</td>
+<td>93.354</td>
+</tr>
+<tr class="row-odd"><td>GoogleNet</td>
+<td>69.826</td>
+<td>89.404</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div class="section" id="semantic-segmentation">
 <h2>Semantic Segmentation<a class="headerlink" href="#semantic-segmentation" title="Permalink to this headline">¶</a></h2>
@@ -2257,6 +2333,7 @@ images because it assumes the video is 4d.</p>
 <li><a class="reference internal" href="#id21">ResNext</a></li>
 <li><a class="reference internal" href="#wide-resnet">Wide ResNet</a></li>
 <li><a class="reference internal" href="#id24">MNASNet</a></li>
+<li><a class="reference internal" href="#quantized-models">Quantized Models</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#semantic-segmentation">Semantic Segmentation</a><ul>
