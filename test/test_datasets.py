@@ -465,5 +465,6 @@ class STL10Tester(DatasetTestcase):
         with self.mocked_dataset() as (dataset, _):
             self.assertIsInstance(repr(dataset), str)
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -43,6 +43,7 @@ def make_tar(root, name, *files, compression=None):
 
     return name, compute_md5(archive)
 
+
 def clean_dir(root, *keep):
     pattern = re.compile(f"({f')|('.join(keep)})")
     for file_or_dir in os.listdir(root):
@@ -560,11 +561,9 @@ def stl10_root(_extracted=False):
 
         return tuple(range(1, NUM_FOLDS + 1))
 
-
     def make_train_files(stack, root, num_unlabeled_images=1):
         num_images_in_fold = make_fold_indices_file(root)
         num_train_images = sum(num_images_in_fold)
-
 
         train_list = [
             list(make_image_file(num_train_images, root, "train_X.bin")),
@@ -588,7 +587,6 @@ def stl10_root(_extracted=False):
         archive, md5 = make_tar(root, name, name, compression="gz")
         mock_class_attribute(stack, target=mock_target("tgz_md5"), new=md5)
         return archive
-
 
     with contextlib.ExitStack() as stack, get_tmp_dir() as root:
         archive_folder = os.path.join(root, ARCHIVE_NAME)
