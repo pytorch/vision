@@ -1955,6 +1955,25 @@ class Tester(unittest.TestCase):
                     img = transform(img)
                 transform.__repr__()
 
+    def test_random_erasing(self):
+        img = torch.ones(3, 128, 128)
+
+        t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1. / 3., 3. / 1.))
+        y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
+        aspect_ratio = h / w
+        self.assertTrue(aspect_ratio > 1. / 3. and aspect_ratio < 3. / 1.)
+
+        aspect_ratios = []
+        random.seed(42)
+        trial = 1000
+        for _ in range(trial):
+            y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
+            aspect_ratios.append(h / w)
+
+        count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
+        count_smaller_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio < 1])
+        self.assertAlmostEqual(count_bigger_then_ones / trial, count_smaller_then_ones / trial, 2)
+
 
 if __name__ == '__main__':
     unittest.main()
