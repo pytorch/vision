@@ -119,17 +119,17 @@ def assert_server_response_ok():
         raise AssertionError(f"The server returned {error.code}: {error.reason}.") from error
 
 
-def assert_url_is_accessible(url):
+def assert_url_is_accessible(url, timeout=5.0):
     request = Request(url, headers=dict(method="HEAD"))
     with assert_server_response_ok():
-        urlopen(request, timeout=5.0)
+        urlopen(request, timeout=timeout)
 
 
-def assert_file_downloads_correctly(url, md5):
+def assert_file_downloads_correctly(url, md5, timeout=5.0):
     with get_tmp_dir() as root:
         file = path.join(root, path.basename(url))
         with assert_server_response_ok():
-            with urlopen(url, timeout=5.0) as response, open(file, "wb") as fh:
+            with urlopen(url, timeout=timeout) as response, open(file, "wb") as fh:
                 fh.write(response.read())
 
         assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
