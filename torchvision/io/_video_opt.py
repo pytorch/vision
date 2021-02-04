@@ -381,6 +381,9 @@ def _read_video_from_memory(
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
 
+    if not isinstance(video_data, torch.Tensor):
+        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
+
     result = torch.ops.video_reader.read_video_from_memory(
         video_data,
         seek_frame_margin,
