@@ -35,7 +35,7 @@ android {
                 arguments "-DANDROID_STL=c++_shared"
             }
         }
-        buildConfigField("String", "MODULE_ASSET_NAME", "\"frcnn.pt\"")
+        buildConfigField("String", "MODULE_ASSET_NAME", "\"frcnn_mnetv3.pt\"")
         buildConfigField("String", "LOGCAT_TAG", "@string/app_name")
         buildConfigField("long[]", "INPUT_TENSOR_SHAPE", "new long[]{3, 96, 96}")
         addManifestPlaceholders([APP_NAME: "@string/app_name", MAIN_ACTIVITY: "org.pytorch.testapp.MainActivity"])
@@ -51,12 +51,12 @@ android {
     }
     flavorDimensions "model", "activity", "build"
     productFlavors {
-        frcnnResnet {
+        frcnnMnetv3 {
             dimension "model"
-            applicationIdSuffix ".frcnnResnet"
-            buildConfigField("String", "MODULE_ASSET_NAME", "\"frcnn_resnet50_fpn.pt\"")
-            addManifestPlaceholders([APP_NAME: "TV_FRCNN_RESNET50"])
-            buildConfigField("String", "LOGCAT_TAG", "\"pytorch-frcnn-resnet50\"")
+            applicationIdSuffix ".frcnnMnetv3"
+            buildConfigField("String", "MODULE_ASSET_NAME", "\"frcnn_mnetv3.pt\"")
+            addManifestPlaceholders([APP_NAME: "TV_FRCNN_MNETV3"])
+            buildConfigField("String", "LOGCAT_TAG", "\"pytorch-frcnn-mnetv3\"")
         }
         camera {
             dimension "activity"
