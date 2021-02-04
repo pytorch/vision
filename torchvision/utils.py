@@ -225,7 +225,7 @@ def draw_segmentation_masks(
 
     Args:
         image (Tensor): Tensor of shape (C x H x W)
-        masks (Tensor): Tensor of shape (H, W). Each containing predicted class.
+        masks (Tensor): Tensor of shape (num_classes, H, W). Each containing probability of predicted class.
         labels (List[str]): List containing the labels of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
@@ -238,12 +238,14 @@ def draw_segmentation_masks(
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
 
+    num_classes = masks.size()[0]
+    masks = masks.argmax(0)
+
     img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize(image.size()[1:])
 
     if colors is None:
-        # Default color palette assumes 21 classes.
         palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-        colors_t = torch.as_tensor([i for i in range(21)])[:, None] * palette
+        colors_t = torch.as_tensor([i for i in range(num_classes)])[:, None] * palette
         color_arr = (colors_t % 255).numpy().astype("uint8")
 
     else:
