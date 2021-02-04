@@ -7,6 +7,7 @@ from .utils import download_and_extract_archive, check_integrity, list_dir, list
 
 class Omniglot(VisionDataset):
     """`Omniglot <https://github.com/brendenlake/omniglot>`_ Dataset.
+
     Args:
         root (string): Root directory of dataset where directory
             ``omniglot-py`` exists.

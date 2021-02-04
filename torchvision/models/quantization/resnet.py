@@ -143,6 +143,7 @@ def resnet18(pretrained=False, progress=True, quantize=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     return _resnet('resnet18', QuantizableBasicBlock, [2, 2, 2, 2], pretrained, progress,
                    quantize, **kwargs)
@@ -155,6 +156,7 @@ def resnet50(pretrained=False, progress=True, quantize=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     return _resnet('resnet50', QuantizableBottleneck, [3, 4, 6, 3], pretrained, progress,
                    quantize, **kwargs)
@@ -167,6 +169,7 @@ def resnext101_32x8d(pretrained=False, progress=True, quantize=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 8

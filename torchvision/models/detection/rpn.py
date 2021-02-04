@@ -252,7 +252,7 @@ class RegionProposalNetwork(torch.nn.Module):
         levels = levels[batch_idx, top_n_idx]
         proposals = proposals[batch_idx, top_n_idx]
 
-        objectness_prob = F.sigmoid(objectness)
+        objectness_prob = torch.sigmoid(objectness)
 
         final_boxes = []
         final_scores = []

@@ -23,7 +23,7 @@ def crop(clip, i, j, h, w):
 def resize(clip, target_size, interpolation_mode):
     assert len(target_size) == 2, "target size should be tuple (height, width)"
     return torch.nn.functional.interpolate(
-        clip, size=target_size, mode=interpolation_mode
+        clip, size=target_size, mode=interpolation_mode, align_corners=False
     )
 
 

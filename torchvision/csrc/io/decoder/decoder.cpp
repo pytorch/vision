@@ -316,6 +316,12 @@ bool Decoder::init(
     av_dict_set_int(&options, "analyzeduration", params_.timeoutMs * 1000, 0);
     av_dict_set_int(&options, "stimeout", params_.timeoutMs * 1000, 0);
     av_dict_set_int(&options, "rw_timeout", params_.timeoutMs * 1000, 0);
+    if (!params_.tlsCertFile.empty()) {
+      av_dict_set(&options, "cert_file", params_.tlsCertFile.data(), 0);
+    }
+    if (!params_.tlsKeyFile.empty()) {
+      av_dict_set(&options, "key_file", params_.tlsCertFile.data(), 0);
+    }
   }
 
   interrupted_ = false;

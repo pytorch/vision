@@ -86,7 +86,7 @@ class Tester(unittest.TestCase):
                              [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
         labels = ["a", "b", "c", "d"]
         colors = ["green", "#FF00FF", (0, 255, 0), "red"]
-        result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors)
+        result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True)
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
         if not os.path.exists(path):

@@ -1,12 +1,11 @@
-#include "Video.h"
-#include <c10/util/Logging.h>
-#include <torch/script.h>
-#include "defs.h"
-#include "memory_buffer.h"
-#include "sync_decoder.h"
+#include "video.h"
 
-using namespace std;
-using namespace ffmpeg;
+#include <regex>
+
+namespace vision {
+namespace video {
+
+namespace {
 
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
@@ -93,6 +92,8 @@ std::tuple<std::string, long> _parseStream(const std::string& streamString) {
   return std::make_tuple(type_, index_);
 }
 
+} // namespace
+
 void Video::_getDecoderParams(
     double videoStartS,
     int64_t getPtsOnly,
@@ -159,7 +160,7 @@ Video::Video(std::string videoPath, std::string stream) {
   Video::_getDecoderParams(
       0, // video start
       0, // headerOnly
-      get<0>(current_stream), // stream info - remove that
+      std::get<0>(current_stream), // stream info - remove that
       long(-1), // stream_id parsed from info above change to -2
       true // read all streams
   );
@@ -209,9 +210,9 @@ Video::Video(std::string videoPath, std::string stream) {
 
   succeeded = Video::setCurrentStream(stream);
   LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
-  if (get<1>(current_stream) != -1) {
+  if (std::get<1>(current_stream) != -1) {
     LOG(INFO)
-        << "Stream index set to " << get<1>(current_stream)
+        << "Stream index set to " << std::get<1>(current_stream)
         << ". If you encounter trouble, consider switching it to automatic stream discovery. \n";
   }
 } // video
@@ -229,8 +230,8 @@ bool Video::setCurrentStream(std::string stream = "video") {
   _getDecoderParams(
       ts, // video start
       0, // headerOnly
-      get<0>(current_stream), // stream
-      long(get<1>(
+      std::get<0>(current_stream), // stream
+      long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       false // read all streams
   );
@@ -253,8 +254,8 @@ void Video::Seek(double ts) {
   _getDecoderParams(
       ts, // video start
       0, // headerOnly
-      get<0>(current_stream), // stream
-      long(get<1>(
+      std::get<0>(current_stream), // stream
+      long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       false // read all streams
   );
@@ -311,11 +312,23 @@ std::tuple<torch::Tensor, double> Video::Next() {
     // currently not supporting other formats (will do soon)
 
     out.payload.reset();
-  } else if (res == 61) {
-    LOG(INFO) << "Decoder ran out of frames (error 61)\n";
+  } else if (res == ENODATA) {
+    LOG(INFO) << "Decoder ran out of frames (ENODATA)\n";
   } else {
     LOG(ERROR) << "Decoder failed with ERROR_CODE " << res;
   }
 
   return std::make_tuple(outFrame, frame_pts_s);
 }
+
+static auto registerVideo =
+    torch::class_<Video>("torchvision", "Video")
+        .def(torch::init<std::string, std::string>())
+        .def("get_current_stream", &Video::getCurrentStream)
+        .def("set_current_stream", &Video::setCurrentStream)
+        .def("get_metadata", &Video::getStreamMetadata)
+        .def("seek", &Video::Seek)
+        .def("next", &Video::Next);
+
+} // namespace video
+} // namespace vision

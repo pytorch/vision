@@ -101,11 +101,11 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
 
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
-    the raw bytes of the PNG image.
+            the raw bytes of the PNG image.
         mode (ImageReadMode): the read mode used for optionally
-    converting the image. Default: `ImageReadMode.UNCHANGED`.
-    See `ImageReadMode` class for more information on various
-    available modes.
+            converting the image. Default: `ImageReadMode.UNCHANGED`.
+            See `ImageReadMode` class for more information on various
+            available modes.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -119,19 +119,15 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     Takes an input tensor in CHW layout and returns a buffer with the contents
     of its corresponding PNG file.
 
-    Parameters
-    ----------
-    input: Tensor[channels, image_height, image_width]
-        int8 image tensor of `c` channels, where `c` must 3 or 1.
-    compression_level: int
-        Compression factor for the resulting file, it must be a number
-        between 0 and 9. Default: 6
+    Args:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor of
+            `c` channels, where `c` must 3 or 1.
+        compression_level (int): Compression factor for the resulting file, it must be a number
+            between 0 and 9. Default: 6
 
-    Returns
-    -------
-    output: Tensor[1]
-        A one dimensional int8 tensor that contains the raw bytes of the
-        PNG file.
+    Returns:
+        Tensor[1]: A one dimensional int8 tensor that contains the raw bytes of the
+            PNG file.
     """
     output = torch.ops.image.encode_png(input, compression_level)
     return output
@@ -142,15 +138,12 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     Takes an input tensor in CHW layout (or HW in the case of grayscale images)
     and saves it in a PNG file.
 
-    Parameters
-    ----------
-    input: Tensor[channels, image_height, image_width]
-        int8 image tensor of `c` channels, where `c` must be 1 or 3.
-    filename: str
-        Path to save the image.
-    compression_level: int
-        Compression factor for the resulting file, it must be a number
-        between 0 and 9. Default: 6
+    Args:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor of
+            `c` channels, where `c` must be 1 or 3.
+        filename (str): Path to save the image.
+        compression_level (int): Compression factor for the resulting file, it must be a number
+            between 0 and 9. Default: 6
     """
     output = encode_png(input, compression_level)
     write_file(filename, output)
@@ -164,11 +157,11 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
 
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
-    the raw bytes of the JPEG image.
+            the raw bytes of the JPEG image.
         mode (ImageReadMode): the read mode used for optionally
-    converting the image. Default: `ImageReadMode.UNCHANGED`.
-    See `ImageReadMode` class for more information on various
-    available modes.
+            converting the image. Default: `ImageReadMode.UNCHANGED`.
+            See `ImageReadMode` class for more information on various
+            available modes.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -182,19 +175,15 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
     Takes an input tensor in CHW layout and returns a buffer with the contents
     of its corresponding JPEG file.
 
-    Parameters
-    ----------
-    input: Tensor[channels, image_height, image_width])
-        int8 image tensor of `c` channels, where `c` must be 1 or 3.
-    quality: int
-        Quality of the resulting JPEG file, it must be a number between
-        1 and 100. Default: 75
+    Args:
+        input (Tensor[channels, image_height, image_width])): int8 image tensor of
+            `c` channels, where `c` must be 1 or 3.
+        quality (int): Quality of the resulting JPEG file, it must be a number between
+            1 and 100. Default: 75
 
-    Returns
-    -------
-    output: Tensor[1]
-        A one dimensional int8 tensor that contains the raw bytes of the
-        JPEG file.
+    Returns:
+        output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
+            JPEG file.
     """
     if quality < 1 or quality > 100:
         raise ValueError('Image quality should be a positive number '
@@ -208,15 +197,12 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     """
     Takes an input tensor in CHW layout and saves it in a JPEG file.
 
-    Parameters
-    ----------
-    input: Tensor[channels, image_height, image_width]
-        int8 image tensor of `c` channels, where `c` must be 1 or 3.
-    filename: str
-        Path to save the image.
-    quality: int
-        Quality of the resulting JPEG file, it must be a number
-        between 1 and 100. Default: 75
+    Args:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor of `c`
+            channels, where `c` must be 1 or 3.
+        filename (str): Path to save the image.
+        quality (int): Quality of the resulting JPEG file, it must be a number
+            between 1 and 100. Default: 75
     """
     output = encode_jpeg(input, quality)
     write_file(filename, output)
@@ -230,20 +216,16 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
-    Parameters
-    ----------
-    input: Tensor
-        a one dimensional uint8 tensor containing the raw bytes of the
-        PNG or JPEG image.
-    mode: ImageReadMode
-        the read mode used for optionally converting the image.
-        Default: `ImageReadMode.UNCHANGED`.
-        See `ImageReadMode` class for more information on various
-        available modes.
+    Args:
+        input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the
+            PNG or JPEG image.
+        mode (ImageReadMode): the read mode used for optionally converting the image.
+            Default: `ImageReadMode.UNCHANGED`.
+            See `ImageReadMode` class for more information on various
+            available modes.
 
-    Returns
-    -------
-    output: Tensor[image_channels, image_height, image_width]
+    Returns:
+        output (Tensor[image_channels, image_height, image_width])
     """
     output = torch.ops.image.decode_image(input, mode.value)
     return output
@@ -255,19 +237,15 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
     Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
-    Parameters
-    ----------
-    path: str
-        path of the JPEG or PNG image.
-    mode: ImageReadMode
-        the read mode used for optionally converting the image.
-        Default: `ImageReadMode.UNCHANGED`.
-        See `ImageReadMode` class for more information on various
-        available modes.
+    Args:
+        path (str): path of the JPEG or PNG image.
+        mode (ImageReadMode): the read mode used for optionally converting the image.
+            Default: `ImageReadMode.UNCHANGED`.
+            See `ImageReadMode` class for more information on various
+            available modes.
 
-    Returns
-    -------
-    output: Tensor[image_channels, image_height, image_width]
+    Returns:
+        output (Tensor[image_channels, image_height, image_width])
     """
     data = read_file(path)
     return decode_image(data, mode)

@@ -76,11 +76,18 @@ def resnet_fpn_backbone(
     Args:
         backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
+        pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
         norm_layer (torchvision.ops): it is recommended to use the default value. For details visit:
             (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
-        pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+        returned_layers (list of int): The layers of the network to return. Each entry must be in ``[1, 4]``.
+            By default all layers are returned.
+        extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
+            be performed. It is expected to take the fpn features, the original
+            features and the names of the original features as input, and returns
+            a new list of feature maps and their corresponding names. By
+            default a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained,
@@ -136,9 +143,9 @@ def mobilenet_backbone(
 ):
     backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer).features
 
-    # Gather the indeces of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
-    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "is_strided", False)] + [len(backbone) - 1]
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
