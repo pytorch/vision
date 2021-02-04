@@ -201,7 +201,7 @@ class RetinaNetRegressionHead(nn.Module):
             losses.append(torch.nn.functional.l1_loss(
                 bbox_regression_per_image,
                 target_regression,
-                size_average=False
+                reduction='sum'
             ) / max(1, num_foreground))
 
         return _sum(losses) / max(1, len(targets))
