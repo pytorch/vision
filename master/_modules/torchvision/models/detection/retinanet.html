@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+18a3e29 )
+                  master (0.9.0a0+4558956 )
                 </div>
               
             
@@ -513,7 +513,7 @@
             <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">l1_loss</span><span class="p">(</span>
                 <span class="n">bbox_regression_per_image</span><span class="p">,</span>
                 <span class="n">target_regression</span><span class="p">,</span>
-                <span class="n">size_average</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span>
             <span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_foreground</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">_sum</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">))</span>
