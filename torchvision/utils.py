@@ -153,7 +153,7 @@ def draw_bounding_boxes(
     If filled, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W)
+        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -220,7 +220,7 @@ def draw_segmentation_masks(
 ) -> torch.Tensor:
 
     """
-    Draws segmentation masks on given image.
+    Draws segmentation masks on given image and dtype uint8.
     The values of the input image should be uint8 between 0 and 255.
 
     Args:
