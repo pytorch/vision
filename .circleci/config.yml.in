@@ -140,7 +140,7 @@ jobs:
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
-            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
+            ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
 
   torchhub_test:
     docker:
