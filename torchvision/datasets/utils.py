@@ -2,8 +2,10 @@ import os
 import os.path
 import hashlib
 import gzip
+import re
 import tarfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar
+from urllib.parse import urlparse
 import zipfile
 
 import torch
@@ -56,6 +58,19 @@ def _get_redirect_url(url: str, max_hops: int = 10) -> str:
         raise RecursionError(f"Too many redirects: {max_hops + 1})")
 
 
+def _get_google_drive_file_id(url: str) -> Optional[str]:
+    parts = urlparse(url)
+
+    if re.match(r"(drive|docs)[.]google[.]com", parts.netloc) is None:
+        return None
+
+    match = re.match(r"/file/d/(?P<id>[^/]*)", parts.path)
+    if match is None:
+        return None
+
+    return match.group("id")
+
+
 def download_url(
     url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
 ) -> None:
@@ -84,6 +99,11 @@ def download_url(
 
     # expand redirect chain if needed
     url = _get_redirect_url(url, max_hops=max_redirect_hops)
+
+    # check if file is located on Google Drive
+    file_id = _get_google_drive_file_id(url)
+    if file_id is not None:
+        return download_file_from_google_drive(file_id, root, filename, md5)
 
     # download the file
     try:
