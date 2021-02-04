@@ -31,6 +31,9 @@ jobs:
           pip install numpy
           pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 
+      - name: Install all optional dataset requirements
+        run: pip install scipy pandas pycocotools lmdb requests
+
       - name: Install tests requirements
         run: pip install pytest
 

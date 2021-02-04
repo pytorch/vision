@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import os
 import unittest
@@ -7,9 +8,10 @@ import PIL
 from PIL import Image
 from torch._utils_internal import get_file_path_2
 import torchvision
+from torchvision.datasets import utils
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root, widerface_root
+    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -28,7 +30,7 @@ except ImportError:
     HAS_PYAV = False
 
 
-class Tester(unittest.TestCase):
+class DatasetTestcase(unittest.TestCase):
     def generic_classification_dataset_test(self, dataset, num_images=1):
         self.assertEqual(len(dataset), num_images)
         img, target = dataset[0]
@@ -41,6 +43,8 @@ class Tester(unittest.TestCase):
         self.assertTrue(isinstance(img, PIL.Image.Image))
         self.assertTrue(isinstance(target, PIL.Image.Image))
 
+
+class Tester(DatasetTestcase):
     def test_imagefolder(self):
         # TODO: create the fake data on-the-fly
         FAKEDATA_DIR = get_file_path_2(
@@ -354,7 +358,7 @@ class Tester(unittest.TestCase):
     def test_places365_devkit_no_download(self):
         for split in ("train-standard", "train-challenge", "val"):
             with self.subTest(split=split):
-                with places365_root(split=split, extract_images=False) as places365:
+                with places365_root(split=split) as places365:
                     root, data = places365
 
                     with self.assertRaises(RuntimeError):
@@ -383,10 +387,82 @@ class Tester(unittest.TestCase):
                 torchvision.datasets.Places365(root, split=split, small=small, download=True)
 
     def test_places365_repr_smoke(self):
-        with places365_root(extract_images=False) as places365:
+        with places365_root() as places365:
             root, data = places365
 
             dataset = torchvision.datasets.Places365(root, download=True)
+            self.assertIsInstance(repr(dataset), str)
+
+
+class STL10Tester(DatasetTestcase):
+    @contextlib.contextmanager
+    def mocked_root(self):
+        with stl10_root() as (root, data):
+            yield root, data
+
+    @contextlib.contextmanager
+    def mocked_dataset(self, pre_extract=False, download=True, **kwargs):
+        with self.mocked_root() as (root, data):
+            if pre_extract:
+                utils.extract_archive(os.path.join(root, data["archive"]))
+            dataset = torchvision.datasets.STL10(root, download=download, **kwargs)
+            yield dataset, data
+
+    def test_not_found(self):
+        with self.assertRaises(RuntimeError):
+            with self.mocked_dataset(download=False):
+                pass
+
+    def test_splits(self):
+        for split in ('train', 'train+unlabeled', 'unlabeled', 'test'):
+            with self.mocked_dataset(split=split) as (dataset, data):
+                num_images = sum([data["num_images_in_split"][part] for part in split.split("+")])
+                self.generic_classification_dataset_test(dataset, num_images=num_images)
+
+    def test_folds(self):
+        for fold in range(10):
+            with self.mocked_dataset(split="train", folds=fold) as (dataset, data):
+                num_images = data["num_images_in_folds"][fold]
+                self.assertEqual(len(dataset), num_images)
+
+    def test_invalid_folds1(self):
+        with self.assertRaises(ValueError):
+            with self.mocked_dataset(folds=10):
+                pass
+
+    def test_invalid_folds2(self):
+        with self.assertRaises(ValueError):
+            with self.mocked_dataset(folds="0"):
+                pass
+
+    def test_transforms(self):
+        expected_image = "image"
+        expected_target = "target"
+
+        def transform(image):
+            return expected_image
+
+        def target_transform(target):
+            return expected_target
+
+        with self.mocked_dataset(transform=transform, target_transform=target_transform) as (dataset, _):
+            actual_image, actual_target = dataset[0]
+
+            self.assertEqual(actual_image, expected_image)
+            self.assertEqual(actual_target, expected_target)
+
+    def test_unlabeled(self):
+        with self.mocked_dataset(split="unlabeled") as (dataset, _):
+            labels = [dataset[idx][1] for idx in range(len(dataset))]
+            self.assertTrue(all([label == -1 for label in labels]))
+
+    @unittest.mock.patch("torchvision.datasets.stl10.download_and_extract_archive")
+    def test_download_preexisting(self, mock):
+        with self.mocked_dataset(pre_extract=True) as (dataset, data):
+            mock.assert_not_called()
+
+    def test_repr_smoke(self):
+        with self.mocked_dataset() as (dataset, _):
             self.assertIsInstance(repr(dataset), str)
 
 

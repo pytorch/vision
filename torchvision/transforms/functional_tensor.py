@@ -45,7 +45,7 @@ def _max_value(dtype: torch.dtype) -> float:
             max_value = next_value
             bits *= 2
         else:
-            return max_value.item()
+            break
     return max_value.item()
 
 
@@ -59,8 +59,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
     if image.dtype == dtype:
         return image
 
-    # TODO: replace with image.dtype.is_floating_point when torchscript supports it
-    if torch.empty(0, dtype=image.dtype).is_floating_point():
+    if image.is_floating_point():
 
         # TODO: replace with dtype.is_floating_point when torchscript supports it
         if torch.tensor(0, dtype=dtype).is_floating_point():
