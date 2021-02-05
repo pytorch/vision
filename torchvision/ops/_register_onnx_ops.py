@@ -30,7 +30,7 @@ def _register_custom_op():
             scale = torch.tensor(0.5 / spatial_scale).to(dtype=torch.float)
             rois = g.op("Sub", rois, scale)
 
-        # ONX doesn't support negative sampling_raatio
+        # ONNX doesn't support negative sampling_raatio
         if sampling_ratio < 0:
             sampling_ratio = 0
         return g.op('RoiAlign', input, rois, batch_indices, spatial_scale_f=spatial_scale,
