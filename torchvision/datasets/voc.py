@@ -5,7 +5,7 @@ from .vision import VisionDataset
 import xml.etree.ElementTree as ET
 from PIL import Image
 from typing import Any, Callable, Dict, Optional, Tuple
-from .utils import download_url, verify_str_arg
+from .utils import download_and_extract_archive, verify_str_arg
 
 DATASET_YEAR_DICT = {
     '2012': {
@@ -98,7 +98,7 @@ class VOCSegmentation(VisionDataset):
         mask_dir = os.path.join(voc_root, 'SegmentationClass')
 
         if download:
-            download_extract(self.url, self.root, self.filename, self.md5)
+            download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.md5)
 
         if not os.path.isdir(voc_root):
             raise RuntimeError('Dataset not found or corrupted.' +
@@ -182,7 +182,7 @@ class VOCDetection(VisionDataset):
         annotation_dir = os.path.join(voc_root, 'Annotations')
 
         if download:
-            download_extract(self.url, self.root, self.filename, self.md5)
+            download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.md5)
 
         if not os.path.isdir(voc_root):
             raise RuntimeError('Dataset not found or corrupted.' +
@@ -239,9 +239,3 @@ class VOCDetection(VisionDataset):
             if not children:
                 voc_dict[node.tag] = text
         return voc_dict
-
-
-def download_extract(url: str, root: str, filename: str, md5: str) -> None:
-    download_url(url, root, filename, md5)
-    with tarfile.open(os.path.join(root, filename), "r") as tar:
-        tar.extractall(path=root)
