@@ -181,7 +181,7 @@ class STL10(VisionDataset):
             self.root, self.base_folder, self.folds_list_file)
         with open(path_to_folds, 'r') as f:
             str_idx = f.read().splitlines()[folds]
-            list_idx = np.fromstring(str_idx, dtype=np.uint8, sep=' ')
+            list_idx = np.fromstring(str_idx, dtype=np.int64, sep=' ')
             self.data = self.data[list_idx, :, :, :]
             if self.labels is not None:
                 self.labels = self.labels[list_idx]
