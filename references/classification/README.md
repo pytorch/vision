@@ -63,6 +63,12 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 
 Then we averaged the parameters of the last 3 checkpoints that improved the Acc@1. See [#3182](https://github.com/pytorch/vision/pull/3182) for details.
 
+
+### MobileNetV3 Small
+
+TODO
+
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).
 
@@ -127,6 +133,8 @@ For Mobilenet-v3 Large, the model was trained with quantization aware training, 
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantization.py --model='mobilenet_v3_large' \
     --wd 0.00001 --lr 0.001
 ```
+
+For MobileNet-v3 Small - TODO.
 
 For post training quant, device is set to CPU. For training, the device is set to CUDA.
 
