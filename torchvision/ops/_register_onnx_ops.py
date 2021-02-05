@@ -29,6 +29,10 @@ def _register_custom_op():
                           " ONNX forces ROIs to be 1x1 or larger.")
             scale = torch.tensor(0.5 / spatial_scale).to(dtype=torch.float)
             rois = g.op("Sub", rois, scale)
+
+        # ONX doesn't support negative sampling_raatio
+        if sampling_ratio < 0:
+            sampling_ratio = 0
         return g.op('RoiAlign', input, rois, batch_indices, spatial_scale_f=spatial_scale,
                     output_height_i=pooled_height, output_width_i=pooled_width, sampling_ratio_i=sampling_ratio)
 
