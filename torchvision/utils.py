@@ -242,8 +242,6 @@ def draw_segmentation_masks(
     num_classes = masks.size()[0]
     masks = masks.argmax(0)
 
-    img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize(image.size()[1:])
-
     if colors is None:
         palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
         colors_t = torch.as_tensor([i for i in range(num_classes)])[:, None] * palette
@@ -263,6 +261,7 @@ def draw_segmentation_masks(
 
         color_arr = np.array(color_list).astype("uint8")
 
+    img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize(image.size()[1:])
     img_to_draw.putpalette(color_arr)
 
     img_to_draw = torch.from_numpy(np.array(img_to_draw.convert('RGBA')))
