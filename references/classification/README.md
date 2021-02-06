@@ -74,27 +74,6 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 ```
 
 ## Quantized
-### INT8 models
-We add INT8 quantized models to follow the quantization support added in PyTorch 1.3. 
-
-Obtaining a pre-trained quantized model can be obtained with a few lines of code:
-```
-model = torchvision.models.quantization.mobilenet_v2(pretrained=True, quantize=True)
-model.eval()
-# run the model with quantized inputs and weights
-out = model(torch.rand(1, 3, 224, 224))
-```
-We provide pre-trained quantized weights for the following models:
-
-|       Model       |  Acc@1 |  Acc@5 |
-|:-----------------:|:------:|:------:|
-|    MobileNet V2   | 71.658 | 90.150 |
-|   ShuffleNet V2:  | 68.360 | 87.582 |
-|     ResNet 18     | 69.494 | 88.882 |
-|     ResNet 50     | 75.920 | 92.814 |
-| ResNext 101 32x8d | 78.986 | 94.480 |
-|    Inception V3   | 77.176 | 93.354 |
-|     GoogleNet     | 69.826 | 89.404 |
 
 ### Parameters used for generating quantized models:
 
@@ -105,6 +84,10 @@ For all post training quantized models (All quantized models except mobilenet-v2
 3. batch_size: 32
 4. eval_batch_size: 128
 5. backend: 'fbgemm'
+
+```
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='<model_name>'
+```
 
 For Mobilenet-v2, the model was trained with quantization aware training, the settings used are:
 1. num_workers: 16
@@ -118,15 +101,38 @@ For Mobilenet-v2, the model was trained with quantization aware training, the se
 9. momentum: 0.9
 10. lr_step_size:30
 11. lr_gamma: 0.1
+12. weight-decay: 0.0001
+
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantization.py --model='mobilenet_v2'
+```
 
 Training converges at about 10 epochs.
 
-For post training quant, device is set to CPU. For training, the device is set to CUDA
+For Mobilenet-v3 Large, the model was trained with quantization aware training, the settings used are:
+1. num_workers: 16
+2. batch_size: 32
+3. eval_batch_size: 128
+4. backend: 'qnnpack'
+5. learning-rate: 0.001
+6. num_epochs: 90
+7. num_observer_update_epochs:4
+8. num_batch_norm_update_epochs:3
+9. momentum: 0.9
+10. lr_step_size:30
+11. lr_gamma: 0.1
+12. weight-decay: 0.00001
+
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantization.py --model='mobilenet_v3_large' \
+    --wd 0.00001 --lr 0.001
+```
+
+For post training quant, device is set to CPU. For training, the device is set to CUDA.
 
 ### Command to evaluate quantized models using the pre-trained weights:
-For all quantized models:
+
 ```
-python references/classification/train_quantization.py  --data-path='imagenet_full_size/' \
-    --device='cpu' --test-only --backend='fbgemm' --model='<model_name>'
+python train_quantization.py --device='cpu' --test-only --backend='<backend>' --model='<model_name>'
 ```
 

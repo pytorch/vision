@@ -1,0 +1,5 @@
+apply from: rootProject.file('gradle_scripts/android_tasks.gradle')
+
+apply from: rootProject.file('gradle_scripts/release_bintray.gradle')
+
+apply from: rootProject.file('gradle_scripts/gradle_maven_push.gradle')
