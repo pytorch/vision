@@ -1,12 +1,15 @@
-#include "readjpeg_cuda.h"
+#include "decode_jpeg_cuda.h"
 
 #include <string>
 
+namespace vision {
+namespace image {
+
 #if !NVJPEG_FOUND
 
-torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg_cuda(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
-      false, "decodeJPEG_cuda: torchvision not compiled with nvJPEG support");
+      false, "decode_jpeg_cuda: torchvision not compiled with nvJPEG support");
 }
 
 #else
@@ -24,7 +27,7 @@ void init_nvjpegImage(nvjpegImage_t& img) {
   }
 }
 
-torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg_cuda(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -156,3 +159,6 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data, ImageReadMode mode) {
 }
 
 #endif // NVJPEG_FOUND
+
+} // namespace image
+} // namespace vision
