@@ -149,7 +149,8 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED,
+                device: torch.device = 'cpu') -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     Optionally converts the image to the desired format.
@@ -166,7 +167,11 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_jpeg(input, mode.value)
+    device = torch.device(device)
+    if device.type == 'cuda':
+        output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
+    else:
+        output = torch.ops.image.decode_jpeg(input, mode.value)
     return output
 
 

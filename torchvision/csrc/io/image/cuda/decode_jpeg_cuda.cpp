@@ -4,6 +4,7 @@
 
 #if NVJPEG_FOUND
 #include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include <nvjpeg.h>
 #endif
 
@@ -14,7 +15,10 @@ namespace image {
 
 #if !NVJPEG_FOUND
 
-torch::Tensor decode_jpeg_cuda(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg_cuda(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    torch::Device device) {
   TORCH_CHECK(
       false, "decode_jpeg_cuda: torchvision not compiled with nvJPEG support");
 }
@@ -30,13 +34,22 @@ void init_nvjpegImage(nvjpegImage_t& img) {
   }
 }
 
-torch::Tensor decode_jpeg_cuda(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_jpeg_cuda(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    torch::Device device) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
+
+  TORCH_CHECK(
+    device.is_cuda(), "Expected a cuda device"
+  )
+
+  at::cuda::CUDAGuard device_guard(device);
 
   auto datap = data.data_ptr<uint8_t>();
 
@@ -132,7 +145,7 @@ torch::Tensor decode_jpeg_cuda(const torch::Tensor& data, ImageReadMode mode) {
   // TODO device selection
   auto tensor = torch::empty(
       {int64_t(outputComponents), int64_t(height), int64_t(width)},
-      torch::dtype(torch::kU8).device(torch::kCUDA));
+      torch::dtype(torch::kU8).device(device));
 
   for (int c = 0; c < outputComponents; c++) {
     outImage.channel[c] = tensor[c].data_ptr<uint8_t>();

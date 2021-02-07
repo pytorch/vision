@@ -8,7 +8,8 @@ namespace image {
 
 C10_EXPORT torch::Tensor decode_jpeg_cuda(
     const torch::Tensor& data,
-    ImageReadMode mode = IMAGE_READ_MODE_UNCHANGED);
+    ImageReadMode mode,
+    torch::Device device);
 
 } // namespace image
 } // namespace vision
