@@ -1,8 +1,8 @@
 #include "decode_jpeg_cuda.h"
 
-#include <string>
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
+#include <string>
 
 namespace vision {
 namespace image {
