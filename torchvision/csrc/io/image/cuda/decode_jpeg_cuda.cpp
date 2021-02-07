@@ -1,6 +1,8 @@
 #include "decode_jpeg_cuda.h"
 
 #include <string>
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
 
 namespace vision {
 namespace image {
@@ -14,8 +16,6 @@ torch::Tensor decode_jpeg_cuda(const torch::Tensor& data, ImageReadMode mode) {
 
 #else
 
-#include <ATen/ATen.h>
-#include <ATen/cuda/CUDAContext.h>
 #include <nvjpeg.h>
 
 static nvjpegHandle_t nvjpeg_handle = nullptr;
