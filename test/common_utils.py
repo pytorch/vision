@@ -18,6 +18,8 @@ from collections import OrderedDict
 import numpy as np
 from PIL import Image
 
+IS_REMOTE_GPU = os.getenv('TEST_WITH_REMOTE_GPU') == '1'
+
 
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
@@ -106,19 +108,25 @@ class TestCase(unittest.TestCase):
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
         munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
-        test_file = os.path.realpath(sys.modules[module_id].__file__)
-        expected_file = os.path.join(os.path.dirname(test_file),
-                                     "expect",
-                                     munged_id)
 
+        # Determine expected file based on environment
+        if IS_REMOTE_GPU:
+            from libfb.py import parutil
+            resource_path = parutil.get_dir_path("expect")
+            expected_file = os.path.join(resource_path, munged_id)
+        else:
+            test_file = os.path.realpath(sys.modules[module_id].__file__)
+            expected_file = os.path.join(os.path.dirname(test_file),
+                                        "expect",
+                                        munged_id)
         if subname:
             expected_file += "_" + subname
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
             raise RuntimeError(
-                ("No expect file exists for {}; to accept the current output, run:\n"
-                 "python {} {} --accept").format(os.path.basename(expected_file), __main__.__file__, munged_id))
+                ("No expect file exists for {} in {}; to accept the current output, run:\n"
+                "python {} {} --accept").format(os.path.basename(expected_file), expected_file, __main__.__file__, munged_id))
 
         return expected_file
 
