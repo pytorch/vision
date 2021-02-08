@@ -54,19 +54,17 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 ```
 
 
-### MobileNetV3 Large
+### MobileNetV3 Large & Small
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
-     --model mobilenet_v3_large --epochs 600 --opt rmsprop --batch-size 128 --lr 0.064\ 
+     --model $MODEL --epochs 600 --opt rmsprop --batch-size 128 --lr 0.064\ 
      --wd 0.00001 --lr-step-size 2 --lr-gamma 0.973 --auto-augment imagenet --random-erase 0.2
 ```
 
-Then we averaged the parameters of the last 3 checkpoints that improved the Acc@1. See [#3182](https://github.com/pytorch/vision/pull/3182) for details.
+Here `$MODEL` is one of `mobilenet_v3_large` or `mobilenet_v3_small`.
 
-
-### MobileNetV3 Small
-
-TODO
+Then we averaged the parameters of the last 3 checkpoints that improved the Acc@1. See [#3182](https://github.com/pytorch/vision/pull/3182) 
+and [#3354](https://github.com/pytorch/vision/pull/3354) for details.
 
 
 ## Mixed precision training

@@ -143,7 +143,7 @@ GoogleNet                         30.22           10.47
 ShuffleNet V2                     30.64           11.68
 MobileNet V2                      28.12           9.71
 MobileNet V3 Large                25.96           8.66
-MobileNet V3 Small                TODO            TODO
+MobileNet V3 Small                32.33           12.60
 ResNeXt-50-32x4d                  22.38           6.30
 ResNeXt-101-32x8d                 20.69           5.47
 Wide ResNet-50-2                  21.49           5.91
