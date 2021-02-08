@@ -216,7 +216,7 @@ def draw_bounding_boxes(
 def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
-    alpha: Optional[float] = 0.2,
+    alpha: float = 0.2,
     colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
 ) -> torch.Tensor:
 
