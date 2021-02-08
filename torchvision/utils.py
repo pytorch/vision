@@ -263,8 +263,7 @@ def draw_segmentation_masks(
     img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize((w, h))
     img_to_draw.putpalette(color_arr)
 
-    img_to_draw = torch.from_numpy(np.array(img_to_draw.convert('RGBA')))
+    img_to_draw = torch.from_numpy(np.array(img_to_draw.convert('RGB')))
     img_to_draw = img_to_draw.permute((2, 0, 1))
 
-    return (torch.cat([image, torch.full(image.shape[1:], 255).unsqueeze(0)]).float()
-            * alpha + img_to_draw.float() * (1.0 - alpha)).to(dtype=torch.uint8)
+    return (image.float() * alpha + img_to_draw.float() * (1.0 - alpha)).to(dtype=torch.uint8)
