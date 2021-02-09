@@ -14,7 +14,7 @@ __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
 
 model_urls = {
     "mobilenet_v3_large": "https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
-    "mobilenet_v3_small": None,
+    "mobilenet_v3_small": "https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
 }
 
 
