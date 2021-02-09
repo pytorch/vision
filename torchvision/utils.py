@@ -253,10 +253,9 @@ def draw_segmentation_masks(
         for color in colors:
             if isinstance(color, str):
                 # This will automatically raise Error if rgb cannot be parsed.
-                fill_color = ImageColor.getrgb(color)  # + (100,)
+                fill_color = ImageColor.getrgb(color)
                 color_list.append(fill_color)
             elif isinstance(color, tuple):
-                # Use the given colors list and create ndarray of colors.
                 color_list.append(color)
 
         color_arr = np.array(color_list).astype("uint8")
