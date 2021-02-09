@@ -132,6 +132,8 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train_quantizati
     --wd 0.00001 --lr 0.001
 ```
 
+For MobileNet-v3 Small - TODO.
+
 For post training quant, device is set to CPU. For training, the device is set to CUDA.
 
 ### Command to evaluate quantized models using the pre-trained weights:
