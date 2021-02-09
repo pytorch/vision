@@ -193,7 +193,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+99d5b29 )
+                  master (0.9.0a0+fa73e64 )
                 </div>
               
             
@@ -367,6 +367,7 @@ These can be constructed by passing <code class="docutils literal notranslate"><
 <span class="n">shufflenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">shufflenet_v2_x1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">mobilenet_v2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">mobilenet_v3_large</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mobilenet_v3_small</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v3_small</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">resnext50_32x4d</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">resnext50_32x4d</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">wide_resnet50_2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">wide_resnet50_2</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">mnasnet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mnasnet1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -420,131 +421,143 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <col width="22%" />
 </colgroup>
 <thead valign="bottom">
-<tr class="row-odd"><th class="head">Network</th>
-<th class="head">Top-1 error</th>
-<th class="head">Top-5 error</th>
+<tr class="row-odd"><th class="head">Model</th>
+<th class="head">Acc&#64;1</th>
+<th class="head">Acc&#64;5</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>AlexNet</td>
-<td>43.45</td>
-<td>20.91</td>
+<td>56.522</td>
+<td>79.066</td>
 </tr>
 <tr class="row-odd"><td>VGG-11</td>
-<td>30.98</td>
-<td>11.37</td>
+<td>69.020</td>
+<td>88.628</td>
 </tr>
 <tr class="row-even"><td>VGG-13</td>
-<td>30.07</td>
-<td>10.75</td>
+<td>69.928</td>
+<td>89.246</td>
 </tr>
 <tr class="row-odd"><td>VGG-16</td>
-<td>28.41</td>
-<td>9.62</td>
+<td>71.592</td>
+<td>90.382</td>
 </tr>
 <tr class="row-even"><td>VGG-19</td>
-<td>27.62</td>
-<td>9.12</td>
+<td>72.376</td>
+<td>90.876</td>
 </tr>
 <tr class="row-odd"><td>VGG-11 with batch normalization</td>
-<td>29.62</td>
-<td>10.19</td>
+<td>70.370</td>
+<td>89.810</td>
 </tr>
 <tr class="row-even"><td>VGG-13 with batch normalization</td>
-<td>28.45</td>
-<td>9.63</td>
+<td>71.586</td>
+<td>90.374</td>
 </tr>
 <tr class="row-odd"><td>VGG-16 with batch normalization</td>
-<td>26.63</td>
-<td>8.50</td>
+<td>73.360</td>
+<td>91.516</td>
 </tr>
 <tr class="row-even"><td>VGG-19 with batch normalization</td>
-<td>25.76</td>
-<td>8.15</td>
+<td>74.218</td>
+<td>91.842</td>
 </tr>
 <tr class="row-odd"><td>ResNet-18</td>
-<td>30.24</td>
-<td>10.92</td>
+<td>69.758</td>
+<td>89.078</td>
 </tr>
 <tr class="row-even"><td>ResNet-34</td>
-<td>26.70</td>
-<td>8.58</td>
+<td>73.314</td>
+<td>91.420</td>
 </tr>
 <tr class="row-odd"><td>ResNet-50</td>
-<td>23.85</td>
-<td>7.13</td>
+<td>76.130</td>
+<td>92.862</td>
 </tr>
 <tr class="row-even"><td>ResNet-101</td>
-<td>22.63</td>
-<td>6.44</td>
+<td>77.374</td>
+<td>93.546</td>
 </tr>
 <tr class="row-odd"><td>ResNet-152</td>
-<td>21.69</td>
-<td>5.94</td>
+<td>78.312</td>
+<td>94.046</td>
 </tr>
 <tr class="row-even"><td>SqueezeNet 1.0</td>
-<td>41.90</td>
-<td>19.58</td>
+<td>58.092</td>
+<td>80.420</td>
 </tr>
 <tr class="row-odd"><td>SqueezeNet 1.1</td>
-<td>41.81</td>
-<td>19.38</td>
+<td>58.178</td>
+<td>80.624</td>
 </tr>
 <tr class="row-even"><td>Densenet-121</td>
-<td>25.35</td>
-<td>7.83</td>
+<td>74.434</td>
+<td>91.972</td>
 </tr>
 <tr class="row-odd"><td>Densenet-169</td>
-<td>24.00</td>
-<td>7.00</td>
+<td>75.600</td>
+<td>92.806</td>
 </tr>
 <tr class="row-even"><td>Densenet-201</td>
-<td>22.80</td>
-<td>6.43</td>
+<td>76.896</td>
+<td>93.370</td>
 </tr>
 <tr class="row-odd"><td>Densenet-161</td>
-<td>22.35</td>
-<td>6.20</td>
+<td>77.138</td>
+<td>93.560</td>
 </tr>
 <tr class="row-even"><td>Inception v3</td>
-<td>22.55</td>
-<td>6.44</td>
+<td>77.294</td>
+<td>93.450</td>
 </tr>
 <tr class="row-odd"><td>GoogleNet</td>
-<td>30.22</td>
-<td>10.47</td>
+<td>69.778</td>
+<td>89.530</td>
 </tr>
-<tr class="row-even"><td>ShuffleNet V2</td>
-<td>30.64</td>
-<td>11.68</td>
+<tr class="row-even"><td>ShuffleNet V2 x1.0</td>
+<td>69.362</td>
+<td>88.316</td>
 </tr>
-<tr class="row-odd"><td>MobileNet V2</td>
-<td>28.12</td>
-<td>9.71</td>
+<tr class="row-odd"><td>ShuffleNet V2 x0.5</td>
+<td>60.552</td>
+<td>81.746</td>
 </tr>
-<tr class="row-even"><td>MobileNet V3 Large</td>
-<td>25.96</td>
-<td>8.66</td>
+<tr class="row-even"><td>MobileNet V2</td>
+<td>71.878</td>
+<td>90.286</td>
+</tr>
+<tr class="row-odd"><td>MobileNet V3 Large</td>
+<td>74.042</td>
+<td>91.340</td>
+</tr>
+<tr class="row-even"><td>MobileNet V3 Small</td>
+<td>67.668</td>
+<td>87.402</td>
 </tr>
 <tr class="row-odd"><td>ResNeXt-50-32x4d</td>
-<td>22.38</td>
-<td>6.30</td>
+<td>77.618</td>
+<td>93.698</td>
 </tr>
 <tr class="row-even"><td>ResNeXt-101-32x8d</td>
-<td>20.69</td>
-<td>5.47</td>
+<td>79.312</td>
+<td>94.526</td>
 </tr>
 <tr class="row-odd"><td>Wide ResNet-50-2</td>
-<td>21.49</td>
-<td>5.91</td>
+<td>78.468</td>
+<td>94.086</td>
 </tr>
 <tr class="row-even"><td>Wide ResNet-101-2</td>
-<td>21.16</td>
-<td>5.72</td>
+<td>78.848</td>
+<td>94.284</td>
 </tr>
 <tr class="row-odd"><td>MNASNet 1.0</td>
-<td>26.49</td>
-<td>8.456</td>
+<td>73.456</td>
+<td>91.510</td>
+</tr>
+<tr class="row-even"><td>MNASNet 0.5</td>
+<td>67.734</td>
+<td>87.490</td>
 </tr>
 </tbody>
 </table>
