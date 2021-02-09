@@ -828,9 +828,9 @@ class RandomResizedCrop(torch.nn.Module):
         width, height = F._get_image_size(img)
         area = height * width
 
+        log_ratio = torch.log(torch.tensor(ratio))
         for _ in range(10):
             target_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
-            log_ratio = torch.log(torch.tensor(ratio))
             aspect_ratio = torch.exp(
                 torch.empty(1).uniform_(log_ratio[0], log_ratio[1])
             ).item()
