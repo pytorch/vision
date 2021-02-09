@@ -221,11 +221,11 @@ def draw_segmentation_masks(
 ) -> torch.Tensor:
 
     """
-    Draws segmentation masks on given image.
+    Draws segmentation masks on given RGB image.
     The values of the input image should be uint8 between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
+        image (Tensor): Tensor of shape (3 x H x W) and dtype uint8.
         masks (Tensor): Tensor of shape (num_classes, H, W). Each containing probability of predicted class.
         alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
@@ -238,6 +238,8 @@ def draw_segmentation_masks(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
+    elif image.size()[0] != 3:
+        raise ValueError("Pass an RGB image. Other Image formats are not supported")
 
     num_classes = masks.size()[0]
     masks = masks.argmax(0)
