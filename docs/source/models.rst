@@ -64,6 +64,7 @@ These can be constructed by passing ``pretrained=True``:
     shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
     mobilenet_v2 = models.mobilenet_v2(pretrained=True)
     mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
+    mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
     wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
     mnasnet = models.mnasnet1_0(pretrained=True)
@@ -143,6 +144,7 @@ ShuffleNet V2 x1.0                69.362          88.316
 ShuffleNet V2 x0.5                60.552          81.746
 MobileNet V2                      71.878          90.286
 MobileNet V3 Large                74.042          91.340
+MobileNet V3 Small                67.668          87.402
 ResNeXt-50-32x4d                  77.618          93.698
 ResNeXt-101-32x8d                 79.312          94.526
 Wide ResNet-50-2                  78.468          94.086
