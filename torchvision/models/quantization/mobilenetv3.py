@@ -8,12 +8,11 @@ from typing import Any, List, Optional
 from .utils import _replace_relu
 
 
-__all__ = ['QuantizableMobileNetV3', 'mobilenet_v3_large', 'mobilenet_v3_small']
+__all__ = ['QuantizableMobileNetV3', 'mobilenet_v3_large']
 
 quant_model_urls = {
     'mobilenet_v3_large_qnnpack':
         "https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
-    'mobilenet_v3_small_qnnpack': None,
 }
 
 
@@ -128,24 +127,5 @@ def mobilenet_v3_large(pretrained=False, progress=True, quantize=False, **kwargs
      quantize (bool): If True, returns a quantized model, else returns a float model
     """
     arch = "mobilenet_v3_large"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, quantize, **kwargs)
-
-
-def mobilenet_v3_small(pretrained=False, progress=True, quantize=False, **kwargs):
-    """
-    Constructs a MobileNetV3 Small architecture from
-    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
-
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
-
-    Args:
-     pretrained (bool): If True, returns a model pre-trained on ImageNet.
-     progress (bool): If True, displays a progress bar of the download to stderr
-     quantize (bool): If True, returns a quantized model, else returns a float model
-    """
-    arch = "mobilenet_v3_small"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, kwargs)
     return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, quantize, **kwargs)
