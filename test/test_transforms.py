@@ -1955,6 +1955,7 @@ class Tester(unittest.TestCase):
                     img = transform(img)
                 transform.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_erasing(self):
         img = torch.ones(3, 128, 128)
 
@@ -1971,8 +1972,8 @@ class Tester(unittest.TestCase):
             aspect_ratios.append(h / w)
 
         count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
-        count_smaller_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio < 1])
-        self.assertAlmostEqual(count_bigger_then_ones / trial, count_smaller_then_ones / trial, 1)
+        p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
+        self.assertGreater(p_value, 0.0001)
 
 
 if __name__ == '__main__':
