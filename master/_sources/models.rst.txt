@@ -280,7 +280,6 @@ a model with random weights by calling its constructor:
     inception_v3 = models.quantization.inception_v3()
     mobilenet_v2 = models.quantization.mobilenet_v2()
     mobilenet_v3_large = models.quantization.mobilenet_v3_large()
-    mobilenet_v3_small = models.quantization.mobilenet_v3_small()
     resnet18 = models.quantization.resnet18()
     resnet50 = models.quantization.resnet50()
     resnext101_32x8d = models.quantization.resnext101_32x8d()
