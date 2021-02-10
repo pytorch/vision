@@ -226,7 +226,7 @@ def draw_segmentation_masks(
 
     Args:
         image (Tensor): Tensor of shape (3 x H x W) and dtype uint8.
-        masks (Tensor): Tensor of shape (num_classes, H, W). Each containing probability of predicted class.
+        masks (Tensor): Boolean Tensor of shape (num_masks, H, W).
         alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
@@ -241,12 +241,12 @@ def draw_segmentation_masks(
     elif image.size()[0] != 3:
         raise ValueError("Pass an RGB image. Other Image formats are not supported")
 
-    num_classes = masks.size()[0]
+    num_masks = masks.size()[0]
     masks = masks.argmax(0)
 
     if colors is None:
         palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-        colors_t = torch.as_tensor([i for i in range(num_classes)])[:, None] * palette
+        colors_t = torch.as_tensor([i for i in range(num_masks)])[:, None] * palette
         color_arr = (colors_t % 255).numpy().astype("uint8")
     else:
         color_list = []
@@ -261,7 +261,7 @@ def draw_segmentation_masks(
         color_arr = np.array(color_list).astype("uint8")
 
     _, h, w = image.size()
-    img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize((w, h))
+    img_to_draw = Image.fromarray(masks.cpu().numpy(), mode="1").resize((w, h))
     img_to_draw.putpalette(color_arr)
 
     img_to_draw = torch.from_numpy(np.array(img_to_draw.convert('RGB')))
