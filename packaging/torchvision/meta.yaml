@@ -10,20 +10,19 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - jpeg
-    - ffmpeg =4.2  # [not win]
+    - ffmpeg =4.2
+    - attrs # [win]
 
   host:
     - python
     - setuptools
+    - attrs # [win]
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
   run:
     - python
-    - libpng
-    - ffmpeg =4.2  # [not win]
-    - jpeg
     - pillow >=4.1.1
     - numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
@@ -31,7 +30,6 @@ requirements:
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
-  script: python setup.py install --single-version-externally-managed --record=record.txt
   script_env:
     - CUDA_HOME
     - FORCE_CUDA

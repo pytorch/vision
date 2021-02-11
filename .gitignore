@@ -13,10 +13,12 @@ docs/build
 .coverage
 htmlcov
 .*.swp
+*.dll
 *.so*
 *.dylib*
 */*.so*
 */*.dylib*
+*/*.dll
 *.swp
 *.swo
 gen.yml
