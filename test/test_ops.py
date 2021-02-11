@@ -449,6 +449,17 @@ class NMSTester(unittest.TestCase):
             with torch.cuda.amp.autocast():
                 self.test_nms_cuda(dtype=dtype)
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_nms_cuda_float16(self):
+        boxes = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551], [285.1472, 188.7374, 1192.4984, 851.0669],
+                             [279.2440, 197.9812, 1189.4746, 849.2019]]).cuda()
+        scores = torch.tensor([0.6370, 0.7569, 0.3966]).cuda()
+
+        iou_thres = 0.2
+        keep32 = ops.nms(boxes, scores, iou_thres)
+        keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
+        self.assertTrue(torch.all(torch.eq(keep32, keep16)))
+
 
 class DeformConvTester(OpTester, unittest.TestCase):
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
