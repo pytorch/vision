@@ -238,7 +238,9 @@ def voc():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.VOCSegmentation(ROOT, year=year, download=True), name=f"VOC, {year}", file="voc"
+                lambda: datasets.VOCSegmentation(ROOT, year=year, download=True),
+                name=f"VOC, {year}",
+                file="voc",
             )
             for year in ("2007", "2007-test", "2008", "2009", "2010", "2011", "2012")
         ]
@@ -266,7 +268,9 @@ def qmnist():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.QMNIST(ROOT, what=what, download=True), name=f"QMNIST, {what}", file="mnist"
+                lambda: datasets.QMNIST(ROOT, what=what, download=True),
+                name=f"QMNIST, {what}",
+                file="mnist",
             )
             for what in ("train", "test", "nist")
         ]
@@ -289,7 +293,9 @@ def phototour():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.PhotoTour(ROOT, name=name, download=True), name=f"PhotoTour, {name}", file="phototour"
+                lambda: datasets.PhotoTour(ROOT, name=name, download=True),
+                name=f"PhotoTour, {name}",
+                file="phototour",
             )
             # The names postfixed with '_harris' point to the domain 'matthewalunbrown.com'. For some reason all
             # requests timeout from within CI. They are disabled until this is resolved.
@@ -299,26 +305,43 @@ def phototour():
 
 
 def sbdataset():
-    return collect_download_configs(lambda: datasets.SBDataset(ROOT, download=True), name="SBDataset", file="voc")
+    return collect_download_configs(
+        lambda: datasets.SBDataset(ROOT, download=True),
+        name="SBDataset",
+        file="voc",
+    )
 
 
 def sbu():
-    return collect_download_configs(lambda: datasets.SBU(ROOT, download=True), name="SBU", file="sbu")
+    return collect_download_configs(
+        lambda: datasets.SBU(ROOT, download=True),
+        name="SBU",
+        file="sbu",
+    )
 
 
 def semeion():
-    return collect_download_configs(lambda: datasets.SEMEION(ROOT, download=True), name="SEMEION", file="semeion")
+    return collect_download_configs(
+        lambda: datasets.SEMEION(ROOT, download=True),
+        name="SEMEION",
+        file="semeion",
+    )
 
 
 def stl10():
-    return collect_download_configs(lambda: datasets.STL10(ROOT, download=True), name="STL10")
+    return collect_download_configs(
+        lambda: datasets.STL10(ROOT, download=True),
+        name="STL10",
+    )
 
 
 def svhn():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.SVHN(ROOT, split=split, download=True), name=f"SVHN, {split}", file="svhn"
+                lambda: datasets.SVHN(ROOT, split=split, download=True),
+                name=f"SVHN, {split}",
+                file="svhn",
             )
             for split in ("train", "test", "extra")
         ]
@@ -339,11 +362,19 @@ def usps():
 
 
 def celeba():
-    return collect_download_configs(lambda: datasets.CelebA(ROOT, download=True), name="CelebA", file="celeba")
+    return collect_download_configs(
+        lambda: datasets.CelebA(ROOT, download=True),
+        name="CelebA",
+        file="celeba",
+    )
 
 
 def widerface():
-    return collect_download_configs(lambda: datasets.WIDERFace(ROOT, download=True), name="WIDERFace", file="widerface")
+    return collect_download_configs(
+        lambda: datasets.WIDERFace(ROOT, download=True),
+        name="WIDERFace",
+        file="widerface",
+    )
 
 
 def make_parametrize_kwargs(download_configs):
