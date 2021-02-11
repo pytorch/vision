@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(torchvision)
 set(CMAKE_CXX_STANDARD 14)
-set(TORCHVISION_VERSION 0.7.0)
+file(STRINGS version.txt TORCHVISION_VERSION)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
 
