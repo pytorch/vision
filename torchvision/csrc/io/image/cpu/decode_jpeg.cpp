@@ -36,7 +36,7 @@ static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
 
 static void torch_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
   torch_jpeg_mgr* src = (torch_jpeg_mgr*)cinfo->src;
-  if (src->pub.bytes_in_buffer < num_bytes) {
+  if (src->pub.bytes_in_buffer < (size_t)num_bytes) {
     // Skipping over all of remaining data;  output EOI.
     src->pub.next_input_byte = EOI_BUFFER;
     src->pub.bytes_in_buffer = 1;
