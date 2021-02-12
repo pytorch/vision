@@ -155,7 +155,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   auto ptr = input.data_ptr<uint8_t>();
 
   // Encode PNG file
-  for (size_t y = 0; y < height; ++y) {
+  for (int y = 0; y < height; ++y) {
     png_write_row(png_write, ptr);
     ptr += stride;
   }
