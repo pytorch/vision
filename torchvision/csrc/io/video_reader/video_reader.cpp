@@ -491,7 +491,6 @@ torch::List<torch::Tensor> probeVideo(
     videoTimeBase = torch::zeros({2}, torch::kInt);
     int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
     const auto& header = videoMetadata;
-    const auto& media = header.format;
 
     videoTimeBaseData[0] = header.num;
     videoTimeBaseData[1] = header.den;
