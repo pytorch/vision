@@ -98,10 +98,10 @@ void Video::_getDecoderParams(
     double videoStartS,
     int64_t getPtsOnly,
     std::string stream,
-    long stream_id = -1,
-    bool all_streams = false,
-    long num_threads = 0,
-    double seekFrameMarginUs = 10) {
+    long stream_id,
+    bool all_streams,
+    long num_threads,
+    double seekFrameMarginUs) {
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
 
   params.timeoutMs = decoderTimeoutMs;
@@ -222,7 +222,7 @@ Video::Video(std::string videoPath, std::string stream, long numThreads) {
   }
 } // video
 
-bool Video::setCurrentStream(std::string stream = "video") {
+bool Video::setCurrentStream(std::string stream) {
   if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
     current_stream = _parseStream(stream);
   }

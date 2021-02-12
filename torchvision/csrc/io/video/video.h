@@ -24,7 +24,7 @@ struct Video : torch::CustomClassHolder {
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
   void Seek(double ts);
-  bool setCurrentStream(std::string stream);
+  bool setCurrentStream(std::string stream = "video");
   std::tuple<torch::Tensor, double> Next();
 
  private:
@@ -40,10 +40,10 @@ struct Video : torch::CustomClassHolder {
       double videoStartS,
       int64_t getPtsOnly,
       std::string stream,
-      long stream_id,
-      bool all_streams,
-      long num_threads,
-      double seekFrameMarginUs); // this needs to be improved
+      long stream_id = -1,
+      bool all_streams = false,
+      long num_threads = 0,
+      double seekFrameMarginUs = 10); // this needs to be improved
 
   std::map<std::string, std::vector<double>> streamTimeBase; // not used
 
