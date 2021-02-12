@@ -28,7 +28,7 @@ AVCodec* Stream::findCodec(AVCodecParameters* params) {
   return avcodec_find_decoder(params->codec_id);
 }
 
-int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
+int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
   AVStream* steam = inputCtx_->streams[format_.stream];
 
   AVCodec* codec = findCodec(steam->codecpar);
@@ -51,6 +51,12 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
     LOG(ERROR) << "LoggingUuid #" << loggingUuid_
                << ", avcodec_parameters_to_context failed";
     return ret;
+  }
+
+  // BRUNO: force codecctx to use more threads
+  if (num_threads > 0) {
+    codecCtx_->thread_count = num_threads;
+    codecCtx_->active_thread_type = 1;
   }
 
   // after avcodec_open2, value of codecCtx_->time_base is NOT meaningful
