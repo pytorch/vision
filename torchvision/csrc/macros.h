@@ -15,6 +15,7 @@
 #else
 #ifdef _MSC_VER
 #define VISION_INLINE_VARIABLE __declspec(selectany)
+#define HINT_MSVC_LINKER_INCLUDE_SYMBOL
 #else
 #define VISION_INLINE_VARIABLE __attribute__((weak))
 #endif

@@ -4,6 +4,7 @@ import contextlib
 import tempfile
 import unittest
 import random
+import sys
 
 import itertools
 
@@ -13,6 +14,7 @@ import numpy as np
 import torch
 import torchvision
 from torchvision.io import _HAS_VIDEO_OPT, VideoReader
+from common_utils import PY39_SKIP
 
 try:
     import av
@@ -278,6 +280,7 @@ def _template_read_video(video_object, s=0, e=None):
 
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideo(unittest.TestCase):
+    @PY39_SKIP
     @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_video_tensor(self):
         """
@@ -362,6 +365,7 @@ class TestVideo(unittest.TestCase):
                 config.duration, reader_md["video"]["duration"][0], delta=0.5
             )
 
+    @PY39_SKIP
     @unittest.skipIf(av is None, "PyAV unavailable")
     def test_video_reading_fn(self):
         """

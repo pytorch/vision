@@ -12,13 +12,12 @@ import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 import com.facebook.soloader.nativeloader.NativeLoader;
 import com.facebook.soloader.nativeloader.SystemDelegate;
+import java.nio.FloatBuffer;
+import java.util.Map;
 import org.pytorch.IValue;
 import org.pytorch.Module;
 import org.pytorch.PyTorchAndroid;
 import org.pytorch.Tensor;
-
-import java.nio.FloatBuffer;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
   static {
@@ -116,8 +115,10 @@ public class MainActivity extends AppCompatActivity {
       final float[] scoresData = scores.getDataAsFloatArray();
       final int n = scoresData.length;
       for (int i = 0; i < n; i++) {
-          android.util.Log.i(TAG,
-              String.format("Forward result %d: score %f box:(%f, %f, %f, %f)",
+        android.util.Log.i(
+            TAG,
+            String.format(
+                "Forward result %d: score %f box:(%f, %f, %f, %f)",
                 scoresData[i],
                 boxesData[4 * i + 0],
                 boxesData[4 * i + 1],
@@ -130,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
     final long moduleForwardDuration = SystemClock.elapsedRealtime() - moduleForwardStartTime;
     final long analysisDuration = SystemClock.elapsedRealtime() - startTime;
-    return new Result(new float[]{}, moduleForwardDuration, analysisDuration);
+    return new Result(new float[] {}, moduleForwardDuration, analysisDuration);
   }
 
   static class Result {
