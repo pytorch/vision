@@ -22,6 +22,14 @@ size_t fillTensorList(DecoderOutputMessage& msgs, torch::Tensor& frame) {
   return sizeof(T);
 }
 
+size_t fillVideoTensor(DecoderOutputMessage& msgs, torch::Tensor& videoFrame) {
+  return fillTensorList<uint8_t>(msgs, videoFrame);
+}
+
+size_t fillAudioTensor(DecoderOutputMessage& msgs, torch::Tensor& audioFrame) {
+  return fillTensorList<float>(msgs, audioFrame);
+}
+
 std::array<std::pair<std::string, ffmpeg::MediaType>, 4>::const_iterator
 _parse_type(const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
@@ -282,6 +290,7 @@ std::tuple<torch::Tensor, double> Video::Next() {
       int outWidth = format.format.video.width;
       int numChannels = 3;
       outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
+      fillVideoTensor(out, outFrame);
       outFrame = outFrame.permute({2, 0, 1});
 
     } else if (format.type == TYPE_AUDIO) {
@@ -296,6 +305,8 @@ std::tuple<torch::Tensor, double> Video::Next() {
 
       outFrame =
           torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
+
+      fillAudioTensor(out, outFrame);
     }
     // currently not supporting other formats (will do soon)
 
