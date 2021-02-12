@@ -291,7 +291,6 @@ std::tuple<torch::Tensor, double> Video::Next() {
       int outWidth = format.format.video.width;
       int numChannels = 3;
       outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
-      auto numberWrittenBytes = fillVideoTensor(out, outFrame);
       outFrame = outFrame.permute({2, 0, 1});
 
     } else if (format.type == TYPE_AUDIO) {
@@ -306,8 +305,6 @@ std::tuple<torch::Tensor, double> Video::Next() {
 
       outFrame =
           torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
-
-      auto numberWrittenBytes = fillAudioTensor(out, outFrame);
     }
     // currently not supporting other formats (will do soon)
 
