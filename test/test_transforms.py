@@ -1964,7 +1964,7 @@ class Tester(unittest.TestCase):
         aspect_ratio = h / w
         # Add some tolerance due to the rounding and int conversion used in the transform
         tol = 0.05
-        self.assertTrue(1. / 3. - tol <= aspect_ratio <= 3. + tol, aspect_ratio)
+        self.assertTrue(1. / 3. - tol <= aspect_ratio <= 3. + tol)
 
         aspect_ratios = []
         random.seed(42)
