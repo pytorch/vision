@@ -19,7 +19,8 @@ import yaml
 import os.path
 
 
-PYTHON_VERSIONS = ["3.6", "3.7", "3.8"]
+PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
+CUDA_VERSION = ["10.1", "10.2", "11.2"]
 
 
 def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
@@ -27,8 +28,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102", "cu110"],
-                                "win": ["cpu", "cu101", "cu102", "cu110"],
+            cu_versions_dict = {"linux": ["cpu", "cu101", "cu102", "cu112"],
+                                "win": ["cpu", "cu101", "cu102", "cu112"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -99,6 +100,7 @@ manylinux_images = {
     "cu101": "pytorch/manylinux-cuda101",
     "cu102": "pytorch/manylinux-cuda102",
     "cu110": "pytorch/manylinux-cuda110",
+    "cu112": "pytorch/manylinux-cuda112",
 }
 
 
@@ -107,6 +109,14 @@ def get_manylinux_image(cu_version):
     if cu_version.startswith('cu'):
         cu_suffix = cu_version[len('cu'):]
     return f"pytorch/manylinux-cuda{cu_suffix}"
+
+
+def get_conda_image(cu_version):
+    if cu_version == "cpu":
+        return "pytorch/conda-builder:cpu"
+    if cu_version.startswith('cu'):
+        cu_suffix = cu_version[len('cu'):]
+    return f"pytorch/conda-builder:cuda{cu_suffix}"
 
 
 def generate_base_workflow(base_workflow_name, python_version, cu_version,
@@ -123,6 +133,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
 
     if os_type != "win":
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
+        d["conda_docker_image"] = get_conda_image(cu_version)
 
     if filter_branch is not None:
         d["filters"] = {
