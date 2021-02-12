@@ -9,7 +9,6 @@ namespace {
 
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
-const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 
 // returns number of written bytes
 template <typename T>
