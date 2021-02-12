@@ -198,7 +198,10 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
     inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
 
     union = area1[:, None] + area2 - inter
-
+    
+    assert torch.count_nonzero(torch.isinf(inter)) == 0
+    assert torch.count_nonzero(torch.isinf(union)) == 0
+    
     return inter, union
 
 
