@@ -194,6 +194,8 @@ struct DecoderParameters {
   bool preventStaleness{true};
   // seek tolerated accuracy (us)
   double seekAccuracy{1000000.0};
+  // Allow multithreaded decoding for numThreads > 0
+  int numThreads{0};
   // what media types should be processed, default none
   std::set<MediaFormat> formats;
 
