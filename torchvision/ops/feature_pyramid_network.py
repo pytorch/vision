@@ -95,36 +95,10 @@ class FeaturePyramidNetwork(nn.Module):
         self.extra_blocks = extra_blocks
 
     def get_result_from_inner_blocks(self, x: Tensor, idx: int) -> Tensor:
-        """
-        This is equivalent to self.inner_blocks[idx](x),
-        but torchscript doesn't support this yet
-        """
-        num_blocks = len(self.inner_blocks)
-        if idx < 0:
-            idx += num_blocks
-        i = 0
-        out = x
-        for module in self.inner_blocks:
-            if i == idx:
-                out = module(x)
-            i += 1
-        return out
+        return self.inner_blocks[idx](x)
 
     def get_result_from_layer_blocks(self, x: Tensor, idx: int) -> Tensor:
-        """
-        This is equivalent to self.layer_blocks[idx](x),
-        but torchscript doesn't support this yet
-        """
-        num_blocks = len(self.layer_blocks)
-        if idx < 0:
-            idx += num_blocks
-        i = 0
-        out = x
-        for module in self.layer_blocks:
-            if i == idx:
-                out = module(x)
-            i += 1
-        return out
+        return self.layer_blocks[idx](x)
 
     def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
