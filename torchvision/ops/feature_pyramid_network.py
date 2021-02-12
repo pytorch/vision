@@ -94,11 +94,19 @@ class FeaturePyramidNetwork(nn.Module):
             assert isinstance(extra_blocks, ExtraFPNBlock)
         self.extra_blocks = extra_blocks
 
+    @staticmethod
+    def _get_result_from_blocks(x: Tensor, idx: int, blocks: nn.ModuleList) -> Tensor:
+        # handle negative numbers for JIT
+        num_blocks = len(blocks)
+        if idx < 0:
+            idx += num_blocks
+        return blocks[idx](x)
+
     def get_result_from_inner_blocks(self, x: Tensor, idx: int) -> Tensor:
-        return self.inner_blocks[idx](x)
+        return self._get_result_from_blocks(x, idx, self.inner_blocks)
 
     def get_result_from_layer_blocks(self, x: Tensor, idx: int) -> Tensor:
-        return self.layer_blocks[idx](x)
+        return self._get_result_from_blocks(x, idx, self.layer_blocks)
 
     def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
