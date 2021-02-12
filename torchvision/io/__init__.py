@@ -98,7 +98,7 @@ class VideoReader:
             Currently available options include ``['video', 'audio']``
     """
 
-    def __init__(self, path, stream="video"):
+    def __init__(self, path, stream="video", num_threads=0):
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -106,7 +106,7 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and"
                 + "build torchvision from source."
             )
-        self._c = torch.classes.torchvision.Video(path, stream)
+        self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
     def __next__(self):
         """Decodes and returns the next frame of the current stream.

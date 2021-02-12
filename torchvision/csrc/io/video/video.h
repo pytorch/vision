@@ -16,9 +16,10 @@ struct Video : torch::CustomClassHolder {
   // global video metadata
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
       streamsMetadata;
+  long numThreads_{0};
 
  public:
-  Video(std::string videoPath, std::string stream);
+  Video(std::string videoPath, std::string stream, long numThreads);
   std::tuple<std::string, int64_t> getCurrentStream() const;
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
@@ -41,6 +42,7 @@ struct Video : torch::CustomClassHolder {
       std::string stream,
       long stream_id,
       bool all_streams,
+      long num_threads,
       double seekFrameMarginUs); // this needs to be improved
 
   std::map<std::string, std::vector<double>> streamTimeBase; // not used
