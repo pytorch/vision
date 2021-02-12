@@ -87,7 +87,7 @@ size_t fillTensor(
   }
   T* frameData = frame.numel() > 0 ? frame.data_ptr<T>() : nullptr;
   int64_t* framePtsData = framePts.data_ptr<int64_t>();
-  CHECK_EQ(framePts.size(0), msgs.size());
+  CHECK_EQ(framePts.size(0), (int64_t)msgs.size());
   size_t avgElementsInFrame = frame.numel() / msgs.size();
 
   size_t offset = 0;
