@@ -100,7 +100,7 @@ void Video::_getDecoderParams(
     std::string stream,
     long stream_id,
     bool all_streams,
-    long num_threads,
+    int64_t num_threads,
     double seekFrameMarginUs) {
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
 
@@ -155,7 +155,7 @@ void Video::_getDecoderParams(
 
 } // _get decoder params
 
-Video::Video(std::string videoPath, std::string stream, long numThreads) {
+Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
   // set number of threads global
   numThreads_ = numThreads;
   // parse stream information
@@ -330,7 +330,7 @@ std::tuple<torch::Tensor, double> Video::Next() {
 
 static auto registerVideo =
     torch::class_<Video>("torchvision", "Video")
-        .def(torch::init<std::string, std::string, long>())
+        .def(torch::init<std::string, std::string, int64_t>())
         .def("get_current_stream", &Video::getCurrentStream)
         .def("set_current_stream", &Video::setCurrentStream)
         .def("get_metadata", &Video::getStreamMetadata)
