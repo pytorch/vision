@@ -320,7 +320,7 @@ bool Decoder::init(
       av_dict_set(&options, "cert_file", params_.tlsCertFile.data(), 0);
     }
     if (!params_.tlsKeyFile.empty()) {
-      av_dict_set(&options, "key_file", params_.tlsCertFile.data(), 0);
+      av_dict_set(&options, "key_file", params_.tlsKeyFile.data(), 0);
     }
   }
 
