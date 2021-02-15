@@ -250,23 +250,14 @@ class DatasetTestCase(unittest.TestCase):
                 "It should contain a sequence of types that the dataset returns when accessed by index."
             )
 
-    @property
-    @classmethod
-    def _argspec(cls):
-        return inspect.getfullargspec(cls.DATASET_CLASS.__init__)
-
-    @property
-    @classmethod
-    def _name(cls):
-        return cls.DATASET_CLASS.__name__
-
     @classmethod
     def _populate_private_class_attributes(cls):
-        cls._HAS_SPECIAL_KWARG = {name: name in cls._argspec.args for name in cls._SPECIAL_KWARGS}
+        argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
+        cls._HAS_SPECIAL_KWARG = {name: name in argspec.args for name in cls._SPECIAL_KWARGS}
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
-        argspec = cls._argspec
+        argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
         if cls.CONFIGS is None:
             config = {
                 kwarg: default
@@ -281,7 +272,8 @@ class DatasetTestCase(unittest.TestCase):
                     importlib.import_module(pkg)
             except ImportError as error:
                 raise unittest.SkipTest(
-                    f"The package '{error.name}' is required to load the dataset '{cls._name}' but is not installed."
+                    f"The package '{error.name}' is required to load the dataset '{cls.DATASET_CLASS.__name__}' but is "
+                    f"not installed."
                 )
 
     def _split_kwargs(self, kwargs):
