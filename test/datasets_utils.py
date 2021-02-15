@@ -421,7 +421,7 @@ def create_image_folder(
 
         def size(idx: int) -> Tuple[int, int, int]:
             num_channels = 3
-            height, width = torch.randint(3, 11, size=(2,), dtype=np.int).tolist()
+            height, width = torch.randint(3, 11, size=(2,), dtype=torch.int).tolist()
             return (num_channels, height, width)
 
     root = pathlib.Path(root) / name
@@ -505,7 +505,7 @@ def create_video_folder(
             num_channels = 3
             # The 'libx264' video codec, which is the default of torchvision.io.write_video, requires the height and
             # width of the video to be divisible by 2.
-            height, width = (torch.randint(2, 6, size=(2,), dtype=np.int) * 2).tolist()
+            height, width = (torch.randint(2, 6, size=(2,), dtype=torch.int) * 2).tolist()
             return (length, num_channels, height, width)
 
     root = pathlib.Path(root) / name
