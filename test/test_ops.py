@@ -449,6 +449,18 @@ class NMSTester(unittest.TestCase):
             with torch.cuda.amp.autocast():
                 self.test_nms_cuda(dtype=dtype)
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_nms_cuda_float16(self):
+        boxes = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                              [285.1472, 188.7374, 1192.4984, 851.0669],
+                              [279.2440, 197.9812, 1189.4746, 849.2019]]).cuda()
+        scores = torch.tensor([0.6370, 0.7569, 0.3966]).cuda()
+
+        iou_thres = 0.2
+        keep32 = ops.nms(boxes, scores, iou_thres)
+        keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
+        self.assertTrue(torch.all(torch.eq(keep32, keep16)))
+
 
 class DeformConvTester(OpTester, unittest.TestCase):
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
@@ -829,48 +841,75 @@ class BoxTester(unittest.TestCase):
 
 class BoxAreaTester(unittest.TestCase):
     def test_box_area(self):
-        # A bounding box of area 10000 and a degenerate case
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
-        expected = torch.tensor([10000, 0])
-        calc_area = ops.box_area(box_tensor)
-        assert calc_area.size() == torch.Size([2])
-        assert calc_area.dtype == box_tensor.dtype
-        assert torch.all(torch.eq(calc_area, expected)).item() is True
+        def area_check(box, expected, tolerance=1e-4):
+            out = ops.box_area(box)
+            assert out.size() == expected.size()
+            assert ((out - expected).abs().max() < tolerance).item()
+
+        # Check for int boxes
+        for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
+            box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
+            expected = torch.tensor([10000, 0])
+            area_check(box_tensor, expected)
+
+        # Check for float32 and float64 boxes
+        for dtype in [torch.float32, torch.float64]:
+            box_tensor = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                                       [285.1472, 188.7374, 1192.4984, 851.0669],
+                                       [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
+            expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
+            area_check(box_tensor, expected, tolerance=0.05)
+
+        # Check for float16 box
+        box_tensor = torch.tensor([[285.25, 185.625, 1194.0, 851.5],
+                                   [285.25, 188.75, 1192.0, 851.0],
+                                   [279.25, 198.0, 1189.0, 849.0]], dtype=torch.float16)
+        expected = torch.tensor([605113.875, 600495.1875, 592247.25])
+        area_check(box_tensor, expected)
 
 
 class BoxIouTester(unittest.TestCase):
     def test_iou(self):
-        # Boxes to test Iou
-        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        def iou_check(box, expected, tolerance=1e-4):
+            out = ops.box_iou(box, box)
+            assert out.size() == expected.size()
+            assert ((out - expected).abs().max() < tolerance).item()
 
-        # Expected IoU matrix for these boxes
-        expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+        # Check for int boxes
+        for dtype in [torch.int16, torch.int32, torch.int64]:
+            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+            iou_check(box, expected)
 
-        out = ops.box_iou(boxes1, boxes2)
-
-        # Check if all elements of tensor are as expected.
-        assert out.size() == torch.Size([3, 3])
-        tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item() is True
+        # Check for float boxes
+        for dtype in [torch.float16, torch.float32, torch.float64]:
+            box_tensor = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                                       [285.1472, 188.7374, 1192.4984, 851.0669],
+                                       [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
+            iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
 
 class GenBoxIouTester(unittest.TestCase):
     def test_gen_iou(self):
-        # Test Generalized IoU
-        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        def gen_iou_check(box, expected, tolerance=1e-4):
+            out = ops.generalized_box_iou(box, box)
+            assert out.size() == expected.size()
+            assert ((out - expected).abs().max() < tolerance).item()
 
-        # Expected gIoU matrix for these boxes
-        expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611],
-                                [-0.7778, -0.8611, 1.0]])
+        # Check for int boxes
+        for dtype in [torch.int16, torch.int32, torch.int64]:
+            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]])
+            gen_iou_check(box, expected)
 
-        out = ops.generalized_box_iou(boxes1, boxes2)
-
-        # Check if all elements of tensor are as expected.
-        assert out.size() == torch.Size([3, 3])
-        tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item() is True
+        # Check for float boxes
+        for dtype in [torch.float16, torch.float32, torch.float64]:
+            box_tensor = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                                       [285.1472, 188.7374, 1192.4984, 851.0669],
+                                       [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
+            gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
 
 
 if __name__ == '__main__':
