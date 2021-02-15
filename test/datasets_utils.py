@@ -317,9 +317,21 @@ class DatasetTestCase(unittest.TestCase):
 
 
 class ImageDatasetTestCase(DatasetTestCase):
+    """Abstract base class for image dataset testcases.
+
+    - Overwrites the FEATURE_TYPES class attribute to expect a :class:`PIL.Image.Image` and an integer label.
+    """
+
     FEATURE_TYPES = (Image.Image, int)
 
 
 class VideoDatasetTestCase(DatasetTestCase):
+    """Abstract base class for video dataset testcases.
+
+    - Overwrites the FEATURE_TYPES class attribute to expect two :class:`torch.Tensor` s for the video and audio as
+      well as an integer label.
+    - Overwrites the REQUIRED_PACKAGES class attribute to require PyAV (``av``).
+    """
+
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
     REQUIRED_PACKAGES = ("av",)
