@@ -400,7 +400,7 @@ def create_image_file(
 def create_image_folder(
     root: Union[pathlib.Path, str],
     name: Union[pathlib.Path, str],
-    file_name_fn: Callable[[idx], str],
+    file_name_fn: Callable[[int], str],
     num_examples: int,
     size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
     **kwargs: Any,
@@ -410,7 +410,7 @@ def create_image_folder(
     Args:
         root (Union[str, pathlib.Path]): Root directory the image folder will be placed in.
         name (Union[str, pathlib.Path]): Name of the image folder.
-        file_name_fn (Callable[[idx], str]): Should return a file name if called with the file index.
+        file_name_fn (Callable[[int], str]): Should return a file name if called with the file index.
         num_examples (int): Number of images to create.
         size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the images. If
             callable, will be called with the index of the corresponding file. If omitted, a random height and width
@@ -475,7 +475,7 @@ def create_video_file(
 def create_video_folder(
     root: Union[str, pathlib.Path],
     name: Union[str, pathlib.Path],
-    file_name_fn: Callable[[idx], str],
+    file_name_fn: Callable[[int], str],
     num_examples: int,
     size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
     fps=25,
@@ -486,7 +486,7 @@ def create_video_folder(
     Args:
         root (Union[str, pathlib.Path]): Root directory the image folder will be placed in.
         name (Union[str, pathlib.Path]): Name of the image folder.
-        file_name_fn (Callable[[idx], str]): Should return a file name if called with the file index.
+        file_name_fn (Callable[[int], str]): Should return a file name if called with the file index.
         num_examples (int): Number of images to create.
         size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the images. If
             callable, will be called with the index of the corresponding file. If omitted, a random length between 0.5
