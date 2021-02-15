@@ -15,6 +15,9 @@ from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
+import datasets_utils
+import pathlib
+from torchvision import datasets
 
 
 try:
@@ -464,6 +467,26 @@ class STL10Tester(DatasetTestcase):
     def test_repr_smoke(self):
         with self.mocked_dataset() as (dataset, _):
             self.assertIsInstance(repr(dataset), str)
+
+
+class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Caltech256
+
+    def inject_fake_data(self, root, config):
+        root = pathlib.Path(root) / "caltech256" / "256_ObjectCategories"
+
+        categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+        num_images_per_category = 2
+
+        for idx, category in categories:
+            datasets_utils.create_image_folder(
+                root,
+                name=f"{idx:03d}.{category}",
+                file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx:04d}.jpg",
+                num_examples=num_images_per_category,
+            )
+
+        return dict(num_examples=num_images_per_category * len(categories))
 
 
 if __name__ == '__main__':
