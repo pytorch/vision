@@ -3,22 +3,57 @@ import functools
 import importlib
 import inspect
 import itertools
+import os
+import pathlib
 import unittest
 import unittest.mock
 from typing import Any, Iterator, Sequence, Tuple, Union
 
-from PIL import Image
+import PIL.Image
 
+import torch
 import torchvision.datasets
 
+from common_utils import get_tmp_dir
 from datasets_utils import tmpdir, disable_console_output
 
+try:
+    from torchvision.io import write_video
 
-__all__ = ["DatasetTestCase", "ImageDatasetTestCase", "VideoDatasetTestCase", "test_all_configs"]
+    PYAV_AVAILABLE = True
+
+except ImportError:
+    write_video = None
+    PYAV_AVAILABLE = False
+
+
+__all__ = [
+    "UsageError",
+    "test_all_configs",
+    "DatasetTestCase",
+    "ImageDatasetTestCase",
+    "VideoDatasetTestCase",
+    "create_image_or_video_tensor",
+    "create_image_file",
+    "create_image_folder",
+    "create_video_file",
+    "create_video_folder",
+]
 
 
 class UsageError(RuntimeError):
-    """Should be raised instead of a generic ``RuntimeError`` in case a test case is not correctly configured."""
+    """Should be raised in case an error happens in the setup rather than the test."""
+
+
+def requires_pyav(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not PYAV_AVAILABLE:
+            raise UsageError("PyAV (av) is required but not available.")
+
+        return fn(*args, **kwargs)
+
+    return wrapper
 
 
 # As of Python 3.7 this is provided by contextlib
@@ -322,7 +357,7 @@ class ImageDatasetTestCase(DatasetTestCase):
     - Overwrites the FEATURE_TYPES class attribute to expect a :class:`PIL.Image.Image` and an integer label.
     """
 
-    FEATURE_TYPES = (Image.Image, int)
+    FEATURE_TYPES = (PIL.Image.Image, int)
 
 
 class VideoDatasetTestCase(DatasetTestCase):
@@ -335,3 +370,155 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
     REQUIRED_PACKAGES = ("av",)
+
+
+def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
+    r"""Create a random uint8 tensor.
+
+    Args:
+        size (Sequence[int]): Size of the tensor.
+    """
+    return torch.randint(0, 256, size, dtype=torch.uint8)
+
+
+def create_image_file(
+    root: Union[pathlib.Path, str], name: Union[pathlib.Path, str], size: Union[Sequence[int], int] = 10, **kwargs: Any
+) -> None:
+    """Create an image file from random data.
+
+    Args:
+        root (Union[str, pathlib.Path]): Root directory the image file will be placed in.
+        name (Union[str, pathlib.Path]): Name of the image file.
+        size (Union[Sequence[int], int]): Size of the image that represents the ``(num_channels, height, width)``. If
+            scalar, the value is used for the height and width. If not provided, three channels are assumed.
+        kwargs (Any): Additional parameters passed to :meth:`PIL.Image.Image.save`.
+    """
+    if isinstance(size, int):
+        size = (size, size)
+    if len(size) == 2:
+        size = (3, *size)
+    if len(size) != 3:
+        raise UsageError(
+            f"The 'size' argument should either be an int or a sequence of length 2 or 3. Got {len(size)} instead"
+        )
+
+    image = create_image_or_video_tensor(size)
+    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(pathlib.Path(root) / name)
+
+
+def create_image_folder(
+    root: Union[pathlib.Path, str],
+    name: Union[pathlib.Path, str],
+    file_name_fn: Callable[[idx], str],
+    num_examples: int,
+    size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
+    **kwargs: Any,
+):
+    """Create a folder of random images.
+
+    Args:
+        root (Union[str, pathlib.Path]): Root directory the image folder will be placed in.
+        name (Union[str, pathlib.Path]): Name of the image folder.
+        file_name_fn (Callable[[idx], str]): Should return a file name if called with the file index.
+        num_examples (int): Number of images to create.
+        size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the images. If
+            callable, will be called with the index of the corresponding file. If omitted, a random height and width
+            between 3 and 10 pixels is selected on a per-image basis.
+        kwargs (Any): Additional parameters passed to :func:`create_image_file`.
+    """
+    if size is None:
+
+        def size(idx: int) -> Tuple[int, int, int]:
+            num_channels = 3
+            height, width = torch.randint(3, 11, size=(2,), dtype=np.int).tolist()
+            return (num_channels, height, width)
+
+    root = pathlib.Path(root) / name
+    os.makedirs(root)
+
+    for idx in range(num_examples):
+        create_image_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
+
+
+@requires_pyav
+def create_video_file(
+    root: Union[pathlib.Path, str],
+    name: Union[pathlib.Path, str],
+    size: Union[Sequence[int], int] = (25, 3, 10, 10),
+    fps: float = 25,
+    **kwargs: Any,
+) -> None:
+    """Create an video file from random data.
+
+    Args:
+        root (Union[str, pathlib.Path]): Root directory the video file will be placed in.
+        name (Union[str, pathlib.Path]): Name of the video file.
+        size (Union[Sequence[int], int]): Size of the video that represents the
+            ``(length, num_channels, height, width)``. If scalar, the value is used for the height and width.
+            If not provided, three channels are assumed. If not provided, the length is set to one second.
+        fps (float): Frame rate in frames per second.
+        kwargs (Any): Additional parameters passed to :func:`torchvision.io.write_video`.
+
+    Raises:
+        UsageError: If PyAV is not available.
+    """
+    if not PYAV_AVAILABLE:
+        raise PyAVNotAvailableError
+
+    if isinstance(size, int):
+        size = (size, size)
+    if len(size) == 2:
+        size = (3, *size)
+    if len(size) == 3:
+        size = (fps, *size)
+    if len(size) != 4:
+        raise UsageError(
+            f"The 'size' argument should either be an int or a sequence of length 2, 3, or 4. Got {len(size)} instead"
+        )
+
+    video = create_image_or_video_tensor(size)
+    write_video(str(pathlib.Path(root) / name), video.permute(0, 2, 3, 1), fps, **kwargs)
+
+
+@requires_pyav
+def create_video_folder(
+    root: Union[str, pathlib.Path],
+    name: Union[str, pathlib.Path],
+    file_name_fn: Callable[[idx], str],
+    num_examples: int,
+    size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
+    fps=25,
+    **kwargs,
+):
+    """Create a folder of random videos.
+
+    Args:
+        root (Union[str, pathlib.Path]): Root directory the image folder will be placed in.
+        name (Union[str, pathlib.Path]): Name of the image folder.
+        file_name_fn (Callable[[idx], str]): Should return a file name if called with the file index.
+        num_examples (int): Number of images to create.
+        size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the images. If
+            callable, will be called with the index of the corresponding file. If omitted, a random length between 0.5
+            and 1.5 seconds as well as random even height and width between 4 and 10 pixels are selected on a
+            per-video basis.
+        fps (float): Frame rate in frames per second.
+        kwargs (Any): Additional parameters passed to :func:`create_video_file`.
+
+    Raises:
+        UsageError: If PyAV is not available.
+    """
+    if size is None:
+
+        def size(idx):
+            length = int((torch.rand(()).item() + 0.5) * fps)
+            num_channels = 3
+            # The 'libx264' video codec, which is the default of torchvision.io.write_video, requires the height and
+            # width of the video to be divisible by 2.
+            height, width = (torch.randint(2, 6, size=(2,), dtype=np.int) * 2).tolist()
+            return (length, num_channels, height, width)
+
+    root = pathlib.Path(root) / name
+    os.makedirs(root)
+
+    for idx in range(num_examples):
+        create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size)
