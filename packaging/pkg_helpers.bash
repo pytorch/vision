@@ -56,6 +56,9 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-11.2/
       fi
       export FORCE_CUDA=1
+      # Hard-coding gencode flags is temporary situation until
+      # https://github.com/pytorch/pytorch/pull/23408 lands
+      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
       ;;
     cu110)
       if [[ "$OSTYPE" == "msys" ]]; then
