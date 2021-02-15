@@ -191,7 +191,7 @@
               
               
                 <div class="version">
-                  master (0.9.0a0+d2faee6 )
+                  master (0.9.0a0+e620c5d )
                 </div>
               
             
@@ -482,6 +482,14 @@
     <span class="k">return</span> <span class="n">boxes</span></div>
 
 
+<span class="k">def</span> <span class="nf">_upcast</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Protects from numerical overflows in multiplications by upcasting to the equivalent higher type</span>
+    <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">t</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">t</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="box_area"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.box_area">[docs]</a><span class="k">def</span> <span class="nf">box_area</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the area of a set of bounding boxes, which are specified by its</span>
@@ -494,6 +502,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        area (Tensor[N]): area for each box</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">boxes</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span></div>
 
 
@@ -506,7 +515,7 @@
     <span class="n">lt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>  <span class="c1"># [N,M,2]</span>
     <span class="n">rb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">:],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:])</span>  <span class="c1"># [N,M,2]</span>
 
-    <span class="n">wh</span> <span class="o">=</span> <span class="p">(</span><span class="n">rb</span> <span class="o">-</span> <span class="n">lt</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [N,M,2]</span>
+    <span class="n">wh</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">rb</span> <span class="o">-</span> <span class="n">lt</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [N,M,2]</span>
     <span class="n">inter</span> <span class="o">=</span> <span class="n">wh</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">wh</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># [N,M]</span>
 
     <span class="n">union</span> <span class="o">=</span> <span class="n">area1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">area2</span> <span class="o">-</span> <span class="n">inter</span>
@@ -559,7 +568,7 @@
     <span class="n">lti</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
     <span class="n">rbi</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">:],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:])</span>
 
-    <span class="n">whi</span> <span class="o">=</span> <span class="p">(</span><span class="n">rbi</span> <span class="o">-</span> <span class="n">lti</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [N,M,2]</span>
+    <span class="n">whi</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">rbi</span> <span class="o">-</span> <span class="n">lti</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [N,M,2]</span>
     <span class="n">areai</span> <span class="o">=</span> <span class="n">whi</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">whi</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">iou</span> <span class="o">-</span> <span class="p">(</span><span class="n">areai</span> <span class="o">-</span> <span class="n">union</span><span class="p">)</span> <span class="o">/</span> <span class="n">areai</span></div>
