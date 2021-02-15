@@ -5,6 +5,7 @@ import inspect
 import itertools
 import unittest
 import unittest.mock
+from typing import Any, Iterator, Sequence, Tuple, Union
 
 from PIL import Image
 
@@ -134,25 +135,31 @@ class DatasetTestCase(unittest.TestCase):
         "download_and_extract_archive",
     }
 
-    def inject_fake_data(self, root: str, config: dict[str, Any]) -> dict[str, Any]:
+    def inject_fake_data(self, root: str, config: Dict[str, Any]) -> Dict[str, Any]:
         """Inject fake data into the root of the dataset.
 
         Args:
             root (str): Root of the dataset.
-            config (dict[str, Any]): Configuration that will be used to create the dataset.
+            config (Dict[str, Any]): Configuration that will be used to create the dataset.
 
         Returns:
-            info (dict[str, Any]): Additional information about the injected fake data. Must contain the field
+            info (Dict[str, Any]): Additional information about the injected fake data. Must contain the field
                 ``"num_examples"`` that corresponds to the length of the dataset to be created.
         """
         raise NotImplementedError("You need to provide fake data in order for the tests to run.")
 
     @contextlib.contextmanager
-    def create_dataset(self, config=None, inject_fake_data=True, disable_download_extract=None, **kwargs):
+    def create_dataset(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+        inject_fake_data: bool = True,
+        disable_download_extract: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
         r"""Create the dataset in a temporary directory.
 
         Args:
-            config (Optional[dict[str, Any]]): Configuration that will be used to create the dataset. If omitted, the
+            config (Optional[Dict[str, Any]]): Configuration that will be used to create the dataset. If omitted, the
                 default configuration is used.
             inject_fake_data (bool): If ``True`` (default) inject the fake data with :meth:`.inject_fake_data` before
                 creating the dataset.
@@ -163,7 +170,7 @@ class DatasetTestCase(unittest.TestCase):
 
         Yields:
             dataset (torchvision.dataset.VisionDataset): Dataset.
-            info (dict[str, Any]): Additional information about the injected fake data. See :meth:`.inject_fake_data`
+            info (Dict[str, Any]): Additional information about the injected fake data. See :meth:`.inject_fake_data`
                 for details.
         """
         if config is None:
