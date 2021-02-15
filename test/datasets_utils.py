@@ -309,8 +309,8 @@ class DatasetTestCase(unittest.TestCase):
             with self.create_dataset(inject_fake_data=False):
                 pass
 
-    def test_smoke(self, config):
-        with self.create_dataset(config) as (dataset, _):
+    def test_smoke(self):
+        with self.create_dataset() as (dataset, _):
             self.assertIsInstance(dataset, torchvision.datasets.VisionDataset)
 
     @test_all_configs
