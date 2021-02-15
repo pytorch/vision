@@ -71,13 +71,13 @@ class _DenseLayer(nn.Module):
     def forward(self, input: List[Tensor]) -> Tensor:
         pass
 
-    @torch.jit._overload_method  # type: ignore[no-redef] # noqa: F811
+    @torch.jit._overload_method  # noqa: F811 # type: ignore[no-redef]
     def forward(self, input: Tensor) -> Tensor:
         pass
 
     # torchscript does not yet support *args, so we overload method
     # allowing it to take either a List[Tensor] or single Tensor
-    def forward(self, input: Tensor) -> Tensor:  # type: ignore[no-redef] # noqa: F811
+    def forward(self, input: Tensor) -> Tensor:  # noqa: F811 # type: ignore[no-redef]
         if isinstance(input, Tensor):
             prev_features = [input]
         else:
