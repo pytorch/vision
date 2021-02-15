@@ -151,8 +151,8 @@ class DatasetTestCase(unittest.TestCase):
         def test_bar(self, config):
             pass
 
-    Within the test you can use the ``create_dataset()`` method that yields the dataset as well as additional information
-    provided by the ``ìnject_fake_data()`` method:
+    Within the test you can use the ``create_dataset()`` method that yields the dataset as well as additional
+    information provided by the ``ìnject_fake_data()`` method:
 
     .. code-block::
 
@@ -278,7 +278,7 @@ class DatasetTestCase(unittest.TestCase):
         if cls.CONFIGS is None:
             config = {
                 kwarg: default
-                for kwarg, default in zip(argspec.args[-len(argspec.defaults) :], argspec.defaults)
+                for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
                 if kwarg not in cls._SPECIAL_KWARGS
             }
             cls.CONFIGS = (config,)
