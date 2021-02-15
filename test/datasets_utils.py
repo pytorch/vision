@@ -7,15 +7,14 @@ import os
 import pathlib
 import unittest
 import unittest.mock
-from typing import Any, Iterator, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 
 import torch
 import torchvision.datasets
 
-from common_utils import get_tmp_dir
-from datasets_utils import tmpdir, disable_console_output
+from common_utils import get_tmp_dir, disable_console_output
 
 try:
     from torchvision.io import write_video
@@ -217,7 +216,7 @@ class DatasetTestCase(unittest.TestCase):
         if disable_download_extract is None:
             disable_download_extract = inject_fake_data
 
-        with tmpdir() as root:
+        with get_tmp_dir() as root:
             info = self.inject_fake_data(root, config) if inject_fake_data else None
             if info is None or "num_examples" not in info:
                 raise UsageError(
