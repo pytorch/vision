@@ -9,6 +9,7 @@ import unittest
 import unittest.mock
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+import PIL
 import PIL.Image
 
 import torch
@@ -381,11 +382,32 @@ class ImageDatasetTestCase(DatasetTestCase):
             disable_download_extract=disable_download_extract,
             **kwargs,
         ) as (dataset, info):
-            with self._eagerly_load_pil_images():
+            # PIL.Image.open() only loads the image meta data upfront and keeps the file open until the first access
+            # to the pixel data occurs. Trying to delete such a file results in an PermissionError on Windows. Thus, we
+            # track all lazily opened images and close the file handle before the file is deleted.
+            # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
+            # image, but never use the underlying data. During normal operation it is reasonable to assume that the
+            # user wants to work with the image he just opened rather than deleting the underlying file.
+            with self._close_image_handles():
                 yield dataset, info
 
     @contextlib.contextmanager
-    def _eagerly_load_pil_images(self):
+    def _close_image_handles(self):
+        module = inspect.getmodule(self.DATASET_CLASS)
+
+        def resolve_patch_object():
+            with contextlib.suppress(StopIteration):
+                return next(name for name, attr in vars(module).items() if attr is PIL.Image)
+
+            with contextlib.suppress(StopIteration):
+                name = next(name for name, attr in vars(module).items() if attr is PIL)
+                return f"{name}.Image"
+
+        obj = resolve_patch_object()
+        if not obj:
+            yield
+            return
+
         lazily_opened_files = set()
 
         open = PIL.Image.open
@@ -396,7 +418,7 @@ class ImageDatasetTestCase(DatasetTestCase):
                 lazily_opened_files.add(image.fp)
             return image
 
-        with unittest.mock.patch("torchvision.datasets.caltech.Image.open", new=new):
+        with unittest.mock.patch(f"{module.__name__}.{obj}.open", new=new):
             try:
                 yield
             finally:
