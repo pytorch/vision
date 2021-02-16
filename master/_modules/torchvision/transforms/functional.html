@@ -186,17 +186,10 @@
         <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           <div class="pytorch-left-menu-search">
             
-
-            
-              
-              
-                <div class="version">
-                  master (0.9.0a0+e620c5d )
-                </div>
-              
-            
-
-            
+    <div class="version">
+      <a href='http://pytorch.org/docs/vision/versions.html'>master (0.9.0a0+7a0806d ) &#x25BC</a>
+    </div>
+    
 
 
   
@@ -210,7 +203,6 @@
   </form>
 </div>
 
-            
           </div>
 
           
@@ -416,6 +408,8 @@
     <span class="k">if</span> <span class="n">_is_numpy</span><span class="p">(</span><span class="n">pic</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_is_numpy_image</span><span class="p">(</span><span class="n">pic</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;pic should be 2/3 dimensional. Got </span><span class="si">{}</span><span class="s1"> dimensions.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pic</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
 
+    <span class="n">default_float_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">()</span>
+
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pic</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="c1"># handle numpy array</span>
         <span class="k">if</span> <span class="n">pic</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -424,12 +418,12 @@
         <span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">pic</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
         <span class="c1"># backward compatibility</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ByteTensor</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">default_float_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">img</span>
 
     <span class="k">if</span> <span class="n">accimage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pic</span><span class="p">,</span> <span class="n">accimage</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
-        <span class="n">nppic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">pic</span><span class="o">.</span><span class="n">channels</span><span class="p">,</span> <span class="n">pic</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">pic</span><span class="o">.</span><span class="n">width</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">nppic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">pic</span><span class="o">.</span><span class="n">channels</span><span class="p">,</span> <span class="n">pic</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">pic</span><span class="o">.</span><span class="n">width</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float_dtype</span><span class="p">)</span>
         <span class="n">pic</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">nppic</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">nppic</span><span class="p">)</span>
 
@@ -449,7 +443,7 @@
     <span class="c1"># put it from HWC to CHW format</span>
     <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">permute</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ByteTensor</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">default_float_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">img</span></div>
 
