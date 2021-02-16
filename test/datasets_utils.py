@@ -7,7 +7,7 @@ import os
 import pathlib
 import unittest
 import unittest.mock
-from typing import Any, Callable, Dict, Iterator, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import PIL.Image
 
@@ -391,7 +391,7 @@ def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
 
 def create_image_file(
     root: Union[pathlib.Path, str], name: Union[pathlib.Path, str], size: Union[Sequence[int], int] = 10, **kwargs: Any
-) -> None:
+) -> pathlib.Path:
     """Create an image file from random data.
 
     Args:
@@ -400,6 +400,9 @@ def create_image_file(
         size (Union[Sequence[int], int]): Size of the image that represents the ``(num_channels, height, width)``. If
             scalar, the value is used for the height and width. If not provided, three channels are assumed.
         kwargs (Any): Additional parameters passed to :meth:`PIL.Image.Image.save`.
+
+    Returns:
+        pathlib.Path: Path to the created image file.
     """
     if isinstance(size, int):
         size = (size, size)
@@ -411,7 +414,9 @@ def create_image_file(
         )
 
     image = create_image_or_video_tensor(size)
-    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(pathlib.Path(root) / name)
+    file = pathlib.Path(root) / name
+    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file)
+    return file
 
 
 def create_image_folder(
@@ -421,7 +426,7 @@ def create_image_folder(
     num_examples: int,
     size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
     **kwargs: Any,
-):
+) -> List[pathlib.Path]:
     """Create a folder of random images.
 
     Args:
@@ -434,6 +439,8 @@ def create_image_folder(
             between 3 and 10 pixels is selected on a per-image basis.
         kwargs (Any): Additional parameters passed to :func:`create_image_file`.
 
+    Returns:
+        List[pathlib.Path]: Paths to all created image files.
 
     .. seealso::
 
@@ -449,8 +456,10 @@ def create_image_folder(
     root = pathlib.Path(root) / name
     os.makedirs(root)
 
-    for idx in range(num_examples):
+    return [
         create_image_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
+        for idx in range(num_examples)
+    ]
 
 
 @requires_pyav
@@ -460,7 +469,7 @@ def create_video_file(
     size: Union[Sequence[int], int] = (1, 3, 10, 10),
     fps: float = 25,
     **kwargs: Any,
-) -> None:
+) -> pathlib.Path:
     """Create an video file from random data.
 
     Args:
@@ -471,6 +480,9 @@ def create_video_file(
             If not provided, ``num_frames=1`` and ``num_channels=3`` are assumed.
         fps (float): Frame rate in frames per second.
         kwargs (Any): Additional parameters passed to :func:`torchvision.io.write_video`.
+
+    Returns:
+        pathlib.Path: Path to the created image file.
 
     Raises:
         UsageError: If PyAV is not available.
@@ -487,7 +499,9 @@ def create_video_file(
         )
 
     video = create_image_or_video_tensor(size)
-    write_video(str(pathlib.Path(root) / name), video.permute(0, 2, 3, 1), fps, **kwargs)
+    file = pathlib.Path(root) / name
+    write_video(str(file), video.permute(0, 2, 3, 1), fps, **kwargs)
+    return file
 
 
 @requires_pyav
@@ -499,7 +513,7 @@ def create_video_folder(
     size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
     fps=25,
     **kwargs,
-):
+) -> List[pathlib.Path]:
     """Create a folder of random videos.
 
     Args:
@@ -512,6 +526,9 @@ def create_video_folder(
             width between 4 and 10 pixels is selected on a per-video basis.
         fps (float): Frame rate in frames per second.
         kwargs (Any): Additional parameters passed to :func:`create_video_file`.
+
+    Returns:
+        List[pathlib.Path]: Paths to all created video files.
 
     Raises:
         UsageError: If PyAV is not available.
@@ -533,5 +550,7 @@ def create_video_folder(
     root = pathlib.Path(root) / name
     os.makedirs(root)
 
-    for idx in range(num_examples):
+    return [
         create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size)
+        for idx in range(num_examples)
+    ]
