@@ -620,6 +620,20 @@ class Tester(unittest.TestCase):
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
+    def test_to_tensor_with_other_default_dtypes(self):
+        current_def_dtype = torch.get_default_dtype()
+
+        t = transforms.ToTensor()
+        np_arr = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
+        img = Image.fromarray(np_arr)
+
+        for dtype in [torch.float16, torch.float, torch.double]:
+            torch.set_default_dtype(dtype)
+            res = t(img)
+            self.assertTrue(res.dtype == dtype, msg=f"{res.dtype} vs {dtype}")
+
+        torch.set_default_dtype(current_def_dtype)
+
     def test_max_value(self):
         for dtype in int_dtypes():
             self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
@@ -1959,10 +1973,12 @@ class Tester(unittest.TestCase):
     def test_random_erasing(self):
         img = torch.ones(3, 128, 128)
 
-        t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1. / 3., 3. / 1.))
+        t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1 / 3, 3.))
         y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
         aspect_ratio = h / w
-        self.assertTrue(aspect_ratio > 1. / 3. and aspect_ratio < 3. / 1.)
+        # Add some tolerance due to the rounding and int conversion used in the transform
+        tol = 0.05
+        self.assertTrue(1 / 3 - tol <= aspect_ratio <= 3 + tol)
 
         aspect_ratios = []
         random.seed(42)

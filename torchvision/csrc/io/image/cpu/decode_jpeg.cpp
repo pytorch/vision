@@ -24,19 +24,15 @@ struct torch_jpeg_mgr {
 static void torch_jpeg_init_source(j_decompress_ptr cinfo) {}
 
 static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
-  torch_jpeg_mgr* src = (torch_jpeg_mgr*)cinfo->src;
   // No more data.  Probably an incomplete image;  Raise exception.
   torch_jpeg_error_ptr myerr = (torch_jpeg_error_ptr)cinfo->err;
   strcpy(myerr->jpegLastErrorMsg, "Image is incomplete or truncated");
   longjmp(myerr->setjmp_buffer, 1);
-  src->pub.next_input_byte = EOI_BUFFER;
-  src->pub.bytes_in_buffer = 1;
-  return TRUE;
 }
 
 static void torch_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
   torch_jpeg_mgr* src = (torch_jpeg_mgr*)cinfo->src;
-  if (src->pub.bytes_in_buffer < num_bytes) {
+  if (src->pub.bytes_in_buffer < (size_t)num_bytes) {
     // Skipping over all of remaining data;  output EOI.
     src->pub.next_input_byte = EOI_BUFFER;
     src->pub.bytes_in_buffer = 1;
