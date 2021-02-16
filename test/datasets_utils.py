@@ -433,6 +433,11 @@ def create_image_folder(
             callable, will be called with the index of the corresponding file. If omitted, a random height and width
             between 3 and 10 pixels is selected on a per-image basis.
         kwargs (Any): Additional parameters passed to :func:`create_image_file`.
+
+
+    .. seealso::
+
+        - :func:`create_image_file`
     """
     if size is None:
 
@@ -514,6 +519,10 @@ def create_video_folder(
 
     Raises:
         UsageError: If PyAV is not available.
+
+    .. seealso::
+
+        - :func:`create_video_file`
     """
     if size is None:
 
