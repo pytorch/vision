@@ -211,26 +211,28 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
     return inter, union
 
 
-def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+def box_iou(boxes1: Tensor, boxes2: Tensor, eps: float=1e-5) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
-
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
-
     Args:
         boxes1 (Tensor[N, 4])
         boxes2 (Tensor[M, 4])
-
     Returns:
         iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
+    # degenerate boxes gives inf / nan results
+    # so do an early check
+    assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
+    assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
+
     inter, union = _box_inter_union(boxes1, boxes2)
-    iou = inter / union
+    iou = inter / (union + eps)
     return iou
 
 
 # Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
-def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+def generalized_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float=1e-5) -> Tensor:
     """
     Return generalized intersection-over-union (Jaccard index) of boxes.
 
@@ -251,7 +253,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
 
     inter, union = _box_inter_union(boxes1, boxes2)
-    iou = inter / union
+    iou = inter / (union + eps)
 
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
@@ -259,4 +261,4 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
     areai = whi[:, :, 0] * whi[:, :, 1]
 
-    return iou - (areai - union) / areai
+    return iou - (areai - union) / (areai + eps)
