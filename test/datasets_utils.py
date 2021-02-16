@@ -367,6 +367,42 @@ class ImageDatasetTestCase(DatasetTestCase):
 
     FEATURE_TYPES = (PIL.Image.Image, int)
 
+    @contextlib.contextmanager
+    def create_dataset(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+        inject_fake_data: bool = True,
+        disable_download_extract: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
+        with super().create_dataset(
+            config=config,
+            inject_fake_data=inject_fake_data,
+            disable_download_extract=disable_download_extract,
+            **kwargs,
+        ) as (dataset, info):
+            with self._eagerly_load_pil_images():
+                yield dataset, info
+
+    @contextlib.contextmanager
+    def _eagerly_load_pil_images(self):
+        lazily_opened_files = set()
+
+        open = PIL.Image.open
+
+        def new(fp, *args, **kwargs):
+            image = open(fp, *args, **kwargs)
+            if isinstance(fp, (str, pathlib.Path)):
+                lazily_opened_files.add(image.fp)
+            return image
+
+        with unittest.mock.patch("torchvision.datasets.caltech.Image.open", new=new):
+            try:
+                yield
+            finally:
+                for fh in lazily_opened_files:
+                    fh.close()
+
 
 class VideoDatasetTestCase(DatasetTestCase):
     """Abstract base class for video dataset testcases.
