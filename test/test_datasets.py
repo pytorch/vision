@@ -17,6 +17,7 @@ from urllib.request import Request, urlopen
 import itertools
 import datasets_utils
 import pathlib
+import pickle
 from torchvision import datasets
 
 
