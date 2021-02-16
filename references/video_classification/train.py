@@ -268,7 +268,7 @@ def parse_args():
     parser.add_argument('--epochs', default=45, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=10, type=int, metavar='N',
-                        help='number of data loading workers (default: 16)')
+                        help='number of data loading workers (default: 10)')
     parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
