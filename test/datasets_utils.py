@@ -475,9 +475,6 @@ def create_video_file(
     Raises:
         UsageError: If PyAV is not available.
     """
-    if not PYAV_AVAILABLE:
-        raise PyAVNotAvailableError
-
     if isinstance(size, int):
         size = (size, size)
     if len(size) == 2:
