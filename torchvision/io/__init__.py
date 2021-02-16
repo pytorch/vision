@@ -96,6 +96,10 @@ class VideoReader:
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
             Currently available options include ``['video', 'audio']``
+        
+        num_threads (int, optional): number of threads used by the codec to decode video.
+            Default value is 0 (single threaded mode); the optimal performance is obtained with 4
+            to 8 threads, depending on the given codec and system configuration.
     """
 
     def __init__(self, path, stream="video", num_threads=0):
