@@ -457,7 +457,7 @@ def create_image_folder(
 def create_video_file(
     root: Union[pathlib.Path, str],
     name: Union[pathlib.Path, str],
-    size: Union[Sequence[int], int] = (25, 3, 10, 10),
+    size: Union[Sequence[int], int] = (1, 3, 10, 10),
     fps: float = 25,
     **kwargs: Any,
 ) -> None:
@@ -467,8 +467,8 @@ def create_video_file(
         root (Union[str, pathlib.Path]): Root directory the video file will be placed in.
         name (Union[str, pathlib.Path]): Name of the video file.
         size (Union[Sequence[int], int]): Size of the video that represents the
-            ``(length, num_channels, height, width)``. If scalar, the value is used for the height and width.
-            If not provided, three channels are assumed. If not provided, the length is set to one second.
+            ``(num_frames, num_channels, height, width)``. If scalar, the value is used for the height and width.
+            If not provided, ``num_frames=1`` and ``num_channels=3`` are assumed.
         fps (float): Frame rate in frames per second.
         kwargs (Any): Additional parameters passed to :func:`torchvision.io.write_video`.
 
@@ -483,7 +483,7 @@ def create_video_file(
     if len(size) == 2:
         size = (3, *size)
     if len(size) == 3:
-        size = (fps, *size)
+        size = (1, *size)
     if len(size) != 4:
         raise UsageError(
             f"The 'size' argument should either be an int or a sequence of length 2, 3, or 4. Got {len(size)} instead"
@@ -510,10 +510,9 @@ def create_video_folder(
         name (Union[str, pathlib.Path]): Name of the image folder.
         file_name_fn (Callable[[int], str]): Should return a file name if called with the file index.
         num_examples (int): Number of images to create.
-        size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the images. If
-            callable, will be called with the index of the corresponding file. If omitted, a random length between 0.5
-            and 1.5 seconds as well as random even height and width between 4 and 10 pixels are selected on a
-            per-video basis.
+        size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the videos. If
+            callable, will be called with the index of the corresponding file. If omitted, a random even height and
+            width between 4 and 10 pixels is selected on a per-video basis.
         fps (float): Frame rate in frames per second.
         kwargs (Any): Additional parameters passed to :func:`create_video_file`.
 
@@ -527,7 +526,7 @@ def create_video_folder(
     if size is None:
 
         def size(idx):
-            length = int((torch.rand(()).item() + 0.5) * fps)
+            num_frames = 1
             num_channels = 3
             # The 'libx264' video codec, which is the default of torchvision.io.write_video, requires the height and
             # width of the video to be divisible by 2.
