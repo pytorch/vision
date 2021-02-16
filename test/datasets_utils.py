@@ -581,7 +581,7 @@ def create_video_folder(
             # The 'libx264' video codec, which is the default of torchvision.io.write_video, requires the height and
             # width of the video to be divisible by 2.
             height, width = (torch.randint(2, 6, size=(2,), dtype=torch.int) * 2).tolist()
-            return (length, num_channels, height, width)
+            return (num_frames, num_channels, height, width)
 
     root = pathlib.Path(root) / name
     os.makedirs(root)
