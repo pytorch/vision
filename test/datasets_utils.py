@@ -266,7 +266,7 @@ class DatasetTestCase(unittest.TestCase):
                 for details.
         """
         if config is None:
-            config = self.CONFIGS[0]
+            config = self.CONFIGS[0].copy()
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
         config.update(other_kwargs)
