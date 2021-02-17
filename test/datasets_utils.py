@@ -14,21 +14,14 @@ import PIL.Image
 
 import torch
 import torchvision.datasets
+import torchvision.io
 
 from common_utils import get_tmp_dir, disable_console_output
-
-try:
-    from torchvision.io import write_video
-
-    PYAV_AVAILABLE = True
-
-except ImportError:
-    write_video = None
-    PYAV_AVAILABLE = False
 
 
 __all__ = [
     "UsageError",
+    "lazy_importer",
     "test_all_configs",
     "DatasetTestCase",
     "ImageDatasetTestCase",
@@ -45,15 +38,58 @@ class UsageError(RuntimeError):
     """Should be raised in case an error happens in the setup rather than the test."""
 
 
-def requires_pyav(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        if not PYAV_AVAILABLE:
-            raise UsageError("PyAV (av) is required but not available.")
+class LazyImporter:
+    r"""Lazy importer for additional dependicies.
 
-        return fn(*args, **kwargs)
+    Some datasets require additional packages that are no direct dependencies of torchvision. Instances of this class
+    provide modules listed in MODULES as attributes. They are only imported when accessed.
 
-    return wrapper
+    """
+    MODULES = (
+        "av",
+        "lmdb",
+        "pandas",
+        "pycocotools",
+        "requests",
+        "scipy.io",
+    )
+
+    def __init__(self):
+        cls = type(self)
+        for module in self.MODULES:
+            # We need the quirky module=module argument to the lambda since otherwise the lookup for module in this
+            # scope happens at runtime rather than at definition. Thus, without it every property would try to import
+            # the last module in MODULES
+            setattr(cls, module.split(".", 1)[0], property(lambda self, module=module: LazyImporter._import(module)))
+
+    @staticmethod
+    def _import(module):
+        try:
+            importlib.import_module(module)
+            return importlib.import_module(module.split(".", 1)[0])
+        except ImportError as error:
+            raise UsageError(
+                f"Failed to import module '{module}'. "
+                f"This probably means that the current test case needs '{module}' installed, "
+                f"but it is not a dependency of torchvision. "
+                f"You need to install it manually, for example 'pip install {module}'."
+            ) from error
+
+
+lazy_importer = LazyImporter()
+
+
+def requires_lazy_imports(*modules):
+    def outer_wrapper(fn):
+        @functools.wraps(fn)
+        def inner_wrapper(*args, **kwargs):
+            for module in modules:
+                getattr(lazy_importer, module.replace(".", "_"))
+            return fn(*args, **kwargs)
+
+        return inner_wrapper
+
+    return outer_wrapper
 
 
 # As of Python 3.7 this is provided by contextlib
@@ -520,7 +556,7 @@ def create_image_folder(
     ]
 
 
-@requires_pyav
+@requires_lazy_imports("av")
 def create_video_file(
     root: Union[pathlib.Path, str],
     name: Union[pathlib.Path, str],
@@ -558,11 +594,11 @@ def create_video_file(
 
     video = create_image_or_video_tensor(size)
     file = pathlib.Path(root) / name
-    write_video(str(file), video.permute(0, 2, 3, 1), fps, **kwargs)
+    torchvision.io.write_video(str(file), video.permute(0, 2, 3, 1), fps, **kwargs)
     return file
 
 
-@requires_pyav
+@requires_lazy_imports("av")
 def create_video_folder(
     root: Union[str, pathlib.Path],
     name: Union[str, pathlib.Path],
