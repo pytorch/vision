@@ -403,7 +403,7 @@ class DatasetTestCase(unittest.TestCase):
     def test_transforms(self, config):
         mock = unittest.mock.Mock(wraps=lambda *args: args[0] if len(args) == 1 else args)
         for kwarg in self._TRANSFORM_KWARGS:
-            if not kwarg in self._HAS_SPECIAL_KWARG:
+            if kwarg not in self._HAS_SPECIAL_KWARG:
                 continue
 
             mock.reset_mock()
