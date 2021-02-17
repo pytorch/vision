@@ -439,46 +439,25 @@ class ImageDatasetTestCase(DatasetTestCase):
         ) as (dataset, info):
             # PIL.Image.open() only loads the image meta data upfront and keeps the file open until the first access
             # to the pixel data occurs. Trying to delete such a file results in an PermissionError on Windows. Thus, we
-            # track all lazily opened images and close the file handle before the file is deleted.
+            # force-load opened images.
             # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
             # image, but never use the underlying data. During normal operation it is reasonable to assume that the
             # user wants to work with the image he just opened rather than deleting the underlying file.
-            with self._close_image_handles():
+            with self._force_load_images():
                 yield dataset, info
 
     @contextlib.contextmanager
-    def _close_image_handles(self):
-        module = inspect.getmodule(self.DATASET_CLASS)
-
-        def resolve_patch_object():
-            with contextlib.suppress(StopIteration):
-                return next(name for name, attr in vars(module).items() if attr is PIL.Image)
-
-            with contextlib.suppress(StopIteration):
-                name = next(name for name, attr in vars(module).items() if attr is PIL)
-                return f"{name}.Image"
-
-        obj = resolve_patch_object()
-        if not obj:
-            yield
-            return
-
-        lazily_opened_files = set()
-
+    def _force_load_images(self):
         open = PIL.Image.open
 
         def new(fp, *args, **kwargs):
             image = open(fp, *args, **kwargs)
             if isinstance(fp, (str, pathlib.Path)):
-                lazily_opened_files.add(image.fp)
+                image.load()
             return image
 
-        with unittest.mock.patch(f"{module.__name__}.{obj}.open", new=new):
-            try:
-                yield
-            finally:
-                for fh in lazily_opened_files:
-                    fh.close()
+        with unittest.mock.patch(f"PIL.Image.open", new=new):
+            yield
 
 
 class VideoDatasetTestCase(DatasetTestCase):
