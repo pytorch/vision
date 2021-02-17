@@ -2107,10 +2107,6 @@ pre code {
   color: #6c757d;
   opacity: 1;
 }
-.form-control::-moz-placeholder {
-  color: #6c757d;
-  opacity: 1;
-}
 .form-control:-ms-input-placeholder {
   color: #6c757d;
   opacity: 1;
@@ -4557,10 +4553,8 @@ tbody.collapse.show {
 @media (min-width: 576px) {
   .card-columns {
     -webkit-column-count: 3;
-       -moz-column-count: 3;
             column-count: 3;
     -webkit-column-gap: 1.25rem;
-       -moz-column-gap: 1.25rem;
             column-gap: 1.25rem;
   }
   .card-columns .card {
@@ -5676,7 +5670,7 @@ button.close {
   -webkit-transform: translateX(0);
           transform: translateX(0);
 }
-@supports (transform-style: preserve-3d) {
+@supports ((-webkit-transform-style: preserve-3d) or (transform-style: preserve-3d)) {
   .carousel-item-next.carousel-item-left,
   .carousel-item-prev.carousel-item-right {
     -webkit-transform: translate3d(0, 0, 0);
@@ -5689,7 +5683,7 @@ button.close {
   -webkit-transform: translateX(100%);
           transform: translateX(100%);
 }
-@supports (transform-style: preserve-3d) {
+@supports ((-webkit-transform-style: preserve-3d) or (transform-style: preserve-3d)) {
   .carousel-item-next,
   .active.carousel-item-right {
     -webkit-transform: translate3d(100%, 0, 0);
@@ -5702,7 +5696,7 @@ button.close {
   -webkit-transform: translateX(-100%);
           transform: translateX(-100%);
 }
-@supports (transform-style: preserve-3d) {
+@supports ((-webkit-transform-style: preserve-3d) or (transform-style: preserve-3d)) {
   .carousel-item-prev,
   .active.carousel-item-left {
     -webkit-transform: translate3d(-100%, 0, 0);
@@ -7233,6 +7227,7 @@ button.bg-dark:focus {
 }
 
 .position-sticky {
+  position: -webkit-sticky !important;
   position: sticky !important;
 }
 
@@ -7252,8 +7247,9 @@ button.bg-dark:focus {
   z-index: 1030;
 }
 
-@supports (position: sticky) {
+@supports ((position: -webkit-sticky) or (position: sticky)) {
   .sticky-top {
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 1020;
@@ -9357,7 +9353,7 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .highlight .bp {
-  color: #999999;
+  color: #525252;
 }
 
 .highlight .nb {
@@ -9900,9 +9896,17 @@ pre {
       -ms-flex-align: center;
           align-items: center;
   padding-left: 2.8125rem;
-  height: 100%;
-  min-height: 100%;
-  margin-top: -68px;
+  height: 90vh;
+  margin-top: -25px;
+  padding-top: 50%;
+  overflow-y: scroll;
+}
+.mobile-main-menu-links-container .main-menu {
+  height: 100vh;
+}
+
+.mobile-main-menu-links-container ul.resources-mobile-menu-items li {
+  padding-left: 15px;
 }
 
 .site-footer {
@@ -10324,31 +10328,43 @@ ul.pytorch-breadcrumbs a {
   background-image: url("../images/icon-menu-dots-dark.svg");
 }
 
-.rst-content footer .helpful-hr.hr-top {
+.rst-content footer .rating-hr.hr-top {
   margin-bottom: -0.0625rem;
 }
-.rst-content footer .helpful-hr.hr-bottom {
+.rst-content footer .rating-hr.hr-bottom {
   margin-top: -0.0625rem;
 }
-.rst-content footer .helpful-container {
+.rst-content footer .rating-container {
   display: -webkit-inline-box;
   display: -ms-inline-flexbox;
   display: inline-flex;
   font-size: 1.125rem;
 }
-.rst-content footer .helpful-container .helpful-question, .rst-content footer .helpful-container .was-helpful-thank-you {
+.rst-content footer .rating-container .rating-prompt, .rst-content footer .rating-container .was-helpful-thank-you {
   padding: 0.625rem 1.25rem 0.625rem 1.25rem;
 }
-.rst-content footer .helpful-container .was-helpful-thank-you {
+.rst-content footer .rating-container .was-helpful-thank-you {
   display: none;
 }
-.rst-content footer .helpful-container .helpful-question.yes-link, .rst-content footer .helpful-container .helpful-question.no-link {
+.rst-content footer .rating-container .rating-prompt.yes-link, .rst-content footer .rating-container .rating-prompt.no-link {
   color: #e44c2c;
   cursor: pointer;
 }
-.rst-content footer .helpful-container .helpful-question.yes-link:hover, .rst-content footer .helpful-container .helpful-question.no-link:hover {
+.rst-content footer .rating-container .rating-prompt.yes-link:hover, .rst-content footer .rating-container .rating-prompt.no-link:hover {
   background-color: #e44c2c;
   color: #ffffff;
+}
+.rst-content footer .rating-container .stars-outer {
+  display: inline-block;
+  position: relative;
+  font-family: FontAwesome;
+  padding: 0.625rem 1.25rem 0.625rem 1.25rem;
+}
+.rst-content footer .rating-container .stars-outer i {
+  cursor: pointer;
+}
+.rst-content footer .rating-container .stars-outer .star-fill {
+  color: #ee4c2c;
 }
 .rst-content footer div[role="contentinfo"] {
   padding-top: 2.5rem;
@@ -10893,7 +10909,7 @@ article.pytorch-article .tip .admonition-title {
   background: #6bcebb;
 }
 article.pytorch-article .seealso .admonition-title {
-    background: #6bcebb;
+  background: #6bcebb;
 }
 article.pytorch-article .hint .admonition-title {
   background: #a2cdde;
@@ -11717,9 +11733,6 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
 .pytorch-left-menu-search ::-webkit-input-placeholder {
   color: #262626;
 }
-.pytorch-left-menu-search ::-moz-placeholder {
-  color: #262626;
-}
 .pytorch-left-menu-search :-ms-input-placeholder {
   color: #262626;
 }
@@ -12276,21 +12289,27 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
 .resources-dropdown .with-down-orange-arrow {
   padding-right: 2rem;
   position: relative;
-  background-image: url("/assets/images/chevron-down-orange.svg");
+  background: url("../images/chevron-down-orange.svg");
   background-size: 14px 18px;
   background-position: top 7px right 10px;
   background-repeat: no-repeat;
 }
-.resources-dropdown .with-down-arrow {
+
+.with-down-arrow {
   padding-right: 2rem;
   position: relative;
-  background-image: url("/assets/images/chevron-down-black.svg");
+  background-image: url("../images/chevron-down-black.svg");
   background-size: 14px 18px;
   background-position: top 7px right 10px;
   background-repeat: no-repeat;
 }
-.resources-dropdown .with-down-arrow:hover {
-  background-image: url("/assets/images/chevron-down-orange.svg");
+.with-down-arrow:hover {
+  background-image: url("../images/chevron-down-orange.svg");
+  background-repeat: no-repeat;
+}
+
+.header-holder .main-menu ul li .resources-dropdown .doc-dropdown-option {
+  padding-top: 1rem;
 }
 
 .header-holder .main-menu ul li a.nav-dropdown-item {

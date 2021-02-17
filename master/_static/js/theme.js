@@ -1055,4 +1055,20 @@ if (link.text() == "SyntaxError") {
     link.text("Speech Command Recognition with torchaudio");
 }
 
+$(".stars-outer > i").hover(function() {
+    $(this).prevAll().addBack().toggleClass("fas star-fill");
+});
+
+$(".stars-outer > i").on("click", function() {
+    $(this).prevAll().each(function() {
+        $(this).addBack().addClass("fas star-fill");
+    });
+
+    $(".stars-outer > i").each(function() {
+        $(this).unbind("mouseenter mouseleave").css({
+            "pointer-events": "none"
+        });
+    });
+})
+
 },{"jquery":"jquery"}]},{},[1,2,3,4,5,6,7,8,9,10,"pytorch-sphinx-theme"]);
