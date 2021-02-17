@@ -1,3 +1,4 @@
+import collections.abc
 import contextlib
 import functools
 import importlib
@@ -227,16 +228,27 @@ class DatasetTestCase(unittest.TestCase):
         "download_and_extract_archive",
     }
 
-    def inject_fake_data(self, root: str, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Inject fake data into the root of the dataset.
+    def inject_fake_data(
+        self, tmpdir: str, config: Dict[str, Any]
+    ) -> Union[int, Dict[str, Any], Tuple[Sequence[Any], Union[int, Dict[str, Any]]]]:
+        """Inject fake data for dataset into a temporary directory.
 
         Args:
-            root (str): Root of the dataset.
+            tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
+                to be created and in turn also for the fake data injected here.
             config (Dict[str, Any]): Configuration that will be used to create the dataset.
 
-        Returns:
-            info (Dict[str, Any]): Additional information about the injected fake data. Must contain the field
-                ``"num_examples"`` that corresponds to the length of the dataset to be created.
+        Needs to return one of the following:
+
+            1. (int): Number of examples in the dataset to be created,
+            2. (Dict[str, Any]): Additional information about the injected fake data. Must contain the field
+                ``"num_examples"`` that corresponds to the number of examples in the dataset to be created, or
+            3. (Tuple[Sequence[Any], Union[int, Dict[str, Any]]]): Additional required parameters that are passed to
+                the dataset constructor. The second element corresponds to cases 1. and 2.
+
+        If no ``args`` is returned (case 1. and 2.), the ``tmp_dir`` is passed as first parameter to the dataset
+        constructor. In most cases this corresponds to ``root``. If the dataset has more parameters without default
+        values you need to explicitly pass them as explained in case 3.
         """
         raise NotImplementedError("You need to provide fake data in order for the tests to run.")
 
@@ -274,17 +286,38 @@ class DatasetTestCase(unittest.TestCase):
         if disable_download_extract is None:
             disable_download_extract = inject_fake_data
 
-        with get_tmp_dir() as root:
-            info = self.inject_fake_data(root, config) if inject_fake_data else None
-            if info is None or "num_examples" not in info:
+        with get_tmp_dir() as tmpdir:
+            output = self.inject_fake_data(tmpdir, config) if inject_fake_data else None
+            if output is None:
                 raise UsageError(
-                    "The method 'inject_fake_data' needs to return a dictionary that contains at least a "
-                    "'num_examples' field."
+                    "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
+                    "examples for the current configuration."
+                )
+
+            if isinstance(output, collections.abc.Sequence) and len(output) == 2:
+                args, info = output
+            else:
+                args = (tmpdir,)
+                info = output
+
+            if isinstance(info, int):
+                info = dict(num_examples=info)
+            elif isinstance(info, dict):
+                if "num_examples" not in info:
+                    raise UsageError(
+                        "The information dictionary returned by the method 'inject_fake_data' must contain a "
+                        "'num_examples' field that holds the number of examples for the current configuration."
+                    )
+            else:
+                raise UsageError(
+                    f"The additional information returned by the method 'inject_fake_data' must be either an integer "
+                    f"indicating the number of examples for the current configuration or a dictionary with the the "
+                    f"same content. Got {type(info)} instead."
                 )
 
             cm = self._disable_download_extract if disable_download_extract else nullcontext
             with cm(special_kwargs), disable_console_output():
-                dataset = self.DATASET_CLASS(root, **config, **special_kwargs)
+                dataset = self.DATASET_CLASS(*args, **config, **special_kwargs)
 
             yield dataset, info
 

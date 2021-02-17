@@ -473,21 +473,21 @@ class STL10Tester(DatasetTestcase):
 class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech256
 
-    def inject_fake_data(self, root, config):
-        root = pathlib.Path(root) / "caltech256" / "256_ObjectCategories"
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / "caltech256" / "256_ObjectCategories"
 
         categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
         num_images_per_category = 2
 
         for idx, category in categories:
             datasets_utils.create_image_folder(
-                root,
+                tmpdir,
                 name=f"{idx:03d}.{category}",
-                file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx:04d}.jpg",
+                file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
                 num_examples=num_images_per_category,
             )
 
-        return dict(num_examples=num_images_per_category * len(categories))
+        return num_images_per_category * len(categories)
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -504,15 +504,15 @@ class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
         categories_key="label_names",
     )
 
-    def inject_fake_data(self, root, config):
-        root = pathlib.Path(root) / self._VERSION_CONFIG["base_folder"]
-        os.makedirs(root)
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / self._VERSION_CONFIG["base_folder"]
+        os.makedirs(tmpdir)
 
         num_images_per_file = 1
         for name in itertools.chain(self._VERSION_CONFIG["train_files"], self._VERSION_CONFIG["test_files"]):
-            self._create_batch_file(root, name, num_images_per_file)
+            self._create_batch_file(tmpdir, name, num_images_per_file)
 
-        categories = self._create_meta_file(root)
+        categories = self._create_meta_file(tmpdir)
 
         return dict(
             num_examples=num_images_per_file
