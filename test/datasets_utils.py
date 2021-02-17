@@ -57,9 +57,9 @@ class LazyImporter:
     def __init__(self):
         cls = type(self)
         for module in self.MODULES:
-            # We need the quirky module=module argument to the lambda since otherwise the lookup for module in this
-            # scope happens at runtime rather than at definition. Thus, without it every property would try to import
-            # the last module in MODULES
+            # We need the quirky 'module=module' argument to the lambda since otherwise the lookup for 'module' in this
+            # scope would happen at runtime rather than at definition. Thus, without it, every property would try to
+            # import the last 'module' in MODULES.
             setattr(cls, module.split(".", 1)[0], property(lambda self, module=module: LazyImporter._import(module)))
 
     @staticmethod
