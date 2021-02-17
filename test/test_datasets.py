@@ -19,6 +19,7 @@ import datasets_utils
 import pathlib
 import pickle
 from torchvision import datasets
+import random
 
 
 try:
@@ -558,6 +559,57 @@ class CIFAR100(CIFAR10TestCase):
         num_categories=100,
         categories_key="fine_label_names",
     )
+
+
+class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.UCF101
+
+    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        video_folder = tmpdir / "videos"
+        os.makedirs(video_folder)
+        video_files = self._create_videos(video_folder)
+
+        annotations_folder = annotations_folder = tmpdir / "annotations"
+        os.makedirs(annotations_folder)
+        num_examples = self._create_annotation_files(annotations_folder, video_files, config["fold"], config["train"])
+
+        return (str(video_folder), str(annotations_folder)), num_examples
+
+    def _create_videos(self, root, num_examples_per_class=3):
+        def file_name_fn(cls, idx, clips_per_group=2):
+            return f"v_{cls}_g{(idx // clips_per_group) + 1:02d}_c{(idx % clips_per_group) + 1:02d}.avi"
+
+        video_files = [
+            datasets_utils.create_video_folder(root, cls, lambda idx: file_name_fn(cls, idx), num_examples_per_class)
+            for cls in ("ApplyEyeMakeup", "YoYo")
+        ]
+        return [path.relative_to(root) for path in itertools.chain(*video_files)]
+
+    def _create_annotation_files(self, root, video_files, fold, train):
+        current_videos = random.sample(video_files, random.randrange(1, len(video_files) - 1))
+        current_annotation = self._annotation_file_name(fold, train)
+        self._create_annotation_file(root, current_annotation, current_videos)
+
+        other_videos = set(video_files) - set(current_videos)
+        other_annotations = [
+            self._annotation_file_name(fold, train) for fold, train in itertools.product((1, 2, 3), (True, False))
+        ]
+        other_annotations.remove(current_annotation)
+        for name in other_annotations:
+            self._create_annotation_file(root, name, other_videos)
+
+        return len(current_videos)
+
+    def _annotation_file_name(self, fold, train):
+        return f"{'train' if train else 'test'}list{fold:02d}.txt"
+
+    def _create_annotation_file(self, root, name, video_files):
+        with open(pathlib.Path(root) / name, "w") as fh:
+            fh.writelines(f"{file}\n" for file in sorted(video_files))
 
 
 if __name__ == "__main__":
