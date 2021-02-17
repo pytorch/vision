@@ -456,7 +456,7 @@ class ImageDatasetTestCase(DatasetTestCase):
                 image.load()
             return image
 
-        with unittest.mock.patch(f"PIL.Image.open", new=new):
+        with unittest.mock.patch("PIL.Image.open", new=new):
             yield
 
 
