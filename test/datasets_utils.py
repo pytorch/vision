@@ -167,10 +167,11 @@ class DatasetTestCase(unittest.TestCase):
     1. the dataset raises a ``RuntimeError`` if the data files are not found,
     2. the dataset inherits from `torchvision.datasets.VisionDataset`,
     3. the dataset can be turned into a string,
-    4. the feature types of a returned example matches ``FEATURE_TYPES``, and
-    5. the number of examples matches the injected fake data.
+    4. the feature types of a returned example matches ``FEATURE_TYPES``,
+    5. the number of examples matches the injected fake data, and
+    6. the dataset calls ``transform``, ``target_transform``, or ``transforms`` if available when accessing data.
 
-    Case 3., 4., and 5. are tested against all configurations in ``CONFIGS``.
+    Case 3. to 6. are tested against all configurations in ``CONFIGS``.
 
     To add dataset-specific tests, create a new method that takes no arguments with ``test_`` as a name prefix:
 
@@ -204,10 +205,13 @@ class DatasetTestCase(unittest.TestCase):
     CONFIGS = None
     REQUIRED_PACKAGES = None
 
-    _SPECIAL_KWARGS = {
+    _TRANSFORM_KWARGS = {
         "transform",
         "target_transform",
         "transforms",
+    }
+    _SPECIAL_KWARGS = {
+        *_TRANSFORM_KWARGS,
         "download",
     }
     _HAS_SPECIAL_KWARG = None
@@ -307,7 +311,7 @@ class DatasetTestCase(unittest.TestCase):
     @classmethod
     def _populate_private_class_attributes(cls):
         argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
-        cls._HAS_SPECIAL_KWARG = {name: name in argspec.args for name in cls._SPECIAL_KWARGS}
+        cls._HAS_SPECIAL_KWARG = {name for name in cls._SPECIAL_KWARGS if name in argspec.args}
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
@@ -337,7 +341,7 @@ class DatasetTestCase(unittest.TestCase):
 
     @contextlib.contextmanager
     def _disable_download_extract(self, special_kwargs):
-        inject_download_kwarg = self._HAS_SPECIAL_KWARG["download"] and "download" not in special_kwargs
+        inject_download_kwarg = "download" in self._HAS_SPECIAL_KWARG and "download" not in special_kwargs
         if inject_download_kwarg:
             special_kwargs["download"] = False
 
@@ -394,6 +398,21 @@ class DatasetTestCase(unittest.TestCase):
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
             self.assertEqual(len(dataset), info["num_examples"])
+
+    @test_all_configs
+    def test_transforms(self, config):
+        mock = unittest.mock.Mock(wraps=lambda *args: args[0] if len(args) == 1 else args)
+        for kwarg in self._TRANSFORM_KWARGS:
+            if not kwarg in self._HAS_SPECIAL_KWARG:
+                continue
+
+            mock.reset_mock()
+
+            with self.subTest(kwarg=kwarg):
+                with self.create_dataset(config, **{kwarg: mock}) as (dataset, _):
+                    dataset[0]
+
+                mock.assert_called()
 
 
 class ImageDatasetTestCase(DatasetTestCase):
