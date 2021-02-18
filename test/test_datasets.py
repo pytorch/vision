@@ -19,6 +19,7 @@ import datasets_utils
 import pathlib
 import pickle
 from torchvision import datasets
+import shutil
 
 
 try:
@@ -558,6 +559,120 @@ class CIFAR100(CIFAR10TestCase):
         num_categories=100,
         categories_key="fine_label_names",
     )
+
+
+class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.VOCSegmentation
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
+
+    CONFIGS = (
+        *datasets_utils.combinations_grid(
+            year=[f"20{year:02d}" for year in range(7, 13)], image_set=("train", "val", "trainval")
+        ),
+        dict(year="2007", image_set="test"),
+        dict(year="2007-test", image_set="test"),
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        year, is_test_set = (
+            ("2007", True)
+            if config["year"] == "2007-test" or config["image_set"] == "test"
+            else (config["year"], False)
+        )
+        image_set = config["image_set"]
+
+        base_dir = pathlib.Path(tmpdir)
+        if year == "2011":
+            base_dir /= "TrainVal"
+        base_dir = base_dir / "VOCdevkit" / f"VOC{year}"
+        os.makedirs(base_dir)
+
+        num_images, num_images_per_image_set = self._create_image_set_files(base_dir, "ImageSets", is_test_set)
+        datasets_utils.create_image_folder(base_dir, "JPEGImages", lambda idx: f"{idx:06d}.jpg", num_images)
+
+        datasets_utils.create_image_folder(base_dir, "SegmentationClass", lambda idx: f"{idx:06d}.png", num_images)
+        annotation = self._create_annotation_files(base_dir, "Annotations", num_images)
+
+        return dict(num_examples=num_images_per_image_set[image_set], annotation=annotation)
+
+    def _create_image_set_files(self, root, name, is_test_set):
+        root = pathlib.Path(root) / name
+        src = pathlib.Path(root) / "Main"
+        os.makedirs(src, exist_ok=True)
+
+        idcs = dict(train=(0, 1, 2), val=(3, 4), test=(5,))
+        idcs["trainval"] = (*idcs["train"], *idcs["val"])
+
+        for image_set in ("test",) if is_test_set else ("train", "val", "trainval"):
+            self._create_image_set_file(src, image_set, idcs[image_set])
+
+        shutil.copytree(src, root / "Segmentation")
+
+        num_images = max(itertools.chain(*idcs.values())) + 1
+        num_images_per_image_set = dict([(image_set, len(idcs_)) for image_set, idcs_ in idcs.items()])
+        return num_images, num_images_per_image_set
+
+    def _create_image_set_file(self, root, image_set, idcs):
+        with open(pathlib.Path(root) / f"{image_set}.txt", "w") as fh:
+            fh.writelines([f"{idx:06d}\n" for idx in idcs])
+
+    def _create_annotation_files(self, root, name, num_images):
+        root = pathlib.Path(root) / name
+        os.makedirs(root)
+
+        for idx in range(num_images):
+            annotation = self._create_annotation_file(root, f"{idx:06d}.xml")
+
+        return annotation
+
+    def _create_annotation_file(self, root, name):
+        def add_child(parent, name, text=None):
+            child = ET.SubElement(parent, name)
+            child.text = text
+            return child
+
+        def add_name(obj, name="dog"):
+            add_child(obj, "name", name)
+            return name
+
+        def add_bndbox(obj, bndbox=None):
+            if bndbox is None:
+                bndbox = {"xmin": "1", "xmax": "2", "ymin": "3", "ymax": "4"}
+
+            obj = add_child(obj, "bndbox")
+            for name, text in bndbox.items():
+                add_child(obj, name, text)
+
+            return bndbox
+
+        annotation = ET.Element("annotation")
+        obj = add_child(annotation, "object")
+        data = dict(name=add_name(obj), bndbox=add_bndbox(obj))
+
+        with open(pathlib.Path(root) / name, "wb") as fh:
+            fh.write(ET.tostring(annotation))
+
+        return data
+
+
+class VOCDetectionTestCase(VOCSegmentationTestCase):
+    DATASET_CLASS = datasets.VOCDetection
+    FEATURE_TYPES = (PIL.Image.Image, dict)
+
+    def test_annotations(self):
+        with self.create_dataset() as (dataset, info):
+            _, target = dataset[0]
+
+            self.assertIn("annotation", target)
+            annotation = target["annotation"]
+
+            self.assertIn("object", annotation)
+            objects = annotation["object"]
+
+            self.assertEqual(len(objects), 1)
+            object = objects[0]
+
+            self.assertEqual(object, info["annotation"])
 
 
 if __name__ == "__main__":
