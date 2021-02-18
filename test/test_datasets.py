@@ -15,6 +15,10 @@ from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
+import datasets_utils
+import pathlib
+import pickle
+from torchvision import datasets
 
 
 try:
@@ -466,5 +470,95 @@ class STL10Tester(DatasetTestcase):
             self.assertIsInstance(repr(dataset), str)
 
 
-if __name__ == '__main__':
+class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Caltech256
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / "caltech256" / "256_ObjectCategories"
+
+        categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+        num_images_per_category = 2
+
+        for idx, category in categories:
+            datasets_utils.create_image_folder(
+                tmpdir,
+                name=f"{idx:03d}.{category}",
+                file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
+                num_examples=num_images_per_category,
+            )
+
+        return num_images_per_category * len(categories)
+
+
+class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CIFAR10
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    _VERSION_CONFIG = dict(
+        base_folder="cifar-10-batches-py",
+        train_files=tuple(f"data_batch_{idx}" for idx in range(1, 6)),
+        test_files=("test_batch",),
+        labels_key="labels",
+        meta_file="batches.meta",
+        num_categories=10,
+        categories_key="label_names",
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / self._VERSION_CONFIG["base_folder"]
+        os.makedirs(tmpdir)
+
+        num_images_per_file = 1
+        for name in itertools.chain(self._VERSION_CONFIG["train_files"], self._VERSION_CONFIG["test_files"]):
+            self._create_batch_file(tmpdir, name, num_images_per_file)
+
+        categories = self._create_meta_file(tmpdir)
+
+        return dict(
+            num_examples=num_images_per_file
+            * len(self._VERSION_CONFIG["train_files"] if config["train"] else self._VERSION_CONFIG["test_files"]),
+            categories=categories,
+        )
+
+    def _create_batch_file(self, root, name, num_images):
+        data = datasets_utils.create_image_or_video_tensor((num_images, 32 * 32 * 3))
+        labels = np.random.randint(0, self._VERSION_CONFIG["num_categories"], size=num_images).tolist()
+        self._create_binary_file(root, name, {"data": data, self._VERSION_CONFIG["labels_key"]: labels})
+
+    def _create_meta_file(self, root):
+        categories = [
+            f"{idx:0{len(str(self._VERSION_CONFIG['num_categories'] - 1))}d}"
+            for idx in range(self._VERSION_CONFIG["num_categories"])
+        ]
+        self._create_binary_file(
+            root, self._VERSION_CONFIG["meta_file"], {self._VERSION_CONFIG["categories_key"]: categories}
+        )
+        return categories
+
+    def _create_binary_file(self, root, name, content):
+        with open(pathlib.Path(root) / name, "wb") as fh:
+            pickle.dump(content, fh)
+
+    def test_class_to_idx(self):
+        with self.create_dataset() as (dataset, info):
+            expected = {category: label for label, category in enumerate(info["categories"])}
+            actual = dataset.class_to_idx
+            self.assertEqual(actual, expected)
+
+
+class CIFAR100(CIFAR10TestCase):
+    DATASET_CLASS = datasets.CIFAR100
+
+    _VERSION_CONFIG = dict(
+        base_folder="cifar-100-python",
+        train_files=("train",),
+        test_files=("test",),
+        labels_key="fine_labels",
+        meta_file="meta",
+        num_categories=100,
+        categories_key="fine_label_names",
+    )
+
+
+if __name__ == "__main__":
     unittest.main()
