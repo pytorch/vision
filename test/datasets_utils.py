@@ -499,9 +499,9 @@ class VideoDatasetTestCase(DatasetTestCase):
     - Overwrites the 'FEATURE_TYPES' class attribute to expect two :class:`torch.Tensor` s for the video and audio as
       well as an integer label.
     - Overwrites the 'REQUIRED_PACKAGES' class attribute to require PyAV (``av``).
-    - Adds the 'DEFAULT_FRAMES_PER_CLIP' class attribute. If 'frames_per_clip' is the last parameter without a default
-      value in the dataset constructor, the value of 'DEFAULT_FRAMES_PER_CLIP' is appended to the output of the
-      'inject_fake_data()' method.
+    - Adds the 'DEFAULT_FRAMES_PER_CLIP' class attribute. If no 'frames_per_clip' is provided by 'inject_fake_data()'
+        and it is the last parameter without a default value in the dataset constructor, the value of the
+        'DEFAULT_FRAMES_PER_CLIP' class attribute is appended to the output.
     """
 
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
