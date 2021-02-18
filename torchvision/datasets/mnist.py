@@ -11,7 +11,7 @@ import gzip
 import lzma
 from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
 from .utils import download_url, download_and_extract_archive, extract_archive, \
-    verify_str_arg
+    verify_str_arg, check_integrity
 
 
 class MNIST(VisionDataset):
@@ -75,6 +75,10 @@ class MNIST(VisionDataset):
                                     target_transform=target_transform)
         self.train = train  # training set or test set
 
+        if self._check_legacy_exist():
+            self.data, self.targets = self._load_legacy_cache()
+            return
+
         if download:
             self.download()
 
@@ -82,11 +86,32 @@ class MNIST(VisionDataset):
             raise RuntimeError('Dataset not found.' +
                                ' You can use download=True to download it')
 
-        if self.train:
-            data_file = self.training_file
-        else:
-            data_file = self.test_file
-        self.data, self.targets = torch.load(os.path.join(self.processed_folder, data_file))
+        self.data, self.targets = self._load_data()
+
+    def _check_legacy_exist(self):
+        processed_folder_exists = os.path.exists(self.processed_folder)
+        if not processed_folder_exists:
+            return False
+
+        return all(
+            check_integrity(os.path.join(self.processed_folder, file)) for file in (self.training_file, self.test_file)
+        )
+
+    def _load_legacy_data(self):
+        # This is for BC only. We no longer cache the data in a custom binary, but simply read from the raw data
+        # directly.
+        data_file = self.training_file if self.train else self.test_file
+        return torch.load(os.path.join(self.processed_folder, data_file))
+
+    def _load_data(self):
+        image_file = f"{'train' if self.train else 't10k'}-images-idx3-ubyte"
+        data = read_image_file(os.path.join(self.raw_folder, image_file))
+
+        label_file = f"{'train' if self.train else 't10k'}-labels-idx1-ubyte"
+        targets = read_label_file(os.path.join(self.raw_folder, label_file))
+
+        return data, targets
+
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
@@ -126,42 +151,22 @@ class MNIST(VisionDataset):
         return {_class: i for i, _class in enumerate(self.classes)}
 
     def _check_exists(self) -> bool:
-        return (os.path.exists(os.path.join(self.processed_folder,
-                                            self.training_file)) and
-                os.path.exists(os.path.join(self.processed_folder,
-                                            self.test_file)))
+        return all(
+            check_integrity(os.path.join(self.raw_folder, os.path.splitext(os.path.basename(url))[0]), md5)
+            for url, md5 in self.resources
+        )
 
     def download(self) -> None:
-        """Download the MNIST data if it doesn't exist in processed_folder already."""
+        """Download the MNIST data if it doesn't exist already."""
 
         if self._check_exists():
             return
 
         os.makedirs(self.raw_folder, exist_ok=True)
-        os.makedirs(self.processed_folder, exist_ok=True)
 
-        # download files
         for url, md5 in self.resources:
             filename = url.rpartition('/')[2]
             download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
-
-        # process and save as torch files
-        print('Processing...')
-
-        training_set = (
-            read_image_file(os.path.join(self.raw_folder, 'train-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.raw_folder, 'train-labels-idx1-ubyte'))
-        )
-        test_set = (
-            read_image_file(os.path.join(self.raw_folder, 't10k-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.raw_folder, 't10k-labels-idx1-ubyte'))
-        )
-        with open(os.path.join(self.processed_folder, self.training_file), 'wb') as f:
-            torch.save(training_set, f)
-        with open(os.path.join(self.processed_folder, self.test_file), 'wb') as f:
-            torch.save(test_set, f)
-
-        print('Done!')
 
     def extra_repr(self) -> str:
         return "Split: {}".format("Train" if self.train is True else "Test")
