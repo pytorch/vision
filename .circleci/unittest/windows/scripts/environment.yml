@@ -1,8 +1,9 @@
 channels:
   - pytorch
   - defaults
+  # use conda-forge for python v3.9+
+  - conda-forge
 dependencies:
-  - numpy
   - pytest
   - pytest-cov
   - codecov
@@ -13,6 +14,6 @@ dependencies:
   - pip:
     - future
     - pillow>=4.1.1
-    - scipy==1.4.1
+    - scipy
     - av
     - dataclasses

@@ -9,13 +9,19 @@ import io
 import torch
 import warnings
 import __main__
+import random
 
 from numbers import Number
 from torch._six import string_classes
 from collections import OrderedDict
+from _utils_internal import get_relative_path
 
 import numpy as np
 from PIL import Image
+
+IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
+PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
+PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
 
 
 @contextlib.contextmanager
@@ -30,9 +36,14 @@ def get_tmp_dir(src=None, **kwargs):
         shutil.rmtree(tmp_dir)
 
 
+def set_rng_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
+
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
-# TEST_WITH_SLOW = True  # TODO: Delete this line once there is a PYTORCH_TEST_WITH_SLOW aware CI job
 
 
 parser = argparse.ArgumentParser(add_help=False)
@@ -100,19 +111,23 @@ class TestCase(unittest.TestCase):
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
         munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
-        test_file = os.path.realpath(sys.modules[module_id].__file__)
-        expected_file = os.path.join(os.path.dirname(test_file),
-                                     "expect",
-                                     munged_id)
 
+        # Determine expected file based on environment
+        expected_file_base = get_relative_path(
+            os.path.realpath(sys.modules[module_id].__file__),
+            "expect")
+
+        # Set expected_file based on subname.
+        expected_file = os.path.join(expected_file_base, munged_id)
         if subname:
             expected_file += "_" + subname
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
             raise RuntimeError(
-                ("No expect file exists for {}; to accept the current output, run:\n"
-                 "python {} {} --accept").format(os.path.basename(expected_file), __main__.__file__, munged_id))
+                f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
+                "to accept the current output, run:\n"
+                f"python {__main__.__file__} {munged_id} --accept")
 
         return expected_file
 
@@ -332,13 +347,13 @@ def freeze_rng_state():
 class TransformsTester(unittest.TestCase):
 
     def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
+        tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
         return tensor, pil_img
 
     def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
         batch_tensor = torch.randint(
-            0, 255,
+            0, 256,
             (num_samples, channels, height, width),
             dtype=torch.uint8,
             device=device

@@ -1,11 +1,6 @@
-#ifndef MODELSIMPL_H
-#define MODELSIMPL_H
+#pragma once
 
-#include <torch/torch.h>
-
-#ifndef TORCH_CHECK
-#define TORCH_CHECK AT_CHECK
-#endif
+#include <torch/nn.h>
 
 namespace vision {
 namespace models {
@@ -42,5 +37,3 @@ inline bool double_compare(double a, double b) {
 } // namespace modelsimpl
 } // namespace models
 } // namespace vision
-
-#endif // MODELSIMPL_H

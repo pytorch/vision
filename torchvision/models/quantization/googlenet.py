@@ -2,7 +2,6 @@ import warnings
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from torch.jit.annotations import Optional
 
 from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.googlenet import (
@@ -30,6 +29,7 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
         aux_logits (bool): If True, adds two auxiliary branches that can improve training.
             Default: *False* when pretrained is True otherwise *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it

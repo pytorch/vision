@@ -1,7 +1,5 @@
 #include "googlenet.h"
 
-#include "modelsimpl.h"
-
 namespace vision {
 namespace models {
 

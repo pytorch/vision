@@ -1,15 +1,8 @@
-#include <ATen/ATen.h>
 #include <torch/script.h>
 #include <torch/torch.h>
-#include <torchvision/ROIAlign.h>
-#include <torchvision/cpu/vision_cpu.h>
-#include <torchvision/nms.h>
+#include <torchvision/vision.h>
+#include <torchvision/ops/nms.h>
 
-#ifdef _WIN32
-// Windows only
-// This is necessary until operators are automatically registered on include
-static auto _nms = &nms_cpu;
-#endif
 
 int main() {
   torch::DeviceType device_type;

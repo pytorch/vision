@@ -4,14 +4,19 @@ import colorsys
 import math
 
 import numpy as np
-from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import torch
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
+from torchvision.transforms import InterpolationMode
 
 from common_utils import TransformsTester
+
+from typing import Dict, List, Tuple
+
+
+NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
 class Tester(TransformsTester):
@@ -30,6 +35,28 @@ class Tester(TransformsTester):
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         self.assertTrue(transformed_batch.allclose(s_transformed_batch))
+
+    def test_assert_image_tensor(self):
+        shape = (100,)
+        tensor = torch.rand(*shape, dtype=torch.float, device=self.device)
+
+        list_of_methods = [(F_t._get_image_size, (tensor, )), (F_t.vflip, (tensor, )),
+                           (F_t.hflip, (tensor, )), (F_t.crop, (tensor, 1, 2, 4, 5)),
+                           (F_t.adjust_brightness, (tensor, 0.)), (F_t.adjust_contrast, (tensor, 1.)),
+                           (F_t.adjust_hue, (tensor, -0.5)), (F_t.adjust_saturation, (tensor, 2.)),
+                           (F_t.center_crop, (tensor, [10, 11])), (F_t.five_crop, (tensor, [10, 11])),
+                           (F_t.ten_crop, (tensor, [10, 11])), (F_t.pad, (tensor, [2, ], 2, "constant")),
+                           (F_t.resize, (tensor, [10, 11])), (F_t.perspective, (tensor, [0.2, ])),
+                           (F_t.gaussian_blur, (tensor, (2, 2), (0.7, 0.5))),
+                           (F_t.invert, (tensor, )), (F_t.posterize, (tensor, 0)),
+                           (F_t.solarize, (tensor, 0.3)), (F_t.adjust_sharpness, (tensor, 0.3)),
+                           (F_t.autocontrast, (tensor, )), (F_t.equalize, (tensor, ))]
+
+        for func, args in list_of_methods:
+            with self.assertRaises(Exception) as context:
+                func(*args)
+
+            self.assertTrue('Tensor is not a torch image.' in str(context.exception))
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F.vflip)
@@ -286,13 +313,14 @@ class Tester(TransformsTester):
 
                     self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
 
-    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max"):
+    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max",
+                        dts=(None, torch.float32, torch.float64)):
         script_fn = torch.jit.script(fn)
         torch.manual_seed(15)
         tensor, pil_img = self._create_data(26, 34, device=self.device)
         batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
-        for dt in [None, torch.float32, torch.float64]:
+        for dt in dts:
 
             if dt is not None:
                 tensor = F.convert_image_dtype(tensor, dt)
@@ -365,7 +393,7 @@ class Tester(TransformsTester):
         )
 
     def test_resize(self):
-        script_fn = torch.jit.script(F_t.resize)
+        script_fn = torch.jit.script(F.resize)
         tensor, pil_img = self._create_data(26, 36, device=self.device)
         batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
@@ -382,14 +410,14 @@ class Tester(TransformsTester):
 
             for size in [32, 26, [32, ], [32, 32], (32, 32), [26, 35]]:
                 for interpolation in [BILINEAR, BICUBIC, NEAREST]:
-                    resized_tensor = F_t.resize(tensor, size=size, interpolation=interpolation)
-                    resized_pil_img = F_pil.resize(pil_img, size=size, interpolation=interpolation)
+                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
+                    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
 
                     self.assertEqual(
                         resized_tensor.size()[1:], resized_pil_img.size[::-1], msg="{}, {}".format(size, interpolation)
                     )
 
-                    if interpolation != NEAREST:
+                    if interpolation not in [NEAREST, ]:
                         # We can not check values if mode = NEAREST, as results are different
                         # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
                         # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
@@ -407,6 +435,7 @@ class Tester(TransformsTester):
                         script_size = [size, ]
                     else:
                         script_size = size
+
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
@@ -414,17 +443,24 @@ class Tester(TransformsTester):
                         batch_tensors, F.resize, size=script_size, interpolation=interpolation
                     )
 
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            res1 = F.resize(tensor, size=32, interpolation=2)
+            res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:
         # 1) resize to the same size, crop to the same size => should be identity
         tensor, _ = self._create_data(26, 36, device=self.device)
-        for i in [0, 2, 3]:
-            out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=i)
+
+        for mode in [NEAREST, BILINEAR, BICUBIC]:
+            out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode)
             self.assertTrue(tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
 
         # 2) resize by half and crop a TL corner
         tensor, _ = self._create_data(26, 36, device=self.device)
-        out_tensor = F.resized_crop(tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=0)
+        out_tensor = F.resized_crop(tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=NEAREST)
         expected_out_tensor = tensor[:, :20:2, :30:2]
         self.assertTrue(
             expected_out_tensor.equal(out_tensor),
@@ -433,17 +469,19 @@ class Tester(TransformsTester):
 
         batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
         self._test_fn_on_batch(
-            batch_tensors, F.resized_crop, top=1, left=2, height=20, width=30, size=[10, 15], interpolation=0
+            batch_tensors, F.resized_crop, top=1, left=2, height=20, width=30, size=[10, 15], interpolation=NEAREST
         )
 
     def _test_affine_identity_map(self, tensor, scripted_affine):
         # 1) identity map
-        out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+        out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
         self.assertTrue(
             tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
         )
-        out_tensor = scripted_affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+        out_tensor = scripted_affine(
+            tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
+        )
         self.assertTrue(
             tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
         )
@@ -461,13 +499,13 @@ class Tester(TransformsTester):
         ]
         for a, true_tensor in test_configs:
             out_pil_img = F.affine(
-                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
             )
             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1))).to(self.device)
 
             for fn in [F.affine, scripted_affine]:
                 out_tensor = fn(
-                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
                 )
                 if true_tensor is not None:
                     self.assertTrue(
@@ -496,13 +534,13 @@ class Tester(TransformsTester):
         for a in test_configs:
 
             out_pil_img = F.affine(
-                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
             )
             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
             for fn in [F.affine, scripted_affine]:
                 out_tensor = fn(
-                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
                 ).cpu()
 
                 if out_tensor.dtype != torch.uint8:
@@ -526,10 +564,10 @@ class Tester(TransformsTester):
         ]
         for t in test_configs:
 
-            out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+            out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
             for fn in [F.affine, scripted_affine]:
-                out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+                out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
                 if out_tensor.dtype != torch.uint8:
                     out_tensor = out_tensor.to(torch.uint8)
@@ -539,24 +577,25 @@ class Tester(TransformsTester):
     def _test_affine_all_ops(self, tensor, pil_img, scripted_affine):
         # 4) Test rotation + translation + scale + share
         test_configs = [
-            (45, [5, 6], 1.0, [0.0, 0.0]),
-            (33, (5, -4), 1.0, [0.0, 0.0]),
-            (45, [-5, 4], 1.2, [0.0, 0.0]),
-            (33, (-4, -8), 2.0, [0.0, 0.0]),
-            (85, (10, -10), 0.7, [0.0, 0.0]),
-            (0, [0, 0], 1.0, [35.0, ]),
-            (-25, [0, 0], 1.2, [0.0, 15.0]),
-            (-45, [-10, 0], 0.7, [2.0, 5.0]),
-            (-45, [-10, -10], 1.2, [4.0, 5.0]),
-            (-90, [0, 0], 1.0, [0.0, 0.0]),
+            (45.5, [5, 6], 1.0, [0.0, 0.0], None),
+            (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0]),
+            (45, [-5, 4], 1.2, [0.0, 0.0], (1, 2, 3)),
+            (33, (-4, -8), 2.0, [0.0, 0.0], [255, 255, 255]),
+            (85, (10, -10), 0.7, [0.0, 0.0], [1, ]),
+            (0, [0, 0], 1.0, [35.0, ], (2.0, )),
+            (-25, [0, 0], 1.2, [0.0, 15.0], None),
+            (-45, [-10, 0], 0.7, [2.0, 5.0], None),
+            (-45, [-10, -10], 1.2, [4.0, 5.0], None),
+            (-90, [0, 0], 1.0, [0.0, 0.0], None),
         ]
-        for r in [0, ]:
-            for a, t, s, sh in test_configs:
-                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, resample=r)
+        for r in [NEAREST, ]:
+            for a, t, s, sh, f in test_configs:
+                f_pil = int(f[0]) if f is not None and len(f) == 1 else f
+                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=r, fill=f_pil)
                 out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                 for fn in [F.affine, scripted_affine]:
-                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, resample=r).cpu()
+                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, interpolation=r, fill=f).cpu()
 
                     if out_tensor.dtype != torch.uint8:
                         out_tensor = out_tensor.to(torch.uint8)
@@ -569,7 +608,7 @@ class Tester(TransformsTester):
                         ratio_diff_pixels,
                         tol,
                         msg="{}: {}\n{} vs \n{}".format(
-                            (r, a, t, s, sh), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                            (r, a, t, s, sh, f), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
                         )
                     )
 
@@ -605,42 +644,61 @@ class Tester(TransformsTester):
                     batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0]
                 )
 
+        tensor, pil_img = data[0]
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=2)
+            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
+            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
+        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
+            res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
+            res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
+            self.assertEqual(res1, res2)
+
     def _test_rotate_all_options(self, tensor, pil_img, scripted_rotate, centers):
         img_size = pil_img.size
         dt = tensor.dtype
-        for r in [0, ]:
+        for r in [NEAREST, ]:
             for a in range(-180, 180, 17):
                 for e in [True, False]:
                     for c in centers:
+                        for f in [None, [0, 0, 0], (1, 2, 3), [255, 255, 255], [1, ], (2.0, )]:
+                            f_pil = int(f[0]) if f is not None and len(f) == 1 else f
+                            out_pil_img = F.rotate(pil_img, angle=a, interpolation=r, expand=e, center=c, fill=f_pil)
+                            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                            for fn in [F.rotate, scripted_rotate]:
+                                out_tensor = fn(tensor, angle=a, interpolation=r, expand=e, center=c, fill=f).cpu()
 
-                        out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
-                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-                        for fn in [F.rotate, scripted_rotate]:
-                            out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
+                                if out_tensor.dtype != torch.uint8:
+                                    out_tensor = out_tensor.to(torch.uint8)
 
-                            if out_tensor.dtype != torch.uint8:
-                                out_tensor = out_tensor.to(torch.uint8)
+                                self.assertEqual(
+                                    out_tensor.shape,
+                                    out_pil_tensor.shape,
+                                    msg="{}: {} vs {}".format(
+                                        (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                                    ))
 
-                            self.assertEqual(
-                                out_tensor.shape,
-                                out_pil_tensor.shape,
-                                msg="{}: {} vs {}".format(
-                                    (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
-                                )
-                            )
-                            num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                            ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                            # Tolerance : less than 3% of different pixels
-                            self.assertLess(
-                                ratio_diff_pixels,
-                                0.03,
-                                msg="{}: {}\n{} vs \n{}".format(
-                                    (img_size, r, dt, a, e, c),
+                                num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                                ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                                # Tolerance : less than 3% of different pixels
+                                self.assertLess(
                                     ratio_diff_pixels,
-                                    out_tensor[0, :7, :7],
-                                    out_pil_tensor[0, :7, :7]
+                                    0.03,
+                                    msg="{}: {}\n{} vs \n{}".format(
+                                        (img_size, r, dt, a, e, c, f),
+                                        ratio_diff_pixels,
+                                        out_tensor[0, :7, :7],
+                                        out_pil_tensor[0, :7, :7]
+                                    )
                                 )
-                            )
 
     def test_rotate(self):
         # Tests on square image
@@ -673,35 +731,50 @@ class Tester(TransformsTester):
 
                 center = (20, 22)
                 self._test_fn_on_batch(
-                    batch_tensors, F.rotate, angle=32, resample=0, expand=True, center=center
+                    batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center
                 )
+        tensor, pil_img = data[0]
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            res1 = F.rotate(tensor, 45, resample=2)
+            res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            res1 = F.rotate(tensor, 45, interpolation=2)
+            res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
 
     def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
         dt = tensor.dtype
-        for r in [0, ]:
-            for spoints, epoints in test_configs:
-                out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
-                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+        for f in [None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )]:
+            for r in [NEAREST, ]:
+                for spoints, epoints in test_configs:
+                    f_pil = int(f[0]) if f is not None and len(f) == 1 else f
+                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r,
+                                                fill=f_pil)
+                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
-                for fn in [F.perspective, scripted_transform]:
-                    out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
+                    for fn in [F.perspective, scripted_transform]:
+                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r, fill=f).cpu()
 
-                    if out_tensor.dtype != torch.uint8:
-                        out_tensor = out_tensor.to(torch.uint8)
+                        if out_tensor.dtype != torch.uint8:
+                            out_tensor = out_tensor.to(torch.uint8)
 
-                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                    # Tolerance : less than 5% of different pixels
-                    self.assertLess(
-                        ratio_diff_pixels,
-                        0.05,
-                        msg="{}: {}\n{} vs \n{}".format(
-                            (r, dt, spoints, epoints),
+                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                        # Tolerance : less than 5% of different pixels
+                        self.assertLess(
                             ratio_diff_pixels,
-                            out_tensor[0, :7, :7],
-                            out_pil_tensor[0, :7, :7]
+                            0.05,
+                            msg="{}: {}\n{} vs \n{}".format(
+                                (f, r, dt, spoints, epoints),
+                                ratio_diff_pixels,
+                                out_tensor[0, :7, :7],
+                                out_pil_tensor[0, :7, :7]
+                            )
                         )
-                    )
 
     def test_perspective(self):
 
@@ -739,8 +812,16 @@ class Tester(TransformsTester):
 
                 for spoints, epoints in test_configs:
                     self._test_fn_on_batch(
-                        batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=0
+                        batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=NEAREST
                     )
+
+        # assert changed type warning
+        spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
+        epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
+            res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
 
     def test_gaussian_blur(self):
         small_image_tensor = torch.from_numpy(
@@ -805,6 +886,77 @@ class Tester(TransformsTester):
                                 1.0,
                                 msg="{}, {}".format(ksize, sigma)
                             )
+
+    def test_invert(self):
+        self._test_adjust_fn(
+            F.invert,
+            F_pil.invert,
+            F_t.invert,
+            [{}],
+            tol=1.0,
+            agg_method="max"
+        )
+
+    def test_posterize(self):
+        self._test_adjust_fn(
+            F.posterize,
+            F_pil.posterize,
+            F_t.posterize,
+            [{"bits": bits} for bits in range(0, 8)],
+            tol=1.0,
+            agg_method="max",
+            dts=(None,)
+        )
+
+    def test_solarize(self):
+        self._test_adjust_fn(
+            F.solarize,
+            F_pil.solarize,
+            F_t.solarize,
+            [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255]],
+            tol=1.0,
+            agg_method="max",
+            dts=(None,)
+        )
+        self._test_adjust_fn(
+            F.solarize,
+            lambda img, threshold: F_pil.solarize(img, 255 * threshold),
+            F_t.solarize,
+            [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0]],
+            tol=1.0,
+            agg_method="max",
+            dts=(torch.float32, torch.float64)
+        )
+
+    def test_adjust_sharpness(self):
+        self._test_adjust_fn(
+            F.adjust_sharpness,
+            F_pil.adjust_sharpness,
+            F_t.adjust_sharpness,
+            [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]]
+        )
+
+    def test_autocontrast(self):
+        self._test_adjust_fn(
+            F.autocontrast,
+            F_pil.autocontrast,
+            F_t.autocontrast,
+            [{}],
+            tol=1.0,
+            agg_method="max"
+        )
+
+    def test_equalize(self):
+        torch.set_deterministic(False)
+        self._test_adjust_fn(
+            F.equalize,
+            F_pil.equalize,
+            F_t.equalize,
+            [{}],
+            tol=1.0,
+            agg_method="max",
+            dts=(None,)
+        )
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")

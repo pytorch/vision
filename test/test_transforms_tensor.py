@@ -2,14 +2,16 @@ import os
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-
-from PIL.Image import NEAREST, BILINEAR, BICUBIC
+from torchvision.transforms import InterpolationMode
 
 import numpy as np
 
 import unittest
 
 from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
+
+
+NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
 class Tester(TransformsTester):
@@ -86,6 +88,34 @@ class Tester(TransformsTester):
 
     def test_random_vertical_flip(self):
         self._test_op('vflip', 'RandomVerticalFlip')
+
+    def test_random_invert(self):
+        self._test_op('invert', 'RandomInvert')
+
+    def test_random_posterize(self):
+        fn_kwargs = meth_kwargs = {"bits": 4}
+        self._test_op(
+            'posterize', 'RandomPosterize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_random_solarize(self):
+        fn_kwargs = meth_kwargs = {"threshold": 192.0}
+        self._test_op(
+            'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_random_adjust_sharpness(self):
+        fn_kwargs = meth_kwargs = {"sharpness_factor": 2.0}
+        self._test_op(
+            'adjust_sharpness', 'RandomAdjustSharpness', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_random_autocontrast(self):
+        self._test_op('autocontrast', 'RandomAutocontrast')
+
+    def test_random_equalize(self):
+        torch.set_deterministic(False)
+        self._test_op('equalize', 'RandomEqualize')
 
     def test_color_jitter(self):
 
@@ -178,7 +208,7 @@ class Tester(TransformsTester):
         self._test_op(
             "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
-        tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8, device=self.device)
+        tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=self.device)
         # Test torchscript of transforms.CenterCrop with size as int
         f = T.CenterCrop(size=5)
         scripted_fn = torch.jit.script(f)
@@ -292,7 +322,7 @@ class Tester(TransformsTester):
         self.assertEqual(y.shape[2], int(38 * 46 / 32))
 
         tensor, _ = self._create_data(height=34, width=36, device=self.device)
-        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
         script_fn = torch.jit.script(F.resize)
 
         for dt in [None, torch.float32, torch.float64]:
@@ -321,8 +351,8 @@ class Tester(TransformsTester):
             script_fn.save(os.path.join(tmp_dir, "t_resize.pt"))
 
     def test_resized_crop(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for scale in [(0.7, 1.2), [0.7, 1.2]]:
             for ratio in [(0.75, 1.333), [0.75, 1.333]]:
@@ -339,17 +369,38 @@ class Tester(TransformsTester):
             s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
     def test_random_affine(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
             for scale in [(0.7, 1.2), [0.7, 1.2]]:
                 for translate in [(0.1, 0.2), [0.2, 0.1]]:
                     for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
                         for interpolation in [NEAREST, BILINEAR]:
-                            transform = T.RandomAffine(
-                                degrees=degrees, translate=translate,
-                                scale=scale, shear=shear, resample=interpolation
+                            for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                                transform = T.RandomAffine(
+                                    degrees=degrees, translate=translate,
+                                    scale=scale, shear=shear, interpolation=interpolation, fill=fill
+                                )
+                                s_transform = torch.jit.script(transform)
+
+                                self._test_transform_vs_scripted(transform, s_transform, tensor)
+                                self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
+
+    def test_random_rotate(self):
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+
+        for center in [(0, 0), [10, 10], None, (56, 44)]:
+            for expand in [True, False]:
+                for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
+                    for interpolation in [NEAREST, BILINEAR]:
+                        for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                            transform = T.RandomRotation(
+                                degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill
                             )
                             s_transform = torch.jit.script(transform)
 
@@ -357,41 +408,24 @@ class Tester(TransformsTester):
                             self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
-
-    def test_random_rotate(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        for center in [(0, 0), [10, 10], None, (56, 44)]:
-            for expand in [True, False]:
-                for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
-                    for interpolation in [NEAREST, BILINEAR]:
-                        transform = T.RandomRotation(
-                            degrees=degrees, resample=interpolation, expand=expand, center=center
-                        )
-                        s_transform = torch.jit.script(transform)
-
-                        self._test_transform_vs_scripted(transform, s_transform, tensor)
-                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
 
     def test_random_perspective(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for distortion_scale in np.linspace(0.1, 1.0, num=20):
             for interpolation in [NEAREST, BILINEAR]:
-                transform = T.RandomPerspective(
-                    distortion_scale=distortion_scale,
-                    interpolation=interpolation
-                )
-                s_transform = torch.jit.script(transform)
+                for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                    transform = T.RandomPerspective(
+                        distortion_scale=distortion_scale,
+                        interpolation=interpolation,
+                        fill=fill
+                    )
+                    s_transform = torch.jit.script(transform)
 
-                self._test_transform_vs_scripted(transform, s_transform, tensor)
-                self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                    self._test_transform_vs_scripted(transform, s_transform, tensor)
+                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
@@ -446,6 +480,7 @@ class Tester(TransformsTester):
         # We skip some tests from _test_transform_vs_scripted_on_batch as
         # results for scripted and non-scripted transformations are not exactly the same
         torch.manual_seed(12)
+        torch.set_deterministic(True)
         transformed_batch = fn(batch_tensors)
         torch.manual_seed(12)
         s_transformed_batch = scripted_fn(batch_tensors)
@@ -590,6 +625,23 @@ class Tester(TransformsTester):
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
+
+    def test_autoaugment(self):
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+
+        s_transform = None
+        for policy in T.AutoAugmentPolicy:
+            for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                transform = T.AutoAugment(policy=policy, fill=fill)
+                s_transform = torch.jit.script(transform)
+                for _ in range(100):
+                    self._test_transform_vs_scripted(transform, s_transform, tensor)
+                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+        if s_transform is not None:
+            with get_tmp_dir() as tmp_dir:
+                s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
