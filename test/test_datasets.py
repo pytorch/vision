@@ -10,7 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
+from fakedata_generation import mnist_root, imagenet_root, \
     cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
@@ -170,38 +170,6 @@ class Tester(DatasetTestcase):
             self.assertEqual(len(dataset), 1)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
-
-    @mock.patch('torchvision.datasets.cifar.check_integrity')
-    @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
-    def test_cifar10(self, mock_ext_check, mock_int_check):
-        mock_ext_check.return_value = True
-        mock_int_check.return_value = True
-        with cifar_root('CIFAR10') as root:
-            dataset = torchvision.datasets.CIFAR10(root, train=True, download=True)
-            self.generic_classification_dataset_test(dataset, num_images=5)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-            dataset = torchvision.datasets.CIFAR10(root, train=False, download=True)
-            self.generic_classification_dataset_test(dataset)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-    @mock.patch('torchvision.datasets.cifar.check_integrity')
-    @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
-    def test_cifar100(self, mock_ext_check, mock_int_check):
-        mock_ext_check.return_value = True
-        mock_int_check.return_value = True
-        with cifar_root('CIFAR100') as root:
-            dataset = torchvision.datasets.CIFAR100(root, train=True, download=True)
-            self.generic_classification_dataset_test(dataset)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-            dataset = torchvision.datasets.CIFAR100(root, train=False, download=True)
-            self.generic_classification_dataset_test(dataset)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_cityscapes(self):
