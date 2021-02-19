@@ -281,42 +281,38 @@ class EMNIST(MNIST):
     def _test_file(split) -> str:
         return 'test_{}.pt'.format(split)
 
+    @property
+    def _file_prefix(self) -> str:
+        return f"emnist-{self.split}-{'train' if self.train else 'test'}"
+
+    @property
+    def images_file(self) -> str:
+        return os.path.join(self.raw_folder, f"{self._file_prefix}-images-idx3-ubyte")
+
+    @property
+    def labels_file(self) -> str:
+        return os.path.join(self.raw_folder, f"{self._file_prefix}-labels-idx1-ubyte")
+
+    def _load_data(self):
+        return read_image_file(self.images_file), read_label_file(self.labels_file)
+
+    def _check_exists(self) -> bool:
+        return all(check_integrity(file) for file in (self.images_file, self.labels_file))
+
     def download(self) -> None:
-        """Download the EMNIST data if it doesn't exist in processed_folder already."""
+        """Download the EMNIST data if it doesn't exist already."""
 
         if self._check_exists():
             return
 
         os.makedirs(self.raw_folder, exist_ok=True)
-        os.makedirs(self.processed_folder, exist_ok=True)
 
-        # download files
-        print('Downloading and extracting zip archive')
-        download_and_extract_archive(self.url, download_root=self.raw_folder, filename="emnist.zip",
-                                     remove_finished=True, md5=self.md5)
+        download_and_extract_archive(self.url, download_root=self.raw_folder, md5=self.md5)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
-                extract_archive(os.path.join(gzip_folder, gzip_file), gzip_folder)
-
-        # process and save as torch files
-        for split in self.splits:
-            print('Processing ' + split)
-            training_set = (
-                read_image_file(os.path.join(gzip_folder, 'emnist-{}-train-images-idx3-ubyte'.format(split))),
-                read_label_file(os.path.join(gzip_folder, 'emnist-{}-train-labels-idx1-ubyte'.format(split)))
-            )
-            test_set = (
-                read_image_file(os.path.join(gzip_folder, 'emnist-{}-test-images-idx3-ubyte'.format(split))),
-                read_label_file(os.path.join(gzip_folder, 'emnist-{}-test-labels-idx1-ubyte'.format(split)))
-            )
-            with open(os.path.join(self.processed_folder, self._training_file(split)), 'wb') as f:
-                torch.save(training_set, f)
-            with open(os.path.join(self.processed_folder, self._test_file(split)), 'wb') as f:
-                torch.save(test_set, f)
+                extract_archive(os.path.join(gzip_folder, gzip_file), self.raw_folder)
         shutil.rmtree(gzip_folder)
-
-        print('Done!')
 
 
 class QMNIST(MNIST):
