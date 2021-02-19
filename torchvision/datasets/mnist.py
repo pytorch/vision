@@ -153,8 +153,8 @@ class MNIST(VisionDataset):
 
     def _check_exists(self) -> bool:
         return all(
-            check_integrity(os.path.join(self.raw_folder, os.path.splitext(os.path.basename(url))[0]), md5)
-            for url, md5 in self.resources
+            check_integrity(os.path.join(self.raw_folder, os.path.splitext(os.path.basename(url))[0]))
+            for url, _ in self.resources
         )
 
     def download(self) -> None:
