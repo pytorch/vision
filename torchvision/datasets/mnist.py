@@ -382,40 +382,51 @@ class QMNIST(MNIST):
         self.test_file = self.data_file
         super(QMNIST, self).__init__(root, train, **kwargs)
 
+    @property
+    def images_file(self) -> str:
+        (url, _), _ = self.resources[self.subsets[self.what]]
+        return os.path.join(self.raw_folder, os.path.splitext(os.path.basename(url))[0])
+
+    @property
+    def labels_file(self) -> str:
+        _, (url, _) = self.resources[self.subsets[self.what]]
+        return os.path.join(self.raw_folder, os.path.splitext(os.path.basename(url))[0])
+
+    def _check_exists(self) -> bool:
+        return all(check_integrity(file) for file in (self.images_file, self.labels_file))
+
+    def _load_data(self):
+        data = read_sn3_pascalvincent_tensor(self.images_file)
+        assert (data.dtype == torch.uint8)
+        assert (data.ndimension() == 3)
+
+        targets = read_sn3_pascalvincent_tensor(self.labels_file).long()
+        assert (targets.ndimension() == 2)
+
+        if self.what == 'test10k':
+            data = data[0:10000, :, :].clone()
+            targets = targets[0:10000, :].clone()
+        elif self.what == 'test50k':
+            data = data[10000:, :, :].clone()
+            targets = targets[10000:, :].clone()
+
+        return data, targets
+
     def download(self) -> None:
-        """Download the QMNIST data if it doesn't exist in processed_folder already.
+        """Download the QMNIST data if it doesn't exist already.
            Note that we only download what has been asked for (argument 'what').
         """
         if self._check_exists():
             return
-        os.makedirs(self.raw_folder, exist_ok=True)
-        os.makedirs(self.processed_folder, exist_ok=True)
-        split = self.resources[self.subsets[self.what]]
-        files = []
 
-        # download data files if not already there
+        os.makedirs(self.raw_folder, exist_ok=True)
+        split = self.resources[self.subsets[self.what]]
+
         for url, md5 in split:
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.raw_folder, filename)
             if not os.path.isfile(file_path):
-                download_url(url, root=self.raw_folder, filename=filename, md5=md5)
-            files.append(file_path)
-
-        # process and save as torch files
-        print('Processing...')
-        data = read_sn3_pascalvincent_tensor(files[0])
-        assert(data.dtype == torch.uint8)
-        assert(data.ndimension() == 3)
-        targets = read_sn3_pascalvincent_tensor(files[1]).long()
-        assert(targets.ndimension() == 2)
-        if self.what == 'test10k':
-            data = data[0:10000, :, :].clone()
-            targets = targets[0:10000, :].clone()
-        if self.what == 'test50k':
-            data = data[10000:, :, :].clone()
-            targets = targets[10000:, :].clone()
-        with open(os.path.join(self.processed_folder, self.data_file), 'wb') as f:
-            torch.save((data, targets), f)
+                download_and_extract_archive(url, self.raw_folder, filename=filename, md5=md5)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag
