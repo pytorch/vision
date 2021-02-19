@@ -12,6 +12,7 @@ import lzma
 from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
 from .utils import download_url, download_and_extract_archive, extract_archive, \
     verify_str_arg, check_integrity
+import shutil
 
 
 class MNIST(VisionDataset):
@@ -282,7 +283,6 @@ class EMNIST(MNIST):
 
     def download(self) -> None:
         """Download the EMNIST data if it doesn't exist in processed_folder already."""
-        import shutil
 
         if self._check_exists():
             return
