@@ -77,7 +77,7 @@ class MNIST(VisionDataset):
         self.train = train  # training set or test set
 
         if self._check_legacy_exist():
-            self.data, self.targets = self._load_legacy_cache()
+            self.data, self.targets = self._load_legacy_data()
             return
 
         if download:
@@ -112,7 +112,6 @@ class MNIST(VisionDataset):
         targets = read_label_file(os.path.join(self.raw_folder, label_file))
 
         return data, targets
-
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
