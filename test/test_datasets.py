@@ -10,7 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
+from fakedata_generation import cifar_root, imagenet_root, \
     cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
@@ -109,33 +109,6 @@ class Tester(DatasetTestcase):
                 torchvision.datasets.ImageFolder(
                     root, loader=lambda x: x, is_valid_file=lambda x: False
                 )
-
-    @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_mnist(self, mock_download_extract):
-        num_examples = 30
-        with mnist_root(num_examples, "MNIST") as root:
-            dataset = torchvision.datasets.MNIST(root, download=True)
-            self.generic_classification_dataset_test(dataset, num_images=num_examples)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-    @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_kmnist(self, mock_download_extract):
-        num_examples = 30
-        with mnist_root(num_examples, "KMNIST") as root:
-            dataset = torchvision.datasets.KMNIST(root, download=True)
-            self.generic_classification_dataset_test(dataset, num_images=num_examples)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-    @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_fashionmnist(self, mock_download_extract):
-        num_examples = 30
-        with mnist_root(num_examples, "FashionMNIST") as root:
-            dataset = torchvision.datasets.FashionMNIST(root, download=True)
-            self.generic_classification_dataset_test(dataset, num_images=num_examples)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.imagenet._verify_archive')
     @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
