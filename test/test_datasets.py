@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import os
 import unittest
@@ -7,12 +8,17 @@ import PIL
 from PIL import Image
 from torch._utils_internal import get_file_path_2
 import torchvision
+from torchvision.datasets import utils
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root
+    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
+import datasets_utils
+import pathlib
+import pickle
+from torchvision import datasets
 
 
 try:
@@ -28,7 +34,7 @@ except ImportError:
     HAS_PYAV = False
 
 
-class Tester(unittest.TestCase):
+class DatasetTestcase(unittest.TestCase):
     def generic_classification_dataset_test(self, dataset, num_images=1):
         self.assertEqual(len(dataset), num_images)
         img, target = dataset[0]
@@ -41,6 +47,8 @@ class Tester(unittest.TestCase):
         self.assertTrue(isinstance(img, PIL.Image.Image))
         self.assertTrue(isinstance(target, PIL.Image.Image))
 
+
+class Tester(DatasetTestcase):
     def test_imagefolder(self):
         # TODO: create the fake data on-the-fly
         FAKEDATA_DIR = get_file_path_2(
@@ -138,6 +146,26 @@ class Tester(unittest.TestCase):
 
             dataset = torchvision.datasets.ImageNet(root, split='val')
             self.generic_classification_dataset_test(dataset)
+
+    @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    def test_widerface(self, mock_check_integrity):
+        mock_check_integrity.return_value = True
+        with widerface_root() as root:
+            dataset = torchvision.datasets.WIDERFace(root, split='train')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.WIDERFace(root, split='val')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.WIDERFace(root, split='test')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
 
     @mock.patch('torchvision.datasets.cifar.check_integrity')
     @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
@@ -264,12 +292,15 @@ class Tester(unittest.TestCase):
 
     @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
     def test_ucf101(self):
+        cached_meta_data = None
         with ucf101_root() as (root, ann_root):
             for split in {True, False}:
                 for fold in range(1, 4):
                     for length in {10, 15, 20}:
-                        dataset = torchvision.datasets.UCF101(
-                            root, ann_root, length, fold=fold, train=split)
+                        dataset = torchvision.datasets.UCF101(root, ann_root, length, fold=fold, train=split,
+                                                              num_workers=2, _precomputed_metadata=cached_meta_data)
+                        if cached_meta_data is None:
+                            cached_meta_data = dataset.metadata
                         self.assertGreater(len(dataset), 0)
 
                         video, audio, label = dataset[0]
@@ -331,7 +362,7 @@ class Tester(unittest.TestCase):
     def test_places365_devkit_no_download(self):
         for split in ("train-standard", "train-challenge", "val"):
             with self.subTest(split=split):
-                with places365_root(split=split, extract_images=False) as places365:
+                with places365_root(split=split) as places365:
                     root, data = places365
 
                     with self.assertRaises(RuntimeError):
@@ -360,12 +391,174 @@ class Tester(unittest.TestCase):
                 torchvision.datasets.Places365(root, split=split, small=small, download=True)
 
     def test_places365_repr_smoke(self):
-        with places365_root(extract_images=False) as places365:
+        with places365_root() as places365:
             root, data = places365
 
             dataset = torchvision.datasets.Places365(root, download=True)
             self.assertIsInstance(repr(dataset), str)
 
 
-if __name__ == '__main__':
+class STL10Tester(DatasetTestcase):
+    @contextlib.contextmanager
+    def mocked_root(self):
+        with stl10_root() as (root, data):
+            yield root, data
+
+    @contextlib.contextmanager
+    def mocked_dataset(self, pre_extract=False, download=True, **kwargs):
+        with self.mocked_root() as (root, data):
+            if pre_extract:
+                utils.extract_archive(os.path.join(root, data["archive"]))
+            dataset = torchvision.datasets.STL10(root, download=download, **kwargs)
+            yield dataset, data
+
+    def test_not_found(self):
+        with self.assertRaises(RuntimeError):
+            with self.mocked_dataset(download=False):
+                pass
+
+    def test_splits(self):
+        for split in ('train', 'train+unlabeled', 'unlabeled', 'test'):
+            with self.mocked_dataset(split=split) as (dataset, data):
+                num_images = sum([data["num_images_in_split"][part] for part in split.split("+")])
+                self.generic_classification_dataset_test(dataset, num_images=num_images)
+
+    def test_folds(self):
+        for fold in range(10):
+            with self.mocked_dataset(split="train", folds=fold) as (dataset, data):
+                num_images = data["num_images_in_folds"][fold]
+                self.assertEqual(len(dataset), num_images)
+
+    def test_invalid_folds1(self):
+        with self.assertRaises(ValueError):
+            with self.mocked_dataset(folds=10):
+                pass
+
+    def test_invalid_folds2(self):
+        with self.assertRaises(ValueError):
+            with self.mocked_dataset(folds="0"):
+                pass
+
+    def test_transforms(self):
+        expected_image = "image"
+        expected_target = "target"
+
+        def transform(image):
+            return expected_image
+
+        def target_transform(target):
+            return expected_target
+
+        with self.mocked_dataset(transform=transform, target_transform=target_transform) as (dataset, _):
+            actual_image, actual_target = dataset[0]
+
+            self.assertEqual(actual_image, expected_image)
+            self.assertEqual(actual_target, expected_target)
+
+    def test_unlabeled(self):
+        with self.mocked_dataset(split="unlabeled") as (dataset, _):
+            labels = [dataset[idx][1] for idx in range(len(dataset))]
+            self.assertTrue(all([label == -1 for label in labels]))
+
+    @unittest.mock.patch("torchvision.datasets.stl10.download_and_extract_archive")
+    def test_download_preexisting(self, mock):
+        with self.mocked_dataset(pre_extract=True) as (dataset, data):
+            mock.assert_not_called()
+
+    def test_repr_smoke(self):
+        with self.mocked_dataset() as (dataset, _):
+            self.assertIsInstance(repr(dataset), str)
+
+
+class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Caltech256
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / "caltech256" / "256_ObjectCategories"
+
+        categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+        num_images_per_category = 2
+
+        for idx, category in categories:
+            datasets_utils.create_image_folder(
+                tmpdir,
+                name=f"{idx:03d}.{category}",
+                file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
+                num_examples=num_images_per_category,
+            )
+
+        return num_images_per_category * len(categories)
+
+
+class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CIFAR10
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    _VERSION_CONFIG = dict(
+        base_folder="cifar-10-batches-py",
+        train_files=tuple(f"data_batch_{idx}" for idx in range(1, 6)),
+        test_files=("test_batch",),
+        labels_key="labels",
+        meta_file="batches.meta",
+        num_categories=10,
+        categories_key="label_names",
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / self._VERSION_CONFIG["base_folder"]
+        os.makedirs(tmpdir)
+
+        num_images_per_file = 1
+        for name in itertools.chain(self._VERSION_CONFIG["train_files"], self._VERSION_CONFIG["test_files"]):
+            self._create_batch_file(tmpdir, name, num_images_per_file)
+
+        categories = self._create_meta_file(tmpdir)
+
+        return dict(
+            num_examples=num_images_per_file
+            * len(self._VERSION_CONFIG["train_files"] if config["train"] else self._VERSION_CONFIG["test_files"]),
+            categories=categories,
+        )
+
+    def _create_batch_file(self, root, name, num_images):
+        data = datasets_utils.create_image_or_video_tensor((num_images, 32 * 32 * 3))
+        labels = np.random.randint(0, self._VERSION_CONFIG["num_categories"], size=num_images).tolist()
+        self._create_binary_file(root, name, {"data": data, self._VERSION_CONFIG["labels_key"]: labels})
+
+    def _create_meta_file(self, root):
+        categories = [
+            f"{idx:0{len(str(self._VERSION_CONFIG['num_categories'] - 1))}d}"
+            for idx in range(self._VERSION_CONFIG["num_categories"])
+        ]
+        self._create_binary_file(
+            root, self._VERSION_CONFIG["meta_file"], {self._VERSION_CONFIG["categories_key"]: categories}
+        )
+        return categories
+
+    def _create_binary_file(self, root, name, content):
+        with open(pathlib.Path(root) / name, "wb") as fh:
+            pickle.dump(content, fh)
+
+    def test_class_to_idx(self):
+        with self.create_dataset() as (dataset, info):
+            expected = {category: label for label, category in enumerate(info["categories"])}
+            actual = dataset.class_to_idx
+            self.assertEqual(actual, expected)
+
+
+class CIFAR100(CIFAR10TestCase):
+    DATASET_CLASS = datasets.CIFAR100
+
+    _VERSION_CONFIG = dict(
+        base_folder="cifar-100-python",
+        train_files=("train",),
+        test_files=("test",),
+        labels_key="fine_labels",
+        meta_file="meta",
+        num_categories=100,
+        categories_key="fine_label_names",
+    )
+
+
+if __name__ == "__main__":
     unittest.main()

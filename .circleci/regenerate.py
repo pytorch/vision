@@ -19,7 +19,10 @@ import yaml
 import os.path
 
 
-PYTHON_VERSIONS = ["3.6", "3.7", "3.8"]
+PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
+CUDA_VERSION = ["10.1", "10.2", "11.2"]
+
+RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
 
 def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
@@ -27,8 +30,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102", "cu110"],
-                                "win": ["cpu", "cu101", "cu102", "cu110"],
+            cu_versions_dict = {"linux": ["cpu", "cu101", "cu102", "cu112"],
+                                "win": ["cpu", "cu101", "cu102", "cu112"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -43,6 +46,10 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                             btype, os_type, python_version, cu_version,
                             unicode, prefix, upload, filter_branch=fb)
 
+    if not filter_branch:
+        # Build on every pull request, but upload only on nightly and tags
+        w += build_doc_job(None)
+        w += upload_doc_job('nightly')
     return indent(indentation, w)
 
 
@@ -65,11 +72,38 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
     return w
 
 
+def build_doc_job(filter_branch):
+    job = {
+        "name": "build_docs",
+        "python_version": "3.7",
+        "requires": ["binary_linux_wheel_py3.7_cpu", ],
+    }
+
+    if filter_branch:
+        job["filters"] = gen_filter_branch_tree(filter_branch)
+    return [{"build_docs": job}]
+
+
+def upload_doc_job(filter_branch):
+    job = {
+        "name": "upload_docs",
+        "context": "org-member",
+        "python_version": "3.7",
+        "requires": ["build_docs", ],
+    }
+
+    if filter_branch:
+        job["filters"] = gen_filter_branch_tree(filter_branch,
+                                                tags_list=RC_PATTERN)
+    return [{"upload_docs": job}]
+
+
 manylinux_images = {
     "cu92": "pytorch/manylinux-cuda92",
     "cu101": "pytorch/manylinux-cuda101",
     "cu102": "pytorch/manylinux-cuda102",
     "cu110": "pytorch/manylinux-cuda110",
+    "cu112": "pytorch/manylinux-cuda112",
 }
 
 
@@ -78,6 +112,14 @@ def get_manylinux_image(cu_version):
     if cu_version.startswith('cu'):
         cu_suffix = cu_version[len('cu'):]
     return f"pytorch/manylinux-cuda{cu_suffix}"
+
+
+def get_conda_image(cu_version):
+    if cu_version == "cpu":
+        return "pytorch/conda-builder:cpu"
+    if cu_version.startswith('cu'):
+        cu_suffix = cu_version[len('cu'):]
+    return f"pytorch/conda-builder:cuda{cu_suffix}"
 
 
 def generate_base_workflow(base_workflow_name, python_version, cu_version,
@@ -94,6 +136,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
 
     if os_type != "win":
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
+        d["conda_docker_image"] = get_conda_image(cu_version)
 
     if filter_branch is not None:
         d["filters"] = {
@@ -111,8 +154,11 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     return {w: d}
 
 
-def gen_filter_branch_tree(*branches):
-    return {"branches": {"only": [b for b in branches]}}
+def gen_filter_branch_tree(*branches, tags_list=None):
+    filter_dict = {"branches": {"only": [b for b in branches]}}
+    if tags_list is not None:
+        filter_dict["tags"] = {"only": tags_list}
+    return filter_dict
 
 
 def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, filter_branch=None):
@@ -212,6 +258,7 @@ if __name__ == "__main__":
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
         autoescape=False,
+        keep_trailing_newline=True,
     )
 
     with open(os.path.join(d, 'config.yml'), 'w') as f:

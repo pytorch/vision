@@ -36,17 +36,17 @@ class Tester(unittest.TestCase):
 
     def test_validate_resnet_inputs_detection(self):
         # default number of backbone layers to train
-        ret = backbone_utils._validate_resnet_trainable_layers(
-            pretrained=True, trainable_backbone_layers=None)
+        ret = backbone_utils._validate_trainable_layers(
+            pretrained=True, trainable_backbone_layers=None, max_value=5, default_value=3)
         self.assertEqual(ret, 3)
         # can't go beyond 5
         with self.assertRaises(AssertionError):
-            ret = backbone_utils._validate_resnet_trainable_layers(
-                pretrained=True, trainable_backbone_layers=6)
+            ret = backbone_utils._validate_trainable_layers(
+                pretrained=True, trainable_backbone_layers=6, max_value=5, default_value=3)
         # if not pretrained, should use all trainable layers and warn
         with self.assertWarns(UserWarning):
-            ret = backbone_utils._validate_resnet_trainable_layers(
-                pretrained=False, trainable_backbone_layers=0)
+            ret = backbone_utils._validate_trainable_layers(
+                pretrained=False, trainable_backbone_layers=0, max_value=5, default_value=3)
         self.assertEqual(ret, 5)
 
     def test_transform_copy_targets(self):
@@ -57,6 +57,13 @@ class Tester(unittest.TestCase):
         out = transform(image, targets)  # noqa: F841
         self.assertTrue(torch.equal(targets[0]['boxes'], targets_copy[0]['boxes']))
         self.assertTrue(torch.equal(targets[1]['boxes'], targets_copy[1]['boxes']))
+
+    def test_not_float_normalize(self):
+        transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
+        image = [torch.randint(0, 255, (3, 200, 300), dtype=torch.uint8)]
+        targets = [{'boxes': torch.rand(3, 4)}]
+        with self.assertRaises(TypeError):
+            out = transform(image, targets)  # noqa: F841
 
 
 if __name__ == '__main__':

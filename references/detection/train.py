@@ -23,7 +23,6 @@ import time
 
 import torch
 import torch.utils.data
-from torch import nn
 import torchvision
 import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
@@ -33,8 +32,8 @@ from coco_utils import get_coco, get_coco_kp
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 from engine import train_one_epoch, evaluate
 
+import presets
 import utils
-import transforms as T
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -49,11 +48,7 @@ def get_dataset(name, image_set, transform, data_path):
 
 
 def get_transform(train):
-    transforms = []
-    transforms.append(T.ToTensor())
-    if train:
-        transforms.append(T.RandomHorizontalFlip(0.5))
-    return T.Compose(transforms)
+    return presets.DetectionPresetTrain() if train else presets.DetectionPresetEval()
 
 
 def main(args):
@@ -93,8 +88,14 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     print("Creating model")
-    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
-                                                              pretrained=args.pretrained)
+    kwargs = {
+        "trainable_backbone_layers": args.trainable_backbone_layers
+    }
+    if "rcnn" in args.model:
+        if args.rpn_score_thresh is not None:
+            kwargs["rpn_score_thresh"] = args.rpn_score_thresh
+    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
+                                                              **kwargs)
     model.to(device)
 
     model_without_ddp = model
@@ -175,6 +176,9 @@ if __name__ == "__main__":
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    parser.add_argument('--rpn-score-thresh', default=None, type=float, help='rpn score threshold for faster-rcnn')
+    parser.add_argument('--trainable-backbone-layers', default=None, type=int,
+                        help='number of trainable layers of backbone')
     parser.add_argument(
         "--test-only",
         dest="test_only",

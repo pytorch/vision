@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torch.jit.annotations import List
+from typing import List
 
 
 def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:

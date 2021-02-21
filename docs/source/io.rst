@@ -18,7 +18,7 @@ Video
 
 
 Fine-grained video API
--------------------
+----------------------
 
 In addition to the :mod:`read_video` function, we provide a high-performance 
 lower-level API for more fine-grained control compared to the :mod:`read_video` function.
@@ -35,7 +35,7 @@ Example of inspecting a video:
     import torchvision
     video_path = "path to a test video"
     # Constructor allocates memory and a threaded decoder
-    # instance per video. At the momet it takes two arguments:
+    # instance per video. At the moment it takes two arguments:
     # path to the video file, and a wanted stream.
     reader = torchvision.io.VideoReader(video_path, "video")
 

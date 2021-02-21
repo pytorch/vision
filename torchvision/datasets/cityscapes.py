@@ -1,7 +1,6 @@
 import json
 import os
 from collections import namedtuple
-import zipfile
 from typing import Any, Callable, Dict, List, Optional, Union, Tuple
 
 from .utils import extract_archive, verify_str_arg, iterable_to_str

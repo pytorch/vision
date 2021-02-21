@@ -1,6 +1,5 @@
 from PIL import Image
 from os.path import join
-import os
 from typing import Any, Callable, List, Optional, Tuple
 from .vision import VisionDataset
 from .utils import download_and_extract_archive, check_integrity, list_dir, list_files
@@ -8,6 +7,7 @@ from .utils import download_and_extract_archive, check_integrity, list_dir, list
 
 class Omniglot(VisionDataset):
     """`Omniglot <https://github.com/brendenlake/omniglot>`_ Dataset.
+
     Args:
         root (string): Root directory of dataset where directory
             ``omniglot-py`` exists.

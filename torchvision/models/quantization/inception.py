@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
-from torch.jit.annotations import Optional
 from torchvision.models.utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
 
@@ -39,6 +38,7 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it

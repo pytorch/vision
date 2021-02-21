@@ -22,7 +22,7 @@ def get_list_of_videos(num_videos=5, sizes=None, fps=None):
                 f = 5
             else:
                 f = fps[i]
-            data = torch.randint(0, 255, (size, 300, 400, 3), dtype=torch.uint8)
+            data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
             name = os.path.join(tmp_dir, "{}.mp4".format(i))
             names.append(name)
             io.write_video(name, data, fps=f)
@@ -118,6 +118,16 @@ class Tester(unittest.TestCase):
         self.assertEqual(len(clips), 3)
         self.assertTrue(clips.equal(idxs))
         self.assertTrue(idxs.flatten().equal(resampled_idxs))
+
+        # case 3: frames aren't enough for a clip
+        num_frames = 32
+        orig_fps = 30
+        new_fps = 13
+        with self.assertWarns(UserWarning):
+            clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
+                                                             orig_fps, new_fps)
+        self.assertEqual(len(clips), 0)
+        self.assertEqual(len(idxs), 0)
 
 
 if __name__ == '__main__':

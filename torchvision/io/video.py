@@ -55,18 +55,26 @@ def write_video(
     fps: float,
     video_codec: str = "libx264",
     options: Optional[Dict[str, Any]] = None,
+    audio_array: Optional[torch.Tensor] = None,
+    audio_fps: Optional[float] = None,
+    audio_codec: Optional[str] = None,
+    audio_options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
-    Parameters
-    ----------
-    filename : str
-        path where the video will be saved
-    video_array : Tensor[T, H, W, C]
-        tensor containing the individual frames, as a uint8 tensor in [T, H, W, C] format
-    fps : Number
-        frames per second
+    Args:
+        filename (str): path where the video will be saved
+        video_array (Tensor[T, H, W, C]): tensor containing the individual frames,
+            as a uint8 tensor in [T, H, W, C] format
+        fps (Number): video frames per second
+        video_codec (str): the name of the video codec, i.e. "libx264", "h264", etc.
+        options (Dict): dictionary containing options to be passed into the PyAV video stream
+        audio_array (Tensor[C, N]): tensor containing the audio, where C is the number of channels
+            and N is the number of samples
+        audio_fps (Number): audio sample rate, typically 44100 or 48000
+        audio_codec (str): the name of the audio codec, i.e. "mp3", "aac", etc.
+        audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream
     """
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
@@ -82,6 +90,41 @@ def write_video(
         stream.height = video_array.shape[1]
         stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
         stream.options = options or {}
+
+        if audio_array is not None:
+            audio_format_dtypes = {
+                'dbl': '<f8',
+                'dblp': '<f8',
+                'flt': '<f4',
+                'fltp': '<f4',
+                's16': '<i2',
+                's16p': '<i2',
+                's32': '<i4',
+                's32p': '<i4',
+                'u8': 'u1',
+                'u8p': 'u1',
+            }
+            a_stream = container.add_stream(audio_codec, rate=audio_fps)
+            a_stream.options = audio_options or {}
+
+            num_channels = audio_array.shape[0]
+            audio_layout = "stereo" if num_channels > 1 else "mono"
+            audio_sample_fmt = container.streams.audio[0].format.name
+
+            format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
+            audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
+
+            frame = av.AudioFrame.from_ndarray(
+                audio_array, format=audio_sample_fmt, layout=audio_layout
+            )
+
+            frame.sample_rate = audio_fps
+
+            for packet in a_stream.encode(frame):
+                container.mux(packet)
+
+            for packet in a_stream.encode():
+                container.mux(packet)
 
         for img in video_array:
             frame = av.VideoFrame.from_ndarray(img, format="rgb24")
@@ -199,29 +242,19 @@ def read_video(
     Reads a video from a file, returning both the video frames as well as
     the audio frames
 
-    Parameters
-    ----------
-    filename : str
-        path to the video file
-    start_pts : int if pts_unit = 'pts', optional
-        float / Fraction if pts_unit = 'sec', optional
-        the start presentation time of the video
-    end_pts : int if pts_unit = 'pts', optional
-        float / Fraction if pts_unit = 'sec', optional
-        the end presentation time
-    pts_unit : str, optional
-        unit in which start_pts and end_pts values will be interpreted, either 'pts' or 'sec'. Defaults to 'pts'.
+    Args:
+        filename (str): path to the video file
+        start_pts (int if pts_unit = 'pts', float / Fraction if pts_unit = 'sec', optional):
+            The start presentation time of the video
+        end_pts (int if pts_unit = 'pts', float / Fraction if pts_unit = 'sec', optional):
+            The end presentation time
+        pts_unit (str, optional): unit in which start_pts and end_pts values will be interpreted,
+            either 'pts' or 'sec'. Defaults to 'pts'.
 
-    Returns
-    -------
-    vframes : Tensor[T, H, W, C]
-        the `T` video frames
-    aframes : Tensor[K, L]
-        the audio frames, where `K` is the number of channels and `L` is the
-        number of points
-    info : Dict
-        metadata for the video and audio. Can contain the fields video_fps (float)
-        and audio_fps (int)
+    Returns:
+        vframes (Tensor[T, H, W, C]): the `T` video frames
+        aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points
+        info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)
     """
 
     from torchvision import get_video_backend
@@ -316,20 +349,15 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
 
     Note that the function decodes the whole video frame-by-frame.
 
-    Parameters
-    ----------
-    filename : str
-        path to the video file
-    pts_unit : str, optional
-        unit in which timestamp values will be returned either 'pts' or 'sec'. Defaults to 'pts'.
+    Args:
+        filename (str): path to the video file
+        pts_unit (str, optional): unit in which timestamp values will be returned
+            either 'pts' or 'sec'. Defaults to 'pts'.
 
-    Returns
-    -------
-    pts : List[int] if pts_unit = 'pts'
-        List[Fraction] if pts_unit = 'sec'
-        presentation timestamps for each one of the frames in the video.
-    video_fps : float, optional
-        the frame rate for the video
+    Returns:
+        pts (List[int] if pts_unit = 'pts', List[Fraction] if pts_unit = 'sec'):
+            presentation timestamps for each one of the frames in the video.
+        video_fps (float, optional): the frame rate for the video
 
     """
     from torchvision import get_video_backend

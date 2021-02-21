@@ -4,8 +4,8 @@ import collections
 from .vision import VisionDataset
 import xml.etree.ElementTree as ET
 from PIL import Image
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from .utils import download_url, check_integrity, verify_str_arg
+from typing import Any, Callable, Dict, Optional, Tuple
+from .utils import download_url, verify_str_arg
 
 DATASET_YEAR_DICT = {
     '2012': {

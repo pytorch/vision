@@ -162,7 +162,7 @@ class GoogLeNet(nn.Module):
         # N x 480 x 14 x 14
         x = self.inception4a(x)
         # N x 512 x 14 x 14
-        aux1 = torch.jit.annotate(Optional[Tensor], None)
+        aux1: Optional[Tensor] = None
         if self.aux1 is not None:
             if self.training:
                 aux1 = self.aux1(x)
@@ -173,7 +173,7 @@ class GoogLeNet(nn.Module):
         # N x 512 x 14 x 14
         x = self.inception4d(x)
         # N x 528 x 14 x 14
-        aux2 = torch.jit.annotate(Optional[Tensor], None)
+        aux2: Optional[Tensor] = None
         if self.aux2 is not None:
             if self.training:
                 aux2 = self.aux2(x)

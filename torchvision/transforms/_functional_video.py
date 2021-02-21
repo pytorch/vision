@@ -23,7 +23,7 @@ def crop(clip, i, j, h, w):
 def resize(clip, target_size, interpolation_mode):
     assert len(target_size) == 2, "target size should be tuple (height, width)"
     return torch.nn.functional.interpolate(
-        clip, size=target_size, mode=interpolation_mode
+        clip, size=target_size, mode=interpolation_mode, align_corners=False
     )
 
 
@@ -60,7 +60,7 @@ def center_crop(clip, crop_size):
 def to_tensor(clip):
     """
     Convert tensor data type from uint8 to float, divide value by 255.0 and
-    permute the dimenions of clip tensor
+    permute the dimensions of clip tensor
     Args:
         clip (torch.tensor, dtype=torch.uint8): Size is (T, H, W, C)
     Return:
