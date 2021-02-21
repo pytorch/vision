@@ -560,5 +560,127 @@ class CIFAR100(CIFAR10TestCase):
     )
 
 
+class MNISTTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.MNIST
+
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    _MAGIC_DTYPES = {
+        torch.uint8: 8,
+        torch.int8: 9,
+        torch.int16: 11,
+        torch.int32: 12,
+        torch.float32: 13,
+        torch.float64: 14,
+    }
+
+    _IMAGES_SIZE = (28, 28)
+    _IMAGES_DTYPE = torch.uint8
+
+    _LABELS_SIZE = ()
+    _LABELS_DTYPE = torch.uint8
+
+    def inject_fake_data(self, tmpdir, config):
+        raw_dir = pathlib.Path(tmpdir) / self.DATASET_CLASS.__name__ / "raw"
+        os.makedirs(raw_dir, exist_ok=True)
+
+        num_images = self.num_images(config)
+        self._create_binary_file(
+            raw_dir, self.images_file(config), (num_images, *self._IMAGES_SIZE), self._IMAGES_DTYPE
+        )
+        self._create_binary_file(
+            raw_dir, self.labels_file(config), (num_images, *self._LABELS_SIZE), self._LABELS_DTYPE
+        )
+        return num_images
+
+    def num_images(self, config):
+        return 2 if config["train"] else 1
+
+    def images_file(self, config):
+        return f"{self._prefix(config)}-images-idx3-ubyte"
+
+    def labels_file(self, config):
+        return f"{self._prefix(config)}-labels-idx1-ubyte"
+
+    def _prefix(self, config):
+        return "train" if config["train"] else "t10k"
+
+    def _create_binary_file(self, root, filename, size, dtype):
+        if dtype.is_floating_point:
+
+            def data_fn(size, dtype):
+                return torch.rand(size, dtype=dtype)
+
+        else:
+
+            def data_fn(size, dtype):
+                return torch.randint(0, torch.iinfo(dtype).max + 1, size, dtype=dtype)
+
+        with open(pathlib.Path(root) / filename, "wb") as fh:
+            for meta in (self._magic(dtype, len(size)), *size):
+                fh.write(self._encode(meta))
+            fh.write(data_fn(size, dtype).numpy().tobytes())
+
+    def _magic(self, dtype, dims):
+        return self._MAGIC_DTYPES[dtype] * 256 + dims
+
+    def _encode(self, v):
+        return torch.tensor(v, dtype=torch.int32).numpy().tobytes()[::-1]
+
+
+class FashionMNISTTestCase(MNISTTestCase):
+    DATASET_CLASS = datasets.FashionMNIST
+
+
+class KMNISTTestCase(MNISTTestCase):
+    DATASET_CLASS = datasets.KMNIST
+
+
+class EMNISTTestCase(MNISTTestCase):
+    DATASET_CLASS = datasets.EMNIST
+
+    CONFIGS = datasets_utils.combinations_grid(
+        split=("byclass", "bymerge", "balanced", "letters", "digits", "mnist"), train=(True, False)
+    )
+
+    def _prefix(self, config):
+        return f"emnist-{config['split']}-{'train' if config['train'] else 'test'}"
+
+
+class QMNIST(MNISTTestCase):
+    DATASET_CLASS = datasets.QMNIST
+
+    CONFIGS = datasets_utils.combinations_grid(what=("train", "test", "test10k", "nist"))
+
+    _LABELS_SIZE = (8,)
+    _LABELS_DTYPE = torch.int32
+
+    def num_images(self, config):
+        if config["what"] == "nist":
+            return 3
+        elif config["what"] == "train":
+            return 2
+        elif config["what"] == "test50k":
+            # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
+            # more than 10000 images for the dataset to not be empty. Since this takes significantly longer than the
+            # creation of all other splits, this is excluded from the 'CONFIGS' and is tested only once in
+            # 'test_num_examples_test50k'
+            return 10001
+        else:
+            return 1
+
+    def labels_file(self, config):
+        return f"{self._prefix(config)}-labels-idx2-int"
+
+    def _prefix(self, config):
+        return "xnist" if config["what"] == "nist" else f"qmnist-{'train' if config['what'] == 'train' else 'test'}"
+
+    def test_num_examples_test50k(self):
+        with self.create_dataset(what="test50k") as (dataset, info):
+            # Since the split 'test50k' selects all images beginning from the index 10000, we subtract the number of
+            # created examples by this.
+            self.assertEqual(len(dataset), info["num_examples"] - 10000)
+
+
 if __name__ == "__main__":
     unittest.main()
