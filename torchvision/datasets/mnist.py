@@ -9,7 +9,7 @@ import codecs
 import string
 import gzip
 import lzma
-from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from .utils import download_url, download_and_extract_archive, extract_archive, \
     verify_str_arg, check_integrity
 import shutil
@@ -425,7 +425,12 @@ class QMNIST(MNIST):
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.raw_folder, filename)
             if not os.path.isfile(file_path):
-                download_and_extract_archive(url, self.raw_folder, filename=filename, md5=md5)
+                download_url(url, self.raw_folder, filename=filename, md5=md5)
+                if filename.endswith(".xz"):
+                    with lzma.open(file_path, "rb") as fh1, open(os.path.splitext(file_path)[0], "wb") as fh2:
+                        fh2.write(fh1.read())
+                else:
+                    extract_archive(file_path, os.path.splitext(file_path)[0])
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag
@@ -447,19 +452,6 @@ def get_int(b: bytes) -> int:
     return int(codecs.encode(b, 'hex'), 16)
 
 
-def open_maybe_compressed_file(path: Union[str, IO]) -> Union[IO, gzip.GzipFile]:
-    """Return a file object that possibly decompresses 'path' on the fly.
-       Decompression occurs when argument `path` is a string and ends with '.gz' or '.xz'.
-    """
-    if not isinstance(path, torch._six.string_classes):
-        return path
-    if path.endswith('.gz'):
-        return gzip.open(path, 'rb')
-    if path.endswith('.xz'):
-        return lzma.open(path, 'rb')
-    return open(path, 'rb')
-
-
 SN3_PASCALVINCENT_TYPEMAP = {
     8: (torch.uint8, np.uint8, np.uint8),
     9: (torch.int8, np.int8, np.int8),
@@ -470,12 +462,12 @@ SN3_PASCALVINCENT_TYPEMAP = {
 }
 
 
-def read_sn3_pascalvincent_tensor(path: Union[str, IO], strict: bool = True) -> torch.Tensor:
+def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tensor:
     """Read a SN3 file in "Pascal Vincent" format (Lush file 'libidx/idx-io.lsh').
        Argument may be a filename, compressed filename, or file object.
     """
     # read
-    with open_maybe_compressed_file(path) as f:
+    with open(path, "rb") as f:
         data = f.read()
     # parse
     magic = get_int(data[0:4])
@@ -491,16 +483,14 @@ def read_sn3_pascalvincent_tensor(path: Union[str, IO], strict: bool = True) -> 
 
 
 def read_label_file(path: str) -> torch.Tensor:
-    with open(path, 'rb') as f:
-        x = read_sn3_pascalvincent_tensor(f, strict=False)
+    x = read_sn3_pascalvincent_tensor(path, strict=False)
     assert(x.dtype == torch.uint8)
     assert(x.ndimension() == 1)
     return x.long()
 
 
 def read_image_file(path: str) -> torch.Tensor:
-    with open(path, 'rb') as f:
-        x = read_sn3_pascalvincent_tensor(f, strict=False)
+    x = read_sn3_pascalvincent_tensor(path, strict=False)
     assert(x.dtype == torch.uint8)
     assert(x.ndimension() == 3)
     return x
