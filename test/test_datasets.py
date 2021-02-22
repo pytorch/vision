@@ -11,7 +11,7 @@ import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root, widerface_root, stl10_root
+    cityscapes_root, svhn_root, ucf101_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -19,6 +19,9 @@ import datasets_utils
 import pathlib
 import pickle
 from torchvision import datasets
+import torch
+import shutil
+import json
 
 
 try:
@@ -258,38 +261,6 @@ class Tester(DatasetTestcase):
             dataset = torchvision.datasets.SVHN(root, split="extra")
             self.generic_classification_dataset_test(dataset, num_images=2)
 
-    @mock.patch('torchvision.datasets.voc.download_extract')
-    def test_voc_parse_xml(self, mock_download_extract):
-        with voc_root() as root:
-            dataset = torchvision.datasets.VOCDetection(root)
-
-            single_object_xml = """<annotation>
-              <object>
-                <name>cat</name>
-              </object>
-            </annotation>"""
-            multiple_object_xml = """<annotation>
-              <object>
-                <name>cat</name>
-              </object>
-              <object>
-                <name>dog</name>
-              </object>
-            </annotation>"""
-
-            single_object_parsed = dataset.parse_voc_xml(ET.fromstring(single_object_xml))
-            multiple_object_parsed = dataset.parse_voc_xml(ET.fromstring(multiple_object_xml))
-
-            self.assertEqual(single_object_parsed, {'annotation': {'object': [{'name': 'cat'}]}})
-            self.assertEqual(multiple_object_parsed,
-                             {'annotation': {
-                                 'object': [{
-                                     'name': 'cat'
-                                 }, {
-                                     'name': 'dog'
-                                 }]
-                             }})
-
     @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
     def test_ucf101(self):
         cached_meta_data = None
@@ -470,6 +441,84 @@ class STL10Tester(DatasetTestcase):
             self.assertIsInstance(repr(dataset), str)
 
 
+class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Caltech101
+    FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, tuple))
+
+    CONFIGS = datasets_utils.combinations_grid(target_type=("category", "annotation", ["category", "annotation"]))
+    REQUIRED_PACKAGES = ("scipy",)
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "caltech101"
+        images = root / "101_ObjectCategories"
+        annotations = root / "Annotations"
+
+        categories = (("Faces", "Faces_2"), ("helicopter", "helicopter"), ("ying_yang", "ying_yang"))
+        num_images_per_category = 2
+
+        for image_category, annotation_category in categories:
+            datasets_utils.create_image_folder(
+                root=images,
+                name=image_category,
+                file_name_fn=lambda idx: f"image_{idx + 1:04d}.jpg",
+                num_examples=num_images_per_category,
+            )
+            self._create_annotation_folder(
+                root=annotations,
+                name=annotation_category,
+                file_name_fn=lambda idx: f"annotation_{idx + 1:04d}.mat",
+                num_examples=num_images_per_category,
+            )
+
+        # This is included in the original archive, but is removed by the dataset. Thus, an empty directory suffices.
+        os.makedirs(images / "BACKGROUND_Google")
+
+        return num_images_per_category * len(categories)
+
+    def _create_annotation_folder(self, root, name, file_name_fn, num_examples):
+        root = pathlib.Path(root) / name
+        os.makedirs(root)
+
+        for idx in range(num_examples):
+            self._create_annotation_file(root, file_name_fn(idx))
+
+    def _create_annotation_file(self, root, name):
+        mdict = dict(obj_contour=torch.rand((2, torch.randint(3, 6, size=())), dtype=torch.float64).numpy())
+        datasets_utils.lazy_importer.scipy.io.savemat(str(pathlib.Path(root) / name), mdict)
+
+    def test_combined_targets(self):
+        target_types = ["category", "annotation"]
+
+        individual_targets = []
+        for target_type in target_types:
+            with self.create_dataset(target_type=target_type) as (dataset, _):
+                _, target = dataset[0]
+                individual_targets.append(target)
+
+        with self.create_dataset(target_type=target_types) as (dataset, _):
+            _, combined_targets = dataset[0]
+
+        actual = len(individual_targets)
+        expected = len(combined_targets)
+        self.assertEqual(
+            actual,
+            expected,
+            f"The number of the returned combined targets does not match the the number targets if requested "
+            f"individually: {actual} != {expected}",
+        )
+
+        for target_type, combined_target, individual_target in zip(target_types, combined_targets, individual_targets):
+            with self.subTest(target_type=target_type):
+                actual = type(combined_target)
+                expected = type(individual_target)
+                self.assertIs(
+                    actual,
+                    expected,
+                    f"Type of the combined target does not match the type of the corresponding individual target: "
+                    f"{actual} is not {expected}",
+                )
+
+
 class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech256
 
@@ -558,6 +607,302 @@ class CIFAR100(CIFAR10TestCase):
         num_categories=100,
         categories_key="fine_label_names",
     )
+
+
+class CelebATestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CelebA
+    FEATURE_TYPES = (PIL.Image.Image, (torch.Tensor, int, tuple, type(None)))
+
+    CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "valid", "test", "all"),
+        target_type=("attr", "identity", "bbox", "landmarks", ["attr", "identity"]),
+    )
+    REQUIRED_PACKAGES = ("pandas",)
+
+    _SPLIT_TO_IDX = dict(train=0, valid=1, test=2)
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = pathlib.Path(tmpdir) / "celeba"
+        os.makedirs(base_folder)
+
+        num_images, num_images_per_split = self._create_split_txt(base_folder)
+
+        datasets_utils.create_image_folder(
+            base_folder, "img_align_celeba", lambda idx: f"{idx + 1:06d}.jpg", num_images
+        )
+        attr_names = self._create_attr_txt(base_folder, num_images)
+        self._create_identity_txt(base_folder, num_images)
+        self._create_bbox_txt(base_folder, num_images)
+        self._create_landmarks_txt(base_folder, num_images)
+
+        return dict(num_examples=num_images_per_split[config["split"]], attr_names=attr_names)
+
+    def _create_split_txt(self, root):
+        num_images_per_split = dict(train=3, valid=2, test=1)
+
+        data = [
+            [self._SPLIT_TO_IDX[split]] for split, num_images in num_images_per_split.items() for _ in range(num_images)
+        ]
+        self._create_txt(root, "list_eval_partition.txt", data)
+
+        num_images_per_split["all"] = num_images = sum(num_images_per_split.values())
+        return num_images, num_images_per_split
+
+    def _create_attr_txt(self, root, num_images):
+        header = ("5_o_Clock_Shadow", "Young")
+        data = torch.rand((num_images, len(header))).ge(0.5).int().mul(2).sub(1).tolist()
+        self._create_txt(root, "list_attr_celeba.txt", data, header=header, add_num_examples=True)
+        return header
+
+    def _create_identity_txt(self, root, num_images):
+        data = torch.randint(1, 4, size=(num_images, 1)).tolist()
+        self._create_txt(root, "identity_CelebA.txt", data)
+
+    def _create_bbox_txt(self, root, num_images):
+        header = ("x_1", "y_1", "width", "height")
+        data = torch.randint(10, size=(num_images, len(header))).tolist()
+        self._create_txt(
+            root, "list_bbox_celeba.txt", data, header=header, add_num_examples=True, add_image_id_to_header=True
+        )
+
+    def _create_landmarks_txt(self, root, num_images):
+        header = ("lefteye_x", "rightmouth_y")
+        data = torch.randint(10, size=(num_images, len(header))).tolist()
+        self._create_txt(root, "list_landmarks_align_celeba.txt", data, header=header, add_num_examples=True)
+
+    def _create_txt(self, root, name, data, header=None, add_num_examples=False, add_image_id_to_header=False):
+        with open(pathlib.Path(root) / name, "w") as fh:
+            if add_num_examples:
+                fh.write(f"{len(data)}\n")
+
+            if header:
+                if add_image_id_to_header:
+                    header = ("image_id", *header)
+                fh.write(f"{' '.join(header)}\n")
+
+            for idx, line in enumerate(data, 1):
+                fh.write(f"{' '.join((f'{idx:06d}.jpg', *[str(value) for value in line]))}\n")
+
+    def test_combined_targets(self):
+        target_types = ["attr", "identity", "bbox", "landmarks"]
+
+        individual_targets = []
+        for target_type in target_types:
+            with self.create_dataset(target_type=target_type) as (dataset, _):
+                _, target = dataset[0]
+                individual_targets.append(target)
+
+        with self.create_dataset(target_type=target_types) as (dataset, _):
+            _, combined_targets = dataset[0]
+
+        actual = len(individual_targets)
+        expected = len(combined_targets)
+        self.assertEqual(
+            actual,
+            expected,
+            f"The number of the returned combined targets does not match the the number targets if requested "
+            f"individually: {actual} != {expected}",
+        )
+
+        for target_type, combined_target, individual_target in zip(target_types, combined_targets, individual_targets):
+            with self.subTest(target_type=target_type):
+                actual = type(combined_target)
+                expected = type(individual_target)
+                self.assertIs(
+                    actual,
+                    expected,
+                    f"Type of the combined target does not match the type of the corresponding individual target: "
+                    f"{actual} is not {expected}",
+                )
+
+    def test_no_target(self):
+        with self.create_dataset(target_type=[]) as (dataset, _):
+            _, target = dataset[0]
+
+        self.assertIsNone(target)
+
+    def test_attr_names(self):
+        with self.create_dataset() as (dataset, info):
+            self.assertEqual(tuple(dataset.attr_names), info["attr_names"])
+
+
+class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.VOCSegmentation
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
+
+    CONFIGS = (
+        *datasets_utils.combinations_grid(
+            year=[f"20{year:02d}" for year in range(7, 13)], image_set=("train", "val", "trainval")
+        ),
+        dict(year="2007", image_set="test"),
+        dict(year="2007-test", image_set="test"),
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        year, is_test_set = (
+            ("2007", True)
+            if config["year"] == "2007-test" or config["image_set"] == "test"
+            else (config["year"], False)
+        )
+        image_set = config["image_set"]
+
+        base_dir = pathlib.Path(tmpdir)
+        if year == "2011":
+            base_dir /= "TrainVal"
+        base_dir = base_dir / "VOCdevkit" / f"VOC{year}"
+        os.makedirs(base_dir)
+
+        num_images, num_images_per_image_set = self._create_image_set_files(base_dir, "ImageSets", is_test_set)
+        datasets_utils.create_image_folder(base_dir, "JPEGImages", lambda idx: f"{idx:06d}.jpg", num_images)
+
+        datasets_utils.create_image_folder(base_dir, "SegmentationClass", lambda idx: f"{idx:06d}.png", num_images)
+        annotation = self._create_annotation_files(base_dir, "Annotations", num_images)
+
+        return dict(num_examples=num_images_per_image_set[image_set], annotation=annotation)
+
+    def _create_image_set_files(self, root, name, is_test_set):
+        root = pathlib.Path(root) / name
+        src = pathlib.Path(root) / "Main"
+        os.makedirs(src, exist_ok=True)
+
+        idcs = dict(train=(0, 1, 2), val=(3, 4), test=(5,))
+        idcs["trainval"] = (*idcs["train"], *idcs["val"])
+
+        for image_set in ("test",) if is_test_set else ("train", "val", "trainval"):
+            self._create_image_set_file(src, image_set, idcs[image_set])
+
+        shutil.copytree(src, root / "Segmentation")
+
+        num_images = max(itertools.chain(*idcs.values())) + 1
+        num_images_per_image_set = dict([(image_set, len(idcs_)) for image_set, idcs_ in idcs.items()])
+        return num_images, num_images_per_image_set
+
+    def _create_image_set_file(self, root, image_set, idcs):
+        with open(pathlib.Path(root) / f"{image_set}.txt", "w") as fh:
+            fh.writelines([f"{idx:06d}\n" for idx in idcs])
+
+    def _create_annotation_files(self, root, name, num_images):
+        root = pathlib.Path(root) / name
+        os.makedirs(root)
+
+        for idx in range(num_images):
+            annotation = self._create_annotation_file(root, f"{idx:06d}.xml")
+
+        return annotation
+
+    def _create_annotation_file(self, root, name):
+        def add_child(parent, name, text=None):
+            child = ET.SubElement(parent, name)
+            child.text = text
+            return child
+
+        def add_name(obj, name="dog"):
+            add_child(obj, "name", name)
+            return name
+
+        def add_bndbox(obj, bndbox=None):
+            if bndbox is None:
+                bndbox = {"xmin": "1", "xmax": "2", "ymin": "3", "ymax": "4"}
+
+            obj = add_child(obj, "bndbox")
+            for name, text in bndbox.items():
+                add_child(obj, name, text)
+
+            return bndbox
+
+        annotation = ET.Element("annotation")
+        obj = add_child(annotation, "object")
+        data = dict(name=add_name(obj), bndbox=add_bndbox(obj))
+
+        with open(pathlib.Path(root) / name, "wb") as fh:
+            fh.write(ET.tostring(annotation))
+
+        return data
+
+
+class VOCDetectionTestCase(VOCSegmentationTestCase):
+    DATASET_CLASS = datasets.VOCDetection
+    FEATURE_TYPES = (PIL.Image.Image, dict)
+
+    def test_annotations(self):
+        with self.create_dataset() as (dataset, info):
+            _, target = dataset[0]
+
+            self.assertIn("annotation", target)
+            annotation = target["annotation"]
+
+            self.assertIn("object", annotation)
+            objects = annotation["object"]
+
+            self.assertEqual(len(objects), 1)
+            object = objects[0]
+
+            self.assertEqual(object, info["annotation"])
+
+
+class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CocoDetection
+    FEATURE_TYPES = (PIL.Image.Image, list)
+
+    REQUIRED_PACKAGES = ("pycocotools",)
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        num_images = 3
+        num_annotations_per_image = 2
+
+        image_folder = tmpdir / "images"
+        files = datasets_utils.create_image_folder(
+            tmpdir, name="images", file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_images
+        )
+        file_names = [file.relative_to(image_folder) for file in files]
+
+        annotation_folder = tmpdir / "annotations"
+        os.makedirs(annotation_folder)
+        annotation_file, info = self._create_annotation_file(annotation_folder, file_names, num_annotations_per_image)
+
+        info["num_examples"] = num_images
+        return (str(image_folder), str(annotation_file)), info
+
+    def _create_annotation_file(self, root, file_names, num_annotations_per_image):
+        image_ids = [int(file_name.stem) for file_name in file_names]
+        images = [dict(file_name=str(file_name), id=id) for file_name, id in zip(file_names, image_ids)]
+
+        annotations, info = self._create_annotations(image_ids, num_annotations_per_image)
+
+        content = dict(images=images, annotations=annotations)
+        return self._create_json(root, "annotations.json", content), info
+
+    def _create_annotations(self, image_ids, num_annotations_per_image):
+        annotations = datasets_utils.combinations_grid(
+            image_id=image_ids, bbox=([1.0, 2.0, 3.0, 4.0],) * num_annotations_per_image
+        )
+        for id, annotation in enumerate(annotations):
+            annotation["id"] = id
+        return annotations, dict()
+
+    def _create_json(self, root, name, content):
+        file = pathlib.Path(root) / name
+        with open(file, "w") as fh:
+            json.dump(content, fh)
+        return file
+
+
+class CocoCaptionsTestCase(CocoDetectionTestCase):
+    DATASET_CLASS = datasets.CocoCaptions
+
+    def _create_annotations(self, image_ids, num_annotations_per_image):
+        captions = [str(idx) for idx in range(num_annotations_per_image)]
+        annotations = datasets_utils.combinations_grid(image_id=image_ids, caption=captions)
+        for id, annotation in enumerate(annotations):
+            annotation["id"] = id
+        return annotations, dict(captions=captions)
+
+    def test_captions(self):
+        with self.create_dataset() as (dataset, info):
+            _, captions = dataset[0]
+            self.assertEqual(tuple(captions), tuple(info["captions"]))
 
 
 if __name__ == "__main__":
