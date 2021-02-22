@@ -189,7 +189,7 @@ def box_area(boxes: Tensor) -> Tensor:
 
     Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
-            are expected to be in (x1, y1, x2, y2) format with 
+            are expected to be in (x1, y1, x2, y2) format with
             ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Returns:
