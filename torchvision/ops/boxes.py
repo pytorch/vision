@@ -74,8 +74,8 @@ def batched_nms(
         _batched_nms = _batched_nms_vanilla
     else:
         _batched_nms = _batched_nms_coordinate_trick
-    return _batched_nms(boxes, scores, idxs,iou_threshold)
-    
+    return _batched_nms(boxes, scores, idxs, iou_threshold)
+
 
 def _batched_nms_coordinate_trick(
     boxes: Tensor,
