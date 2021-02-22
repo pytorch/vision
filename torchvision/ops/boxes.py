@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import Tuple
+from typing import List, Tuple
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 from torchvision.extension import _assert_has_ops
@@ -60,18 +60,53 @@ def batched_nms(
             the elements that have been kept by NMS, sorted
             in decreasing order of scores
     """
-    if boxes.numel() == 0:
+    num_boxes = boxes.numel()
+    if num_boxes == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
-    # strategy: in order to perform NMS independently per class.
+
+    is_cuda = boxes.is_cuda
+
+    # Benchmarks that drove the following thresholds are at
+    # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
+    if (is_cuda and num_boxes > 20_000) or (not is_cuda and num_boxes > 4_000):
+        _batched_nms = _batched_nms_vanilla
+    else:
+        _batched_nms = _batched_nms_coordinate_trick
+    return _batched_nms(boxes, scores, idxs,iou_threshold)
+    
+
+def _batched_nms_coordinate_trick(
+    boxes: Tensor,
+    scores: Tensor,
+    idxs: Tensor,
+    iou_threshold: float,
+) -> Tensor:
+    # strategy: in order to perform NMS independently per class,
     # we add an offset to all the boxes. The offset is dependent
     # only on the class idx, and is large enough so that boxes
     # from different classes do not overlap
-    else:
-        max_coordinate = boxes.max()
-        offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
-        boxes_for_nms = boxes + offsets[:, None]
-        keep = nms(boxes_for_nms, scores, iou_threshold)
-        return keep
+    max_coordinate = boxes.max()
+    offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
+    boxes_for_nms = boxes + offsets[:, None]
+    keep = nms(boxes_for_nms, scores, iou_threshold)
+    return keep
+
+
+def _batched_nms_vanilla(
+    boxes: Tensor,
+    scores: Tensor,
+    idxs: Tensor,
+    iou_threshold: float,
+) -> Tensor:
+    # Based on Detectron2 implementation
+    result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
+    for id in torch.jit.annotate(List[int], torch.unique(idxs).cpu().tolist()):
+        mask = (idxs == id).nonzero(as_tuple=False).view(-1)
+        keep = nms(boxes[mask], scores[mask], iou_threshold)
+        result_mask[mask[keep]] = True
+    keep = result_mask.nonzero(as_tuple=False).view(-1)
+    keep = keep[scores[keep].argsort(descending=True)]
+    return keep
 
 
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
