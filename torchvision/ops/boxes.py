@@ -22,7 +22,8 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
 
     Args:
         boxes (Tensor[N, 4])): boxes to perform NMS on. They
-            are expected to be in (x1, y1, x2, y2) format
+            are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and
+            ``0 <= y1 < y2``.
         scores (Tensor[N]): scores for each one of the boxes
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
 
@@ -50,7 +51,8 @@ def batched_nms(
 
     Args:
         boxes (Tensor[N, 4]): boxes where NMS will be performed. They
-            are expected to be in (x1, y1, x2, y2) format
+            are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and
+            ``0 <= y1 < y2``.
         scores (Tensor[N]): scores for each one of the boxes
         idxs (Tensor[N]): indices of the categories for each one of the boxes.
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
@@ -114,7 +116,8 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     Remove boxes which contains at least one side smaller than min_size.
 
     Args:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
+        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+            with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         min_size (float): minimum size
 
     Returns:
@@ -132,7 +135,8 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     Clip boxes so that they lie inside an image of size `size`.
 
     Args:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
+        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+            with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         size (Tuple[height, width]): size of the image
 
     Returns:
@@ -220,7 +224,8 @@ def box_area(boxes: Tensor) -> Tensor:
 
     Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
-            are expected to be in (x1, y1, x2, y2) format
+            are expected to be in (x1, y1, x2, y2) format with
+            ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Returns:
         area (Tensor[N]): area for each box
@@ -250,7 +255,8 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
 
-    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
         boxes1 (Tensor[N, 4])
@@ -269,7 +275,8 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return generalized intersection-over-union (Jaccard index) of boxes.
 
-    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
         boxes1 (Tensor[N, 4])
