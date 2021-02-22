@@ -370,19 +370,6 @@ def svhn_root():
 
 
 @contextlib.contextmanager
-def voc_root():
-    with get_tmp_dir() as tmp_dir:
-        voc_dir = os.path.join(tmp_dir, 'VOCdevkit',
-                               'VOC2012', 'ImageSets', 'Main')
-        os.makedirs(voc_dir)
-        train_file = os.path.join(voc_dir, 'train.txt')
-        with open(train_file, 'w') as f:
-            f.write('test')
-
-        yield tmp_dir
-
-
-@contextlib.contextmanager
 def ucf101_root():
     with get_tmp_dir() as tmp_dir:
         ucf_dir = os.path.join(tmp_dir, 'UCF-101')
