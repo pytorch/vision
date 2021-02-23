@@ -114,7 +114,6 @@ class Tester(TransformsTester):
         self._test_op('autocontrast', 'RandomAutocontrast')
 
     def test_random_equalize(self):
-        torch.set_deterministic(False)
         self._test_op('equalize', 'RandomEqualize')
 
     def test_color_jitter(self):
@@ -480,7 +479,6 @@ class Tester(TransformsTester):
         # We skip some tests from _test_transform_vs_scripted_on_batch as
         # results for scripted and non-scripted transformations are not exactly the same
         torch.manual_seed(12)
-        torch.set_deterministic(True)
         transformed_batch = fn(batch_tensors)
         torch.manual_seed(12)
         s_transformed_batch = scripted_fn(batch_tensors)
@@ -648,6 +646,7 @@ class Tester(TransformsTester):
 class CUDATester(Tester):
 
     def setUp(self):
+        torch.set_deterministic(False)
         self.device = "cuda"
 
 
