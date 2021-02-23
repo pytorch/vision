@@ -9353,7 +9353,7 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .highlight .bp {
-  color: #999999;
+  color: #525252;
 }
 
 .highlight .nb {
@@ -9806,7 +9806,7 @@ pre {
 }
 .header-holder .main-menu ul li a {
   color: #ffffff;
-  font-size: 1.125rem;
+  font-size: 1.3rem;
   letter-spacing: 0;
   line-height: 2.125rem;
   text-align: center;
@@ -9861,7 +9861,7 @@ pre {
   list-style-type: none;
   padding: 0;
 }
-.mobile-main-menu.open ul li a {
+.mobile-main-menu.open ul li a, .mobile-main-menu.open .resources-mobile-menu-title {
   font-size: 2rem;
   color: #ffffff;
   letter-spacing: 0;
@@ -9896,9 +9896,17 @@ pre {
       -ms-flex-align: center;
           align-items: center;
   padding-left: 2.8125rem;
-  height: 100%;
-  min-height: 100%;
-  margin-top: -68px;
+  height: 90vh;
+  margin-top: -25px;
+  padding-top: 50%;
+  overflow-y: scroll;
+}
+.mobile-main-menu-links-container .main-menu {
+  height: 100vh;
+}
+
+.mobile-main-menu-links-container ul.resources-mobile-menu-items li {
+  padding-left: 15px;
 }
 
 .site-footer {
@@ -10320,31 +10328,43 @@ ul.pytorch-breadcrumbs a {
   background-image: url("../images/icon-menu-dots-dark.svg");
 }
 
-.rst-content footer .helpful-hr.hr-top {
+.rst-content footer .rating-hr.hr-top {
   margin-bottom: -0.0625rem;
 }
-.rst-content footer .helpful-hr.hr-bottom {
+.rst-content footer .rating-hr.hr-bottom {
   margin-top: -0.0625rem;
 }
-.rst-content footer .helpful-container {
+.rst-content footer .rating-container {
   display: -webkit-inline-box;
   display: -ms-inline-flexbox;
   display: inline-flex;
   font-size: 1.125rem;
 }
-.rst-content footer .helpful-container .helpful-question, .rst-content footer .helpful-container .was-helpful-thank-you {
+.rst-content footer .rating-container .rating-prompt, .rst-content footer .rating-container .was-helpful-thank-you {
   padding: 0.625rem 1.25rem 0.625rem 1.25rem;
 }
-.rst-content footer .helpful-container .was-helpful-thank-you {
+.rst-content footer .rating-container .was-helpful-thank-you {
   display: none;
 }
-.rst-content footer .helpful-container .helpful-question.yes-link, .rst-content footer .helpful-container .helpful-question.no-link {
+.rst-content footer .rating-container .rating-prompt.yes-link, .rst-content footer .rating-container .rating-prompt.no-link {
   color: #e44c2c;
   cursor: pointer;
 }
-.rst-content footer .helpful-container .helpful-question.yes-link:hover, .rst-content footer .helpful-container .helpful-question.no-link:hover {
+.rst-content footer .rating-container .rating-prompt.yes-link:hover, .rst-content footer .rating-container .rating-prompt.no-link:hover {
   background-color: #e44c2c;
   color: #ffffff;
+}
+.rst-content footer .rating-container .stars-outer {
+  display: inline-block;
+  position: relative;
+  font-family: FontAwesome;
+  padding: 0.625rem 1.25rem 0.625rem 1.25rem;
+}
+.rst-content footer .rating-container .stars-outer i {
+  cursor: pointer;
+}
+.rst-content footer .rating-container .stars-outer .star-fill {
+  color: #ee4c2c;
 }
 .rst-content footer div[role="contentinfo"] {
   padding-top: 2.5rem;
@@ -10521,9 +10541,9 @@ article.pytorch-article .sphx-glr-thumbcontainer .figure a.reference.internal {
 
 article.pytorch-article .section :not(dt) > code {
   color: #262626;
-  border-top: solid 2px #f3f4f7;
-  background-color: #f3f4f7;
-  border-bottom: solid 2px #f3f4f7;
+  border-top: solid 2px #ffffff;
+  background-color: #ffffff;
+  border-bottom: solid 2px #ffffff;
   padding: 0px 3px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
@@ -10675,6 +10695,7 @@ article.pytorch-article table {
 article.pytorch-article .note,
 article.pytorch-article .warning,
 article.pytorch-article .tip,
+article.pytorch-article .seealso,
 article.pytorch-article .hint,
 article.pytorch-article .important,
 article.pytorch-article .caution,
@@ -10688,6 +10709,7 @@ article.pytorch-article .error {
 article.pytorch-article .note .admonition-title,
 article.pytorch-article .warning .admonition-title,
 article.pytorch-article .tip .admonition-title,
+article.pytorch-article .seealso .admonition-title,
 article.pytorch-article .hint .admonition-title,
 article.pytorch-article .important .admonition-title,
 article.pytorch-article .caution .admonition-title,
@@ -10705,6 +10727,7 @@ article.pytorch-article .error .admonition-title {
 article.pytorch-article .note .admonition-title:before,
 article.pytorch-article .warning .admonition-title:before,
 article.pytorch-article .tip .admonition-title:before,
+article.pytorch-article .seealso .admonition-title:before,
 article.pytorch-article .hint .admonition-title:before,
 article.pytorch-article .important .admonition-title:before,
 article.pytorch-article .caution .admonition-title:before,
@@ -10720,6 +10743,7 @@ article.pytorch-article .error .admonition-title:before {
 article.pytorch-article .note p:nth-child(n + 2),
 article.pytorch-article .warning p:nth-child(n + 2),
 article.pytorch-article .tip p:nth-child(n + 2),
+article.pytorch-article .seealso p:nth-child(n + 2),
 article.pytorch-article .hint p:nth-child(n + 2),
 article.pytorch-article .important p:nth-child(n + 2),
 article.pytorch-article .caution p:nth-child(n + 2),
@@ -10731,6 +10755,7 @@ article.pytorch-article .error p:nth-child(n + 2) {
 article.pytorch-article .note table,
 article.pytorch-article .warning table,
 article.pytorch-article .tip table,
+article.pytorch-article .seealso table,
 article.pytorch-article .hint table,
 article.pytorch-article .important table,
 article.pytorch-article .caution table,
@@ -10746,6 +10771,8 @@ article.pytorch-article .warning .pre,
 article.pytorch-article .warning pre,
 article.pytorch-article .tip .pre,
 article.pytorch-article .tip pre,
+article.pytorch-article .seealso .pre,
+article.pytorch-article .seealso pre,
 article.pytorch-article .hint .pre,
 article.pytorch-article .hint pre,
 article.pytorch-article .important .pre,
@@ -10764,6 +10791,7 @@ article.pytorch-article .error pre {
 article.pytorch-article .note :not(dt) > code,
 article.pytorch-article .warning :not(dt) > code,
 article.pytorch-article .tip :not(dt) > code,
+article.pytorch-article .seealso :not(dt) > code,
 article.pytorch-article .hint :not(dt) > code,
 article.pytorch-article .important :not(dt) > code,
 article.pytorch-article .caution :not(dt) > code,
@@ -10781,6 +10809,7 @@ article.pytorch-article .error :not(dt) > code {
 article.pytorch-article .note :not(dt) > code .pre,
 article.pytorch-article .warning :not(dt) > code .pre,
 article.pytorch-article .tip :not(dt) > code .pre,
+article.pytorch-article .seealso :not(dt) > code .pre,
 article.pytorch-article .hint :not(dt) > code .pre,
 article.pytorch-article .important :not(dt) > code .pre,
 article.pytorch-article .caution :not(dt) > code .pre,
@@ -10793,6 +10822,7 @@ article.pytorch-article .error :not(dt) > code .pre {
 article.pytorch-article .note pre,
 article.pytorch-article .warning pre,
 article.pytorch-article .tip pre,
+article.pytorch-article .seealso pre,
 article.pytorch-article .hint pre,
 article.pytorch-article .important pre,
 article.pytorch-article .caution pre,
@@ -10804,6 +10834,7 @@ article.pytorch-article .error pre {
 article.pytorch-article .note .highlight,
 article.pytorch-article .warning .highlight,
 article.pytorch-article .tip .highlight,
+article.pytorch-article .seealso .highlight,
 article.pytorch-article .hint .highlight,
 article.pytorch-article .important .highlight,
 article.pytorch-article .caution .highlight,
@@ -10818,6 +10849,8 @@ article.pytorch-article .warning ul,
 article.pytorch-article .warning ol,
 article.pytorch-article .tip ul,
 article.pytorch-article .tip ol,
+article.pytorch-article .seealso ul,
+article.pytorch-article .seealso ol,
 article.pytorch-article .hint ul,
 article.pytorch-article .hint ol,
 article.pytorch-article .important ul,
@@ -10838,6 +10871,8 @@ article.pytorch-article .warning ul li,
 article.pytorch-article .warning ol li,
 article.pytorch-article .tip ul li,
 article.pytorch-article .tip ol li,
+article.pytorch-article .seealso ul li,
+article.pytorch-article .seealso ol li,
 article.pytorch-article .hint ul li,
 article.pytorch-article .hint ol li,
 article.pytorch-article .important ul li,
@@ -10855,6 +10890,7 @@ article.pytorch-article .error ol li {
 article.pytorch-article .note p,
 article.pytorch-article .warning p,
 article.pytorch-article .tip p,
+article.pytorch-article .seealso p,
 article.pytorch-article .hint p,
 article.pytorch-article .important p,
 article.pytorch-article .caution p,
@@ -10870,6 +10906,9 @@ article.pytorch-article .warning .admonition-title {
   background: #e94f3b;
 }
 article.pytorch-article .tip .admonition-title {
+  background: #6bcebb;
+}
+article.pytorch-article .seealso .admonition-title {
   background: #6bcebb;
 }
 article.pytorch-article .hint .admonition-title {
@@ -11002,7 +11041,6 @@ article.pytorch-article .wy-table-responsive table tbody td {
 }
 article.pytorch-article .wy-table-responsive table tbody td .pre {
   background: #ffffff;
-  outline: 1px solid #e9e9e9;
   color: #ee4c2c;
   font-size: 87.5%;
 }
@@ -12183,7 +12221,10 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
   }
 }
 
-.main-menu ul li .ecosystem-dropdown, .main-menu ul li .resources-dropdown a {
+.main-menu ul li.active:after {
+  display: none;
+}
+.main-menu ul li .resources-dropdown a {
   cursor: pointer;
 }
 .main-menu ul li .dropdown-menu {
@@ -12211,18 +12252,16 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
   color: #ffffff;
 }
 
-.ecosystem-dropdown-menu, .resources-dropdown-menu {
+.resources-dropdown-menu {
   left: -75px;
   width: 226px;
   display: none;
   position: absolute;
-  top: 3.125rem;
   z-index: 1000;
   display: none;
   float: left;
   min-width: 10rem;
   padding: 0.5rem 0;
-  margin: 0.125rem 0 0;
   font-size: 1rem;
   color: #212529;
   text-align: left;
@@ -12233,18 +12272,44 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
   border-radius: 0.25rem;
 }
 
-.ecosystem-dropdown-menu.show-menu, .resources-dropdown-menu.show-menu {
+.resources-dropdown:hover .resources-dropdown-menu {
   display: block;
 }
 
-.main-menu ul li .ecosystem-dropdown-menu, .main-menu ul li .resources-dropdown-menu {
+.main-menu ul li .resources-dropdown-menu {
   border-radius: 0;
   padding: 0;
 }
 
-.main-menu ul li .ecosystem-dropdown-menu .dropdown-item, .main-menu ul li .resources-dropdown-menu .dropdown-item {
+.main-menu ul li .resources-dropdown-menu .dropdown-item {
   color: #6c6c6d;
   border-bottom: 1px solid #e2e2e2;
+}
+
+.resources-dropdown .with-down-orange-arrow {
+  padding-right: 2rem;
+  position: relative;
+  background: url("../images/chevron-down-orange.svg");
+  background-size: 14px 18px;
+  background-position: top 7px right 10px;
+  background-repeat: no-repeat;
+}
+
+.with-down-arrow {
+  padding-right: 2rem;
+  position: relative;
+  background-image: url("../images/chevron-down-black.svg");
+  background-size: 14px 18px;
+  background-position: top 7px right 10px;
+  background-repeat: no-repeat;
+}
+.with-down-arrow:hover {
+  background-image: url("../images/chevron-down-orange.svg");
+  background-repeat: no-repeat;
+}
+
+.header-holder .main-menu ul li .resources-dropdown .doc-dropdown-option {
+  padding-top: 1rem;
 }
 
 .header-holder .main-menu ul li a.nav-dropdown-item {
