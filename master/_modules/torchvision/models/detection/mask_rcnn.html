@@ -188,7 +188,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+3772d09 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+ac4bcde ) &#x25BC</a>
     </div>
     
 
@@ -331,8 +331,8 @@
 
 <span class="sd">    During training, the model expects both the input tensors, as well as a targets (list of dictionary),</span>
 <span class="sd">    containing:</span>
-<span class="sd">        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values of x</span>
-<span class="sd">          between 0 and W and values of y between 0 and H</span>
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
 <span class="sd">        - labels (Int64Tensor[N]): the class label for each ground-truth box</span>
 <span class="sd">        - masks (UInt8Tensor[N, H, W]): the segmentation binary masks for each instance</span>
 
@@ -342,8 +342,8 @@
 <span class="sd">    During inference, the model requires only the input tensors, and returns the post-processed</span>
 <span class="sd">    predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as</span>
 <span class="sd">    follows:</span>
-<span class="sd">        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values of x</span>
-<span class="sd">          between 0 and W and values of y between 0 and H</span>
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
 <span class="sd">        - labels (Int64Tensor[N]): the predicted labels for each image</span>
 <span class="sd">        - scores (Tensor[N]): the scores or each prediction</span>
 <span class="sd">        - masks (UInt8Tensor[N, 1, H, W]): the predicted masks for each instance, in 0-1 range. In order to</span>
@@ -584,8 +584,8 @@
 <span class="sd">    During training, the model expects both the input tensors, as well as a targets (list of dictionary),</span>
 <span class="sd">    containing:</span>
 
-<span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format,  with values of ``x``</span>
-<span class="sd">          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``</span>
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
 <span class="sd">        - labels (``Int64Tensor[N]``): the class label for each ground-truth box</span>
 <span class="sd">        - masks (``UInt8Tensor[N, H, W]``): the segmentation binary masks for each instance</span>
 
@@ -596,8 +596,8 @@
 <span class="sd">    predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as</span>
 <span class="sd">    follows:</span>
 
-<span class="sd">        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format,  with values of ``x``</span>
-<span class="sd">          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``</span>
+<span class="sd">        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with</span>
+<span class="sd">          ``0 &lt;= x1 &lt; x2 &lt;= W`` and ``0 &lt;= y1 &lt; y2 &lt;= H``.</span>
 <span class="sd">        - labels (``Int64Tensor[N]``): the predicted labels for each image</span>
 <span class="sd">        - scores (``Tensor[N]``): the scores or each prediction</span>
 <span class="sd">        - masks (``UInt8Tensor[N, 1, H, W]``): the predicted masks for each instance, in ``0-1`` range. In order to</span>

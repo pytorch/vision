@@ -190,7 +190,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+3772d09 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+ac4bcde ) &#x25BC</a>
     </div>
     
 
@@ -540,7 +540,7 @@ than one item. Otherwise target is a json object if target_type=”polygon”, e
 <h3><a class="toc-backref" href="#id22">Captions</a><a class="headerlink" href="#captions" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="torchvision.datasets.CocoCaptions">
-<em class="property">class </em><code class="descclassname">torchvision.datasets.</code><code class="descname">CocoCaptions</code><span class="sig-paren">(</span><em>root: str</em>, <em>annFile: str</em>, <em>transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>target_transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>transforms: Union[Callable</em>, <em>NoneType] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoCaptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoCaptions" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.datasets.</code><code class="descname">CocoCaptions</code><span class="sig-paren">(</span><em>root: str</em>, <em>annFile: str</em>, <em>transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>target_transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>transforms: Union[Callable</em>, <em>NoneType] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoCaptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoCaptions" title="Permalink to this definition">¶</a></dt>
 <dd><p><a class="reference external" href="https://cocodataset.org/#captions-2015">MS Coco Captions</a> Dataset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -584,23 +584,6 @@ and returns a transformed version.</li>
 <span class="sa">u</span><span class="s1">&#39;A mountain view with a plume of smoke in the background&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<dl class="method">
-<dt id="torchvision.datasets.CocoCaptions.__getitem__">
-<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoCaptions.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoCaptions.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Tuple (image, target). target is a list of captions for the image.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -608,7 +591,7 @@ and returns a transformed version.</li>
 <h3><a class="toc-backref" href="#id23">Detection</a><a class="headerlink" href="#detection" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="torchvision.datasets.CocoDetection">
-<em class="property">class </em><code class="descclassname">torchvision.datasets.</code><code class="descname">CocoDetection</code><span class="sig-paren">(</span><em>root: str</em>, <em>annFile: str</em>, <em>transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>target_transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>transforms: Union[Callable</em>, <em>NoneType] = None</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoDetection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoDetection" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchvision.datasets.</code><code class="descname">CocoDetection</code><span class="sig-paren">(</span><em>root: str</em>, <em>annFile: str</em>, <em>transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>target_transform: Union[Callable</em>, <em>NoneType] = None</em>, <em>transforms: Union[Callable</em>, <em>NoneType] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoDetection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoDetection" title="Permalink to this definition">¶</a></dt>
 <dd><p><a class="reference external" href="https://cocodataset.org/#detection-2016">MS Coco Detection</a> Dataset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -628,23 +611,6 @@ and returns a transformed version.</li>
 </tr>
 </tbody>
 </table>
-<dl class="method">
-<dt id="torchvision.datasets.CocoDetection.__getitem__">
-<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoDetection.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoDetection.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Tuple (image, target). target is the object returned by <code class="docutils literal notranslate"><span class="pre">coco.loadAnns</span></code>.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -1628,8 +1594,9 @@ downloaded again.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>root</strong> (<em>string</em>) – Root directory of the VOC Dataset.</li>
-<li><strong>year</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset year, supports years 2007 to 2012.</li>
-<li><strong>image_set</strong> (<em>string</em><em>, </em><em>optional</em>) – Select the image_set to use, <code class="docutils literal notranslate"><span class="pre">train</span></code>, <code class="docutils literal notranslate"><span class="pre">trainval</span></code> or <code class="docutils literal notranslate"><span class="pre">val</span></code></li>
+<li><strong>year</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset year, supports years <code class="docutils literal notranslate"><span class="pre">&quot;2007&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">&quot;2012&quot;</span></code>.</li>
+<li><strong>image_set</strong> (<em>string</em><em>, </em><em>optional</em>) – Select the image_set to use, <code class="docutils literal notranslate"><span class="pre">&quot;train&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;trainval&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;val&quot;</span></code>. If
+<code class="docutils literal notranslate"><span class="pre">year==&quot;2007&quot;</span></code>, can also be <code class="docutils literal notranslate"><span class="pre">&quot;test&quot;</span></code>.</li>
 <li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – If true, downloads the dataset from the internet and
 puts it in root directory. If dataset is already downloaded, it is not
 downloaded again.</li>
@@ -1673,8 +1640,9 @@ and returns a transformed version.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>root</strong> (<em>string</em>) – Root directory of the VOC Dataset.</li>
-<li><strong>year</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset year, supports years 2007 to 2012.</li>
-<li><strong>image_set</strong> (<em>string</em><em>, </em><em>optional</em>) – Select the image_set to use, <code class="docutils literal notranslate"><span class="pre">train</span></code>, <code class="docutils literal notranslate"><span class="pre">trainval</span></code> or <code class="docutils literal notranslate"><span class="pre">val</span></code></li>
+<li><strong>year</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset year, supports years <code class="docutils literal notranslate"><span class="pre">&quot;2007&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">&quot;2012&quot;</span></code>.</li>
+<li><strong>image_set</strong> (<em>string</em><em>, </em><em>optional</em>) – Select the image_set to use, <code class="docutils literal notranslate"><span class="pre">&quot;train&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;trainval&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;val&quot;</span></code>. If
+<code class="docutils literal notranslate"><span class="pre">year==&quot;2007&quot;</span></code>, can also be <code class="docutils literal notranslate"><span class="pre">&quot;test&quot;</span></code>.</li>
 <li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – If true, downloads the dataset from the internet and
 puts it in root directory. If dataset is already downloaded, it is not
 downloaded again.

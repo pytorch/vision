@@ -190,7 +190,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+3772d09 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+ac4bcde ) &#x25BC</a>
     </div>
     
 
@@ -329,7 +329,8 @@ to the behavior of argsort in PyTorch when repeated values are present.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em><em>)</em>) – boxes to perform NMS on. They
-are expected to be in (x1, y1, x2, y2) format</li>
+are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</li>
 <li><strong>scores</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – scores for each one of the boxes</li>
 <li><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – discards all overlapping boxes with IoU &gt; iou_threshold</li>
 </ul>
@@ -363,7 +364,8 @@ will not be applied between elements of different categories.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes where NMS will be performed. They
-are expected to be in (x1, y1, x2, y2) format</li>
+are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</li>
 <li><strong>scores</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – scores for each one of the boxes</li>
 <li><strong>idxs</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – indices of the categories for each one of the boxes.</li>
 <li><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – discards all overlapping boxes with IoU &gt; iou_threshold</li>
@@ -395,7 +397,8 @@ in decreasing order of scores</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes in (x1, y1, x2, y2) format</li>
+<li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format
+with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</li>
 <li><strong>min_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – minimum size</li>
 </ul>
 </td>
@@ -424,7 +427,8 @@ in decreasing order of scores</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes in (x1, y1, x2, y2) format</li>
+<li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format
+with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</li>
 <li><strong>size</strong> (<em>Tuple</em><em>[</em><em>height</em><em>, </em><em>width</em><em>]</em>) – size of the image</li>
 </ul>
 </td>
@@ -476,7 +480,8 @@ being width and height.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes for which the area will be computed. They
-are expected to be in (x1, y1, x2, y2) format</td>
+are expected to be in (x1, y1, x2, y2) format with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">area for each box</td>
 </tr>
@@ -490,7 +495,8 @@ are expected to be in (x1, y1, x2, y2) format</td>
 <dt id="torchvision.ops.box_iou">
 <code class="descclassname">torchvision.ops.</code><code class="descname">box_iou</code><span class="sig-paren">(</span><em>boxes1: torch.Tensor</em>, <em>boxes2: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_iou"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.box_iou" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return intersection-over-union (Jaccard index) of boxes.</p>
-<p>Both sets of boxes are expected to be in (x1, y1, x2, y2) format.</p>
+<p>Both sets of boxes are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -515,7 +521,8 @@ are expected to be in (x1, y1, x2, y2) format</td>
 <dt id="torchvision.ops.generalized_box_iou">
 <code class="descclassname">torchvision.ops.</code><code class="descname">generalized_box_iou</code><span class="sig-paren">(</span><em>boxes1: torch.Tensor</em>, <em>boxes2: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/boxes.html#generalized_box_iou"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.generalized_box_iou" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return generalized intersection-over-union (Jaccard index) of boxes.</p>
-<p>Both sets of boxes are expected to be in (x1, y1, x2, y2) format.</p>
+<p>Both sets of boxes are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -548,7 +555,9 @@ for every element in boxes1 and boxes2</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</li>
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from. If a single Tensor is passed,
+format where the regions will be taken from.
+The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
+If a single Tensor is passed,
 then the first column should contain the batch index. If a list of Tensors
 is passed, then each Tensor will correspond to the boxes for an element i
 in a batch</li>
@@ -586,7 +595,9 @@ mentioned in Light-Head R-CNN.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</li>
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from. If a single Tensor is passed,
+format where the regions will be taken from.
+The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
+If a single Tensor is passed,
 then the first column should contain the batch index. If a list of Tensors
 is passed, then each Tensor will correspond to the boxes for an element i
 in a batch</li>
@@ -620,7 +631,9 @@ ceil(roi_width / pooled_w), and likewise for height). Default: -1</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</li>
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from. If a single Tensor is passed,
+format where the regions will be taken from.
+The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
+If a single Tensor is passed,
 then the first column should contain the batch index. If a list of Tensors
 is passed, then each Tensor will correspond to the boxes for an element i
 in a batch</li>
@@ -650,7 +663,9 @@ described in R-FCN</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</li>
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from. If a single Tensor is passed,
+format where the regions will be taken from.
+The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
+If a single Tensor is passed,
 then the first column should contain the batch index. If a list of Tensors
 is passed, then each Tensor will correspond to the boxes for an element i
 in a batch</li>

@@ -190,7 +190,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+3772d09 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+ac4bcde ) &#x25BC</a>
     </div>
     
 
@@ -1837,8 +1837,8 @@ image, and should be in <code class="docutils literal notranslate"><span class="
 containing:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with values of <code class="docutils literal notranslate"><span class="pre">x</span></code>
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> and values of <code class="docutils literal notranslate"><span class="pre">y</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
 </ul>
 </div></blockquote>
@@ -1849,8 +1849,8 @@ predictions as a <code class="docutils literal notranslate"><span class="pre">Li
 follows:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with values of <code class="docutils literal notranslate"><span class="pre">x</span></code>
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> and values of <code class="docutils literal notranslate"><span class="pre">y</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
 <li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
 </ul>
@@ -1970,8 +1970,8 @@ image, and should be in <code class="docutils literal notranslate"><span class="
 containing:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with values
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
 </ul>
 </div></blockquote>
@@ -1982,8 +1982,8 @@ predictions as a <code class="docutils literal notranslate"><span class="pre">Li
 follows:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with values between
-<code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
 <li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
 </ul>
@@ -2027,8 +2027,8 @@ image, and should be in <code class="docutils literal notranslate"><span class="
 containing:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format,  with values of <code class="docutils literal notranslate"><span class="pre">x</span></code>
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> and values of <code class="docutils literal notranslate"><span class="pre">y</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
 <li>masks (<code class="docutils literal notranslate"><span class="pre">UInt8Tensor[N,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>): the segmentation binary masks for each instance</li>
 </ul>
@@ -2040,8 +2040,8 @@ predictions as a <code class="docutils literal notranslate"><span class="pre">Li
 follows:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format,  with values of <code class="docutils literal notranslate"><span class="pre">x</span></code>
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> and values of <code class="docutils literal notranslate"><span class="pre">y</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
 <li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
 <li>masks (<code class="docutils literal notranslate"><span class="pre">UInt8Tensor[N,</span> <span class="pre">1,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>): the predicted masks for each instance, in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. In order to
@@ -2092,8 +2092,8 @@ image, and should be in <code class="docutils literal notranslate"><span class="
 containing:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with values of <code class="docutils literal notranslate"><span class="pre">x</span></code>
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> and values of <code class="docutils literal notranslate"><span class="pre">y</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
 <li>keypoints (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">K,</span> <span class="pre">3]</span></code>): the <code class="docutils literal notranslate"><span class="pre">K</span></code> keypoints location for each of the <code class="docutils literal notranslate"><span class="pre">N</span></code> instances, in the
 format <code class="docutils literal notranslate"><span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">visibility]</span></code>, where <code class="docutils literal notranslate"><span class="pre">visibility=0</span></code> means that the keypoint is not visible.</li>
@@ -2106,8 +2106,8 @@ predictions as a <code class="docutils literal notranslate"><span class="pre">Li
 follows:</p>
 <blockquote>
 <div><ul class="simple">
-<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format,  with values of <code class="docutils literal notranslate"><span class="pre">x</span></code>
-between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">W</span></code> and values of <code class="docutils literal notranslate"><span class="pre">y</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code></li>
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
 <li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
 <li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
 <li>keypoints (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">K,</span> <span class="pre">3]</span></code>): the locations of the predicted keypoints, in <code class="docutils literal notranslate"><span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">v]</span></code> format.</li>
