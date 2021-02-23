@@ -11,7 +11,7 @@ import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, ucf101_root, places365_root, widerface_root, stl10_root
+    cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -22,6 +22,7 @@ from torchvision import datasets
 import torch
 import shutil
 import json
+import random
 
 
 try:
@@ -260,29 +261,6 @@ class Tester(DatasetTestcase):
 
             dataset = torchvision.datasets.SVHN(root, split="extra")
             self.generic_classification_dataset_test(dataset, num_images=2)
-
-    @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
-    def test_ucf101(self):
-        cached_meta_data = None
-        with ucf101_root() as (root, ann_root):
-            for split in {True, False}:
-                for fold in range(1, 4):
-                    for length in {10, 15, 20}:
-                        dataset = torchvision.datasets.UCF101(root, ann_root, length, fold=fold, train=split,
-                                                              num_workers=2, _precomputed_metadata=cached_meta_data)
-                        if cached_meta_data is None:
-                            cached_meta_data = dataset.metadata
-                        self.assertGreater(len(dataset), 0)
-
-                        video, audio, label = dataset[0]
-                        self.assertEqual(video.size(), (length, 320, 240, 3))
-                        self.assertEqual(audio.numel(), 0)
-                        self.assertEqual(label, 0)
-
-                        video, audio, label = dataset[len(dataset) - 1]
-                        self.assertEqual(video.size(), (length, 320, 240, 3))
-                        self.assertEqual(audio.numel(), 0)
-                        self.assertEqual(label, 1)
 
     def test_places365(self):
         for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
@@ -903,6 +881,57 @@ class CocoCaptionsTestCase(CocoDetectionTestCase):
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
             self.assertEqual(tuple(captions), tuple(info["captions"]))
+
+
+class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.UCF101
+
+    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        video_folder = tmpdir / "videos"
+        os.makedirs(video_folder)
+        video_files = self._create_videos(video_folder)
+
+        annotations_folder = annotations_folder = tmpdir / "annotations"
+        os.makedirs(annotations_folder)
+        num_examples = self._create_annotation_files(annotations_folder, video_files, config["fold"], config["train"])
+
+        return (str(video_folder), str(annotations_folder)), num_examples
+
+    def _create_videos(self, root, num_examples_per_class=3):
+        def file_name_fn(cls, idx, clips_per_group=2):
+            return f"v_{cls}_g{(idx // clips_per_group) + 1:02d}_c{(idx % clips_per_group) + 1:02d}.avi"
+
+        video_files = [
+            datasets_utils.create_video_folder(root, cls, lambda idx: file_name_fn(cls, idx), num_examples_per_class)
+            for cls in ("ApplyEyeMakeup", "YoYo")
+        ]
+        return [path.relative_to(root) for path in itertools.chain(*video_files)]
+
+    def _create_annotation_files(self, root, video_files, fold, train):
+        current_videos = random.sample(video_files, random.randrange(1, len(video_files) - 1))
+        current_annotation = self._annotation_file_name(fold, train)
+        self._create_annotation_file(root, current_annotation, current_videos)
+
+        other_videos = set(video_files) - set(current_videos)
+        other_annotations = [
+            self._annotation_file_name(fold, train) for fold, train in itertools.product((1, 2, 3), (True, False))
+        ]
+        other_annotations.remove(current_annotation)
+        for name in other_annotations:
+            self._create_annotation_file(root, name, other_videos)
+
+        return len(current_videos)
+
+    def _annotation_file_name(self, fold, train):
+        return f"{'train' if train else 'test'}list{fold:02d}.txt"
+
+    def _create_annotation_file(self, root, name, video_files):
+        with open(pathlib.Path(root) / name, "w") as fh:
+            fh.writelines(f"{file}\n" for file in sorted(video_files))
 
 
 if __name__ == "__main__":
