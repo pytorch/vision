@@ -69,9 +69,6 @@ android {
         aar {
             dimension "build"
         }
-        nightly {
-            dimension "build"
-        }
         local {
             dimension "build"
         }
@@ -106,7 +103,6 @@ dependencies {
 
     implementation 'org.pytorch:pytorch_android:1.8.0-SNAPSHOT'
     implementation 'org.pytorch:pytorch_android_torchvision:1.8.0-SNAPSHOT'
-    implementation 'org.pytorch:torchvision_ops:0.0.1-SNAPSHOT'
 
     aarImplementation(name: 'pytorch_android-release', ext: 'aar')
     aarImplementation(name: 'pytorch_android_torchvision-release', ext: 'aar')
