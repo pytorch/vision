@@ -393,3 +393,11 @@ def int_dtypes():
 
 def float_dtypes():
     return torch.testing.floating_types()
+
+
+@contextlib.contextmanager
+def disable_console_output():
+    with contextlib.ExitStack() as stack, open(os.devnull, "w") as devnull:
+        stack.enter_context(contextlib.redirect_stdout(devnull))
+        stack.enter_context(contextlib.redirect_stderr(devnull))
+        yield
