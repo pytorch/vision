@@ -119,9 +119,9 @@ def to_tensor(pic):
             return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
-        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=default_float_dtype)
+        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
         pic.copyto(nppic)
-        return torch.from_numpy(nppic)
+        return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
     if pic.mode == 'I':
