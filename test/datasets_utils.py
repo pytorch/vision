@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 
-class UsageError(RuntimeError):
+class UsageError(Exception):
     """Should be raised in case an error happens in the setup rather than the test."""
 
 
