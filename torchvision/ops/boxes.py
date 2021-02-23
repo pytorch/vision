@@ -101,10 +101,10 @@ def _batched_nms_vanilla(
     # Based on Detectron2 implementation
     result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
     for id in torch.jit.annotate(List[int], torch.unique(idxs).cpu().tolist()):
-        mask = (idxs == id).nonzero().view(-1)
+        mask = torch.where(idxs == id)[0].view(-1)
         keep = nms(boxes[mask], scores[mask], iou_threshold)
         result_mask[mask[keep]] = True
-    keep = result_mask.nonzero().view(-1)
+    keep = torch.where(result_mask)[0].view(-1)
     keep = keep[scores[keep].argsort(descending=True)]
     return keep
 
