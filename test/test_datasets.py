@@ -846,33 +846,44 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
 
     REQUIRED_PACKAGES = ("pycocotools",)
 
+    _IMAGE_FOLDER = pathlib.Path("images")
+    _ANNOTATIONS_FOLDER = pathlib.Path("annotations")
+    _ANNOTATIONS_FILE = "annotations.json"
+
+    def dataset_args(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        root = tmpdir / self._IMAGE_FOLDER
+        annotation_file = tmpdir / self._ANNOTATIONS_FOLDER / self._ANNOTATIONS_FILE
+        return root, annotation_file
+
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
         num_images = 3
         num_annotations_per_image = 2
 
-        image_folder = tmpdir / "images"
         files = datasets_utils.create_image_folder(
-            tmpdir, name="images", file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_images
+            tmpdir, name=self._IMAGE_FOLDER, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_images
         )
-        file_names = [file.relative_to(image_folder) for file in files]
+        file_names = [file.relative_to(tmpdir / self._IMAGE_FOLDER) for file in files]
 
-        annotation_folder = tmpdir / "annotations"
+        annotation_folder = tmpdir / self._ANNOTATIONS_FOLDER
         os.makedirs(annotation_folder)
-        annotation_file, info = self._create_annotation_file(annotation_folder, file_names, num_annotations_per_image)
+        info = self._create_annotation_file(
+            annotation_folder, self._ANNOTATIONS_FILE, file_names, num_annotations_per_image
+        )
 
         info["num_examples"] = num_images
-        return (str(image_folder), str(annotation_file)), info
+        return info
 
-    def _create_annotation_file(self, root, file_names, num_annotations_per_image):
+    def _create_annotation_file(self, root, name, file_names, num_annotations_per_image):
         image_ids = [int(file_name.stem) for file_name in file_names]
         images = [dict(file_name=str(file_name), id=id) for file_name, id in zip(file_names, image_ids)]
 
         annotations, info = self._create_annotations(image_ids, num_annotations_per_image)
+        self._create_json(root, name, dict(images=images, annotations=annotations))
 
-        content = dict(images=images, annotations=annotations)
-        return self._create_json(root, "annotations.json", content), info
+        return info
 
     def _create_annotations(self, image_ids, num_annotations_per_image):
         annotations = datasets_utils.combinations_grid(
