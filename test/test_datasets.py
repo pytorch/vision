@@ -19,6 +19,7 @@ import datasets_utils
 import pathlib
 import pickle
 from torchvision import datasets
+import torch
 
 
 try:
@@ -468,6 +469,84 @@ class STL10Tester(DatasetTestcase):
     def test_repr_smoke(self):
         with self.mocked_dataset() as (dataset, _):
             self.assertIsInstance(repr(dataset), str)
+
+
+class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Caltech101
+    FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, tuple))
+
+    CONFIGS = datasets_utils.combinations_grid(target_type=("category", "annotation", ["category", "annotation"]))
+    REQUIRED_PACKAGES = ("scipy",)
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "caltech101"
+        images = root / "101_ObjectCategories"
+        annotations = root / "Annotations"
+
+        categories = (("Faces", "Faces_2"), ("helicopter", "helicopter"), ("ying_yang", "ying_yang"))
+        num_images_per_category = 2
+
+        for image_category, annotation_category in categories:
+            datasets_utils.create_image_folder(
+                root=images,
+                name=image_category,
+                file_name_fn=lambda idx: f"image_{idx + 1:04d}.jpg",
+                num_examples=num_images_per_category,
+            )
+            self._create_annotation_folder(
+                root=annotations,
+                name=annotation_category,
+                file_name_fn=lambda idx: f"annotation_{idx + 1:04d}.mat",
+                num_examples=num_images_per_category,
+            )
+
+        # This is included in the original archive, but is removed by the dataset. Thus, an empty directory suffices.
+        os.makedirs(images / "BACKGROUND_Google")
+
+        return num_images_per_category * len(categories)
+
+    def _create_annotation_folder(self, root, name, file_name_fn, num_examples):
+        root = pathlib.Path(root) / name
+        os.makedirs(root)
+
+        for idx in range(num_examples):
+            self._create_annotation_file(root, file_name_fn(idx))
+
+    def _create_annotation_file(self, root, name):
+        mdict = dict(obj_contour=torch.rand((2, torch.randint(3, 6, size=())), dtype=torch.float64).numpy())
+        datasets_utils.lazy_importer.scipy.io.savemat(str(pathlib.Path(root) / name), mdict)
+
+    def test_combined_targets(self):
+        target_types = ["category", "annotation"]
+
+        individual_targets = []
+        for target_type in target_types:
+            with self.create_dataset(target_type=target_type) as (dataset, _):
+                _, target = dataset[0]
+                individual_targets.append(target)
+
+        with self.create_dataset(target_type=target_types) as (dataset, _):
+            _, combined_targets = dataset[0]
+
+        actual = len(individual_targets)
+        expected = len(combined_targets)
+        self.assertEqual(
+            actual,
+            expected,
+            f"The number of the returned combined targets does not match the the number targets if requested "
+            f"individually: {actual} != {expected}",
+        )
+
+        for target_type, combined_target, individual_target in zip(target_types, combined_targets, individual_targets):
+            with self.subTest(target_type=target_type):
+                actual = type(combined_target)
+                expected = type(individual_target)
+                self.assertIs(
+                    actual,
+                    expected,
+                    f"Type of the combined target does not match the type of the corresponding individual target: "
+                    f"{actual} is not {expected}",
+                )
 
 
 class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
