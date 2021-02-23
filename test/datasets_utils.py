@@ -228,6 +228,9 @@ class DatasetTestCase(unittest.TestCase):
         "download_and_extract_archive",
     }
 
+    def dataset_args(self, tmpdir: str, config: Dict[str, Any]) -> Sequence[Any]:
+        return (tmpdir,)
+
     def inject_fake_data(
         self, tmpdir: str, config: Dict[str, Any]
     ) -> Union[int, Dict[str, Any], Tuple[Sequence[Any], Union[int, Dict[str, Any]]]]:
@@ -287,33 +290,30 @@ class DatasetTestCase(unittest.TestCase):
             disable_download_extract = inject_fake_data
 
         with get_tmp_dir() as tmpdir:
-            output = self.inject_fake_data(tmpdir, config) if inject_fake_data else None
-            if output is None:
-                raise UsageError(
-                    "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
-                    "examples for the current configuration."
-                )
+            args = self.dataset_args(tmpdir, config)
 
-            if isinstance(output, collections.abc.Sequence) and len(output) == 2:
-                args, info = output
-            else:
-                args = (tmpdir,)
-                info = output
-
-            if isinstance(info, int):
-                info = dict(num_examples=info)
-            elif isinstance(info, dict):
-                if "num_examples" not in info:
+            if inject_fake_data:
+                info = self.inject_fake_data(tmpdir, config)
+                if info is None:
+                    raise UsageError(
+                        "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
+                        "examples for the current configuration."
+                    )
+                elif isinstance(info, int):
+                    info = dict(num_examples=info)
+                elif not isinstance(info, dict):
+                    raise UsageError(
+                        f"The additional information returned by the method 'inject_fake_data' must be either an "
+                        f"integer indicating the number of examples for the current configuration or a dictionary with "
+                        f"the same content. Got {type(info)} instead."
+                    )
+                elif "num_examples" not in info:
                     raise UsageError(
                         "The information dictionary returned by the method 'inject_fake_data' must contain a "
                         "'num_examples' field that holds the number of examples for the current configuration."
                     )
             else:
-                raise UsageError(
-                    f"The additional information returned by the method 'inject_fake_data' must be either an integer "
-                    f"indicating the number of examples for the current configuration or a dictionary with the the "
-                    f"same content. Got {type(info)} instead."
-                )
+                info = None
 
             cm = self._disable_download_extract if disable_download_extract else nullcontext
             with cm(special_kwargs), disable_console_output():
