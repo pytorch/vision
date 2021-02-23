@@ -1,5 +1,6 @@
 import torch
 import torchvision
+from torch.utils.mobile_optimizer import optimize_for_mobile 
 
 print(torch.__version__)
 
@@ -12,6 +13,5 @@ model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(
 
 model.eval()
 script_model = torch.jit.script(model)
-# TODO: put back call to optimize_for_mobile once
-# https://github.com/pytorch/pytorch/issues/52463 is fixed
-script_model.save("app/src/main/assets/frcnn_mnetv3.pt")
+opt_script_model = optimize_for_mobile(script_model)
+opt_script_model.save("app/src/main/assets/frcnn_mnetv3.pt") 
