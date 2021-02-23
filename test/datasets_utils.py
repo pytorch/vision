@@ -1,3 +1,4 @@
+import collections.abc
 import contextlib
 import functools
 import importlib
@@ -517,7 +518,7 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.inject_fake_data = self._set_default_frames_per_clip(self.inject_fake_data)
+        self.dataset_args = self._set_default_frames_per_clip(self.dataset_args)
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
@@ -527,16 +528,11 @@ class VideoDatasetTestCase(DatasetTestCase):
 
         @functools.wraps(inject_fake_data)
         def wrapper(tmpdir, config):
-            output = inject_fake_data(tmpdir, config)
-            if isinstance(output, collections.abc.Sequence) and len(output) == 2:
-                args, info = output
-                if frames_per_clip_last and len(args) == len(args_without_default) - 1:
-                    args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
-                    return args, info
-            elif isinstance(output, (int, dict)) and only_root_and_frames_per_clip:
-                return (tmpdir, self.DEFAULT_FRAMES_PER_CLIP)
-            else:
-                return output
+            args = inject_fake_data(tmpdir, config)
+            if frames_per_clip_last and len(args) == len(args_without_default) - 1:
+                args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
+
+            return args
 
         return wrapper
 
