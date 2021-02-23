@@ -63,13 +63,13 @@ def batched_nms(
             in decreasing order of scores
     """
     num_boxes = boxes.numel()
-    is_cuda = boxes.is_cuda
 
     if num_boxes == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
-    elif (is_cuda and num_boxes > 20_000) or (not is_cuda and num_boxes > 4_000):
+    # Ideally for GPU we'd use a higher threshold
+    elif num_boxes > 4_000:
         return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
     else:
         return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
