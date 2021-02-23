@@ -1,5 +1,8 @@
 #include "stream.h"
 #include <c10/util/Logging.h>
+#include <stdio.h>
+#include <string.h>
+#include <torch/torch.h>
 #include "util.h"
 
 namespace ffmpeg {
@@ -53,11 +56,45 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     return ret;
   }
 
-  // BRUNO: force codecctx to use more threads
+  // multithreading heuristics
+  int max_threads = torch::get_num_threads();
+  // first a safety check
+  if (num_threads > max_threads) {
+    num_threads = max_threads;
+  }
+
   if (num_threads > 0) {
+    // if user defined, respect that
     codecCtx_->thread_count = num_threads;
     codecCtx_->active_thread_type = 1;
+  } else {
+    // otherwise set sensible defaults
+    // with the special case for the different MPEG codecs
+    // that don't have threading context functions
+    // TODO: automate this using native c++ function lookups
+    if (strcmp(codecCtx_->codec->name, "mpeg4") == 0 &&
+        codecCtx_->codec_type == 0) {
+      if (codecCtx_->codec_tag == 1684633208) {
+        codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
+        codecCtx_->thread_type = 1;
+      } else {
+        codecCtx_->thread_count = (2 <= max_threads) ? 2 : max_threads;
+        codecCtx_->thread_type = 2;
+      }
+    } else {
+      // otherwise default to multithreading
+      codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
+      codecCtx_->active_thread_type = 1;
+    }
   }
+
+  // print codec type and number of threads
+  LOG(INFO) << "Codec " << codecCtx_->codec->long_name
+            << " Codec id: " << codecCtx_->codec_id
+            << " Codec tag: " << codecCtx_->codec_tag
+            << " Codec type: " << codecCtx_->codec_type
+            << " Codec extradata: " << codecCtx_->extradata
+            << " Number of threads: " << torch::get_num_threads();
 
   // after avcodec_open2, value of codecCtx_->time_base is NOT meaningful
   if ((ret = avcodec_open2(codecCtx_, codec, nullptr)) < 0) {
