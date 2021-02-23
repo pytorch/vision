@@ -1,4 +1,3 @@
-import collections.abc
 import contextlib
 import functools
 import importlib
@@ -229,11 +228,24 @@ class DatasetTestCase(unittest.TestCase):
     }
 
     def dataset_args(self, tmpdir: str, config: Dict[str, Any]) -> Sequence[Any]:
+        """Define positional arguments passed to the dataset.
+
+        .. note::
+
+            The default behavior is only valid if the dataset to be tested has ``root`` as the only required parameter.
+            Otherwise you need to overwrite this method.
+
+        Args:
+            tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
+                to be created and in turn also for the fake data injected here.
+            config (Dict[str, Any]): Configuration that will be used to create the dataset.
+
+        Returns:
+            (Tuple[str]): ``tmpdir`` which corresponds to ``root`` for most datasets.
+        """
         return (tmpdir,)
 
-    def inject_fake_data(
-        self, tmpdir: str, config: Dict[str, Any]
-    ) -> Union[int, Dict[str, Any], Tuple[Sequence[Any], Union[int, Dict[str, Any]]]]:
+    def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
         """Inject fake data for dataset into a temporary directory.
 
         Args:
@@ -243,15 +255,9 @@ class DatasetTestCase(unittest.TestCase):
 
         Needs to return one of the following:
 
-            1. (int): Number of examples in the dataset to be created,
+            1. (int): Number of examples in the dataset to be created, or
             2. (Dict[str, Any]): Additional information about the injected fake data. Must contain the field
-                ``"num_examples"`` that corresponds to the number of examples in the dataset to be created, or
-            3. (Tuple[Sequence[Any], Union[int, Dict[str, Any]]]): Additional required parameters that are passed to
-                the dataset constructor. The second element corresponds to cases 1. and 2.
-
-        If no ``args`` is returned (case 1. and 2.), the ``tmp_dir`` is passed as first parameter to the dataset
-        constructor. In most cases this corresponds to ``root``. If the dataset has more parameters without default
-        values you need to explicitly pass them as explained in case 3.
+                ``"num_examples"`` that corresponds to the number of examples in the dataset to be created.
         """
         raise NotImplementedError("You need to provide fake data in order for the tests to run.")
 
