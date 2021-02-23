@@ -525,7 +525,6 @@ class VideoDatasetTestCase(DatasetTestCase):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
         args_without_default = argspec.args[1:-len(argspec.defaults)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
-        only_root_and_frames_per_clip = (len(args_without_default) == 2) and frames_per_clip_last
 
         @functools.wraps(inject_fake_data)
         def wrapper(tmpdir, config):
