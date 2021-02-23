@@ -165,7 +165,8 @@ class DatasetTestCase(unittest.TestCase):
 
     Without further configuration, the testcase will test if
 
-    1. the dataset raises a ``RuntimeError`` if the data files are not found,
+    1. the dataset raises a :class:`FileNotFoundError` or a :class:`RuntimeError` if the data files are not found or
+       corrupted,
     2. the dataset inherits from `torchvision.datasets.VisionDataset`,
     3. the dataset can be turned into a string,
     4. the feature types of a returned example matches ``FEATURE_TYPES``,
@@ -402,8 +403,8 @@ class DatasetTestCase(unittest.TestCase):
                 if inject_download_kwarg:
                     del special_kwargs["download"]
 
-    def test_not_found(self):
-        with self.assertRaises(RuntimeError):
+    def test_not_found_or_corrupted(self):
+        with self.assertRaises((FileNotFoundError, RuntimeError)):
             with self.create_dataset(inject_fake_data=False):
                 pass
 
