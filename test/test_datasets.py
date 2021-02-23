@@ -899,6 +899,15 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
 
     CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
 
+    _VIDEO_FOLDER = "videos"
+    _ANNOTATIONS_FOLDER = "annotations"
+
+    def dataset_args(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        root = tmpdir / self._VIDEO_FOLDER
+        annotation_path = tmpdir / self._ANNOTATIONS_FOLDER
+        return root, annotation_path
+
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
@@ -910,7 +919,7 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
         os.makedirs(annotations_folder)
         num_examples = self._create_annotation_files(annotations_folder, video_files, config["fold"], config["train"])
 
-        return (str(video_folder), str(annotations_folder)), num_examples
+        return num_examples
 
     def _create_videos(self, root, num_examples_per_class=3):
         def file_name_fn(cls, idx, clips_per_group=2):
