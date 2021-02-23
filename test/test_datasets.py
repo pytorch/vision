@@ -824,8 +824,8 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
 
     REQUIRED_PACKAGES = ("pycocotools",)
 
-    _IMAGE_FOLDER = pathlib.Path("images")
-    _ANNOTATIONS_FOLDER = pathlib.Path("annotations")
+    _IMAGE_FOLDER = "images"
+    _ANNOTATIONS_FOLDER = "annotations"
     _ANNOTATIONS_FILE = "annotations.json"
 
     def dataset_args(self, tmpdir, config):
