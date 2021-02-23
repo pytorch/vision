@@ -30,7 +30,11 @@ class CocoDetection(VisionDataset):
         super().__init__(root, transforms, transform, target_transform)
         from pycocotools.coco import COCO
 
-        self.coco = COCO(annFile)
+        try:
+            self.coco = COCO(annFile)
+        except FileNotFoundError as error:
+            raise RuntimeError(f"The file {annFile} does not exist or is corrupt.") from error
+
         self.ids = list(sorted(self.coco.imgs.keys()))
 
     def _load_image(self, id: int) -> Image.Image:
