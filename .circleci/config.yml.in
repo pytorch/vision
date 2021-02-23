@@ -216,6 +216,7 @@ jobs:
       - designate_upload_channel
       - run:
           name: Build conda packages
+          no_output_timeout: 20m
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
