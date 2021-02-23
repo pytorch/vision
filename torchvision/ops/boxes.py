@@ -63,18 +63,16 @@ def batched_nms(
             in decreasing order of scores
     """
     num_boxes = boxes.numel()
-    if num_boxes == 0:
-        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
-
     is_cuda = boxes.is_cuda
 
+    if num_boxes == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
-    if (is_cuda and num_boxes > 20_000) or (not is_cuda and num_boxes > 4_000):
-        _batched_nms = _batched_nms_vanilla
+    elif (is_cuda and num_boxes > 20_000) or (not is_cuda and num_boxes > 4_000):
+        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
     else:
-        _batched_nms = _batched_nms_coordinate_trick
-    return _batched_nms(boxes, scores, idxs, iou_threshold)
+        return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
 
 def _batched_nms_coordinate_trick(
@@ -103,10 +101,10 @@ def _batched_nms_vanilla(
     # Based on Detectron2 implementation
     result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
     for id in torch.jit.annotate(List[int], torch.unique(idxs).cpu().tolist()):
-        mask = (idxs == id).nonzero(as_tuple=False).view(-1)
+        mask = (idxs == id).nonzero().view(-1)
         keep = nms(boxes[mask], scores[mask], iou_threshold)
         result_mask[mask[keep]] = True
-    keep = result_mask.nonzero(as_tuple=False).view(-1)
+    keep = result_mask.nonzero().view(-1)
     keep = keep[scores[keep].argsort(descending=True)]
     return keep
 
