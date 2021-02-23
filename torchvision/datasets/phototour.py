@@ -10,7 +10,17 @@ from .utils import download_url
 
 
 class PhotoTour(VisionDataset):
-    """`Learning Local Image Descriptors Data <http://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
+    """`Multi-view Stereo Correspondence <http://matthewalunbrown.com/patchdata/patchdata.html>`_ Dataset.
+
+    .. note::
+
+        We only provide the newer version of the dataset, since the authors state that it
+
+            is more suitable for training descriptors based on difference of Gaussian, or Harris corners, as the
+            patches are centred on real interest point detections, rather than being projections of 3D points as is the
+            case in the old dataset.
+
+        The original dataset is available under http://phototour.cs.washington.edu/patches/default.htm.
 
 
     Args:
