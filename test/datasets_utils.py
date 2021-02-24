@@ -206,6 +206,8 @@ class DatasetTestCase(unittest.TestCase):
     CONFIGS = None
     REQUIRED_PACKAGES = None
 
+    _DEFAULT_CONFIG = None
+
     _TRANSFORM_KWARGS = {
         "transform",
         "target_transform",
@@ -277,8 +279,10 @@ class DatasetTestCase(unittest.TestCase):
             info (Dict[str, Any]): Additional information about the injected fake data. See :meth:`.inject_fake_data`
                 for details.
         """
-        if config is None:
-            config = self.CONFIGS[0].copy()
+        default_config = self._DEFAULT_CONFIG.copy()
+        if config is not None:
+            default_config.update(config)
+        config = default_config
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
         config.update(other_kwargs)
@@ -344,19 +348,18 @@ class DatasetTestCase(unittest.TestCase):
     @classmethod
     def _populate_private_class_attributes(cls):
         argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
+
+        cls._DEFAULT_CONFIG = {
+            kwarg: default
+            for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
+            if kwarg not in cls._SPECIAL_KWARGS
+        }
+
         cls._HAS_SPECIAL_KWARG = {name for name in cls._SPECIAL_KWARGS if name in argspec.args}
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
         argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
-        if cls.CONFIGS is None:
-            config = {
-                kwarg: default
-                for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
-                if kwarg not in cls._SPECIAL_KWARGS
-            }
-            cls.CONFIGS = (config,)
-
         if cls.REQUIRED_PACKAGES is not None:
             try:
                 for pkg in cls.REQUIRED_PACKAGES:
