@@ -11718,7 +11718,7 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
   line-height: 1.375rem;
   margin-bottom: 1rem;
   text-transform: none;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .pytorch-left-menu-search {
