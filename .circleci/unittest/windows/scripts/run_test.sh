@@ -15,6 +15,7 @@ fi
 python -m torch.utils.collect_env
 pytest \
     --numprocesses=$NUMPROCESSES \
+    --boxed \
     --cov=torchvision \
     --junitxml=test-results/junit.xml \
     --verbose \
