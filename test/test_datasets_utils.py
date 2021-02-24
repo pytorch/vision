@@ -102,6 +102,39 @@ class Tester(unittest.TestCase):
 
         mock.assert_called_once_with(id, root, filename, md5)
 
+    def test_detect_file_type(self):
+        for file, expected in [
+            ("foo.tar.xz", ("tar.xz", "tar", "xz")),
+            ("foo.tar", ("tar", "tar", None)),
+            ("foo.tar.gz", ("tar.gz", "tar", "gz")),
+            ("foo.tgz", ("tgz", "tar", "gz")),
+            ("foo.gz", ("gz", None, "gz")),
+            ("foo.zip", ("zip", "zip", None)),
+            ("foo.xz", ("xz", None, "xz")),
+        ]:
+            with self.subTest(file=file):
+                self.assertSequenceEqual(utils._detect_file_type(file), expected)
+
+    def test_detect_file_type_no_ext(self):
+        with self.assertRaises(RuntimeError):
+            utils._detect_file_type("foo")
+
+    def test_detect_file_type_to_many_exts(self):
+        with self.assertRaises(RuntimeError):
+            utils._detect_file_type("foo.bar.tar.gz")
+
+    def test_detect_file_type_unknown_archive_type(self):
+        with self.assertRaises(RuntimeError):
+            utils._detect_file_type("foo.bar.gz")
+
+    def test_detect_file_type_unknown_compression(self):
+        with self.assertRaises(RuntimeError):
+            utils._detect_file_type("foo.tar.baz")
+
+    def test_detect_file_type_unknown_partial_ext(self):
+        with self.assertRaises(RuntimeError):
+            utils._detect_file_type("foo.bar")
+
     def test_extract_zip(self):
         with get_tmp_dir() as temp_dir:
             with tempfile.NamedTemporaryFile(suffix='.zip') as f:
