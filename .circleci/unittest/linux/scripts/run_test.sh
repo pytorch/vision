@@ -11,11 +11,11 @@ if [ "${CU_VERSION:-}" == cpu ] ; then
 else
     NUMPROCESSES="1"
 fi
+export OMP_NUM_THREADS="1"
 
 python -m torch.utils.collect_env
 pytest \
     --numprocesses=$NUMPROCESSES \
-    --boxed \
     --cov=torchvision \
     --junitxml=test-results/junit.xml \
     --verbose \
