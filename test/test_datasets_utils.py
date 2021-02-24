@@ -102,7 +102,6 @@ class Tester(unittest.TestCase):
 
         mock.assert_called_once_with(id, root, filename, md5)
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_zip(self):
         with get_tmp_dir() as temp_dir:
             with tempfile.NamedTemporaryFile(suffix='.zip') as f:
@@ -114,7 +113,6 @@ class Tester(unittest.TestCase):
                     data = nf.read()
                 self.assertEqual(data, 'this is the content')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_tar(self):
         for ext, mode in zip(['.tar', '.tar.gz', '.tgz'], ['w', 'w:gz', 'w:gz']):
             with get_tmp_dir() as temp_dir:
@@ -130,7 +128,6 @@ class Tester(unittest.TestCase):
                             data = nf.read()
                         self.assertEqual(data, 'this is the content')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_tar_xz(self):
         for ext, mode in zip(['.tar.xz'], ['w:xz']):
             with get_tmp_dir() as temp_dir:
@@ -146,7 +143,6 @@ class Tester(unittest.TestCase):
                             data = nf.read()
                         self.assertEqual(data, 'this is the content')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_gzip(self):
         with get_tmp_dir() as temp_dir:
             with tempfile.NamedTemporaryFile(suffix='.gz') as f:
