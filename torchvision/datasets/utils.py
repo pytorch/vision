@@ -270,10 +270,18 @@ def _verify_archive_type(archive_type: str) -> None:
         raise RuntimeError(f"Unknown archive type '{archive_type}'. Known archive types are '{valid_types}'.")
 
 
+def _verify_compression(compression: str) -> None:
+    if compression not in _COMPRESSED_FILE_OPENERS.keys():
+        valid_types = "', '".join(_COMPRESSED_FILE_OPENERS.keys())
+        raise RuntimeError(f"Unknown compression '{compression}'. Known compressions are '{valid_types}'.")
+
+
 def _parse_ext(ext: str) -> Tuple[Optional[str], Optional[str]]:
     exts = ext.split(".")
     if len(exts) > 2:
-        raise RuntimeError
+        raise RuntimeError(
+            "Archive type and compression detection only works for 1 or 2 extensions. " f"Got {len(exts)} instead."
+        )
 
     if len(exts) == 2:
         archive_type, compression = exts
@@ -294,14 +302,15 @@ def _parse_ext(ext: str) -> Tuple[Optional[str], Optional[str]]:
         _verify_compression(partial_ext)
         return None, partial_ext
 
-    raise RuntimeError
+    raise RuntimeError(f"Extension '{partial_ext}' is neither recognized as archive type nor as compression.")
 
 
-def _determine_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
+def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
     try:
         ext = file.split(".", 1)[1]
     except IndexError as error:
-        raise RuntimeError from error
+        msg = f"File '{file}' has no extensions that could be used to detect the archive type and compression."
+        raise RuntimeError(msg) from error
 
     return (ext, *_parse_ext(ext))
 
@@ -319,7 +328,7 @@ def decompress(from_path: str, to_path: Optional[str] = None, remove_finished: b
     Returns:
         (str): Path to the decompressed file.
     """
-    ext, archive_type, compression = _determine_file_type(from_path)
+    ext, archive_type, compression = _detect_file_type(from_path)
     if not compression:
         raise RuntimeError
 
@@ -358,7 +367,7 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
-    ext, archive_type, compression = _determine_file_type(from_path)
+    ext, archive_type, compression = _detect_file_type(from_path)
     if not archive_type:
         return decompress(
             from_path,
