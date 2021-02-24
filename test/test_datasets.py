@@ -911,11 +911,11 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
-        video_folder = tmpdir / "videos"
+        video_folder = tmpdir / self._VIDEO_FOLDER
         os.makedirs(video_folder)
         video_files = self._create_videos(video_folder)
 
-        annotations_folder = annotations_folder = tmpdir / "annotations"
+        annotations_folder = tmpdir / self._ANNOTATIONS_FOLDER
         os.makedirs(annotations_folder)
         num_examples = self._create_annotation_files(annotations_folder, video_files, config["fold"], config["train"])
 
