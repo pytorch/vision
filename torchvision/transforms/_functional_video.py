@@ -7,7 +7,6 @@ warnings.warn(
 )
 
 
-
 def _is_tensor_video_clip(clip):
     if not torch.is_tensor(clip):
         raise TypeError("clip should be Tesnor. Got %s" % type(clip))
