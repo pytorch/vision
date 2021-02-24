@@ -6,6 +6,7 @@ channels:
 dependencies:
   - pytest
   - pytest-cov
+  - pytest-xdist
   - codecov
   - pip
   - libpng
