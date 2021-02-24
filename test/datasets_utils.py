@@ -496,13 +496,43 @@ class ImageDatasetTestCase(DatasetTestCase):
 class VideoDatasetTestCase(DatasetTestCase):
     """Abstract base class for video dataset testcases.
 
-    - Overwrites the FEATURE_TYPES class attribute to expect two :class:`torch.Tensor` s for the video and audio as
+    - Overwrites the 'FEATURE_TYPES' class attribute to expect two :class:`torch.Tensor` s for the video and audio as
       well as an integer label.
-    - Overwrites the REQUIRED_PACKAGES class attribute to require PyAV (``av``).
+    - Overwrites the 'REQUIRED_PACKAGES' class attribute to require PyAV (``av``).
+    - Adds the 'DEFAULT_FRAMES_PER_CLIP' class attribute. If no 'frames_per_clip' is provided by 'inject_fake_data()'
+        and it is the last parameter without a default value in the dataset constructor, the value of the
+        'DEFAULT_FRAMES_PER_CLIP' class attribute is appended to the output.
     """
 
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
     REQUIRED_PACKAGES = ("av",)
+
+    DEFAULT_FRAMES_PER_CLIP = 1
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.inject_fake_data = self._set_default_frames_per_clip(self.inject_fake_data)
+
+    def _set_default_frames_per_clip(self, inject_fake_data):
+        argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
+        args_without_default = argspec.args[1:-len(argspec.defaults)]
+        frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
+        only_root_and_frames_per_clip = (len(args_without_default) == 2) and frames_per_clip_last
+
+        @functools.wraps(inject_fake_data)
+        def wrapper(tmpdir, config):
+            output = inject_fake_data(tmpdir, config)
+            if isinstance(output, collections.abc.Sequence) and len(output) == 2:
+                args, info = output
+                if frames_per_clip_last and len(args) == len(args_without_default) - 1:
+                    args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
+                    return args, info
+            elif isinstance(output, (int, dict)) and only_root_and_frames_per_clip:
+                return (tmpdir, self.DEFAULT_FRAMES_PER_CLIP)
+            else:
+                return output
+
+        return wrapper
 
 
 def create_image_or_video_tensor(size: Sequence[int]) -> torch.Tensor:
