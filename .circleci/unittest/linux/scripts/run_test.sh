@@ -8,10 +8,10 @@ conda activate ./env
 export PYTORCH_TEST_WITH_SLOW='1'
 if [ "${CU_VERSION:-}" == cpu ] ; then
     NUMPROCESSES="auto"
+    export OMP_NUM_THREADS="1"
 else
     NUMPROCESSES="1"
 fi
-export OMP_NUM_THREADS="1"
 
 python -m torch.utils.collect_env
 pytest \

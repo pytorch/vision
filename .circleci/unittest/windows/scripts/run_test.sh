@@ -8,6 +8,7 @@ conda activate ./env
 export PYTORCH_TEST_WITH_SLOW='1'
 if [ "${CU_VERSION:-}" == cpu ] ; then
     NUMPROCESSES="auto"
+    export OMP_NUM_THREADS="1"
 else
     NUMPROCESSES="1"
 fi
@@ -15,7 +16,6 @@ fi
 python -m torch.utils.collect_env
 pytest \
     --numprocesses=$NUMPROCESSES \
-    --boxed \
     --cov=torchvision \
     --junitxml=test-results/junit.xml \
     --verbose \
