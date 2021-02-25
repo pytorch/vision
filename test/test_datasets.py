@@ -976,7 +976,7 @@ class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
         os.makedirs(video_folder)
         video_files = self._create_videos(video_folder)
 
-        splits_folder = annotations_folder = tmpdir / self._SPLITS_FOLDER
+        splits_folder = tmpdir / self._SPLITS_FOLDER
         os.makedirs(splits_folder)
         num_examples = self._create_split_files(splits_folder, video_files, config["fold"], config["train"])
 
