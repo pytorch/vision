@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 
-class UsageError(RuntimeError):
+class UsageError(Exception):
     """Should be raised in case an error happens in the setup rather than the test."""
 
 
@@ -165,7 +165,8 @@ class DatasetTestCase(unittest.TestCase):
 
     Without further configuration, the testcase will test if
 
-    1. the dataset raises a ``RuntimeError`` if the data files are not found,
+    1. the dataset raises a :class:`FileNotFoundError` or a :class:`RuntimeError` if the data files are not found or
+       corrupted,
     2. the dataset inherits from `torchvision.datasets.VisionDataset`,
     3. the dataset can be turned into a string,
     4. the feature types of a returned example matches ``FEATURE_TYPES``,
@@ -228,9 +229,25 @@ class DatasetTestCase(unittest.TestCase):
         "download_and_extract_archive",
     }
 
-    def inject_fake_data(
-        self, tmpdir: str, config: Dict[str, Any]
-    ) -> Union[int, Dict[str, Any], Tuple[Sequence[Any], Union[int, Dict[str, Any]]]]:
+    def dataset_args(self, tmpdir: str, config: Dict[str, Any]) -> Sequence[Any]:
+        """Define positional arguments passed to the dataset.
+
+        .. note::
+
+            The default behavior is only valid if the dataset to be tested has ``root`` as the only required parameter.
+            Otherwise you need to overwrite this method.
+
+        Args:
+            tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
+                to be created and in turn also for the fake data injected here.
+            config (Dict[str, Any]): Configuration that will be used to create the dataset.
+
+        Returns:
+            (Tuple[str]): ``tmpdir`` which corresponds to ``root`` for most datasets.
+        """
+        return (tmpdir,)
+
+    def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
         """Inject fake data for dataset into a temporary directory.
 
         Args:
@@ -240,15 +257,9 @@ class DatasetTestCase(unittest.TestCase):
 
         Needs to return one of the following:
 
-            1. (int): Number of examples in the dataset to be created,
+            1. (int): Number of examples in the dataset to be created, or
             2. (Dict[str, Any]): Additional information about the injected fake data. Must contain the field
-                ``"num_examples"`` that corresponds to the number of examples in the dataset to be created, or
-            3. (Tuple[Sequence[Any], Union[int, Dict[str, Any]]]): Additional required parameters that are passed to
-                the dataset constructor. The second element corresponds to cases 1. and 2.
-
-        If no ``args`` is returned (case 1. and 2.), the ``tmp_dir`` is passed as first parameter to the dataset
-        constructor. In most cases this corresponds to ``root``. If the dataset has more parameters without default
-        values you need to explicitly pass them as explained in case 3.
+                ``"num_examples"`` that corresponds to the number of examples in the dataset to be created.
         """
         raise NotImplementedError("You need to provide fake data in order for the tests to run.")
 
@@ -287,33 +298,30 @@ class DatasetTestCase(unittest.TestCase):
             disable_download_extract = inject_fake_data
 
         with get_tmp_dir() as tmpdir:
-            output = self.inject_fake_data(tmpdir, config) if inject_fake_data else None
-            if output is None:
-                raise UsageError(
-                    "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
-                    "examples for the current configuration."
-                )
+            args = self.dataset_args(tmpdir, config)
 
-            if isinstance(output, collections.abc.Sequence) and len(output) == 2:
-                args, info = output
-            else:
-                args = (tmpdir,)
-                info = output
-
-            if isinstance(info, int):
-                info = dict(num_examples=info)
-            elif isinstance(info, dict):
-                if "num_examples" not in info:
+            if inject_fake_data:
+                info = self.inject_fake_data(tmpdir, config)
+                if info is None:
+                    raise UsageError(
+                        "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
+                        "examples for the current configuration."
+                    )
+                elif isinstance(info, int):
+                    info = dict(num_examples=info)
+                elif not isinstance(info, dict):
+                    raise UsageError(
+                        f"The additional information returned by the method 'inject_fake_data' must be either an "
+                        f"integer indicating the number of examples for the current configuration or a dictionary with "
+                        f"the same content. Got {type(info)} instead."
+                    )
+                elif "num_examples" not in info:
                     raise UsageError(
                         "The information dictionary returned by the method 'inject_fake_data' must contain a "
                         "'num_examples' field that holds the number of examples for the current configuration."
                     )
             else:
-                raise UsageError(
-                    f"The additional information returned by the method 'inject_fake_data' must be either an integer "
-                    f"indicating the number of examples for the current configuration or a dictionary with the the "
-                    f"same content. Got {type(info)} instead."
-                )
+                info = None
 
             cm = self._disable_download_extract if disable_download_extract else nullcontext
             with cm(special_kwargs), disable_console_output():
@@ -395,8 +403,8 @@ class DatasetTestCase(unittest.TestCase):
                 if inject_download_kwarg:
                     del special_kwargs["download"]
 
-    def test_not_found(self):
-        with self.assertRaises(RuntimeError):
+    def test_not_found_or_corrupted(self):
+        with self.assertRaises((FileNotFoundError, RuntimeError)):
             with self.create_dataset(inject_fake_data=False):
                 pass
 
@@ -511,26 +519,20 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.inject_fake_data = self._set_default_frames_per_clip(self.inject_fake_data)
+        self.dataset_args = self._set_default_frames_per_clip(self.dataset_args)
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
         args_without_default = argspec.args[1:-len(argspec.defaults)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
-        only_root_and_frames_per_clip = (len(args_without_default) == 2) and frames_per_clip_last
 
         @functools.wraps(inject_fake_data)
         def wrapper(tmpdir, config):
-            output = inject_fake_data(tmpdir, config)
-            if isinstance(output, collections.abc.Sequence) and len(output) == 2:
-                args, info = output
-                if frames_per_clip_last and len(args) == len(args_without_default) - 1:
-                    args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
-                    return args, info
-            elif isinstance(output, (int, dict)) and only_root_and_frames_per_clip:
-                return (tmpdir, self.DEFAULT_FRAMES_PER_CLIP)
-            else:
-                return output
+            args = inject_fake_data(tmpdir, config)
+            if frames_per_clip_last and len(args) == len(args_without_default) - 1:
+                args = (*args, self.DEFAULT_FRAMES_PER_CLIP)
+
+            return args
 
         return wrapper
 
@@ -570,7 +572,7 @@ def create_image_file(
 
     image = create_image_or_video_tensor(size)
     file = pathlib.Path(root) / name
-    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file)
+    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file, **kwargs)
     return file
 
 
@@ -706,6 +708,6 @@ def create_video_folder(
     os.makedirs(root)
 
     return [
-        create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size)
+        create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
         for idx in range(num_examples)
     ]
