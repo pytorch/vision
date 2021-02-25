@@ -116,7 +116,7 @@ def test_all_configs(test):
 
     @functools.wraps(test)
     def wrapper(self):
-        for config in self.CONFIGS:
+        for config in self.CONFIGS or (self._DEFAULT_CONFIG,):
             with self.subTest(**config):
                 test(self, config)
 
