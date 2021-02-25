@@ -23,6 +23,7 @@ import torch
 import shutil
 import json
 import random
+import string
 
 
 try:
@@ -952,6 +953,25 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
     def _create_annotation_file(self, root, name, video_files):
         with open(pathlib.Path(root) / name, "w") as fh:
             fh.writelines(f"{file}\n" for file in sorted(video_files))
+
+
+class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.Kinetics400
+
+    def inject_fake_data(self, tmpdir, config):
+        classes = ("Abseiling", "Zumba")
+        num_videos_per_class = 2
+
+        letters = string.ascii_letters + string.digits + "-_"
+        for cls in classes:
+            datasets_utils.create_video_folder(
+                tmpdir, cls, lambda _: f"{''.join(random.choice(letters) for _ in range(11))}.avi", num_videos_per_class
+            )
+
+        return num_videos_per_class * len(classes)
+
+    def test_not_found_or_corrupted(self):
+        self.skipTest("Dataset currently does not handle the case of no found videos.")
 
 
 if __name__ == "__main__":
