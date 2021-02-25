@@ -6,6 +6,8 @@ import inspect
 import itertools
 import os
 import pathlib
+import random
+import string
 import unittest
 import unittest.mock
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -32,6 +34,7 @@ __all__ = [
     "create_image_folder",
     "create_video_file",
     "create_video_folder",
+    "create_random_string",
 ]
 
 
@@ -713,3 +716,18 @@ def create_video_folder(
         create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size)
         for idx in range(num_examples)
     ]
+
+
+def create_random_string(length: int, *digits: str) -> str:
+    """Create a random string.
+
+    Args:
+        length (int): Number of characters in the generated string.
+        *characters (str): Characters to sample from. If omitted defaults to :attr:`string.ascii_lowercase`.
+    """
+    if not digits:
+        digits = string.ascii_lowercase
+    else:
+        digits = "".join(itertools.chain(*digits))
+
+    return "".join(random.choice(digits) for _ in range(length))
