@@ -306,29 +306,8 @@ class DatasetTestCase(unittest.TestCase):
 
         with get_tmp_dir() as tmpdir:
             args = self.dataset_args(tmpdir, config)
+            info = self._inject_fake_data(tmpdir, config) if inject_fake_data else None
 
-            if inject_fake_data:
-                info = self.inject_fake_data(tmpdir, config)
-                if info is None:
-                    raise UsageError(
-                        "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
-                        "examples for the current configuration."
-                    )
-                elif isinstance(info, int):
-                    info = dict(num_examples=info)
-                elif not isinstance(info, dict):
-                    raise UsageError(
-                        f"The additional information returned by the method 'inject_fake_data' must be either an "
-                        f"integer indicating the number of examples for the current configuration or a dictionary with "
-                        f"the same content. Got {type(info)} instead."
-                    )
-                elif "num_examples" not in info:
-                    raise UsageError(
-                        "The information dictionary returned by the method 'inject_fake_data' must contain a "
-                        "'num_examples' field that holds the number of examples for the current configuration."
-                    )
-            else:
-                info = None
 
             cm = self._disable_download_extract if disable_download_extract else nullcontext
             with cm(special_kwargs), disable_console_output():
@@ -385,11 +364,31 @@ class DatasetTestCase(unittest.TestCase):
         other_kwargs = {key: special_kwargs.pop(key) for key in set(special_kwargs.keys()) - self._SPECIAL_KWARGS}
         return special_kwargs, other_kwargs
 
-    @contextlib.contextmanager
-    def _disable_download_extract(self, special_kwargs):
-        inject_download_kwarg = "download" in self._HAS_SPECIAL_KWARG and "download" not in special_kwargs
-        if inject_download_kwarg:
-            special_kwargs["download"] = False
+    def _inject_fake_data(self, tmpdir, config):
+        info = self.inject_fake_data(tmpdir, config)
+        if info is None:
+            raise UsageError(
+                "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
+                "examples for the current configuration."
+            )
+        elif isinstance(info, int):
+            info = dict(num_examples=info)
+        elif not isinstance(info, dict):
+            raise UsageError(
+                f"The additional information returned by the method 'inject_fake_data' must be either an "
+                f"integer indicating the number of examples for the current configuration or a dictionary with "
+                f"the same content. Got {type(info)} instead."
+            )
+        elif "num_examples" not in info:
+            raise UsageError(
+                "The information dictionary returned by the method 'inject_fake_data' must contain a "
+                "'num_examples' field that holds the number of examples for the current configuration."
+            )
+        return info
+
+    def _patch_download_extract(self):
+        module = inspect.getmodule(self.DATASET_CLASS).__name__
+        return {unittest.mock.patch(f"{module}.{function}") for function in self._DOWNLOAD_EXTRACT_FUNCTIONS}
 
         module = inspect.getmodule(self.DATASET_CLASS).__name__
         with contextlib.ExitStack() as stack:
