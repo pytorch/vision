@@ -2,7 +2,7 @@
 #include <c10/util/Logging.h>
 #include <stdio.h>
 #include <string.h>
-#include <torch/torch.h>
+#include <ATen/Parallel.h>
 #include "util.h"
 
 namespace ffmpeg {
