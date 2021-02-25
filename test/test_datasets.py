@@ -954,5 +954,22 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
             fh.writelines(f"{file}\n" for file in sorted(video_files))
 
 
+class SEMEIONTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SEMEION
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 3
+
+        images = torch.rand(num_images, 256)
+        labels = F.one_hot(torch.randint(10, size=(num_images,)))
+        with open(pathlib.Path(tmpdir) / "semeion.data", "w") as fh:
+            for image, one_hot_labels in zip(images, labels):
+                image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
+                labels_columns = " ".join([str(label.item()) for label in one_hot_labels])
+                fh.write(f"{image_columns} {labels_columns}\n")
+
+        return num_images
+
+
 if __name__ == "__main__":
     unittest.main()
