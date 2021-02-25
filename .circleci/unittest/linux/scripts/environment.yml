@@ -7,6 +7,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
+  - pytest-timeout
   - codecov
   - pip
   - libpng
