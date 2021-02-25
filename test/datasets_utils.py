@@ -96,14 +96,6 @@ def requires_lazy_imports(*modules):
     return outer_wrapper
 
 
-# As of Python 3.7 this is provided by contextlib
-# https://docs.python.org/3.7/library/contextlib.html#contextlib.nullcontext
-# TODO: If the minimum Python requirement is >= 3.7, replace this
-@contextlib.contextmanager
-def nullcontext(enter_result=None):
-    yield enter_result
-
-
 def test_all_configs(test):
     """Decorator to run test against all configurations.
 
@@ -273,7 +265,7 @@ class DatasetTestCase(unittest.TestCase):
         self,
         config: Optional[Dict[str, Any]] = None,
         inject_fake_data: bool = True,
-        disable_download_extract: Optional[bool] = None,
+        patch_checks: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
         r"""Create the dataset in a temporary directory.
@@ -283,8 +275,8 @@ class DatasetTestCase(unittest.TestCase):
                 default configuration is used.
             inject_fake_data (bool): If ``True`` (default) inject the fake data with :meth:`.inject_fake_data` before
                 creating the dataset.
-            disable_download_extract (Optional[bool]): If ``True`` disable download and extract logic while creating
-                the dataset. If ``None`` (default) this takes the same value as ``inject_fake_data``.
+            patch_checks (Optional[bool]): If ``True`` disable integrity check logic while creating the dataset. If
+                omitted defaults to the same value as ``inject_fake_data``.
             **kwargs (Any): Additional parameters passed to the dataset. These parameters take precedence in case they
                 overlap with ``config``.
 
@@ -298,19 +290,23 @@ class DatasetTestCase(unittest.TestCase):
             default_config.update(config)
         config = default_config
 
+        if patch_checks is None:
+            patch_checks = inject_fake_data
+
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
+        if "download" in self._HAS_SPECIAL_KWARG:
+            special_kwargs["download"] = False
         config.update(other_kwargs)
 
-        if disable_download_extract is None:
-            disable_download_extract = inject_fake_data
+        patchers = self._patch_download_extract()
+        if patch_checks:
+            patchers.update(self._patch_checks())
 
         with get_tmp_dir() as tmpdir:
             args = self.dataset_args(tmpdir, config)
             info = self._inject_fake_data(tmpdir, config) if inject_fake_data else None
 
-
-            cm = self._disable_download_extract if disable_download_extract else nullcontext
-            with cm(special_kwargs), disable_console_output():
+            with self._maybe_apply_patches(patchers), disable_console_output():
                 dataset = self.DATASET_CLASS(*args, **config, **special_kwargs)
 
             yield dataset, info
@@ -390,22 +386,18 @@ class DatasetTestCase(unittest.TestCase):
         module = inspect.getmodule(self.DATASET_CLASS).__name__
         return {unittest.mock.patch(f"{module}.{function}") for function in self._DOWNLOAD_EXTRACT_FUNCTIONS}
 
+    def _patch_checks(self):
         module = inspect.getmodule(self.DATASET_CLASS).__name__
+        return {unittest.mock.patch(f"{module}.{function}", return_value=True) for function in self._CHECK_FUNCTIONS}
+
+    @contextlib.contextmanager
+    def _maybe_apply_patches(self, patchers):
         with contextlib.ExitStack() as stack:
             mocks = {}
-            for function, kwargs in itertools.chain(
-                zip(self._CHECK_FUNCTIONS, [dict(return_value=True)] * len(self._CHECK_FUNCTIONS)),
-                zip(self._DOWNLOAD_EXTRACT_FUNCTIONS, [dict()] * len(self._DOWNLOAD_EXTRACT_FUNCTIONS)),
-            ):
+            for patcher in patchers:
                 with contextlib.suppress(AttributeError):
-                    patcher = unittest.mock.patch(f"{module}.{function}", **kwargs)
-                    mocks[function] = stack.enter_context(patcher)
-
-            try:
-                yield mocks
-            finally:
-                if inject_download_kwarg:
-                    del special_kwargs["download"]
+                    mocks[patcher.target] = stack.enter_context(patcher)
+            yield mocks
 
     def test_not_found_or_corrupted(self):
         with self.assertRaises((FileNotFoundError, RuntimeError)):
@@ -473,13 +465,13 @@ class ImageDatasetTestCase(DatasetTestCase):
         self,
         config: Optional[Dict[str, Any]] = None,
         inject_fake_data: bool = True,
-        disable_download_extract: Optional[bool] = None,
+        patch_checks: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
         with super().create_dataset(
             config=config,
             inject_fake_data=inject_fake_data,
-            disable_download_extract=disable_download_extract,
+            patch_checks=patch_checks,
             **kwargs,
         ) as (dataset, info):
             # PIL.Image.open() only loads the image meta data upfront and keeps the file open until the first access
