@@ -188,7 +188,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+a841013 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+dc18f42 ) &#x25BC</a>
     </div>
     
 
@@ -315,7 +315,17 @@
 
 
 <div class="viewcode-block" id="PhotoTour"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.PhotoTour">[docs]</a><span class="k">class</span> <span class="nc">PhotoTour</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;`Learning Local Image Descriptors Data &lt;http://phototour.cs.washington.edu/patches/default.htm&gt;`_ Dataset.</span>
+    <span class="sd">&quot;&quot;&quot;`Multi-view Stereo Correspondence &lt;http://matthewalunbrown.com/patchdata/patchdata.html&gt;`_ Dataset.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        We only provide the newer version of the dataset, since the authors state that it</span>
+
+<span class="sd">            is more suitable for training descriptors based on difference of Gaussian, or Harris corners, as the</span>
+<span class="sd">            patches are centred on real interest point detections, rather than being projections of 3D points as is the</span>
+<span class="sd">            case in the old dataset.</span>
+
+<span class="sd">        The original dataset is available under http://phototour.cs.washington.edu/patches/default.htm.</span>
 
 
 <span class="sd">    Args:</span>
