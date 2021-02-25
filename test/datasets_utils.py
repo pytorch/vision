@@ -568,7 +568,7 @@ def create_image_file(
 
     image = create_image_or_video_tensor(size)
     file = pathlib.Path(root) / name
-    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file)
+    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file, **kwargs)
     return file
 
 
@@ -704,7 +704,7 @@ def create_video_folder(
     os.makedirs(root)
 
     return [
-        create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size)
+        create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
         for idx in range(num_examples)
     ]
 
