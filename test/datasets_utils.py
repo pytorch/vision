@@ -359,7 +359,6 @@ class DatasetTestCase(unittest.TestCase):
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
-        argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
         if cls.REQUIRED_PACKAGES is not None:
             try:
                 for pkg in cls.REQUIRED_PACKAGES:
