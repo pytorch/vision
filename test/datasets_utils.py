@@ -56,6 +56,7 @@ class LazyImporter:
         "pycocotools",
         "requests",
         "scipy.io",
+        "scipy.sparse",
     )
 
     def __init__(self):
