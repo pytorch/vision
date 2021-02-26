@@ -965,7 +965,7 @@ class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
         return config["size"]
 
     def test_not_found_or_corrupted(self):
-        self.skipTest("The data is generated at creation and thus cannot non-existent or corrupted.")
+        self.skipTest("The data is generated at creation and thus cannot be non-existent or corrupted.")
 
 
 if __name__ == "__main__":
