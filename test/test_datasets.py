@@ -962,10 +962,13 @@ class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
         classes = ("Abseiling", "Zumba")
         num_videos_per_class = 2
 
-        letters = string.ascii_letters + string.digits + "-_"
+        digits = string.ascii_letters + string.digits + "-_"
         for cls in classes:
             datasets_utils.create_video_folder(
-                tmpdir, cls, lambda _: f"{''.join(random.choice(letters) for _ in range(11))}.avi", num_videos_per_class
+                tmpdir,
+                cls,
+                lambda _: f"{datasets_utils.create_random_string(11, digits)}.avi",
+                num_videos_per_class,
             )
 
         return num_videos_per_class * len(classes)
