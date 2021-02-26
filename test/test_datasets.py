@@ -23,6 +23,7 @@ import torch
 import shutil
 import json
 import random
+import bz2
 
 
 try:
@@ -952,6 +953,25 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
     def _create_annotation_file(self, root, name, video_files):
         with open(pathlib.Path(root) / name, "w") as fh:
             fh.writelines(f"{file}\n" for file in sorted(video_files))
+
+
+class USPSTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.USPS
+
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 2 if config["train"] else 1
+
+        images = torch.rand(num_images, 256) * 2 - 1
+        labels = torch.randint(1, 11, size=(num_images,))
+
+        with bz2.open(pathlib.Path(tmpdir) / f"usps{'.t' if not config['train'] else ''}.bz2", "w") as fh:
+            for image, label in zip(images, labels):
+                line = " ".join((str(label.item()), *[f"{idx}:{pixel:.6f}" for idx, pixel in enumerate(image, 1)]))
+                fh.write(f"{line}\n".encode())
+
+        return num_images
 
 
 if __name__ == "__main__":
