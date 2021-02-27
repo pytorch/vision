@@ -226,8 +226,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     result = (gain * result ** gamma).clamp(0, 1)
 
-    result = convert_image_dtype(result, dtype)
-    result = result.to(dtype)
+    if result.dtype != dtype:
+        result = convert_image_dtype(result, dtype)
     return result
 
 
