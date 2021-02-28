@@ -1,14 +1,19 @@
 import torch
-import torchvision.transforms._transforms_video as transforms
 from torchvision.transforms import Compose
 import unittest
 import random
 import numpy as np
+import warnings
 
 try:
     from scipy import stats
 except ImportError:
     stats = None
+
+
+with warnings.catch_warnings(record=True):
+    warnings.simplefilter("always")
+    import torchvision.transforms._transforms_video as transforms
 
 
 class TestVideoTransforms(unittest.TestCase):
