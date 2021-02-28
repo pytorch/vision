@@ -16,8 +16,7 @@ requirements:
   host:
     - python
     - setuptools
-    - numpy >=1.20 # [py>=39]
-    - numpy >=1.11 # [py!=39]
+    - defaults::numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
@@ -28,8 +27,7 @@ requirements:
     - ffmpeg >=4.2  # [not win]
     - jpeg <=9b
     - pillow >=4.1.1
-    - numpy >=1.20 # [py>=39]
-    - numpy >=1.11 # [py!=39]
+    - defaults::numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
