@@ -69,26 +69,10 @@ def batched_nms(
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
     # Ideally for GPU we'd use a higher threshold
-    # print("vanilla")
-    a = _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-    # print("trick")
-    b = _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
-    # print('a')
-    # # print(a)
-    # print(a.shape, a.dtype, a.device)
-    # print('b')
-    # # print(b)
-    # print(b.shape, b.dtype, b.device)
-    # print(torch.equal(a, b))
-    # print(a[a != b])
-    # print(b[a != b])
-    # assert torch.equal(a, b)
-    assert torch.equal(a[a != b].sort()[0], b[a != b].sort()[0])
-    return a
-    # elif num_boxes > 4_000:
-    #     return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-    # else:
-    #     return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+    elif num_boxes > 4_000:
+        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
+    else:
+        return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
 
 @torch.jit._script_if_tracing
@@ -118,11 +102,11 @@ def _batched_nms_vanilla(
 ) -> Tensor:
     # Based on Detectron2 implementation, just manually call nms() on each class independently
     keep_mask = torch.zeros_like(scores, dtype=torch.bool)
-    for class_id in torch.jit.annotate(List[int], torch.unique(idxs).cpu().tolist()):
-        curr_indices = torch.where(idxs == class_id)[0].view(-1)
+    for class_id in torch.unique(idxs):
+        curr_indices = torch.where(idxs == class_id)[0]
         curr_keep_indices = nms(boxes[curr_indices], scores[curr_indices], iou_threshold)
         keep_mask[curr_indices[curr_keep_indices]] = True
-    keep_indices = torch.where(keep_mask)[0].view(-1)
+    keep_indices = torch.where(keep_mask)[0]
     return keep_indices[scores[keep_indices].sort(descending=True)[1]]
 
 
