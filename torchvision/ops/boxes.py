@@ -98,15 +98,14 @@ def _batched_nms_vanilla(
     idxs: Tensor,
     iou_threshold: float,
 ) -> Tensor:
-    # Based on Detectron2 implementation
-    result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
-    for id in torch.jit.annotate(List[int], torch.unique(idxs).cpu().tolist()):
-        mask = torch.where(idxs == id)[0].view(-1)
-        keep = nms(boxes[mask], scores[mask], iou_threshold)
-        result_mask[mask[keep]] = True
-    keep = torch.where(result_mask)[0].view(-1)
-    keep = keep[scores[keep].argsort(descending=True)]
-    return keep
+    # Based on Detectron2 implementation, just manually call nms() on each class independently
+    keep_mask = torch.zeros_like(scores, dtype=torch.bool)
+    for class_id in torch.jit.annotate(List[int], torch.unique(idxs).cpu().tolist()):
+        curr_indices = torch.where(idxs == class_id)[0]
+        curr_keep_indices = nms(boxes[curr_indices], scores[curr_indices], iou_threshold)
+        keep_mask[curr_indices[curr_keep_indices]] = True
+    keep_indices = torch.where(keep_mask)[0]
+    return keep_indices[scores[keep_indices].sort(descending=True)[1]]
 
 
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
