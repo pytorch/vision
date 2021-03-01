@@ -92,8 +92,10 @@ class PhotoTour(VisionDataset):
             self.download()
 
         if not self._check_datafile_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            try:
+                self.cache()
+            except Exception as error:
+                raise RuntimeError("Dataset not found. You can use download=True to download it") from error
 
         # load the serialized data
         self.data, self.labels, self.matches = torch.load(self.data_file)
@@ -151,6 +153,7 @@ class PhotoTour(VisionDataset):
 
             os.unlink(fpath)
 
+    def cache(self) -> None:
         # process and save as torch files
         print('# Caching data {}'.format(self.data_file))
 
