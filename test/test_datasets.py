@@ -10,7 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
+from fakedata_generation import mnist_root, imagenet_root, \
     cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
@@ -24,6 +24,7 @@ import shutil
 import json
 import random
 import string
+import io
 
 
 try:
@@ -171,38 +172,6 @@ class Tester(DatasetTestcase):
             self.assertEqual(len(dataset), 1)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
-
-    @mock.patch('torchvision.datasets.cifar.check_integrity')
-    @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
-    def test_cifar10(self, mock_ext_check, mock_int_check):
-        mock_ext_check.return_value = True
-        mock_int_check.return_value = True
-        with cifar_root('CIFAR10') as root:
-            dataset = torchvision.datasets.CIFAR10(root, train=True, download=True)
-            self.generic_classification_dataset_test(dataset, num_images=5)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-            dataset = torchvision.datasets.CIFAR10(root, train=False, download=True)
-            self.generic_classification_dataset_test(dataset)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-    @mock.patch('torchvision.datasets.cifar.check_integrity')
-    @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
-    def test_cifar100(self, mock_ext_check, mock_int_check):
-        mock_ext_check.return_value = True
-        mock_int_check.return_value = True
-        with cifar_root('CIFAR100') as root:
-            dataset = torchvision.datasets.CIFAR100(root, train=True, download=True)
-            self.generic_classification_dataset_test(dataset)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-            dataset = torchvision.datasets.CIFAR100(root, train=False, download=True)
-            self.generic_classification_dataset_test(dataset)
-            img, target = dataset[0]
-            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_cityscapes(self):
@@ -953,6 +922,204 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
     def _create_annotation_file(self, root, name, video_files):
         with open(pathlib.Path(root) / name, "w") as fh:
             fh.writelines(f"{file}\n" for file in sorted(video_files))
+
+
+class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.LSUN
+
+    REQUIRED_PACKAGES = ("lmdb",)
+    CONFIGS = datasets_utils.combinations_grid(
+        classes=("train", "test", "val", ["bedroom_train", "church_outdoor_train"])
+    )
+
+    _CATEGORIES = (
+        "bedroom",
+        "bridge",
+        "church_outdoor",
+        "classroom",
+        "conference_room",
+        "dining_room",
+        "kitchen",
+        "living_room",
+        "restaurant",
+        "tower",
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir)
+
+        num_images = 0
+        for cls in self._parse_classes(config["classes"]):
+            num_images += self._create_lmdb(root, cls)
+
+        return num_images
+
+    @contextlib.contextmanager
+    def create_dataset(
+        self,
+        *args, **kwargs
+    ):
+        with super().create_dataset(*args, **kwargs) as output:
+            yield output
+            # Currently datasets.LSUN caches the keys in the current directory rather than in the root directory. Thus,
+            # this creates a number of unique _cache_* files in the current directory that will not be removed together
+            # with the temporary directory
+            for file in os.listdir(os.getcwd()):
+                if file.startswith("_cache_"):
+                    os.remove(file)
+
+    def _parse_classes(self, classes):
+        if not isinstance(classes, str):
+            return classes
+
+        split = classes
+        if split == "test":
+            return [split]
+
+        return [f"{category}_{split}" for category in self._CATEGORIES]
+
+    def _create_lmdb(self, root, cls):
+        lmdb = datasets_utils.lazy_importer.lmdb
+        hexdigits_lowercase = string.digits + string.ascii_lowercase[:6]
+
+        folder = f"{cls}_lmdb"
+
+        num_images = torch.randint(1, 4, size=()).item()
+        format = "webp"
+        files = datasets_utils.create_image_folder(root, folder, lambda idx: f"{idx}.{format}", num_images)
+
+        with lmdb.open(str(root / folder)) as env, env.begin(write=True) as txn:
+            for file in files:
+                key = "".join(random.choice(hexdigits_lowercase) for _ in range(40)).encode()
+
+                buffer = io.BytesIO()
+                Image.open(file).save(buffer, format)
+                buffer.seek(0)
+                value = buffer.read()
+
+                txn.put(key, value)
+
+                os.remove(file)
+
+        return num_images
+
+    def test_not_found_or_corrupted(self):
+        # LSUN does not raise built-in exception, but a custom one. It is expressive enough to not 'cast' it to
+        # RuntimeError or FileNotFoundError that are normally checked by this test.
+        with self.assertRaises(datasets_utils.lazy_importer.lmdb.Error):
+            super().test_not_found_or_corrupted()
+
+
+class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.Kinetics400
+
+    def inject_fake_data(self, tmpdir, config):
+        classes = ("Abseiling", "Zumba")
+        num_videos_per_class = 2
+
+        digits = string.ascii_letters + string.digits + "-_"
+        for cls in classes:
+            datasets_utils.create_video_folder(
+                tmpdir,
+                cls,
+                lambda _: f"{datasets_utils.create_random_string(11, digits)}.avi",
+                num_videos_per_class,
+            )
+
+        return num_videos_per_class * len(classes)
+
+    def test_not_found_or_corrupted(self):
+        self.skipTest("Dataset currently does not handle the case of no found videos.")
+
+
+class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.HMDB51
+
+    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+
+    _VIDEO_FOLDER = "videos"
+    _SPLITS_FOLDER = "splits"
+    _CLASSES = ("brush_hair", "wave")
+
+    def dataset_args(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        root = tmpdir / self._VIDEO_FOLDER
+        annotation_path = tmpdir / self._SPLITS_FOLDER
+        return root, annotation_path
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        video_folder = tmpdir / self._VIDEO_FOLDER
+        os.makedirs(video_folder)
+        video_files = self._create_videos(video_folder)
+
+        splits_folder = tmpdir / self._SPLITS_FOLDER
+        os.makedirs(splits_folder)
+        num_examples = self._create_split_files(splits_folder, video_files, config["fold"], config["train"])
+
+        return num_examples
+
+    def _create_videos(self, root, num_examples_per_class=3):
+        def file_name_fn(cls, idx, clips_per_group=2):
+            return f"{cls}_{(idx // clips_per_group) + 1:d}_{(idx % clips_per_group) + 1:d}.avi"
+
+        return [
+            (
+                cls,
+                datasets_utils.create_video_folder(
+                    root,
+                    cls,
+                    lambda idx: file_name_fn(cls, idx),
+                    num_examples_per_class,
+                ),
+            )
+            for cls in self._CLASSES
+        ]
+
+    def _create_split_files(self, root, video_files, fold, train):
+        num_videos = num_train_videos = 0
+
+        for cls, videos in video_files:
+            num_videos += len(videos)
+
+            train_videos = set(random.sample(videos, random.randrange(1, len(videos) - 1)))
+            num_train_videos += len(train_videos)
+
+            with open(pathlib.Path(root) / f"{cls}_test_split{fold}.txt", "w") as fh:
+                fh.writelines(f"{file.name} {1 if file in train_videos else 2}\n" for file in videos)
+
+        return num_train_videos if train else (num_videos - num_train_videos)
+
+
+class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Omniglot
+
+    CONFIGS = datasets_utils.combinations_grid(background=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        target_folder = (
+            pathlib.Path(tmpdir) / "omniglot-py" / f"images_{'background' if config['background'] else 'evaluation'}"
+        )
+        os.makedirs(target_folder)
+
+        num_images = 0
+        for name in ("Alphabet_of_the_Magi", "Tifinagh"):
+            num_images += self._create_alphabet_folder(target_folder, name)
+
+        return num_images
+
+    def _create_alphabet_folder(self, root, name):
+        num_images_total = 0
+        for idx in range(torch.randint(1, 4, size=()).item()):
+            num_images = torch.randint(1, 4, size=()).item()
+            num_images_total += num_images
+
+            datasets_utils.create_image_folder(
+                root / name, f"character{idx:02d}", lambda image_idx: f"{image_idx:02d}.png", num_images
+            )
+
+        return num_images_total
 
 
 class SBUTestCase(datasets_utils.ImageDatasetTestCase):
