@@ -1275,5 +1275,95 @@ class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
         self.skipTest("The data is generated at creation and thus cannot be non-existent or corrupted.")
 
 
+class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.DatasetFolder
+
+    # The dataset has no fixed return type since it is defined by the loader parameter. For testing, we use a loader
+    # that simply returns the path as type 'str' instead of loading anything. See the 'dataset_args()' method.
+    FEATURE_TYPES = (str, int)
+
+    _IMAGE_EXTENSIONS = ("jpg", "png")
+    _VIDEO_EXTENSIONS = ("avi", "mp4")
+    _EXTENSIONS = (*_IMAGE_EXTENSIONS, *_VIDEO_EXTENSIONS)
+
+    # DatasetFolder has two mutually exclusive parameters: 'extensions' and 'is_valid_file'. One of both is required.
+    # We only iterate over different 'extensions' here and handle the tests for 'is_valid_file' in the
+    # 'test_is_valid_file()' method.
+    # This is also the reason we are forced to overwrite the default tests that are not tested against all configs,
+    # i.e. 'test_not_found_or_corrupted()' and 'test_smoke()'.
+    CONFIGS = datasets_utils.combinations_grid(extensions=datasets_utils.powerset(_EXTENSIONS))
+
+    def dataset_args(self, tmpdir, config):
+        return tmpdir, lambda x: x
+
+    def inject_fake_data(self, tmpdir, config):
+        num_examples = {}
+        classes = {}
+        for ext, cls in zip(self._EXTENSIONS, string.ascii_letters):
+            create_example_folder = (
+                datasets_utils.create_image_folder
+                if ext in self._IMAGE_EXTENSIONS
+                else datasets_utils.create_video_folder
+            )
+
+            num_examples[ext] = torch.randint(1, 3, size=()).item()
+            classes[ext] = cls
+
+            create_example_folder(tmpdir, cls, lambda idx: self._file_name_fn(cls, ext, idx), num_examples[ext])
+
+        extensions = config["extensions"] or self._is_valid_file_to_extensions(config["is_valid_file"])
+        return dict(num_examples=sum(num_examples[ext] for ext in extensions), classes=[classes[ext] for ext in extensions])
+
+    def _file_name_fn(self, cls, ext, idx):
+        return f"{cls}_{idx}.{ext}"
+
+    def _is_valid_file_to_extensions(self, is_valid_file):
+        return {ext for ext in self._EXTENSIONS if is_valid_file(f"foo.{ext}")}
+
+    def test_not_found_or_corrupted(self):
+        with self.assertRaises((FileNotFoundError, RuntimeError)):
+            with self.create_dataset(inject_fake_data=False, extensions=self._EXTENSIONS):
+                pass
+
+    def test_smoke(self):
+        with self.create_dataset(extensions=self._EXTENSIONS) as (dataset, _):
+            self.assertIsInstance(dataset, torchvision.datasets.VisionDataset)
+
+    def test_is_valid_file(self):
+        for config in self.CONFIGS:
+            config = config.copy()
+            extensions = config.pop("extensions")
+            with self.subTest(extensions=extensions):
+                with self.create_dataset(
+                    config, is_valid_file=lambda file: pathlib.Path(file).suffix[1:] in extensions
+                ) as (dataset, info):
+                    self.assertEqual(len(dataset), info["num_examples"])
+
+    @datasets_utils.test_all_configs
+    def test_classes(self, config):
+        with self.create_dataset(config) as (dataset, info):
+            self.assertSequenceEqual(dataset.classes, info["classes"])
+
+
+class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ImageFolder
+
+    def inject_fake_data(self, tmpdir, config):
+        num_examples_total = 0
+        classes = ("a", "b")
+        for cls in classes:
+            num_examples = torch.randint(1, 3, size=()).item()
+            num_examples_total += num_examples
+
+            datasets_utils.create_image_folder(tmpdir, cls, lambda idx: f"{cls}_{idx}.png", num_examples)
+
+        return dict(num_examples=num_examples_total, classes=classes)
+
+    @datasets_utils.test_all_configs
+    def test_classes(self, config):
+        with self.create_dataset(config) as (dataset, info):
+            self.assertSequenceEqual(dataset.classes, info["classes"])
+
+
 if __name__ == "__main__":
     unittest.main()
