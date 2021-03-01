@@ -23,6 +23,8 @@ import torch
 import shutil
 import json
 import random
+import bz2
+import torch.nn.functional as F
 import string
 import io
 
@@ -1030,6 +1032,165 @@ class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
 
     def test_not_found_or_corrupted(self):
         self.skipTest("Dataset currently does not handle the case of no found videos.")
+
+
+class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.HMDB51
+
+    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+
+    _VIDEO_FOLDER = "videos"
+    _SPLITS_FOLDER = "splits"
+    _CLASSES = ("brush_hair", "wave")
+
+    def dataset_args(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        root = tmpdir / self._VIDEO_FOLDER
+        annotation_path = tmpdir / self._SPLITS_FOLDER
+        return root, annotation_path
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        video_folder = tmpdir / self._VIDEO_FOLDER
+        os.makedirs(video_folder)
+        video_files = self._create_videos(video_folder)
+
+        splits_folder = tmpdir / self._SPLITS_FOLDER
+        os.makedirs(splits_folder)
+        num_examples = self._create_split_files(splits_folder, video_files, config["fold"], config["train"])
+
+        return num_examples
+
+    def _create_videos(self, root, num_examples_per_class=3):
+        def file_name_fn(cls, idx, clips_per_group=2):
+            return f"{cls}_{(idx // clips_per_group) + 1:d}_{(idx % clips_per_group) + 1:d}.avi"
+
+        return [
+            (
+                cls,
+                datasets_utils.create_video_folder(
+                    root,
+                    cls,
+                    lambda idx: file_name_fn(cls, idx),
+                    num_examples_per_class,
+                ),
+            )
+            for cls in self._CLASSES
+        ]
+
+    def _create_split_files(self, root, video_files, fold, train):
+        num_videos = num_train_videos = 0
+
+        for cls, videos in video_files:
+            num_videos += len(videos)
+
+            train_videos = set(random.sample(videos, random.randrange(1, len(videos) - 1)))
+            num_train_videos += len(train_videos)
+
+            with open(pathlib.Path(root) / f"{cls}_test_split{fold}.txt", "w") as fh:
+                fh.writelines(f"{file.name} {1 if file in train_videos else 2}\n" for file in videos)
+
+        return num_train_videos if train else (num_videos - num_train_videos)
+
+
+class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Omniglot
+
+    CONFIGS = datasets_utils.combinations_grid(background=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        target_folder = (
+            pathlib.Path(tmpdir) / "omniglot-py" / f"images_{'background' if config['background'] else 'evaluation'}"
+        )
+        os.makedirs(target_folder)
+
+        num_images = 0
+        for name in ("Alphabet_of_the_Magi", "Tifinagh"):
+            num_images += self._create_alphabet_folder(target_folder, name)
+
+        return num_images
+
+    def _create_alphabet_folder(self, root, name):
+        num_images_total = 0
+        for idx in range(torch.randint(1, 4, size=()).item()):
+            num_images = torch.randint(1, 4, size=()).item()
+            num_images_total += num_images
+
+            datasets_utils.create_image_folder(
+                root / name, f"character{idx:02d}", lambda image_idx: f"{image_idx:02d}.png", num_images
+            )
+
+        return num_images_total
+
+
+class SBUTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SBU
+    FEATURE_TYPES = (PIL.Image.Image, str)
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 3
+
+        dataset_folder = pathlib.Path(tmpdir) / "dataset"
+        images = datasets_utils.create_image_folder(tmpdir, "dataset", self._create_file_name, num_images)
+
+        self._create_urls_txt(dataset_folder, images)
+        self._create_captions_txt(dataset_folder, num_images)
+
+        return num_images
+
+    def _create_file_name(self, idx):
+        part1 = datasets_utils.create_random_string(10, string.digits)
+        part2 = datasets_utils.create_random_string(10, string.ascii_lowercase, string.digits[:6])
+        return f"{part1}_{part2}.jpg"
+
+    def _create_urls_txt(self, root, images):
+        with open(root / "SBU_captioned_photo_dataset_urls.txt", "w") as fh:
+            for image in images:
+                fh.write(
+                    f"http://static.flickr.com/{datasets_utils.create_random_string(4, string.digits)}/{image.name}\n"
+                )
+
+    def _create_captions_txt(self, root, num_images):
+        with open(root / "SBU_captioned_photo_dataset_captions.txt", "w") as fh:
+            for _ in range(num_images):
+                fh.write(f"{datasets_utils.create_random_string(10)}\n")
+
+
+class SEMEIONTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SEMEION
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 3
+
+        images = torch.rand(num_images, 256)
+        labels = F.one_hot(torch.randint(10, size=(num_images,)))
+        with open(pathlib.Path(tmpdir) / "semeion.data", "w") as fh:
+            for image, one_hot_labels in zip(images, labels):
+                image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
+                labels_columns = " ".join([str(label.item()) for label in one_hot_labels])
+                fh.write(f"{image_columns} {labels_columns}\n")
+
+        return num_images
+
+
+class USPSTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.USPS
+
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 2 if config["train"] else 1
+
+        images = torch.rand(num_images, 256) * 2 - 1
+        labels = torch.randint(1, 11, size=(num_images,))
+
+        with bz2.open(pathlib.Path(tmpdir) / f"usps{'.t' if not config['train'] else ''}.bz2", "w") as fh:
+            for image, label in zip(images, labels):
+                line = " ".join((str(label.item()), *[f"{idx}:{pixel:.6f}" for idx, pixel in enumerate(image, 1)]))
+                fh.write(f"{line}\n".encode())
+
+        return num_images
 
 
 if __name__ == "__main__":
