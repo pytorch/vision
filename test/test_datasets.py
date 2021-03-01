@@ -1312,7 +1312,9 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             create_example_folder(tmpdir, cls, lambda idx: self._file_name_fn(cls, ext, idx), num_examples[ext])
 
         extensions = config["extensions"] or self._is_valid_file_to_extensions(config["is_valid_file"])
-        return dict(num_examples=sum(num_examples[ext] for ext in extensions), classes=[classes[ext] for ext in extensions])
+        return dict(
+            num_examples=sum(num_examples[ext] for ext in extensions), classes=[classes[ext] for ext in extensions],
+        )
 
     def _file_name_fn(self, cls, ext, idx):
         return f"{cls}_{idx}.{ext}"

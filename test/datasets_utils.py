@@ -735,5 +735,4 @@ def powerset(iterable):
 
     """
     s = list(iterable)
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
-
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
