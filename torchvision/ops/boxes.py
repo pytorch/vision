@@ -84,7 +84,7 @@ def batched_nms(
     # print(b[a != b])
     # assert torch.equal(a, b)
     assert torch.equal(a[a != b].sort()[0], b[a != b].sort()[0])
-    return b
+    return a
     # elif num_boxes > 4_000:
     #     return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
     # else:
