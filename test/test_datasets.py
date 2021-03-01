@@ -1261,5 +1261,19 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
         return f"2008_{idx:06d}"
 
 
+class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FakeData
+    FEATURE_TYPES = (PIL.Image.Image, torch.Tensor)
+
+    def dataset_args(self, tmpdir, config):
+        return ()
+
+    def inject_fake_data(self, tmpdir, config):
+        return config["size"]
+
+    def test_not_found_or_corrupted(self):
+        self.skipTest("The data is generated at creation and thus cannot be non-existent or corrupted.")
+
+
 if __name__ == "__main__":
     unittest.main()
