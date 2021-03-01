@@ -83,7 +83,7 @@ class LSUN(VisionDataset):
         self.dbs = []
         for c in self.classes:
             self.dbs.append(LSUNClass(
-                root=root + '/' + c + '_lmdb',
+                root=os.path.join(root, f"{c}_lmdb"),
                 transform=transform))
 
         self.indices = []
