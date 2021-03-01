@@ -330,7 +330,7 @@ class TestCase(unittest.TestCase):
             results = m(*args)
         with freeze_rng_state():
             results_from_imported = m_import(*args)
-        self.assertEqual(results, results_from_imported)
+        self.assertEqual(results, results_from_imported, prec=3e-5)
 
 
 @contextlib.contextmanager
