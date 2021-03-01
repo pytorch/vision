@@ -16,7 +16,7 @@ fi
 python -m torch.utils.collect_env
 pytest \
     --numprocesses=$NUMPROCESSES \
-    --timeout=10 \
+    --timeout=300 \
     --cov=torchvision \
     --junitxml=test-results/junit.xml \
     --verbose \
