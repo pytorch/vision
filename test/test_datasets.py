@@ -23,6 +23,7 @@ import torch
 import shutil
 import json
 import random
+import torch.nn.functional as F
 import string
 import io
 
@@ -1153,6 +1154,23 @@ class SBUTestCase(datasets_utils.ImageDatasetTestCase):
         with open(root / "SBU_captioned_photo_dataset_captions.txt", "w") as fh:
             for _ in range(num_images):
                 fh.write(f"{datasets_utils.create_random_string(10)}\n")
+
+
+class SEMEIONTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SEMEION
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 3
+
+        images = torch.rand(num_images, 256)
+        labels = F.one_hot(torch.randint(10, size=(num_images,)))
+        with open(pathlib.Path(tmpdir) / "semeion.data", "w") as fh:
+            for image, one_hot_labels in zip(images, labels):
+                image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
+                labels_columns = " ".join([str(label.item()) for label in one_hot_labels])
+                fh.write(f"{image_columns} {labels_columns}\n")
+
+        return num_images
 
 
 if __name__ == "__main__":
