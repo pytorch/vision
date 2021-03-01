@@ -1003,6 +1003,34 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_images
 
+    def test_not_found_or_corrupted(self):
+        # LSUN does not raise built-in exception, but a custom one. It is expressive enough to not 'cast' it to
+        # RuntimeError or FileNotFoundError that are normally checked by this test.
+        with self.assertRaises(datasets_utils.lazy_importer.lmdb.Error):
+            super().test_not_found_or_corrupted()
+
+
+class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.Kinetics400
+
+    def inject_fake_data(self, tmpdir, config):
+        classes = ("Abseiling", "Zumba")
+        num_videos_per_class = 2
+
+        digits = string.ascii_letters + string.digits + "-_"
+        for cls in classes:
+            datasets_utils.create_video_folder(
+                tmpdir,
+                cls,
+                lambda _: f"{datasets_utils.create_random_string(11, digits)}.avi",
+                num_videos_per_class,
+            )
+
+        return num_videos_per_class * len(classes)
+
+    def test_not_found_or_corrupted(self):
+        self.skipTest("Dataset currently does not handle the case of no found videos.")
+
 
 if __name__ == "__main__":
     unittest.main()
