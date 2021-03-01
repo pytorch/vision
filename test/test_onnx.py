@@ -91,7 +91,7 @@ class ONNXExporterTester(unittest.TestCase):
                 return ops.nms(boxes, scores, 0.5)
 
         self.run_model(Module(), [(boxes, scores)])
-    
+
     def test_batched_nms(self):
         num_boxes = 100
         boxes = torch.rand(num_boxes, 4)
