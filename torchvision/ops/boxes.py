@@ -69,10 +69,26 @@ def batched_nms(
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
     # Ideally for GPU we'd use a higher threshold
-    elif num_boxes > 4_000:
-        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-    else:
-        return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+    # print("vanilla")
+    a = _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
+    # print("trick")
+    b = _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+    # print('a')
+    # # print(a)
+    # print(a.shape, a.dtype, a.device)
+    # print('b')
+    # # print(b)
+    # print(b.shape, b.dtype, b.device)
+    # print(torch.equal(a, b))
+    # print(a[a != b])
+    # print(b[a != b])
+    # assert torch.equal(a, b)
+    assert torch.equal(a[a != b].sort()[0], b[a != b].sort()[0])
+    return b
+    # elif num_boxes > 4_000:
+    #     return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
+    # else:
+    #     return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
 
 def _batched_nms_coordinate_trick(
