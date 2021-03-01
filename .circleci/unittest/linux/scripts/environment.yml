@@ -5,9 +5,9 @@ channels:
   - conda-forge
 dependencies:
   - pytest
-  - pytest-cov
   - pytest-xdist
   - pytest-timeout
+  - pytest-cov
   - codecov
   - pip
   - libpng
