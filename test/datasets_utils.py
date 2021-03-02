@@ -420,14 +420,17 @@ class DatasetTestCase(unittest.TestCase):
         with self.create_dataset(config) as (dataset, _):
             example = dataset[0]
 
-            actual = len(example)
-            expected = len(self.FEATURE_TYPES)
-            self.assertEqual(
-                actual,
-                expected,
-                f"The number of the returned features does not match the the number of elements in in FEATURE_TYPES: "
-                f"{actual} != {expected}",
-            )
+            if len(self.FEATURE_TYPES) > 1:
+                actual = len(example)
+                expected = len(self.FEATURE_TYPES)
+                self.assertEqual(
+                    actual,
+                    expected,
+                    f"The number of the returned features does not match the the number of elements in in FEATURE_TYPES: "
+                    f"{actual} != {expected}",
+                )
+            else:
+                example = (example,)
 
             for idx, (feature, expected_feature_type) in enumerate(zip(example, self.FEATURE_TYPES)):
                 with self.subTest(idx=idx):
