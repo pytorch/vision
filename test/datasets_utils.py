@@ -442,7 +442,7 @@ class DatasetTestCase(unittest.TestCase):
                 self.assertEqual(
                     actual,
                     expected,
-                    f"The number of the returned features does not match the the number of elements in in FEATURE_TYPES: "
+                    f"The number of the returned features does not match the the number of elements in FEATURE_TYPES: "
                     f"{actual} != {expected}",
                 )
             else:
