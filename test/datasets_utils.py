@@ -436,14 +436,17 @@ class DatasetTestCase(unittest.TestCase):
         with self.create_dataset(config) as (dataset, _):
             example = dataset[0]
 
-            actual = len(example)
-            expected = len(self.FEATURE_TYPES)
-            self.assertEqual(
-                actual,
-                expected,
-                f"The number of the returned features does not match the the number of elements in in FEATURE_TYPES: "
-                f"{actual} != {expected}",
-            )
+            if len(self.FEATURE_TYPES) > 1:
+                actual = len(example)
+                expected = len(self.FEATURE_TYPES)
+                self.assertEqual(
+                    actual,
+                    expected,
+                    f"The number of the returned features does not match the the number of elements in FEATURE_TYPES: "
+                    f"{actual} != {expected}",
+                )
+            else:
+                example = (example,)
 
             for idx, (feature, expected_feature_type) in enumerate(zip(example, self.FEATURE_TYPES)):
                 with self.subTest(idx=idx):
@@ -586,7 +589,13 @@ def create_image_file(
 
     image = create_image_or_video_tensor(size)
     file = pathlib.Path(root) / name
-    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file, **kwargs)
+
+    # torch (num_channels x height x width) -> PIL (width x height x num_channels)
+    image = image.permute(2, 1, 0)
+    # For grayscale images PIL doesn't use a channel dimension
+    if image.shape[2] == 1:
+        image = torch.squeeze(image, 2)
+    PIL.Image.fromarray(image.numpy()).save(file, **kwargs)
     return file
 
 
