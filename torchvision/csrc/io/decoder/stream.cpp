@@ -1,8 +1,8 @@
 #include "stream.h"
+#include <ATen/Parallel.h>
 #include <c10/util/Logging.h>
 #include <stdio.h>
 #include <string.h>
-#include <ATen/Parallel.h>
 #include "util.h"
 
 namespace ffmpeg {
@@ -57,7 +57,7 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
   }
 
   // multithreading heuristics
-  int max_threads = torch::get_num_threads();
+  int max_threads = at::get_num_threads();
   // first a safety check
   if (num_threads > max_threads) {
     num_threads = max_threads;
@@ -94,7 +94,7 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
             << " Codec tag: " << codecCtx_->codec_tag
             << " Codec type: " << codecCtx_->codec_type
             << " Codec extradata: " << codecCtx_->extradata
-            << " Number of threads: " << torch::get_num_threads();
+            << " Number of threads: " << at::get_num_threads();
 
   // after avcodec_open2, value of codecCtx_->time_base is NOT meaningful
   if ((ret = avcodec_open2(codecCtx_, codec, nullptr)) < 0) {
