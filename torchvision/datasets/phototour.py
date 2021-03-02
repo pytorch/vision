@@ -194,8 +194,8 @@ def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
 
     for fpath in list_files:
         img = Image.open(fpath)
-        for y in range(0, 1024, 64):
-            for x in range(0, 1024, 64):
+        for y in range(0, img.height, 64):
+            for x in range(0, img.width, 64):
                 patch = img.crop((x, y, x + 64, y + 64))
                 patches.append(PIL2array(patch))
     return torch.ByteTensor(np.array(patches[:n]))
