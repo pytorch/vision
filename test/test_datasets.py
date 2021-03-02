@@ -57,67 +57,6 @@ class DatasetTestcase(unittest.TestCase):
 
 
 class Tester(DatasetTestcase):
-    def test_imagefolder(self):
-        # TODO: create the fake data on-the-fly
-        FAKEDATA_DIR = get_file_path_2(
-            os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata')
-
-        with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
-            classes = sorted(['a', 'b'])
-            class_a_image_files = [
-                os.path.join(root, 'a', file) for file in ('a1.png', 'a2.png', 'a3.png')
-            ]
-            class_b_image_files = [
-                os.path.join(root, 'b', file) for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')
-            ]
-            dataset = torchvision.datasets.ImageFolder(root, loader=lambda x: x)
-
-            # test if all classes are present
-            self.assertEqual(classes, sorted(dataset.classes))
-
-            # test if combination of classes and class_to_index functions correctly
-            for cls in classes:
-                self.assertEqual(cls, dataset.classes[dataset.class_to_idx[cls]])
-
-            # test if all images were detected correctly
-            class_a_idx = dataset.class_to_idx['a']
-            class_b_idx = dataset.class_to_idx['b']
-            imgs_a = [(img_file, class_a_idx) for img_file in class_a_image_files]
-            imgs_b = [(img_file, class_b_idx) for img_file in class_b_image_files]
-            imgs = sorted(imgs_a + imgs_b)
-            self.assertEqual(imgs, dataset.imgs)
-
-            # test if the datasets outputs all images correctly
-            outputs = sorted([dataset[i] for i in range(len(dataset))])
-            self.assertEqual(imgs, outputs)
-
-            # redo all tests with specified valid image files
-            dataset = torchvision.datasets.ImageFolder(
-                root, loader=lambda x: x, is_valid_file=lambda x: '3' in x)
-            self.assertEqual(classes, sorted(dataset.classes))
-
-            class_a_idx = dataset.class_to_idx['a']
-            class_b_idx = dataset.class_to_idx['b']
-            imgs_a = [(img_file, class_a_idx) for img_file in class_a_image_files
-                      if '3' in img_file]
-            imgs_b = [(img_file, class_b_idx) for img_file in class_b_image_files
-                      if '3' in img_file]
-            imgs = sorted(imgs_a + imgs_b)
-            self.assertEqual(imgs, dataset.imgs)
-
-            outputs = sorted([dataset[i] for i in range(len(dataset))])
-            self.assertEqual(imgs, outputs)
-
-    def test_imagefolder_empty(self):
-        with get_tmp_dir() as root:
-            with self.assertRaises(RuntimeError):
-                torchvision.datasets.ImageFolder(root, loader=lambda x: x)
-
-            with self.assertRaises(RuntimeError):
-                torchvision.datasets.ImageFolder(
-                    root, loader=lambda x: x, is_valid_file=lambda x: False
-                )
-
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
         num_examples = 30
