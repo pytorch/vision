@@ -1318,7 +1318,7 @@ class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
 
     def _add_image(self, fh, image, num_captions_per_image):
         fh.write("<tr>")
-        self._add_image_header(fh,image)
+        self._add_image_header(fh, image)
         fh.write("</tr><tr><td><ul>")
         self._add_image_captions(fh, num_captions_per_image)
         fh.write("</ul></td></tr>")
@@ -1356,7 +1356,9 @@ class Flickr30kTestCase(Flickr8kTestCase):
 
     def _create_annotations_file(self, root, name, images, num_captions_per_image):
         with open(root / name, "w") as fh:
-            for image, (idx, caption) in itertools.product(images, enumerate(self._create_captions(num_captions_per_image))):
+            for image, (idx, caption) in itertools.product(
+                images, enumerate(self._create_captions(num_captions_per_image))
+            ):
                 fh.write(f"{image.name}#{idx}\t{caption}\n")
 
 
