@@ -69,9 +69,9 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     codecCtx_->active_thread_type = 1;
   } else {
     // otherwise set sensible defaults
-    // with the special case for the different MPEG codecs
+    // with the special case for the different MPEG4 codecs
     // that don't have threading context functions
-    // TODO: automate this using native c++ function lookups
+    // TODO: potentially automate this using native c++ function lookups
     if (strcmp(codecCtx_->codec->name, "mpeg4") == 0 &&
         codecCtx_->codec_type == 0) {
       if (codecCtx_->codec_tag == 1684633208) {

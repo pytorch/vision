@@ -98,7 +98,8 @@ class VideoReader:
             Currently available options include ``['video', 'audio']``
         
         num_threads (int, optional): number of threads used by the codec to decode video.
-            Default value (0) enables multithreading with codec-related heuristic.
+            Default value (0) enables multithreading with codec-dependent heuristic. The performance
+            will depend on the version of FFMPEG codecs supported.
     """
 
     def __init__(self, path, stream="video", num_threads=0):
