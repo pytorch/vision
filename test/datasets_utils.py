@@ -12,7 +12,6 @@ import unittest
 import unittest.mock
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import PIL
 import PIL.Image
 
@@ -575,11 +574,11 @@ def create_image_file(
     file = pathlib.Path(root) / name
 
     # torch (num_channels x height x width) -> PIL (width x height x num_channels)
-    image = image.permute(2, 1, 0).numpy()
+    image = image.permute(2, 1, 0)
     # For grayscale images PIL doesn't use a channel dimension
     if image.shape[2] == 1:
-        image = np.squeeze(image, 2)
-    PIL.Image.fromarray(image).save(file, **kwargs)
+        image = torch.squeeze(image, 2)
+    PIL.Image.fromarray(image.numpy()).save(file, **kwargs)
     return file
 
 
