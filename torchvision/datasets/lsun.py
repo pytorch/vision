@@ -23,13 +23,7 @@ class LSUNClass(VisionDataset):
                              readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
             self.length = txn.stat()['entries']
-        cache_file = '_cache_' + ''.join(c for c in root if c in string.ascii_letters)
-        if os.path.isfile(cache_file):
-            self.keys = pickle.load(open(cache_file, "rb"))
-        else:
-            with self.env.begin(write=False) as txn:
-                self.keys = [key for key in txn.cursor().iternext(keys=True, values=False)]
-            pickle.dump(self.keys, open(cache_file, "wb"))
+            self.keys = [key for key in txn.cursor().iternext(keys=True, values=False)]
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         img, target = None, None
