@@ -121,9 +121,7 @@ class PhotoTour(VisionDataset):
         return data1, data2, m[2]
 
     def __len__(self) -> int:
-        if self.train:
-            return self.lens[self.name]
-        return len(self.matches)
+        return len(self.data if self.train else self.matches)
 
     def _check_datafile_exists(self) -> bool:
         return os.path.exists(self.data_file)
