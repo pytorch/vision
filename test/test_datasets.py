@@ -27,6 +27,7 @@ import bz2
 import torch.nn.functional as F
 import string
 import io
+import zipfile
 
 
 try:
@@ -1273,6 +1274,84 @@ class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
 
     def test_not_found_or_corrupted(self):
         self.skipTest("The data is generated at creation and thus cannot be non-existent or corrupted.")
+
+
+class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.PhotoTour
+
+    # The PhotoTour dataset returns examples with different features with respect to the 'train' parameter. Thus,
+    # we overwrite 'FEATURE_TYPES' with a dummy value to satisfy the initial checks of the base class. Furthermore, we
+    # overwrite the 'test_feature_types()' method to select the correct feature types before the test is run.
+    FEATURE_TYPES = ()
+    _TRAIN_FEATURE_TYPES = (torch.Tensor,)
+    _TEST_FEATURE_TYPES = (torch.Tensor, torch.Tensor, torch.Tensor)
+
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    _NAME = "liberty"
+
+    def dataset_args(self, tmpdir, config):
+        return tmpdir, self._NAME
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        # In contrast to the original data, the fake images injected here comprise only a single patch. Thus,
+        # num_images == num_patches.
+        num_patches = 5
+
+        image_files = self._create_images(tmpdir, self._NAME, num_patches)
+        point_ids, info_file = self._create_info_file(tmpdir / self._NAME, num_patches)
+        num_matches, matches_file = self._create_matches_file(tmpdir / self._NAME, num_patches, point_ids)
+
+        self._create_archive(tmpdir, self._NAME, *image_files, info_file, matches_file)
+
+        return num_patches if config["train"] else num_matches
+
+    def _create_images(self, root, name, num_images):
+        # The images in the PhotoTour dataset comprises of multiple grayscale patches of 64 x 64 pixels. Thus, the
+        # smallest fake image is 64 x 64 pixels and comprises a single patch.
+        return datasets_utils.create_image_folder(
+            root, name, lambda idx: f"patches{idx:04d}.bmp", num_images, size=(1, 64, 64)
+        )
+
+    def _create_info_file(self, root, num_images):
+        point_ids = torch.randint(num_images, size=(num_images,)).tolist()
+
+        file = root / "info.txt"
+        with open(file, "w") as fh:
+            fh.writelines([f"{point_id} 0\n" for point_id in point_ids])
+
+        return point_ids, file
+
+    def _create_matches_file(self, root, num_patches, point_ids):
+        lines = [
+            f"{patch_id1} {point_ids[patch_id1]} 0 {patch_id2} {point_ids[patch_id2]} 0\n"
+            for patch_id1, patch_id2 in itertools.combinations(range(num_patches), 2)
+        ]
+
+        file = root / "m50_100000_100000_0.txt"
+        with open(file, "w") as fh:
+            fh.writelines(lines)
+
+        return len(lines), file
+
+    def _create_archive(self, root, name, *files):
+        archive = root / f"{name}.zip"
+        with zipfile.ZipFile(archive, "w") as zip:
+            for file in files:
+                zip.write(file, arcname=file.relative_to(root))
+
+        return archive
+
+    @datasets_utils.test_all_configs
+    def test_feature_types(self, config):
+        feature_types = self.FEATURE_TYPES
+        self.FEATURE_TYPES = self._TRAIN_FEATURE_TYPES if config["train"] else self._TEST_FEATURE_TYPES
+        try:
+            super().test_feature_types.__wrapped__(self, config)
+        finally:
+            self.FEATURE_TYPES = feature_types
 
 
 class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
