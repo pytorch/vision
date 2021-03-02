@@ -1281,7 +1281,7 @@ class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, list)
 
     _IMAGES_FOLDER = "images"
-    _ANNOTATIONS_FILE = "annotations.html"
+    _ANNOTATIONS_FILE = "captions.html"
 
     def dataset_args(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
@@ -1342,6 +1342,22 @@ class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
             self.assertSequenceEqual(captions, info["captions"])
+
+
+class Flickr30kTestCase(Flickr8kTestCase):
+    DATASET_CLASS = datasets.Flickr30k
+
+    FEATURE_TYPES = (PIL.Image.Image, list)
+
+    _ANNOTATIONS_FILE = "captions.token"
+
+    def _image_file_name(self, idx):
+        return f"{idx}.jpg"
+
+    def _create_annotations_file(self, root, name, images, num_captions_per_image):
+        with open(root / name, "w") as fh:
+            for image, (idx, caption) in itertools.product(images, enumerate(self._create_captions(num_captions_per_image))):
+                fh.write(f"{image.name}#{idx}\t{caption}\n")
 
 
 if __name__ == "__main__":
