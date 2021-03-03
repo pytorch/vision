@@ -356,6 +356,14 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        max_size (int, optional): The maximum allowed for the longer edge of
+            the resized image: if the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``, then
+            the image is resized again so that the longer edge is equal to
+            ``max_size``. As a result, ```size` might be overruled, i.e the
+            smaller edge may be shorter than ``size``. This is only supported
+            if ``size`` is an int (or a sequence of length 1 in torchscript
+            mode).
 
     Returns:
         PIL Image or Tensor: Resized image.
