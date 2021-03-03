@@ -988,7 +988,7 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
         folder = f"{cls}_lmdb"
 
         num_images = torch.randint(1, 4, size=()).item()
-        format = "webp"
+        format = "png"
         files = datasets_utils.create_image_folder(root, folder, lambda idx: f"{idx}.{format}", num_images)
 
         with lmdb.open(str(root / folder)) as env, env.begin(write=True) as txn:
