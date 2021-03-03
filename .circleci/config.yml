@@ -194,7 +194,11 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - run: packaging/build_conda.sh
+      - run:
+          name: Build conda packages
+          no_output_timeout: 20m
+          command: |
+            packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
@@ -593,7 +597,7 @@ jobs:
 
           keys:
             - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
- 
+
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
