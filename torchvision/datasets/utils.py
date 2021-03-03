@@ -7,9 +7,21 @@ import tarfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar
 from urllib.parse import urlparse
 import zipfile
+import urllib
+import urllib.request
+import urllib.error
 
 import torch
 from torch.utils.model_zoo import tqdm
+
+
+USER_AGENT = "pytorch/vision"
+
+
+def _urlretrieve(url: str, filename: str, **kwargs: Any) -> None:
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with open(filename, "wb") as fh, urllib.request.urlopen(request) as response:
+        fh.write(response.read())
 
 
 def gen_bar_updater() -> Callable[[int, int, int], None]:
@@ -83,8 +95,6 @@ def download_url(
         md5 (str, optional): MD5 checksum of the download. If None, do not check
         max_redirect_hops (int, optional): Maximum number of redirect hops allowed
     """
-    import urllib
-
     root = os.path.expanduser(root)
     if not filename:
         filename = os.path.basename(url)
@@ -106,20 +116,23 @@ def download_url(
         return download_file_from_google_drive(file_id, root, filename, md5)
 
     # download the file
+    headers = {"User-Agent": USER_AGENT}
     try:
         print('Downloading ' + url + ' to ' + fpath)
-        urllib.request.urlretrieve(
+        _urlretrieve(
             url, fpath,
-            reporthook=gen_bar_updater()
+            reporthook=gen_bar_updater(),
+            headers=headers,
         )
     except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
         if url[:5] == 'https':
             url = url.replace('https:', 'http:')
             print('Failed download. Trying https -> http instead.'
                   ' Downloading ' + url + ' to ' + fpath)
-            urllib.request.urlretrieve(
+            _urlretrieve(
                 url, fpath,
-                reporthook=gen_bar_updater()
+                reporthook=gen_bar_updater(),
+                headers=headers,
             )
         else:
             raise e
