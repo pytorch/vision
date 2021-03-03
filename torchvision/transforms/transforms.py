@@ -275,7 +275,8 @@ class Resize(torch.nn.Module):
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2})'.format(self.size, interpolate_str, max_size)
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2})'.format(
+            self.size, interpolate_str, max_size)
 
 
 class Scale(Resize):

@@ -417,7 +417,8 @@ class Tester(TransformsTester):
                         resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
 
                         self.assertEqual(
-                            resized_tensor.size()[1:], resized_pil_img.size[::-1], msg="{}, {}".format(size, interpolation)
+                            resized_tensor.size()[1:], resized_pil_img.size[::-1],
+                            msg="{}, {}".format(size, interpolation)
                         )
 
                         if interpolation not in [NEAREST, ]:
@@ -439,7 +440,8 @@ class Tester(TransformsTester):
                         else:
                             script_size = size
 
-                        resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, max_size=max_size)
+                        resize_result = script_fn(tensor, size=script_size, interpolation=interpolation,
+                                                  max_size=max_size)
                         self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
                         self._test_fn_on_batch(
@@ -457,7 +459,6 @@ class Tester(TransformsTester):
                 F.resize(img, size=(32, 34), max_size=35)
             with self.assertRaisesRegex(ValueError, "TODO"):
                 F.resize(img, size=32, max_size=32)
-
 
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:

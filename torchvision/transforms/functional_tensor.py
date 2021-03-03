@@ -487,7 +487,7 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
     if isinstance(size, list):
         if len(size) not in [1, 2]:
             raise ValueError("Size must be an int or a 1 or 2 element tuple/list, not a "
-                            "{} element tuple/list".format(len(size)))
+                             "{} element tuple/list".format(len(size)))
         if max_size is not None and len(size) != 1:
             raise ValueError("TODO proper error message")
 
