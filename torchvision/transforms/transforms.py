@@ -244,13 +244,14 @@ class Resize(torch.nn.Module):
 
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
         if isinstance(size, Sequence) and len(size) not in (1, 2):
             raise ValueError("If size is a sequence, it should have 1 or 2 values")
         self.size = size
+        self.max_size = max_size
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -270,11 +271,11 @@ class Resize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation)
+        return F.resize(img, self.size, self.interpolation, self.max_size)
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2})'.format(self.size, interpolate_str, max_size)
 
 
 class Scale(Resize):

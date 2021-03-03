@@ -337,7 +337,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return tensor
 
 
-def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR) -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR, max_size: Optional[int] = None) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -372,9 +372,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.resize(img, size=size, interpolation=pil_interpolation)
+        return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
-    return F_t.resize(img, size=size, interpolation=interpolation.value)
+    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size)
 
 
 def scale(*args, **kwargs):

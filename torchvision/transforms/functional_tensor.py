@@ -506,8 +506,11 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
 
         new_short, new_long = requested_new_short, int(requested_new_short * long / short)
 
-        if max_size is not None and new_long > max_size:
-            new_short, new_long = int(max_size * new_short / new_long), max_size
+        if max_size is not None:
+            if max_size <= requested_new_short:
+                raise ValueError("TODO")
+            if new_long > max_size:
+                new_short, new_long = int(max_size * new_short / new_long), max_size
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
 
