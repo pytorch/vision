@@ -111,10 +111,10 @@ class Tester(DatasetTestcase):
 
     def test_imagefolder_empty(self):
         with get_tmp_dir() as root:
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(FileNotFoundError):
                 torchvision.datasets.ImageFolder(root, loader=lambda x: x)
 
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(FileNotFoundError):
                 torchvision.datasets.ImageFolder(
                     root, loader=lambda x: x, is_valid_file=lambda x: False
                 )
