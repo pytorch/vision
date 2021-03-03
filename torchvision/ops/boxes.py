@@ -22,7 +22,8 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
 
     Args:
         boxes (Tensor[N, 4])): boxes to perform NMS on. They
-            are expected to be in (x1, y1, x2, y2) format
+            are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and
+            ``0 <= y1 < y2``.
         scores (Tensor[N]): scores for each one of the boxes
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
 
@@ -50,7 +51,8 @@ def batched_nms(
 
     Args:
         boxes (Tensor[N, 4]): boxes where NMS will be performed. They
-            are expected to be in (x1, y1, x2, y2) format
+            are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and
+            ``0 <= y1 < y2``.
         scores (Tensor[N]): scores for each one of the boxes
         idxs (Tensor[N]): indices of the categories for each one of the boxes.
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
@@ -79,7 +81,8 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     Remove boxes which contains at least one side smaller than min_size.
 
     Args:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
+        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+            with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         min_size (float): minimum size
 
     Returns:
@@ -97,7 +100,8 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     Clip boxes so that they lie inside an image of size `size`.
 
     Args:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
+        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+            with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         size (Tuple[height, width]): size of the image
 
     Returns:
@@ -170,6 +174,14 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     return boxes
 
 
+def _upcast(t: Tensor) -> Tensor:
+    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+    if t.is_floating_point():
+        return t if t.dtype in (torch.float32, torch.float64) else t.float()
+    else:
+        return t if t.dtype in (torch.int32, torch.int64) else t.int()
+
+
 def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
@@ -177,11 +189,13 @@ def box_area(boxes: Tensor) -> Tensor:
 
     Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
-            are expected to be in (x1, y1, x2, y2) format
+            are expected to be in (x1, y1, x2, y2) format with
+            ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Returns:
         area (Tensor[N]): area for each box
     """
+    boxes = _upcast(boxes)
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
@@ -194,7 +208,7 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
     lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
     rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
 
-    wh = (rb - lt).clamp(min=0)  # [N,M,2]
+    wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
     inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
 
     union = area1[:, None] + area2 - inter
@@ -206,7 +220,8 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
 
-    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
         boxes1 (Tensor[N, 4])
@@ -225,7 +240,8 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return generalized intersection-over-union (Jaccard index) of boxes.
 
-    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
         boxes1 (Tensor[N, 4])
@@ -247,7 +263,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
 
-    whi = (rbi - lti).clamp(min=0)  # [N,M,2]
+    whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
     areai = whi[:, :, 0] * whi[:, :, 1]
 
     return iou - (areai - union) / areai

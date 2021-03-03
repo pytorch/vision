@@ -181,9 +181,7 @@ def get_extensions():
 
     define_macros = []
 
-    extra_compile_args = {
-        'cxx': []
-    }
+    extra_compile_args = {'cxx': []}
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
@@ -198,13 +196,12 @@ def get_extensions():
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
-        extra_compile_args['nvcc'] = nvcc_flags
+        extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
+
         extra_compile_args['cxx'].append('/MP')
-    elif sys.platform == 'linux':
-        extra_compile_args['cxx'].append('-fopenmp')
 
     debug_mode = os.getenv('DEBUG', '0') == '1'
     if debug_mode:

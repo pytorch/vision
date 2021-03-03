@@ -20,7 +20,9 @@ def ps_roi_pool(
     Args:
         input (Tensor[N, C, H, W]): input tensor
         boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in (x1, y1, x2, y2)
-            format where the regions will be taken from. If a single Tensor is passed,
+            format where the regions will be taken from.
+            The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+            If a single Tensor is passed,
             then the first column should contain the batch index. If a list of Tensors
             is passed, then each Tensor will correspond to the boxes for an element i
             in a batch
