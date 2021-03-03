@@ -886,7 +886,10 @@ def autocontrast(img: Tensor) -> Tensor:
 
 
 def _scale_channel(img_chan):
-    hist = torch.bincount(img_chan.view(-1),  minlength=256)
+    if img_chan.is_cuda:
+        hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
+    else:
+        hist = torch.bincount(img_chan.view(-1), minlength=256)
 
     nonzero_hist = hist[hist != 0]
     step = nonzero_hist[:-1].sum() // 255
