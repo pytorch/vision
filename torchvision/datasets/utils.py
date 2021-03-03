@@ -13,9 +13,15 @@ import urllib.error
 
 import torch
 from torch.utils.model_zoo import tqdm
+try:
+    from ..version import __version__ as __vision_version__   # noqa: F401
+except ImportError:
+    __vision_version__ = "undefined"
 
-
-USER_AGENT = "pytorch/vision"
+USER_AGENT = os.environ.get(
+    "TORCHVISION_USER_AGENT",
+    f"pytorch-{torch.__version__}/vision-{__vision_version__}"
+)
 
 
 def _urlretrieve(url: str, filename: str, chunk_size: int = 1024) -> None:
