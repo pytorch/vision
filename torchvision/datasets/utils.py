@@ -121,7 +121,6 @@ def download_url(
         return download_file_from_google_drive(file_id, root, filename, md5)
 
     # download the file
-    headers = {"User-Agent": USER_AGENT}
     try:
         print('Downloading ' + url + ' to ' + fpath)
         _urlretrieve(url, fpath)
