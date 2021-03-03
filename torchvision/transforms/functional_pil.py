@@ -223,7 +223,10 @@ def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
 
         if max_size is not None:
             if max_size <= size:
-                raise ValueError("TODO")
+                raise ValueError(
+                    f"max_size = {max_size} must be strictly greater than the requested "
+                    f"size for the smaller edge size = {size}"
+                )
             if new_long > max_size:
                 new_short, new_long = int(max_size * new_short / new_long), max_size
 
@@ -231,7 +234,10 @@ def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
         return img.resize((new_w, new_h), interpolation)
     else:
         if max_size is not None:
-            raise ValueError("TODO: proper error message")
+            raise ValueError(
+                "max_size should only be passed if size specifies the length of the smaller edge, "
+                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+            )
         return img.resize(size[::-1], interpolation)
 
 

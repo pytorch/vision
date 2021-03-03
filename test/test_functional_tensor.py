@@ -455,9 +455,10 @@ class Tester(TransformsTester):
             self.assertTrue(res1.equal(res2))
 
         for img in (tensor, pil_img):
-            with self.assertRaisesRegex(ValueError, "TODO"):
+            exp_msg = "max_size should only be passed if size specifies the length of the smaller edge"
+            with self.assertRaisesRegex(ValueError, exp_msg):
                 F.resize(img, size=(32, 34), max_size=35)
-            with self.assertRaisesRegex(ValueError, "TODO"):
+            with self.assertRaisesRegex(ValueError, "max_size = 32 must be strictly greater"):
                 F.resize(img, size=32, max_size=32)
 
     def test_resized_crop(self):
