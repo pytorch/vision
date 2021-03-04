@@ -23,6 +23,7 @@ import torch
 import shutil
 import json
 import random
+import bz2
 import torch.nn.functional as F
 import string
 import io
@@ -1169,6 +1170,25 @@ class SEMEIONTestCase(datasets_utils.ImageDatasetTestCase):
                 image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
                 labels_columns = " ".join([str(label.item()) for label in one_hot_labels])
                 fh.write(f"{image_columns} {labels_columns}\n")
+
+        return num_images
+
+
+class USPSTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.USPS
+
+    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 2 if config["train"] else 1
+
+        images = torch.rand(num_images, 256) * 2 - 1
+        labels = torch.randint(1, 11, size=(num_images,))
+
+        with bz2.open(pathlib.Path(tmpdir) / f"usps{'.t' if not config['train'] else ''}.bz2", "w") as fh:
+            for image, label in zip(images, labels):
+                line = " ".join((str(label.item()), *[f"{idx}:{pixel:.6f}" for idx, pixel in enumerate(image, 1)]))
+                fh.write(f"{line}\n".encode())
 
         return num_images
 
