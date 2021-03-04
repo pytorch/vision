@@ -1,0 +1,2649 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-90545585-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchvision.models &mdash; Torchvision master documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="torchvision.ops" href="ops.html" />
+    <link rel="prev" title="torchvision.io" href="io.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="active">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0+cu111 ) &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">torchvision.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">torchvision.ops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+</ul>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>torchvision.models</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/models.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+  <div class="section" id="torchvision-models">
+<h1>torchvision.models<a class="headerlink" href="#torchvision-models" title="Permalink to this headline">¶</a></h1>
+<p>The models subpackage contains definitions of models for addressing
+different tasks, including: image classification, pixelwise semantic
+segmentation, object detection, instance segmentation, person
+keypoint detection and video classification.</p>
+<div class="section" id="classification">
+<h2>Classification<a class="headerlink" href="#classification" title="Permalink to this headline">¶</a></h2>
+<p>The models subpackage contains definitions for the following model
+architectures for image classification:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://arxiv.org/abs/1404.5997">AlexNet</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1409.1556">VGG</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1512.03385">ResNet</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1602.07360">SqueezeNet</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1608.06993">DenseNet</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1512.00567">Inception</a> v3</li>
+<li><a class="reference external" href="https://arxiv.org/abs/1409.4842">GoogLeNet</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1807.11164">ShuffleNet</a> v2</li>
+<li><a class="reference external" href="https://arxiv.org/abs/1801.04381">MobileNetV2</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1905.02244">MobileNetV3</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1611.05431">ResNeXt</a></li>
+<li><a class="reference internal" href="#wide-resnet">Wide ResNet</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1807.11626">MNASNet</a></li>
+</ul>
+<p>You can construct a model with random weights by calling its constructor:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
+<span class="n">resnet18</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
+<span class="n">alexnet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">alexnet</span><span class="p">()</span>
+<span class="n">vgg16</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vgg16</span><span class="p">()</span>
+<span class="n">squeezenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">squeezenet1_0</span><span class="p">()</span>
+<span class="n">densenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">densenet161</span><span class="p">()</span>
+<span class="n">inception</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">inception_v3</span><span class="p">()</span>
+<span class="n">googlenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">googlenet</span><span class="p">()</span>
+<span class="n">shufflenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">shufflenet_v2_x1_0</span><span class="p">()</span>
+<span class="n">mobilenet_v2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">()</span>
+<span class="n">mobilenet_v3_large</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">()</span>
+<span class="n">mobilenet_v3_small</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v3_small</span><span class="p">()</span>
+<span class="n">resnext50_32x4d</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">resnext50_32x4d</span><span class="p">()</span>
+<span class="n">wide_resnet50_2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">wide_resnet50_2</span><span class="p">()</span>
+<span class="n">mnasnet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mnasnet1_0</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We provide pre-trained models, using the PyTorch <code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.utils.model_zoo</span></code>.
+These can be constructed by passing <code class="docutils literal notranslate"><span class="pre">pretrained=True</span></code>:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
+<span class="n">resnet18</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">alexnet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">alexnet</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">squeezenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">squeezenet1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">vgg16</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vgg16</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">densenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">densenet161</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">inception</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">inception_v3</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">googlenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">googlenet</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">shufflenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">shufflenet_v2_x1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mobilenet_v2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mobilenet_v3_large</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mobilenet_v3_small</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mobilenet_v3_small</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">resnext50_32x4d</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">resnext50_32x4d</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">wide_resnet50_2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">wide_resnet50_2</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mnasnet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">mnasnet1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Instancing a pre-trained model will download its weights to a cache directory.
+This directory can be set using the <cite>TORCH_MODEL_ZOO</cite> environment variable. See
+<code class="xref py py-func docutils literal notranslate"><span class="pre">torch.utils.model_zoo.load_url()</span></code> for details.</p>
+<p>Some models use modules which have different training and evaluation
+behavior, such as batch normalization. To switch between these modes, use
+<code class="docutils literal notranslate"><span class="pre">model.train()</span></code> or <code class="docutils literal notranslate"><span class="pre">model.eval()</span></code> as appropriate. See
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">train()</span></code> or <code class="xref py py-meth docutils literal notranslate"><span class="pre">eval()</span></code> for details.</p>
+<p>All pre-trained models expect input images normalized in the same way,
+i.e. mini-batches of 3-channel RGB images of shape (3 x H x W),
+where H and W are expected to be at least 224.
+The images have to be loaded in to a range of [0, 1] and then normalized
+using <code class="docutils literal notranslate"><span class="pre">mean</span> <span class="pre">=</span> <span class="pre">[0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406]</span></code> and <code class="docutils literal notranslate"><span class="pre">std</span> <span class="pre">=</span> <span class="pre">[0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225]</span></code>.
+You can use the following transform to normalize:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">normalize</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">],</span>
+                                 <span class="n">std</span><span class="o">=</span><span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>An example of such normalization can be found in the imagenet example
+<a class="reference external" href="https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101">here</a></p>
+<p>The process for obtaining the values of <cite>mean</cite> and <cite>std</cite> is roughly equivalent
+to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">T</span>
+
+<span class="n">transform</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span><span class="n">T</span><span class="o">.</span><span class="n">Resize</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">T</span><span class="o">.</span><span class="n">CenterCrop</span><span class="p">(</span><span class="mi">224</span><span class="p">),</span> <span class="n">T</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()])</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">ImageNet</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+
+<span class="n">means</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">stds</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+    <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
+    <span class="n">stds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
+
+<span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">stds</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Unfortunately, the concrete <cite>subset</cite> that was used is lost. For more
+information see <a class="reference external" href="https://github.com/pytorch/vision/issues/1439">this discussion</a>
+or <a class="reference external" href="https://github.com/pytorch/vision/pull/1965">these experiments</a>.</p>
+<p>ImageNet 1-crop error rates (224x224)</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="22%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Model</th>
+<th class="head">Acc&#64;1</th>
+<th class="head">Acc&#64;5</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>AlexNet</td>
+<td>56.522</td>
+<td>79.066</td>
+</tr>
+<tr class="row-odd"><td>VGG-11</td>
+<td>69.020</td>
+<td>88.628</td>
+</tr>
+<tr class="row-even"><td>VGG-13</td>
+<td>69.928</td>
+<td>89.246</td>
+</tr>
+<tr class="row-odd"><td>VGG-16</td>
+<td>71.592</td>
+<td>90.382</td>
+</tr>
+<tr class="row-even"><td>VGG-19</td>
+<td>72.376</td>
+<td>90.876</td>
+</tr>
+<tr class="row-odd"><td>VGG-11 with batch normalization</td>
+<td>70.370</td>
+<td>89.810</td>
+</tr>
+<tr class="row-even"><td>VGG-13 with batch normalization</td>
+<td>71.586</td>
+<td>90.374</td>
+</tr>
+<tr class="row-odd"><td>VGG-16 with batch normalization</td>
+<td>73.360</td>
+<td>91.516</td>
+</tr>
+<tr class="row-even"><td>VGG-19 with batch normalization</td>
+<td>74.218</td>
+<td>91.842</td>
+</tr>
+<tr class="row-odd"><td>ResNet-18</td>
+<td>69.758</td>
+<td>89.078</td>
+</tr>
+<tr class="row-even"><td>ResNet-34</td>
+<td>73.314</td>
+<td>91.420</td>
+</tr>
+<tr class="row-odd"><td>ResNet-50</td>
+<td>76.130</td>
+<td>92.862</td>
+</tr>
+<tr class="row-even"><td>ResNet-101</td>
+<td>77.374</td>
+<td>93.546</td>
+</tr>
+<tr class="row-odd"><td>ResNet-152</td>
+<td>78.312</td>
+<td>94.046</td>
+</tr>
+<tr class="row-even"><td>SqueezeNet 1.0</td>
+<td>58.092</td>
+<td>80.420</td>
+</tr>
+<tr class="row-odd"><td>SqueezeNet 1.1</td>
+<td>58.178</td>
+<td>80.624</td>
+</tr>
+<tr class="row-even"><td>Densenet-121</td>
+<td>74.434</td>
+<td>91.972</td>
+</tr>
+<tr class="row-odd"><td>Densenet-169</td>
+<td>75.600</td>
+<td>92.806</td>
+</tr>
+<tr class="row-even"><td>Densenet-201</td>
+<td>76.896</td>
+<td>93.370</td>
+</tr>
+<tr class="row-odd"><td>Densenet-161</td>
+<td>77.138</td>
+<td>93.560</td>
+</tr>
+<tr class="row-even"><td>Inception v3</td>
+<td>77.294</td>
+<td>93.450</td>
+</tr>
+<tr class="row-odd"><td>GoogleNet</td>
+<td>69.778</td>
+<td>89.530</td>
+</tr>
+<tr class="row-even"><td>ShuffleNet V2 x1.0</td>
+<td>69.362</td>
+<td>88.316</td>
+</tr>
+<tr class="row-odd"><td>ShuffleNet V2 x0.5</td>
+<td>60.552</td>
+<td>81.746</td>
+</tr>
+<tr class="row-even"><td>MobileNet V2</td>
+<td>71.878</td>
+<td>90.286</td>
+</tr>
+<tr class="row-odd"><td>MobileNet V3 Large</td>
+<td>74.042</td>
+<td>91.340</td>
+</tr>
+<tr class="row-even"><td>MobileNet V3 Small</td>
+<td>67.668</td>
+<td>87.402</td>
+</tr>
+<tr class="row-odd"><td>ResNeXt-50-32x4d</td>
+<td>77.618</td>
+<td>93.698</td>
+</tr>
+<tr class="row-even"><td>ResNeXt-101-32x8d</td>
+<td>79.312</td>
+<td>94.526</td>
+</tr>
+<tr class="row-odd"><td>Wide ResNet-50-2</td>
+<td>78.468</td>
+<td>94.086</td>
+</tr>
+<tr class="row-even"><td>Wide ResNet-101-2</td>
+<td>78.848</td>
+<td>94.284</td>
+</tr>
+<tr class="row-odd"><td>MNASNet 1.0</td>
+<td>73.456</td>
+<td>91.510</td>
+</tr>
+<tr class="row-even"><td>MNASNet 0.5</td>
+<td>67.734</td>
+<td>87.490</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="id1">
+<h3>Alexnet<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.alexnet">
+<code class="descclassname">torchvision.models.</code><code class="descname">alexnet</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.alexnet.AlexNet<a class="reference internal" href="_modules/torchvision/models/alexnet.html#alexnet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.alexnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>AlexNet model architecture from the
+<a class="reference external" href="https://arxiv.org/abs/1404.5997">“One weird trick…”</a> paper.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id2">
+<h3>VGG<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.vgg11">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg11</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg11"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg11" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 11-layer model (configuration “A”) from
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg11_bn">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg11_bn</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg11_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg11_bn" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 11-layer model (configuration “A”) with batch normalization
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg13">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg13</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg13"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg13" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 13-layer model (configuration “B”)
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg13_bn">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg13_bn</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg13_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg13_bn" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 13-layer model (configuration “B”) with batch normalization
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg16">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg16</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg16"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg16" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 16-layer model (configuration “D”)
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg16_bn">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg16_bn</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg16_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg16_bn" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 16-layer model (configuration “D”) with batch normalization
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg19">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg19</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg19"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg19" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 19-layer model (configuration “E”)
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.vgg19_bn">
+<code class="descclassname">torchvision.models.</code><code class="descname">vgg19_bn</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg19_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg19_bn" title="Permalink to this definition">¶</a></dt>
+<dd><p>VGG 19-layer model (configuration ‘E’) with batch normalization
+<cite>“Very Deep Convolutional Networks For Large-Scale Image Recognition” &lt;https://arxiv.org/pdf/1409.1556.pdf&gt;</cite>._</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id3">
+<h3>ResNet<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.resnet18">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnet18</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnet18"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnet18" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNet-18 model from
+<a class="reference external" href="https://arxiv.org/pdf/1512.03385.pdf">“Deep Residual Learning for Image Recognition”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.resnet34">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnet34</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnet34"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnet34" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNet-34 model from
+<a class="reference external" href="https://arxiv.org/pdf/1512.03385.pdf">“Deep Residual Learning for Image Recognition”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.resnet50">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnet50</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnet50"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnet50" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNet-50 model from
+<a class="reference external" href="https://arxiv.org/pdf/1512.03385.pdf">“Deep Residual Learning for Image Recognition”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.resnet101">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnet101</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnet101"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnet101" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNet-101 model from
+<a class="reference external" href="https://arxiv.org/pdf/1512.03385.pdf">“Deep Residual Learning for Image Recognition”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.resnet152">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnet152</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnet152"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnet152" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNet-152 model from
+<a class="reference external" href="https://arxiv.org/pdf/1512.03385.pdf">“Deep Residual Learning for Image Recognition”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id8">
+<h3>SqueezeNet<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.squeezenet1_0">
+<code class="descclassname">torchvision.models.</code><code class="descname">squeezenet1_0</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.squeezenet.SqueezeNet<a class="reference internal" href="_modules/torchvision/models/squeezenet.html#squeezenet1_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.squeezenet1_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>SqueezeNet model architecture from the <a class="reference external" href="https://arxiv.org/abs/1602.07360">“SqueezeNet: AlexNet-level
+accuracy with 50x fewer parameters and &lt;0.5MB model size”</a> paper.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.squeezenet1_1">
+<code class="descclassname">torchvision.models.</code><code class="descname">squeezenet1_1</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.squeezenet.SqueezeNet<a class="reference internal" href="_modules/torchvision/models/squeezenet.html#squeezenet1_1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.squeezenet1_1" title="Permalink to this definition">¶</a></dt>
+<dd><p>SqueezeNet 1.1 model from the <a class="reference external" href="https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1">official SqueezeNet repo</a>.
+SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
+than SqueezeNet 1.0, without sacrificing accuracy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id9">
+<h3>DenseNet<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.densenet121">
+<code class="descclassname">torchvision.models.</code><code class="descname">densenet121</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet121"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet121" title="Permalink to this definition">¶</a></dt>
+<dd><p>Densenet-121 model from
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>memory_efficient</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – but slower. Default: <em>False</em>. See <a class="reference external" href="https://arxiv.org/pdf/1707.06990.pdf">“paper”</a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.densenet169">
+<code class="descclassname">torchvision.models.</code><code class="descname">densenet169</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet169"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet169" title="Permalink to this definition">¶</a></dt>
+<dd><p>Densenet-169 model from
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>memory_efficient</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – <p>but slower. Default: <em>False</em>. See <a class="reference external" href="https://arxiv.org/pdf/1707.06990.pdf">“paper”</a>.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.densenet161">
+<code class="descclassname">torchvision.models.</code><code class="descname">densenet161</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet161"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet161" title="Permalink to this definition">¶</a></dt>
+<dd><p>Densenet-161 model from
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>memory_efficient</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – <p>but slower. Default: <em>False</em>. See <a class="reference external" href="https://arxiv.org/pdf/1707.06990.pdf">“paper”</a>.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.densenet201">
+<code class="descclassname">torchvision.models.</code><code class="descname">densenet201</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet201"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet201" title="Permalink to this definition">¶</a></dt>
+<dd><p>Densenet-201 model from
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>memory_efficient</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – <p>but slower. Default: <em>False</em>. See <a class="reference external" href="https://arxiv.org/pdf/1707.06990.pdf">“paper”</a>.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="inception-v3">
+<h3>Inception v3<a class="headerlink" href="#inception-v3" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.inception_v3">
+<code class="descclassname">torchvision.models.</code><code class="descname">inception_v3</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.inception.Inception3<a class="reference internal" href="_modules/torchvision/models/inception.html#inception_v3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.inception_v3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inception v3 model architecture from
+<a class="reference external" href="http://arxiv.org/abs/1512.00567">“Rethinking the Inception Architecture for Computer Vision”</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><strong>Important</strong>: In contrast to the other models the inception_v3 expects tensors with a size of
+N x 3 x 299 x 299, so ensure your images are sized accordingly.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>aux_logits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, add an auxiliary branch that can improve training.
+Default: <em>True</em></li>
+<li><strong>transform_input</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, preprocesses the input according to the method with which it
+was trained on ImageNet. Default: <em>False</em></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This requires <cite>scipy</cite> to be installed</p>
+</div>
+</div>
+<div class="section" id="id16">
+<h3>GoogLeNet<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.googlenet">
+<code class="descclassname">torchvision.models.</code><code class="descname">googlenet</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.googlenet.GoogLeNet<a class="reference internal" href="_modules/torchvision/models/googlenet.html#googlenet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.googlenet" title="Permalink to this definition">¶</a></dt>
+<dd><p>GoogLeNet (Inception v1) model architecture from
+<a class="reference external" href="http://arxiv.org/abs/1409.4842">“Going Deeper with Convolutions”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>aux_logits</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, adds two auxiliary branches that can improve training.
+Default: <em>False</em> when pretrained is True otherwise <em>True</em></li>
+<li><strong>transform_input</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, preprocesses the input according to the method with which it
+was trained on ImageNet. Default: <em>False</em></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This requires <cite>scipy</cite> to be installed</p>
+</div>
+</div>
+<div class="section" id="shufflenet-v2">
+<h3>ShuffleNet v2<a class="headerlink" href="#shufflenet-v2" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.shufflenet_v2_x0_5">
+<code class="descclassname">torchvision.models.</code><code class="descname">shufflenet_v2_x0_5</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.shufflenetv2.ShuffleNetV2<a class="reference internal" href="_modules/torchvision/models/shufflenetv2.html#shufflenet_v2_x0_5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.shufflenet_v2_x0_5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a ShuffleNetV2 with 0.5x output channels, as described in
+<a class="reference external" href="https://arxiv.org/abs/1807.11164">“ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.shufflenet_v2_x1_0">
+<code class="descclassname">torchvision.models.</code><code class="descname">shufflenet_v2_x1_0</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.shufflenetv2.ShuffleNetV2<a class="reference internal" href="_modules/torchvision/models/shufflenetv2.html#shufflenet_v2_x1_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.shufflenet_v2_x1_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a ShuffleNetV2 with 1.0x output channels, as described in
+<a class="reference external" href="https://arxiv.org/abs/1807.11164">“ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.shufflenet_v2_x1_5">
+<code class="descclassname">torchvision.models.</code><code class="descname">shufflenet_v2_x1_5</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.shufflenetv2.ShuffleNetV2<a class="reference internal" href="_modules/torchvision/models/shufflenetv2.html#shufflenet_v2_x1_5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.shufflenet_v2_x1_5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a ShuffleNetV2 with 1.5x output channels, as described in
+<a class="reference external" href="https://arxiv.org/abs/1807.11164">“ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.shufflenet_v2_x2_0">
+<code class="descclassname">torchvision.models.</code><code class="descname">shufflenet_v2_x2_0</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.shufflenetv2.ShuffleNetV2<a class="reference internal" href="_modules/torchvision/models/shufflenetv2.html#shufflenet_v2_x2_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.shufflenet_v2_x2_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a ShuffleNetV2 with 2.0x output channels, as described in
+<a class="reference external" href="https://arxiv.org/abs/1807.11164">“ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="mobilenet-v2">
+<h3>MobileNet v2<a class="headerlink" href="#mobilenet-v2" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.mobilenet_v2">
+<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v2</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv2.MobileNetV2<a class="reference internal" href="_modules/torchvision/models/mobilenetv2.html#mobilenet_v2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a MobileNetV2 architecture from
+<a class="reference external" href="https://arxiv.org/abs/1801.04381">“MobileNetV2: Inverted Residuals and Linear Bottlenecks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="mobilenet-v3">
+<h3>MobileNet v3<a class="headerlink" href="#mobilenet-v3" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.mobilenet_v3_large">
+<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv3.MobileNetV3<a class="reference internal" href="_modules/torchvision/models/mobilenetv3.html#mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a large MobileNetV3 architecture from
+<a class="reference external" href="https://arxiv.org/abs/1905.02244">“Searching for MobileNetV3”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.mobilenet_v3_small">
+<code class="descclassname">torchvision.models.</code><code class="descname">mobilenet_v3_small</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mobilenetv3.MobileNetV3<a class="reference internal" href="_modules/torchvision/models/mobilenetv3.html#mobilenet_v3_small"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mobilenet_v3_small" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a small MobileNetV3 architecture from
+<a class="reference external" href="https://arxiv.org/abs/1905.02244">“Searching for MobileNetV3”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id21">
+<h3>ResNext<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.resnext50_32x4d">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnext50_32x4d</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnext50_32x4d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnext50_32x4d" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNeXt-50 32x4d model from
+<a class="reference external" href="https://arxiv.org/pdf/1611.05431.pdf">“Aggregated Residual Transformation for Deep Neural Networks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.resnext101_32x8d">
+<code class="descclassname">torchvision.models.</code><code class="descname">resnext101_32x8d</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#resnext101_32x8d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.resnext101_32x8d" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNeXt-101 32x8d model from
+<a class="reference external" href="https://arxiv.org/pdf/1611.05431.pdf">“Aggregated Residual Transformation for Deep Neural Networks”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="wide-resnet">
+<h3>Wide ResNet<a class="headerlink" href="#wide-resnet" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.wide_resnet50_2">
+<code class="descclassname">torchvision.models.</code><code class="descname">wide_resnet50_2</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#wide_resnet50_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.wide_resnet50_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wide ResNet-50-2 model from
+<a class="reference external" href="https://arxiv.org/pdf/1605.07146.pdf">“Wide Residual Networks”</a>.</p>
+<p>The model is the same as ResNet except for the bottleneck number of channels
+which is twice larger in every block. The number of channels in outer 1x1
+convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
+channels, and in Wide ResNet-50-2 has 2048-1024-2048.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.wide_resnet101_2">
+<code class="descclassname">torchvision.models.</code><code class="descname">wide_resnet101_2</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.resnet.ResNet<a class="reference internal" href="_modules/torchvision/models/resnet.html#wide_resnet101_2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.wide_resnet101_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wide ResNet-101-2 model from
+<a class="reference external" href="https://arxiv.org/pdf/1605.07146.pdf">“Wide Residual Networks”</a>.</p>
+<p>The model is the same as ResNet except for the bottleneck number of channels
+which is twice larger in every block. The number of channels in outer 1x1
+convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
+channels, and in Wide ResNet-50-2 has 2048-1024-2048.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id24">
+<h3>MNASNet<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.mnasnet0_5">
+<code class="descclassname">torchvision.models.</code><code class="descname">mnasnet0_5</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mnasnet.MNASNet<a class="reference internal" href="_modules/torchvision/models/mnasnet.html#mnasnet0_5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mnasnet0_5" title="Permalink to this definition">¶</a></dt>
+<dd><p>MNASNet with depth multiplier of 0.5 from
+<a class="reference external" href="https://arxiv.org/pdf/1807.11626.pdf">“MnasNet: Platform-Aware Neural Architecture Search for Mobile”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.mnasnet0_75">
+<code class="descclassname">torchvision.models.</code><code class="descname">mnasnet0_75</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mnasnet.MNASNet<a class="reference internal" href="_modules/torchvision/models/mnasnet.html#mnasnet0_75"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mnasnet0_75" title="Permalink to this definition">¶</a></dt>
+<dd><p>MNASNet with depth multiplier of 0.75 from
+<a class="reference external" href="https://arxiv.org/pdf/1807.11626.pdf">“MnasNet: Platform-Aware Neural Architecture Search for Mobile”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.mnasnet1_0">
+<code class="descclassname">torchvision.models.</code><code class="descname">mnasnet1_0</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mnasnet.MNASNet<a class="reference internal" href="_modules/torchvision/models/mnasnet.html#mnasnet1_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mnasnet1_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>MNASNet with depth multiplier of 1.0 from
+<a class="reference external" href="https://arxiv.org/pdf/1807.11626.pdf">“MnasNet: Platform-Aware Neural Architecture Search for Mobile”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.mnasnet1_3">
+<code class="descclassname">torchvision.models.</code><code class="descname">mnasnet1_3</code><span class="sig-paren">(</span><em>pretrained: bool = False</em>, <em>progress: bool = True</em>, <em>**kwargs</em><span class="sig-paren">)</span> &#x2192; torchvision.models.mnasnet.MNASNet<a class="reference internal" href="_modules/torchvision/models/mnasnet.html#mnasnet1_3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.mnasnet1_3" title="Permalink to this definition">¶</a></dt>
+<dd><p>MNASNet with depth multiplier of 1.3 from
+<a class="reference external" href="https://arxiv.org/pdf/1807.11626.pdf">“MnasNet: Platform-Aware Neural Architecture Search for Mobile”</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="quantized-models">
+<h3>Quantized Models<a class="headerlink" href="#quantized-models" title="Permalink to this headline">¶</a></h3>
+<p>The following architectures provide support for INT8 quantized models. You can get
+a model with random weights by calling its constructor:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
+<span class="n">googlenet</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">googlenet</span><span class="p">()</span>
+<span class="n">inception_v3</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">inception_v3</span><span class="p">()</span>
+<span class="n">mobilenet_v2</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">()</span>
+<span class="n">mobilenet_v3_large</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">()</span>
+<span class="n">resnet18</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
+<span class="n">resnet50</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">resnet50</span><span class="p">()</span>
+<span class="n">resnext101_32x8d</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">resnext101_32x8d</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x0_5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x0_5</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x1_0</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x1_0</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x1_5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x1_5</span><span class="p">()</span>
+<span class="n">shufflenet_v2_x2_0</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">shufflenet_v2_x2_0</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Obtaining a pre-trained quantized model can be done with a few lines of code:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v2</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">quantize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="c1"># run the model with quantized inputs and weights</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We provide pre-trained quantized weights for the following models:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="22%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Model</th>
+<th class="head">Acc&#64;1</th>
+<th class="head">Acc&#64;5</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>MobileNet V2</td>
+<td>71.658</td>
+<td>90.150</td>
+</tr>
+<tr class="row-odd"><td>MobileNet V3 Large</td>
+<td>73.004</td>
+<td>90.858</td>
+</tr>
+<tr class="row-even"><td>ShuffleNet V2</td>
+<td>68.360</td>
+<td>87.582</td>
+</tr>
+<tr class="row-odd"><td>ResNet 18</td>
+<td>69.494</td>
+<td>88.882</td>
+</tr>
+<tr class="row-even"><td>ResNet 50</td>
+<td>75.920</td>
+<td>92.814</td>
+</tr>
+<tr class="row-odd"><td>ResNext 101 32x8d</td>
+<td>78.986</td>
+<td>94.480</td>
+</tr>
+<tr class="row-even"><td>Inception V3</td>
+<td>77.176</td>
+<td>93.354</td>
+</tr>
+<tr class="row-odd"><td>GoogleNet</td>
+<td>69.826</td>
+<td>89.404</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="semantic-segmentation">
+<h2>Semantic Segmentation<a class="headerlink" href="#semantic-segmentation" title="Permalink to this headline">¶</a></h2>
+<p>The models subpackage contains definitions for the following model
+architectures for semantic segmentation:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://arxiv.org/abs/1411.4038">FCN ResNet50, ResNet101</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1706.05587">DeepLabV3 ResNet50, ResNet101, MobileNetV3-Large</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1905.02244">LR-ASPP MobileNetV3-Large</a></li>
+</ul>
+<p>As with image classification models, all pre-trained models expect input images normalized in the same way.
+The images have to be loaded in to a range of <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> and then normalized using
+<code class="docutils literal notranslate"><span class="pre">mean</span> <span class="pre">=</span> <span class="pre">[0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406]</span></code> and <code class="docutils literal notranslate"><span class="pre">std</span> <span class="pre">=</span> <span class="pre">[0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225]</span></code>.
+They have been trained on images resized such that their minimum size is 520.</p>
+<p>The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
+present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
+<code class="docutils literal notranslate"><span class="pre">references/segmentation/coco_utils.py</span></code>. The classes that the pre-trained model outputs are the following,
+in order:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s1">&#39;__background__&#39;</span><span class="p">,</span> <span class="s1">&#39;aeroplane&#39;</span><span class="p">,</span> <span class="s1">&#39;bicycle&#39;</span><span class="p">,</span> <span class="s1">&#39;bird&#39;</span><span class="p">,</span> <span class="s1">&#39;boat&#39;</span><span class="p">,</span> <span class="s1">&#39;bottle&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;car&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;chair&#39;</span><span class="p">,</span> <span class="s1">&#39;cow&#39;</span><span class="p">,</span> <span class="s1">&#39;diningtable&#39;</span><span class="p">,</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;horse&#39;</span><span class="p">,</span> <span class="s1">&#39;motorbike&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;person&#39;</span><span class="p">,</span> <span class="s1">&#39;pottedplant&#39;</span><span class="p">,</span> <span class="s1">&#39;sheep&#39;</span><span class="p">,</span> <span class="s1">&#39;sofa&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;tvmonitor&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The accuracies of the pre-trained models evaluated on COCO val2017 are as follows</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="49%" />
+<col width="20%" />
+<col width="31%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Network</th>
+<th class="head">mean IoU</th>
+<th class="head">global pixelwise acc</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>FCN ResNet50</td>
+<td>60.5</td>
+<td>91.4</td>
+</tr>
+<tr class="row-odd"><td>FCN ResNet101</td>
+<td>63.7</td>
+<td>91.9</td>
+</tr>
+<tr class="row-even"><td>DeepLabV3 ResNet50</td>
+<td>66.4</td>
+<td>92.4</td>
+</tr>
+<tr class="row-odd"><td>DeepLabV3 ResNet101</td>
+<td>67.4</td>
+<td>92.4</td>
+</tr>
+<tr class="row-even"><td>DeepLabV3 MobileNetV3-Large</td>
+<td>60.3</td>
+<td>91.2</td>
+</tr>
+<tr class="row-odd"><td>LR-ASPP MobileNetV3-Large</td>
+<td>57.9</td>
+<td>91.2</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="fully-convolutional-networks">
+<h3>Fully Convolutional Networks<a class="headerlink" href="#fully-convolutional-networks" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.segmentation.fcn_resnet50">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">fcn_resnet50</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>aux_loss=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#fcn_resnet50"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.fcn_resnet50" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.segmentation.fcn_resnet101">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">fcn_resnet101</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>aux_loss=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#fcn_resnet101"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.fcn_resnet101" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="deeplabv3">
+<h3>DeepLabV3<a class="headerlink" href="#deeplabv3" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.segmentation.deeplabv3_resnet50">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">deeplabv3_resnet50</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>aux_loss=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#deeplabv3_resnet50"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.deeplabv3_resnet50" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a DeepLabV3 model with a ResNet-50 backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.segmentation.deeplabv3_resnet101">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">deeplabv3_resnet101</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>aux_loss=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#deeplabv3_resnet101"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.deeplabv3_resnet101" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a DeepLabV3 model with a ResNet-101 backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – The number of classes</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, include an auxiliary classifier</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.segmentation.deeplabv3_mobilenet_v3_large">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">deeplabv3_mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>aux_loss=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#deeplabv3_mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.deeplabv3_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>aux_loss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, it uses an auxiliary loss</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="lr-aspp">
+<h3>LR-ASPP<a class="headerlink" href="#lr-aspp" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.segmentation.lraspp_mobilenet_v3_large">
+<code class="descclassname">torchvision.models.segmentation.</code><code class="descname">lraspp_mobilenet_v3_large</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=21</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/segmentation/segmentation.html#lraspp_mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.segmentation.lraspp_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017 which
+contains the same classes as Pascal VOC</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="object-detection-instance-segmentation-and-person-keypoint-detection">
+<h2>Object Detection, Instance Segmentation and Person Keypoint Detection<a class="headerlink" href="#object-detection-instance-segmentation-and-person-keypoint-detection" title="Permalink to this headline">¶</a></h2>
+<p>The models subpackage contains definitions for the following model
+architectures for detection:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://arxiv.org/abs/1506.01497">Faster R-CNN ResNet-50 FPN</a></li>
+<li><a class="reference external" href="https://arxiv.org/abs/1703.06870">Mask R-CNN ResNet-50 FPN</a></li>
+</ul>
+<p>The pre-trained models for detection, instance segmentation and
+keypoint detection are initialized with the classification models
+in torchvision.</p>
+<p>The models expect a list of <code class="docutils literal notranslate"><span class="pre">Tensor[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>, in the range <code class="docutils literal notranslate"><span class="pre">0-1</span></code>.
+The models internally resize the images so that they have a minimum size
+of <code class="docutils literal notranslate"><span class="pre">800</span></code>. This option can be changed by passing the option <code class="docutils literal notranslate"><span class="pre">min_size</span></code>
+to the constructor of the models.</p>
+<p>For object detection and instance segmentation, the pre-trained
+models return the predictions of the following classes:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">COCO_INSTANCE_CATEGORY_NAMES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;__background__&#39;</span><span class="p">,</span> <span class="s1">&#39;person&#39;</span><span class="p">,</span> <span class="s1">&#39;bicycle&#39;</span><span class="p">,</span> <span class="s1">&#39;car&#39;</span><span class="p">,</span> <span class="s1">&#39;motorcycle&#39;</span><span class="p">,</span> <span class="s1">&#39;airplane&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;truck&#39;</span><span class="p">,</span> <span class="s1">&#39;boat&#39;</span><span class="p">,</span> <span class="s1">&#39;traffic light&#39;</span><span class="p">,</span> <span class="s1">&#39;fire hydrant&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;stop sign&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;parking meter&#39;</span><span class="p">,</span> <span class="s1">&#39;bench&#39;</span><span class="p">,</span> <span class="s1">&#39;bird&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;horse&#39;</span><span class="p">,</span> <span class="s1">&#39;sheep&#39;</span><span class="p">,</span> <span class="s1">&#39;cow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;elephant&#39;</span><span class="p">,</span> <span class="s1">&#39;bear&#39;</span><span class="p">,</span> <span class="s1">&#39;zebra&#39;</span><span class="p">,</span> <span class="s1">&#39;giraffe&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;backpack&#39;</span><span class="p">,</span> <span class="s1">&#39;umbrella&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;handbag&#39;</span><span class="p">,</span> <span class="s1">&#39;tie&#39;</span><span class="p">,</span> <span class="s1">&#39;suitcase&#39;</span><span class="p">,</span> <span class="s1">&#39;frisbee&#39;</span><span class="p">,</span> <span class="s1">&#39;skis&#39;</span><span class="p">,</span> <span class="s1">&#39;snowboard&#39;</span><span class="p">,</span> <span class="s1">&#39;sports ball&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;kite&#39;</span><span class="p">,</span> <span class="s1">&#39;baseball bat&#39;</span><span class="p">,</span> <span class="s1">&#39;baseball glove&#39;</span><span class="p">,</span> <span class="s1">&#39;skateboard&#39;</span><span class="p">,</span> <span class="s1">&#39;surfboard&#39;</span><span class="p">,</span> <span class="s1">&#39;tennis racket&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bottle&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;wine glass&#39;</span><span class="p">,</span> <span class="s1">&#39;cup&#39;</span><span class="p">,</span> <span class="s1">&#39;fork&#39;</span><span class="p">,</span> <span class="s1">&#39;knife&#39;</span><span class="p">,</span> <span class="s1">&#39;spoon&#39;</span><span class="p">,</span> <span class="s1">&#39;bowl&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;banana&#39;</span><span class="p">,</span> <span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="s1">&#39;sandwich&#39;</span><span class="p">,</span> <span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="s1">&#39;broccoli&#39;</span><span class="p">,</span> <span class="s1">&#39;carrot&#39;</span><span class="p">,</span> <span class="s1">&#39;hot dog&#39;</span><span class="p">,</span> <span class="s1">&#39;pizza&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;donut&#39;</span><span class="p">,</span> <span class="s1">&#39;cake&#39;</span><span class="p">,</span> <span class="s1">&#39;chair&#39;</span><span class="p">,</span> <span class="s1">&#39;couch&#39;</span><span class="p">,</span> <span class="s1">&#39;potted plant&#39;</span><span class="p">,</span> <span class="s1">&#39;bed&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;dining table&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;toilet&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;tv&#39;</span><span class="p">,</span> <span class="s1">&#39;laptop&#39;</span><span class="p">,</span> <span class="s1">&#39;mouse&#39;</span><span class="p">,</span> <span class="s1">&#39;remote&#39;</span><span class="p">,</span> <span class="s1">&#39;keyboard&#39;</span><span class="p">,</span> <span class="s1">&#39;cell phone&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;microwave&#39;</span><span class="p">,</span> <span class="s1">&#39;oven&#39;</span><span class="p">,</span> <span class="s1">&#39;toaster&#39;</span><span class="p">,</span> <span class="s1">&#39;sink&#39;</span><span class="p">,</span> <span class="s1">&#39;refrigerator&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;book&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;clock&#39;</span><span class="p">,</span> <span class="s1">&#39;vase&#39;</span><span class="p">,</span> <span class="s1">&#39;scissors&#39;</span><span class="p">,</span> <span class="s1">&#39;teddy bear&#39;</span><span class="p">,</span> <span class="s1">&#39;hair drier&#39;</span><span class="p">,</span> <span class="s1">&#39;toothbrush&#39;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Here are the summary of the accuracies for the models trained on
+the instances set of COCO train2017 and evaluated on COCO val2017.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="59%" />
+<col width="11%" />
+<col width="13%" />
+<col width="17%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Network</th>
+<th class="head">box AP</th>
+<th class="head">mask AP</th>
+<th class="head">keypoint AP</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Faster R-CNN ResNet-50 FPN</td>
+<td>37.0</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td>Faster R-CNN MobileNetV3-Large FPN</td>
+<td>32.8</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td>Faster R-CNN MobileNetV3-Large 320 FPN</td>
+<td>22.8</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td>RetinaNet ResNet-50 FPN</td>
+<td>36.4</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td>Mask R-CNN ResNet-50 FPN</td>
+<td>37.9</td>
+<td>34.6</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For person keypoint detection, the accuracies for the pre-trained
+models are as follows</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="12%" />
+<col width="14%" />
+<col width="19%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Network</th>
+<th class="head">box AP</th>
+<th class="head">mask AP</th>
+<th class="head">keypoint AP</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Keypoint R-CNN ResNet-50 FPN</td>
+<td>54.6</td>
+<td><ul class="first last simple">
+<li></li>
+</ul>
+</td>
+<td>65.0</td>
+</tr>
+</tbody>
+</table>
+<p>For person keypoint detection, the pre-trained model return the
+keypoints in the following order:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">COCO_PERSON_KEYPOINT_NAMES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;nose&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_eye&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_eye&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_ear&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_ear&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_shoulder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_shoulder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_elbow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_elbow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_wrist&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_wrist&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_hip&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_hip&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_knee&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_knee&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;left_ankle&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;right_ankle&#39;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="section" id="runtime-characteristics">
+<h3>Runtime characteristics<a class="headerlink" href="#runtime-characteristics" title="Permalink to this headline">¶</a></h3>
+<p>The implementations of the models for object detection, instance segmentation
+and keypoint detection are efficient.</p>
+<p>In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
+report the results. During training, we use a batch size of 2 per GPU, and
+during testing a batch size of 1 is used.</p>
+<p>For test time, we report the time for the model evaluation and postprocessing
+(including mask pasting in image), but not the time for computing the
+precision-recall.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="44%" />
+<col width="22%" />
+<col width="21%" />
+<col width="13%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Network</th>
+<th class="head">train time (s / it)</th>
+<th class="head">test time (s / it)</th>
+<th class="head">memory (GB)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Faster R-CNN ResNet-50 FPN</td>
+<td>0.2288</td>
+<td>0.0590</td>
+<td>5.2</td>
+</tr>
+<tr class="row-odd"><td>Faster R-CNN MobileNetV3-Large FPN</td>
+<td>0.1020</td>
+<td>0.0415</td>
+<td>1.0</td>
+</tr>
+<tr class="row-even"><td>Faster R-CNN MobileNetV3-Large 320 FPN</td>
+<td>0.0978</td>
+<td>0.0376</td>
+<td>0.6</td>
+</tr>
+<tr class="row-odd"><td>RetinaNet ResNet-50 FPN</td>
+<td>0.2514</td>
+<td>0.0939</td>
+<td>4.1</td>
+</tr>
+<tr class="row-even"><td>Mask R-CNN ResNet-50 FPN</td>
+<td>0.2728</td>
+<td>0.0903</td>
+<td>5.4</td>
+</tr>
+<tr class="row-odd"><td>Keypoint R-CNN ResNet-50 FPN</td>
+<td>0.3789</td>
+<td>0.1242</td>
+<td>6.8</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="faster-r-cnn">
+<h3>Faster R-CNN<a class="headerlink" href="#faster-r-cnn" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.detection.fasterrcnn_resnet50_fpn">
+<code class="descclassname">torchvision.models.detection.</code><code class="descname">fasterrcnn_resnet50_fpn</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=91</em>, <em>pretrained_backbone=True</em>, <em>trainable_backbone_layers=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_resnet50_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.</p>
+<p>The input to the model is expected to be a list of tensors, each of shape <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>, one for each
+image, and should be in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. Different images can have different sizes.</p>
+<p>The behavior of the model changes depending if it is in training or evaluation mode.</p>
+<p>During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
+</ul>
+</div></blockquote>
+<p>The model returns a <code class="docutils literal notranslate"><span class="pre">Dict[Tensor]</span></code> during training, containing the classification and regression
+losses for both the RPN and the R-CNN.</p>
+<p>During inference, the model requires only the input tensors, and returns the post-processed
+predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
+follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
+<li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
+</ul>
+</div></blockquote>
+<p>Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">fasterrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># For training</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">images</span><span class="p">,</span> <span class="n">boxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">1200</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">91</span><span class="p">,</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">images</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">image</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">d</span><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">d</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># For inference</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># optionally, if you want to export the model to ONNX:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">onnx</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;faster_rcnn.onnx&quot;</span><span class="p">,</span> <span class="n">opset_version</span> <span class="o">=</span> <span class="mi">11</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</li>
+<li><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
+Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn">
+<code class="descclassname">torchvision.models.detection.</code><code class="descname">fasterrcnn_mobilenet_v3_large_fpn</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=91</em>, <em>pretrained_backbone=True</em>, <em>trainable_backbone_layers=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_mobilenet_v3_large_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See <cite>fasterrcnn_resnet50_fpn</cite> for more details.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</li>
+<li><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
+Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn">
+<code class="descclassname">torchvision.models.detection.</code><code class="descname">fasterrcnn_mobilenet_v3_large_320_fpn</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=91</em>, <em>pretrained_backbone=True</em>, <em>trainable_backbone_layers=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_mobilenet_v3_large_320_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
+It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See <cite>fasterrcnn_resnet50_fpn</cite> for more details.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">fasterrcnn_mobilenet_v3_large_320_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</li>
+<li><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
+Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="retinanet">
+<h3>RetinaNet<a class="headerlink" href="#retinanet" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.detection.retinanet_resnet50_fpn">
+<code class="descclassname">torchvision.models.detection.</code><code class="descname">retinanet_resnet50_fpn</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=91</em>, <em>pretrained_backbone=True</em>, <em>trainable_backbone_layers=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/retinanet.html#retinanet_resnet50_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.retinanet_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RetinaNet model with a ResNet-50-FPN backbone.</p>
+<p>The input to the model is expected to be a list of tensors, each of shape <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>, one for each
+image, and should be in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. Different images can have different sizes.</p>
+<p>The behavior of the model changes depending if it is in training or evaluation mode.</p>
+<p>During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
+</ul>
+</div></blockquote>
+<p>The model returns a <code class="docutils literal notranslate"><span class="pre">Dict[Tensor]</span></code> during training, containing the classification and regression
+losses.</p>
+<p>During inference, the model requires only the input tensors, and returns the post-processed
+predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
+follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
+<li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
+</ul>
+</div></blockquote>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">retinanet_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</li>
+<li><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
+Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="mask-r-cnn">
+<h3>Mask R-CNN<a class="headerlink" href="#mask-r-cnn" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.detection.maskrcnn_resnet50_fpn">
+<code class="descclassname">torchvision.models.detection.</code><code class="descname">maskrcnn_resnet50_fpn</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=91</em>, <em>pretrained_backbone=True</em>, <em>trainable_backbone_layers=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/mask_rcnn.html#maskrcnn_resnet50_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.maskrcnn_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.</p>
+<p>The input to the model is expected to be a list of tensors, each of shape <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>, one for each
+image, and should be in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. Different images can have different sizes.</p>
+<p>The behavior of the model changes depending if it is in training or evaluation mode.</p>
+<p>During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
+<li>masks (<code class="docutils literal notranslate"><span class="pre">UInt8Tensor[N,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>): the segmentation binary masks for each instance</li>
+</ul>
+</div></blockquote>
+<p>The model returns a <code class="docutils literal notranslate"><span class="pre">Dict[Tensor]</span></code> during training, containing the classification and regression
+losses for both the RPN and the R-CNN, and the mask loss.</p>
+<p>During inference, the model requires only the input tensors, and returns the post-processed
+predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
+follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
+<li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
+<li>masks (<code class="docutils literal notranslate"><span class="pre">UInt8Tensor[N,</span> <span class="pre">1,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>): the predicted masks for each instance, in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. In order to
+obtain the final segmentation masks, the soft masks can be thresholded, generally
+with a value of 0.5 (<code class="docutils literal notranslate"><span class="pre">mask</span> <span class="pre">&gt;=</span> <span class="pre">0.5</span></code>)</li>
+</ul>
+</div></blockquote>
+<p>Mask R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">maskrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># optionally, if you want to export the model to ONNX:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">onnx</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;mask_rcnn.onnx&quot;</span><span class="p">,</span> <span class="n">opset_version</span> <span class="o">=</span> <span class="mi">11</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</li>
+<li><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
+Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="keypoint-r-cnn">
+<h3>Keypoint R-CNN<a class="headerlink" href="#keypoint-r-cnn" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.detection.keypointrcnn_resnet50_fpn">
+<code class="descclassname">torchvision.models.detection.</code><code class="descname">keypointrcnn_resnet50_fpn</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>num_classes=2</em>, <em>num_keypoints=17</em>, <em>pretrained_backbone=True</em>, <em>trainable_backbone_layers=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/keypoint_rcnn.html#keypointrcnn_resnet50_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.keypointrcnn_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.</p>
+<p>The input to the model is expected to be a list of tensors, each of shape <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>, one for each
+image, and should be in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. Different images can have different sizes.</p>
+<p>The behavior of the model changes depending if it is in training or evaluation mode.</p>
+<p>During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the class label for each ground-truth box</li>
+<li>keypoints (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">K,</span> <span class="pre">3]</span></code>): the <code class="docutils literal notranslate"><span class="pre">K</span></code> keypoints location for each of the <code class="docutils literal notranslate"><span class="pre">N</span></code> instances, in the
+format <code class="docutils literal notranslate"><span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">visibility]</span></code>, where <code class="docutils literal notranslate"><span class="pre">visibility=0</span></code> means that the keypoint is not visible.</li>
+</ul>
+</div></blockquote>
+<p>The model returns a <code class="docutils literal notranslate"><span class="pre">Dict[Tensor]</span></code> during training, containing the classification and regression
+losses for both the RPN and the R-CNN, and the keypoint loss.</p>
+<p>During inference, the model requires only the input tensors, and returns the post-processed
+predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
+follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</li>
+<li>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</li>
+<li>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</li>
+<li>keypoints (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">K,</span> <span class="pre">3]</span></code>): the locations of the predicted keypoints, in <code class="docutils literal notranslate"><span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">v]</span></code> format.</li>
+</ul>
+</div></blockquote>
+<p>Keypoint R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">keypointrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># optionally, if you want to export the model to ONNX:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">onnx</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;keypoint_rcnn.onnx&quot;</span><span class="p">,</span> <span class="n">opset_version</span> <span class="o">=</span> <span class="mi">11</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+<li><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of output classes of the model (including the background)</li>
+<li><strong>num_keypoints</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of keypoints, default 17</li>
+<li><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</li>
+<li><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
+Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="video-classification">
+<h2>Video classification<a class="headerlink" href="#video-classification" title="Permalink to this headline">¶</a></h2>
+<p>We provide models for action recognition pre-trained on Kinetics-400.
+They have all been trained with the scripts provided in <code class="docutils literal notranslate"><span class="pre">references/video_classification</span></code>.</p>
+<p>All pre-trained models expect input images normalized in the same way,
+i.e. mini-batches of 3-channel RGB videos of shape (3 x T x H x W),
+where H and W are expected to be 112, and T is a number of video frames in a clip.
+The images have to be loaded in to a range of [0, 1] and then normalized
+using <code class="docutils literal notranslate"><span class="pre">mean</span> <span class="pre">=</span> <span class="pre">[0.43216,</span> <span class="pre">0.394666,</span> <span class="pre">0.37645]</span></code> and <code class="docutils literal notranslate"><span class="pre">std</span> <span class="pre">=</span> <span class="pre">[0.22803,</span> <span class="pre">0.22145,</span> <span class="pre">0.216989]</span></code>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The normalization parameters are different from the image classification ones, and correspond
+to the mean and std from Kinetics-400.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For now, normalization code can be found in <code class="docutils literal notranslate"><span class="pre">references/video_classification/transforms.py</span></code>,
+see the <code class="docutils literal notranslate"><span class="pre">Normalize</span></code> function there. Note that it differs from standard normalization for
+images because it assumes the video is 4d.</p>
+</div>
+<p>Kinetics 1-crop accuracies for clip length 16 (16x112x112)</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="22%" />
+<col width="22%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Network</th>
+<th class="head">Clip acc&#64;1</th>
+<th class="head">Clip acc&#64;5</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>ResNet 3D 18</td>
+<td>52.75</td>
+<td>75.45</td>
+</tr>
+<tr class="row-odd"><td>ResNet MC 18</td>
+<td>53.90</td>
+<td>76.29</td>
+</tr>
+<tr class="row-even"><td>ResNet (2+1)D</td>
+<td>57.50</td>
+<td>78.81</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="resnet-3d">
+<h3>ResNet 3D<a class="headerlink" href="#resnet-3d" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.video.r3d_18">
+<code class="descclassname">torchvision.models.video.</code><code class="descname">r3d_18</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/video/resnet.html#r3d_18"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.video.r3d_18" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct 18 layer Resnet3D model as in
+<a class="reference external" href="https://arxiv.org/abs/1711.11248">https://arxiv.org/abs/1711.11248</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on Kinetics-400</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">R3D-18 network</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">nn.Module</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="resnet-mixed-convolution">
+<h3>ResNet Mixed Convolution<a class="headerlink" href="#resnet-mixed-convolution" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.video.mc3_18">
+<code class="descclassname">torchvision.models.video.</code><code class="descname">mc3_18</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/video/resnet.html#mc3_18"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.video.mc3_18" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for 18 layer Mixed Convolution network as in
+<a class="reference external" href="https://arxiv.org/abs/1711.11248">https://arxiv.org/abs/1711.11248</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on Kinetics-400</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">MC3 Network definition</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">nn.Module</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="resnet-2-1-d">
+<h3>ResNet (2+1)D<a class="headerlink" href="#resnet-2-1-d" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="torchvision.models.video.r2plus1d_18">
+<code class="descclassname">torchvision.models.video.</code><code class="descname">r2plus1d_18</code><span class="sig-paren">(</span><em>pretrained=False</em>, <em>progress=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/video/resnet.html#r2plus1d_18"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.video.r2plus1d_18" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for the 18 layer deep R(2+1)D network as in
+<a class="reference external" href="https://arxiv.org/abs/1711.11248">https://arxiv.org/abs/1711.11248</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on Kinetics-400</li>
+<li><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">R(2+1)D-18 network</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">nn.Module</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ops.html" class="btn btn-neutral float-right" title="torchvision.ops" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="io.html" class="btn btn-neutral" title="torchvision.io" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">torchvision.models</a><ul>
+<li><a class="reference internal" href="#classification">Classification</a><ul>
+<li><a class="reference internal" href="#id1">Alexnet</a></li>
+<li><a class="reference internal" href="#id2">VGG</a></li>
+<li><a class="reference internal" href="#id3">ResNet</a></li>
+<li><a class="reference internal" href="#id8">SqueezeNet</a></li>
+<li><a class="reference internal" href="#id9">DenseNet</a></li>
+<li><a class="reference internal" href="#inception-v3">Inception v3</a></li>
+<li><a class="reference internal" href="#id16">GoogLeNet</a></li>
+<li><a class="reference internal" href="#shufflenet-v2">ShuffleNet v2</a></li>
+<li><a class="reference internal" href="#mobilenet-v2">MobileNet v2</a></li>
+<li><a class="reference internal" href="#mobilenet-v3">MobileNet v3</a></li>
+<li><a class="reference internal" href="#id21">ResNext</a></li>
+<li><a class="reference internal" href="#wide-resnet">Wide ResNet</a></li>
+<li><a class="reference internal" href="#id24">MNASNet</a></li>
+<li><a class="reference internal" href="#quantized-models">Quantized Models</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#semantic-segmentation">Semantic Segmentation</a><ul>
+<li><a class="reference internal" href="#fully-convolutional-networks">Fully Convolutional Networks</a></li>
+<li><a class="reference internal" href="#deeplabv3">DeepLabV3</a></li>
+<li><a class="reference internal" href="#lr-aspp">LR-ASPP</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a><ul>
+<li><a class="reference internal" href="#runtime-characteristics">Runtime characteristics</a></li>
+<li><a class="reference internal" href="#faster-r-cnn">Faster R-CNN</a></li>
+<li><a class="reference internal" href="#retinanet">RetinaNet</a></li>
+<li><a class="reference internal" href="#mask-r-cnn">Mask R-CNN</a></li>
+<li><a class="reference internal" href="#keypoint-r-cnn">Keypoint R-CNN</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#video-classification">Video classification</a><ul>
+<li><a class="reference internal" href="#resnet-3d">ResNet 3D</a></li>
+<li><a class="reference internal" href="#resnet-mixed-convolution">ResNet Mixed Convolution</a></li>
+<li><a class="reference internal" href="#resnet-2-1-d">ResNet (2+1)D</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript">
+           var DOCUMENTATION_OPTIONS = {
+               URL_ROOT:'./',
+               VERSION:'master',
+               LANGUAGE:'None',
+               COLLAPSE_INDEX:false,
+               FILE_SUFFIX:'.html',
+               HAS_SOURCE:  true,
+               SOURCELINK_SUFFIX: '.txt'
+           };
+       </script>
+         <script type="text/javascript" src="_static/jquery.js"></script>
+         <script type="text/javascript" src="_static/underscore.js"></script>
+         <script type="text/javascript" src="_static/doctools.js"></script>
+         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>
