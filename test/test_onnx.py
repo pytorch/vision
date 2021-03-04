@@ -99,7 +99,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         for num_boxes in (5, 100, 5_000):
             boxes = torch.rand(num_boxes, 4)
-            boxes[:, 2:] += torch.rand(num_boxes, 2)
+            boxes[:, 2:] += 1 + torch.rand(num_boxes, 2)
             scores = torch.randn(num_boxes)
             idxs = torch.randint(0, 5, size=(num_boxes,))
             self.run_model(Module(), [(boxes, scores, idxs)])
