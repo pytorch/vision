@@ -1,3 +1,4 @@
+import itertools
 import os
 import unittest
 import colorsys
@@ -14,9 +15,17 @@ from torchvision.transforms import InterpolationMode
 from common_utils import TransformsTester
 
 from typing import Dict, List, Sequence, Tuple
+from parameterized import parameterized
 
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+
+
+def name_func(func, _, params):
+    # Gives the parametrized test a decent name so they can be selected with pytest -k etc.
+    # This should be put in some common utils file
+    return f'{func.__name__}_{"_".join(str(arg) for arg in params.args)}'
+
 
 
 class Tester(TransformsTester):
@@ -392,62 +401,64 @@ class Tester(TransformsTester):
             [{"gamma": g1, "gain": g2} for g1, g2 in zip([0.8, 1.0, 1.2], [0.7, 1.0, 1.3])]
         )
 
-    def test_resize(self):
+    @parameterized.expand(list(itertools.product(
+        [None, torch.float32, torch.float64, torch.float16],
+        [32, 26, [32, ], [32, 32], (32, 32), [26, 35]],
+        [None, 33, 40, 1000],
+        [BILINEAR, BICUBIC, NEAREST]
+    )), name_func=name_func)
+    def test_resize(self, dt, size, max_size, interpolation):
         script_fn = torch.jit.script(F.resize)
         tensor, pil_img = self._create_data(26, 36, device=self.device)
         batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
-        for dt in [None, torch.float32, torch.float64, torch.float16]:
+        if dt == torch.float16 and torch.device(self.device).type == "cpu":
+            self.skipTest("skip float16 on CPU")
+        if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
+            self.skipTest("size must be an int with max_size")
 
-            if dt == torch.float16 and torch.device(self.device).type == "cpu":
-                # skip float16 on CPU case
-                continue
+        if dt is not None:
+            # This is a trivial cast to float of uint8 data to test all cases
+            tensor = tensor.to(dt)
+            batch_tensors = batch_tensors.to(dt)
 
-            if dt is not None:
-                # This is a trivial cast to float of uint8 data to test all cases
-                tensor = tensor.to(dt)
-                batch_tensors = batch_tensors.to(dt)
+        resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size)
+        resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
 
-            for size in [32, 26, [32, ], [32, 32], (32, 32), [26, 35]]:
-                for max_size in (None, 33, 40, 1000):
-                    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
-                        continue  # unsupported, see assertRaises below
-                    for interpolation in [BILINEAR, BICUBIC, NEAREST]:
-                        resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size)
-                        resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
+        self.assertEqual(
+            resized_tensor.size()[1:], resized_pil_img.size[::-1],
+            msg="{}, {}".format(size, interpolation)
+        )
 
-                        self.assertEqual(
-                            resized_tensor.size()[1:], resized_pil_img.size[::-1],
-                            msg="{}, {}".format(size, interpolation)
-                        )
+        if interpolation not in [NEAREST, ]:
+            # We can not check values if mode = NEAREST, as results are different
+            # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
+            # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
+            resized_tensor_f = resized_tensor
+            # we need to cast to uint8 to compare with PIL image
+            if resized_tensor_f.dtype == torch.uint8:
+                resized_tensor_f = resized_tensor_f.to(torch.float)
 
-                        if interpolation not in [NEAREST, ]:
-                            # We can not check values if mode = NEAREST, as results are different
-                            # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
-                            # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
-                            resized_tensor_f = resized_tensor
-                            # we need to cast to uint8 to compare with PIL image
-                            if resized_tensor_f.dtype == torch.uint8:
-                                resized_tensor_f = resized_tensor_f.to(torch.float)
+            # Pay attention to high tolerance for MAE
+            self.approxEqualTensorToPIL(
+                resized_tensor_f, resized_pil_img, tol=8.0, msg="{}, {}".format(size, interpolation)
+            )
 
-                            # Pay attention to high tolerance for MAE
-                            self.approxEqualTensorToPIL(
-                                resized_tensor_f, resized_pil_img, tol=8.0, msg="{}, {}".format(size, interpolation)
-                            )
+        if isinstance(size, int):
+            script_size = [size, ]
+        else:
+            script_size = size
 
-                        if isinstance(size, int):
-                            script_size = [size, ]
-                        else:
-                            script_size = size
+        resize_result = script_fn(tensor, size=script_size, interpolation=interpolation,
+                                    max_size=max_size)
+        self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
-                        resize_result = script_fn(tensor, size=script_size, interpolation=interpolation,
-                                                  max_size=max_size)
-                        self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
+        self._test_fn_on_batch(
+            batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size
+        )
 
-                        self._test_fn_on_batch(
-                            batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size
-                        )
-
+    def test_resize_errors(self):
+        tensor, pil_img = self._create_data(26, 36, device=self.device)
         # assert changed type warning
         with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.resize(tensor, size=32, interpolation=2)

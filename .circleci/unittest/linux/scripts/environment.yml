@@ -15,4 +15,5 @@ dependencies:
     - future
     - pillow>=4.1.1
     - scipy
+    - parameterized
     - av
