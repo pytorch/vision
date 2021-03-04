@@ -1630,6 +1630,14 @@ class RandomErasing(torch.nn.Module):
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
 
+    def __repr__(self):
+        s = '(p={}, '.format(self.p)
+        s += 'scale={}, '.format(self.scale)
+        s += 'ratio={}, '.format(self.ratio)
+        s += 'value={}, '.format(self.value)
+        s += 'inplace={})'.format(self.inplace)
+        return self.__class__.__name__ + s
+
 
 class GaussianBlur(torch.nn.Module):
     """Blurs image with randomly chosen Gaussian blur.
