@@ -371,8 +371,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
-        pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.resize(img, size=size, interpolation=pil_interpolation)
+        # pil_interpolation = pil_modes_mapping[interpolation]
+        # return F_pil.resize(img, size=size, interpolation=pil_interpolation)
+        return F_pil.resize(img, size=size, interpolation=interpolation)
 
     return F_t.resize(img, size=size, interpolation=interpolation.value)
 
