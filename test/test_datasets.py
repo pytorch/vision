@@ -1193,5 +1193,73 @@ class USPSTestCase(datasets_utils.ImageDatasetTestCase):
         return num_images
 
 
+class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SBDataset
+    FEATURE_TYPES = (PIL.Image.Image, (np.ndarray, PIL.Image.Image))
+
+    REQUIRED_PACKAGES = ("scipy.io", "scipy.sparse")
+
+    CONFIGS = datasets_utils.combinations_grid(
+        image_set=("train", "val", "train_noval"), mode=("boundaries", "segmentation")
+    )
+
+    _NUM_CLASSES = 20
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images, num_images_per_image_set = self._create_split_files(tmpdir)
+
+        sizes = self._create_target_folder(tmpdir, "cls", num_images)
+
+        datasets_utils.create_image_folder(
+            tmpdir, "img", lambda idx: f"{self._file_stem(idx)}.jpg", num_images, size=lambda idx: sizes[idx]
+        )
+
+        return num_images_per_image_set[config["image_set"]]
+
+    def _create_split_files(self, root):
+        root = pathlib.Path(root)
+
+        splits = dict(train=(0, 1, 2), train_noval=(0, 2), val=(3,))
+
+        for split, idcs in splits.items():
+            self._create_split_file(root, split, idcs)
+
+        num_images = max(itertools.chain(*splits.values())) + 1
+        num_images_per_split = dict([(split, len(idcs)) for split, idcs in splits.items()])
+        return num_images, num_images_per_split
+
+    def _create_split_file(self, root, name, idcs):
+        with open(root / f"{name}.txt", "w") as fh:
+            fh.writelines(f"{self._file_stem(idx)}\n" for idx in idcs)
+
+    def _create_target_folder(self, root, name, num_images):
+        io = datasets_utils.lazy_importer.scipy.io
+
+        target_folder = pathlib.Path(root) / name
+        os.makedirs(target_folder)
+
+        sizes = [torch.randint(1, 4, size=(2,)).tolist() for _ in range(num_images)]
+        for idx, size in enumerate(sizes):
+            content = dict(
+                GTcls=dict(Boundaries=self._create_boundaries(size), Segmentation=self._create_segmentation(size))
+            )
+            io.savemat(target_folder / f"{self._file_stem(idx)}.mat", content)
+
+        return sizes
+
+    def _create_boundaries(self, size):
+        sparse = datasets_utils.lazy_importer.scipy.sparse
+        return [
+            [sparse.csc_matrix(torch.randint(0, 2, size=size, dtype=torch.uint8).numpy())]
+            for _ in range(self._NUM_CLASSES)
+        ]
+
+    def _create_segmentation(self, size):
+        return torch.randint(0, self._NUM_CLASSES + 1, size=size, dtype=torch.uint8).numpy()
+
+    def _file_stem(self, idx):
+        return f"2008_{idx:06d}"
+
+
 if __name__ == "__main__":
     unittest.main()
