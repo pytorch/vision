@@ -1010,5 +1010,27 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
             super().test_not_found_or_corrupted()
 
 
+class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.Kinetics400
+
+    def inject_fake_data(self, tmpdir, config):
+        classes = ("Abseiling", "Zumba")
+        num_videos_per_class = 2
+
+        digits = string.ascii_letters + string.digits + "-_"
+        for cls in classes:
+            datasets_utils.create_video_folder(
+                tmpdir,
+                cls,
+                lambda _: f"{datasets_utils.create_random_string(11, digits)}.avi",
+                num_videos_per_class,
+            )
+
+        return num_videos_per_class * len(classes)
+
+    def test_not_found_or_corrupted(self):
+        self.skipTest("Dataset currently does not handle the case of no found videos.")
+
+
 if __name__ == "__main__":
     unittest.main()
