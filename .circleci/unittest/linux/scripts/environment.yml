@@ -5,8 +5,6 @@ channels:
   - conda-forge
 dependencies:
   - pytest
-  - pytest-xdist
-  - pytest-timeout
   - pytest-cov
   - codecov
   - pip
