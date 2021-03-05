@@ -1,3 +1,11 @@
+# onnxruntime requires python 3.5 or above
+try:
+    # This import should be before that of torch
+    # see https://github.com/onnx/onnx/issues/2394#issuecomment-581638840
+    import onnxruntime
+except ImportError:
+    onnxruntime = None
+
 from common_utils import set_rng_seed
 import io
 import torch
@@ -12,12 +20,6 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHe
 from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
-
-# onnxruntime requires python 3.5 or above
-try:
-    import onnxruntime
-except ImportError:
-    onnxruntime = None
 
 import unittest
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
