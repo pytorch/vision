@@ -7,7 +7,7 @@ import os.path
 import zipfile
 
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, cast, Dict, List, Optional,Tuple, Union
+from typing import Any, BinaryIO, Callable, cast, Dict, List, Optional, Tuple, Union
 
 
 def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bool:
@@ -142,7 +142,8 @@ class DatasetFolder(VisionDataset):
         self.samples = samples
         self.targets = [s[1] for s in samples]
 
-    def make_dataset(self,
+    def make_dataset(
+        self,
         directory: str,
         class_to_idx: Dict[str, int],
         extensions: Optional[Tuple[str, ...]] = None,
@@ -290,7 +291,8 @@ class ZipFolder(DatasetFolder):
                     zip_path = os.path.join(zip_root, _file)
                     zf.write(org_path, zip_path)
 
-    def make_dataset(self,
+    def make_dataset(
+        self,
         directory: str,
         class_to_idx: Dict[str, int],
         extensions: Optional[Tuple[str, ...]] = None,
