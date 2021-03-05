@@ -257,6 +257,7 @@ class ImageFolder(DatasetFolder):
                                           is_valid_file=is_valid_file)
         self.imgs = self.samples
 
+
 class ZipFolder(DatasetFolder):
     def __init__(self, root: str, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None,
                  is_valid_file: Optional[Callable[[str], bool]] = None, memory: bool = True) -> None:
@@ -289,10 +290,10 @@ class ZipFolder(DatasetFolder):
     def make_dataset(
         self,
         directory: str,
-        class_to_idx: dict[str, int],
-        extensions: Optional[tuple[str, ...]] = None,
+        class_to_idx: Dict[str, int],
+        extensions: Optional[Tuple[str, ...]] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
-    ) -> list[tuple[str, int]]:
+    ) -> List[Tuple[str, int]]:
         instances = []
         both_none = extensions is None and is_valid_file is None
         both_something = extensions is not None and is_valid_file is not None
@@ -300,7 +301,7 @@ class ZipFolder(DatasetFolder):
             raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
         if extensions is not None:
             def is_valid_file(x: str) -> bool:
-                return has_file_allowed_extension(x, cast(tuple[str, ...], extensions))
+                return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
         is_valid_file = cast(Callable[[str], bool], is_valid_file)
         for filepath in self.root_zip.namelist():
             if is_valid_file(filepath):
@@ -308,15 +309,8 @@ class ZipFolder(DatasetFolder):
                 instances.append((filepath, class_to_idx[target_class]))
         return instances
 
-    def zip_loader(self, path: str) -> Image.Image:
-        f = io.BytesIO(self.root_zip.read(path))
-        if get_image_backend() == 'accimage':
-            try:
-                import accimage  # type: ignore
-                return accimage.Image(f)
-            except IOError:
-                pass   # fall through to PIL
-        return Image.open(f).convert('RGB')
+    def zip_loader(self, path: str) -> Any:
+        return default_loader(io.BytesIO(self.root_zip.read(path)))
 
     def _find_classes(self, *args, **kwargs):
         """
