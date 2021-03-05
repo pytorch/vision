@@ -89,4 +89,5 @@ def get_video_backend():
 
 
 def _is_tracing():
-    return torch._C._get_tracing_state()
+    # return torch._C._get_tracing_state()
+    return torch.onnx.is_in_onnx_export()
