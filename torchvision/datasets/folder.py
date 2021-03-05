@@ -1,13 +1,12 @@
 from .vision import VisionDataset
 
 from PIL import Image
+
 import io
 import os
 import os.path
 import zipfile
-
-from pathlib import Path
-from typing import Any, BinaryIO, Callable, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 
 def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bool:
@@ -193,16 +192,16 @@ class DatasetFolder(VisionDataset):
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
 
-def pil_loader(path: Union[str, Path, BinaryIO]) -> Image.Image:
+def pil_loader(path: Union[str, io.IOBase]) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
-    f = path if isinstance(path, BinaryIO) else open(path, 'rb')
+    f = open(path, 'rb') if isinstance(path, str) else path
     img = Image.open(f)
     f.close()
     return img.convert('RGB')
 
 
 # TODO: specify the return type
-def accimage_loader(path: Union[str, Path, BinaryIO]) -> Any:
+def accimage_loader(path: Union[str, io.IOBase]) -> Any:
     import accimage
     try:
         return accimage.Image(path)
@@ -211,7 +210,7 @@ def accimage_loader(path: Union[str, Path, BinaryIO]) -> Any:
         return pil_loader(path)
 
 
-def default_loader(path: Union[str, Path, BinaryIO]) -> Any:
+def default_loader(path: Union[str, io.IOBase]) -> Any:
     from torchvision import get_image_backend
     if get_image_backend() == 'accimage':
         return accimage_loader(path)
