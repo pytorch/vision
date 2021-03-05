@@ -1,5 +1,4 @@
 from .vision import VisionDataset
-from torchvision import get_image_backend
 
 from PIL import Image
 import io
@@ -210,6 +209,7 @@ def accimage_loader(path: str) -> Any:
 
 
 def default_loader(path: str) -> Any:
+    from torchvision import get_image_backend
     if get_image_backend() == 'accimage':
         return accimage_loader(path)
     else:
