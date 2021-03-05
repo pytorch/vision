@@ -5,7 +5,9 @@ import io
 import os
 import os.path
 import zipfile
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+
+from pathlib import Path
+from typing import Any, BinaryIO, Callable, cast, Dict, List, Optional,Tuple, Union
 
 
 def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bool:
@@ -140,8 +142,7 @@ class DatasetFolder(VisionDataset):
         self.samples = samples
         self.targets = [s[1] for s in samples]
 
-    @staticmethod
-    def make_dataset(
+    def make_dataset(self,
         directory: str,
         class_to_idx: Dict[str, int],
         extensions: Optional[Tuple[str, ...]] = None,
@@ -191,15 +192,16 @@ class DatasetFolder(VisionDataset):
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
 
-def pil_loader(path: str) -> Image.Image:
+def pil_loader(path: Union[str, Path, BinaryIO]) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
-    with open(path, 'rb') as f:
-        img = Image.open(f)
-        return img.convert('RGB')
+    f = path if isinstance(path, BinaryIO) else open(path, 'rb')
+    img = Image.open(f)
+    f.close()
+    return img.convert('RGB')
 
 
 # TODO: specify the return type
-def accimage_loader(path: str) -> Any:
+def accimage_loader(path: Union[str, Path, BinaryIO]) -> Any:
     import accimage
     try:
         return accimage.Image(path)
@@ -208,7 +210,7 @@ def accimage_loader(path: str) -> Any:
         return pil_loader(path)
 
 
-def default_loader(path: str) -> Any:
+def default_loader(path: Union[str, Path, BinaryIO]) -> Any:
     from torchvision import get_image_backend
     if get_image_backend() == 'accimage':
         return accimage_loader(path)
@@ -281,14 +283,14 @@ class ZipFolder(DatasetFolder):
             zip_path = os.path.join(folder_dir, f'{folder_base}_store.zip')
         with zipfile.ZipFile(zip_path, mode='w', compression=zipfile.ZIP_STORED) as zf:
             for walk_root, walk_dirs, walk_files in os.walk(root):
-                zip_root = walk_root.removeprefix(folder_dir)
+                # TODO: (python 3.9) zip_root = walk_root.removeprefix(folder_dir)
+                zip_root = walk_root[len(folder_dir):] if walk_root.startswith(folder_dir) else walk_root
                 for _file in walk_files:
                     org_path = os.path.join(walk_root, _file)
                     zip_path = os.path.join(zip_root, _file)
                     zf.write(org_path, zip_path)
 
-    def make_dataset(
-        self,
+    def make_dataset(self,
         directory: str,
         class_to_idx: Dict[str, int],
         extensions: Optional[Tuple[str, ...]] = None,
