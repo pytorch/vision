@@ -195,9 +195,9 @@ IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tif
 def pil_loader(path: Union[str, io.BytesIO]) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     f = open(path, 'rb') if isinstance(path, str) else path
-    img = Image.open(f)
+    img = Image.open(f).convert('RGB')
     f.close()
-    return img.convert('RGB')
+    return img
 
 
 # TODO: specify the return type
