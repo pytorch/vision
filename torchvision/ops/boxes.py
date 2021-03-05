@@ -36,7 +36,6 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
-@torch.jit._script_if_tracing
 def batched_nms(
     boxes: Tensor,
     scores: Tensor,
@@ -62,14 +61,10 @@ def batched_nms(
             the elements that have been kept by NMS, sorted
             in decreasing order of scores
     """
-    num_boxes = boxes.numel()
-
-    if num_boxes == 0:
-        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
     # Ideally for GPU we'd use a higher threshold
-    elif num_boxes > 4_000 and torchvision._is_tracing():
+    if boxes.numel()  > 4_000 and not torchvision._is_tracing():
         return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
     else:
         return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
@@ -86,6 +81,8 @@ def _batched_nms_coordinate_trick(
     # we add an offset to all the boxes. The offset is dependent
     # only on the class idx, and is large enough so that boxes
     # from different classes do not overlap
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     max_coordinate = boxes.max()
     offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
     boxes_for_nms = boxes + offsets[:, None]
@@ -101,6 +98,9 @@ def _batched_nms_vanilla(
     iou_threshold: float,
 ) -> Tensor:
     # Based on Detectron2 implementation, just manually call nms() on each class independently
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+
     keep_mask = torch.zeros_like(scores, dtype=torch.bool)
     for class_id in torch.unique(idxs):
         curr_indices = torch.where(idxs == class_id)[0]
