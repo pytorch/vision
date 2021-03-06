@@ -10,6 +10,7 @@ import random
 import string
 import unittest
 import unittest.mock
+from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import PIL
@@ -56,28 +57,45 @@ class LazyImporter:
         "pycocotools",
         "requests",
         "scipy.io",
+        "scipy.sparse",
     )
 
     def __init__(self):
-        cls = type(self)
+        modules = defaultdict(list)
         for module in self.MODULES:
-            # We need the quirky 'module=module' argument to the lambda since otherwise the lookup for 'module' in this
-            # scope would happen at runtime rather than at definition. Thus, without it, every property would try to
-            # import the last 'module' in MODULES.
-            setattr(cls, module.split(".", 1)[0], property(lambda self, module=module: LazyImporter._import(module)))
+            module, *submodules = module.split(".", 1)
+            if submodules:
+                modules[module].append(submodules[0])
+            else:
+                # This introduces the module so that it is known when we later iterate over the dictionary.
+                modules.__missing__(module)
+
+        for module, submodules in modules.items():
+            # We need the quirky 'module=module' and submodules=submodules arguments to the lambda since otherwise the
+            # lookup for these would happen at runtime rather than at definition. Thus, without it, every property
+            # would try to import the last item in 'modules'
+            setattr(
+                type(self),
+                module,
+                property(lambda self, module=module, submodules=submodules: LazyImporter._import(module, submodules)),
+            )
 
     @staticmethod
-    def _import(module):
+    def _import(package, subpackages):
         try:
-            importlib.import_module(module)
-            return importlib.import_module(module.split(".", 1)[0])
+            module = importlib.import_module(package)
         except ImportError as error:
             raise UsageError(
-                f"Failed to import module '{module}'. "
-                f"This probably means that the current test case needs '{module}' installed, "
+                f"Failed to import module '{package}'. "
+                f"This probably means that the current test case needs '{package}' installed, "
                 f"but it is not a dependency of torchvision. "
-                f"You need to install it manually, for example 'pip install {module}'."
+                f"You need to install it manually, for example 'pip install {package}'."
             ) from error
+
+        for name in subpackages:
+            importlib.import_module(f".{name}", package=package)
+
+        return module
 
 
 lazy_importer = LazyImporter()
@@ -418,14 +436,17 @@ class DatasetTestCase(unittest.TestCase):
         with self.create_dataset(config) as (dataset, _):
             example = dataset[0]
 
-            actual = len(example)
-            expected = len(self.FEATURE_TYPES)
-            self.assertEqual(
-                actual,
-                expected,
-                f"The number of the returned features does not match the the number of elements in in FEATURE_TYPES: "
-                f"{actual} != {expected}",
-            )
+            if len(self.FEATURE_TYPES) > 1:
+                actual = len(example)
+                expected = len(self.FEATURE_TYPES)
+                self.assertEqual(
+                    actual,
+                    expected,
+                    f"The number of the returned features does not match the the number of elements in FEATURE_TYPES: "
+                    f"{actual} != {expected}",
+                )
+            else:
+                example = (example,)
 
             for idx, (feature, expected_feature_type) in enumerate(zip(example, self.FEATURE_TYPES)):
                 with self.subTest(idx=idx):
@@ -568,7 +589,13 @@ def create_image_file(
 
     image = create_image_or_video_tensor(size)
     file = pathlib.Path(root) / name
-    PIL.Image.fromarray(image.permute(2, 1, 0).numpy()).save(file, **kwargs)
+
+    # torch (num_channels x height x width) -> PIL (width x height x num_channels)
+    image = image.permute(2, 1, 0)
+    # For grayscale images PIL doesn't use a channel dimension
+    if image.shape[2] == 1:
+        image = torch.squeeze(image, 2)
+    PIL.Image.fromarray(image.numpy()).save(file, **kwargs)
     return file
 
 
