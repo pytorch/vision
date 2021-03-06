@@ -1,7 +1,7 @@
 channels:
   - pytorch
   - defaults
-  # using conda-forge for python v3.9+
+  # using conda-forge for python v3.9
   - conda-forge
 dependencies:
   - pytest

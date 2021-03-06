@@ -10,7 +10,17 @@ from .utils import download_url
 
 
 class PhotoTour(VisionDataset):
-    """`Learning Local Image Descriptors Data <http://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
+    """`Multi-view Stereo Correspondence <http://matthewalunbrown.com/patchdata/patchdata.html>`_ Dataset.
+
+    .. note::
+
+        We only provide the newer version of the dataset, since the authors state that it
+
+            is more suitable for training descriptors based on difference of Gaussian, or Harris corners, as the
+            patches are centred on real interest point detections, rather than being projections of 3D points as is the
+            case in the old dataset.
+
+        The original dataset is available under http://phototour.cs.washington.edu/patches/default.htm.
 
 
     Args:
@@ -82,8 +92,10 @@ class PhotoTour(VisionDataset):
             self.download()
 
         if not self._check_datafile_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            try:
+                self.cache()
+            except Exception as error:
+                raise RuntimeError("Dataset not found. You can use download=True to download it") from error
 
         # load the serialized data
         self.data, self.labels, self.matches = torch.load(self.data_file)
@@ -109,9 +121,7 @@ class PhotoTour(VisionDataset):
         return data1, data2, m[2]
 
     def __len__(self) -> int:
-        if self.train:
-            return self.lens[self.name]
-        return len(self.matches)
+        return len(self.data if self.train else self.matches)
 
     def _check_datafile_exists(self) -> bool:
         return os.path.exists(self.data_file)
@@ -141,6 +151,7 @@ class PhotoTour(VisionDataset):
 
             os.unlink(fpath)
 
+    def cache(self) -> None:
         # process and save as torch files
         print('# Caching data {}'.format(self.data_file))
 
@@ -181,8 +192,8 @@ def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
 
     for fpath in list_files:
         img = Image.open(fpath)
-        for y in range(0, 1024, 64):
-            for x in range(0, 1024, 64):
+        for y in range(0, img.height, 64):
+            for x in range(0, img.width, 64):
                 patch = img.crop((x, y, x + 64, y + 64))
                 patches.append(PIL2array(patch))
     return torch.ByteTensor(np.array(patches[:n]))
