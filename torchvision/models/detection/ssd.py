@@ -1,6 +1,9 @@
 from torch import nn, Tensor
-
 from typing import Dict, List, Optional, Tuple
+
+from .backbone_utils import _validate_trainable_layers
+from .. import vgg
+
 
 __all__ = ['SSD']
 
@@ -51,8 +54,11 @@ class SSDRegressionHead(nn.Module):
 
 
 class SSD(nn.Module):
-    def __init__(self, backbone, num_classes):
+    def __init__(self, backbone, num_classes, num_anchors=(4, 6, 6, 6, 4, 4)):
         super().__init__()
+        self.backbone = backbone
+        self.num_classes = num_classes
+        self.num_anchors = num_anchors
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      anchors: List[Tensor]) -> Dict[str, Tensor]:
@@ -65,3 +71,96 @@ class SSD(nn.Module):
     def forward(self, images: List[Tensor],
                 targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         pass
+
+
+class MultiFeatureMap(nn.Module):
+
+    def __init__(self, feature_maps: nn.ModuleList):
+        super().__init__()
+        self.feature_maps = feature_maps
+
+    def forward(self, x):
+        output = []
+        for block in self.feature_maps:
+            x = block(x)
+            output.append(x)
+        return output
+
+
+def vgg16_mfm_backbone(pretrained, trainable_layers=3):
+    backbone = vgg.vgg16(pretrained=pretrained).features
+
+    # Gather the indices of maxpools. These are the locations of output blocks.
+    stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
+    num_stages = len(stage_indices)
+
+    # find the index of the layer from which we wont freeze
+    assert 0 <= trainable_layers <= num_stages
+    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+
+    for b in backbone[:freeze_before]:
+        for parameter in b.parameters():
+            parameter.requires_grad_(False)
+
+    # Multiple Feature map definition - page 4, Fig 2 of SSD paper
+    feature_maps = nn.ModuleList([
+        # Conv4_3 map
+        nn.Sequential(
+            *backbone[:23],  # until conv4_3
+        ),
+        # FC7 map
+        nn.Sequential(
+            *backbone[23:],  # until maxpool5  # TODO: replace maxpool 5 as in the paper?
+            nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=1),  # FC6
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
+            nn.ReLU(inplace=True)
+        ),
+        # Conv8_2 map
+        nn.Sequential(
+            nn.Conv2d(1024, 256, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),
+            nn.ReLU(inplace=True),
+        ),
+        # Conv9_2 map
+        nn.Sequential(
+            nn.Conv2d(512, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),
+            nn.ReLU(inplace=True),
+        ),
+        # Conv10_2 map
+        nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+        ),
+        # Conv11_2 map
+        nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+        ),
+    ])
+    # TODO: keep track of block output sizes in a variable. Perhaps define a new block class that has it as attribute?
+
+    return MultiFeatureMap(feature_maps)
+
+
+def ssd_vgg16(pretrained=False, progress=True,
+              num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
+
+    if pretrained:
+        # no need to download the backbone if pretrained is set
+        pretrained_backbone = False
+
+    backbone = vgg16_mfm_backbone(pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    model = SSD(backbone, num_classes, **kwargs)
+    if pretrained:
+        pass  # TODO: load pre-trained COCO weights
+    return model
