@@ -87,7 +87,7 @@ class MultiFeatureMap(nn.Module):
         return output
 
 
-def vgg16_mfm_backbone(pretrained, trainable_layers=3):
+def _vgg16_mfm_backbone(pretrained, trainable_layers=3):
     backbone = vgg.vgg16(pretrained=pretrained).features
 
     # Gather the indices of maxpools. These are the locations of output blocks.
@@ -102,50 +102,77 @@ def vgg16_mfm_backbone(pretrained, trainable_layers=3):
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
+    # Patch ceil_mode for all maxpool layers of backbone to get the same outputs as Fig2 of SSD papers
+    for layer in backbone:
+        if isinstance(layer, nn.MaxPool2d):
+            layer.ceil_mode = True
+
     # Multiple Feature map definition - page 4, Fig 2 of SSD paper
+    def build_feature_map_block(layers, out_channels):
+        block = nn.Sequential(*layers)
+        block.out_channels = out_channels
+        return block
+
     feature_maps = nn.ModuleList([
         # Conv4_3 map
-        nn.Sequential(
-            *backbone[:23],  # until conv4_3
+        build_feature_map_block(
+            backbone[:23],  # until conv4_3
+            # TODO: add L2 nomarlization + scaling?
+            512
         ),
         # FC7 map
-        nn.Sequential(
-            *backbone[23:],  # until maxpool5  # TODO: replace maxpool 5 as in the paper?
-            nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=1),  # FC6
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
-            nn.ReLU(inplace=True)
+        build_feature_map_block(
+            (
+                *backbone[23:-1],  # until conv5_3
+                nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # modified maxpool5
+                nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
+                nn.ReLU(inplace=True),
+                nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
+                nn.ReLU(inplace=True)
+            ),
+            1024
         ),
         # Conv8_2 map
-        nn.Sequential(
-            nn.Conv2d(1024, 256, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),
-            nn.ReLU(inplace=True),
+        build_feature_map_block(
+            (
+                nn.Conv2d(1024, 256, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),
+                nn.ReLU(inplace=True),
+            ),
+            512,
         ),
         # Conv9_2 map
-        nn.Sequential(
-            nn.Conv2d(512, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),
-            nn.ReLU(inplace=True),
+        build_feature_map_block(
+            (
+                nn.Conv2d(512, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),
+                nn.ReLU(inplace=True),
+            ),
+            256,
         ),
         # Conv10_2 map
-        nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
+        build_feature_map_block(
+            (
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=3),
+                nn.ReLU(inplace=True),
+            ),
+            256,
         ),
         # Conv11_2 map
-        nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
+        build_feature_map_block(
+            (
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=3),
+                nn.ReLU(inplace=True),
+            ),
+            256,
         ),
     ])
-    # TODO: keep track of block output sizes in a variable. Perhaps define a new block class that has it as attribute?
 
     return MultiFeatureMap(feature_maps)
 
@@ -159,7 +186,7 @@ def ssd_vgg16(pretrained=False, progress=True,
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = vgg16_mfm_backbone(pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = _vgg16_mfm_backbone(pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = SSD(backbone, num_classes, **kwargs)
     if pretrained:
         pass  # TODO: load pre-trained COCO weights
