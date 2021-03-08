@@ -87,8 +87,8 @@ class MultiFeatureMap(nn.Module):
         return output
 
 
-def _vgg16_mfm_backbone(pretrained, trainable_layers=3):
-    backbone = vgg.vgg16(pretrained=pretrained).features
+def _vgg_mfm_backbone(backbone_name, pretrained, trainable_layers=3):
+    backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
 
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
@@ -113,18 +113,17 @@ def _vgg16_mfm_backbone(pretrained, trainable_layers=3):
         block.out_channels = out_channels
         return block
 
+    penultimate_block_index = stage_indices[-2]
     feature_maps = nn.ModuleList([
-        # Conv4_3 map
         build_feature_map_block(
-            backbone[:23],  # until conv4_3
+            backbone[:penultimate_block_index],  # until conv4_3
             # TODO: add L2 nomarlization + scaling?
             512
         ),
-        # FC7 map
         build_feature_map_block(
             (
-                *backbone[23:-1],  # until conv5_3
-                nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # modified maxpool5
+                *backbone[penultimate_block_index:-1],  # until conv5_3, skip last maxpool
+                nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # add modified maxpool5
                 nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
                 nn.ReLU(inplace=True),
                 nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
@@ -132,42 +131,38 @@ def _vgg16_mfm_backbone(pretrained, trainable_layers=3):
             ),
             1024
         ),
-        # Conv8_2 map
         build_feature_map_block(
             (
                 nn.Conv2d(1024, 256, kernel_size=1),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),
+                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
                 nn.ReLU(inplace=True),
             ),
             512,
         ),
-        # Conv9_2 map
         build_feature_map_block(
             (
                 nn.Conv2d(512, 128, kernel_size=1),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),
+                nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
                 nn.ReLU(inplace=True),
             ),
             256,
         ),
-        # Conv10_2 map
         build_feature_map_block(
             (
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3),
+                nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
                 nn.ReLU(inplace=True),
             ),
             256,
         ),
-        # Conv11_2 map
         build_feature_map_block(
             (
                 nn.Conv2d(256, 128, kernel_size=1),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3),
+                nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
                 nn.ReLU(inplace=True),
             ),
             256,
@@ -186,7 +181,7 @@ def ssd_vgg16(pretrained=False, progress=True,
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg16_mfm_backbone(pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = _vgg_mfm_backbone("vgg16", pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = SSD(backbone, num_classes, **kwargs)
     if pretrained:
         pass  # TODO: load pre-trained COCO weights
