@@ -461,6 +461,28 @@ class NMSTester(unittest.TestCase):
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
         self.assertTrue(torch.all(torch.eq(keep32, keep16)))
 
+    def test_batched_nms_implementations(self):
+        """Make sure that both implementations of batched_nms yield identical results"""
+
+        num_boxes = 1000
+        iou_threshold = .9
+
+        boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
+        assert max(boxes[:, 0]) < min(boxes[:, 2])  # x1 < x2
+        assert max(boxes[:, 1]) < min(boxes[:, 3])  # y1 < y2
+
+        scores = torch.rand(num_boxes)
+        idxs = torch.randint(0, 4, size=(num_boxes,))
+        keep_vanilla = ops.boxes._batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
+        keep_trick = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+
+        err_msg = "The vanilla and the trick implementation yield different nms outputs."
+        self.assertTrue(torch.allclose(keep_vanilla, keep_trick), err_msg)
+
+        # Also make sure an empty tensor is returned if boxes is empty
+        empty = torch.empty((0,), dtype=torch.int64)
+        self.assertTrue(torch.allclose(empty, ops.batched_nms(empty, None, None, None)))
+
 
 class DeformConvTester(OpTester, unittest.TestCase):
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
