@@ -479,6 +479,10 @@ class NMSTester(unittest.TestCase):
         err_msg = "The vanilla and the trick implementation yield different nms outputs."
         self.assertTrue(torch.allclose(keep_vanilla, keep_trick), err_msg)
 
+        # Also make sure an empty tensor is returned if boxes is empty
+        empty = torch.empty((0,), dtype=torch.int64)
+        self.assertTrue(torch.allclose(empty, ops.batched_nms(empty, None, None, None)))
+
 
 class DeformConvTester(OpTester, unittest.TestCase):
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):

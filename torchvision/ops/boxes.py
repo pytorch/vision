@@ -98,9 +98,6 @@ def _batched_nms_vanilla(
     iou_threshold: float,
 ) -> Tensor:
     # Based on Detectron2 implementation, just manually call nms() on each class independently
-    if boxes.numel() == 0:
-        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
-
     keep_mask = torch.zeros_like(scores, dtype=torch.bool)
     for class_id in torch.unique(idxs):
         curr_indices = torch.where(idxs == class_id)[0]
