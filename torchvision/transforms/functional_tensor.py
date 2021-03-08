@@ -902,6 +902,10 @@ def autocontrast(img: Tensor) -> Tensor:
 
 
 def _scale_channel(img_chan):
+    # TODO: we should expect bincount to always be faster than histc, but this
+    # isn't always the case. Once
+    # https://github.com/pytorch/pytorch/issues/53194 is fixed, remove the if
+    # block and only use bincount.
     if img_chan.is_cuda:
         hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
     else:
