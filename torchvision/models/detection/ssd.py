@@ -35,6 +35,9 @@ class SSDHead(nn.Module):
 class SSDClassificationHead(nn.Module):
     def __init__(self, in_channels, num_anchors, num_classes):
         super().__init__()
+        self.cls_logits = nn.ModuleList()
+        for channels, anchors in zip(in_channels, num_anchors):
+            self.cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
@@ -47,6 +50,9 @@ class SSDClassificationHead(nn.Module):
 class SSDRegressionHead(nn.Module):
     def __init__(self, in_channels, num_anchors):
         super().__init__()
+        self.bbox_reg = nn.ModuleList()
+        for channels, anchors in zip(in_channels, num_anchors):
+            self.bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
@@ -59,9 +65,22 @@ class SSDRegressionHead(nn.Module):
 class SSD(nn.Module):
     def __init__(self, backbone, num_classes, num_anchors=(4, 6, 6, 6, 4, 4)):
         super().__init__()
+
+        assert len(backbone.OUT_CHANNELS) == len(num_anchors)
+
         self.backbone = backbone
         self.num_classes = num_classes
         self.num_anchors = num_anchors
+
+        self.head = SSDHead(backbone.OUT_CHANNELS, num_anchors, num_classes)
+
+    @torch.jit.unused
+    def eager_outputs(self, losses, detections):
+        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+        if self.training:
+            return losses
+
+        return detections
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      anchors: List[Tensor]) -> Dict[str, Tensor]:
@@ -146,7 +165,7 @@ class SSDFeatureExtractorVGG(nn.Module):
         return output
 
 
-def _vgg_mfm_backbone(backbone_name, pretrained, trainable_layers=3):
+def _vgg_backbone(backbone_name, pretrained, trainable_layers=3):
     backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
 
     # Gather the indices of maxpools. These are the locations of output blocks.
@@ -173,7 +192,7 @@ def ssd_vgg16(pretrained=False, progress=True,
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_mfm_backbone("vgg16", pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = _vgg_backbone("vgg16", pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = SSD(backbone, num_classes, **kwargs)
     if pretrained:
         pass  # TODO: load pre-trained COCO weights
