@@ -7,6 +7,8 @@ from typing import List, Tuple, Optional
 
 from . import functional as F, InterpolationMode
 
+__all__ = ["AutoAugmentPolicy", "AutoAugment"]
+
 
 class AutoAugmentPolicy(Enum):
     """AutoAugment policies learned on different datasets.
