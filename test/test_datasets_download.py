@@ -149,13 +149,13 @@ def assert_server_response_ok():
         raise AssertionError(str(error)) from error
 
 
-def assert_url_is_accessible(url, timeout=5.0):
+def assert_url_is_accessible(url, timeout=30.0):
     request = Request(url, headers={"method": "HEAD", "User-Agent": USER_AGENT})
     with assert_server_response_ok():
         urlopen(request, timeout=timeout)
 
 
-def assert_file_downloads_correctly(url, md5, timeout=5.0):
+def assert_file_downloads_correctly(url, md5, timeout=30.0):
     with get_tmp_dir() as root:
         file = path.join(root, path.basename(url))
         with assert_server_response_ok():
