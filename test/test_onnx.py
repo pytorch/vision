@@ -1,3 +1,11 @@
+# onnxruntime requires python 3.5 or above
+try:
+    # This import should be before that of torch
+    # see https://github.com/onnx/onnx/issues/2394#issuecomment-581638840
+    import onnxruntime
+except ImportError:
+    onnxruntime = None
+
 from common_utils import set_rng_seed
 import io
 import torch
@@ -12,12 +20,6 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHe
 from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
-
-# onnxruntime requires python 3.5 or above
-try:
-    import onnxruntime
-except ImportError:
-    onnxruntime = None
 
 import unittest
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
@@ -82,15 +84,29 @@ class ONNXExporterTester(unittest.TestCase):
                     raise
 
     def test_nms(self):
-        boxes = torch.rand(5, 4)
-        boxes[:, 2:] += torch.rand(5, 2)
-        scores = torch.randn(5)
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
 
         class Module(torch.nn.Module):
             def forward(self, boxes, scores):
                 return ops.nms(boxes, scores, 0.5)
 
         self.run_model(Module(), [(boxes, scores)])
+
+    def test_batched_nms(self):
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
+        idxs = torch.randint(0, 5, size=(num_boxes,))
+
+        class Module(torch.nn.Module):
+            def forward(self, boxes, scores, idxs):
+                return ops.batched_nms(boxes, scores, idxs, 0.5)
+
+        self.run_model(Module(), [(boxes, scores, idxs)])
 
     def test_clip_boxes_to_image(self):
         boxes = torch.randn(5, 4) * 500

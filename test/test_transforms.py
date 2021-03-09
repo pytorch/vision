@@ -312,23 +312,30 @@ class Tester(unittest.TestCase):
             img = Image.new("RGB", size=(width, height), color=127)
 
             for osize in test_output_sizes_1:
+                for max_size in (None, 37, 1000):
 
-                t = transforms.Resize(osize)
-                result = t(img)
+                    t = transforms.Resize(osize, max_size=max_size)
+                    result = t(img)
 
-                msg = "{}, {} - {}".format(height, width, osize)
-                osize = osize[0] if isinstance(osize, (list, tuple)) else osize
-                # If size is an int, smaller edge of the image will be matched to this number.
-                # i.e, if height > width, then image will be rescaled to (size * height / width, size).
-                if height < width:
-                    expected_size = (int(osize * width / height), osize)  # (w, h)
-                    self.assertEqual(result.size, expected_size, msg=msg)
-                elif width < height:
-                    expected_size = (osize, int(osize * height / width))  # (w, h)
-                    self.assertEqual(result.size, expected_size, msg=msg)
-                else:
-                    expected_size = (osize, osize)  # (w, h)
-                    self.assertEqual(result.size, expected_size, msg=msg)
+                    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
+                    osize = osize[0] if isinstance(osize, (list, tuple)) else osize
+                    # If size is an int, smaller edge of the image will be matched to this number.
+                    # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+                    if height < width:
+                        exp_w, exp_h = (int(osize * width / height), osize)  # (w, h)
+                        if max_size is not None and max_size < exp_w:
+                            exp_w, exp_h = max_size, int(max_size * exp_h / exp_w)
+                        self.assertEqual(result.size, (exp_w, exp_h), msg=msg)
+                    elif width < height:
+                        exp_w, exp_h = (osize, int(osize * height / width))  # (w, h)
+                        if max_size is not None and max_size < exp_h:
+                            exp_w, exp_h = int(max_size * exp_w / exp_h), max_size
+                        self.assertEqual(result.size, (exp_w, exp_h), msg=msg)
+                    else:
+                        exp_w, exp_h = (osize, osize)  # (w, h)
+                        if max_size is not None and max_size < osize:
+                            exp_w, exp_h = max_size, max_size
+                        self.assertEqual(result.size, (exp_w, exp_h), msg=msg)
 
         for height, width in input_sizes:
             img = Image.new("RGB", size=(width, height), color=127)

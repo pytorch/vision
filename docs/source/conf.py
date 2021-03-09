@@ -83,7 +83,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Torchvision'
-copyright = '2017, Torch Contributors'
+copyright = '2017-present, Torch Contributors'
 author = 'Torch Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
