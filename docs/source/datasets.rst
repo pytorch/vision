@@ -205,7 +205,7 @@ SBU
   :special-members:
 
 SEMEION
-~~~~~~
+~~~~~~~
 
 .. autoclass:: SEMEION
   :members: __getitem__
