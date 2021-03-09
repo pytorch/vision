@@ -188,7 +188,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+f826e3d ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+f0eb122 ) &#x25BC</a>
     </div>
     
 
@@ -305,7 +305,7 @@
   <h1>Source code for torchvision.ops.boxes</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">from</span> <span class="nn">._box_convert</span> <span class="kn">import</span> <span class="n">_box_cxcywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xyxy_to_cxcywh</span><span class="p">,</span> <span class="n">_box_xywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xyxy_to_xywh</span>
 <span class="kn">import</span> <span class="nn">torchvision</span>
 <span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span>
@@ -341,8 +341,7 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="batched_nms"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.batched_nms">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">_script_if_tracing</span>
-<span class="k">def</span> <span class="nf">batched_nms</span><span class="p">(</span>
+<div class="viewcode-block" id="batched_nms"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.batched_nms">[docs]</a><span class="k">def</span> <span class="nf">batched_nms</span><span class="p">(</span>
     <span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -367,18 +366,50 @@
 <span class="sd">            the elements that have been kept by NMS, sorted</span>
 <span class="sd">            in decreasing order of scores</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">boxes</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">boxes</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-    <span class="c1"># strategy: in order to perform NMS independently per class.</span>
+    <span class="c1"># Benchmarks that drove the following thresholds are at</span>
+    <span class="c1"># https://github.com/pytorch/vision/issues/1311#issuecomment-781329339</span>
+    <span class="c1"># Ideally for GPU we&#39;d use a higher threshold</span>
+    <span class="k">if</span> <span class="n">boxes</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">4_000</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">_is_tracing</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">_batched_nms_vanilla</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_batched_nms_coordinate_trick</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">idxs</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span></div>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">_script_if_tracing</span>
+<span class="k">def</span> <span class="nf">_batched_nms_coordinate_trick</span><span class="p">(</span>
+    <span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># strategy: in order to perform NMS independently per class,</span>
     <span class="c1"># we add an offset to all the boxes. The offset is dependent</span>
     <span class="c1"># only on the class idx, and is large enough so that boxes</span>
     <span class="c1"># from different classes do not overlap</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">max_coordinate</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-        <span class="n">offsets</span> <span class="o">=</span> <span class="n">idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_coordinate</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">boxes</span><span class="p">))</span>
-        <span class="n">boxes_for_nms</span> <span class="o">=</span> <span class="n">boxes</span> <span class="o">+</span> <span class="n">offsets</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">keep</span> <span class="o">=</span> <span class="n">nms</span><span class="p">(</span><span class="n">boxes_for_nms</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">keep</span></div>
+    <span class="k">if</span> <span class="n">boxes</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">boxes</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">max_coordinate</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">offsets</span> <span class="o">=</span> <span class="n">idxs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_coordinate</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">boxes</span><span class="p">))</span>
+    <span class="n">boxes_for_nms</span> <span class="o">=</span> <span class="n">boxes</span> <span class="o">+</span> <span class="n">offsets</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="n">nms</span><span class="p">(</span><span class="n">boxes_for_nms</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">keep</span>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">_script_if_tracing</span>
+<span class="k">def</span> <span class="nf">_batched_nms_vanilla</span><span class="p">(</span>
+    <span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># Based on Detectron2 implementation, just manually call nms() on each class independently</span>
+    <span class="n">keep_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">class_id</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span>
+        <span class="n">curr_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">idxs</span> <span class="o">==</span> <span class="n">class_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">curr_keep_indices</span> <span class="o">=</span> <span class="n">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">[</span><span class="n">curr_indices</span><span class="p">],</span> <span class="n">scores</span><span class="p">[</span><span class="n">curr_indices</span><span class="p">],</span> <span class="n">iou_threshold</span><span class="p">)</span>
+        <span class="n">keep_mask</span><span class="p">[</span><span class="n">curr_indices</span><span class="p">[</span><span class="n">curr_keep_indices</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">keep_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">keep_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">keep_indices</span><span class="p">[</span><span class="n">scores</span><span class="p">[</span><span class="n">keep_indices</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]]</span>
 
 
 <div class="viewcode-block" id="remove_small_boxes"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.remove_small_boxes">[docs]</a><span class="k">def</span> <span class="nf">remove_small_boxes</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
