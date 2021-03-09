@@ -498,11 +498,7 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
 
     if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
         short, long = (w, h) if w <= h else (h, w)
-
-        if isinstance(size, int):
-            requested_new_short = size
-        else:
-            requested_new_short = size[0]
+        requested_new_short = size if isinstance(size, int) else size[0]
 
         if short == requested_new_short:
             return img
