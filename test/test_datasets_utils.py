@@ -103,7 +103,7 @@ class Tester(unittest.TestCase):
     def test_extract_zip(self):
         def create_archive(root, content="this is the content"):
             file = os.path.join(root, "dst.txt")
-            archive = os.path.join(root, f"archive.zip")
+            archive = os.path.join(root, "archive.zip")
 
             with zipfile.ZipFile(archive, "w") as zf:
                 zf.writestr(os.path.basename(file), content)
