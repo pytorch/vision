@@ -102,23 +102,20 @@ class SSDFeatureExtractorVGG(nn.Module):
     def __init__(self, backbone: nn.Module):
         super().__init__()
 
-        # Patch ceil_mode for all maxpool layers of backbone to get the same WxH output sizes as the paper
-        penultimate_block_pos = ultimate_block_pos = None
-        for i, layer in enumerate(backbone):
-            if isinstance(layer, nn.MaxPool2d):
-                layer.ceil_mode = True
-                penultimate_block_pos = ultimate_block_pos
-                ultimate_block_pos = i
+        _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
+
+        # Patch ceil_mode for maxpool3 to get the same WxH output sizes as the paper
+        backbone[maxpool3_pos].ceil_mode = True
 
         # parameters used for L2 regularization + rescaling
         self.scale_weight = nn.Parameter(torch.ones(self.OUT_CHANNELS[0]) * 20)
 
         # Multiple Feature maps - page 4, Fig 2 of SSD paper
         self.block1 = nn.Sequential(
-            *backbone[:penultimate_block_pos]  # until conv4_3
+            *backbone[:maxpool4_pos]  # until conv4_3
         )
         self.block2 = nn.Sequential(
-            *backbone[penultimate_block_pos:-1],  # until conv5_3, skip maxpool5
+            *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # add modified maxpool5
             nn.Conv2d(in_channels=self.OUT_CHANNELS[0],
                       out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
