@@ -1991,6 +1991,9 @@ class Tester(unittest.TestCase):
         p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
         self.assertGreater(p_value, 0.0001)
 
+        # Checking if RandomErasing can be printed as string
+        t.__repr__()
+
 
 if __name__ == '__main__':
     unittest.main()
