@@ -470,7 +470,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     return img
 
 
-def resize(img: Tensor, size: List[int], interpolation: str = "bilinear") -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_size: Optional[int] = None) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(size, (int, tuple, list)):
@@ -484,34 +484,51 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear") -> Ten
     if isinstance(size, tuple):
         size = list(size)
 
-    if isinstance(size, list) and len(size) not in [1, 2]:
-        raise ValueError("Size must be an int or a 1 or 2 element tuple/list, not a "
-                         "{} element tuple/list".format(len(size)))
+    if isinstance(size, list):
+        if len(size) not in [1, 2]:
+            raise ValueError("Size must be an int or a 1 or 2 element tuple/list, not a "
+                             "{} element tuple/list".format(len(size)))
+        if max_size is not None and len(size) != 1:
+            raise ValueError(
+                "max_size should only be passed if size specifies the length of the smaller edge, "
+                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+            )
 
     w, h = _get_image_size(img)
 
-    if isinstance(size, int):
-        size_w, size_h = size, size
-    elif len(size) < 2:
-        size_w, size_h = size[0], size[0]
-    else:
-        size_w, size_h = size[1], size[0]  # Convention (h, w)
+    if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
+        short, long = (w, h) if w <= h else (h, w)
 
-    if isinstance(size, int) or len(size) < 2:
-        if w < h:
-            size_h = int(size_w * h / w)
+        if isinstance(size, int):
+            requested_new_short = size
         else:
-            size_w = int(size_h * w / h)
+            requested_new_short = size[0]
 
-        if (w <= h and w == size_w) or (h <= w and h == size_h):
+        if short == requested_new_short:
             return img
+
+        new_short, new_long = requested_new_short, int(requested_new_short * long / short)
+
+        if max_size is not None:
+            if max_size <= requested_new_short:
+                raise ValueError(
+                    f"max_size = {max_size} must be strictly greater than the requested "
+                    f"size for the smaller edge size = {size}"
+                )
+            if new_long > max_size:
+                new_short, new_long = int(max_size * new_short / new_long), max_size
+
+        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
+
+    else:  # specified both h and w
+        new_w, new_h = size[1], size[0]
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    img = interpolate(img, size=[size_h, size_w], mode=interpolation, align_corners=align_corners)
+    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
