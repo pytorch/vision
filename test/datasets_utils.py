@@ -316,9 +316,10 @@ class DatasetTestCase(unittest.TestCase):
             special_kwargs["download"] = False
         config.update(other_kwargs)
 
-        patchers = self._patch_download_extract()
-        if patch_checks:
-            patchers.update(self._patch_checks())
+        patchers = set()
+        # patchers = self._patch_download_extract()
+        # if patch_checks:
+        #     patchers.update(self._patch_checks())
 
         with get_tmp_dir() as tmpdir:
             args = self.dataset_args(tmpdir, config)

@@ -146,15 +146,15 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @mock.patch('torchvision.datasets.imagenet._verify_archive')
-    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
-    def test_imagenet(self, mock_verify):
-        with imagenet_root() as root:
-            dataset = torchvision.datasets.ImageNet(root, split='train')
-            self.generic_classification_dataset_test(dataset)
+    # @mock.patch('torchvision.datasets.imagenet._verify_archive')
+    # @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
+    # def test_imagenet(self, mock_verify):
+    #     with imagenet_root() as root:
+    #         dataset = torchvision.datasets.ImageNet(root, split='train')
+    #         self.generic_classification_dataset_test(dataset)
 
-            dataset = torchvision.datasets.ImageNet(root, split='val')
-            self.generic_classification_dataset_test(dataset)
+    #         dataset = torchvision.datasets.ImageNet(root, split='val')
+    #         self.generic_classification_dataset_test(dataset)
 
     @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
@@ -488,6 +488,89 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
             )
 
         return num_images_per_category * len(categories)
+
+
+# @mock.patch('torchvision.datasets.imagenet._verify_archive')
+class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ImageNet
+    REQUIRED_PACKAGES = ['scipy']
+
+    def imagenet_root(self, root):
+        import scipy.io as sio
+        import tarfile
+
+        WNID = 'n01234567'
+        CLS = 'fakedata'
+
+        def _make_image(file):
+            PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
+
+        def _make_tar(archive, content, arcname=None, compress=False):
+            mode = 'w:gz' if compress else 'w'
+            if arcname is None:
+                arcname = os.path.basename(content)
+            with tarfile.open(archive, mode) as fh:
+                fh.add(content, arcname=arcname)
+
+        def _make_train_archive(root):
+            with get_tmp_dir() as tmp:
+                wnid_dir = os.path.join(tmp, WNID)
+                os.mkdir(wnid_dir)
+
+                _make_image(os.path.join(wnid_dir, WNID + '_1.JPEG'))
+
+                wnid_archive = wnid_dir + '.tar'
+                _make_tar(wnid_archive, wnid_dir)
+
+                train_archive = os.path.join(root, 'ILSVRC2012_img_train.tar')
+                _make_tar(train_archive, wnid_archive)
+                # from torchvision.datasets.utils import extract_archive
+                # extract_archive(train_archive, os.path.join(root, 'train'))
+
+        def _make_val_archive(root):
+            with get_tmp_dir() as tmp:
+                val_image = os.path.join(tmp, 'ILSVRC2012_val_00000001.JPEG')
+                _make_image(val_image)
+
+                val_archive = os.path.join(root, 'ILSVRC2012_img_val.tar')
+                _make_tar(val_archive, val_image)
+
+        def _make_devkit_archive(root):
+            with get_tmp_dir() as tmp:
+                data_dir = os.path.join(tmp, 'data')
+                os.mkdir(data_dir)
+
+                meta_file = os.path.join(data_dir, 'meta.mat')
+                synsets = np.core.records.fromarrays([
+                    (0.0, 1.0),
+                    (WNID, ''),
+                    (CLS, ''),
+                    ('fakedata for the torchvision testsuite', ''),
+                    (0.0, 1.0),
+                ], names=['ILSVRC2012_ID', 'WNID', 'words', 'gloss', 'num_children'])
+                sio.savemat(meta_file, {'synsets': synsets})
+
+                groundtruth_file = os.path.join(data_dir,
+                                                'ILSVRC2012_validation_ground_truth.txt')
+                with open(groundtruth_file, 'w') as fh:
+                    fh.write('0\n')
+
+                devkit_name = 'ILSVRC2012_devkit_t12'
+                devkit_archive = os.path.join(root, devkit_name + '.tar.gz')
+                _make_tar(devkit_archive, tmp, arcname=devkit_name, compress=True)
+
+        _make_train_archive(root)
+        _make_val_archive(root)
+        _make_devkit_archive(root)
+
+
+    CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        self.imagenet_root(tmpdir)
+
+        return 1
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):

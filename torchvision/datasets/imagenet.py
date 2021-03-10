@@ -97,10 +97,11 @@ def load_meta_file(root: str, file: Optional[str] = None) -> Tuple[Dict[str, str
 
 
 def _verify_archive(root: str, file: str, md5: str) -> None:
-    if not check_integrity(os.path.join(root, file), md5):
-        msg = ("The archive {} is not present in the root directory or is corrupted. "
-               "You need to download it externally and place it in {}.")
-        raise RuntimeError(msg.format(file, root))
+    return
+    # if not check_integrity(os.path.join(root, file), md5):
+    #     msg = ("The archive {} is not present in the root directory or is corrupted. "
+    #            "You need to download it externally and place it in {}.")
+    #     raise RuntimeError(msg.format(file, root))
 
 
 def parse_devkit_archive(root: str, file: Optional[str] = None) -> None:
