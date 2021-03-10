@@ -370,63 +370,6 @@ def svhn_root():
 
 
 @contextlib.contextmanager
-def voc_root():
-    with get_tmp_dir() as tmp_dir:
-        voc_dir = os.path.join(tmp_dir, 'VOCdevkit',
-                               'VOC2012', 'ImageSets', 'Main')
-        os.makedirs(voc_dir)
-        train_file = os.path.join(voc_dir, 'train.txt')
-        with open(train_file, 'w') as f:
-            f.write('test')
-
-        yield tmp_dir
-
-
-@contextlib.contextmanager
-def ucf101_root():
-    with get_tmp_dir() as tmp_dir:
-        ucf_dir = os.path.join(tmp_dir, 'UCF-101')
-        video_dir = os.path.join(ucf_dir, 'video')
-        annotations = os.path.join(ucf_dir, 'annotations')
-
-        os.makedirs(ucf_dir)
-        os.makedirs(video_dir)
-        os.makedirs(annotations)
-
-        fold_files = []
-        for split in {'train', 'test'}:
-            for fold in range(1, 4):
-                fold_file = '{:s}list{:02d}.txt'.format(split, fold)
-                fold_files.append(os.path.join(annotations, fold_file))
-
-        file_handles = [open(x, 'w') for x in fold_files]
-        file_iter = cycle(file_handles)
-
-        for i in range(0, 2):
-            current_class = 'class_{0}'.format(i + 1)
-            class_dir = os.path.join(video_dir, current_class)
-            os.makedirs(class_dir)
-            for group in range(0, 3):
-                for clip in range(0, 4):
-                    # Save sample file
-                    clip_name = 'v_{0}_g{1}_c{2}.avi'.format(
-                        current_class, group, clip)
-                    clip_path = os.path.join(class_dir, clip_name)
-                    length = random.randrange(10, 21)
-                    this_clip = torch.randint(
-                        0, 256, (length * 25, 320, 240, 3), dtype=torch.uint8)
-                    write_video(clip_path, this_clip, 25)
-                    # Add to annotations
-                    ann_file = next(file_iter)
-                    ann_file.write('{0}\n'.format(
-                        os.path.join(current_class, clip_name)))
-        # Close all file descriptors
-        for f in file_handles:
-            f.close()
-        yield (video_dir, annotations)
-
-
-@contextlib.contextmanager
 def places365_root(split="train-standard", small=False):
     VARIANTS = {
         "train-standard": "standard",

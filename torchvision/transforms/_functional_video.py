@@ -1,4 +1,10 @@
 import torch
+import warnings
+
+
+warnings.warn(
+    "The _functional_video module is deprecated. Please use the functional module instead."
+)
 
 
 def _is_tensor_video_clip(clip):

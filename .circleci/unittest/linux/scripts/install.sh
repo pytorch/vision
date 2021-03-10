@@ -24,7 +24,7 @@ else
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge pytorch "${cudatoolkit}"
+conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
 
 printf "* Installing torchvision\n"
 python setup.py develop
