@@ -51,11 +51,18 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
+In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFA10 and SVHN.
+
+Compositions of transforms
+--------------------------
+
+.. autoclass:: Compose
+
 
 AutoAugment transforms
 ----------------------
 
-AutoAugment is a common Data Augmentation technique that can improve the accuracy of Scene Classification models.
+`AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Scene Classification models.
 Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
 ImageNet policies provide significant improvements when applied to other datasets.
 The new transform can be used standalone or mixed-and-matched with existing transforms:
@@ -65,17 +72,15 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     t = transforms.AutoAugment()
     transformed = t(image)
 
+To use along with torchvision transforms:
+
+.. code:: python
+
     transform=transforms.Compose([
         transforms.Resize(256),
         transforms.AutoAugment(),
         transforms.ToTensor()])
 
-In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFA10 and SVHN.
-
-Compositions of transforms
---------------------------
-
-.. autoclass:: Compose
 
 Transforms on PIL Image and torch.\*Tensor
 ------------------------------------------
