@@ -78,6 +78,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-11.0/
       fi
       export FORCE_CUDA=1
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;7.0;7.5"
       # Hard-coding gencode flags is temporary situation until
       # https://github.com/pytorch/pytorch/pull/23408 lands
       export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_50,code=compute_50"
