@@ -151,6 +151,8 @@ var Documentation = {
     this.highlightSearchWords();
     this.initIndexTable();
     
+    this.initOnKeyListeners();
+    
   },
 
   /**
