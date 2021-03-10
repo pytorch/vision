@@ -977,6 +977,18 @@ class CUDATester(Tester):
     def setUp(self):
         self.device = "cuda"
 
+    def test_scale_channel(self):
+        """Make sure that _scale_channel gives the same results on CPU and GPU as
+        histc or bincount are used depending on the device.
+        """
+        # TODO: when # https://github.com/pytorch/pytorch/issues/53194 is fixed,
+        # only use bincount and remove that test.
+        size = (1_000,)
+        img_chan = torch.randint(0, 256, size=size).to('cpu')
+        scaled_cpu = F_t._scale_channel(img_chan)
+        scaled_cuda = F_t._scale_channel(img_chan.to('cuda'))
+        self.assertTrue(scaled_cpu.equal(scaled_cuda.to('cpu')))
+
 
 if __name__ == '__main__':
     unittest.main()
