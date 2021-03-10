@@ -7,6 +7,7 @@ from torchvision.transforms import InterpolationMode
 import numpy as np
 
 import unittest
+from typing import Sequence
 
 from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
 
@@ -322,32 +323,29 @@ class Tester(TransformsTester):
 
         tensor, _ = self._create_data(height=34, width=36, device=self.device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-        script_fn = torch.jit.script(F.resize)
 
         for dt in [None, torch.float32, torch.float64]:
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
             for size in [32, 34, [32, ], [32, 32], (32, 32), [34, 35]]:
-                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+                for max_size in (None, 35, 1000):
+                    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
+                        continue  # Not supported
+                    for interpolation in [BILINEAR, BICUBIC, NEAREST]:
 
-                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
+                        if isinstance(size, int):
+                            script_size = [size, ]
+                        else:
+                            script_size = size
 
-                    if isinstance(size, int):
-                        script_size = [size, ]
-                    else:
-                        script_size = size
-
-                    s_resized_tensor = script_fn(tensor, size=script_size, interpolation=interpolation)
-                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
-
-                    transform = T.Resize(size=script_size, interpolation=interpolation)
-                    s_transform = torch.jit.script(transform)
-                    self._test_transform_vs_scripted(transform, s_transform, tensor)
-                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                        transform = T.Resize(size=script_size, interpolation=interpolation, max_size=max_size)
+                        s_transform = torch.jit.script(transform)
+                        self._test_transform_vs_scripted(transform, s_transform, tensor)
+                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
-            script_fn.save(os.path.join(tmp_dir, "t_resize.pt"))
+            s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
 
     def test_resized_crop(self):
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
