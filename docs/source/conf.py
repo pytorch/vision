@@ -133,6 +133,7 @@ html_theme_options = {
     'display_version': True,
     'logo_only': True,
     'pytorch_project': 'docs',
+    'navigation_with_keys': True,
 }
 
 html_logo = '_static/img/pytorch-logo-dark.svg'
