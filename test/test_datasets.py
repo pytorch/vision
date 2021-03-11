@@ -482,7 +482,7 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
-    REQUIRED_PACKAGES = ['scipy']
+    REQUIRED_PACKAGES = ('scipy',)
     CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
 
     def inject_fake_data(self, tmpdir, config):
@@ -490,23 +490,25 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
 
         wnid = 'n01234567'
         if config['split'] == 'train':
+            num_examples = 3
             datasets_utils.create_image_folder(
                 root=tmpdir,
                 name=tmpdir / 'train' / wnid / wnid,
                 file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
-                num_examples=1,
+                num_examples=num_examples,
             )
         else:
+            num_examples = 1
             datasets_utils.create_image_folder(
                 root=tmpdir,
                 name=tmpdir / 'val' / wnid,
-                file_name_fn=lambda _: "ILSVRC2012_val_00000001.JPEG",
-                num_examples=1,
+                file_name_fn=lambda image_ifx: "ILSVRC2012_val_0000000{image_idx}.JPEG",
+                num_examples=num_examples,
             )
 
         wnid_to_classes = {wnid: [1]}
         torch.save((wnid_to_classes, None), tmpdir / 'meta.bin')
-        return 1
+        return num_examples
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
