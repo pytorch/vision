@@ -10,6 +10,7 @@ import string
 import gzip
 import lzma
 from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
+from urllib.error import URLError
 from .utils import download_url, download_and_extract_archive, extract_archive, \
     verify_str_arg
 
@@ -31,11 +32,16 @@ class MNIST(VisionDataset):
             target and transforms it.
     """
 
+    mirrors = [
+        'http://yann.lecun.com/exdb/mnist/',
+        'https://ossci-datasets.s3.amazonaws.com/mnist/',
+    ]
+
     resources = [
-        ("http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
-        ("http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
-        ("http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
-        ("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
+        ("train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
+        ("train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
+        ("t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
+        ("t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
     ]
 
     training_file = 'training.pt'
@@ -141,9 +147,26 @@ class MNIST(VisionDataset):
         os.makedirs(self.processed_folder, exist_ok=True)
 
         # download files
-        for url, md5 in self.resources:
-            filename = url.rpartition('/')[2]
-            download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+        for filename, md5 in self.resources:
+            for mirror in self.mirrors:
+                url = "{}{}".format(mirror, filename)
+                try:
+                    print("Downloading {}".format(url))
+                    download_and_extract_archive(
+                        url, download_root=self.raw_folder,
+                        filename=filename,
+                        md5=md5
+                    )
+                except URLError as error:
+                    print(
+                        "Failed to download (trying next):\n{}".format(error)
+                    )
+                    continue
+                finally:
+                    print()
+                break
+            else:
+                raise RuntimeError("Error downloading {}".format(filename))
 
         # process and save as torch files
         print('Processing...')
