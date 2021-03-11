@@ -89,6 +89,61 @@ def mnist_root(num_images, cls_name):
 
 
 @contextlib.contextmanager
+def cifar_root(version):
+    def _get_version_params(version):
+        if version == 'CIFAR10':
+            return {
+                'base_folder': 'cifar-10-batches-py',
+                'train_files': ['data_batch_{}'.format(batch) for batch in range(1, 6)],
+                'test_file': 'test_batch',
+                'target_key': 'labels',
+                'meta_file': 'batches.meta',
+                'classes_key': 'label_names',
+            }
+        elif version == 'CIFAR100':
+            return {
+                'base_folder': 'cifar-100-python',
+                'train_files': ['train'],
+                'test_file': 'test',
+                'target_key': 'fine_labels',
+                'meta_file': 'meta',
+                'classes_key': 'fine_label_names',
+            }
+        else:
+            raise ValueError
+
+    def _make_pickled_file(obj, file):
+        with open(file, 'wb') as fh:
+            pickle.dump(obj, fh, 2)
+
+    def _make_data_file(file, target_key):
+        obj = {
+            'data': np.zeros((1, 32 * 32 * 3), dtype=np.uint8),
+            target_key: [0]
+        }
+        _make_pickled_file(obj, file)
+
+    def _make_meta_file(file, classes_key):
+        obj = {
+            classes_key: ['fakedata'],
+        }
+        _make_pickled_file(obj, file)
+
+    params = _get_version_params(version)
+    with get_tmp_dir() as root:
+        base_folder = os.path.join(root, params['base_folder'])
+        os.mkdir(base_folder)
+
+        for file in list(params['train_files']) + [params['test_file']]:
+            _make_data_file(os.path.join(base_folder, file), params['target_key'])
+
+        _make_meta_file(os.path.join(base_folder, params['meta_file']),
+                        params['classes_key'])
+
+        yield root
+
+
+@contextlib.contextmanager
 def imagenet_root():
     import scipy.io as sio
 
