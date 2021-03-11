@@ -157,7 +157,7 @@ class Tester(DatasetTestcase):
             self.generic_classification_dataset_test(dataset)
 
     @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_widerface(self, mock_check_integrity):
         mock_check_integrity.return_value = True
         with widerface_root() as root:
@@ -176,7 +176,7 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
