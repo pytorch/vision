@@ -181,17 +181,19 @@ class DBoxGenerator(nn.Module):
         self.scales = [c / 100 for c in centiles]
 
         # Default Boxes pre-calculation based on page 6 of SSD paper
+        clip01 = lambda x: max(min(x, 1.0), 0.0)
         self._dboxes = []
         for k, f_k in enumerate(self.feature_map_sizes):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
-            s_prime_k = math.sqrt(self.scales[k] * self.scales[k + 1])
-            wh_pairs = [(self.scales[k], self.scales[k]), (s_prime_k, s_prime_k)]
+            s_k = clip01(self.scales[k])
+            s_prime_k = clip01(math.sqrt(self.scales[k] * self.scales[k + 1]))
+            wh_pairs = [(s_k, s_k), (s_prime_k, s_prime_k)]
 
             # Adding 2 pairs for each aspect ratio of the feature map k
             for ar in self.aspect_ratios[k]:
                 sq_ar = math.sqrt(ar)
-                w = self.scales[k] * sq_ar
-                h = self.scales[k] / sq_ar
+                w = clip01(self.scales[k] * sq_ar)
+                h = clip01(self.scales[k] / sq_ar)
                 wh_pairs.extend([(w, h), (h, w)])
 
             # Now add the default boxes for each width-height pair
@@ -199,6 +201,7 @@ class DBoxGenerator(nn.Module):
                 cx = (i + 0.5) / f_k
                 cy = (j + 0.5) / f_k
                 self._dboxes.extend((cx, cy, w, h) for w, h in wh_pairs)
+                # self._dboxes.extend((cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h) for w, h in wh_pairs)
 
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
@@ -214,6 +217,5 @@ class DBoxGenerator(nn.Module):
         dboxes = []
         for i in range(len(image_list.image_sizes)):
             dboxes_in_image = torch.tensor(self._dboxes, dtype=dtype, device=device)
-            dboxes_in_image.clamp_(min=0, max=1)
             dboxes.append(dboxes_in_image)
         return dboxes

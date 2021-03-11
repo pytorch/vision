@@ -112,6 +112,7 @@ class SSD(nn.Module):
 
 
 class SSDFeatureExtractorVGG(nn.Module):
+    # TODO: That's the SSD300 extractor. handle the SDD500 case as well. See page 11, footernote 5.
     def __init__(self, backbone: nn.Module):
         super().__init__()
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
