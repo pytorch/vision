@@ -1,4 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+import itertools
+import math
 import torch
 from torch import nn, Tensor
 
@@ -167,21 +169,51 @@ class DBoxGenerator(nn.Module):
         self.feature_map_sizes = feature_map_sizes
         self.aspect_ratios = aspect_ratios
 
+        # Estimation of default boxes scales
         # Inspired from https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_pascal.py#L311-L317
         min_centile = int(100 * min_ratio)
         max_centile = int(100 * max_ratio)
         conv4_centile = min_centile // 2  # assume half of min_ratio as in paper
         step = (max_centile - min_centile) // (len(feature_map_sizes) - 2)
-        box_centiles = [conv4_centile, min_centile]
-        for centile in range(min_centile, max_centile + 1, step):
-            box_centiles.append(centile + step)
-        self.box_sizes = [size * c // 100 for c in box_centiles]
+        centiles = [conv4_centile, min_centile]
+        for c in range(min_centile, max_centile + 1, step):
+            centiles.append(c + step)
+        self.scales = [c / 100 for c in centiles]
+
+        # Default Boxes pre-calculation based on page 6 of SSD paper
+        self._dboxes = []
+        for k, f_k in enumerate(self.feature_map_sizes):
+            # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
+            s_prime_k = math.sqrt(self.scales[k] * self.scales[k + 1])
+            wh_pairs = [(self.scales[k], self.scales[k]), (s_prime_k, s_prime_k)]
+
+            # Adding 2 pairs for each aspect ratio of the feature map k
+            for ar in self.aspect_ratios[k]:
+                sq_ar = math.sqrt(ar)
+                w = self.scales[k] * sq_ar
+                h = self.scales[k] / sq_ar
+                wh_pairs.extend([(w, h), (h, w)])
+
+            # Now add the default boxes for each width-height pair
+            for i, j in itertools.product(range(f_k), repeat=2):
+                cx = (i + 0.5) / f_k
+                cy = (j + 0.5) / f_k
+                self._dboxes.extend((cx, cy, w, h) for w, h in wh_pairs)
 
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
         s += 'size={size}'
         s += ', feature_map_sizes={feature_map_sizes}'
         s += ', aspect_ratios={aspect_ratios}'
-        s += ', box_sizes={box_sizes}'
+        s += ', scales={scales}'
         s += ')'
         return s.format(**self.__dict__)
+
+    def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
+        dtype, device = feature_maps[0].dtype, feature_maps[0].device
+        dboxes = []
+        for i in range(len(image_list.image_sizes)):
+            dboxes_in_image = torch.tensor(self._dboxes, dtype=dtype, device=device)
+            dboxes_in_image.clamp_(min=0, max=1)
+            dboxes.append(dboxes_in_image)
+        return dboxes
