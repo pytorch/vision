@@ -54,7 +54,7 @@ class OpTester(object):
 
 
 class RoIOpTester(OpTester):
-    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None):
+    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, **kwargs):
         x_dtype = self.dtype if x_dtype is None else x_dtype
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
@@ -70,11 +70,11 @@ class RoIOpTester(OpTester):
                             dtype=rois_dtype, device=device)
 
         pool_h, pool_w = pool_size, pool_size
-        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1)
+        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs)
         # the following should be true whether we're running an autocast test or not.
         self.assertTrue(y.dtype == x.dtype)
         gt_y = self.expected_fn(x, rois, pool_h, pool_w, spatial_scale=1,
-                                sampling_ratio=-1, device=device, dtype=self.dtype)
+                                sampling_ratio=-1, device=device, dtype=self.dtype, **kwargs)
 
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         self.assertTrue(torch.allclose(gt_y.to(y.dtype), y, rtol=tol, atol=tol))
@@ -135,11 +135,8 @@ class RoIPoolTester(RoIOpTester, unittest.TestCase):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.roi_pool(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.roi_pool)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
                     device=None, dtype=torch.float64):
@@ -177,11 +174,8 @@ class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.ps_roi_pool(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.ps_roi_pool)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
                     device=None, dtype=torch.float64):
@@ -257,11 +251,8 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                             sampling_ratio=sampling_ratio, aligned=aligned)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.roi_align(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.roi_align)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False,
                     device=None, dtype=torch.float64):
@@ -304,6 +295,10 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, **kwargs):
+        for aligned in (True, False):
+            super()._test_forward(device, contiguous, x_dtype, rois_dtype, aligned=aligned)
+
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -311,11 +306,8 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
                               sampling_ratio=sampling_ratio)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.ps_roi_align(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.ps_roi_align)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, in_data, rois, pool_h, pool_w, device, spatial_scale=1,
                     sampling_ratio=-1, dtype=torch.float64):
