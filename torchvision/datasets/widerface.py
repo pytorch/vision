@@ -14,6 +14,7 @@ class WIDERFace(VisionDataset):
     Args:
         root (string): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
+
             .. code::
 
                 <root>
