@@ -483,8 +483,8 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
     REQUIRED_PACKAGES = ['scipy']
-
     CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+
     def inject_fake_data(self, tmpdir, config):
         wnid = 'n01234567'
 
@@ -498,8 +498,8 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
         )
         datasets_utils.create_image_folder(
             root=tmpdir,
-            name=tmpdir / 'val' /  wnid,
-            file_name_fn=lambda _: f"ILSVRC2012_val_00000001.JPEG",
+            name=tmpdir / 'val' / wnid,
+            file_name_fn=lambda _: "ILSVRC2012_val_00000001.JPEG",
             num_examples=1,
         )
 
