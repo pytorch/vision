@@ -161,7 +161,8 @@ class DatasetTestCase(unittest.TestCase):
         - DATASET_CLASS (torchvision.datasets.VisionDataset): Class of dataset to be tested.
         - FEATURE_TYPES (Sequence[Any]): Types of the elements returned by index access of the dataset. Instead of
             providing these manually, you can instead subclass ``ImageDatasetTestCase`` or ``VideoDatasetTestCase```to
-            get a reasonable default, that should work for most cases.
+            get a reasonable default, that should work for most cases. Each entry of the sequence may be a tuple,
+            to indicate multiple possible values.
 
     Optionally, you can overwrite the following class attributes:
 

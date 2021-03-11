@@ -3,7 +3,7 @@ import os
 from os.path import abspath, expanduser
 import torch
 from typing import Any, Callable, List, Dict, Optional, Tuple, Union
-from .utils import check_integrity, download_file_from_google_drive, \
+from .utils import download_file_from_google_drive, \
     download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
@@ -61,7 +61,7 @@ class WIDERFace(VisionDataset):
         if download:
             self.download()
 
-        if not self._check_integrity():
+        if not check_integrity(self):
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download and prepare it")
 
@@ -155,19 +155,8 @@ class WIDERFace(VisionDataset):
                 img_path = abspath(expanduser(img_path))
                 self.img_info.append({"img_path": img_path})
 
-    def _check_integrity(self) -> bool:
-        # Allow original archive to be deleted (zip). Only need the extracted images
-        all_files = self.FILE_LIST.copy()
-        all_files.append(self.ANNOTATIONS_FILE)
-        for (_, md5, filename) in all_files:
-            file, ext = os.path.splitext(filename)
-            extracted_dir = os.path.join(self.root, file)
-            if not os.path.exists(extracted_dir):
-                return False
-        return True
-
     def download(self) -> None:
-        if self._check_integrity():
+        if check_integrity(self):
             print('Files already downloaded and verified')
             return
 
@@ -181,3 +170,15 @@ class WIDERFace(VisionDataset):
         download_and_extract_archive(url=self.ANNOTATIONS_FILE[0],
                                      download_root=self.root,
                                      md5=self.ANNOTATIONS_FILE[1])
+
+
+def check_integrity(self) -> bool:
+    # Allow original archive to be deleted (zip). Only need the extracted images
+    all_files = self.FILE_LIST.copy()
+    all_files.append(self.ANNOTATIONS_FILE)
+    for (_, md5, filename) in all_files:
+        file, ext = os.path.splitext(filename)
+        extracted_dir = os.path.join(self.root, file)
+        if not os.path.exists(extracted_dir):
+            return False
+    return True
