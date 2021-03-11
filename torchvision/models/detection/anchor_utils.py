@@ -156,3 +156,32 @@ class AnchorGenerator(nn.Module):
         # Clear the cache in case that memory leaks.
         self._cache.clear()
         return anchors
+
+
+class DBoxGenerator(nn.Module):
+
+    def __init__(self, size: int, feature_map_sizes: List[int], aspect_ratios: List[List[int]],
+                 min_ratio: float = 0.15, max_ratio: float = 0.9):
+        super().__init__()
+        self.size = size
+        self.feature_map_sizes = feature_map_sizes
+        self.aspect_ratios = aspect_ratios
+
+        # Inspired from https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_pascal.py#L311-L317
+        min_centile = int(100 * min_ratio)
+        max_centile = int(100 * max_ratio)
+        conv4_centile = min_centile // 2  # assume half of min_ratio as in paper
+        step = (max_centile - min_centile) // (len(feature_map_sizes) - 2)
+        box_centiles = [conv4_centile, min_centile]
+        for centile in range(min_centile, max_centile + 1, step):
+            box_centiles.append(centile + step)
+        self.box_sizes = [size * c // 100 for c in box_centiles]
+
+    def __repr__(self) -> str:
+        s = self.__class__.__name__ + '('
+        s += 'size={size}'
+        s += ', feature_map_sizes={feature_map_sizes}'
+        s += ', aspect_ratios={aspect_ratios}'
+        s += ', box_sizes={box_sizes}'
+        s += ')'
+        return s.format(**self.__dict__)
