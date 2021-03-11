@@ -162,7 +162,7 @@ class Places365(VisionDataset):
         return verify_str_arg(split, "split", self._SPLITS)
 
     def _check_integrity(self, file: str, md5: str, download: bool) -> bool:
-        integrity = check_integrity(path.join(self.root, file), md5=md5)
+        integrity = check_integrity(file, md5=md5)
         if not integrity and not download:
             raise RuntimeError(
                 f"The file {file} does not exist or is corrupted. You can set download=True to download it."
