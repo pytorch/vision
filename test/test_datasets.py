@@ -501,6 +501,7 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
             annotation_file.write(annotation_content)
         return num_examples
 
+
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
     REQUIRED_PACKAGES = ('scipy',)
