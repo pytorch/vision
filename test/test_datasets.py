@@ -486,22 +486,23 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
 
     def inject_fake_data(self, tmpdir, config):
-        wnid = 'n01234567'
-
         tmpdir = pathlib.Path(tmpdir)
 
-        datasets_utils.create_image_folder(
-            root=tmpdir,
-            name=tmpdir / 'train' / wnid / wnid,
-            file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
-            num_examples=1,
-        )
-        datasets_utils.create_image_folder(
-            root=tmpdir,
-            name=tmpdir / 'val' / wnid,
-            file_name_fn=lambda _: "ILSVRC2012_val_00000001.JPEG",
-            num_examples=1,
-        )
+        wnid = 'n01234567'
+        if config['split'] == 'train':
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'train' / wnid / wnid,
+                file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
+                num_examples=1,
+            )
+        else:
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'val' / wnid,
+                file_name_fn=lambda _: "ILSVRC2012_val_00000001.JPEG",
+                num_examples=1,
+            )
 
         wnid_to_classes = {wnid: [1]}
         torch.save((wnid_to_classes, None), tmpdir / 'meta.bin')
