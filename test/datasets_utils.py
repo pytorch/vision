@@ -313,13 +313,12 @@ class DatasetTestCase(unittest.TestCase):
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
         if "download" in self._HAS_SPECIAL_KWARG:
-            special_kwargs["download"] = False
+            special_kwargs["download"] = None if self.DATASET_CLASS.__name__ == 'ImageNet' else False
         config.update(other_kwargs)
 
-        patchers = set()
-        # patchers = self._patch_download_extract()
-        # if patch_checks:
-        #     patchers.update(self._patch_checks())
+        patchers = self._patch_download_extract()
+        if patch_checks:
+            patchers.update(self._patch_checks())
 
         with get_tmp_dir() as tmpdir:
             args = self.dataset_args(tmpdir, config)
