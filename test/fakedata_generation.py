@@ -144,7 +144,6 @@ def cifar_root(version):
 
 
 @contextlib.contextmanager
-@contextlib.contextmanager
 def widerface_root():
     """
     Generates a dataset with the following folder structure and returns the path root:
