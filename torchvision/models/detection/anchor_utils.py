@@ -163,7 +163,7 @@ class AnchorGenerator(nn.Module):
 class DBoxGenerator(nn.Module):
 
     def __init__(self, size: int, feature_map_sizes: List[int], aspect_ratios: List[List[int]],
-                 min_ratio: float = 0.15, max_ratio: float = 0.9):
+                 min_ratio: float = 0.15, max_ratio: float = 0.9, clip: bool = False):
         super().__init__()
         self.size = size
         self.feature_map_sizes = feature_map_sizes
@@ -181,19 +181,19 @@ class DBoxGenerator(nn.Module):
         self.scales = [c / 100 for c in centiles]
 
         # Default Boxes pre-calculation based on page 6 of SSD paper
-        clip01 = lambda x: max(min(x, 1.0), 0.0)
+        clamp01 = (lambda x: max(min(x, 1.0), 0.0)) if clip else (lambda x: x)
         self._dboxes = []
         for k, f_k in enumerate(self.feature_map_sizes):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
-            s_k = clip01(self.scales[k])
-            s_prime_k = clip01(math.sqrt(self.scales[k] * self.scales[k + 1]))
+            s_k = clamp01(self.scales[k])
+            s_prime_k = clamp01(math.sqrt(self.scales[k] * self.scales[k + 1]))
             wh_pairs = [(s_k, s_k), (s_prime_k, s_prime_k)]
 
             # Adding 2 pairs for each aspect ratio of the feature map k
             for ar in self.aspect_ratios[k]:
                 sq_ar = math.sqrt(ar)
-                w = clip01(self.scales[k] * sq_ar)
-                h = clip01(self.scales[k] / sq_ar)
+                w = clamp01(self.scales[k] * sq_ar)
+                h = clamp01(self.scales[k] / sq_ar)
                 wh_pairs.extend([(w, h), (h, w)])
 
             # Now add the default boxes for each width-height pair
