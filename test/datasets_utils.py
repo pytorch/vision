@@ -313,6 +313,7 @@ class DatasetTestCase(unittest.TestCase):
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
         if "download" in self._HAS_SPECIAL_KWARG and special_kwargs.get("download", False):
+            # override download param to False param if its default is truthy
             special_kwargs["download"] = False
         config.update(other_kwargs)
 
