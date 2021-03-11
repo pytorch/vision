@@ -312,8 +312,8 @@ class DatasetTestCase(unittest.TestCase):
             patch_checks = inject_fake_data
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
-        if "download" in self._HAS_SPECIAL_KWARG:
-            special_kwargs["download"] = None if self.DATASET_CLASS.__name__ == 'ImageNet' else False
+        if "download" in self._HAS_SPECIAL_KWARG and special_kwargs.get("download", False):
+            special_kwargs["download"] = False
         config.update(other_kwargs)
 
         patchers = self._patch_download_extract()
