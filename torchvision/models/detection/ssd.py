@@ -73,7 +73,7 @@ class SSD(nn.Module):
 
         # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
         device = next(backbone.parameters()).device
-        tmp_img = torch.randn((1, 3, size, size), device=device)
+        tmp_img = torch.empty((1, 3, size, size), device=device)
         tmp_sizes = [x.size() for x in backbone(tmp_img)]
         out_channels = [x[1] for x in tmp_sizes]
         feature_map_sizes = [x[2] for x in tmp_sizes]
