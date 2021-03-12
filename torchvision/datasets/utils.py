@@ -9,9 +9,26 @@ from urllib.parse import urlparse
 import zipfile
 import lzma
 import contextlib
+import urllib
+import urllib.request
+import urllib.error
 
 import torch
 from torch.utils.model_zoo import tqdm
+
+
+USER_AGENT = "pytorch/vision"
+
+
+def _urlretrieve(url: str, filename: str, chunk_size: int = 1024) -> None:
+    with open(filename, "wb") as fh:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
+            with tqdm(total=response.length) as pbar:
+                for chunk in iter(lambda: response.read(chunk_size), ""):
+                    if not chunk:
+                        break
+                    pbar.update(chunk_size)
+                    fh.write(chunk)
 
 
 def gen_bar_updater() -> Callable[[int, int, int], None]:
@@ -85,8 +102,6 @@ def download_url(
         md5 (str, optional): MD5 checksum of the download. If None, do not check
         max_redirect_hops (int, optional): Maximum number of redirect hops allowed
     """
-    import urllib
-
     root = os.path.expanduser(root)
     if not filename:
         filename = os.path.basename(url)
@@ -110,19 +125,13 @@ def download_url(
     # download the file
     try:
         print('Downloading ' + url + ' to ' + fpath)
-        urllib.request.urlretrieve(
-            url, fpath,
-            reporthook=gen_bar_updater()
-        )
+        _urlretrieve(url, fpath)
     except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
         if url[:5] == 'https':
             url = url.replace('https:', 'http:')
             print('Failed download. Trying https -> http instead.'
                   ' Downloading ' + url + ' to ' + fpath)
-            urllib.request.urlretrieve(
-                url, fpath,
-                reporthook=gen_bar_updater()
-            )
+            _urlretrieve(url, fpath)
         else:
             raise e
     # check integrity of downloaded file
