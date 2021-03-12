@@ -1,38 +1,27 @@
 import torch
 import torch.nn.functional as F
 
+from collections import OrderedDict
 from torch import nn, Tensor
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import _utils as det_utils
 from .anchor_utils import DBoxGenerator
-from .transform import GeneralizedRCNNTransform
 from .backbone_utils import _validate_trainable_layers
+from .transform import GeneralizedRCNNTransform
 from .. import vgg
+
+from .retinanet import RetinaNet, RetinaNetHead  # TODO: Refactor both to inherit properly
 
 
 __all__ = ['SSD']
 
 
-class SSDHead(nn.Module):
-    # TODO: Similar to RetinaNetHead. Perhaps abstract and reuse for one-shot detectors.
+class SSDHead(RetinaNetHead):
     def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
-        super().__init__()
+        nn.Module.__init__(self)
         self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes)
         self.regression_head = SSDRegressionHead(in_channels, num_anchors)
-
-    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
-                     matched_idxs: List[Tensor]) -> Dict[str, Tensor]:
-        return {
-            'classification': self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
-            'bbox_regression': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
-        }
-
-    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
-        return {
-            'cls_logits': self.classification_head(x),
-            'bbox_regression': self.regression_head(x)
-        }
 
 
 class SSDClassificationHead(nn.Module):
@@ -65,7 +54,7 @@ class SSDRegressionHead(nn.Module):
         pass
 
 
-class SSD(nn.Module):
+class SSD(RetinaNet):
     def __init__(self, backbone: nn.Module, num_classes: int,
                  size: int = 300, image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
                  aspect_ratios: Optional[List[List[int]]] = None,
@@ -74,7 +63,7 @@ class SSD(nn.Module):
                  detections_per_img: int = 200,
                  iou_thresh: float = 0.5,
                  topk_candidates: int = 400):
-        super().__init__()
+        nn.Module.__init__(self)
 
         if aspect_ratios is None:
             aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
@@ -82,7 +71,7 @@ class SSD(nn.Module):
         # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
         device = next(backbone.parameters()).device
         tmp_img = torch.empty((1, 3, size, size), device=device)
-        tmp_sizes = [x.size() for x in backbone(tmp_img)]
+        tmp_sizes = [x.size() for x in backbone(tmp_img).values()]
         out_channels = [x[1] for x in tmp_sizes]
         feature_map_sizes = [x[2] for x in tmp_sizes]
 
@@ -118,24 +107,8 @@ class SSD(nn.Module):
         # used only on torchscript mode
         self._has_warned = False
 
-    @torch.jit.unused
-    def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
-        if self.training:
-            return losses
-
-        return detections
-
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      anchors: List[Tensor]) -> Dict[str, Tensor]:
-        pass
-
-    def postprocess_detections(self, head_outputs: Dict[str, List[Tensor]], anchors: List[List[Tensor]],
-                               image_shapes: List[Tuple[int, int]]) -> List[Dict[str, Tensor]]:
-        pass
-
-    def forward(self, images: List[Tensor],
-                targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         pass
 
 
@@ -188,7 +161,7 @@ class SSDFeatureExtractorVGG(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-    def forward(self, x: Tensor) -> List[Tensor]:
+    def forward(self, x: Tensor) -> Dict[str, Tensor]:
         # L2 regularization + Rescaling of 1st block's feature map
         x = self.block1(x)
         rescaled = self.scale_weight.view(1, -1, 1, 1) * F.normalize(x)
@@ -199,7 +172,7 @@ class SSDFeatureExtractorVGG(nn.Module):
             x = block(x)
             output.append(x)
 
-        return output
+        return OrderedDict(((str(i), v) for i, v in enumerate(output)))
 
 
 def _vgg_backbone(backbone_name: str, pretrained: bool, trainable_layers: int = 3):
