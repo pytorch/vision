@@ -42,21 +42,21 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(norm_max, rounded_grid_max), 'Normalized max is not equal to 1')
         self.assertTrue(torch.equal(norm_min, rounded_grid_min), 'Normalized min is not equal to 0')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_save_image(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(2, 3, 64, 64)
             utils.save_image(t, f.name)
             self.assertTrue(os.path.exists(f.name), 'The image is not present after save')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_save_image_single_pixel(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(1, 3, 1, 1)
             utils.save_image(t, f.name)
             self.assertTrue(os.path.exists(f.name), 'The pixel image is not present after save')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_save_image_file_object(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(2, 3, 64, 64)
@@ -68,7 +68,7 @@ class Tester(unittest.TestCase):
             self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
                             'Image not stored in file object')
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_save_image_single_pixel_file_object(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(1, 3, 1, 1)
