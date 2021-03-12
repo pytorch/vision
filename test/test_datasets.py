@@ -146,7 +146,7 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
