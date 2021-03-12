@@ -184,8 +184,10 @@ class Tester(unittest.TestCase):
                     utils.extract_archive(file, remove_finished=remove_finished)
 
                 mock.assert_called_once()
-                self.assertEqual(call_args_to_kwargs_only(mock.call_args, utils.decompress),
-                                 dict(from_path=file, to_path=filename, remove_finished=remove_finished))
+                self.assertEqual(
+                    call_args_to_kwargs_only(mock.call_args, utils.decompress),
+                    dict(from_path=file, to_path=filename, remove_finished=remove_finished),
+                )
 
     def test_extract_zip(self):
         def create_archive(root, content="this is the content"):
