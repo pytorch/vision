@@ -66,7 +66,7 @@ class GeneralizedRCNNTransform(nn.Module):
     It returns a ImageList for the inputs, and a List[Dict[Tensor]] for the targets
     """
 
-    def __init__(self, min_size, max_size, image_mean, image_std):
+    def __init__(self, min_size, max_size, image_mean, image_std, size_divisible=32):
         super(GeneralizedRCNNTransform, self).__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)
@@ -74,6 +74,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.max_size = max_size
         self.image_mean = image_mean
         self.image_std = image_std
+        self.size_divisible = size_divisible
 
     def forward(self,
                 images,       # type: List[Tensor]
@@ -107,7 +108,7 @@ class GeneralizedRCNNTransform(nn.Module):
                 targets[i] = target_index
 
         image_sizes = [img.shape[-2:] for img in images]
-        images = self.batch_images(images)
+        images = self.batch_images(images, size_divisible=self.size_divisible)
         image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
             assert len(image_size) == 2

@@ -24,33 +24,66 @@ class SSDHead(RetinaNetHead):
         self.regression_head = SSDRegressionHead(in_channels, num_anchors)
 
 
-class SSDClassificationHead(nn.Module):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+class SSDScoringHead(nn.Module):
+    def __init__(self, module_list: nn.ModuleList, num_columns: int):
         super().__init__()
-        self.cls_logits = nn.ModuleList()
+        self.module_list = module_list
+        self.num_columns = num_columns
+
+    def get_result_from_module_list(self, x: Tensor, idx: int) -> Tensor:
+        """
+        This is equivalent to self.module_list[idx](x),
+        but torchscript doesn't support this yet
+        """
+        num_blocks = len(self.module_list)
+        if idx < 0:
+            idx += num_blocks
+        i = 0
+        out = x
+        for module in self.module_list:
+            if i == idx:
+                out = module(x)
+            i += 1
+        return out
+
+    def forward(self, x: List[Tensor]) -> Tensor:
+        all_results = []
+
+        for i, features in enumerate(x):
+            results = self.get_result_from_module_list(features, i)
+
+            # Permute output from (N, A * K, H, W) to (N, HWA, K).
+            N, _, H, W = results.shape
+            results = results.view(N, -1, self.num_columns, H, W)
+            results = results.permute(0, 3, 4, 1, 2)
+            results = results.reshape(N, -1, self.num_columns)  # Size=(N, HWA, K)
+
+            all_results.append(results)
+
+        return torch.cat(all_results, dim=1)
+
+
+class SSDClassificationHead(SSDScoringHead):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+        cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
-            self.cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
+            cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
+        super().__init__(cls_logits, num_classes)
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
         pass
 
-    def forward(self, x: List[Tensor]) -> Tensor:
-        pass
 
-
-class SSDRegressionHead(nn.Module):
+class SSDRegressionHead(SSDScoringHead):
     def __init__(self, in_channels: List[int], num_anchors: List[int]):
-        super().__init__()
-        self.bbox_reg = nn.ModuleList()
+        bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
-            self.bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
+            bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
+        super().__init__(bbox_reg, 4)
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
-        pass
-
-    def forward(self, x: List[Tensor]) -> Tensor:
         pass
 
 
@@ -80,8 +113,8 @@ class SSD(RetinaNet):
         self.backbone = backbone
 
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
-        num_anchors = [2 + 2 * len(r) for r in aspect_ratios]
-        self.head = SSDHead(out_channels, num_anchors, num_classes)
+        self.num_anchors = [2 + 2 * len(r) for r in aspect_ratios]
+        self.head = SSDHead(out_channels, self.num_anchors, num_classes)
 
         self.anchor_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
 
@@ -97,7 +130,8 @@ class SSD(RetinaNet):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        self.transform = GeneralizedRCNNTransform(size, size, image_mean, image_std)
+        self.transform = GeneralizedRCNNTransform(size, size, image_mean, image_std,
+                                                  size_divisible=1)  # TODO: Discuss/refactor this workaround
 
         self.score_thresh = score_thresh
         self.nms_thresh = nms_thresh
@@ -106,6 +140,15 @@ class SSD(RetinaNet):
 
         # used only on torchscript mode
         self._has_warned = False
+
+    def _anchors_per_level(self, features, HWA):
+        # TODO: Discuss/refactor this workaround
+        num_anchors_per_level = [x.size(2) * x.size(3) * anchors for x, anchors in zip(features, self.num_anchors)]
+        HW = 0
+        for v in num_anchors_per_level:
+            HW += v
+        A = HWA // HW
+        return [hw * A for hw in num_anchors_per_level]
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      anchors: List[Tensor]) -> Dict[str, Tensor]:
@@ -203,7 +246,7 @@ def ssd_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int 
         pretrained_backbone = False
 
     backbone = _vgg_backbone("vgg16", pretrained_backbone, trainable_layers=trainable_backbone_layers)
-    model = SSD(backbone, num_classes, **kwargs)
+    model = SSD(backbone, num_classes, **kwargs)  # TODO: fix initializations in all new layers
     if pretrained:
         pass  # TODO: load pre-trained COCO weights
     return model
