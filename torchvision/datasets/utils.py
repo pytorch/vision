@@ -267,12 +267,6 @@ _COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {"gz": gzip.open, "xz":
 _FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {"tgz": ("tar", "gz")}
 
 
-def _verify_compression(compression: str) -> None:
-    if compression not in _COMPRESSED_FILE_OPENERS.keys():
-        valid_types = "', '".join(_COMPRESSED_FILE_OPENERS.keys())
-        raise RuntimeError(f"Unknown compression '{compression}'. Known compressions are '{valid_types}'.")
-
-
 def _verify_archive_type(archive_type: str) -> None:
     if archive_type not in _ARCHIVE_EXTRACTORS.keys():
         valid_types = "', '".join(_ARCHIVE_EXTRACTORS.keys())
@@ -342,7 +336,7 @@ def decompress(from_path: str, to_path: Optional[str] = None, remove_finished: b
         raise RuntimeError
 
     if to_path is None:
-        to_path = from_path.replace(ext, archive_type if archive_type is not None else "")
+        to_path = from_path.replace(f".{ext}", f".{archive_type}" if archive_type is not None else "")
 
     try:
         compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]

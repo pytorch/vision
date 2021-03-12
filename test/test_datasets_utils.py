@@ -8,8 +8,10 @@ import gzip
 import warnings
 from torch._utils_internal import get_file_path_2
 from urllib.error import URLError
+import itertools
+import lzma
 
-from common_utils import get_tmp_dir
+from common_utils import get_tmp_dir, call_args_to_kwargs_only
 
 
 TEST_FILE = get_file_path_2(
@@ -133,6 +135,46 @@ class Tester(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             utils._detect_file_type("foo.bar")
 
+    def test_decopress_gzip(self):
+        def create_compressed(root, content="this is the content"):
+            file = os.path.join(root, "file")
+            compressed = f"{file}.gz"
+
+            with gzip.open(compressed, "wb") as fh:
+                fh.write(content.encode())
+
+            return compressed, file, content
+
+        with get_tmp_dir() as temp_dir:
+            compressed, file, content = create_compressed(temp_dir)
+
+            utils.decompress(compressed)
+
+            self.assertTrue(os.path.exists(file))
+
+            with open(file, "r") as fh:
+                self.assertEqual(fh.read(), content)
+
+    def test_decopress_lzma(self):
+        def create_compressed(root, content="this is the content"):
+            file = os.path.join(root, "file")
+            compressed = f"{file}.xz"
+
+            with lzma.open(compressed, "wb") as fh:
+                fh.write(content.encode())
+
+            return compressed, file, content
+
+        with get_tmp_dir() as temp_dir:
+            compressed, file, content = create_compressed(temp_dir)
+
+            utils.extract_archive(compressed, temp_dir)
+
+            self.assertTrue(os.path.exists(file))
+
+            with open(file, "r") as fh:
+                self.assertEqual(fh.read(), content)
+
     def test_extract_zip(self):
         def create_archive(root, content="this is the content"):
             file = os.path.join(root, "dst.txt")
@@ -202,26 +244,6 @@ class Tester(unittest.TestCase):
 
                 with open(file, "r") as fh:
                     self.assertEqual(fh.read(), content)
-
-    def test_extract_gzip(self):
-        def create_compressed(root, content="this is the content"):
-            file = os.path.join(root, "file")
-            compressed = f"{file}.gz"
-
-            with gzip.GzipFile(compressed, "wb") as fh:
-                fh.write(content.encode())
-
-            return compressed, file, content
-
-        with get_tmp_dir() as temp_dir:
-            compressed, file, content = create_compressed(temp_dir)
-
-            utils.extract_archive(compressed, temp_dir)
-
-            self.assertTrue(os.path.exists(file))
-
-            with open(file, "r") as fh:
-                self.assertEqual(fh.read(), content)
 
     def test_verify_str_arg(self):
         self.assertEqual("a", utils.verify_str_arg("a", "arg", ("a",)))
