@@ -10,7 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, imagenet_root, \
+from fakedata_generation import mnist_root, \
     cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
@@ -146,18 +146,8 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @mock.patch('torchvision.datasets.imagenet._verify_archive')
-    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
-    def test_imagenet(self, mock_verify):
-        with imagenet_root() as root:
-            dataset = torchvision.datasets.ImageNet(root, split='train')
-            self.generic_classification_dataset_test(dataset)
-
-            dataset = torchvision.datasets.ImageNet(root, split='val')
-            self.generic_classification_dataset_test(dataset)
-
     @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_widerface(self, mock_check_integrity):
         mock_check_integrity.return_value = True
         with widerface_root() as root:
@@ -176,7 +166,7 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
@@ -488,6 +478,37 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
             )
 
         return num_images_per_category * len(categories)
+
+
+class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ImageNet
+    REQUIRED_PACKAGES = ('scipy',)
+    CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        wnid = 'n01234567'
+        if config['split'] == 'train':
+            num_examples = 3
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'train' / wnid / wnid,
+                file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
+                num_examples=num_examples,
+            )
+        else:
+            num_examples = 1
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'val' / wnid,
+                file_name_fn=lambda image_ifx: "ILSVRC2012_val_0000000{image_idx}.JPEG",
+                num_examples=num_examples,
+            )
+
+        wnid_to_classes = {wnid: [1]}
+        torch.save((wnid_to_classes, None), tmpdir / 'meta.bin')
+        return num_examples
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
