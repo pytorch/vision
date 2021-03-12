@@ -4,7 +4,9 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from typing import Any, Dict, List, Optional, Tuple
 
+from . import _utils as det_utils
 from .anchor_utils import DBoxGenerator
+from .transform import GeneralizedRCNNTransform
 from .backbone_utils import _validate_trainable_layers
 from .. import vgg
 
@@ -64,8 +66,14 @@ class SSDRegressionHead(nn.Module):
 
 
 class SSD(nn.Module):
-    def __init__(self, backbone: nn.Module, num_classes: int, size: int = 300,
-                 aspect_ratios: Optional[List[List[int]]] = None):
+    def __init__(self, backbone: nn.Module, num_classes: int,
+                 size: int = 300, image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
+                 aspect_ratios: Optional[List[List[int]]] = None,
+                 score_thresh: float = 0.01,
+                 nms_thresh: float = 0.45,
+                 detections_per_img: int = 200,
+                 iou_thresh: float = 0.5,
+                 topk_candidates: int = 400):
         super().__init__()
 
         if aspect_ratios is None:
@@ -81,14 +89,34 @@ class SSD(nn.Module):
         assert len(feature_map_sizes) == len(aspect_ratios)
 
         self.backbone = backbone
-        self.num_classes = num_classes
-        self.aspect_ratios = aspect_ratios
 
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
         num_anchors = [2 + 2 * len(r) for r in aspect_ratios]
         self.head = SSDHead(out_channels, num_anchors, num_classes)
 
-        self.dbox_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
+        self.anchor_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
+
+        self.proposal_matcher = det_utils.Matcher(
+            iou_thresh,
+            iou_thresh,
+            allow_low_quality_matches=True,
+        )
+
+        self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
+
+        if image_mean is None:
+            image_mean = [0.485, 0.456, 0.406]
+        if image_std is None:
+            image_std = [0.229, 0.224, 0.225]
+        self.transform = GeneralizedRCNNTransform(size, size, image_mean, image_std)
+
+        self.score_thresh = score_thresh
+        self.nms_thresh = nms_thresh
+        self.detections_per_img = detections_per_img
+        self.topk_candidates = topk_candidates
+
+        # used only on torchscript mode
+        self._has_warned = False
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
