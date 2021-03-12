@@ -249,7 +249,8 @@ def voc():
 
 
 def mnist():
-    return collect_download_configs(lambda: datasets.MNIST(ROOT, download=True), name="MNIST")
+    with unittest.mock.patch.object(datasets.MNIST, "mirrors", datasets.MNIST.mirrors[-1:]):
+        return collect_download_configs(lambda: datasets.MNIST(ROOT, download=True), name="MNIST")
 
 
 def fashion_mnist():
