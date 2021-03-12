@@ -200,8 +200,7 @@ class DBoxGenerator(nn.Module):
             for i, j in itertools.product(range(f_k), repeat=2):
                 cx = (i + 0.5) / f_k
                 cy = (j + 0.5) / f_k
-                self._dboxes.extend((cx, cy, w, h) for w, h in wh_pairs)
-                # self._dboxes.extend((cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h) for w, h in wh_pairs)
+                self._dboxes.extend((cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h) for w, h in wh_pairs)
 
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
