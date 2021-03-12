@@ -206,15 +206,15 @@ class FashionMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
+    mirrors = [
+        "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+    ]
+
     resources = [
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz",
-         "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz",
-         "25c81989df183df01b3e8a0aad5dffbe"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz",
-         "bef4ecab320f06d8554ea6380940ec79"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz",
-         "bb300cfdad3c16e7a12a480ee83cd310")
+        ("train-images-idx3-ubyte.gz", "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
+        ("train-labels-idx1-ubyte.gz", "25c81989df183df01b3e8a0aad5dffbe"),
+        ("t10k-images-idx3-ubyte.gz", "bef4ecab320f06d8554ea6380940ec79"),
+        ("t10k-labels-idx1-ubyte.gz", "bb300cfdad3c16e7a12a480ee83cd310")
     ]
     classes = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
                'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -236,11 +236,15 @@ class KMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
+    mirrors = [
+        "http://codh.rois.ac.jp/kmnist/dataset/kmnist/"
+    ]
+
     resources = [
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz", "e144d726b3acfaa3e44228e80efcd344"),
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz", "5c965bf0a639b31b8f53240b1b52f4d7"),
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134")
+        ("train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
+        ("train-labels-idx1-ubyte.gz", "e144d726b3acfaa3e44228e80efcd344"),
+        ("t10k-images-idx3-ubyte.gz", "5c965bf0a639b31b8f53240b1b52f4d7"),
+        ("t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134")
     ]
     classes = ['o', 'ki', 'su', 'tsu', 'na', 'ha', 'ma', 'ya', 're', 'wo']
 
