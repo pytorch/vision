@@ -150,10 +150,6 @@ class SSD(RetinaNet):
         A = HWA // HW
         return [hw * A for hw in num_anchors_per_level]
 
-    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
-                     anchors: List[Tensor]) -> Dict[str, Tensor]:
-        pass
-
 
 class SSDFeatureExtractorVGG(nn.Module):
     # TODO: That's the SSD300 extractor. handle the SDD500 case as well. See page 11, footernote 5.
