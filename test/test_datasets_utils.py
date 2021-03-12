@@ -104,13 +104,13 @@ class Tester(unittest.TestCase):
 
     def test_detect_file_type(self):
         for file, expected in [
-            ("foo.tar.xz", ("tar.xz", "tar", "xz")),
-            ("foo.tar", ("tar", "tar", None)),
-            ("foo.tar.gz", ("tar.gz", "tar", "gz")),
-            ("foo.tgz", ("tgz", "tar", "gz")),
-            ("foo.gz", ("gz", None, "gz")),
-            ("foo.zip", ("zip", "zip", None)),
-            ("foo.xz", ("xz", None, "xz")),
+            ("foo.tar.xz", (".tar.xz", ".tar", ".xz")),
+            ("foo.tar", (".tar", ".tar", None)),
+            ("foo.tar.gz", (".tar.gz", ".tar", ".gz")),
+            ("foo.tgz", (".tgz", ".tar", ".gz")),
+            ("foo.gz", (".gz", None, ".gz")),
+            ("foo.zip", (".zip", ".zip", None)),
+            ("foo.xz", (".xz", None, ".xz")),
         ]:
             with self.subTest(file=file):
                 self.assertSequenceEqual(utils._detect_file_type(file), expected)
@@ -174,6 +174,18 @@ class Tester(unittest.TestCase):
 
             with open(file, "r") as fh:
                 self.assertEqual(fh.read(), content)
+
+    def test_extract_archive_defer_to_decompress(self):
+        filename = "foo"
+        for ext, remove_finished in itertools.product((".gz", ".xz"), (True, False)):
+            with self.subTest(ext=ext, remove_finished=remove_finished):
+                with unittest.mock.patch("torchvision.datasets.utils.decompress") as mock:
+                    file = f"{filename}{ext}"
+                    utils.extract_archive(file, remove_finished=remove_finished)
+
+                mock.assert_called_once()
+                self.assertEqual(call_args_to_kwargs_only(mock.call_args, utils.decompress),
+                                 dict(from_path=file, to_path=filename, remove_finished=remove_finished))
 
     def test_extract_zip(self):
         def create_archive(root, content="this is the content"):

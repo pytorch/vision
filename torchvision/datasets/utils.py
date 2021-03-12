@@ -12,6 +12,7 @@ import contextlib
 import urllib
 import urllib.request
 import urllib.error
+import pathlib
 
 import torch
 from torch.utils.model_zoo import tqdm
@@ -243,12 +244,12 @@ def _save_response_content(
 
 
 def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
-    with tarfile.open(from_path, f"r:{compression}" if compression else "r") as tar:
+    with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
         tar.extractall(to_path)
 
 
 _ZIP_COMPRESSION_MAP: Dict[str, int] = {
-    "xz": zipfile.ZIP_LZMA,
+    ".xz": zipfile.ZIP_LZMA,
 }
 
 
@@ -260,11 +261,11 @@ def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> No
 
 
 _ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
-    "tar": _extract_tar,
-    "zip": _extract_zip,
+    ".tar": _extract_tar,
+    ".zip": _extract_zip,
 }
-_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {"gz": gzip.open, "xz": lzma.open}
-_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {"tgz": ("tar", "gz")}
+_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {".gz": gzip.open, ".xz": lzma.open}
+_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {".tgz": (".tar", ".gz")}
 
 
 def _verify_archive_type(archive_type: str) -> None:
@@ -279,43 +280,41 @@ def _verify_compression(compression: str) -> None:
         raise RuntimeError(f"Unknown compression '{compression}'. Known compressions are '{valid_types}'.")
 
 
-def _parse_ext(ext: str) -> Tuple[Optional[str], Optional[str]]:
-    exts = ext.split(".")
-    if len(exts) > 2:
+def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
+    path = pathlib.Path(file)
+    suffix = path.suffix
+    suffixes = pathlib.Path(file).suffixes
+    if not suffixes:
         raise RuntimeError(
-            "Archive type and compression detection only works for 1 or 2 extensions. " f"Got {len(exts)} instead."
+            f"File '{file}' has no suffixes that could be used to detect the archive type and compression."
         )
-
-    if len(exts) == 2:
-        archive_type, compression = exts
+    elif len(suffixes) > 2:
+        raise RuntimeError(
+            "Archive type and compression detection only works for 1 or 2 suffixes. " f"Got {len(suffixes)} instead."
+        )
+    elif len(suffixes) == 2:
+        # if we have exactly two suffixes we assume the first one is the archive type and the second on is the
+        # compression
+        archive_type, compression = suffixes
         _verify_archive_type(archive_type)
         _verify_compression(compression)
-        return archive_type, compression
+        return "".join(suffixes), archive_type, compression
 
+    # check if the suffix is a known alias
     with contextlib.suppress(KeyError):
-        return _FILE_TYPE_ALIASES[ext]
+        return (suffix, *_FILE_TYPE_ALIASES[suffix])
 
-    partial_ext = exts[0]
-
+    # check if the suffix is an archive type
     with contextlib.suppress(RuntimeError):
-        _verify_archive_type(partial_ext)
-        return partial_ext, None
+        _verify_archive_type(suffix)
+        return suffix, suffix, None
 
+    # check if the suffix is a compression
     with contextlib.suppress(RuntimeError):
-        _verify_compression(partial_ext)
-        return None, partial_ext
+        _verify_compression(suffix)
+        return suffix, None, suffix
 
-    raise RuntimeError(f"Extension '{partial_ext}' is neither recognized as archive type nor as compression.")
-
-
-def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
-    try:
-        ext = file.split(".", 1)[1]
-    except IndexError as error:
-        msg = f"File '{file}' has no extensions that could be used to detect the archive type and compression."
-        raise RuntimeError(msg) from error
-
-    return (ext, *_parse_ext(ext))
+    raise RuntimeError(f"Suffix '{suffix}' is neither recognized as archive type nor as compression.")
 
 
 def decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
@@ -331,12 +330,12 @@ def decompress(from_path: str, to_path: Optional[str] = None, remove_finished: b
     Returns:
         (str): Path to the decompressed file.
     """
-    ext, archive_type, compression = _detect_file_type(from_path)
+    suffix, archive_type, compression = _detect_file_type(from_path)
     if not compression:
         raise RuntimeError
 
     if to_path is None:
-        to_path = from_path.replace(f".{ext}", f".{archive_type}" if archive_type is not None else "")
+        to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
 
     try:
         compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
@@ -370,11 +369,11 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
-    ext, archive_type, compression = _detect_file_type(from_path)
+    suffix, archive_type, compression = _detect_file_type(from_path)
     if not archive_type:
         return decompress(
             from_path,
-            os.path.join(to_path, os.path.basename(from_path).replace(f".{ext}", "")),
+            os.path.join(to_path, os.path.basename(from_path).replace(suffix, "")),
             remove_finished=remove_finished,
         )
 
