@@ -24,6 +24,7 @@ class Kinetics400(VisionDataset):
 
     Args:
         root (string): Root directory of the Kinetics-400 Dataset. Should be structured as follows:
+
             .. code::
 
                 root/
