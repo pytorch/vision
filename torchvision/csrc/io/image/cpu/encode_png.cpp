@@ -28,11 +28,6 @@ struct torch_png_error_mgr {
 
 using torch_png_error_mgr_ptr = torch_png_error_mgr*;
 
-void torch_png_warn(png_structp png_ptr, png_const_charp warn_msg) {
-  /* Display warning to user */
-  TORCH_WARN_ONCE(warn_msg);
-}
-
 void torch_png_error(png_structp png_ptr, png_const_charp error_msg) {
   /* png_ptr->err really points to a torch_png_error_mgr struct, so coerce
    * pointer */
@@ -155,7 +150,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   auto ptr = input.data_ptr<uint8_t>();
 
   // Encode PNG file
-  for (size_t y = 0; y < height; ++y) {
+  for (int y = 0; y < height; ++y) {
     png_write_row(png_write, ptr);
     ptr += stride;
   }

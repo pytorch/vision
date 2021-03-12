@@ -6,8 +6,7 @@ from typing import Any, Callable, Optional, Tuple
 import numpy as np
 
 from PIL import Image
-from .utils import download_url, verify_str_arg
-from .voc import download_extract
+from .utils import download_url, verify_str_arg, download_and_extract_archive
 
 
 class SBDataset(VisionDataset):
@@ -77,7 +76,7 @@ class SBDataset(VisionDataset):
         mask_dir = os.path.join(sbd_root, 'cls')
 
         if download:
-            download_extract(self.url, self.root, self.filename, self.md5)
+            download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.md5)
             extracted_ds_root = os.path.join(self.root, "benchmark_RELEASE", "dataset")
             for f in ["cls", "img", "inst", "train.txt", "val.txt"]:
                 old_path = os.path.join(extracted_ds_root, f)

@@ -1,15 +1,15 @@
 channels:
   - pytorch
   - defaults
+  # using conda-forge for python v3.9
+  - conda-forge
 dependencies:
-  - numpy
   - pytest
   - pytest-cov
   - codecov
   - pip
   - libpng
   - jpeg
-  - ffmpeg=4.2
   - ca-certificates
   - pip:
     - future

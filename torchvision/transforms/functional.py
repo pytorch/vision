@@ -104,6 +104,8 @@ def to_tensor(pic):
     if _is_numpy(pic) and not _is_numpy_image(pic):
         raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
+    default_float_dtype = torch.get_default_dtype()
+
     if isinstance(pic, np.ndarray):
         # handle numpy array
         if pic.ndim == 2:
@@ -112,14 +114,14 @@ def to_tensor(pic):
         img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
-            return img.float().div(255)
+            return img.to(dtype=default_float_dtype).div(255)
         else:
             return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
         pic.copyto(nppic)
-        return torch.from_numpy(nppic)
+        return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
     if pic.mode == 'I':
@@ -137,7 +139,7 @@ def to_tensor(pic):
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
-        return img.float().div(255)
+        return img.to(dtype=default_float_dtype).div(255)
     else:
         return img
 
@@ -335,7 +337,8 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return tensor
 
 
-def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR) -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+           max_size: Optional[int] = None) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -353,6 +356,14 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        max_size (int, optional): The maximum allowed for the longer edge of
+            the resized image: if the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``, then
+            the image is resized again so that the longer edge is equal to
+            ``max_size``. As a result, ```size` might be overruled, i.e the
+            smaller edge may be shorter than ``size``. This is only supported
+            if ``size`` is an int (or a sequence of length 1 in torchscript
+            mode).
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -370,9 +381,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.resize(img, size=size, interpolation=pil_interpolation)
+        return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
-    return F_t.resize(img, size=size, interpolation=interpolation.value)
+    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size)
 
 
 def scale(*args, **kwargs):

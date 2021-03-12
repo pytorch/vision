@@ -54,7 +54,7 @@ class OpTester(object):
 
 
 class RoIOpTester(OpTester):
-    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None):
+    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, **kwargs):
         x_dtype = self.dtype if x_dtype is None else x_dtype
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
@@ -70,11 +70,11 @@ class RoIOpTester(OpTester):
                             dtype=rois_dtype, device=device)
 
         pool_h, pool_w = pool_size, pool_size
-        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1)
+        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs)
         # the following should be true whether we're running an autocast test or not.
         self.assertTrue(y.dtype == x.dtype)
         gt_y = self.expected_fn(x, rois, pool_h, pool_w, spatial_scale=1,
-                                sampling_ratio=-1, device=device, dtype=self.dtype)
+                                sampling_ratio=-1, device=device, dtype=self.dtype, **kwargs)
 
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         self.assertTrue(torch.allclose(gt_y.to(y.dtype), y, rtol=tol, atol=tol))
@@ -135,11 +135,8 @@ class RoIPoolTester(RoIOpTester, unittest.TestCase):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.roi_pool(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.roi_pool)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
                     device=None, dtype=torch.float64):
@@ -177,11 +174,8 @@ class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.ps_roi_pool(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.ps_roi_pool)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
                     device=None, dtype=torch.float64):
@@ -257,11 +251,8 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                             sampling_ratio=sampling_ratio, aligned=aligned)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.roi_align(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.roi_align)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False,
                     device=None, dtype=torch.float64):
@@ -304,6 +295,10 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, **kwargs):
+        for aligned in (True, False):
+            super()._test_forward(device, contiguous, x_dtype, rois_dtype, aligned=aligned)
+
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -311,11 +306,8 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
                               sampling_ratio=sampling_ratio)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.ps_roi_align(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.ps_roi_align)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, in_data, rois, pool_h, pool_w, device, spatial_scale=1,
                     sampling_ratio=-1, dtype=torch.float64):
@@ -448,6 +440,40 @@ class NMSTester(unittest.TestCase):
         for dtype in (torch.float, torch.half):
             with torch.cuda.amp.autocast():
                 self.test_nms_cuda(dtype=dtype)
+
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_nms_cuda_float16(self):
+        boxes = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                              [285.1472, 188.7374, 1192.4984, 851.0669],
+                              [279.2440, 197.9812, 1189.4746, 849.2019]]).cuda()
+        scores = torch.tensor([0.6370, 0.7569, 0.3966]).cuda()
+
+        iou_thres = 0.2
+        keep32 = ops.nms(boxes, scores, iou_thres)
+        keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
+        self.assertTrue(torch.all(torch.eq(keep32, keep16)))
+
+    def test_batched_nms_implementations(self):
+        """Make sure that both implementations of batched_nms yield identical results"""
+
+        num_boxes = 1000
+        iou_threshold = .9
+
+        boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
+        assert max(boxes[:, 0]) < min(boxes[:, 2])  # x1 < x2
+        assert max(boxes[:, 1]) < min(boxes[:, 3])  # y1 < y2
+
+        scores = torch.rand(num_boxes)
+        idxs = torch.randint(0, 4, size=(num_boxes,))
+        keep_vanilla = ops.boxes._batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
+        keep_trick = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+
+        err_msg = "The vanilla and the trick implementation yield different nms outputs."
+        self.assertTrue(torch.allclose(keep_vanilla, keep_trick), err_msg)
+
+        # Also make sure an empty tensor is returned if boxes is empty
+        empty = torch.empty((0,), dtype=torch.int64)
+        self.assertTrue(torch.allclose(empty, ops.batched_nms(empty, None, None, None)))
 
 
 class DeformConvTester(OpTester, unittest.TestCase):
@@ -829,48 +855,75 @@ class BoxTester(unittest.TestCase):
 
 class BoxAreaTester(unittest.TestCase):
     def test_box_area(self):
-        # A bounding box of area 10000 and a degenerate case
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
-        expected = torch.tensor([10000, 0])
-        calc_area = ops.box_area(box_tensor)
-        assert calc_area.size() == torch.Size([2])
-        assert calc_area.dtype == box_tensor.dtype
-        assert torch.all(torch.eq(calc_area, expected)).item() is True
+        def area_check(box, expected, tolerance=1e-4):
+            out = ops.box_area(box)
+            assert out.size() == expected.size()
+            assert ((out - expected).abs().max() < tolerance).item()
+
+        # Check for int boxes
+        for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
+            box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
+            expected = torch.tensor([10000, 0])
+            area_check(box_tensor, expected)
+
+        # Check for float32 and float64 boxes
+        for dtype in [torch.float32, torch.float64]:
+            box_tensor = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                                       [285.1472, 188.7374, 1192.4984, 851.0669],
+                                       [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
+            expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
+            area_check(box_tensor, expected, tolerance=0.05)
+
+        # Check for float16 box
+        box_tensor = torch.tensor([[285.25, 185.625, 1194.0, 851.5],
+                                   [285.25, 188.75, 1192.0, 851.0],
+                                   [279.25, 198.0, 1189.0, 849.0]], dtype=torch.float16)
+        expected = torch.tensor([605113.875, 600495.1875, 592247.25])
+        area_check(box_tensor, expected)
 
 
 class BoxIouTester(unittest.TestCase):
     def test_iou(self):
-        # Boxes to test Iou
-        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        def iou_check(box, expected, tolerance=1e-4):
+            out = ops.box_iou(box, box)
+            assert out.size() == expected.size()
+            assert ((out - expected).abs().max() < tolerance).item()
 
-        # Expected IoU matrix for these boxes
-        expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+        # Check for int boxes
+        for dtype in [torch.int16, torch.int32, torch.int64]:
+            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+            iou_check(box, expected)
 
-        out = ops.box_iou(boxes1, boxes2)
-
-        # Check if all elements of tensor are as expected.
-        assert out.size() == torch.Size([3, 3])
-        tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item() is True
+        # Check for float boxes
+        for dtype in [torch.float16, torch.float32, torch.float64]:
+            box_tensor = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                                       [285.1472, 188.7374, 1192.4984, 851.0669],
+                                       [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
+            iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
 
 class GenBoxIouTester(unittest.TestCase):
     def test_gen_iou(self):
-        # Test Generalized IoU
-        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        def gen_iou_check(box, expected, tolerance=1e-4):
+            out = ops.generalized_box_iou(box, box)
+            assert out.size() == expected.size()
+            assert ((out - expected).abs().max() < tolerance).item()
 
-        # Expected gIoU matrix for these boxes
-        expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611],
-                                [-0.7778, -0.8611, 1.0]])
+        # Check for int boxes
+        for dtype in [torch.int16, torch.int32, torch.int64]:
+            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]])
+            gen_iou_check(box, expected)
 
-        out = ops.generalized_box_iou(boxes1, boxes2)
-
-        # Check if all elements of tensor are as expected.
-        assert out.size() == torch.Size([3, 3])
-        tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item() is True
+        # Check for float boxes
+        for dtype in [torch.float16, torch.float32, torch.float64]:
+            box_tensor = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
+                                       [285.1472, 188.7374, 1192.4984, 851.0669],
+                                       [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
+            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
+            gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
 
 
 if __name__ == '__main__':

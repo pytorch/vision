@@ -2,10 +2,59 @@ from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, List
 
 
-class CocoCaptions(VisionDataset):
+class CocoDetection(VisionDataset):
+    """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
+
+    Args:
+        root (string): Root directory where images are downloaded to.
+        annFile (string): Path to json annotation file.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.ToTensor``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
+            and returns a transformed version.
+    """
+
+    def __init__(
+        self,
+        root: str,
+        annFile: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        transforms: Optional[Callable] = None,
+    ):
+        super().__init__(root, transforms, transform, target_transform)
+        from pycocotools.coco import COCO
+
+        self.coco = COCO(annFile)
+        self.ids = list(sorted(self.coco.imgs.keys()))
+
+    def _load_image(self, id: int) -> Image.Image:
+        path = self.coco.loadImgs(id)[0]["file_name"]
+        return Image.open(os.path.join(self.root, path)).convert("RGB")
+
+    def _load_target(self, id) -> List[Any]:
+        return self.coco.loadAnns(self.coco.getAnnIds(id))
+
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        id = self.ids[index]
+        image = self._load_image(id)
+        target = self._load_target(id)
+
+        if self.transforms is not None:
+            image, target = self.transforms(image, target)
+
+        return image, target
+
+    def __len__(self) -> int:
+        return len(self.ids)
+
+
+class CocoCaptions(CocoDetection):
     """`MS Coco Captions <https://cocodataset.org/#captions-2015>`_ Dataset.
 
     Args:
@@ -46,93 +95,5 @@ class CocoCaptions(VisionDataset):
 
     """
 
-    def __init__(
-            self,
-            root: str,
-            annFile: str,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            transforms: Optional[Callable] = None,
-    ) -> None:
-        super(CocoCaptions, self).__init__(root, transforms, transform, target_transform)
-        from pycocotools.coco import COCO
-        self.coco = COCO(annFile)
-        self.ids = list(sorted(self.coco.imgs.keys()))
-
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
-        """
-        Args:
-            index (int): Index
-
-        Returns:
-            tuple: Tuple (image, target). target is a list of captions for the image.
-        """
-        coco = self.coco
-        img_id = self.ids[index]
-        ann_ids = coco.getAnnIds(imgIds=img_id)
-        anns = coco.loadAnns(ann_ids)
-        target = [ann['caption'] for ann in anns]
-
-        path = coco.loadImgs(img_id)[0]['file_name']
-
-        img = Image.open(os.path.join(self.root, path)).convert('RGB')
-
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
-
-        return img, target
-
-    def __len__(self) -> int:
-        return len(self.ids)
-
-
-class CocoDetection(VisionDataset):
-    """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
-
-    Args:
-        root (string): Root directory where images are downloaded to.
-        annFile (string): Path to json annotation file.
-        transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it.
-        transforms (callable, optional): A function/transform that takes input sample and its target as entry
-            and returns a transformed version.
-    """
-
-    def __init__(
-            self,
-            root: str,
-            annFile: str,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            transforms: Optional[Callable] = None,
-    ) -> None:
-        super(CocoDetection, self).__init__(root, transforms, transform, target_transform)
-        from pycocotools.coco import COCO
-        self.coco = COCO(annFile)
-        self.ids = list(sorted(self.coco.imgs.keys()))
-
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
-        """
-        Args:
-            index (int): Index
-
-        Returns:
-            tuple: Tuple (image, target). target is the object returned by ``coco.loadAnns``.
-        """
-        coco = self.coco
-        img_id = self.ids[index]
-        ann_ids = coco.getAnnIds(imgIds=img_id)
-        target = coco.loadAnns(ann_ids)
-
-        path = coco.loadImgs(img_id)[0]['file_name']
-
-        img = Image.open(os.path.join(self.root, path)).convert('RGB')
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
-
-        return img, target
-
-    def __len__(self) -> int:
-        return len(self.ids)
+    def _load_target(self, id) -> List[str]:
+        return [ann["caption"] for ann in super()._load_target(id)]

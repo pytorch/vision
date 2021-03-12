@@ -14,9 +14,14 @@ import random
 from numbers import Number
 from torch._six import string_classes
 from collections import OrderedDict
+from _utils_internal import get_relative_path
 
 import numpy as np
 from PIL import Image
+
+IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
+PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
+PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
 
 
 @contextlib.contextmanager
@@ -106,19 +111,23 @@ class TestCase(unittest.TestCase):
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
         munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
-        test_file = os.path.realpath(sys.modules[module_id].__file__)
-        expected_file = os.path.join(os.path.dirname(test_file),
-                                     "expect",
-                                     munged_id)
 
+        # Determine expected file based on environment
+        expected_file_base = get_relative_path(
+            os.path.realpath(sys.modules[module_id].__file__),
+            "expect")
+
+        # Set expected_file based on subname.
+        expected_file = os.path.join(expected_file_base, munged_id)
         if subname:
             expected_file += "_" + subname
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
             raise RuntimeError(
-                ("No expect file exists for {}; to accept the current output, run:\n"
-                 "python {} {} --accept").format(os.path.basename(expected_file), __main__.__file__, munged_id))
+                f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
+                "to accept the current output, run:\n"
+                f"python {__main__.__file__} {munged_id} --accept")
 
         return expected_file
 
@@ -321,7 +330,7 @@ class TestCase(unittest.TestCase):
             results = m(*args)
         with freeze_rng_state():
             results_from_imported = m_import(*args)
-        self.assertEqual(results, results_from_imported)
+        self.assertEqual(results, results_from_imported, prec=3e-5)
 
 
 @contextlib.contextmanager
@@ -384,3 +393,11 @@ def int_dtypes():
 
 def float_dtypes():
     return torch.testing.floating_types()
+
+
+@contextlib.contextmanager
+def disable_console_output():
+    with contextlib.ExitStack() as stack, open(os.devnull, "w") as devnull:
+        stack.enter_context(contextlib.redirect_stdout(devnull))
+        stack.enter_context(contextlib.redirect_stderr(devnull))
+        yield
