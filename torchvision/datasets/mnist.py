@@ -268,11 +268,7 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    # Updated URL from https://www.nist.gov/node/1298471/emnist-dataset since the
-    # _official_ download link
-    # https://cloudstor.aarnet.edu.au/plus/s/ZNmuFiuQTqZlu9W/download
-    # is (currently) unavailable
-    url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+    url = 'https://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
     md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
     # Merged Classes assumes Same structure for both uppercase and lowercase version
