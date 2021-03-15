@@ -317,7 +317,7 @@ def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
     raise RuntimeError(f"Suffix '{suffix}' is neither recognized as archive type nor as compression.")
 
 
-def decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
     r"""Decompress a file.
 
     The compression is automatically detected from the file name.
@@ -371,7 +371,7 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
 
     suffix, archive_type, compression = _detect_file_type(from_path)
     if not archive_type:
-        return decompress(
+        return _decompress(
             from_path,
             os.path.join(to_path, os.path.basename(from_path).replace(suffix, "")),
             remove_finished=remove_finished,

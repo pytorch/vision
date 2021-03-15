@@ -148,7 +148,7 @@ class Tester(unittest.TestCase):
         with get_tmp_dir() as temp_dir:
             compressed, file, content = create_compressed(temp_dir)
 
-            utils.decompress(compressed)
+            utils._decompress(compressed)
 
             self.assertTrue(os.path.exists(file))
 
@@ -185,7 +185,7 @@ class Tester(unittest.TestCase):
 
                 mock.assert_called_once()
                 self.assertEqual(
-                    call_args_to_kwargs_only(mock.call_args, utils.decompress),
+                    call_args_to_kwargs_only(mock.call_args, utils._decompress),
                     dict(from_path=file, to_path=filename, remove_finished=remove_finished),
                 )
 
