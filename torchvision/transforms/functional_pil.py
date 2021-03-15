@@ -204,12 +204,12 @@ def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Imag
 
 
 @torch.jit.unused
-def resize(img, size, interpolation='bilinear'):
+def resize(img, size, interpolation=None, max_size=None):
     from .functional_tensor import resize as ft_resize
     from .functional import pil_to_tensor, to_pil_image
 
     t = pil_to_tensor(img)
-    resized_t = ft_resize(t, size, interpolation.value)
+    resized_t = ft_resize(t, size, interpolation.value, max_size=max_size)
     return to_pil_image(resized_t)
 
 

@@ -10,7 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, imagenet_root, \
+from fakedata_generation import mnist_root, \
     cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
@@ -146,18 +146,8 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @mock.patch('torchvision.datasets.imagenet._verify_archive')
-    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
-    def test_imagenet(self, mock_verify):
-        with imagenet_root() as root:
-            dataset = torchvision.datasets.ImageNet(root, split='train')
-            self.generic_classification_dataset_test(dataset)
-
-            dataset = torchvision.datasets.ImageNet(root, split='val')
-            self.generic_classification_dataset_test(dataset)
-
     @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_widerface(self, mock_check_integrity):
         mock_check_integrity.return_value = True
         with widerface_root() as root:
@@ -176,7 +166,7 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
@@ -488,6 +478,37 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
             )
 
         return num_images_per_category * len(categories)
+
+
+class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ImageNet
+    REQUIRED_PACKAGES = ('scipy',)
+    CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        wnid = 'n01234567'
+        if config['split'] == 'train':
+            num_examples = 3
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'train' / wnid / wnid,
+                file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
+                num_examples=num_examples,
+            )
+        else:
+            num_examples = 1
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'val' / wnid,
+                file_name_fn=lambda image_ifx: "ILSVRC2012_val_0000000{image_idx}.JPEG",
+                num_examples=num_examples,
+            )
+
+        wnid_to_classes = {wnid: [1]}
+        torch.save((wnid_to_classes, None), tmpdir / 'meta.bin')
+        return num_examples
 
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -1352,6 +1373,93 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
             super().test_feature_types.__wrapped__(self, config)
         finally:
             self.FEATURE_TYPES = feature_types
+
+
+class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Flickr8k
+
+    FEATURE_TYPES = (PIL.Image.Image, list)
+
+    _IMAGES_FOLDER = "images"
+    _ANNOTATIONS_FILE = "captions.html"
+
+    def dataset_args(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        root = tmpdir / self._IMAGES_FOLDER
+        ann_file = tmpdir / self._ANNOTATIONS_FILE
+        return str(root), str(ann_file)
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 3
+        num_captions_per_image = 3
+
+        tmpdir = pathlib.Path(tmpdir)
+
+        images = self._create_images(tmpdir, self._IMAGES_FOLDER, num_images)
+        self._create_annotations_file(tmpdir, self._ANNOTATIONS_FILE, images, num_captions_per_image)
+
+        return dict(num_examples=num_images, captions=self._create_captions(num_captions_per_image))
+
+    def _create_images(self, root, name, num_images):
+        return datasets_utils.create_image_folder(root, name, self._image_file_name, num_images)
+
+    def _image_file_name(self, idx):
+        id = datasets_utils.create_random_string(10, string.digits)
+        checksum = datasets_utils.create_random_string(10, string.digits, string.ascii_lowercase[:6])
+        size = datasets_utils.create_random_string(1, "qwcko")
+        return f"{id}_{checksum}_{size}.jpg"
+
+    def _create_annotations_file(self, root, name, images, num_captions_per_image):
+        with open(root / name, "w") as fh:
+            fh.write("<table>")
+            for image in (None, *images):
+                self._add_image(fh, image, num_captions_per_image)
+            fh.write("</table>")
+
+    def _add_image(self, fh, image, num_captions_per_image):
+        fh.write("<tr>")
+        self._add_image_header(fh, image)
+        fh.write("</tr><tr><td><ul>")
+        self._add_image_captions(fh, num_captions_per_image)
+        fh.write("</ul></td></tr>")
+
+    def _add_image_header(self, fh, image=None):
+        if image:
+            url = f"http://www.flickr.com/photos/user/{image.name.split('_')[0]}/"
+            data = f'<a href="{url}">{url}</a>'
+        else:
+            data = "Image Not Found"
+        fh.write(f"<td>{data}</td>")
+
+    def _add_image_captions(self, fh, num_captions_per_image):
+        for caption in self._create_captions(num_captions_per_image):
+            fh.write(f"<li>{caption}")
+
+    def _create_captions(self, num_captions_per_image):
+        return [str(idx) for idx in range(num_captions_per_image)]
+
+    def test_captions(self):
+        with self.create_dataset() as (dataset, info):
+            _, captions = dataset[0]
+            self.assertSequenceEqual(captions, info["captions"])
+
+
+class Flickr30kTestCase(Flickr8kTestCase):
+    DATASET_CLASS = datasets.Flickr30k
+
+    FEATURE_TYPES = (PIL.Image.Image, list)
+
+    _ANNOTATIONS_FILE = "captions.token"
+
+    def _image_file_name(self, idx):
+        return f"{idx}.jpg"
+
+    def _create_annotations_file(self, root, name, images, num_captions_per_image):
+        with open(root / name, "w") as fh:
+            for image, (idx, caption) in itertools.product(
+                images, enumerate(self._create_captions(num_captions_per_image))
+            ):
+                fh.write(f"{image.name}#{idx}\t{caption}\n")
 
 
 if __name__ == "__main__":
