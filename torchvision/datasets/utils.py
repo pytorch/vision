@@ -61,18 +61,20 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
-def _get_redirect_url(url: str, max_hops: int = 10) -> str:
-    import requests
+def _get_redirect_url(url: str, max_hops: int = 3) -> str:
+    initial_url = url
+    headers = {"Method": "HEAD", "User-Agent": USER_AGENT}
 
-    for hop in range(max_hops + 1):
-        response = requests.head(url)
+    for _ in range(max_hops + 1):
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers)) as response:
+            if response.url == url or response.url is None:
+                return url
 
-        if response.url == url or response.url is None:
-            return url
-
-        url = response.url
+            url = response.url
     else:
-        raise RecursionError(f"Too many redirects: {max_hops + 1})")
+        raise RecursionError(
+            f"Request to {initial_url} exceeded {max_hops} redirects. The last redirect points to {url}."
+        )
 
 
 def _get_google_drive_file_id(url: str) -> Optional[str]:
