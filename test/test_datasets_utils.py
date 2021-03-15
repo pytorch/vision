@@ -135,7 +135,7 @@ class Tester(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             utils._detect_file_type("foo.bar")
 
-    def test_decopress_gzip(self):
+    def test_decompress_gzip(self):
         def create_compressed(root, content="this is the content"):
             file = os.path.join(root, "file")
             compressed = f"{file}.gz"
@@ -155,7 +155,7 @@ class Tester(unittest.TestCase):
             with open(file, "r") as fh:
                 self.assertEqual(fh.read(), content)
 
-    def test_decopress_lzma(self):
+    def test_decompress_lzma(self):
         def create_compressed(root, content="this is the content"):
             file = os.path.join(root, "file")
             compressed = f"{file}.xz"
