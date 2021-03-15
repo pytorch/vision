@@ -332,7 +332,7 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
     """
     suffix, archive_type, compression = _detect_file_type(from_path)
     if not compression:
-        raise RuntimeError
+        raise RuntimeError(f"Couldn't detect a compression from suffix {suffix}.")
 
     if to_path is None:
         to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
