@@ -129,6 +129,11 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIAlign((5, 5), 1, 2)
         self.run_model(model, [(x, single_roi)])
 
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, -1)
+        self.run_model(model, [(x, single_roi)])
+
     def test_roi_align_aligned(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
@@ -148,6 +153,11 @@ class ONNXExporterTester(unittest.TestCase):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
         model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((2, 2), 2.5, -1, aligned=True)
         self.run_model(model, [(x, single_roi)])
 
     @unittest.skip  # Issue in exporting ROIAlign with aligned = True for malformed boxes
