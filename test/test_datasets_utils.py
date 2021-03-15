@@ -196,7 +196,6 @@ class Tester(unittest.TestCase):
 
             self.assertFalse(os.path.exists(compressed))
 
-
     def test_extract_archive_defer_to_decompress(self):
         filename = "foo"
         for ext, remove_finished in itertools.product((".gz", ".xz"), (True, False)):
