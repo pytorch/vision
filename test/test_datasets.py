@@ -146,26 +146,6 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
-    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
-    def test_widerface(self, mock_check_integrity):
-        mock_check_integrity.return_value = True
-        with widerface_root() as root:
-            dataset = torchvision.datasets.WIDERFace(root, split='train')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
-            dataset = torchvision.datasets.WIDERFace(root, split='val')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
-            dataset = torchvision.datasets.WIDERFace(root, split='test')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
     @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
@@ -478,6 +458,62 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
             )
 
         return num_images_per_category * len(categories)
+
+
+@unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
+class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.WIDERFace
+    FEATURE_TYPES = (PIL.Image.Image, (dict, type(None)))  # test split returns None as target
+    CONFIGS = datasets_utils.combinations_grid(split=('train', 'val', 'test'))
+
+    def inject_fake_data(self, tmpdir, config):
+        widerface_dir = pathlib.Path(tmpdir) / 'widerface'
+        annotations_dir = widerface_dir / 'wider_face_split'
+        os.makedirs(annotations_dir)
+
+        split_to_idx = split_to_num_examples = {
+            "train": 1,
+            "val": 2,
+            "test": 3,
+        }
+
+        # We need to create all folders regardless of the split in config
+        for split in ('train', 'val', 'test'):
+            split_idx = split_to_idx[split]
+            num_examples = split_to_num_examples[split]
+
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=widerface_dir / f'WIDER_{split}' / 'images' / '0--Parade',
+                file_name_fn=lambda image_idx: f"0_Parade_marchingband_1_{split_idx + image_idx}.jpg",
+                num_examples=num_examples,
+            )
+
+            annotation_file_name = {
+                'train': annotations_dir / 'wider_face_train_bbx_gt.txt',
+                'val': annotations_dir / 'wider_face_val_bbx_gt.txt',
+                'test': annotations_dir / 'wider_face_test_filelist.txt',
+            }[split]
+
+            annotation_content = {
+                "train": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n"
+                    for image_idx in range(num_examples)
+                ),
+                "val": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n"
+                    for image_idx in range(num_examples)
+                ),
+                "test": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n"
+                    for image_idx in range(num_examples)
+                ),
+            }[split]
+
+            with open(annotation_file_name, "w") as annotation_file:
+                annotation_file.write(annotation_content)
+
+        return split_to_num_examples[config["split"]]
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
