@@ -471,18 +471,21 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
         annotations_dir = widerface_dir / 'wider_face_split'
         os.makedirs(annotations_dir)
 
-        for split in ('train', 'val', 'test'):
-            split_idx = {
-                'train': 1,
-                'val': 2,
-                'test': 3,
-            }[split]
+        split_to_idx = split_to_num_examples = {
+            "train": 1,
+            "val": 2,
+            "test": 3,
+        }
 
-            num_examples = 1
+        # We need to create all folders regardless of the split in config
+        for split in ('train', 'val', 'test'):
+            split_idx = split_to_idx[split]
+            num_examples = split_to_num_examples[split]
+
             datasets_utils.create_image_folder(
                 root=tmpdir,
                 name=widerface_dir / f'WIDER_{split}' / 'images' / '0--Parade',
-                file_name_fn=lambda image_idx: f"0_Parade_marchingband_{image_idx + 1}_{split_idx}.jpg",
+                file_name_fn=lambda image_idx: f"0_Parade_marchingband_1_{split_idx + image_idx}.jpg",
                 num_examples=num_examples,
             )
 
@@ -491,15 +494,26 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
                 'val': annotations_dir / 'wider_face_val_bbx_gt.txt',
                 'test': annotations_dir / 'wider_face_test_filelist.txt',
             }[split]
+
             annotation_content = {
-                'train': f'0--Parade/0_Parade_marchingband_1_{split_idx}.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n',
-                'val': f'0--Parade/0_Parade_marchingband_1_{split_idx}.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n',
-                'test': f'0--Parade/0_Parade_marchingband_1_{split_idx}.jpg\n',
+                "train": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n"
+                    for image_idx in range(num_examples)
+                ),
+                "val": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n"
+                    for image_idx in range(num_examples)
+                ),
+                "test": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n"
+                    for image_idx in range(num_examples)
+                ),
             }[split]
 
             with open(annotation_file_name, "w") as annotation_file:
                 annotation_file.write(annotation_content)
-        return num_examples
+
+        return split_to_num_examples[config["split"]]
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
