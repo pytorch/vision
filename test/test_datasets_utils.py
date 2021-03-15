@@ -175,6 +175,28 @@ class Tester(unittest.TestCase):
             with open(file, "r") as fh:
                 self.assertEqual(fh.read(), content)
 
+    def test_decompress_no_compression(self):
+        with self.assertRaises(RuntimeError):
+            utils._decompress("foo.tar")
+
+    def test_decompress_remove_finished(self):
+        def create_compressed(root, content="this is the content"):
+            file = os.path.join(root, "file")
+            compressed = f"{file}.gz"
+
+            with gzip.open(compressed, "wb") as fh:
+                fh.write(content.encode())
+
+            return compressed, file, content
+
+        with get_tmp_dir() as temp_dir:
+            compressed, file, content = create_compressed(temp_dir)
+
+            utils.extract_archive(compressed, temp_dir, remove_finished=True)
+
+            self.assertFalse(os.path.exists(compressed))
+
+
     def test_extract_archive_defer_to_decompress(self):
         filename = "foo"
         for ext, remove_finished in itertools.product((".gz", ".xz"), (True, False)):
