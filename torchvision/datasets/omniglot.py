@@ -21,8 +21,9 @@ class Omniglot(VisionDataset):
             puts it in root directory. If the zip files are already downloaded, they are not
             downloaded again.
     """
+
     folder = 'omniglot-py'
-    download_url_prefix = 'https://github.com/brendenlake/omniglot/raw/master/python'
+    download_url_prefix = 'https://raw.githubusercontent.com/brendenlake/omniglot/master/python/'
     zips_md5 = {
         'images_background': '68d2efa1b9178cc56df9314c21c6e718',
         'images_evaluation': '6b91aef0f799c5bb55b94e3f2daec811'
