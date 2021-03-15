@@ -36,7 +36,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
             for python_version in python_versions:
                 for cu_version in cu_versions:
                     # ROCm conda packages not yet supported
-                    if cu_version.startswith('rocm') and btype == "conda": continue
+                    if cu_version.startswith('rocm') and btype == "conda":
+                        continue
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         fb = filter_branch
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
