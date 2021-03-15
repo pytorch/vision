@@ -65,7 +65,7 @@ def _get_redirect_url(url: str, max_hops: int = 10) -> str:
     import requests
 
     for hop in range(max_hops + 1):
-        response = requests.get(url)
+        response = requests.head(url)
 
         if response.url == url or response.url is None:
             return url
