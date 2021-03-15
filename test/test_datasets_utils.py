@@ -179,7 +179,7 @@ class Tester(unittest.TestCase):
         filename = "foo"
         for ext, remove_finished in itertools.product((".gz", ".xz"), (True, False)):
             with self.subTest(ext=ext, remove_finished=remove_finished):
-                with unittest.mock.patch("torchvision.datasets.utils.decompress") as mock:
+                with unittest.mock.patch("torchvision.datasets.utils._decompress") as mock:
                     file = f"{filename}{ext}"
                     utils.extract_archive(file, remove_finished=remove_finished)
 
