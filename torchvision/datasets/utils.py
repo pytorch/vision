@@ -337,10 +337,8 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
     if to_path is None:
         to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
 
-    try:
-        compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
-    except KeyError as error:
-        raise RuntimeError from error
+    # We don't need to check for a missing key here, since this was already done in _detect_file_type()
+    compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
 
     with compressed_file_opener(from_path, "rb") as rfh, open(to_path, "wb") as wfh:
         wfh.write(rfh.read())
@@ -377,10 +375,8 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
             remove_finished=remove_finished,
         )
 
-    try:
-        extractor = _ARCHIVE_EXTRACTORS[archive_type]
-    except KeyError as error:
-        raise RuntimeError from error
+    # We don't need to check for a missing key here, since this was already done in _detect_file_type()
+    extractor = _ARCHIVE_EXTRACTORS[archive_type]
 
     extractor(from_path, to_path, compression)
 
