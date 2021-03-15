@@ -161,7 +161,8 @@ class DatasetTestCase(unittest.TestCase):
         - DATASET_CLASS (torchvision.datasets.VisionDataset): Class of dataset to be tested.
         - FEATURE_TYPES (Sequence[Any]): Types of the elements returned by index access of the dataset. Instead of
             providing these manually, you can instead subclass ``ImageDatasetTestCase`` or ``VideoDatasetTestCase```to
-            get a reasonable default, that should work for most cases.
+            get a reasonable default, that should work for most cases. Each entry of the sequence may be a tuple,
+            to indicate multiple possible values.
 
     Optionally, you can overwrite the following class attributes:
 
@@ -312,7 +313,8 @@ class DatasetTestCase(unittest.TestCase):
             patch_checks = inject_fake_data
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
-        if "download" in self._HAS_SPECIAL_KWARG:
+        if "download" in self._HAS_SPECIAL_KWARG and special_kwargs.get("download", False):
+            # override download param to False param if its default is truthy
             special_kwargs["download"] = False
         config.update(other_kwargs)
 
