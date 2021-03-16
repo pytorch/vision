@@ -4,12 +4,32 @@ import hashlib
 import gzip
 import re
 import tarfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar
+from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple
 from urllib.parse import urlparse
 import zipfile
+import lzma
+import contextlib
+import urllib
+import urllib.request
+import urllib.error
+import pathlib
 
 import torch
 from torch.utils.model_zoo import tqdm
+
+
+USER_AGENT = "pytorch/vision"
+
+
+def _urlretrieve(url: str, filename: str, chunk_size: int = 1024) -> None:
+    with open(filename, "wb") as fh:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
+            with tqdm(total=response.length) as pbar:
+                for chunk in iter(lambda: response.read(chunk_size), ""):
+                    if not chunk:
+                        break
+                    pbar.update(chunk_size)
+                    fh.write(chunk)
 
 
 def gen_bar_updater() -> Callable[[int, int, int], None]:
@@ -44,18 +64,20 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
-def _get_redirect_url(url: str, max_hops: int = 10) -> str:
-    import requests
+def _get_redirect_url(url: str, max_hops: int = 3) -> str:
+    initial_url = url
+    headers = {"Method": "HEAD", "User-Agent": USER_AGENT}
 
-    for hop in range(max_hops + 1):
-        response = requests.get(url)
+    for _ in range(max_hops + 1):
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers)) as response:
+            if response.url == url or response.url is None:
+                return url
 
-        if response.url == url or response.url is None:
-            return url
-
-        url = response.url
+            url = response.url
     else:
-        raise RecursionError(f"Too many redirects: {max_hops + 1})")
+        raise RecursionError(
+            f"Request to {initial_url} exceeded {max_hops} redirects. The last redirect points to {url}."
+        )
 
 
 def _get_google_drive_file_id(url: str) -> Optional[str]:
@@ -83,8 +105,6 @@ def download_url(
         md5 (str, optional): MD5 checksum of the download. If None, do not check
         max_redirect_hops (int, optional): Maximum number of redirect hops allowed
     """
-    import urllib
-
     root = os.path.expanduser(root)
     if not filename:
         filename = os.path.basename(url)
@@ -108,19 +128,13 @@ def download_url(
     # download the file
     try:
         print('Downloading ' + url + ' to ' + fpath)
-        urllib.request.urlretrieve(
-            url, fpath,
-            reporthook=gen_bar_updater()
-        )
+        _urlretrieve(url, fpath)
     except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
         if url[:5] == 'https':
             url = url.replace('https:', 'http:')
             print('Failed download. Trying https -> http instead.'
                   ' Downloading ' + url + ' to ' + fpath)
-            urllib.request.urlretrieve(
-                url, fpath,
-                reporthook=gen_bar_updater()
-            )
+            _urlretrieve(url, fpath)
         else:
             raise e
     # check integrity of downloaded file
@@ -231,55 +245,144 @@ def _save_response_content(
         pbar.close()
 
 
-def _is_tarxz(filename: str) -> bool:
-    return filename.endswith(".tar.xz")
+def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
+    with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
+        tar.extractall(to_path)
 
 
-def _is_tar(filename: str) -> bool:
-    return filename.endswith(".tar")
+_ZIP_COMPRESSION_MAP: Dict[str, int] = {
+    ".xz": zipfile.ZIP_LZMA,
+}
 
 
-def _is_targz(filename: str) -> bool:
-    return filename.endswith(".tar.gz")
+def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> None:
+    with zipfile.ZipFile(
+        from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
+    ) as zip:
+        zip.extractall(to_path)
 
 
-def _is_tgz(filename: str) -> bool:
-    return filename.endswith(".tgz")
+_ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
+    ".tar": _extract_tar,
+    ".zip": _extract_zip,
+}
+_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {".gz": gzip.open, ".xz": lzma.open}
+_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {".tgz": (".tar", ".gz")}
 
 
-def _is_gzip(filename: str) -> bool:
-    return filename.endswith(".gz") and not filename.endswith(".tar.gz")
+def _verify_archive_type(archive_type: str) -> None:
+    if archive_type not in _ARCHIVE_EXTRACTORS.keys():
+        valid_types = "', '".join(_ARCHIVE_EXTRACTORS.keys())
+        raise RuntimeError(f"Unknown archive type '{archive_type}'. Known archive types are '{valid_types}'.")
 
 
-def _is_zip(filename: str) -> bool:
-    return filename.endswith(".zip")
+def _verify_compression(compression: str) -> None:
+    if compression not in _COMPRESSED_FILE_OPENERS.keys():
+        valid_types = "', '".join(_COMPRESSED_FILE_OPENERS.keys())
+        raise RuntimeError(f"Unknown compression '{compression}'. Known compressions are '{valid_types}'.")
 
 
-def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> None:
+def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
+    path = pathlib.Path(file)
+    suffix = path.suffix
+    suffixes = pathlib.Path(file).suffixes
+    if not suffixes:
+        raise RuntimeError(
+            f"File '{file}' has no suffixes that could be used to detect the archive type and compression."
+        )
+    elif len(suffixes) > 2:
+        raise RuntimeError(
+            "Archive type and compression detection only works for 1 or 2 suffixes. " f"Got {len(suffixes)} instead."
+        )
+    elif len(suffixes) == 2:
+        # if we have exactly two suffixes we assume the first one is the archive type and the second on is the
+        # compression
+        archive_type, compression = suffixes
+        _verify_archive_type(archive_type)
+        _verify_compression(compression)
+        return "".join(suffixes), archive_type, compression
+
+    # check if the suffix is a known alias
+    with contextlib.suppress(KeyError):
+        return (suffix, *_FILE_TYPE_ALIASES[suffix])
+
+    # check if the suffix is an archive type
+    with contextlib.suppress(RuntimeError):
+        _verify_archive_type(suffix)
+        return suffix, suffix, None
+
+    # check if the suffix is a compression
+    with contextlib.suppress(RuntimeError):
+        _verify_compression(suffix)
+        return suffix, None, suffix
+
+    raise RuntimeError(f"Suffix '{suffix}' is neither recognized as archive type nor as compression.")
+
+
+def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+    r"""Decompress a file.
+
+    The compression is automatically detected from the file name.
+
+    Args:
+        from_path (str): Path to the file to be decompressed.
+        to_path (str): Path to the decompressed file. If omitted, ``from_path`` without compression extension is used.
+        remove_finished (bool): If ``True``, remove the file after the extraction.
+
+    Returns:
+        (str): Path to the decompressed file.
+    """
+    suffix, archive_type, compression = _detect_file_type(from_path)
+    if not compression:
+        raise RuntimeError(f"Couldn't detect a compression from suffix {suffix}.")
+
     if to_path is None:
-        to_path = os.path.dirname(from_path)
+        to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
 
-    if _is_tar(from_path):
-        with tarfile.open(from_path, 'r') as tar:
-            tar.extractall(path=to_path)
-    elif _is_targz(from_path) or _is_tgz(from_path):
-        with tarfile.open(from_path, 'r:gz') as tar:
-            tar.extractall(path=to_path)
-    elif _is_tarxz(from_path):
-        with tarfile.open(from_path, 'r:xz') as tar:
-            tar.extractall(path=to_path)
-    elif _is_gzip(from_path):
-        to_path = os.path.join(to_path, os.path.splitext(os.path.basename(from_path))[0])
-        with open(to_path, "wb") as out_f, gzip.GzipFile(from_path) as zip_f:
-            out_f.write(zip_f.read())
-    elif _is_zip(from_path):
-        with zipfile.ZipFile(from_path, 'r') as z:
-            z.extractall(to_path)
-    else:
-        raise ValueError("Extraction of {} not supported".format(from_path))
+    # We don't need to check for a missing key here, since this was already done in _detect_file_type()
+    compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
+
+    with compressed_file_opener(from_path, "rb") as rfh, open(to_path, "wb") as wfh:
+        wfh.write(rfh.read())
 
     if remove_finished:
         os.remove(from_path)
+
+    return to_path
+
+
+def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+    """Extract an archive.
+
+    The archive type and a possible compression is automatically detected from the file name. If the file is compressed
+    but not an archive the call is dispatched to :func:`decompress`.
+
+    Args:
+        from_path (str): Path to the file to be extracted.
+        to_path (str): Path to the directory the file will be extracted to. If omitted, the directory of the file is
+            used.
+        remove_finished (bool): If ``True``, remove the file after the extraction.
+
+    Returns:
+        (str): Path to the directory the file was extracted to.
+    """
+    if to_path is None:
+        to_path = os.path.dirname(from_path)
+
+    suffix, archive_type, compression = _detect_file_type(from_path)
+    if not archive_type:
+        return _decompress(
+            from_path,
+            os.path.join(to_path, os.path.basename(from_path).replace(suffix, "")),
+            remove_finished=remove_finished,
+        )
+
+    # We don't need to check for a missing key here, since this was already done in _detect_file_type()
+    extractor = _ARCHIVE_EXTRACTORS[archive_type]
+
+    extractor(from_path, to_path, compression)
+
+    return to_path
 
 
 def download_and_extract_archive(

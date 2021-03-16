@@ -57,6 +57,7 @@ Compositions of transforms
 
 .. autoclass:: Compose
 
+
 Transforms on PIL Image and torch.\*Tensor
 ------------------------------------------
 
@@ -153,6 +154,22 @@ Generic Transforms
 ------------------
 
 .. autoclass:: Lambda
+    :members:
+
+
+AutoAugment Transforms
+----------------------
+
+`AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
+Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
+ImageNet policies provide significant improvements when applied to other datasets.
+In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
+The new transform can be used standalone or mixed-and-matched with existing transforms:
+
+.. autoclass:: AutoAugmentPolicy
+    :members:
+
+.. autoclass:: AutoAugment
     :members:
 
 
