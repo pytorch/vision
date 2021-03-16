@@ -251,6 +251,30 @@ def cmake_workflows(indentation=6):
             jobs.append({f'cmake_{os_type}_{device}': job})
     return indent(indentation, jobs)
 
+def ios_workflows(indentation=6):
+    jobs = []
+    build_job_names = []
+    for arch, platform in [('x86_64', 'SIMULATOR'), ('arm64', 'OS')]:
+        name = f'libtorchvision_ops_ios_12.0.0_nightly_{arch}_build'
+        build_job_names.append(name)
+        build_job = {
+            'build_environment': f'libtorchvision_ops-ios-12.0.0-nightly-{arch}-build',
+            'context': 'org-member',
+            'filters': gen_filter_branch_tree('nightly'),
+            'ios_arch': arch,
+            'ios_platform': platform,
+            'name': name,
+        }
+        jobs.append({'binary_ios_build': build_job})
+
+    upload_job = {
+        'build_environment': 'libtorchvision_ops-ios-12.0.0-nightly-binary-build-upload',
+        'context': 'org-member',
+        'filters': gen_filter_branch_tree('nightly'),
+        'requires': build_job_names,
+    }
+    jobs.append({'binary_ios_upload': upload_job})
+    return indent(indentation, jobs)
 
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
@@ -266,4 +290,5 @@ if __name__ == "__main__":
             build_workflows=build_workflows,
             unittest_workflows=unittest_workflows,
             cmake_workflows=cmake_workflows,
+            ios_workflows=ios_workflows,
         ))
