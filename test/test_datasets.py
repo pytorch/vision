@@ -1582,7 +1582,17 @@ class QMNIST(MNISTTestCase):
         return f"{self._prefix(config)}-labels-idx2-int"
 
     def _prefix(self, config):
-        return "xnist" if config["what"] == "nist" else f"qmnist-{'train' if config['what'] == 'train' else 'test'}"
+        if config["what"] == "nist":
+            return "xnist"
+
+        if config["what"] is None:
+            what = "train" if config["train"] else "test"
+        elif config["what"].startswith("test"):
+            what = "test"
+        else:
+            what = config["what"]
+
+        return f"qmnist-{what}"
 
     def test_num_examples_test50k(self):
         with self.create_dataset(what="test50k") as (dataset, info):
