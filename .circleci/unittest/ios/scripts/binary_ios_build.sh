@@ -52,6 +52,6 @@ rm -rf ${TORCH_ROOT}
 cd ${WORKSPACE}
 DEST_DIR=${WORKSPACE}/ios
 mkdir -p ${DEST_DIR}
-ARCH_DIR=DEST_DIR/${IOS_ARCH}
+ARCH_DIR=${DEST_DIR}/${IOS_ARCH}
 mkdir -p ${ARCH_DIR}
 cp ${VISION_IOS_ROOT}/lib/*.a ${ARCH_DIR}
