@@ -259,7 +259,7 @@ class EMNIST(MNIST):
         root (string): Root directory of dataset where ``EMNIST/processed/training.pt``
             and  ``EMNIST/processed/test.pt`` exist.
         split (string): The dataset has 6 different splits: ``byclass``, ``bymerge``,
-            ``balanced``, ``letters``, ``digits`` and ``mnist``. This argument specifies
+            ``balanced``, ``letters``, ``digits`` and ``mnist`` (default). This argument specifies
             which one to use.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
@@ -286,7 +286,7 @@ class EMNIST(MNIST):
         'mnist': list(string.digits),
     }
 
-    def __init__(self, root: str, split: str, **kwargs: Any) -> None:
+    def __init__(self, root: str, split: str = "mnist", **kwargs: Any) -> None:
         self.split = verify_str_arg(split, "split", self.splits)
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
