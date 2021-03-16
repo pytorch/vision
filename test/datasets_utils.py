@@ -357,14 +357,31 @@ class DatasetTestCase(unittest.TestCase):
 
     @classmethod
     def _populate_private_class_attributes(cls):
-        argspec = inspect.getfullargspec(cls.DATASET_CLASS.__init__)
+        defaults = []
+        for cls_ in cls.DATASET_CLASS.__mro__:
+            if cls_ is torchvision.datasets.VisionDataset:
+                break
 
+            argspec = inspect.getfullargspec(cls_.__init__)
 
-        cls._DEFAULT_CONFIG = {
-            kwarg: default
-            for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
-            if kwarg not in cls._SPECIAL_KWARGS
-        }
+            if not argspec.defaults:
+                continue
+
+            defaults.append(
+                {
+                    kwarg: default
+                    for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
+                    if kwarg not in cls._SPECIAL_KWARGS
+                }
+            )
+
+            if not argspec.varkw:
+                break
+
+        default_config = dict()
+        for config in reversed(defaults):
+            default_config.update(config)
+        cls._DEFAULT_CONFIG = default_config
 
         cls._HAS_SPECIAL_KWARG = {name for name in cls._SPECIAL_KWARGS if name in argspec.args}
 
