@@ -161,7 +161,8 @@ class DatasetTestCase(unittest.TestCase):
         - DATASET_CLASS (torchvision.datasets.VisionDataset): Class of dataset to be tested.
         - FEATURE_TYPES (Sequence[Any]): Types of the elements returned by index access of the dataset. Instead of
             providing these manually, you can instead subclass ``ImageDatasetTestCase`` or ``VideoDatasetTestCase```to
-            get a reasonable default, that should work for most cases.
+            get a reasonable default, that should work for most cases. Each entry of the sequence may be a tuple,
+            to indicate multiple possible values.
 
     Optionally, you can overwrite the following class attributes:
 
@@ -264,6 +265,10 @@ class DatasetTestCase(unittest.TestCase):
 
     def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
         """Inject fake data for dataset into a temporary directory.
+
+        During the creation of the dataset the download and extract logic is disabled. Thus, the fake data injected
+        here needs to resemble the raw data, i.e. the state of the dataset directly after the files are downloaded and
+        potentially extracted.
 
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
