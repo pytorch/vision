@@ -14,7 +14,7 @@ import warnings
 import pytest
 
 from torchvision import datasets
-from torchvision.datasets.utils import download_url, check_integrity, download_file_from_google_drive
+from torchvision.datasets.utils import download_url, check_integrity, download_file_from_google_drive, USER_AGENT
 
 from common_utils import get_tmp_dir
 from fakedata_generation import places365_root
@@ -150,7 +150,7 @@ def assert_server_response_ok():
 
 
 def assert_url_is_accessible(url, timeout=5.0):
-    request = Request(url, headers=dict(method="HEAD"))
+    request = Request(url, headers={"method": "HEAD", "User-Agent": USER_AGENT})
     with assert_server_response_ok():
         urlopen(request, timeout=timeout)
 
@@ -160,7 +160,8 @@ def assert_file_downloads_correctly(url, md5, timeout=5.0):
         file = path.join(root, path.basename(url))
         with assert_server_response_ok():
             with open(file, "wb") as fh:
-                response = urlopen(url, timeout=timeout)
+                request = Request(url, headers={"User-Agent": USER_AGENT})
+                response = urlopen(request, timeout=timeout)
                 fh.write(response.read())
 
         assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
@@ -248,7 +249,8 @@ def voc():
 
 
 def mnist():
-    return collect_download_configs(lambda: datasets.MNIST(ROOT, download=True), name="MNIST")
+    with unittest.mock.patch.object(datasets.MNIST, "mirrors", datasets.MNIST.mirrors[-1:]):
+        return collect_download_configs(lambda: datasets.MNIST(ROOT, download=True), name="MNIST")
 
 
 def fashion_mnist():

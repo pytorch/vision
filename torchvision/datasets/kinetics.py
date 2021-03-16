@@ -23,7 +23,19 @@ class Kinetics400(VisionDataset):
     Internally, it uses a VideoClips object to handle clip creation.
 
     Args:
-        root (string): Root directory of the Kinetics-400 Dataset.
+        root (string): Root directory of the Kinetics-400 Dataset. Should be structured as follows:
+
+            .. code::
+
+                root/
+                ├── class1
+                │   ├── clip1.avi
+                │   ├── clip2.avi
+                │   └── ...
+                └── class2
+                    ├── clipx.avi
+                    └── ...
+
         frames_per_clip (int): number of frames in a clip
         step_between_clips (int): number of frames between each clip
         transform (callable, optional): A function/transform that  takes in a TxHxWxC video
