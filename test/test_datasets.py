@@ -1493,22 +1493,22 @@ class MNISTTestCase(datasets_utils.ImageDatasetTestCase):
         raw_dir = pathlib.Path(tmpdir) / self.DATASET_CLASS.__name__ / "raw"
         os.makedirs(raw_dir, exist_ok=True)
 
-        num_images = self.num_images(config)
+        num_images = self._num_images(config)
         self._create_binary_file(
-            raw_dir, self.images_file(config), (num_images, *self._IMAGES_SIZE), self._IMAGES_DTYPE
+            raw_dir, self._images_file(config), (num_images, *self._IMAGES_SIZE), self._IMAGES_DTYPE
         )
         self._create_binary_file(
-            raw_dir, self.labels_file(config), (num_images, *self._LABELS_SIZE), self._LABELS_DTYPE
+            raw_dir, self._labels_file(config), (num_images, *self._LABELS_SIZE), self._LABELS_DTYPE
         )
         return num_images
 
-    def num_images(self, config):
+    def _num_images(self, config):
         return 2 if config["train"] else 1
 
-    def images_file(self, config):
+    def _images_file(self, config):
         return f"{self._prefix(config)}-images-idx3-ubyte"
 
-    def labels_file(self, config):
+    def _labels_file(self, config):
         return f"{self._prefix(config)}-labels-idx1-ubyte"
 
     def _prefix(self, config):
@@ -1564,7 +1564,7 @@ class QMNIST(MNISTTestCase):
     _LABELS_SIZE = (8,)
     _LABELS_DTYPE = torch.int32
 
-    def num_images(self, config):
+    def _num_images(self, config):
         if config["what"] == "nist":
             return 3
         elif config["what"] == "train":
@@ -1573,12 +1573,12 @@ class QMNIST(MNISTTestCase):
             # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
             # more than 10000 images for the dataset to not be empty. Since this takes significantly longer than the
             # creation of all other splits, this is excluded from the 'CONFIGS' and is tested only once in
-            # 'test_num_examples_test50k'
+            # 'test_num_examples_test50k'.
             return 10001
         else:
             return 1
 
-    def labels_file(self, config):
+    def _labels_file(self, config):
         return f"{self._prefix(config)}-labels-idx2-int"
 
     def _prefix(self, config):
