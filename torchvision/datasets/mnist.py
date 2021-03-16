@@ -7,9 +7,9 @@ import numpy as np
 import torch
 import codecs
 import string
-import gzip
 import lzma
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.error import URLError
 from .utils import download_url, download_and_extract_archive, extract_archive, \
     verify_str_arg, check_integrity
 import shutil
@@ -32,11 +32,16 @@ class MNIST(VisionDataset):
             target and transforms it.
     """
 
+    mirrors = [
+        'http://yann.lecun.com/exdb/mnist/',
+        'https://ossci-datasets.s3.amazonaws.com/mnist/',
+    ]
+
     resources = [
-        ("http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
-        ("http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
-        ("http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
-        ("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
+        ("train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
+        ("train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
+        ("t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
+        ("t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
     ]
 
     training_file = 'training.pt'
@@ -164,9 +169,27 @@ class MNIST(VisionDataset):
 
         os.makedirs(self.raw_folder, exist_ok=True)
 
-        for url, md5 in self.resources:
-            filename = url.rpartition('/')[2]
-            download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+        # download files
+        for filename, md5 in self.resources:
+            for mirror in self.mirrors:
+                url = "{}{}".format(mirror, filename)
+                try:
+                    print("Downloading {}".format(url))
+                    download_and_extract_archive(
+                        url, download_root=self.raw_folder,
+                        filename=filename,
+                        md5=md5
+                    )
+                except URLError as error:
+                    print(
+                        "Failed to download (trying next):\n{}".format(error)
+                    )
+                    continue
+                finally:
+                    print()
+                break
+            else:
+                raise RuntimeError("Error downloading {}".format(filename))
 
     def extra_repr(self) -> str:
         return "Split: {}".format("Train" if self.train is True else "Test")
@@ -188,15 +211,15 @@ class FashionMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
+    mirrors = [
+        "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+    ]
+
     resources = [
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz",
-         "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz",
-         "25c81989df183df01b3e8a0aad5dffbe"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz",
-         "bef4ecab320f06d8554ea6380940ec79"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz",
-         "bb300cfdad3c16e7a12a480ee83cd310")
+        ("train-images-idx3-ubyte.gz", "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
+        ("train-labels-idx1-ubyte.gz", "25c81989df183df01b3e8a0aad5dffbe"),
+        ("t10k-images-idx3-ubyte.gz", "bef4ecab320f06d8554ea6380940ec79"),
+        ("t10k-labels-idx1-ubyte.gz", "bb300cfdad3c16e7a12a480ee83cd310")
     ]
     classes = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
                'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -218,11 +241,15 @@ class KMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
+    mirrors = [
+        "http://codh.rois.ac.jp/kmnist/dataset/kmnist/"
+    ]
+
     resources = [
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz", "e144d726b3acfaa3e44228e80efcd344"),
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz", "5c965bf0a639b31b8f53240b1b52f4d7"),
-        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134")
+        ("train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
+        ("train-labels-idx1-ubyte.gz", "e144d726b3acfaa3e44228e80efcd344"),
+        ("t10k-images-idx3-ubyte.gz", "5c965bf0a639b31b8f53240b1b52f4d7"),
+        ("t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134")
     ]
     classes = ['o', 'ki', 'su', 'tsu', 'na', 'ha', 'ma', 'ya', 're', 'wo']
 
@@ -246,11 +273,7 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    # Updated URL from https://www.nist.gov/node/1298471/emnist-dataset since the
-    # _official_ download link
-    # https://cloudstor.aarnet.edu.au/plus/s/ZNmuFiuQTqZlu9W/download
-    # is (currently) unavailable
-    url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+    url = 'https://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
     md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
     # Merged Classes assumes Same structure for both uppercase and lowercase version

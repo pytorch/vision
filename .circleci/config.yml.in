@@ -119,7 +119,7 @@ jobs:
           command: |
             sudo apt-get update -y
             sudo apt install -y libturbojpeg-dev
-            pip install --user --progress-bar off numpy mypy
+            pip install --user --progress-bar off mypy
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
@@ -153,7 +153,6 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off numpy
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
             pip install --user --progress-bar off --editable .
@@ -166,7 +165,6 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off numpy
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
             pip install --user --progress-bar off --editable .
@@ -216,6 +214,7 @@ jobs:
       - designate_upload_channel
       - run:
           name: Build conda packages
+          no_output_timeout: 20m
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh

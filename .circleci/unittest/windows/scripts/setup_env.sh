@@ -36,9 +36,4 @@ conda activate "${env_dir}"
 
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
-NUMPY_MIN_VER="1.11"
-if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
-    NUMPY_MIN_VER="1.20"
-fi
-conda install -y -c conda-forge "numpy >=${NUMPY_MIN_VER}"
 conda env update --file "${this_dir}/environment.yml" --prune
