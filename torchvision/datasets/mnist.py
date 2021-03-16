@@ -7,11 +7,9 @@ import numpy as np
 import torch
 import codecs
 import string
-import lzma
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.error import URLError
-from .utils import download_url, download_and_extract_archive, extract_archive, \
-    verify_str_arg, check_integrity
+from .utils import download_and_extract_archive, extract_archive, verify_str_arg, check_integrity
 import shutil
 
 
@@ -448,12 +446,7 @@ class QMNIST(MNIST):
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.raw_folder, filename)
             if not os.path.isfile(file_path):
-                download_url(url, self.raw_folder, filename=filename, md5=md5)
-                if filename.endswith(".xz"):
-                    with lzma.open(file_path, "rb") as fh1, open(os.path.splitext(file_path)[0], "wb") as fh2:
-                        fh2.write(fh1.read())
-                else:
-                    extract_archive(file_path, os.path.splitext(file_path)[0])
+                download_and_extract_archive(url, self.raw_folder, filename=filename, md5=md5)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag
