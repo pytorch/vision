@@ -100,7 +100,7 @@ pytest test -vvv
 ``` 
 
 Tests that require internet access should be in
-`test/test_requires_internet.py`.
+`test/test_internet.py`.
 
 ### Documentation
 
