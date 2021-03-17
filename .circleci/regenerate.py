@@ -260,7 +260,7 @@ def ios_workflows(indentation=6):
         build_job = {
             'build_environment': f'libtorchvision_ops-ios-12.0.0-nightly-{arch}-build',
             'context': 'org-member',
-            'filters': gen_filter_branch_tree('nightly'),
+            # 'filters': gen_filter_branch_tree('nightly'),
             'ios_arch': arch,
             'ios_platform': platform,
             'name': name,
@@ -270,7 +270,7 @@ def ios_workflows(indentation=6):
     upload_job = {
         'build_environment': 'libtorchvision_ops-ios-12.0.0-nightly-binary-build-upload',
         'context': 'org-member',
-        'filters': gen_filter_branch_tree('nightly'),
+        # 'filters': gen_filter_branch_tree('nightly'),
         'requires': build_job_names,
     }
     jobs.append({'binary_ios_upload': upload_job})
