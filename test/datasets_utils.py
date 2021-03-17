@@ -379,7 +379,7 @@ class DatasetTestCase(unittest.TestCase):
                 continue
 
             defaults.append(
-                {kwarg: default for kwarg, default in zip(argspec.args[-len(argspec.defaults) :], argspec.defaults)}
+                {kwarg: default for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)}
             )
 
             if not argspec.varkw:
@@ -420,14 +420,18 @@ class DatasetTestCase(unittest.TestCase):
             cls.CONFIGS = tuple(update_config(config, f"CONFIGS[{idx}]") for idx, config in enumerate(cls.CONFIGS))
         cls.DEFAULT_CONFIG = update_config(cls.DEFAULT_CONFIG or dict(), "DEFAULT_CONFIG")
 
-        if cls.REQUIRED_PACKAGES is not None:
-            try:
-                for pkg in cls.REQUIRED_PACKAGES:
+        if cls.REQUIRED_PACKAGES:
+            missing_pkgs = []
+            for pkg in cls.REQUIRED_PACKAGES:
+                try:
                     importlib.import_module(pkg)
-            except ImportError as error:
+                except ImportError:
+                    missing_pkgs.append(f"'{pkg}'")
+
+            if missing_pkgs:
                 raise unittest.SkipTest(
-                    f"The package '{pkg}' is required to load the dataset '{cls.DATASET_CLASS.__name__}' but is not "
-                    f"installed."
+                    f"The package(s) {', '.join(missing_pkgs)} are required to load the dataset "
+                    f"'{cls.DATASET_CLASS.__name__}', but are not installed."
                 )
 
     def _split_kwargs(self, kwargs):
