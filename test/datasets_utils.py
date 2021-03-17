@@ -166,9 +166,11 @@ class DatasetTestCase(unittest.TestCase):
 
     Optionally, you can overwrite the following class attributes:
 
-        - CONFIGS (Sequence[Dict[str, Any]]): Additional configs that should be tested. Each dictonary can contain an
+        - CONFIGS (Sequence[Dict[str, Any]]): Additional configs that should be tested. Each dictionary can contain an
             arbitrary combination of dataset parameters that are **not** ``transform``, ``target_transform``,
-            ``transforms``, or ``download``. The first element will be used as default configuration.
+            ``transforms``, or ``download``. Each config will be updated by potentially missing default values.
+        - DEFAULT_CONFIG (Dict[str, Any]): Config that will be used by default. This defaults to all keyword arguments
+            of the dataset minus ``transform``, ``target_transform``, ``transforms``, and ``download``.
         - REQUIRED_PACKAGES (Iterable[str]): Additional dependencies to use the dataset. If these packages are not
             available, the tests are skipped.
 
