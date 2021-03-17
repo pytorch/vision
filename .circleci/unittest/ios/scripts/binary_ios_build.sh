@@ -53,9 +53,6 @@ rm -rf ${VISION_IOS_ROOT}/build
 rm -rf ${TORCH_ROOT}
 
 # store the binary
-cd ${WORKSPACE}
-DEST_DIR=${WORKSPACE}/ios
+DEST_DIR=${WORKSPACE}/ios/${IOS_ARCH}
 mkdir -p ${DEST_DIR}
-ARCH_DIR=${DEST_DIR}/${IOS_ARCH}
-mkdir -p ${ARCH_DIR}
-cp ${VISION_IOS_ROOT}/lib/*.a ${ARCH_DIR}
+cp ${VISION_IOS_ROOT}/lib/*.a ${DEST_DIR}
