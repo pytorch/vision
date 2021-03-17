@@ -5,6 +5,7 @@ import unittest
 import torch
 import torchvision
 from torchvision.io import _HAS_VIDEO_OPT, VideoReader
+from torchvision.datasets.utils import download_url
 
 from common_utils import PY39_SKIP
 
@@ -21,6 +22,17 @@ VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "
 
 CheckerConfig = ["duration", "video_fps", "audio_sample_rate"]
 GroundTruth = collections.namedtuple("GroundTruth", " ".join(CheckerConfig))
+
+
+def fate(name, path="."):
+    """Download and return a path to a sample from the FFmpeg test suite.
+    See the `FFmpeg Automated Test Environment <https://www.ffmpeg.org/fate.html>`_
+    """
+
+    file_name = name.split("/")[1]
+    download_url("http://fate.ffmpeg.org/fate-suite/" + name, path, file_name)
+    return os.path.join(path, file_name)
+
 
 test_videos = {
     "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(
@@ -174,6 +186,14 @@ class TestVideoApi(unittest.TestCase):
                 lb = duration / 2 - 1 / md[stream]["fps"][0]
                 ub = duration / 2 + 1 / md[stream]["fps"][0]
                 self.assertTrue((lb <= frame["pts"]) & (ub >= frame["pts"]))
+
+    def test_fate_suite(self):
+        video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
+        vr = VideoReader(video_path)
+        metadata = vr.get_metadata()
+
+        self.assertTrue(metadata["subtitles"]["duration"] is not None)
+        os.remove(video_path)
 
 
 if __name__ == "__main__":

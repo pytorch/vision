@@ -11,12 +11,8 @@ import unittest.mock
 import warnings
 from urllib.error import URLError
 
-import torch
-from torchvision import models
 import torchvision.datasets.utils as utils
-from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 from common_utils import get_tmp_dir
-from common_utils import PY39_SKIP
 
 
 class DatasetUtilsTester(unittest.TestCase):
@@ -73,27 +69,3 @@ class DatasetUtilsTester(unittest.TestCase):
             utils.download_url(url, root, filename, md5)
 
         mock.assert_called_once_with(id, root, filename, md5)
-
-
-@unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
-@PY39_SKIP
-class VideoAPITester(unittest.TestCase):
-
-    VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
-
-    def _fate(self, name, path="."):
-        """Download and return a path to a sample from the FFmpeg test suite.
-        See the `FFmpeg Automated Test Environment <https://www.ffmpeg.org/fate.html>`_
-        """
-
-        file_name = name.split("/")[1]
-        utils.download_url("http://fate.ffmpeg.org/fate-suite/" + name, path, file_name)
-        return os.path.join(path, file_name)
-
-    def test_fate_suite(self):
-        video_path = self._fate("sub/MovText_capability_tester.mp4", self.VIDEO_DIR)
-        vr = VideoReader(video_path)
-        metadata = vr.get_metadata()
-
-        self.assertTrue(metadata["subtitles"]["duration"] is not None)
-        os.remove(video_path)
