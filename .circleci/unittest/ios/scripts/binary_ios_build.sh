@@ -43,7 +43,11 @@ unbuffer ${TORCH_ROOT}/scripts/build_ios.sh 2>&1 | ts
 
 LIBTORCH_HEADER_ROOT="${TORCH_ROOT}/build_ios/install/include"
 cd ${VISION_IOS_ROOT}/build
-cmake -DLIBTORCH_HEADER_ROOT=${LIBTORCH_HEADER_ROOT}  -DCMAKE_TOOLCHAIN_FILE=${VISION_IOS_ROOT}/../cmake/iOS.cmake ..
+cmake -DLIBTORCH_HEADER_ROOT=${LIBTORCH_HEADER_ROOT}  \
+      -DCMAKE_TOOLCHAIN_FILE=${VISION_IOS_ROOT}/../cmake/iOS.cmake \
+      -DIOS_ARCH=${IOS_ARCH} \
+      -DIOS_PLATFORM=${IOS_PLATFORM} \
+      ..
 make
 rm -rf ${VISION_IOS_ROOT}/build
 rm -rf ${TORCH_ROOT}
