@@ -402,7 +402,7 @@ class DatasetTestCase(unittest.TestCase):
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
-        def update_config(config, name):
+        def check_config(config, name):
             special_kwargs = tuple(f"'{name}'" for name in cls._SPECIAL_KWARGS if name in config)
             if special_kwargs:
                 raise UsageError(
@@ -412,13 +412,14 @@ class DatasetTestCase(unittest.TestCase):
                     f"you need to write a custom test (*not* test case), e.g. test_custom_transform()."
                 )
 
-            kwarg_defaults = cls._KWARG_DEFAULTS.copy()
-            kwarg_defaults.update(config)
-            return kwarg_defaults
+        if cls.CONFIGS is None:
+            for idx, config in enumerate(cls.CONFIGS):
+                check_config(config, f"CONFIGS[{idx}]")
 
-        if cls.CONFIGS:
-            cls.CONFIGS = tuple(update_config(config, f"CONFIGS[{idx}]") for idx, config in enumerate(cls.CONFIGS))
-        cls.DEFAULT_CONFIG = update_config(cls.DEFAULT_CONFIG or dict(), "DEFAULT_CONFIG")
+        if cls.DEFAULT_CONFIG is None:
+            cls.DEFAULT_CONFIG = cls._KWARG_DEFAULTS.copy()
+        else:
+            check_config(cls.DEFAULT_CONFIG , "DEFAULT_CONFIG")
 
         if cls.REQUIRED_PACKAGES:
             missing_pkgs = []
