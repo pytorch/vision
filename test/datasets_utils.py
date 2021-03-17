@@ -368,11 +368,7 @@ class DatasetTestCase(unittest.TestCase):
                 continue
 
             defaults.append(
-                {
-                    kwarg: default
-                    for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
-                    if kwarg not in cls._SPECIAL_KWARGS
-                }
+                {kwarg: default for kwarg, default in zip(argspec.args[-len(argspec.defaults) :], argspec.defaults)}
             )
 
             if not argspec.varkw:
@@ -381,9 +377,17 @@ class DatasetTestCase(unittest.TestCase):
         default_config = dict()
         for config in reversed(defaults):
             default_config.update(config)
-        cls._DEFAULT_CONFIG = default_config
 
-        cls._HAS_SPECIAL_KWARG = {name for name in cls._SPECIAL_KWARGS if name in argspec.args}
+        has_special_kwargs = set()
+        for name in cls._SPECIAL_KWARGS:
+            if name not in default_config:
+                continue
+
+            del default_config[name]
+            has_special_kwargs.add(name)
+
+        cls._DEFAULT_CONFIG = default_config
+        cls._HAS_SPECIAL_KWARG = has_special_kwargs
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
