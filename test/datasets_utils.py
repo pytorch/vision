@@ -129,7 +129,7 @@ def test_all_configs(test):
 
     @functools.wraps(test)
     def wrapper(self):
-        for config in self.CONFIGS or (self._DEFAULT_CONFIG,):
+        for config in self.CONFIGS or (self.DEFAULT_CONFIG,):
             with self.subTest(**config):
                 test(self, config)
 
@@ -219,9 +219,9 @@ class DatasetTestCase(unittest.TestCase):
     FEATURE_TYPES = None
 
     CONFIGS = None
+    DEFAULT_CONFIG = None
     REQUIRED_PACKAGES = None
 
-    _DEFAULT_CONFIG = None
 
     _TRANSFORM_KWARGS = {
         "transform",
@@ -232,6 +232,7 @@ class DatasetTestCase(unittest.TestCase):
         *_TRANSFORM_KWARGS,
         "download",
     }
+    _KWARG_DEFAULTS = None
     _HAS_SPECIAL_KWARG = None
 
     _CHECK_FUNCTIONS = {
@@ -308,7 +309,7 @@ class DatasetTestCase(unittest.TestCase):
             info (Dict[str, Any]): Additional information about the injected fake data. See :meth:`.inject_fake_data`
                 for details.
         """
-        default_config = self._DEFAULT_CONFIG.copy()
+        default_config = self.DEFAULT_CONFIG.copy()
         if config is not None:
             default_config.update(config)
         config = default_config
@@ -374,23 +375,41 @@ class DatasetTestCase(unittest.TestCase):
             if not argspec.varkw:
                 break
 
-        default_config = dict()
+        kwarg_defaults = dict()
         for config in reversed(defaults):
-            default_config.update(config)
+            kwarg_defaults.update(config)
 
         has_special_kwargs = set()
         for name in cls._SPECIAL_KWARGS:
-            if name not in default_config:
+            if name not in kwarg_defaults:
                 continue
 
-            del default_config[name]
+            del kwarg_defaults[name]
             has_special_kwargs.add(name)
 
-        cls._DEFAULT_CONFIG = default_config
+        cls._KWARG_DEFAULTS = kwarg_defaults
         cls._HAS_SPECIAL_KWARG = has_special_kwargs
 
     @classmethod
     def _process_optional_public_class_attributes(cls):
+        def update_config(config, name):
+            special_kwargs = tuple(f"'{name}'" for name in cls._SPECIAL_KWARGS if name in config)
+            if special_kwargs:
+                raise UsageError(
+                    f"{name} contains a value for the parameter(s) {', '.join(special_kwargs)}. "
+                    f"These are handled separately by the test case and should not be set here. "
+                    f"If you need to test some custom behavior regarding these parameters, "
+                    f"you need to write a custom test (*not* test case), e.g. test_custom_transform()."
+                )
+
+            kwarg_defaults = cls._KWARG_DEFAULTS.copy()
+            kwarg_defaults.update(config)
+            return kwarg_defaults
+
+        if cls.CONFIGS:
+            cls.CONFIGS = tuple(update_config(config, f"CONFIGS[{idx}]") for idx, config in enumerate(cls.CONFIGS))
+        cls.DEFAULT_CONFIG = update_config(cls.DEFAULT_CONFIG or dict(), "DEFAULT_CONFIG")
+
         if cls.REQUIRED_PACKAGES is not None:
             try:
                 for pkg in cls.REQUIRED_PACKAGES:
