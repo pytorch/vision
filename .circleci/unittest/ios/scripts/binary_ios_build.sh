@@ -4,7 +4,7 @@ set -ex -o pipefail
 echo ""
 echo "DIR: $(pwd)"
 WORKSPACE=/Users/distiller/workspace
-VISION_IOS_ROOT=/Users/distiller/project
+VISION_IOS_ROOT=/Users/distiller/project/ios
 export TCLLIBPATH="/usr/local/lib"
 
 # install conda
