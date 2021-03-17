@@ -426,8 +426,8 @@ class DatasetTestCase(unittest.TestCase):
                     importlib.import_module(pkg)
             except ImportError as error:
                 raise unittest.SkipTest(
-                    f"The package '{error.name}' is required to load the dataset '{cls.DATASET_CLASS.__name__}' but is "
-                    f"not installed."
+                    f"The package '{pkg}' is required to load the dataset '{cls.DATASET_CLASS.__name__}' but is not "
+                    f"installed."
                 )
 
     def _split_kwargs(self, kwargs):
