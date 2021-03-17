@@ -266,6 +266,10 @@ class DatasetTestCase(unittest.TestCase):
     def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
         """Inject fake data for dataset into a temporary directory.
 
+        During the creation of the dataset the download and extract logic is disabled. Thus, the fake data injected
+        here needs to resemble the raw data, i.e. the state of the dataset directly after the files are downloaded and
+        potentially extracted.
+
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
                 to be created and in turn also for the fake data injected here.
