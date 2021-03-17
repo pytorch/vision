@@ -40,16 +40,16 @@ class CelebA(VisionDataset):
     # dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available
     # right now.
     file_list = [
-        # File ID                                  MD5 Hash                            Filename
-        ("0B7EVK8r0v71pZjFTYXZWM3FlRnM/edit",      "00d2c5bc6d35e252742224ab0c1e8fcb", "img_align_celeba.zip"),
-        # ("0B7EVK8r0v71pbWNEUjJKdDQ3dGc/edit",      "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_align_celeba_png.7z"),
-        # ("0B7EVK8r0v71peklHb0pGdDl6R28/edit",      "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_celeba.7z"),
-        ("0B7EVK8r0v71pblRyaVFSWGxPY0U/edit",      "75e246fa4810816ffd6ee81facbd244c", "list_attr_celeba.txt"),
+        # File ID                                      MD5 Hash                            Filename
+        ("0B7EVK8r0v71pZjFTYXZWM3FlRnM/edit", "00d2c5bc6d35e252742224ab0c1e8fcb", "img_align_celeba.zip"),
+        # ("0B7EVK8r0v71pbWNEUjJKdDQ3dGc/edit","b6cd7e93bc7a96c2dc33f819aa3ac651", "img_align_celeba_png.7z"),
+        # ("0B7EVK8r0v71peklHb0pGdDl6R28/edit", "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_celeba.7z"),
+        ("0B7EVK8r0v71pblRyaVFSWGxPY0U/edit", "75e246fa4810816ffd6ee81facbd244c", "list_attr_celeba.txt"),
         ("1_ee_0u7vcNLOfNLegJRHmolfH5ICW-XS/edit", "32bd1bd63d3c78cd57e08160ec5ed1e2", "identity_CelebA.txt"),
-        ("0B7EVK8r0v71pbThiMVRxWXZ4dU0/edit",      "00566efa6fedff7a56946cd1c10f1c16", "list_bbox_celeba.txt"),
-        ("0B7EVK8r0v71pd0FJY3Blby1HUTQ/edit",      "cc24ecafdb5b50baae59b03474781f8c", "list_landmarks_align_celeba.txt"),
-        # ("0B7EVK8r0v71pTzJIdlJWdHczRlU/edit",      "063ee6ddb681f96bc9ca28c6febb9d1a", "list_landmarks_celeba.txt"),
-        ("0B7EVK8r0v71pY0NSMzRuSXJEVkk/edit",      "d32c9cbf5e040fd4025c592c306e6668", "list_eval_partition.txt"),
+        ("0B7EVK8r0v71pbThiMVRxWXZ4dU0/edit", "00566efa6fedff7a56946cd1c10f1c16", "list_bbox_celeba.txt"),
+        ("0B7EVK8r0v71pd0FJY3Blby1HUTQ/edit", "cc24ecafdb5b50baae59b03474781f8c", "list_landmarks_align_celeba.txt"),
+        # ("0B7EVK8r0v71pTzJIdlJWdHczRlU/edit", "063ee6ddb681f96bc9ca28c6febb9d1a", "list_landmarks_celeba.txt"),
+        ("0B7EVK8r0v71pY0NSMzRuSXJEVkk/edit", "d32c9cbf5e040fd4025c592c306e6668", "list_eval_partition.txt"),
     ]
 
     def __init__(
