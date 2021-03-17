@@ -224,19 +224,27 @@ class DatasetTestCase(unittest.TestCase):
     DEFAULT_CONFIG = None
     REQUIRED_PACKAGES = None
 
-
+    # These keyword arguments are checked by test_transforms in case they are available in DATASET_CLASS.
     _TRANSFORM_KWARGS = {
         "transform",
         "target_transform",
         "transforms",
     }
+    # These keyword arguments get a 'special' treatment and should not be set in CONFIGS or DEFAULT_CONFIG.
     _SPECIAL_KWARGS = {
         *_TRANSFORM_KWARGS,
         "download",
     }
+
+    # These fields are populated during setupClass() within _populate_private_class_attributes()
+
+    # This will be a dictionary containing all keyword arguments with their respective default values extracted from
+    # the dataset constructor.
     _KWARG_DEFAULTS = None
+    # This will be a set of all _SPECIAL_KWARGS that the dataset constructor takes.
     _HAS_SPECIAL_KWARG = None
 
+    # These functions are disabled during dataset creation in create_dataset().
     _CHECK_FUNCTIONS = {
         "check_md5",
         "check_integrity",
