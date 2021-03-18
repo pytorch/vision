@@ -918,7 +918,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
-      {{ ios_workflows(nightly=True) }}
+      {{ ios_workflows() }}
 
   unittest:
     jobs:

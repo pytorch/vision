@@ -257,24 +257,24 @@ def ios_workflows(indentation=6, nightly=False):
     name_prefix = "nightly_" if nightly else ""
     env_prefix = "nightly-" if nightly else ""
     for arch, platform in [('x86_64', 'SIMULATOR'), ('arm64', 'OS')]:
-        name = f'{name_prefix}libtorchvision_ops_ios_12.0.0_{arch}_build'
+        name = f'{name_prefix}binary_libtorchvision_ops_ios_12.0.0_{arch}'
         build_job_names.append(name)
         build_job = {
-            'build_environment': f'{env_prefix}libtorchvision_ops-ios-12.0.0-nightly-{arch}-build',
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}',
             'context': 'org-member',
             'ios_arch': arch,
             'ios_platform': platform,
             'name': name,
         }
-        # if nightly:
-        #     build_job['filters'] = gen_filter_branch_tree('nightly')
+        if nightly:
+            build_job['filters'] = gen_filter_branch_tree('nightly')
         jobs.append({'binary_ios_build': build_job})
 
     if nightly:
         upload_job = {
-            'build_environment': f'{env_prefix}libtorchvision_ops-ios-12.0.0-binary-build-upload',
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload',
             'context': 'org-member',
-            # 'filters': gen_filter_branch_tree('nightly'),
+            'filters': gen_filter_branch_tree('nightly'),
             'requires': build_job_names,
         }
         jobs.append({'binary_ios_upload': upload_job})

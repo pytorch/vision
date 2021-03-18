@@ -1442,23 +1442,17 @@ workflows:
       - torchhub_test
       - torch_onnx_test
       - binary_ios_build:
-          build_environment: nightly-libtorchvision_ops-ios-12.0.0-nightly-x86_64-build
+          build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
           context: org-member
           ios_arch: x86_64
           ios_platform: SIMULATOR
-          name: nightly_libtorchvision_ops_ios_12.0.0_x86_64_build
+          name: binary_libtorchvision_ops_ios_12.0.0_x86_64
       - binary_ios_build:
-          build_environment: nightly-libtorchvision_ops-ios-12.0.0-nightly-arm64-build
+          build_environment: binary-libtorchvision_ops-ios-12.0.0-arm64
           context: org-member
           ios_arch: arm64
           ios_platform: OS
-          name: nightly_libtorchvision_ops_ios_12.0.0_arm64_build
-      - binary_ios_upload:
-          build_environment: nightly-libtorchvision_ops-ios-12.0.0-binary-build-upload
-          context: org-member
-          requires:
-          - nightly_libtorchvision_ops_ios_12.0.0_x86_64_build
-          - nightly_libtorchvision_ops_ios_12.0.0_arm64_build
+          name: binary_libtorchvision_ops_ios_12.0.0_arm64
 
   unittest:
     jobs:
@@ -1607,23 +1601,35 @@ workflows:
       - torchhub_test
       - torch_onnx_test
       - binary_ios_build:
-          build_environment: nightly-libtorchvision_ops-ios-12.0.0-nightly-x86_64-build
+          build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
           context: org-member
+          filters:
+            branches:
+              only:
+              - nightly
           ios_arch: x86_64
           ios_platform: SIMULATOR
-          name: nightly_libtorchvision_ops_ios_12.0.0_x86_64_build
+          name: nightly_binary_libtorchvision_ops_ios_12.0.0_x86_64
       - binary_ios_build:
-          build_environment: nightly-libtorchvision_ops-ios-12.0.0-nightly-arm64-build
+          build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-arm64
           context: org-member
+          filters:
+            branches:
+              only:
+              - nightly
           ios_arch: arm64
           ios_platform: OS
-          name: nightly_libtorchvision_ops_ios_12.0.0_arm64_build
+          name: nightly_binary_libtorchvision_ops_ios_12.0.0_arm64
       - binary_ios_upload:
-          build_environment: nightly-libtorchvision_ops-ios-12.0.0-binary-build-upload
+          build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-upload
           context: org-member
+          filters:
+            branches:
+              only:
+              - nightly
           requires:
-          - nightly_libtorchvision_ops_ios_12.0.0_x86_64_build
-          - nightly_libtorchvision_ops_ios_12.0.0_arm64_build
+          - nightly_binary_libtorchvision_ops_ios_12.0.0_x86_64
+          - nightly_binary_libtorchvision_ops_ios_12.0.0_arm64
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
