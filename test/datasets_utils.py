@@ -412,14 +412,14 @@ class DatasetTestCase(unittest.TestCase):
                     f"you need to write a custom test (*not* test case), e.g. test_custom_transform()."
                 )
 
-        if cls.CONFIGS is None:
+        if cls.CONFIGS is not None:
             for idx, config in enumerate(cls.CONFIGS):
                 check_config(config, f"CONFIGS[{idx}]")
 
-        if cls.DEFAULT_CONFIG is None:
-            cls.DEFAULT_CONFIG = cls._KWARG_DEFAULTS.copy()
+        if cls.DEFAULT_CONFIG is not None:
+            check_config(cls.DEFAULT_CONFIG, "DEFAULT_CONFIG")
         else:
-            check_config(cls.DEFAULT_CONFIG , "DEFAULT_CONFIG")
+            cls.DEFAULT_CONFIG = cls._KWARG_DEFAULTS.copy()
 
         if cls.REQUIRED_PACKAGES:
             missing_pkgs = []
