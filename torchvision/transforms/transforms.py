@@ -773,7 +773,7 @@ class RandomPerspective(torch.nn.Module):
 
 
 class RandomResizedCrop(torch.nn.Module):
-    """Crop the given image to a given size.
+    """Crop a random portion of image and resize it to a given size.
 
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
