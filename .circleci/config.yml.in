@@ -46,6 +46,58 @@ commands:
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
 
+  brew_update:
+    description: "Update Homebrew and install base formulae"
+    steps:
+      - run:
+          name: Update Homebrew
+          no_output_timeout: "10m"
+          command: |
+            set -ex
+
+            # Update repositories manually.
+            # Running `brew update` produces a comparison between the
+            # current checkout and the updated checkout, which takes a
+            # very long time because the existing checkout is 2y old.
+            for path in $(find /usr/local/Homebrew -type d -name .git)
+            do
+            cd $path/..
+            git fetch --depth=1 origin
+            git reset --hard origin/master
+            done
+
+            export HOMEBREW_NO_AUTO_UPDATE=1
+
+            # Install expect and moreutils so that we can call `unbuffer` and `ts`.
+            # moreutils installs a `parallel` executable by default, which conflicts
+            # with the executable from the GNU `parallel`, so we must unlink GNU
+            # `parallel` first, and relink it afterwards.
+            brew unlink parallel
+            brew install moreutils
+            brew link parallel --overwrite
+            brew install expect
+
+  brew_install:
+    description: "Install Homebrew formulae"
+    parameters:
+      formulae:
+        type: string
+        default: ""
+    steps:
+      - run:
+          name: Install << parameters.formulae >>
+          no_output_timeout: "10m"
+          command: |
+            set -ex
+            export HOMEBREW_NO_AUTO_UPDATE=1
+            brew install << parameters.formulae >>
+
+  run_brew_for_ios_build:
+    steps:
+      - brew_update
+      - brew_install:
+          formulae: libtool
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release
@@ -82,6 +134,22 @@ binary_common: &binary_common
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
+
+torchvision_ios_params: &torchvision_ios_params
+  parameters:
+    build_environment:
+      type: string
+      default: ""
+    ios_arch:
+      type: string
+      default: ""
+    ios_platform:
+      type: string
+      default: ""
+  environment:
+    BUILD_ENVIRONMENT: << parameters.build_environment >>
+    IOS_ARCH: << parameters.ios_arch >>
+    IOS_PLATFORM: << parameters.ios_platform >>
 
 smoke_test_common: &smoke_test_common
   <<: *binary_common
@@ -277,6 +345,43 @@ jobs:
           root: dist
           paths:
             - "*"
+
+  binary_ios_build:
+    <<: *torchvision_ios_params
+    macos:
+      xcode: "12.0"
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run_brew_for_ios_build
+    - run:
+        name: Build
+        no_output_timeout: "1h"
+        command: |
+          script="/Users/distiller/project/.circleci/unittest/ios/scripts/binary_ios_build.sh"
+          cat "$script"
+          source "$script"
+    - persist_to_workspace:
+        root: /Users/distiller/workspace/
+        paths: ios
+
+  binary_ios_upload:
+    <<: *torchvision_ios_params
+    macos:
+      xcode: "12.0"
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run_brew_for_ios_build
+    - run:
+        name: Upload
+        no_output_timeout: "1h"
+        command: |
+          script="/Users/distiller/project/.circleci/unittest/ios/scripts/binary_ios_upload.sh"
+          cat "$script"
+          source "$script"
 
   binary_macos_conda:
     <<: *binary_common
@@ -595,7 +700,7 @@ jobs:
           {% raw %}
           keys:
             - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %} 
+          {% endraw %}
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
@@ -813,6 +918,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      {{ ios_workflows() }}
 
   unittest:
     jobs:
@@ -832,6 +938,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      {{ ios_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
     triggers:
