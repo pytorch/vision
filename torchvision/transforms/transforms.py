@@ -848,8 +848,6 @@ class RandomResizedCrop(torch.nn.Module):
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
-            print(target_area)
-            print(w * h)
 
             if 0 < w <= width and 0 < h <= height:
                 i = torch.randint(0, height - h + 1, size=(1,)).item()
