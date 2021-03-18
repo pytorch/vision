@@ -36,3 +36,7 @@ export PATH="~/anaconda/bin:${PATH}"
 source ~/anaconda/bin/activate
 conda install -c conda-forge awscli --yes
 set +x
+export AWS_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_FOR_PYTORCH_BINARY_UPLOAD}
+export AWS_SECRET_ACCESS_KEY=${AWS_S3_ACCESS_SECRET_FOR_PYTORCH_BINARY_UPLOAD}
+set -x
+aws s3 cp ${ZIPFILE} s3://ossci-ios-build/ --acl public-read
