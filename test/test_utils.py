@@ -11,27 +11,27 @@ from PIL import Image
 
 masks = torch.tensor([
     [
-        [False, False, False, False, False],
-        [True, True, True, True, True],
-        [False, False, False, False, False],
-        [False, False, False, False, False],
-        [False, False, False, False, False]
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799]
     ],
     [
-        [True, True, True, True, True],
-        [False, False, False, False, False],
-        [True, True, True, True, True],
-        [True, True, True, True, True],
-        [False, False, False, False, False]
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541]
     ],
     [
-        [False, False, False, False, False],
-        [False, False, False, False, False],
-        [False, False, False, False, False],
-        [False, False, False, False, False],
-        [True, True, True, True, True],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
     ]
-], dtype=torch.bool)
+], dtype=torch.float)
 
 
 class Tester(unittest.TestCase):
@@ -136,7 +136,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(result, expected))
 
     def test_draw_segmentation_masks_no_colors(self):
-        img = torch.full((3, 5, 5), 255, dtype=torch.uint8)
+        img = torch.full((3, 20, 20), 255, dtype=torch.uint8)
         result = utils.draw_segmentation_masks(img, masks, colors=None)
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets",

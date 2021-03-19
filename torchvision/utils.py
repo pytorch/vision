@@ -223,10 +223,9 @@ def draw_segmentation_masks(
     """
     Draws segmentation masks on given RGB image.
     The values of the input image should be uint8 between 0 and 255.
-
     Args:
         image (Tensor): Tensor of shape (3 x H x W) and dtype uint8.
-        masks (Tensor): Boolean Tensor of shape (num_masks, H, W).
+        masks (Tensor): Tensor of shape (num_masks, H, W). Each containing probability of predicted class.
         alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
@@ -261,7 +260,7 @@ def draw_segmentation_masks(
         color_arr = np.array(color_list).astype("uint8")
 
     _, h, w = image.size()
-    img_to_draw = Image.fromarray(masks.cpu().numpy(), mode="L").resize((w, h))
+    img_to_draw = Image.fromarray(masks.byte().cpu().numpy()).resize((w, h))
     img_to_draw.putpalette(color_arr)
 
     img_to_draw = torch.from_numpy(np.array(img_to_draw.convert('RGB')))
