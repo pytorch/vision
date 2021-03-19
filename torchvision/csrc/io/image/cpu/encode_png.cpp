@@ -128,7 +128,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   png_set_write_fn(png_write, &buf_info, torch_png_write_data, NULL);
 
   // Set output image information
-  auto color_type = PNG_COLOR_TYPE_GRAY ? channels == 1 : PNG_COLOR_TYPE_RGB;
+  auto color_type = channels == 1 ? PNG_COLOR_TYPE_GRAY : PNG_COLOR_TYPE_RGB;
   png_set_IHDR(
       png_write,
       info_ptr,

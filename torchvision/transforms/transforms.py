@@ -773,22 +773,23 @@ class RandomPerspective(torch.nn.Module):
 
 
 class RandomResizedCrop(torch.nn.Module):
-    """Crop the given image to random size and aspect ratio.
+    """Crop a random portion of image and resize it to a given size.
+
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
-    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
-    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
-    is finally resized to given size.
-    This is popularly used to train the Inception networks.
+    A crop of the original image is made: the crop has a random area (H * W)
+    and a random aspect ratio. This crop is finally resized to the given
+    size. This is popularly used to train the Inception networks.
 
     Args:
-        size (int or sequence): expected output size of each edge. If size is an
+        size (int or sequence): expected output size of the crop, for each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
             In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
-        ratio (tuple of float): aspect ratio range of the cropped image before resizing.
+        scale (tuple of float): lower and upper bounds for the random area of the crop, before resizing.
+        ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
+            resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and

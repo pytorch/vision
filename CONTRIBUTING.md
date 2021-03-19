@@ -99,6 +99,9 @@ If you would like to run all tests:
 pytest test -vvv
 ``` 
 
+Tests that require internet access should be in
+`test/test_internet.py`.
+
 ### Documentation
 
 Torchvision uses [Google style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
