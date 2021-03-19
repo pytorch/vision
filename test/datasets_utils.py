@@ -166,11 +166,12 @@ class DatasetTestCase(unittest.TestCase):
 
     Optionally, you can overwrite the following class attributes:
 
-        - CONFIGS (Sequence[Dict[str, Any]]): Additional configs that should be tested. Each dictionary can contain an
-            arbitrary combination of dataset parameters that are **not** ``transform``, ``target_transform``,
-            ``transforms``, or ``download``. Each config will be updated by potentially missing default values.
-        - DEFAULT_CONFIG (Dict[str, Any]): Config that will be used by default. This defaults to all keyword arguments
-            of the dataset minus ``transform``, ``target_transform``, ``transforms``, and ``download``.
+        - DEFAULT_CONFIG (Dict[str, Any]): Config that will be used by default. If omitted, this defaults to all
+            keyword arguments of the dataset minus ``transform``, ``target_transform``, ``transforms``, and
+            ``download``.
+        - ADDITIONAL_CONFIGS (Sequence[Dict[str, Any]]): Additional configs that should be tested. Each dictionary can
+            contain an arbitrary combination of dataset parameters that are **not** ``transform``, ``target_transform``,
+            ``transforms``, or ``download``.
         - REQUIRED_PACKAGES (Iterable[str]): Additional dependencies to use the dataset. If these packages are not
             available, the tests are skipped.
 
@@ -220,8 +221,8 @@ class DatasetTestCase(unittest.TestCase):
     DATASET_CLASS = None
     FEATURE_TYPES = None
 
-    CONFIGS = None
     DEFAULT_CONFIG = None
+    ADDITIONAL_CONFIGS = None
     REQUIRED_PACKAGES = None
 
     # These keyword arguments are checked by test_transforms in case they are available in DATASET_CLASS.
@@ -267,7 +268,8 @@ class DatasetTestCase(unittest.TestCase):
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
                 to be created and in turn also for the fake data injected here.
-            config (Dict[str, Any]): Configuration that will be used to create the dataset.
+            config (Dict[str, Any]): Configuration that will be used to create the dataset. It provides at least fields
+                for all dataset parameters with default values.
 
         Returns:
             (Tuple[str]): ``tmpdir`` which corresponds to ``root`` for most datasets.
@@ -284,7 +286,8 @@ class DatasetTestCase(unittest.TestCase):
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
                 to be created and in turn also for the fake data injected here.
-            config (Dict[str, Any]): Configuration that will be used to create the dataset.
+            config (Dict[str, Any]): Configuration that will be used to create the dataset. It provides at least fields
+                for all dataset parameters with default values.
 
         Needs to return one of the following:
 
@@ -304,9 +307,16 @@ class DatasetTestCase(unittest.TestCase):
     ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
         r"""Create the dataset in a temporary directory.
 
+        The configuration passed to the dataset is populated to contain at least all parameters with default values.
+        For this the following order of precedence is used:
+
+        1. Parameters in :attr:`kwargs`.
+        2. Configuration in :attr:`config`.
+        3. Configuration in :attr:`~DatasetTestCase.DEFAULT_CONFIG`.
+        4. Default parameters of the dataset.
+
         Args:
-            config (Optional[Dict[str, Any]]): Configuration that will be used to create the dataset. If omitted, the
-                default configuration is used.
+            config (Optional[Dict[str, Any]]): Configuration that will be used to create the dataset.
             inject_fake_data (bool): If ``True`` (default) inject the fake data with :meth:`.inject_fake_data` before
                 creating the dataset.
             patch_checks (Optional[bool]): If ``True`` disable integrity check logic while creating the dataset. If
@@ -319,30 +329,33 @@ class DatasetTestCase(unittest.TestCase):
             info (Dict[str, Any]): Additional information about the injected fake data. See :meth:`.inject_fake_data`
                 for details.
         """
-        default_config = self.DEFAULT_CONFIG.copy()
-        if config is not None:
-            default_config.update(config)
-        config = default_config
-
         if patch_checks is None:
             patch_checks = inject_fake_data
 
         special_kwargs, other_kwargs = self._split_kwargs(kwargs)
+
+        complete_config = self._KWARG_DEFAULTS.copy()
+        if self.DEFAULT_CONFIG:
+            complete_config.update(self.DEFAULT_CONFIG)
+        if config:
+            complete_config.update(config)
+        if other_kwargs:
+            complete_config.update(other_kwargs)
+
         if "download" in self._HAS_SPECIAL_KWARG and special_kwargs.get("download", False):
             # override download param to False param if its default is truthy
             special_kwargs["download"] = False
-        config.update(other_kwargs)
 
         patchers = self._patch_download_extract()
         if patch_checks:
             patchers.update(self._patch_checks())
 
         with get_tmp_dir() as tmpdir:
-            args = self.dataset_args(tmpdir, config)
-            info = self._inject_fake_data(tmpdir, config) if inject_fake_data else None
+            args = self.dataset_args(tmpdir, complete_config)
+            info = self._inject_fake_data(tmpdir, complete_config) if inject_fake_data else None
 
             with self._maybe_apply_patches(patchers), disable_console_output():
-                dataset = self.DATASET_CLASS(*args, **config, **special_kwargs)
+                dataset = self.DATASET_CLASS(*args, **complete_config, **special_kwargs)
 
             yield dataset, info
 
@@ -412,14 +425,12 @@ class DatasetTestCase(unittest.TestCase):
                     f"you need to write a custom test (*not* test case), e.g. test_custom_transform()."
                 )
 
-        if cls.CONFIGS is not None:
-            for idx, config in enumerate(cls.CONFIGS):
-                check_config(config, f"CONFIGS[{idx}]")
-
         if cls.DEFAULT_CONFIG is not None:
             check_config(cls.DEFAULT_CONFIG, "DEFAULT_CONFIG")
-        else:
-            cls.DEFAULT_CONFIG = cls._KWARG_DEFAULTS.copy()
+
+        if cls.ADDITIONAL_CONFIGS is not None:
+            for idx, config in enumerate(cls.ADDITIONAL_CONFIGS):
+                check_config(config, f"CONFIGS[{idx}]")
 
         if cls.REQUIRED_PACKAGES:
             missing_pkgs = []
