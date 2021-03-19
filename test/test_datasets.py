@@ -369,7 +369,7 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech101
     FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, tuple))
 
-    CONFIGS = datasets_utils.combinations_grid(target_type=("category", "annotation", ["category", "annotation"]))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(target_type=("annotation", ["category", "annotation"]))
     REQUIRED_PACKAGES = ("scipy",)
 
     def inject_fake_data(self, tmpdir, config):
@@ -467,7 +467,7 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
 class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.WIDERFace
     FEATURE_TYPES = (PIL.Image.Image, (dict, type(None)))  # test split returns None as target
-    CONFIGS = datasets_utils.combinations_grid(split=('train', 'val', 'test'))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('val', 'test'))
 
     def inject_fake_data(self, tmpdir, config):
         widerface_dir = pathlib.Path(tmpdir) / 'widerface'
@@ -522,7 +522,7 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
     REQUIRED_PACKAGES = ('scipy',)
-    CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+    ADDITIONAL_CONFIGS = [dict(split="val")]
 
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
@@ -552,7 +552,7 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
 
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.CIFAR10
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = [dict(train=False)]
 
     _VERSION_CONFIG = dict(
         base_folder="cifar-10-batches-py",
@@ -624,7 +624,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.CelebA
     FEATURE_TYPES = (PIL.Image.Image, (torch.Tensor, int, tuple, type(None)))
 
-    CONFIGS = datasets_utils.combinations_grid(
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "valid", "test", "all"),
         target_type=("attr", "identity", "bbox", "landmarks", ["attr", "identity"]),
     )
@@ -741,7 +741,7 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.VOCSegmentation
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
 
-    CONFIGS = (
+    ADDITIONAL_CONFIGS = (
         *datasets_utils.combinations_grid(
             year=[f"20{year:02d}" for year in range(7, 13)], image_set=("train", "val", "trainval")
         ),
@@ -930,7 +930,7 @@ class CocoCaptionsTestCase(CocoDetectionTestCase):
 class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.UCF101
 
-    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
 
     _VIDEO_FOLDER = "videos"
     _ANNOTATIONS_FOLDER = "annotations"
@@ -991,8 +991,8 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.LSUN
 
     REQUIRED_PACKAGES = ("lmdb",)
-    CONFIGS = datasets_utils.combinations_grid(
-        classes=("train", "test", "val", ["bedroom_train", "church_outdoor_train"])
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        classes=("test", "val", ["bedroom_train", "church_outdoor_train"])
     )
 
     _CATEGORIES = (
@@ -1098,7 +1098,7 @@ class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
 class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.HMDB51
 
-    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
 
     _VIDEO_FOLDER = "videos"
     _SPLITS_FOLDER = "splits"
@@ -1158,7 +1158,7 @@ class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
 class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Omniglot
 
-    CONFIGS = datasets_utils.combinations_grid(background=(True, False))
+    ADDITIONAL_CONFIGS = [dict(background=False)]
 
     def inject_fake_data(self, tmpdir, config):
         target_folder = (
@@ -1238,7 +1238,7 @@ class SEMEIONTestCase(datasets_utils.ImageDatasetTestCase):
 class USPSTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.USPS
 
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = [dict(train=False)]
 
     def inject_fake_data(self, tmpdir, config):
         num_images = 2 if config["train"] else 1
@@ -1260,7 +1260,7 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
 
     REQUIRED_PACKAGES = ("scipy.io", "scipy.sparse")
 
-    CONFIGS = datasets_utils.combinations_grid(
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         image_set=("train", "val", "train_noval"), mode=("boundaries", "segmentation")
     )
 
@@ -1346,7 +1346,7 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
     _TRAIN_FEATURE_TYPES = (torch.Tensor,)
     _TEST_FEATURE_TYPES = (torch.Tensor, torch.Tensor, torch.Tensor)
 
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = [dict(train=False)]
 
     _NAME = "liberty"
 
@@ -1404,7 +1404,7 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
 
         return archive
 
-    @datasets_utils.test_all_configs
+    @datasets_utils.test_all_configs()
     def test_feature_types(self, config):
         feature_types = self.FEATURE_TYPES
         self.FEATURE_TYPES = self._TRAIN_FEATURE_TYPES if config["train"] else self._TEST_FEATURE_TYPES
