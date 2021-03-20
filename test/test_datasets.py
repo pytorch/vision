@@ -1323,7 +1323,7 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
 
 class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FakeData
-    FEATURE_TYPES = (PIL.Image.Image, torch.Tensor)
+    FEATURE_TYPES = (PIL.Image.Image, int)
 
     def dataset_args(self, tmpdir, config):
         return ()
