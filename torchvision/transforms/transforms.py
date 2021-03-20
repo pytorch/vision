@@ -787,7 +787,8 @@ class RandomResizedCrop(torch.nn.Module):
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
             In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        scale (tuple of float): lower and upper bounds for the random area of the crop, before resizing.
+        scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,
+            before resizing. The scale is defined with respect to the area of the original image.
         ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
             resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
