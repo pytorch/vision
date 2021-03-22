@@ -209,7 +209,7 @@ def draw_bounding_boxes(
         if labels is not None:
             draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
 @torch.no_grad()
