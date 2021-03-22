@@ -1473,7 +1473,7 @@ class Flickr30kTestCase(Flickr8kTestCase):
 class MNISTTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.MNIST
 
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
 
     _MAGIC_DTYPES = {
         torch.uint8: 8,
@@ -1549,7 +1549,8 @@ class KMNISTTestCase(MNISTTestCase):
 class EMNISTTestCase(MNISTTestCase):
     DATASET_CLASS = datasets.EMNIST
 
-    CONFIGS = datasets_utils.combinations_grid(
+    DEFAULT_CONFIG = dict(split="byclass")
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("byclass", "bymerge", "balanced", "letters", "digits", "mnist"), train=(True, False)
     )
 
@@ -1560,7 +1561,7 @@ class EMNISTTestCase(MNISTTestCase):
 class QMNIST(MNISTTestCase):
     DATASET_CLASS = datasets.QMNIST
 
-    CONFIGS = datasets_utils.combinations_grid(what=("train", "test", "test10k", "nist"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(what=("train", "test", "test10k", "nist"))
 
     _LABELS_SIZE = (8,)
     _LABELS_DTYPE = torch.int32
@@ -1573,7 +1574,7 @@ class QMNIST(MNISTTestCase):
         elif config["what"] == "test50k":
             # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
             # more than 10000 images for the dataset to not be empty. Since this takes significantly longer than the
-            # creation of all other splits, this is excluded from the 'CONFIGS' and is tested only once in
+            # creation of all other splits, this is excluded from the 'ADDITIONAL_CONFIGS' and is tested only once in
             # 'test_num_examples_test50k'.
             return 10001
         else:
