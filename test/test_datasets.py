@@ -10,8 +10,13 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, \
-    cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
+from fakedata_generation import (
+    mnist_root,
+    svhn_root,
+    places365_root,
+    widerface_root,
+    stl10_root,
+)
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -148,51 +153,6 @@ class Tester(DatasetTestcase):
             self.generic_classification_dataset_test(dataset, num_images=num_examples)
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
-
-    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
-    def test_cityscapes(self):
-        with cityscapes_root() as root:
-
-            for mode in ['coarse', 'fine']:
-
-                if mode == 'coarse':
-                    splits = ['train', 'train_extra', 'val']
-                else:
-                    splits = ['train', 'val', 'test']
-
-                for split in splits:
-                    for target_type in ['semantic', 'instance']:
-                        dataset = torchvision.datasets.Cityscapes(
-                            root, split=split, target_type=target_type, mode=mode)
-                        self.generic_segmentation_dataset_test(dataset, num_images=2)
-
-                    color_dataset = torchvision.datasets.Cityscapes(
-                        root, split=split, target_type='color', mode=mode)
-                    color_img, color_target = color_dataset[0]
-                    self.assertTrue(isinstance(color_img, PIL.Image.Image))
-                    self.assertTrue(np.array(color_target).shape[2] == 4)
-
-                    polygon_dataset = torchvision.datasets.Cityscapes(
-                        root, split=split, target_type='polygon', mode=mode)
-                    polygon_img, polygon_target = polygon_dataset[0]
-                    self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
-                    self.assertTrue(isinstance(polygon_target, dict))
-                    self.assertTrue(isinstance(polygon_target['imgHeight'], int))
-                    self.assertTrue(isinstance(polygon_target['objects'], list))
-
-                    # Test multiple target types
-                    targets_combo = ['semantic', 'polygon', 'color']
-                    multiple_types_dataset = torchvision.datasets.Cityscapes(
-                        root, split=split, target_type=targets_combo, mode=mode)
-                    output = multiple_types_dataset[0]
-                    self.assertTrue(isinstance(output, tuple))
-                    self.assertTrue(len(output) == 2)
-                    self.assertTrue(isinstance(output[0], PIL.Image.Image))
-                    self.assertTrue(isinstance(output[1], tuple))
-                    self.assertTrue(len(output[1]) == 3)
-                    self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
-                    self.assertTrue(isinstance(output[1][1], dict))  # polygon
-                    self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
     @mock.patch('torchvision.datasets.SVHN._check_integrity')
     @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
@@ -518,6 +478,94 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
                 annotation_file.write(annotation_content)
 
         return split_to_num_examples[config["split"]]
+
+
+class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Cityscapes
+    ADDITIONAL_CONFIGS = (
+        datasets_utils.combinations_grid(mode=('fine',), split=('train', 'test', 'val')) +
+        datasets_utils.combinations_grid(mode=('coarse',), split=('train', 'train_extra', 'val')) 
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
+
+    def inject_fake_data(self, tmpdir, config):
+
+        tmpdir = pathlib.Path(tmpdir)
+
+        mode_to_splits = {
+            "Coarse": ["train", "train_extra", "val"],
+            "Fine": ["train", "test", "val"],
+        }
+
+        if config["split"] == "train":  # just for coverage of the number of samples
+            cities = ["bochum", "bremen"]
+        else:
+            cities = ["bochum"]
+
+        for mode in ["Coarse", "Fine"]:
+            gt_dir = tmpdir / f"gt{mode}"
+            for split in mode_to_splits[mode]:
+                for city in cities:
+
+                    idx_to_name = {
+                        0: f"{city}_000000_000000_gt{mode}_color.png",
+                        1: f"{city}_000000_000000_gt{mode}_instanceIds.png",
+                        2: f"{city}_000000_000000_gt{mode}_labelIds.png",
+                    }
+
+                    datasets_utils.create_image_folder(
+                        root=gt_dir / split,
+                        name=city,
+                        file_name_fn=lambda idx: idx_to_name[idx],
+                        num_examples=3,
+                    )
+
+                    self._make_polygon_target(
+                        f"{city}_000000_000000_gt{mode}_polygons.json"
+                    )
+
+        # Create leftImg8bit folder
+        for split in ['test', 'train_extra', 'train', 'val']:
+            for city in cities:
+                datasets_utils.create_image_folder(
+                    root=tmpdir / "leftImg8bit" / split,
+                    name=city,
+                    file_name_fn=lambda _: f"{city}_000000_000000_leftImg8bit.png",
+                    num_examples=1,
+                )
+
+        return len(cities)
+
+    def _make_polygon_target(self, filename):
+        polygon_example = {
+            "imgHeight": 1024,
+            "imgWidth": 2048,
+            "objects": [
+                {
+                    "label": "sky",
+                    "polygon": [
+                        [1241, 0],
+                        [1234, 156],
+                        [1478, 197],
+                        [1611, 172],
+                        [1606, 0],
+                    ],
+                },
+                {
+                    "label": "road",
+                    "polygon": [
+                        [0, 448],
+                        [1331, 274],
+                        [1473, 265],
+                        [2047, 605],
+                        [2047, 1023],
+                        [0, 1023],
+                    ],
+                },
+            ],
+        }
+        with open(filename, "w") as outfile:
+            json.dump(polygon_example, outfile)
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
