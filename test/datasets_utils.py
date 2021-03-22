@@ -194,7 +194,8 @@ class DatasetTestCase(unittest.TestCase):
 
         - DEFAULT_CONFIG (Dict[str, Any]): Config that will be used by default. If omitted, this defaults to all
             keyword arguments of the dataset minus ``transform``, ``target_transform``, ``transforms``, and
-            ``download``.
+            ``download``. Overwrite this if you want to use a default value for a parameter for which the dataset does
+            not provide one.
         - ADDITIONAL_CONFIGS (Sequence[Dict[str, Any]]): Additional configs that should be tested. Each dictionary can
             contain an arbitrary combination of dataset parameters that are **not** ``transform``, ``target_transform``,
             ``transforms``, or ``download``.
@@ -257,7 +258,7 @@ class DatasetTestCase(unittest.TestCase):
         "target_transform",
         "transforms",
     }
-    # These keyword arguments get a 'special' treatment and should not be set in CONFIGS or DEFAULT_CONFIG.
+    # These keyword arguments get a 'special' treatment and should not be set in DEFAULT_CONFIG or ADDITIONAL_CONFIGS.
     _SPECIAL_KWARGS = {
         *_TRANSFORM_KWARGS,
         "download",
@@ -294,8 +295,8 @@ class DatasetTestCase(unittest.TestCase):
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
                 to be created and in turn also for the fake data injected here.
-            config (Dict[str, Any]): Configuration that will be used to create the dataset. It provides at least fields
-                for all dataset parameters with default values.
+            config (Dict[str, Any]): Configuration that will be passed to the dataset constructor. It provides at least
+                fields for all dataset parameters with default values.
 
         Returns:
             (Tuple[str]): ``tmpdir`` which corresponds to ``root`` for most datasets.
@@ -312,8 +313,8 @@ class DatasetTestCase(unittest.TestCase):
         Args:
             tmpdir (str): Path to a temporary directory. For most cases this acts as root directory for the dataset
                 to be created and in turn also for the fake data injected here.
-            config (Dict[str, Any]): Configuration that will be used to create the dataset. It provides at least fields
-                for all dataset parameters with default values.
+            config (Dict[str, Any]): Configuration that will be passed to the dataset constructor. It provides at least
+                fields for all dataset parameters with default values.
 
         Needs to return one of the following:
 
