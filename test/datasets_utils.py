@@ -151,7 +151,7 @@ def test_all_configs(test):
             configs.extend(self.ADDITIONAL_CONFIGS)
 
         if not configs:
-            configs.append(self._KWARG_DEFAULTS.copy())
+            configs = [self._KWARG_DEFAULTS.copy()]
         else:
             configs = maybe_remove_duplicates(configs)
 
