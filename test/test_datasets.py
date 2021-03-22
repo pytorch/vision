@@ -1404,7 +1404,7 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
 
         return archive
 
-    @datasets_utils.test_all_configs()
+    @datasets_utils.test_all_configs
     def test_feature_types(self, config):
         feature_types = self.FEATURE_TYPES
         self.FEATURE_TYPES = self._TRAIN_FEATURE_TYPES if config["train"] else self._TEST_FEATURE_TYPES

@@ -114,7 +114,7 @@ def requires_lazy_imports(*modules):
     return outer_wrapper
 
 
-def test_all_configs(*, remove_duplicates=True, strict=False):
+def test_all_configs(test):
     """Decorator to run test against all configurations.
 
     Add this as decorator to an arbitrary test to run it against all configurations. This includes
@@ -130,45 +130,36 @@ def test_all_configs(*, remove_duplicates=True, strict=False):
 
     .. note::
 
-        This will not preserve a potential ordering of the configuration or an inner ordering of a configuration.
-
-    Args:
-        remove_duplicates (bool): If ``True`` (default), tries to remove duplicate configurations. If any
-            :class:`Exception` is encountered, e.g. a configuration contains an unhashable value, the complete set of
-            configurations is used as fallback.
-        strict (bool): If ``True``, raise an :class:`Exception` during duplicate removing instead of using a fallback.
+        This will try to remove duplicate configurations. During this process it will not not preserve a potential
+        ordering of the configurations or an inner ordering of a configuration.
     """
 
-    def maybe_remove_duplicates(configs, *, strict):
+    def maybe_remove_duplicates(configs):
         try:
             return [dict(config_) for config_ in set(tuple(sorted(config.items())) for config in configs)]
-        except Exception:
-            if strict:
-                raise
-
+        except TypeError:
+            # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
+            # removal would be a lot more elaborate and we simply bail out.
             return configs
 
-    def decorator(test):
-        @functools.wraps(test)
-        def wrapper(self):
-            configs = []
-            if self.DEFAULT_CONFIG is not None:
-                configs.append(self.DEFAULT_CONFIG)
-            if self.ADDITIONAL_CONFIGS is not None:
-                configs.extend(self.ADDITIONAL_CONFIGS)
+    @functools.wraps(test)
+    def wrapper(self):
+        configs = []
+        if self.DEFAULT_CONFIG is not None:
+            configs.append(self.DEFAULT_CONFIG)
+        if self.ADDITIONAL_CONFIGS is not None:
+            configs.extend(self.ADDITIONAL_CONFIGS)
 
-            if not configs:
-                configs.append(self._KWARG_DEFAULTS.copy())
-            elif remove_duplicates:
-                configs = maybe_remove_duplicates(configs, strict=strict)
+        if not configs:
+            configs.append(self._KWARG_DEFAULTS.copy())
+        else:
+            configs = maybe_remove_duplicates(configs)
 
-            for config in configs:
-                with self.subTest(**config):
-                    test(self, config)
+        for config in configs:
+            with self.subTest(**config):
+                test(self, config)
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 def combinations_grid(**kwargs):
@@ -534,12 +525,12 @@ class DatasetTestCase(unittest.TestCase):
         with self.create_dataset() as (dataset, _):
             self.assertIsInstance(dataset, torchvision.datasets.VisionDataset)
 
-    @test_all_configs()
+    @test_all_configs
     def test_str_smoke(self, config):
         with self.create_dataset(config) as (dataset, _):
             self.assertIsInstance(str(dataset), str)
 
-    @test_all_configs()
+    @test_all_configs
     def test_feature_types(self, config):
         with self.create_dataset(config) as (dataset, _):
             example = dataset[0]
@@ -560,12 +551,12 @@ class DatasetTestCase(unittest.TestCase):
                 with self.subTest(idx=idx):
                     self.assertIsInstance(feature, expected_feature_type)
 
-    @test_all_configs()
+    @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
             self.assertEqual(len(dataset), info["num_examples"])
 
-    @test_all_configs()
+    @test_all_configs
     def test_transforms(self, config):
         mock = unittest.mock.Mock(wraps=lambda *args: args[0] if len(args) == 1 else args)
         for kwarg in self._TRANSFORM_KWARGS:
