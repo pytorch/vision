@@ -468,7 +468,7 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
 class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.WIDERFace
     FEATURE_TYPES = (PIL.Image.Image, (dict, type(None)))  # test split returns None as target
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('train', 'val', 'test'))
 
     def inject_fake_data(self, tmpdir, config):
         widerface_dir = pathlib.Path(tmpdir) / 'widerface'
@@ -523,7 +523,7 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
     REQUIRED_PACKAGES = ('scipy',)
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
 
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
