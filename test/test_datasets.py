@@ -1558,7 +1558,7 @@ class EMNISTTestCase(MNISTTestCase):
         return f"emnist-{config['split']}-{'train' if config['train'] else 'test'}"
 
 
-class QMNIST(MNISTTestCase):
+class QMNISTTestCase(MNISTTestCase):
     DATASET_CLASS = datasets.QMNIST
 
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(what=("train", "test", "test10k", "nist"))
