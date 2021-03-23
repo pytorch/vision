@@ -477,10 +477,19 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
 
 class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Cityscapes
-    TARGET_TYPES = ('instance', 'semantic', 'polygon', 'color', ['instance', 'semantic'])
-    ADDITIONAL_CONFIGS = (
-        datasets_utils.combinations_grid(mode=('fine',), split=('train', 'test', 'val'), target_type=TARGET_TYPES) +
-        datasets_utils.combinations_grid(mode=('coarse',), split=('train', 'train_extra', 'val'), target_type=TARGET_TYPES)
+    TARGET_TYPES = (
+        "instance",
+        "semantic",
+        "polygon",
+        "color",
+        ["instance", "semantic"],
+    )
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        mode=("fine",), split=("train", "test", "val"), target_type=TARGET_TYPES
+    ) + datasets_utils.combinations_grid(
+        mode=("coarse",),
+        split=("train", "train_extra", "val"),
+        target_type=TARGET_TYPES,
     )
     FEATURE_TYPES = (PIL.Image.Image, (dict, tuple, PIL.Image.Image))
 
