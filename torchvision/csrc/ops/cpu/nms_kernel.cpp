@@ -27,16 +27,15 @@ at::Tensor nms_kernel_impl(
 
   auto dets_a = dets.accessor<scalar_t, 2>();
 
-  auto x1_t = dets.select(1, X1);
-  auto y1_t = dets.select(1, Y1);
-  auto x2_t = dets.select(1, X2);
-  auto y2_t = dets.select(1, Y2);
-
-  at::Tensor areas_t = (x2_t - x1_t) * (y2_t - y1_t);
+  auto ndets = dets.size(0);
+  at::Tensor areas_t = at::empty({ndets});
+  auto areas_a = areas_t.accessor<scalar_t, 1>();
+  for (int64_t i = 0; i < ndets; i++) {
+    areas_a[i] = (dets_a[i][X2] - dets_a[i][X1]) * (dets_a[i][Y2] - dets_a[i][Y1]);
+  }
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
 
-  auto ndets = dets.size(0);
   at::Tensor suppressed_t = at::zeros({ndets}, dets.options().dtype(at::kByte));
   at::Tensor keep_t = at::zeros({ndets}, dets.options().dtype(at::kLong));
 
@@ -70,7 +69,7 @@ at::Tensor nms_kernel_impl(
       auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1);
       auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
       auto inter = w * h;
-      auto ovr = inter / (iarea + areas[j] - inter);
+      auto ovr = inter / (iarea + areas_a[j] - inter);
       if (ovr > iou_threshold)
         suppressed[j] = 1;
     }
