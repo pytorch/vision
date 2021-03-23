@@ -477,11 +477,12 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
 
 class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Cityscapes
+    TARGET_TYPES = ('instance', 'semantic', 'polygon', 'color', ['instance', 'semantic'])
     ADDITIONAL_CONFIGS = (
-        datasets_utils.combinations_grid(mode=('fine',), split=('train', 'test', 'val')) +
-        datasets_utils.combinations_grid(mode=('coarse',), split=('train', 'train_extra', 'val'))
+        datasets_utils.combinations_grid(mode=('fine',), split=('train', 'test', 'val'), target_type=TARGET_TYPES) +
+        datasets_utils.combinations_grid(mode=('coarse',), split=('train', 'train_extra', 'val'), target_type=TARGET_TYPES)
     )
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
+    FEATURE_TYPES = (PIL.Image.Image, (dict, tuple, PIL.Image.Image))
 
     def inject_fake_data(self, tmpdir, config):
 
@@ -516,7 +517,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
                     )
 
                     self._make_polygon_target(
-                        f"{city}_000000_000000_gt{mode}_polygons.json"
+                        gt_dir / split / city / f"{city}_000000_000000_gt{mode}_polygons.json"
                     )
 
         # Create leftImg8bit folder
