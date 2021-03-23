@@ -479,7 +479,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Cityscapes
     ADDITIONAL_CONFIGS = (
         datasets_utils.combinations_grid(mode=('fine',), split=('train', 'test', 'val')) +
-        datasets_utils.combinations_grid(mode=('coarse',), split=('train', 'train_extra', 'val')) 
+        datasets_utils.combinations_grid(mode=('coarse',), split=('train', 'train_extra', 'val'))
     )
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
 
