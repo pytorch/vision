@@ -1,6 +1,11 @@
 #include <ATen/ATen.h>
 #include <torch/library.h>
 
+#define X1 (0)
+#define Y1 (1)
+#define X2 (2)
+#define Y2 (3)
+
 namespace vision {
 namespace ops {
 
@@ -20,10 +25,12 @@ at::Tensor nms_kernel_impl(
   if (dets.numel() == 0)
     return at::empty({0}, dets.options().dtype(at::kLong));
 
-  auto x1_t = dets.select(1, 0).contiguous();
-  auto y1_t = dets.select(1, 1).contiguous();
-  auto x2_t = dets.select(1, 2).contiguous();
-  auto y2_t = dets.select(1, 3).contiguous();
+  auto dets_a = dets.accessor<scalar_t, 2>();
+
+  auto x1_t = dets.select(1, X1);
+  auto y1_t = dets.select(1, Y1);
+  auto x2_t = dets.select(1, X2);
+  auto y2_t = dets.select(1, Y2);
 
   at::Tensor areas_t = (x2_t - x1_t) * (y2_t - y1_t);
 
@@ -36,10 +43,6 @@ at::Tensor nms_kernel_impl(
   auto suppressed = suppressed_t.data_ptr<uint8_t>();
   auto keep = keep_t.data_ptr<int64_t>();
   auto order = order_t.data_ptr<int64_t>();
-  auto x1 = x1_t.data_ptr<scalar_t>();
-  auto y1 = y1_t.data_ptr<scalar_t>();
-  auto x2 = x2_t.data_ptr<scalar_t>();
-  auto y2 = y2_t.data_ptr<scalar_t>();
   auto areas = areas_t.data_ptr<scalar_t>();
 
   int64_t num_to_keep = 0;
@@ -49,20 +52,20 @@ at::Tensor nms_kernel_impl(
     if (suppressed[i] == 1)
       continue;
     keep[num_to_keep++] = i;
-    auto ix1 = x1[i];
-    auto iy1 = y1[i];
-    auto ix2 = x2[i];
-    auto iy2 = y2[i];
+    auto ix1 = dets_a[i][X1];
+    auto iy1 = dets_a[i][Y1];
+    auto ix2 = dets_a[i][X2];
+    auto iy2 = dets_a[i][Y2];
     auto iarea = areas[i];
 
     for (int64_t _j = _i + 1; _j < ndets; _j++) {
       auto j = order[_j];
       if (suppressed[j] == 1)
         continue;
-      auto xx1 = std::max(ix1, x1[j]);
-      auto yy1 = std::max(iy1, y1[j]);
-      auto xx2 = std::min(ix2, x2[j]);
-      auto yy2 = std::min(iy2, y2[j]);
+      auto xx1 = std::max(ix1, dets_a[j][X1]);
+      auto yy1 = std::max(iy1, dets_a[j][Y1]);
+      auto xx2 = std::min(ix2, dets_a[j][X2]);
+      auto yy2 = std::min(iy2, dets_a[j][Y2]);
 
       auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1);
       auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
