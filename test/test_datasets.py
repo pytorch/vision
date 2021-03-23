@@ -1516,20 +1516,13 @@ class MNISTTestCase(datasets_utils.ImageDatasetTestCase):
         return "train" if config["train"] else "t10k"
 
     def _create_binary_file(self, root, filename, size, dtype):
-        if dtype.is_floating_point:
-
-            def data_fn(size, dtype):
-                return torch.rand(size, dtype=dtype)
-
-        else:
-
-            def data_fn(size, dtype):
-                return torch.randint(0, torch.iinfo(dtype).max + 1, size, dtype=dtype)
-
         with open(pathlib.Path(root) / filename, "wb") as fh:
             for meta in (self._magic(dtype, len(size)), *size):
                 fh.write(self._encode(meta))
-            fh.write(data_fn(size, dtype).numpy().tobytes())
+
+            # If ever an MNIST variant is added that uses floating point data, this should be adapted.
+            data = torch.randint(0, torch.iinfo(dtype).max + 1, size, dtype=dtype)
+            fh.write(data.numpy().tobytes())
 
     def _magic(self, dtype, dims):
         return self._MAGIC_DTYPES[dtype] * 256 + dims
