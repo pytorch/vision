@@ -175,6 +175,8 @@ class Tester(unittest.TestCase):
 
     def test_draw_segmentation_masks_no_colors(self):
         img = torch.full((3, 20, 20), 255, dtype=torch.uint8)
+        img_cp = img.clone()
+        masks_cp = masks.clone()
         result = utils.draw_segmentation_masks(img, masks, colors=None)
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets",
@@ -186,6 +188,9 @@ class Tester(unittest.TestCase):
 
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         self.assertTrue(torch.equal(result, expected))
+        # Check if modification is not in place
+        self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
+        self.assertTrue(torch.all(torch.eq(masks, masks_cp)).item())
 
     def test_draw_invalid_masks(self):
         img_tp = ((1, 1, 1), (1, 2, 3))
