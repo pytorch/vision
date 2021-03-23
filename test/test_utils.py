@@ -198,9 +198,9 @@ class Tester(unittest.TestCase):
         img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
         img_wrong3 = torch.full((4, 5, 5), 255, dtype=torch.float)
 
-        self.assertRaises(TypeError, utils.draw_bounding_boxes, img_tp, masks)
-        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong1, masks)
-        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong2, masks)
+        self.assertRaises(TypeError, utils.draw_segmentation_masks, img_tp, masks)
+        self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong1, masks)
+        self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong2, masks)
         self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong3, masks)
 
 
