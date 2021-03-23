@@ -10,13 +10,8 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import (
-    mnist_root,
-    svhn_root,
-    places365_root,
-    widerface_root,
-    stl10_root,
-)
+from fakedata_generation import mnist_root, \
+    svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
