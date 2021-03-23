@@ -10,7 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, imagenet_root, \
+from fakedata_generation import mnist_root, \
     cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
@@ -120,7 +120,8 @@ class Tester(DatasetTestcase):
                 )
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_mnist(self, mock_download_extract):
+    @mock.patch('torchvision.datasets.mnist.check_integrity', return_value=True)
+    def test_mnist(self, mock_download_extract, mock_check_integrity):
         num_examples = 30
         with mnist_root(num_examples, "MNIST") as root:
             dataset = torchvision.datasets.MNIST(root, download=True)
@@ -129,7 +130,8 @@ class Tester(DatasetTestcase):
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_kmnist(self, mock_download_extract):
+    @mock.patch('torchvision.datasets.mnist.check_integrity', return_value=True)
+    def test_kmnist(self, mock_download_extract, mock_check_integrity):
         num_examples = 30
         with mnist_root(num_examples, "KMNIST") as root:
             dataset = torchvision.datasets.KMNIST(root, download=True)
@@ -138,7 +140,8 @@ class Tester(DatasetTestcase):
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_fashionmnist(self, mock_download_extract):
+    @mock.patch('torchvision.datasets.mnist.check_integrity', return_value=True)
+    def test_fashionmnist(self, mock_download_extract, mock_check_integrity):
         num_examples = 30
         with mnist_root(num_examples, "FashionMNIST") as root:
             dataset = torchvision.datasets.FashionMNIST(root, download=True)
@@ -146,37 +149,7 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @mock.patch('torchvision.datasets.imagenet._verify_archive')
-    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
-    def test_imagenet(self, mock_verify):
-        with imagenet_root() as root:
-            dataset = torchvision.datasets.ImageNet(root, split='train')
-            self.generic_classification_dataset_test(dataset)
-
-            dataset = torchvision.datasets.ImageNet(root, split='val')
-            self.generic_classification_dataset_test(dataset)
-
-    @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
-    def test_widerface(self, mock_check_integrity):
-        mock_check_integrity.return_value = True
-        with widerface_root() as root:
-            dataset = torchvision.datasets.WIDERFace(root, split='train')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
-            dataset = torchvision.datasets.WIDERFace(root, split='val')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
-            dataset = torchvision.datasets.WIDERFace(root, split='test')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
@@ -396,7 +369,9 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Caltech101
     FEATURE_TYPES = (PIL.Image.Image, (int, np.ndarray, tuple))
 
-    CONFIGS = datasets_utils.combinations_grid(target_type=("category", "annotation", ["category", "annotation"]))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        target_type=("category", "annotation", ["category", "annotation"])
+    )
     REQUIRED_PACKAGES = ("scipy",)
 
     def inject_fake_data(self, tmpdir, config):
@@ -490,9 +465,95 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
         return num_images_per_category * len(categories)
 
 
+class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.WIDERFace
+    FEATURE_TYPES = (PIL.Image.Image, (dict, type(None)))  # test split returns None as target
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('train', 'val', 'test'))
+
+    def inject_fake_data(self, tmpdir, config):
+        widerface_dir = pathlib.Path(tmpdir) / 'widerface'
+        annotations_dir = widerface_dir / 'wider_face_split'
+        os.makedirs(annotations_dir)
+
+        split_to_idx = split_to_num_examples = {
+            "train": 1,
+            "val": 2,
+            "test": 3,
+        }
+
+        # We need to create all folders regardless of the split in config
+        for split in ('train', 'val', 'test'):
+            split_idx = split_to_idx[split]
+            num_examples = split_to_num_examples[split]
+
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=widerface_dir / f'WIDER_{split}' / 'images' / '0--Parade',
+                file_name_fn=lambda image_idx: f"0_Parade_marchingband_1_{split_idx + image_idx}.jpg",
+                num_examples=num_examples,
+            )
+
+            annotation_file_name = {
+                'train': annotations_dir / 'wider_face_train_bbx_gt.txt',
+                'val': annotations_dir / 'wider_face_val_bbx_gt.txt',
+                'test': annotations_dir / 'wider_face_test_filelist.txt',
+            }[split]
+
+            annotation_content = {
+                "train": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n"
+                    for image_idx in range(num_examples)
+                ),
+                "val": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n"
+                    for image_idx in range(num_examples)
+                ),
+                "test": "".join(
+                    f"0--Parade/0_Parade_marchingband_1_{split_idx + image_idx}.jpg\n"
+                    for image_idx in range(num_examples)
+                ),
+            }[split]
+
+            with open(annotation_file_name, "w") as annotation_file:
+                annotation_file.write(annotation_content)
+
+        return split_to_num_examples[config["split"]]
+
+
+class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.ImageNet
+    REQUIRED_PACKAGES = ('scipy',)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        wnid = 'n01234567'
+        if config['split'] == 'train':
+            num_examples = 3
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'train' / wnid / wnid,
+                file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
+                num_examples=num_examples,
+            )
+        else:
+            num_examples = 1
+            datasets_utils.create_image_folder(
+                root=tmpdir,
+                name=tmpdir / 'val' / wnid,
+                file_name_fn=lambda image_ifx: "ILSVRC2012_val_0000000{image_idx}.JPEG",
+                num_examples=num_examples,
+            )
+
+        wnid_to_classes = {wnid: [1]}
+        torch.save((wnid_to_classes, None), tmpdir / 'meta.bin')
+        return num_examples
+
+
 class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.CIFAR10
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
 
     _VERSION_CONFIG = dict(
         base_folder="cifar-10-batches-py",
@@ -564,7 +625,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.CelebA
     FEATURE_TYPES = (PIL.Image.Image, (torch.Tensor, int, tuple, type(None)))
 
-    CONFIGS = datasets_utils.combinations_grid(
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "valid", "test", "all"),
         target_type=("attr", "identity", "bbox", "landmarks", ["attr", "identity"]),
     )
@@ -681,7 +742,7 @@ class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.VOCSegmentation
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
 
-    CONFIGS = (
+    ADDITIONAL_CONFIGS = (
         *datasets_utils.combinations_grid(
             year=[f"20{year:02d}" for year in range(7, 13)], image_set=("train", "val", "trainval")
         ),
@@ -870,7 +931,7 @@ class CocoCaptionsTestCase(CocoDetectionTestCase):
 class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.UCF101
 
-    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
 
     _VIDEO_FOLDER = "videos"
     _ANNOTATIONS_FOLDER = "annotations"
@@ -931,7 +992,7 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.LSUN
 
     REQUIRED_PACKAGES = ("lmdb",)
-    CONFIGS = datasets_utils.combinations_grid(
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         classes=("train", "test", "val", ["bedroom_train", "church_outdoor_train"])
     )
 
@@ -1038,7 +1099,7 @@ class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
 class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.HMDB51
 
-    CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(fold=(1, 2, 3), train=(True, False))
 
     _VIDEO_FOLDER = "videos"
     _SPLITS_FOLDER = "splits"
@@ -1098,7 +1159,7 @@ class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
 class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Omniglot
 
-    CONFIGS = datasets_utils.combinations_grid(background=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(background=(True, False))
 
     def inject_fake_data(self, tmpdir, config):
         target_folder = (
@@ -1178,7 +1239,7 @@ class SEMEIONTestCase(datasets_utils.ImageDatasetTestCase):
 class USPSTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.USPS
 
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
 
     def inject_fake_data(self, tmpdir, config):
         num_images = 2 if config["train"] else 1
@@ -1200,7 +1261,7 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
 
     REQUIRED_PACKAGES = ("scipy.io", "scipy.sparse")
 
-    CONFIGS = datasets_utils.combinations_grid(
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         image_set=("train", "val", "train_noval"), mode=("boundaries", "segmentation")
     )
 
@@ -1264,7 +1325,7 @@ class SBDatasetTestCase(datasets_utils.ImageDatasetTestCase):
 
 class FakeDataTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FakeData
-    FEATURE_TYPES = (PIL.Image.Image, torch.Tensor)
+    FEATURE_TYPES = (PIL.Image.Image, int)
 
     def dataset_args(self, tmpdir, config):
         return ()
@@ -1286,7 +1347,7 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
     _TRAIN_FEATURE_TYPES = (torch.Tensor,)
     _TEST_FEATURE_TYPES = (torch.Tensor, torch.Tensor, torch.Tensor)
 
-    CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    datasets_utils.combinations_grid(train=(True, False))
 
     _NAME = "liberty"
 
@@ -1352,6 +1413,93 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
             super().test_feature_types.__wrapped__(self, config)
         finally:
             self.FEATURE_TYPES = feature_types
+
+
+class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Flickr8k
+
+    FEATURE_TYPES = (PIL.Image.Image, list)
+
+    _IMAGES_FOLDER = "images"
+    _ANNOTATIONS_FILE = "captions.html"
+
+    def dataset_args(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        root = tmpdir / self._IMAGES_FOLDER
+        ann_file = tmpdir / self._ANNOTATIONS_FILE
+        return str(root), str(ann_file)
+
+    def inject_fake_data(self, tmpdir, config):
+        num_images = 3
+        num_captions_per_image = 3
+
+        tmpdir = pathlib.Path(tmpdir)
+
+        images = self._create_images(tmpdir, self._IMAGES_FOLDER, num_images)
+        self._create_annotations_file(tmpdir, self._ANNOTATIONS_FILE, images, num_captions_per_image)
+
+        return dict(num_examples=num_images, captions=self._create_captions(num_captions_per_image))
+
+    def _create_images(self, root, name, num_images):
+        return datasets_utils.create_image_folder(root, name, self._image_file_name, num_images)
+
+    def _image_file_name(self, idx):
+        id = datasets_utils.create_random_string(10, string.digits)
+        checksum = datasets_utils.create_random_string(10, string.digits, string.ascii_lowercase[:6])
+        size = datasets_utils.create_random_string(1, "qwcko")
+        return f"{id}_{checksum}_{size}.jpg"
+
+    def _create_annotations_file(self, root, name, images, num_captions_per_image):
+        with open(root / name, "w") as fh:
+            fh.write("<table>")
+            for image in (None, *images):
+                self._add_image(fh, image, num_captions_per_image)
+            fh.write("</table>")
+
+    def _add_image(self, fh, image, num_captions_per_image):
+        fh.write("<tr>")
+        self._add_image_header(fh, image)
+        fh.write("</tr><tr><td><ul>")
+        self._add_image_captions(fh, num_captions_per_image)
+        fh.write("</ul></td></tr>")
+
+    def _add_image_header(self, fh, image=None):
+        if image:
+            url = f"http://www.flickr.com/photos/user/{image.name.split('_')[0]}/"
+            data = f'<a href="{url}">{url}</a>'
+        else:
+            data = "Image Not Found"
+        fh.write(f"<td>{data}</td>")
+
+    def _add_image_captions(self, fh, num_captions_per_image):
+        for caption in self._create_captions(num_captions_per_image):
+            fh.write(f"<li>{caption}")
+
+    def _create_captions(self, num_captions_per_image):
+        return [str(idx) for idx in range(num_captions_per_image)]
+
+    def test_captions(self):
+        with self.create_dataset() as (dataset, info):
+            _, captions = dataset[0]
+            self.assertSequenceEqual(captions, info["captions"])
+
+
+class Flickr30kTestCase(Flickr8kTestCase):
+    DATASET_CLASS = datasets.Flickr30k
+
+    FEATURE_TYPES = (PIL.Image.Image, list)
+
+    _ANNOTATIONS_FILE = "captions.token"
+
+    def _image_file_name(self, idx):
+        return f"{idx}.jpg"
+
+    def _create_annotations_file(self, root, name, images, num_captions_per_image):
+        with open(root / name, "w") as fh:
+            for image, (idx, caption) in itertools.product(
+                images, enumerate(self._create_captions(num_captions_per_image))
+            ):
+                fh.write(f"{image.name}#{idx}\t{caption}\n")
 
 
 if __name__ == "__main__":
