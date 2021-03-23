@@ -125,6 +125,16 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.all(torch.eq(boxes, boxes_cp)).item())
         self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
 
+    def test_invalid_boxes(self):
+        img_tp = ((1, 1, 1), (1, 2, 3))
+        img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
+        img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
+        boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
+                             [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        self.assertRaises(TypeError, utils.draw_bounding_boxes, img_tp, boxes)
+        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong1, boxes)
+        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong2, boxes)
+
     def test_draw_segmentation_masks_colors(self):
         img = torch.full((3, 5, 5), 255, dtype=torch.uint8)
         img_cp = img.clone()
@@ -158,6 +168,14 @@ class Tester(unittest.TestCase):
 
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         self.assertTrue(torch.equal(result, expected))
+
+    def test_invalid_masks(self):
+        img_tp = ((1, 1, 1), (1, 2, 3))
+        img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
+        img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
+        self.assertRaises(TypeError, utils.draw_bounding_boxes, img_tp, masks)
+        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong1, masks)
+        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong2, masks)
 
 
 if __name__ == '__main__':
