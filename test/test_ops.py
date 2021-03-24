@@ -418,6 +418,27 @@ class NMSTester(unittest.TestCase):
         self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(3, 2), 0.5)
         self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
 
+    def test_qnms(self):
+        # Note: we compare qnms vs nms instead of qnms vs reference implementation.
+        # This is because with the int convertion, the trick used in _create_tensors_with_iou
+        # doesn't really work (in fact, nms vs reference implem will also fail with ints)
+        err_msg = 'NMS and QNMS give different results for IoU={}'
+        for iou in [0.2, 0.5, 0.8]:
+            boxes, scores = self._create_tensors_with_iou(1000, iou)
+            scores *= 100 # otherwise most scores would be 0 or 1 after int convertion
+
+            # use integer values and clamp to the uint8 range for a fair comparison
+            boxes = boxes.to(torch.int).to(torch.float).clamp(0, 255)
+            scores = scores.to(torch.int).to(torch.float).clamp(0, 255)
+
+            qboxes = torch.quantize_per_tensor(boxes, scale=1, zero_point=0, dtype=torch.quint8)
+            qscores = torch.quantize_per_tensor(scores, scale=1, zero_point=0, dtype=torch.quint8)
+
+            keep = ops.nms(boxes, scores, iou)
+            qkeep = ops.nms(qboxes, qscores, iou)
+
+            self.assertTrue(torch.allclose(qkeep, keep), err_msg.format(iou))
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_nms_cuda(self, dtype=torch.float64):
         tol = 1e-3 if dtype is torch.half else 1e-5
