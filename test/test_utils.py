@@ -9,6 +9,30 @@ from io import BytesIO
 import torchvision.transforms.functional as F
 from PIL import Image
 
+masks = torch.tensor([
+    [
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799]
+    ],
+    [
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [-2.2799, -2.2799, -2.2799, -2.2799, -2.2799],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541]
+    ],
+    [
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [-1.4541, -1.4541, -1.4541, -1.4541, -1.4541],
+        [5.0914, 5.0914, 5.0914, 5.0914, 5.0914],
+    ]
+], dtype=torch.float)
+
 
 class Tester(unittest.TestCase):
 
@@ -89,6 +113,35 @@ class Tester(unittest.TestCase):
         result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True)
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
+        if not os.path.exists(path):
+            res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+            res.save(path)
+
+        expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+        self.assertTrue(torch.equal(result, expected))
+
+    def test_draw_segmentation_masks_colors(self):
+        img = torch.full((3, 5, 5), 255, dtype=torch.uint8)
+        colors = ["#FF00FF", (0, 255, 0), "red"]
+        result = utils.draw_segmentation_masks(img, masks, colors=colors)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets",
+                            "fakedata", "draw_segm_masks_colors_util.png")
+
+        if not os.path.exists(path):
+            res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+            res.save(path)
+
+        expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+        self.assertTrue(torch.equal(result, expected))
+
+    def test_draw_segmentation_masks_no_colors(self):
+        img = torch.full((3, 20, 20), 255, dtype=torch.uint8)
+        result = utils.draw_segmentation_masks(img, masks, colors=None)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets",
+                            "fakedata", "draw_segm_masks_no_colors_util.png")
+
         if not os.path.exists(path):
             res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
             res.save(path)
