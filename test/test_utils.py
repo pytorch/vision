@@ -196,7 +196,7 @@ class Tester(unittest.TestCase):
         img_tp = ((1, 1, 1), (1, 2, 3))
         img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
         img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
-        img_wrong3 = torch.full((4, 5, 5), 255, dtype=torch.float)
+        img_wrong3 = torch.full((4, 5, 5), 255, dtype=torch.uint8)
 
         self.assertRaises(TypeError, utils.draw_segmentation_masks, img_tp, masks)
         self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong1, masks)
