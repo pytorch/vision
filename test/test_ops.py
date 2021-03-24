@@ -425,7 +425,7 @@ class NMSTester(unittest.TestCase):
         err_msg = 'NMS and QNMS give different results for IoU={}'
         for iou in [0.2, 0.5, 0.8]:
             boxes, scores = self._create_tensors_with_iou(1000, iou)
-            scores *= 100 # otherwise most scores would be 0 or 1 after int convertion
+            scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
 
             # use integer values and clamp to the uint8 range for a fair comparison
             boxes = boxes.to(torch.int).to(torch.float).clamp(0, 255)
