@@ -59,7 +59,8 @@ class DatasetTestcase(unittest.TestCase):
 
 class Tester(DatasetTestcase):
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_mnist(self, mock_download_extract):
+    @mock.patch('torchvision.datasets.mnist.check_integrity', return_value=True)
+    def test_mnist(self, mock_download_extract, mock_check_integrity):
         num_examples = 30
         with mnist_root(num_examples, "MNIST") as root:
             dataset = torchvision.datasets.MNIST(root, download=True)
@@ -68,7 +69,8 @@ class Tester(DatasetTestcase):
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_kmnist(self, mock_download_extract):
+    @mock.patch('torchvision.datasets.mnist.check_integrity', return_value=True)
+    def test_kmnist(self, mock_download_extract, mock_check_integrity):
         num_examples = 30
         with mnist_root(num_examples, "KMNIST") as root:
             dataset = torchvision.datasets.KMNIST(root, download=True)
@@ -77,7 +79,8 @@ class Tester(DatasetTestcase):
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
-    def test_fashionmnist(self, mock_download_extract):
+    @mock.patch('torchvision.datasets.mnist.check_integrity', return_value=True)
+    def test_fashionmnist(self, mock_download_extract, mock_check_integrity):
         num_examples = 30
         with mnist_root(num_examples, "FashionMNIST") as root:
             dataset = torchvision.datasets.FashionMNIST(root, download=True)
@@ -85,7 +88,7 @@ class Tester(DatasetTestcase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
