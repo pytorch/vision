@@ -188,7 +188,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+1b8e147 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.9.0a0+a487f0c ) &#x25BC</a>
     </div>
     
 
@@ -337,9 +337,43 @@
     <span class="k">return</span> <span class="n">has_file_allowed_extension</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">IMG_EXTENSIONS</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">find_classes</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Finds the class folders in a dataset structured as follows:</span>
+
+<span class="sd">    .. code::</span>
+
+<span class="sd">        directory/</span>
+<span class="sd">        ├── class_x</span>
+<span class="sd">        │   ├── xxx.ext</span>
+<span class="sd">        │   ├── xxy.ext</span>
+<span class="sd">        │   └── ...</span>
+<span class="sd">        │       └── xxz.ext</span>
+<span class="sd">        └── class_y</span>
+<span class="sd">            ├── 123.ext</span>
+<span class="sd">            ├── nsdf3.ext</span>
+<span class="sd">            └── ...</span>
+<span class="sd">                └── asd932_.ext</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        directory (str): Root directory path.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If ``directory`` has no class folders.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (Tuple[List[str], Dict[str, int]]): List of all classes and dictionary mapping each class to an index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">classes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span> <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_dir</span><span class="p">())</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">classes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Couldn&#39;t find any class folder in </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">cls_name</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cls_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">classes</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span>
+
+
 <span class="k">def</span> <span class="nf">make_dataset</span><span class="p">(</span>
     <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">class_to_idx</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">class_to_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">is_valid_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
@@ -347,7 +381,8 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        directory (str): root dataset directory</span>
-<span class="sd">        class_to_idx (Dict[str, int]): dictionary mapping class name to class index</span>
+<span class="sd">        class_to_idx (Optional[Dict[str, int]]): Dictionary mapping class name to class index. If omitted, is generated</span>
+<span class="sd">            by :func:`find_classes`.</span>
 <span class="sd">        extensions (optional): A list of allowed extensions.</span>
 <span class="sd">            Either extensions or is_valid_file should be passed. Defaults to None.</span>
 <span class="sd">        is_valid_file (optional): A function that takes path of a file</span>
@@ -356,21 +391,34 @@
 <span class="sd">            is_valid_file should not be passed. Defaults to None.</span>
 
 <span class="sd">    Raises:</span>
+<span class="sd">        ValueError: In case ``class_to_idx`` is empty.</span>
 <span class="sd">        ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.</span>
+<span class="sd">        FileNotFoundError: In case no valid file was found for any class.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List[Tuple[str, int]]: samples of a form (path_to_sample, class)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">instances</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">class_to_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">class_to_idx</span> <span class="o">=</span> <span class="n">find_classes</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">class_to_idx</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;class_to_index&#39; must have at least one entry to collect any samples.&quot;</span><span class="p">)</span>
+
     <span class="n">both_none</span> <span class="o">=</span> <span class="n">extensions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">is_valid_file</span> <span class="ow">is</span> <span class="kc">None</span>
     <span class="n">both_something</span> <span class="o">=</span> <span class="n">extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">is_valid_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">both_none</span> <span class="ow">or</span> <span class="n">both_something</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Both extensions and is_valid_file cannot be None or not None at the same time&quot;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
         <span class="k">def</span> <span class="nf">is_valid_file</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">has_file_allowed_extension</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">extensions</span><span class="p">))</span>
+
     <span class="n">is_valid_file</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">is_valid_file</span><span class="p">)</span>
+
+    <span class="n">instances</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">available_classes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">target_class</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">class_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
         <span class="n">class_index</span> <span class="o">=</span> <span class="n">class_to_idx</span><span class="p">[</span><span class="n">target_class</span><span class="p">]</span>
         <span class="n">target_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">target_class</span><span class="p">)</span>
@@ -382,6 +430,17 @@
                 <span class="k">if</span> <span class="n">is_valid_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
                     <span class="n">item</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span> <span class="n">class_index</span>
                     <span class="n">instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">target_class</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available_classes</span><span class="p">:</span>
+                        <span class="n">available_classes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">target_class</span><span class="p">)</span>
+
+    <span class="n">empty_classes</span> <span class="o">=</span> <span class="n">available_classes</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">class_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">empty_classes</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Found no valid file for the classes </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">empty_classes</span><span class="p">))</span><span class="si">}</span><span class="s2">. &quot;</span>
+        <span class="k">if</span> <span class="n">extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Supported extensions are: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extensions</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">instances</span>
 
 
@@ -430,11 +489,6 @@
                                             <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
         <span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_classes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="p">,</span> <span class="n">is_valid_file</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Found 0 files in subfolders of: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;Supported extensions are: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extensions</span><span class="p">))</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="n">extensions</span>
@@ -453,23 +507,9 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="n">make_dataset</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">,</span> <span class="n">is_valid_file</span><span class="o">=</span><span class="n">is_valid_file</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_find_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Finds the class folders in a dataset.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            dir (string): Root directory path.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            tuple: (classes, class_to_idx) where classes are relative to (dir), and class_to_idx is a dictionary.</span>
-
-<span class="sd">        Ensures:</span>
-<span class="sd">            No class is a subdirectory of another.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
-        <span class="n">classes</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
-        <span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">cls_name</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cls_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">classes</span><span class="p">)}</span>
-        <span class="k">return</span> <span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_find_classes</span><span class="p">(</span><span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="n">find_classes</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DatasetFolder.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.DatasetFolder.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
