@@ -1,4 +1,3 @@
-import collections.abc
 import contextlib
 import functools
 import importlib
@@ -849,16 +848,3 @@ def create_random_string(length: int, *digits: str) -> str:
         digits = "".join(itertools.chain(*digits))
 
     return "".join(random.choice(digits) for _ in range(length))
-
-
-def powerset(iterable):
-    """Create the powerset from given iterable.
-
-    E.g.: powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
-
-    This function is taken from the
-    `itertools recipes <https://docs.python.org/3/library/itertools.html#itertools-recipes>`_.
-
-    """
-    s = list(iterable)
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
