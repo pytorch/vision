@@ -215,10 +215,10 @@ jobs:
       - checkout_merge
       - designate_upload_channel
       - run:
-        name: _HACK_ Install CUDA compatible cmath
-        no_output_timeout: 1m
-        command: |
-            powershell .circleci/scripts/vs_install_cmath.ps1
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           name: Build conda packages
           no_output_timeout: 20m
@@ -247,10 +247,10 @@ jobs:
       - checkout_merge
       - designate_upload_channel
       - run:
-        name: _HACK_ Install CUDA compatible cmath
-        no_output_timeout: 1m
-        command: |
-            powershell .circleci/scripts/vs_install_cmath.ps1
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           name: Build wheel packages
           command: |
@@ -559,10 +559,10 @@ jobs:
       - checkout
       - designate_upload_channel
       - run:
-        name: _HACK_ Install CUDA compatible cmath
-        no_output_timeout: 1m
-        command: |
-            powershell .circleci/scripts/vs_install_cmath.ps1
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -605,10 +605,10 @@ jobs:
       - checkout
       - designate_upload_channel
       - run:
-        name: _HACK_ Install CUDA compatible cmath
-        no_output_timeout: 1m
-        command: |
-            powershell .circleci/scripts/vs_install_cmath.ps1
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -739,10 +739,10 @@ jobs:
       - checkout_merge
       - designate_upload_channel
       - run:
-        name: _HACK_ Install CUDA compatible cmath
-        no_output_timeout: 1m
-        command: |
-            powershell .circleci/scripts/vs_install_cmath.ps1
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           command: |
             set -ex
@@ -757,10 +757,10 @@ jobs:
       - checkout_merge
       - designate_upload_channel
       - run:
-        name: _HACK_ Install CUDA compatible cmath
-        no_output_timeout: 1m
-        command: |
-            powershell .circleci/scripts/vs_install_cmath.ps1
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           command: |
             set -ex
