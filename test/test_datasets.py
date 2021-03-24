@@ -111,10 +111,10 @@ class Tester(DatasetTestcase):
 
     def test_imagefolder_empty(self):
         with get_tmp_dir() as root:
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(FileNotFoundError):
                 torchvision.datasets.ImageFolder(root, loader=lambda x: x)
 
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(FileNotFoundError):
                 torchvision.datasets.ImageFolder(
                     root, loader=lambda x: x, is_valid_file=lambda x: False
                 )
@@ -1060,9 +1060,6 @@ class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
             )
 
         return num_videos_per_class * len(classes)
-
-    def test_not_found_or_corrupted(self):
-        self.skipTest("Dataset currently does not handle the case of no found videos.")
 
 
 class HMDB51TestCase(datasets_utils.VideoDatasetTestCase):
