@@ -58,6 +58,37 @@ def clean_dir(root, *keep):
 
 
 @contextlib.contextmanager
+def mnist_root(num_images, cls_name):
+    def _encode(v):
+        return torch.tensor(v, dtype=torch.int32).numpy().tobytes()[::-1]
+
+    def _make_image_file(filename, num_images):
+        img = torch.randint(0, 256, size=(28 * 28 * num_images,), dtype=torch.uint8)
+        with open(filename, "wb") as f:
+            f.write(_encode(2051))  # magic header
+            f.write(_encode(num_images))
+            f.write(_encode(28))
+            f.write(_encode(28))
+            f.write(img.numpy().tobytes())
+
+    def _make_label_file(filename, num_images):
+        labels = torch.zeros((num_images,), dtype=torch.uint8)
+        with open(filename, "wb") as f:
+            f.write(_encode(2049))  # magic header
+            f.write(_encode(num_images))
+            f.write(labels.numpy().tobytes())
+
+    with get_tmp_dir() as tmp_dir:
+        raw_dir = os.path.join(tmp_dir, cls_name, "raw")
+        os.makedirs(raw_dir)
+        _make_image_file(os.path.join(raw_dir, "train-images-idx3-ubyte"), num_images)
+        _make_label_file(os.path.join(raw_dir, "train-labels-idx1-ubyte"), num_images)
+        _make_image_file(os.path.join(raw_dir, "t10k-images-idx3-ubyte"), num_images)
+        _make_label_file(os.path.join(raw_dir, "t10k-labels-idx1-ubyte"), num_images)
+        yield tmp_dir
+
+
+@contextlib.contextmanager
 def cifar_root(version):
     def _get_version_params(version):
         if version == 'CIFAR10':
