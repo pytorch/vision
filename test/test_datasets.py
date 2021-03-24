@@ -1350,6 +1350,7 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
         finally:
             self.FEATURE_TYPES = feature_types
 
+
 class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Flickr8k
 
