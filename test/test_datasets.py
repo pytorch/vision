@@ -1452,32 +1452,39 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
     # DatasetFolder has two mutually exclusive parameters: 'extensions' and 'is_valid_file'. One of both is required.
     # We only iterate over different 'extensions' here and handle the tests for 'is_valid_file' in the
     # 'test_is_valid_file()' method.
-    # This is also the reason we are forced to overwrite the default tests that are not tested against all configs,
-    # i.e. 'test_not_found_or_corrupted()' and 'test_smoke()'.
-    CONFIGS = datasets_utils.combinations_grid(extensions=datasets_utils.powerset(_EXTENSIONS))
+    DEFAULT_CONFIG = dict(extensions=_EXTENSIONS)
+    ADDITIONAL_CONFIGS = (
+        *datasets_utils.combinations_grid(extensions=[(ext,) for ext in _IMAGE_EXTENSIONS]),
+        dict(extensions=_IMAGE_EXTENSIONS),
+        *datasets_utils.combinations_grid(extensions=[(ext,) for ext in _VIDEO_EXTENSIONS]),
+        dict(extensions=_VIDEO_EXTENSIONS),
+    )
 
     def dataset_args(self, tmpdir, config):
         return tmpdir, lambda x: x
 
     def inject_fake_data(self, tmpdir, config):
-        num_examples = {}
-        classes = {}
+        extensions = config["extensions"] or self._is_valid_file_to_extensions(config["is_valid_file"])
+
+        num_examples_total = 0
+        classes = []
         for ext, cls in zip(self._EXTENSIONS, string.ascii_letters):
+            if ext not in extensions:
+                continue
+
             create_example_folder = (
                 datasets_utils.create_image_folder
                 if ext in self._IMAGE_EXTENSIONS
                 else datasets_utils.create_video_folder
             )
 
-            num_examples[ext] = torch.randint(1, 3, size=()).item()
-            classes[ext] = cls
+            num_examples = torch.randint(1, 3, size=()).item()
+            create_example_folder(tmpdir, cls, lambda idx: self._file_name_fn(cls, ext, idx), num_examples)
 
-            create_example_folder(tmpdir, cls, lambda idx: self._file_name_fn(cls, ext, idx), num_examples[ext])
+            num_examples_total += num_examples
+            classes.append(cls)
 
-        extensions = config["extensions"] or self._is_valid_file_to_extensions(config["is_valid_file"])
-        return dict(
-            num_examples=sum(num_examples[ext] for ext in extensions), classes=[classes[ext] for ext in extensions],
-        )
+        return dict(num_examples=num_examples_total, classes=classes)
 
     def _file_name_fn(self, cls, ext, idx):
         return f"{cls}_{idx}.{ext}"
@@ -1485,24 +1492,15 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
     def _is_valid_file_to_extensions(self, is_valid_file):
         return {ext for ext in self._EXTENSIONS if is_valid_file(f"foo.{ext}")}
 
-    def test_not_found_or_corrupted(self):
-        with self.assertRaises((FileNotFoundError, RuntimeError)):
-            with self.create_dataset(inject_fake_data=False, extensions=self._EXTENSIONS):
-                pass
-
-    def test_smoke(self):
-        with self.create_dataset(extensions=self._EXTENSIONS) as (dataset, _):
-            self.assertIsInstance(dataset, torchvision.datasets.VisionDataset)
-
-    def test_is_valid_file(self):
-        for config in self.CONFIGS:
-            config = config.copy()
-            extensions = config.pop("extensions")
-            with self.subTest(extensions=extensions):
-                with self.create_dataset(
-                    config, is_valid_file=lambda file: pathlib.Path(file).suffix[1:] in extensions
-                ) as (dataset, info):
-                    self.assertEqual(len(dataset), info["num_examples"])
+    @datasets_utils.test_all_configs
+    def test_is_valid_file(self, config):
+        extensions = config.pop("extensions")
+        # We need to explicitly pass extensions=None here or otherwise it would be filled by the value from the
+        # DEFAULT_CONFIG.
+        with self.create_dataset(
+                config, extensions=None, is_valid_file=lambda file: pathlib.Path(file).suffix[1:] in extensions
+        ) as (dataset, info):
+            self.assertEqual(len(dataset), info["num_examples"])
 
     @datasets_utils.test_all_configs
     def test_classes(self, config):
