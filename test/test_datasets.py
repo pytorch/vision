@@ -11,7 +11,7 @@ import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
 
-from fakedata_generation import cityscapes_root, svhn_root, places365_root, stl10_root
+from fakedata_generation import cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
