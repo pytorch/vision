@@ -241,16 +241,25 @@ class Resize(torch.nn.Module):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
             ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        max_size (int, optional): The maximum allowed for the longer edge of
+            the resized image: if the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``, then
+            the image is resized again so that the longer edge is equal to
+            ``max_size``. As a result, ```size` might be overruled, i.e the
+            smaller edge may be shorter than ``size``. This is only supported
+            if ``size`` is an int (or a sequence of length 1 in torchscript
+            mode).
 
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
         if isinstance(size, Sequence) and len(size) not in (1, 2):
             raise ValueError("If size is a sequence, it should have 1 or 2 values")
         self.size = size
+        self.max_size = max_size
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -270,11 +279,12 @@ class Resize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation)
+        return F.resize(img, self.size, self.interpolation, self.max_size)
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2})'.format(
+            self.size, interpolate_str, self.max_size)
 
 
 class Scale(Resize):
@@ -763,22 +773,24 @@ class RandomPerspective(torch.nn.Module):
 
 
 class RandomResizedCrop(torch.nn.Module):
-    """Crop the given image to random size and aspect ratio.
+    """Crop a random portion of image and resize it to a given size.
+
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
-    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
-    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
-    is finally resized to given size.
-    This is popularly used to train the Inception networks.
+    A crop of the original image is made: the crop has a random area (H * W)
+    and a random aspect ratio. This crop is finally resized to the given
+    size. This is popularly used to train the Inception networks.
 
     Args:
-        size (int or sequence): expected output size of each edge. If size is an
+        size (int or sequence): expected output size of the crop, for each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
             In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
-        ratio (tuple of float): aspect ratio range of the cropped image before resizing.
+        scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,
+            before resizing. The scale is defined with respect to the area of the original image.
+        ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
+            resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
