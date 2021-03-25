@@ -77,7 +77,7 @@ at::Tensor qnms_kernel_impl(
       auto w = std::max(0, xx2 - xx1);  // * scale (gets canceled below)
       auto h = std::max(0, yy2 - yy1);  // * scale (gets canceled below)
       auto inter = w * h;
-      double ovr = inter / (iarea + areas[j] - inter);
+      auto ovr = (float)inter / (iarea + areas[j] - inter);
       if (ovr > iou_threshold)
         suppressed[j] = 1;
     }
