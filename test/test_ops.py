@@ -427,12 +427,11 @@ class NMSTester(unittest.TestCase):
             boxes, scores = self._create_tensors_with_iou(1000, iou)
             scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
 
-            # use integer values and clamp to the uint8 range for a fair comparison
-            boxes = boxes.to(torch.int).to(torch.float).clamp(0, 255)
-            scores = scores.to(torch.int).to(torch.float).clamp(0, 255)
-
             qboxes = torch.quantize_per_tensor(boxes, scale=1, zero_point=0, dtype=torch.quint8)
             qscores = torch.quantize_per_tensor(scores, scale=1, zero_point=0, dtype=torch.quint8)
+
+            boxes = qboxes.dequantize()
+            scores = qscores.dequantize()
 
             keep = ops.nms(boxes, scores, iou)
             qkeep = ops.nms(qboxes, qscores, iou)
