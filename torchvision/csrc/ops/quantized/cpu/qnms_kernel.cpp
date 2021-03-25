@@ -42,14 +42,13 @@ at::Tensor qnms_kernel_impl(
   auto y2 = y2_t.data_ptr<scalar_t>();
   auto areas = areas_t.data_ptr<float>();
 
-  auto areas_a = areas_t.accessor<float, 1>();
   for (int64_t i = 0; i < ndets; i++) {
     // Note 1: To get the exact area we'd need to multiply by scale**2, but this
     // would get canceled out in the computation of ovr below. So we leave that
     // out.
     // Note 2: degenerate boxes (x2 < x1 or y2 < y1) may underflow. Same below
     // when computing w and h
-    areas_a[i] = (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
+    areas[i] = (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
   }
 
   int64_t num_to_keep = 0;
