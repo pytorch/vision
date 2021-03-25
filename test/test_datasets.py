@@ -58,6 +58,7 @@ class DatasetTestcase(unittest.TestCase):
 
 
 class Tester(DatasetTestcase):
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
