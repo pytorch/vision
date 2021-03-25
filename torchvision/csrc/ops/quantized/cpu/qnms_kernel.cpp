@@ -23,8 +23,6 @@ at::Tensor qnms_kernel_impl(
     return at::empty({0}, dets.options().dtype(at::kLong)); 
 
   const auto ndets = dets.size(0);
-  const double dets_scale = dets.q_scale();
-
 
   auto x1_t = dets.select(1, 0).contiguous();
   auto y1_t = dets.select(1, 1).contiguous();
@@ -46,7 +44,10 @@ at::Tensor qnms_kernel_impl(
 
   auto areas_a = areas_t.accessor<float, 1>();
   for (int64_t i = 0; i < ndets; i++) {
-    areas_a[i] = dets_scale * dets_scale * (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
+    // Note: To get the exact area we'd need to multiply by scale**2, but this
+    // would get canceled out in the computation of ovr below.
+    // So we leave that out.
+    areas_a[i] = (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
   }
 
   int64_t num_to_keep = 0;
@@ -72,8 +73,8 @@ at::Tensor qnms_kernel_impl(
       auto xx2 = std::min(ix2val, x2[j].val_);
       auto yy2 = std::min(iy2val, y2[j].val_);
 
-      float w = dets_scale * std::max(0, xx2 - xx1);
-      float h = dets_scale * std::max(0, yy2 - yy1);
+      auto w = std::max(0, xx2 - xx1);  // * scale (gets canceled below)
+      auto h = std::max(0, yy2 - yy1);  // * scale (gets canceled below)
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr > iou_threshold)
