@@ -424,19 +424,22 @@ class NMSTester(unittest.TestCase):
         # doesn't really work (in fact, nms vs reference implem will also fail with ints)
         err_msg = 'NMS and QNMS give different results for IoU={}'
         for iou in [0.2, 0.5, 0.8]:
-            boxes, scores = self._create_tensors_with_iou(1000, iou)
-            scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
+            for scale, zero_point in ((1, 0), (2, 50), (3, 10)):
+                boxes, scores = self._create_tensors_with_iou(1000, iou)
+                scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
 
-            qboxes = torch.quantize_per_tensor(boxes, scale=1, zero_point=0, dtype=torch.quint8)
-            qscores = torch.quantize_per_tensor(scores, scale=1, zero_point=0, dtype=torch.quint8)
+                qboxes = torch.quantize_per_tensor(boxes, scale=scale, zero_point=zero_point,
+                                                   dtype=torch.quint8)
+                qscores = torch.quantize_per_tensor(scores, scale=scale, zero_point=zero_point,
+                                                    dtype=torch.quint8)
 
-            boxes = qboxes.dequantize()
-            scores = qscores.dequantize()
+                boxes = qboxes.dequantize()
+                scores = qscores.dequantize()
 
-            keep = ops.nms(boxes, scores, iou)
-            qkeep = ops.nms(qboxes, qscores, iou)
+                keep = ops.nms(boxes, scores, iou)
+                qkeep = ops.nms(qboxes, qscores, iou)
 
-            self.assertTrue(torch.allclose(qkeep, keep), err_msg.format(iou))
+                self.assertTrue(torch.allclose(qkeep, keep), err_msg.format(iou))
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_nms_cuda(self, dtype=torch.float64):
