@@ -215,6 +215,11 @@ jobs:
       - checkout_merge
       - designate_upload_channel
       - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
+      - run:
           name: Build conda packages
           no_output_timeout: 20m
           command: |
@@ -241,6 +246,11 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           name: Build wheel packages
           command: |
@@ -549,6 +559,11 @@ jobs:
       - checkout
       - designate_upload_channel
       - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
+      - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
@@ -589,6 +604,11 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
+      - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -719,6 +739,11 @@ jobs:
       - checkout_merge
       - designate_upload_channel
       - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
+      - run:
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
@@ -731,6 +756,11 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
       - run:
           command: |
             set -ex
