@@ -42,7 +42,8 @@ def make_grid(
         grid (Tensor): the tensor containing grid of images.
 
     Example:
-        See this notebook `here <https://github.com/pytorch/vision/blob/master/examples/python/utils_demo.ipynb>`_
+        See this notebook
+        `here <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
     if not (torch.is_tensor(tensor) or
             (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
@@ -130,9 +131,6 @@ def save_image(
         format(Optional):  If omitted, the format to use is determined from the filename extension.
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
-
-    Example:
-        See this notebook `example <https://github.com/pytorch/vision/blob/master/examples/python/utils_demo.ipynb>`_
     """
 
     grid = make_grid(tensor, **kwargs)
@@ -178,7 +176,8 @@ def draw_bounding_boxes(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
 
     Example:
-        See this notebook `linked <https://github.com/pytorch/vision/blob/master/examples/python/utils_demo.ipynb>`_
+        See this notebook
+        `linked <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
@@ -248,7 +247,8 @@ def draw_segmentation_masks(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with segmentation masks plotted.
 
     Example:
-        See this notebook `attached <https://github.com/pytorch/vision/blob/master/examples/python/utils_demo.ipynb>`_
+        See this notebook
+        `attached <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
