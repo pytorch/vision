@@ -5,7 +5,7 @@
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pytorch/vision/blob/master/examples/python/video_api.ipynb)
 [Example of VideoAPI](https://github.com/pytorch/vision/blob/master/examples/python/video_api.ipynb)
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb)
-[Example of Visualization Utils](https://colab.research.google.com/github/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb)
+[Example of Visualization Utils](https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb)
 
 
 Prior to v0.8.0, transforms in torchvision have traditionally been PIL-centric and presented multiple limitations due to 
