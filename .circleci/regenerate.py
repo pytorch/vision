@@ -260,6 +260,7 @@ def cmake_workflows(indentation=6):
             jobs.append({f'cmake_{os_type}_{device}': job})
     return indent(indentation, jobs)
 
+
 def ios_workflows(indentation=6, nightly=False):
     jobs = []
     build_job_names = []
@@ -288,6 +289,7 @@ def ios_workflows(indentation=6, nightly=False):
         }
         jobs.append({'binary_ios_upload': upload_job})
     return indent(indentation, jobs)
+
 
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
