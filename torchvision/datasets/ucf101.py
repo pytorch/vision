@@ -1,7 +1,7 @@
 import os
 
 from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -55,10 +55,8 @@ class UCF101(VisionDataset):
         self.fold = fold
         self.train = train
 
-        classes = list(sorted(list_dir(root)))
-        class_to_idx = {classes[i]: i for i in range(len(classes))}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
-        self.classes = classes
         video_list = [x[0] for x in self.samples]
         video_clips = VideoClips(
             video_list,
