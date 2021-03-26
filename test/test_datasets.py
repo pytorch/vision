@@ -119,6 +119,7 @@ class Tester(DatasetTestcase):
                     root, loader=lambda x: x, is_valid_file=lambda x: False
                 )
 
+    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
     def test_cityscapes(self):
         with cityscapes_root() as root:
 
