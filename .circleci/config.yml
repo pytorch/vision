@@ -45,6 +45,14 @@ commands:
               our_upload_channel=test
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
+  install_cuda_compatible_cmath:
+    description: "Install CUDA compatible cmath"
+    steps:
+      - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
 
 binary_common: &binary_common
   parameters:
@@ -212,6 +220,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Build conda packages
           no_output_timeout: 20m
@@ -239,6 +248,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Build wheel packages
           command: |
@@ -546,6 +556,7 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -587,6 +598,7 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -716,6 +728,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -729,6 +742,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -830,6 +844,11 @@ workflows:
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda111
       - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          name: binary_linux_wheel_py3.6_rocm4.0.1
+          python_version: '3.6'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
+      - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_linux_wheel_py3.7_cpu
@@ -853,6 +872,11 @@ workflows:
           name: binary_linux_wheel_py3.7_cu111
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-cuda111
+      - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          name: binary_linux_wheel_py3.7_rocm4.0.1
+          python_version: '3.7'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -878,6 +902,11 @@ workflows:
           python_version: '3.8'
           wheel_docker_image: pytorch/manylinux-cuda111
       - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          name: binary_linux_wheel_py3.8_rocm4.0.1
+          python_version: '3.8'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
+      - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           name: binary_linux_wheel_py3.9_cpu
@@ -901,6 +930,11 @@ workflows:
           name: binary_linux_wheel_py3.9_cu111
           python_version: '3.9'
           wheel_docker_image: pytorch/manylinux-cuda111
+      - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          name: binary_linux_wheel_py3.9_rocm4.0.1
+          python_version: '3.9'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -1608,6 +1642,36 @@ workflows:
           requires:
           - nightly_binary_linux_wheel_py3.6_cu111_upload
       - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.6_rocm4.0.1
+          python_version: '3.6'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.6_rocm4.0.1_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.6_rocm4.0.1
+          subfolder: rocm4.0.1/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.6_rocm4.0.1_smoke_test_pip
+          python_version: '3.6'
+          requires:
+          - nightly_binary_linux_wheel_py3.6_rocm4.0.1_upload
+      - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           filters:
@@ -1731,6 +1795,36 @@ workflows:
           python_version: '3.7'
           requires:
           - nightly_binary_linux_wheel_py3.7_cu111_upload
+      - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.7_rocm4.0.1
+          python_version: '3.7'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.7_rocm4.0.1_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.7_rocm4.0.1
+          subfolder: rocm4.0.1/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.7_rocm4.0.1_smoke_test_pip
+          python_version: '3.7'
+          requires:
+          - nightly_binary_linux_wheel_py3.7_rocm4.0.1_upload
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -1856,6 +1950,36 @@ workflows:
           requires:
           - nightly_binary_linux_wheel_py3.8_cu111_upload
       - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.8_rocm4.0.1
+          python_version: '3.8'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.8_rocm4.0.1_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.8_rocm4.0.1
+          subfolder: rocm4.0.1/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.8_rocm4.0.1_smoke_test_pip
+          python_version: '3.8'
+          requires:
+          - nightly_binary_linux_wheel_py3.8_rocm4.0.1_upload
+      - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
           filters:
@@ -1979,6 +2103,36 @@ workflows:
           python_version: '3.9'
           requires:
           - nightly_binary_linux_wheel_py3.9_cu111_upload
+      - binary_linux_wheel:
+          cu_version: rocm4.0.1
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.9_rocm4.0.1
+          python_version: '3.9'
+          wheel_docker_image: pytorch/manylinux-rocm:4.0.1
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.9_rocm4.0.1_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.9_rocm4.0.1
+          subfolder: rocm4.0.1/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.9_rocm4.0.1_smoke_test_pip
+          python_version: '3.9'
+          requires:
+          - nightly_binary_linux_wheel_py3.9_rocm4.0.1_upload
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
