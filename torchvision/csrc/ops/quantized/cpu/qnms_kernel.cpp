@@ -12,7 +12,6 @@ at::Tensor qnms_kernel_impl(
     const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
-
   TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
   TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
   TORCH_CHECK(
