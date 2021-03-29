@@ -5,6 +5,7 @@ echo ""
 echo "DIR: $(pwd)"
 WORKSPACE=/Users/distiller/workspace
 PROJ_ROOT_IOS=/Users/distiller/project/ios
+PYTORCH_IOS_NIGHTLY_NAME=libtorch_ios_nightly_build.zip
 export TCLLIBPATH="/usr/local/lib"
 
 # install conda
@@ -24,22 +25,16 @@ cd ${PROJ_ROOT_IOS}
 git submodule sync
 git submodule update --init --recursive
 
-# clone main pytorch repo
+# download pytorch-iOS nightly build and unzip it
 mkdir -p ${PROJ_ROOT_IOS}/lib
 mkdir -p ${PROJ_ROOT_IOS}/build
-git clone --recursive https://github.com/pytorch/pytorch.git
+mkdir -p ${PROJ_ROOT_IOS}/pytorch
 TORCH_ROOT="${PROJ_ROOT_IOS}/pytorch"
 
-# run build script
-chmod a+x ${TORCH_ROOT}/scripts/build_ios.sh
-echo "########################################################"
-cat ${TORCH_ROOT}/scripts/build_ios.sh
-echo "########################################################"
-echo "IOS_ARCH: ${IOS_ARCH}"
-echo "IOS_PLATFORM: ${IOS_PLATFORM}"
-export IOS_ARCH=${IOS_ARCH}
-export IOS_PLATFORM=${IOS_PLATFORM}
-unbuffer ${TORCH_ROOT}/scripts/build_ios.sh 2>&1 | ts
+cd {TORCH_ROOT}
+wget https://ossci-ios-build.s3.amazonaws.com/${PYTORCH_IOS_NIGHTLY_NAME}
+mkdir -p ${PROJ_ROOT_IOS}/pytorch/build_ios
+unzip -d ${PROJ_ROOT_IOS}/pytorch/build_ios ./${PYTORCH_IOS_NIGHTLY_NAME}
 
 LIBTORCH_HEADER_ROOT="${TORCH_ROOT}/build_ios/install/include"
 cd ${PROJ_ROOT_IOS}
