@@ -20,7 +20,7 @@ at::Tensor qnms_kernel_impl(
       "dets should have the same type as scores");
 
   if (dets.numel() == 0)
-    return at::empty({0}, dets.options().dtype(at::kLong)); 
+    return at::empty({0}, dets.options().dtype(at::kLong));
 
   const auto ndets = dets.size(0);
 
