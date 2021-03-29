@@ -46,8 +46,10 @@ at::Tensor qnms_kernel_impl(
     // Note 1: To get the exact area we'd need to multiply by scale**2, but this
     // would get canceled out in the computation of ovr below. So we leave that
     // out.
-    // Note 2: degenerate boxes (x2 < x1 or y2 < y1) may underflow. Same below
-    // when computing w and h
+    // Note 2: degenerate boxes (x2 < x1 or y2 < y1) may underflow, although
+    // integral promotion rules will likely prevent it (see
+    // https://stackoverflow.com/questions/32959564/subtraction-of-two-unsigned-gives-signed
+    // for more details).
     areas[i] = (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
   }
 
@@ -74,6 +76,11 @@ at::Tensor qnms_kernel_impl(
       auto xx2 = std::min(ix2val, x2[j].val_);
       auto yy2 = std::min(iy2val, y2[j].val_);
 
+      // This may underflow if xx2 < xx1 on unsigned types but as noted above,
+      // integral promotion should prevent it. Also, an actual underflow would
+      // lead to a negative ovr (because of high value for inter), but since the
+      // actual over should have been 0 the condition below isn't altered, and
+      // thus the underflow should be effectively harmless.
       auto w = std::max(0, xx2 - xx1);  // * scale (gets canceled below)
       auto h = std::max(0, yy2 - yy1);  // * scale (gets canceled below)
       auto inter = w * h;
