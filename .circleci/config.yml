@@ -73,6 +73,7 @@ commands:
             # with the executable from the GNU `parallel`, so we must unlink GNU
             # `parallel` first, and relink it afterwards.
             brew unlink parallel
+            brew install coreutils
             brew install moreutils
             brew link parallel --overwrite
             brew install expect
