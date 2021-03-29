@@ -544,7 +544,6 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
     def test_combined_targets(self):
         target_types = ['semantic', 'polygon', 'color']
 
-        individual_targets = []
         with self.create_dataset(target_type=target_types) as (dataset, _):
             output = dataset[0]
             self.assertTrue(isinstance(output, tuple))
