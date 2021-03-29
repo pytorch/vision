@@ -31,10 +31,10 @@ mkdir -p ${PROJ_ROOT_IOS}/build
 mkdir -p ${PROJ_ROOT_IOS}/pytorch
 TORCH_ROOT="${PROJ_ROOT_IOS}/pytorch"
 
-cd {TORCH_ROOT}
+cd ${TORCH_ROOT}
 wget https://ossci-ios-build.s3.amazonaws.com/${PYTORCH_IOS_NIGHTLY_NAME}
-mkdir -p ${PROJ_ROOT_IOS}/pytorch/build_ios
-unzip -d ${PROJ_ROOT_IOS}/pytorch/build_ios ./${PYTORCH_IOS_NIGHTLY_NAME}
+mkdir -p ./build_ios
+unzip -d ./build_ios ./${PYTORCH_IOS_NIGHTLY_NAME}
 
 LIBTORCH_HEADER_ROOT="${TORCH_ROOT}/build_ios/install/include"
 cd ${PROJ_ROOT_IOS}
