@@ -484,12 +484,15 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
         "color",
         ["instance", "semantic"],
     )
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        mode=("fine",), split=("train", "test", "val"), target_type=TARGET_TYPES
-    ) + datasets_utils.combinations_grid(
-        mode=("coarse",),
-        split=("train", "train_extra", "val"),
-        target_type=TARGET_TYPES,
+    ADDITIONAL_CONFIGS = (
+        *datasets_utils.combinations_grid(
+            mode=("fine",), split=("train", "test", "val"), target_type=TARGET_TYPES
+        ),
+        *datasets_utils.combinations_grid(
+            mode=("coarse",),
+            split=("train", "train_extra", "val"),
+            target_type=TARGET_TYPES,
+        ),
     )
     FEATURE_TYPES = (PIL.Image.Image, (dict, tuple, PIL.Image.Image))
 
