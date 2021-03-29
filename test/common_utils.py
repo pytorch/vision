@@ -10,6 +10,7 @@ import torch
 import warnings
 import __main__
 import random
+import inspect
 
 from numbers import Number
 from torch._six import string_classes
@@ -401,3 +402,20 @@ def disable_console_output():
         stack.enter_context(contextlib.redirect_stdout(devnull))
         stack.enter_context(contextlib.redirect_stderr(devnull))
         yield
+
+
+def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
+    callable_or_arg_name = callable_or_arg_names[0]
+    if callable(callable_or_arg_name):
+        argspec = inspect.getfullargspec(callable_or_arg_name)
+        arg_names = argspec.args
+        if isinstance(callable_or_arg_name, type):
+            # remove self
+            arg_names.pop(0)
+    else:
+        arg_names = callable_or_arg_names
+
+    args, kwargs = call_args
+    kwargs_only = kwargs.copy()
+    kwargs_only.update(dict(zip(arg_names, args)))
+    return kwargs_only
