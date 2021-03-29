@@ -803,7 +803,7 @@ class Tester(unittest.TestCase):
             input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
             img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
             output = trans(img)  # HWC -> CHW
-            expected_output = (input_data * 255).byte()
+            expected_output = input_data.mul(255).round().byte()
             self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
 
         # separate test for mode '1' PIL images
@@ -811,6 +811,15 @@ class Tester(unittest.TestCase):
         img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+
+    def test_tensor_to_pil_no_overshoot(self):
+        transform = transforms.ToPILImage()
+
+        inputs = [torch.full((1, 4, 4), 1.01), torch.full((1, 4, 4), -0.01)]
+        expected_outputs = [np.full((1, 4, 4), 255), np.full((1, 4, 4), 0)]
+        for img_data, expected_output in zip(inputs, expected_outputs):
+            img = transform(img_data)
+            self.assertTrue(np.allclose(expected_output, np.array(img)))
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_pil_to_tensor(self):
@@ -866,7 +875,7 @@ class Tester(unittest.TestCase):
         img_data_int = torch.IntTensor(1, 4, 4).random_()
 
         inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
-        expected_outputs = [img_data_float.mul(255).int().float().div(255).numpy(),
+        expected_outputs = [img_data_float.mul(255).round().div(255).numpy(),
                             img_data_byte.float().div(255.0).numpy(),
                             img_data_short.numpy(),
                             img_data_int.numpy()]
@@ -934,7 +943,7 @@ class Tester(unittest.TestCase):
                 self.assertTrue(np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy()))
 
         img_data = torch.Tensor(2, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255)
+        expected_output = img_data.mul(255).round().div(255)
         for mode in [None, 'LA']:
             verify_img_data(img_data, expected_output, mode=mode)
 
@@ -957,7 +966,7 @@ class Tester(unittest.TestCase):
                 self.assertTrue(np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy()))
 
         img_data = torch.Tensor(3, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255)
+        expected_output = img_data.mul(255).round().div(255)
         for mode in [None, 'RGB', 'HSV', 'YCbCr']:
             verify_img_data(img_data, expected_output, mode=mode)
 
@@ -1009,7 +1018,7 @@ class Tester(unittest.TestCase):
                 self.assertTrue(np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy()))
 
         img_data = torch.Tensor(4, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255)
+        expected_output = img_data.mul(255).round().div(255)
         for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
             verify_img_data(img_data, expected_output, mode)
 
@@ -1050,7 +1059,7 @@ class Tester(unittest.TestCase):
         img_data_int = torch.IntTensor(4, 4).random_()
 
         inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
-        expected_outputs = [img_data_float.mul(255).int().float().div(255).numpy(),
+        expected_outputs = [img_data_float.mul(255).round().div(255).numpy(),
                             img_data_byte.float().div(255.0).numpy(),
                             img_data_short.numpy(),
                             img_data_int.numpy()]
