@@ -451,7 +451,6 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
         "semantic",
         "polygon",
         "color",
-        ["instance", "semantic"],
     )
     ADDITIONAL_CONFIGS = (
         *datasets_utils.combinations_grid(
@@ -463,7 +462,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             target_type=TARGET_TYPES,
         ),
     )
-    FEATURE_TYPES = (PIL.Image.Image, (dict, tuple, PIL.Image.Image))
+    FEATURE_TYPES = (PIL.Image.Image, (dict, PIL.Image.Image))
 
     def inject_fake_data(self, tmpdir, config):
 
@@ -479,42 +478,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
         else:
             cities = ["bochum"]
 
-        for mode in ["Coarse", "Fine"]:
-            gt_dir = tmpdir / f"gt{mode}"
-            for split in mode_to_splits[mode]:
-                for city in cities:
-
-                    idx_to_name = {
-                        0: f"{city}_000000_000000_gt{mode}_color.png",
-                        1: f"{city}_000000_000000_gt{mode}_instanceIds.png",
-                        2: f"{city}_000000_000000_gt{mode}_labelIds.png",
-                    }
-
-                    datasets_utils.create_image_folder(
-                        root=gt_dir / split,
-                        name=city,
-                        file_name_fn=lambda idx: idx_to_name[idx],
-                        num_examples=3,
-                    )
-
-                    self._make_polygon_target(
-                        gt_dir / split / city / f"{city}_000000_000000_gt{mode}_polygons.json"
-                    )
-
-        # Create leftImg8bit folder
-        for split in ['test', 'train_extra', 'train', 'val']:
-            for city in cities:
-                datasets_utils.create_image_folder(
-                    root=tmpdir / "leftImg8bit" / split,
-                    name=city,
-                    file_name_fn=lambda _: f"{city}_000000_000000_leftImg8bit.png",
-                    num_examples=1,
-                )
-
-        return len(cities)
-
-    def _make_polygon_target(self, filename):
-        polygon_example = {
+        polygon_target = {
             "imgHeight": 1024,
             "imgWidth": 2048,
             "objects": [
@@ -541,8 +505,68 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
                 },
             ],
         }
-        with open(filename, "w") as outfile:
-            json.dump(polygon_example, outfile)
+
+        for mode in ["Coarse", "Fine"]:
+            gt_dir = tmpdir / f"gt{mode}"
+            for split in mode_to_splits[mode]:
+                for city in cities:
+                    def make_image(name, size=10):
+                        datasets_utils.create_image_folder(
+                            root=gt_dir / split,
+                            name=city,
+                            file_name_fn=lambda _: name,
+                            size=size,
+                            num_examples=1,
+                        )
+                    make_image(f"{city}_000000_000000_gt{mode}_instanceIds.png")
+                    make_image(f"{city}_000000_000000_gt{mode}_labelIds.png")
+                    make_image(f"{city}_000000_000000_gt{mode}_color.png", size=(4, 10, 10))
+
+                    polygon_target_name = gt_dir / split / city / f"{city}_000000_000000_gt{mode}_polygons.json"
+                    with open(polygon_target_name, "w") as outfile:
+                        json.dump(polygon_target, outfile)
+
+        # Create leftImg8bit folder
+        for split in ['test', 'train_extra', 'train', 'val']:
+            for city in cities:
+                datasets_utils.create_image_folder(
+                    root=tmpdir / "leftImg8bit" / split,
+                    name=city,
+                    file_name_fn=lambda _: f"{city}_000000_000000_leftImg8bit.png",
+                    num_examples=1,
+                )
+
+        info = {'num_examples': len(cities)}
+        if config['target_type'] == 'polygon':
+            info['expected_polygon_target'] = polygon_target
+        return info
+
+    def test_combined_targets(self):
+        target_types = ['semantic', 'polygon', 'color']
+
+        individual_targets = []
+        with self.create_dataset(target_type=target_types) as (dataset, _):
+            output = dataset[0]
+            self.assertTrue(isinstance(output, tuple))
+            self.assertTrue(len(output) == 2)
+            self.assertTrue(isinstance(output[0], PIL.Image.Image))
+            self.assertTrue(isinstance(output[1], tuple))
+            self.assertTrue(len(output[1]) == 3)
+            self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
+            self.assertTrue(isinstance(output[1][1], dict))  # polygon
+            self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
+
+    def test_feature_types_target_color(self):
+        with self.create_dataset(target_type='color') as (dataset, _):
+            color_img, color_target = dataset[0]
+            self.assertTrue(isinstance(color_img, PIL.Image.Image))
+            self.assertTrue(np.array(color_target).shape[2] == 4)
+
+    def test_feature_types_target_polygon(self):
+        with self.create_dataset(target_type='polygon') as (dataset, info):
+            polygon_img, polygon_target = dataset[0]
+            self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
+            self.assertEqual(polygon_target, info['expected_polygon_target'])
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):

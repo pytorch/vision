@@ -734,7 +734,7 @@ def create_image_folder(
             return (num_channels, height, width)
 
     root = pathlib.Path(root) / name
-    os.makedirs(root)
+    os.makedirs(root, exist_ok=True)
 
     return [
         create_image_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
