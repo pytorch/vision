@@ -61,30 +61,26 @@ at::Tensor qnms_kernel_impl(
       continue;
     keep[num_to_keep++] = i;
 
-    auto ix1val = x1[i].val_;
-    auto iy1val = y1[i].val_;
-    auto ix2val = x2[i].val_;
-    auto iy2val = y2[i].val_;
-    auto iarea = areas[i];
+    // We explicitely cast coordinates to float so that the code can be vectorized.
+    float ix1val = x1[i].val_;
+    float iy1val = y1[i].val_;
+    float ix2val = x2[i].val_;
+    float iy2val = y2[i].val_;
+    float iarea = areas[i];
 
     for (int64_t _j = _i + 1; _j < ndets; _j++) {
       auto j = order[_j];
       if (suppressed[j] == 1)
         continue;
-      auto xx1 = std::max(ix1val, x1[j].val_);
-      auto yy1 = std::max(iy1val, y1[j].val_);
-      auto xx2 = std::min(ix2val, x2[j].val_);
-      auto yy2 = std::min(iy2val, y2[j].val_);
+      float xx1 = std::max(ix1val, (float)x1[j].val_);
+      float yy1 = std::max(iy1val, (float)y1[j].val_);
+      float xx2 = std::min(ix2val, (float)x2[j].val_);
+      float yy2 = std::min(iy2val, (float)y2[j].val_);
 
-      // This may underflow if xx2 < xx1 on unsigned types but as noted above,
-      // integral promotion should prevent it. Also, an actual underflow would
-      // lead to a negative ovr (because of high value for inter), but since the
-      // actual over should have been 0 the condition below isn't altered, and
-      // thus the underflow should be effectively harmless.
-      auto w = std::max(0, xx2 - xx1);  // * scale (gets canceled below)
-      auto h = std::max(0, yy2 - yy1);  // * scale (gets canceled below)
+      auto w = std::max(0.f, xx2 - xx1);  // * scale (gets canceled below)
+      auto h = std::max(0.f, yy2 - yy1);  // * scale (gets canceled below)
       auto inter = w * h;
-      auto ovr = (float)inter / (iarea + areas[j] - inter);
+      auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr > iou_threshold)
         suppressed[j] = 1;
     }
