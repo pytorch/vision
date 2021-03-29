@@ -61,7 +61,8 @@ at::Tensor qnms_kernel_impl(
       continue;
     keep[num_to_keep++] = i;
 
-    // We explicitely cast coordinates to float so that the code can be vectorized.
+    // We explicitely cast coordinates to float so that the code can be
+    // vectorized.
     float ix1val = x1[i].val_;
     float iy1val = y1[i].val_;
     float ix2val = x2[i].val_;
@@ -77,8 +78,8 @@ at::Tensor qnms_kernel_impl(
       float xx2 = std::min(ix2val, (float)x2[j].val_);
       float yy2 = std::min(iy2val, (float)y2[j].val_);
 
-      auto w = std::max(0.f, xx2 - xx1);  // * scale (gets canceled below)
-      auto h = std::max(0.f, yy2 - yy1);  // * scale (gets canceled below)
+      auto w = std::max(0.f, xx2 - xx1); // * scale (gets canceled below)
+      auto h = std::max(0.f, yy2 - yy1); // * scale (gets canceled below)
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr > iou_threshold)
@@ -106,10 +107,10 @@ at::Tensor qnms_kernel(
   TORCH_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
-    "dimension 0, got ",
-    dets.size(0),
-    " and ",
-    scores.size(0));
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0));
 
   auto result = at::empty({0});
 
