@@ -138,8 +138,11 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp')) + glob.glob(os.path.join(extensions_dir, 'ops',
                                                                                           '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) + glob.glob(
-        os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp'))
+    source_cpu = (
+        glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'quantized', 'cpu', '*.cpp'))
+    )
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':

@@ -10,8 +10,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-
-from fakedata_generation import cityscapes_root, svhn_root, places365_root, widerface_root, stl10_root
+from fakedata_generation import svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -118,51 +117,6 @@ class Tester(DatasetTestcase):
                 torchvision.datasets.ImageFolder(
                     root, loader=lambda x: x, is_valid_file=lambda x: False
                 )
-
-    @unittest.skipIf(sys.platform in ('win32', 'cygwin'), 'temporarily disabled on Windows')
-    def test_cityscapes(self):
-        with cityscapes_root() as root:
-
-            for mode in ['coarse', 'fine']:
-
-                if mode == 'coarse':
-                    splits = ['train', 'train_extra', 'val']
-                else:
-                    splits = ['train', 'val', 'test']
-
-                for split in splits:
-                    for target_type in ['semantic', 'instance']:
-                        dataset = torchvision.datasets.Cityscapes(
-                            root, split=split, target_type=target_type, mode=mode)
-                        self.generic_segmentation_dataset_test(dataset, num_images=2)
-
-                    color_dataset = torchvision.datasets.Cityscapes(
-                        root, split=split, target_type='color', mode=mode)
-                    color_img, color_target = color_dataset[0]
-                    self.assertTrue(isinstance(color_img, PIL.Image.Image))
-                    self.assertTrue(np.array(color_target).shape[2] == 4)
-
-                    polygon_dataset = torchvision.datasets.Cityscapes(
-                        root, split=split, target_type='polygon', mode=mode)
-                    polygon_img, polygon_target = polygon_dataset[0]
-                    self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
-                    self.assertTrue(isinstance(polygon_target, dict))
-                    self.assertTrue(isinstance(polygon_target['imgHeight'], int))
-                    self.assertTrue(isinstance(polygon_target['objects'], list))
-
-                    # Test multiple target types
-                    targets_combo = ['semantic', 'polygon', 'color']
-                    multiple_types_dataset = torchvision.datasets.Cityscapes(
-                        root, split=split, target_type=targets_combo, mode=mode)
-                    output = multiple_types_dataset[0]
-                    self.assertTrue(isinstance(output, tuple))
-                    self.assertTrue(len(output) == 2)
-                    self.assertTrue(isinstance(output[0], PIL.Image.Image))
-                    self.assertTrue(isinstance(output[1], tuple))
-                    self.assertTrue(len(output[1]) == 3)
-                    self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
-                    self.assertTrue(isinstance(output[1][1], dict))  # polygon
-                    self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
     @mock.patch('torchvision.datasets.SVHN._check_integrity')
     @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
@@ -488,6 +442,130 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
                 annotation_file.write(annotation_content)
 
         return split_to_num_examples[config["split"]]
+
+
+class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Cityscapes
+    TARGET_TYPES = (
+        "instance",
+        "semantic",
+        "polygon",
+        "color",
+    )
+    ADDITIONAL_CONFIGS = (
+        *datasets_utils.combinations_grid(
+            mode=("fine",), split=("train", "test", "val"), target_type=TARGET_TYPES
+        ),
+        *datasets_utils.combinations_grid(
+            mode=("coarse",),
+            split=("train", "train_extra", "val"),
+            target_type=TARGET_TYPES,
+        ),
+    )
+    FEATURE_TYPES = (PIL.Image.Image, (dict, PIL.Image.Image))
+
+    def inject_fake_data(self, tmpdir, config):
+
+        tmpdir = pathlib.Path(tmpdir)
+
+        mode_to_splits = {
+            "Coarse": ["train", "train_extra", "val"],
+            "Fine": ["train", "test", "val"],
+        }
+
+        if config["split"] == "train":  # just for coverage of the number of samples
+            cities = ["bochum", "bremen"]
+        else:
+            cities = ["bochum"]
+
+        polygon_target = {
+            "imgHeight": 1024,
+            "imgWidth": 2048,
+            "objects": [
+                {
+                    "label": "sky",
+                    "polygon": [
+                        [1241, 0],
+                        [1234, 156],
+                        [1478, 197],
+                        [1611, 172],
+                        [1606, 0],
+                    ],
+                },
+                {
+                    "label": "road",
+                    "polygon": [
+                        [0, 448],
+                        [1331, 274],
+                        [1473, 265],
+                        [2047, 605],
+                        [2047, 1023],
+                        [0, 1023],
+                    ],
+                },
+            ],
+        }
+
+        for mode in ["Coarse", "Fine"]:
+            gt_dir = tmpdir / f"gt{mode}"
+            for split in mode_to_splits[mode]:
+                for city in cities:
+                    def make_image(name, size=10):
+                        datasets_utils.create_image_folder(
+                            root=gt_dir / split,
+                            name=city,
+                            file_name_fn=lambda _: name,
+                            size=size,
+                            num_examples=1,
+                        )
+                    make_image(f"{city}_000000_000000_gt{mode}_instanceIds.png")
+                    make_image(f"{city}_000000_000000_gt{mode}_labelIds.png")
+                    make_image(f"{city}_000000_000000_gt{mode}_color.png", size=(4, 10, 10))
+
+                    polygon_target_name = gt_dir / split / city / f"{city}_000000_000000_gt{mode}_polygons.json"
+                    with open(polygon_target_name, "w") as outfile:
+                        json.dump(polygon_target, outfile)
+
+        # Create leftImg8bit folder
+        for split in ['test', 'train_extra', 'train', 'val']:
+            for city in cities:
+                datasets_utils.create_image_folder(
+                    root=tmpdir / "leftImg8bit" / split,
+                    name=city,
+                    file_name_fn=lambda _: f"{city}_000000_000000_leftImg8bit.png",
+                    num_examples=1,
+                )
+
+        info = {'num_examples': len(cities)}
+        if config['target_type'] == 'polygon':
+            info['expected_polygon_target'] = polygon_target
+        return info
+
+    def test_combined_targets(self):
+        target_types = ['semantic', 'polygon', 'color']
+
+        with self.create_dataset(target_type=target_types) as (dataset, _):
+            output = dataset[0]
+            self.assertTrue(isinstance(output, tuple))
+            self.assertTrue(len(output) == 2)
+            self.assertTrue(isinstance(output[0], PIL.Image.Image))
+            self.assertTrue(isinstance(output[1], tuple))
+            self.assertTrue(len(output[1]) == 3)
+            self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
+            self.assertTrue(isinstance(output[1][1], dict))  # polygon
+            self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
+
+    def test_feature_types_target_color(self):
+        with self.create_dataset(target_type='color') as (dataset, _):
+            color_img, color_target = dataset[0]
+            self.assertTrue(isinstance(color_img, PIL.Image.Image))
+            self.assertTrue(np.array(color_target).shape[2] == 4)
+
+    def test_feature_types_target_polygon(self):
+        with self.create_dataset(target_type='polygon') as (dataset, info):
+            polygon_img, polygon_target = dataset[0]
+            self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
+            self.assertEqual(polygon_target, info['expected_polygon_target'])
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
