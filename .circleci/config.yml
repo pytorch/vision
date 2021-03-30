@@ -1498,13 +1498,11 @@ workflows:
       - torch_onnx_test
       - binary_ios_build:
           build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
-          context: org-member
           ios_arch: x86_64
           ios_platform: SIMULATOR
           name: binary_libtorchvision_ops_ios_12.0.0_x86_64
       - binary_ios_build:
           build_environment: binary-libtorchvision_ops-ios-12.0.0-arm64
-          context: org-member
           ios_arch: arm64
           ios_platform: OS
           name: binary_libtorchvision_ops_ios_12.0.0_arm64
@@ -1657,7 +1655,6 @@ workflows:
       - torch_onnx_test
       - binary_ios_build:
           build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
-          context: org-member
           filters:
             branches:
               only:
@@ -1667,7 +1664,6 @@ workflows:
           name: nightly_binary_libtorchvision_ops_ios_12.0.0_x86_64
       - binary_ios_build:
           build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-arm64
-          context: org-member
           filters:
             branches:
               only:
