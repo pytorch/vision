@@ -230,9 +230,10 @@ class Resize(torch.nn.Module):
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     .. warning::
-        The output image might be different depending on its type: the interpolation of PIL images
-        and tensors is slightly different, which may lead to significant differences in the performance
-        of a network. Therefore, it is preferable to train and serve a model with the same input types.
+        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
+        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
+        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
+        types.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
