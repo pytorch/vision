@@ -797,10 +797,10 @@ def create_video_folder(
     """Create a folder of random videos.
 
     Args:
-        root (Union[str, pathlib.Path]): Root directory the image folder will be placed in.
-        name (Union[str, pathlib.Path]): Name of the image folder.
+        root (Union[str, pathlib.Path]): Root directory the video folder will be placed in.
+        name (Union[str, pathlib.Path]): Name of the video folder.
         file_name_fn (Callable[[int], str]): Should return a file name if called with the file index.
-        num_examples (int): Number of images to create.
+        num_examples (int): Number of videos to create.
         size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the videos. If
             callable, will be called with the index of the corresponding file. If omitted, a random even height and
             width between 4 and 10 pixels is selected on a per-video basis.
@@ -828,7 +828,7 @@ def create_video_folder(
             return (num_frames, num_channels, height, width)
 
     root = pathlib.Path(root) / name
-    os.makedirs(root)
+    os.makedirs(root, exist_ok=True)
 
     return [
         create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
