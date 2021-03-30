@@ -271,7 +271,6 @@ def ios_workflows(indentation=6, nightly=False):
         build_job_names.append(name)
         build_job = {
             'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}',
-            'context': 'org-member',
             'ios_arch': arch,
             'ios_platform': platform,
             'name': name,
