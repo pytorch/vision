@@ -343,6 +343,11 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
+    .. warning::
+        The output image might be different depending on its type: the interpolation of PIL images
+        and tensors is slightly different, which may lead to significant differences in the performance
+        of a network. Therefore, it is preferable to train and serve a model with the same input types.
+
     Args:
         img (PIL Image or Tensor): Image to be resized.
         size (sequence or int): Desired output size. If size is a sequence like
