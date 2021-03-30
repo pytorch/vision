@@ -446,12 +446,15 @@ class Tester(TransformsTester):
         )
 
     def test_normalize(self):
+        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         tensor, _ = self._create_data(26, 34, device=self.device)
-        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
 
+        with self.assertRaisesRegex(TypeError, r"Input tensor should be a float tensor"):
+            fn(tensor)
+
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
         tensor = tensor.to(dtype=torch.float32) / 255.0
         # test for class interface
-        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         scripted_fn = torch.jit.script(fn)
 
         self._test_transform_vs_scripted(fn, scripted_fn, tensor)
