@@ -2,7 +2,7 @@ import os
 import tarfile
 import collections
 from .vision import VisionDataset
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from PIL import Image
 from typing import Any, Callable, Dict, Optional, Tuple, List
 from .utils import download_and_extract_archive, verify_str_arg

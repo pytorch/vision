@@ -17,3 +17,4 @@ dependencies:
     - scipy
     - av
     - dataclasses
+    - defusedxml

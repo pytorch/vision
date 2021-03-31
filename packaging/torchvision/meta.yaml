@@ -12,6 +12,7 @@ requirements:
     - jpeg <=9b
     # NOTE: The only ffmpeg version that we build is actually 4.2
     - ffmpeg >=4.2  # [not win]
+    - defusedxml
 
   host:
     - python
@@ -28,6 +29,7 @@ requirements:
     - jpeg <=9b
     - pillow >=4.1.1
     - defaults::numpy >=1.11
+    - defusedxml
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
@@ -55,6 +57,7 @@ test:
     - av >=8.0.1
     - jpeg <=9b
     - ca-certificates
+    - defusedxml
 
 
 about:

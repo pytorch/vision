@@ -295,7 +295,7 @@ if __name__ == "__main__":
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
-        autoescape=False,
+        autoescape=True,
         keep_trailing_newline=True,
     )
 
