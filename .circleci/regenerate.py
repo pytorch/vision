@@ -29,12 +29,15 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu101", "cu102", "cu111"],
+            cu_versions_dict = {"linux": ["cpu", "cu101", "cu102", "cu111", "rocm4.0.1", "rocm4.1"],
                                 "win": ["cpu", "cu101", "cu102", "cu111"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
                 for cu_version in cu_versions:
+                    # ROCm conda packages not yet supported
+                    if cu_version.startswith('rocm') and btype == "conda":
+                        continue
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         fb = filter_branch
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
@@ -108,18 +111,22 @@ manylinux_images = {
 
 
 def get_manylinux_image(cu_version):
-    cu_suffix = "102"
-    if cu_version.startswith('cu'):
+    if cu_version == "cpu":
+        return "pytorch/manylinux-cuda102"
+    elif cu_version.startswith('cu'):
         cu_suffix = cu_version[len('cu'):]
-    return f"pytorch/manylinux-cuda{cu_suffix}"
+        return f"pytorch/manylinux-cuda{cu_suffix}"
+    elif cu_version.startswith('rocm'):
+        rocm_suffix = cu_version[len('rocm'):]
+        return f"pytorch/manylinux-rocm:{rocm_suffix}"
 
 
 def get_conda_image(cu_version):
     if cu_version == "cpu":
         return "pytorch/conda-builder:cpu"
-    if cu_version.startswith('cu'):
+    elif cu_version.startswith('cu'):
         cu_suffix = cu_version[len('cu'):]
-    return f"pytorch/conda-builder:cuda{cu_suffix}"
+        return f"pytorch/conda-builder:cuda{cu_suffix}"
 
 
 def generate_base_workflow(base_workflow_name, python_version, cu_version,
@@ -136,7 +143,9 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
 
     if os_type != "win":
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
-        d["conda_docker_image"] = get_conda_image(cu_version)
+        # ROCm conda packages not yet supported
+        if "rocm" not in cu_version:
+            d["conda_docker_image"] = get_conda_image(cu_version)
 
     if filter_branch is not None:
         d["filters"] = {
@@ -252,6 +261,35 @@ def cmake_workflows(indentation=6):
     return indent(indentation, jobs)
 
 
+def ios_workflows(indentation=6, nightly=False):
+    jobs = []
+    build_job_names = []
+    name_prefix = "nightly_" if nightly else ""
+    env_prefix = "nightly-" if nightly else ""
+    for arch, platform in [('x86_64', 'SIMULATOR'), ('arm64', 'OS')]:
+        name = f'{name_prefix}binary_libtorchvision_ops_ios_12.0.0_{arch}'
+        build_job_names.append(name)
+        build_job = {
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}',
+            'ios_arch': arch,
+            'ios_platform': platform,
+            'name': name,
+        }
+        if nightly:
+            build_job['filters'] = gen_filter_branch_tree('nightly')
+        jobs.append({'binary_ios_build': build_job})
+
+    if nightly:
+        upload_job = {
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload',
+            'context': 'org-member',
+            'filters': gen_filter_branch_tree('nightly'),
+            'requires': build_job_names,
+        }
+        jobs.append({'binary_ios_upload': upload_job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -266,4 +304,5 @@ if __name__ == "__main__":
             build_workflows=build_workflows,
             unittest_workflows=unittest_workflows,
             cmake_workflows=cmake_workflows,
+            ios_workflows=ios_workflows,
         ))

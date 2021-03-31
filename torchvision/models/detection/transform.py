@@ -85,7 +85,7 @@ class GeneralizedRCNNTransform(nn.Module):
         if targets is not None:
             # make a copy of targets to avoid modifying it in-place
             # once torchscript supports dict comprehension
-            # this can be simplified as as follows
+            # this can be simplified as follows
             # targets = [{k: v for k,v in t.items()} for t in targets]
             targets_copy: List[Dict[str, Tensor]] = []
             for t in targets:

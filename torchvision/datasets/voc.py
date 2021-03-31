@@ -87,10 +87,9 @@ class _VOCBase(VisionDataset):
         valid_image_sets = ["train", "trainval", "val"]
         if year == "2007":
             valid_image_sets.append("test")
-            key = "2007-test"
-        else:
-            key = year
         self.image_set = verify_str_arg(image_set, "image_set", valid_image_sets)
+
+        key = "2007-test" if year == "2007" and image_set == "test" else year
         dataset_year_dict = DATASET_YEAR_DICT[key]
 
         self.url = dataset_year_dict["url"]
