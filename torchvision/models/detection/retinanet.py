@@ -454,7 +454,7 @@ class RetinaNet(nn.Module):
 
         return detections
 
-    def _anchors_per_level(self, features, HWA):
+    def _anchors_per_level(self, features: List[Tensor], HWA: int):
         # recover level sizes
         num_anchors_per_level = [x.size(2) * x.size(3) for x in features]
         HW = 0

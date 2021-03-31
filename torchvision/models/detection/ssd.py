@@ -141,7 +141,7 @@ class SSD(RetinaNet):
         # used only on torchscript mode
         self._has_warned = False
 
-    def _anchors_per_level(self, features, HWA):
+    def _anchors_per_level(self, features: List[Tensor], HWA: int):
         # TODO: Discuss/refactor this workaround
         num_anchors_per_level = [x.size(2) * x.size(3) * anchors for x, anchors in zip(features, self.num_anchors)]
         HW = 0
