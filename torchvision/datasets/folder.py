@@ -129,7 +129,7 @@ def make_dataset(
                     if target_class not in available_classes:
                         available_classes.add(target_class)
 
-    empty_classes = available_classes - set(class_to_idx.keys())
+    empty_classes = set(class_to_idx.keys()) - available_classes
     if empty_classes:
         msg = f"Found no valid file for the classes {', '.join(sorted(empty_classes))}. "
         if extensions is not None:
