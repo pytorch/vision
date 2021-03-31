@@ -297,7 +297,7 @@ def to_pil_image(pic, mode=None):
 
 
 def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
-    """Normalize a tensor image with mean and standard deviation.
+    """Normalize a float tensor image with mean and standard deviation.
     This transform does not support PIL Image.
 
     .. note::
@@ -306,7 +306,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        tensor (Tensor): Float tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation inplace.
@@ -316,6 +316,9 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     """
     if not isinstance(tensor, torch.Tensor):
         raise TypeError('Input tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+
+    if not tensor.is_floating_point():
+        raise TypeError('Input tensor should be a float tensor. Got {}.'.format(tensor.dtype))
 
     if tensor.ndim < 3:
         raise ValueError('Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = '
