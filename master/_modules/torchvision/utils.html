@@ -188,7 +188,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+8d50278 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+8edb629 ) &#x25BC</a>
     </div>
     
 
@@ -325,7 +325,8 @@
     <span class="n">pad_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Make a grid of images.</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make a grid of images.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)</span>
@@ -342,9 +343,12 @@
 <span class="sd">            images separately rather than the (min, max) over all images. Default: ``False``.</span>
 <span class="sd">        pad_value (float, optional): Value for the padded pixels. Default: ``0``.</span>
 
-<span class="sd">    Example:</span>
-<span class="sd">        See this notebook `here &lt;https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91&gt;`_</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        grid (Tensor): the tensor containing grid of images.</span>
 
+<span class="sd">    Example:</span>
+<span class="sd">        See this notebook</span>
+<span class="sd">        `here &lt;https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb&gt;`_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="ow">or</span>
             <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensor</span><span class="p">))):</span>
@@ -422,7 +426,8 @@
     <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Save a given Tensor into an image file.</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save a given Tensor into an image file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,</span>
@@ -455,7 +460,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Draws bounding boxes on given image.</span>
 <span class="sd">    The values of the input image should be uint8 between 0 and 255.</span>
-<span class="sd">    If filled, Resulting Tensor should be saved as PNG image.</span>
+<span class="sd">    If fill is True, Resulting Tensor should be saved as PNG image.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.</span>
@@ -471,6 +476,13 @@
 <span class="sd">            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,</span>
 <span class="sd">            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.</span>
 <span class="sd">        font_size (int): The requested font size in points.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        See this notebook</span>
+<span class="sd">        `linked &lt;https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb&gt;`_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
@@ -514,7 +526,7 @@
         <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">draw</span><span class="o">.</span><span class="n">text</span><span class="p">((</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="n">txt_font</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">))</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">))</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="draw_segmentation_masks"><a class="viewcode-back" href="../../utils.html#torchvision.utils.draw_segmentation_masks">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
@@ -535,6 +547,13 @@
 <span class="sd">        alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.</span>
 <span class="sd">        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can</span>
 <span class="sd">            be represented as `str` or `Tuple[int, int, int]`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with segmentation masks plotted.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        See this notebook</span>
+<span class="sd">        `attached &lt;https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb&gt;`_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
