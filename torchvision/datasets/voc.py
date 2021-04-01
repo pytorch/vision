@@ -3,7 +3,6 @@ import tarfile
 import collections
 from .vision import VisionDataset
 import xml.etree.ElementTree as ET
-import defusedxml.ElementTree as DET
 from PIL import Image
 from typing import Any, Callable, Dict, Optional, Tuple, List
 from .utils import download_and_extract_archive, verify_str_arg
@@ -203,8 +202,14 @@ class VOCDetection(_VOCBase):
         Returns:
             tuple: (image, target) where target is a dictionary of the XML tree.
         """
+        # If defusedxml exists, use defusedxml.ElementTree instead.
+        # Else, use xml.ElementTree as normal.
+        try:
+            import defusedxml.ElementTree as ET
+        except ImportError:
+            pass
         img = Image.open(self.images[index]).convert("RGB")
-        target = self.parse_voc_xml(DET.parse(self.annotations[index]).getroot())
+        target = self.parse_voc_xml(ET.parse(self.annotations[index]).getroot())
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
