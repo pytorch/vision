@@ -202,8 +202,7 @@ class DatasetFolder(VisionDataset):
     ) -> List[Tuple[str, int]]:
         return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
-    @staticmethod
-    def find_classes(dir: str) -> Tuple[List[str], Dict[str, int]]:
+    def find_classes(self, dir: str) -> Tuple[List[str], Dict[str, int]]:
         return find_classes(dir)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
