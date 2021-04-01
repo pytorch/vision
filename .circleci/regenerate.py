@@ -291,6 +291,34 @@ def ios_workflows(indentation=6, nightly=False):
     return indent(indentation, jobs)
 
 
+def android_workflows(indentation=6, nightly=False):
+    jobs = []
+    build_job_names = []
+    name_prefix = "nightly_" if nightly else ""
+    env_prefix = "nightly-" if nightly else ""
+
+    name = f'{name_prefix}binary_libtorchvision_ops_android'
+    build_job_names.append(name)
+    build_job = {
+        'build_environment': f'{env_prefix}binary-libtorchvision_ops-android',
+        'context': 'org-member',
+        'name': name,
+    }
+
+    if nightly:
+        upload_job = {
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-android-upload',
+            # 'build_environment': 'binary-libtorchvision_ops-android-upload',
+            'context': 'org-member',
+            'filters': gen_filter_branch_tree('nightly'),
+            'name': f'{name_prefix}binary_libtorchvision_ops_android_upload'
+        }
+        jobs.append({'binary_android_upload': upload_job})
+    else:
+        jobs.append({'binary_android_build': build_job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -306,4 +334,5 @@ if __name__ == "__main__":
             unittest_workflows=unittest_workflows,
             cmake_workflows=cmake_workflows,
             ios_workflows=ios_workflows,
+            android_workflows=android_workflows,
         ))
