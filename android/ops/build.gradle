@@ -55,8 +55,7 @@ android {
 dependencies {
     implementation 'com.android.support:appcompat-v7:' + rootProject.androidSupportAppCompatV7Version
 
-    implementation 'org.pytorch:pytorch_android:1.8.0-SNAPSHOT'
-    extractForNativeBuild 'org.pytorch:pytorch_android:1.8.0-SNAPSHOT'
+    extractForNativeBuild "org.pytorch:pytorch_android:$pytorchAndroidVersion"
 
     // For testing: deps on local aar files
     //implementation(name: 'pytorch_android-release', ext: 'aar')
