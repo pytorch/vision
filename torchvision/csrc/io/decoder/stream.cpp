@@ -1,8 +1,5 @@
 #include "stream.h"
-#include <ATen/Parallel.h>
 #include <c10/util/Logging.h>
-#include <stdio.h>
-#include <string.h>
 #include "util.h"
 
 namespace ffmpeg {
@@ -31,7 +28,7 @@ AVCodec* Stream::findCodec(AVCodecParameters* params) {
   return avcodec_find_decoder(params->codec_id);
 }
 
-int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
+int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
   AVStream* steam = inputCtx_->streams[format_.stream];
 
   AVCodec* codec = findCodec(steam->codecpar);
@@ -55,49 +52,6 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
                << ", avcodec_parameters_to_context failed";
     return ret;
   }
-
-  // multithreading heuristics
-  int max_threads = at::get_num_threads();
-  // first a safety check
-  if (num_threads > max_threads) {
-    num_threads = max_threads;
-  }
-
-  if (num_threads > 0) {
-    if (num_threads > 1) {
-      codecCtx_->active_thread_type = 1;
-    }
-    // if user defined, respect that
-    codecCtx_->thread_count = num_threads;
-
-  } else {
-    // otherwise set sensible defaults
-    // with the special case for the different MPEG4 codecs
-    // that don't have threading context functions
-    // TODO: potentially automate this using native c++ function lookups
-    if (strcmp(codecCtx_->codec->name, "mpeg4") == 0 &&
-        codecCtx_->codec_type == 0) {
-      if (codecCtx_->codec_tag == 1684633208) {
-        codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
-        codecCtx_->thread_type = 1;
-      } else {
-        codecCtx_->thread_count = (2 <= max_threads) ? 2 : max_threads;
-        codecCtx_->thread_type = 2;
-      }
-    } else {
-      // otherwise default to multithreading
-      codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
-      codecCtx_->active_thread_type = 1;
-    }
-  }
-
-  // print codec type and number of threads
-  LOG(INFO) << "Codec " << codecCtx_->codec->long_name
-            << " Codec id: " << codecCtx_->codec_id
-            << " Codec tag: " << codecCtx_->codec_tag
-            << " Codec type: " << codecCtx_->codec_type
-            << " Codec extradata: " << codecCtx_->extradata
-            << " Number of threads: " << at::get_num_threads();
 
   // after avcodec_open2, value of codecCtx_->time_base is NOT meaningful
   if ((ret = avcodec_open2(codecCtx_, codec, nullptr)) < 0) {
