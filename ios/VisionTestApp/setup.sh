@@ -4,6 +4,9 @@ set -ex -o pipefail
 echo ""
 echo "DIR: $(pwd)"
 
+TEST_APP_PATH=$(dirname $(realpath $0))
+cd ${TEST_APP_PATH}
+
 PYTORCH_IOS_NIGHTLY_NAME=libtorch_ios_nightly_build.zip
 VISION_IOS_NIGHTLY_NAME=libtorchvision_ops_ios_nightly_build.zip
 
@@ -27,4 +30,4 @@ rm -rf ./*.zip
 echo "Generating the vision model..."
 python ./make_assets.py
 
-echo "Done."
+echo "Finished project setups."
