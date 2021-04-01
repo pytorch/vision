@@ -126,6 +126,9 @@ setup_cuda() {
       ;;
     cpu)
       ;;
+    rocm*)
+      export FORCE_CUDA=1
+      ;;
     *)
       echo "Unrecognized CU_VERSION=$CU_VERSION"
       exit 1
