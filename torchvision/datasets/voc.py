@@ -2,11 +2,11 @@ import os
 import tarfile
 import collections
 from .vision import VisionDataset
-import xml.etree.ElementTree.Element as ET_Element
+from xml.etree.ElementTree import Element as ET_Element
 try:
-  import defusedxml.ElementTree.parse as ET_parse
+  from defusedxml.ElementTree import parse as ET_parse
 except ImportError:
-  import xml.etree.ElementTree.parse as ET_parse
+  from xml.etree.ElementTree import parse as ET_parse
 from PIL import Image
 from typing import Any, Callable, Dict, Optional, Tuple, List
 from .utils import download_and_extract_archive, verify_str_arg
