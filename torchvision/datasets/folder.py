@@ -203,8 +203,9 @@ class DatasetFolder(VisionDataset):
         return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
     def find_classes(self, dir: str) -> Tuple[List[str], Dict[str, int]]:
-        """
-        Same as :func:find_classes. This method can be overridden to only consider 
+        """Same as :func:`find_classes`.
+        
+        This method can be overridden to only consider 
         a subset of classes, or to adapt to a different dataset directory structure.
         """
         return find_classes(dir)
