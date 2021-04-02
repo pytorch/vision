@@ -17,7 +17,7 @@ def roi_align(
     aligned: bool = False,
 ) -> Tensor:
     """
-    Performs Region of Interest (RoI) Align operator described in Mask R-CNN
+    Performs Region of Interest (RoI) Align operator with average pooling, as described in Mask R-CNN.
 
     Args:
         input (Tensor[N, C, H, W]): input tensor
@@ -27,19 +27,19 @@ def roi_align(
             If a single Tensor is passed,
             then the first column should contain the batch index. If a list of Tensors
             is passed, then each Tensor will correspond to the boxes for an element i
-            in a batch
-        output_size (int or Tuple[int, int]): the size of the output after the cropping
-            is performed, as (height, width)
+            in a batch.
+        output_size (int or Tuple[int, int]): the size of the output after the pooling
+            is performed, as (height, width).
         spatial_scale (float): a scaling factor that maps the input coordinates to
             the box coordinates. Default: 1.0
         sampling_ratio (int): number of sampling points in the interpolation grid
             used to compute the output value of each pooled output bin. If > 0,
-            then exactly sampling_ratio x sampling_ratio grid points are used. If
+            then exactly ``sampling_ratio x sampling_ratio`` sampling points per bin are used. If
             <= 0, then an adaptive number of grid points are used (computed as
-            ceil(roi_width / pooled_w), and likewise for height). Default: -1
+            ``ceil(roi_width / output_width)``, and likewise for height). Default: -1
         aligned (bool): If False, use the legacy implementation.
             If True, pixel shift it by -0.5 for align more perfectly about two neighboring pixel indices.
-            This version in Detectron2
+            This version is used in Detectron2
 
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
