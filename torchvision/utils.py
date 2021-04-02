@@ -20,7 +20,8 @@ def make_grid(
     pad_value: int = 0,
     **kwargs
 ) -> torch.Tensor:
-    """Make a grid of images.
+    """
+    Make a grid of images.
 
     Args:
         tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)
@@ -37,9 +38,12 @@ def make_grid(
             images separately rather than the (min, max) over all images. Default: ``False``.
         pad_value (float, optional): Value for the padded pixels. Default: ``0``.
 
-    Example:
-        See this notebook `here <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>`_
+    Returns:
+        grid (Tensor): the tensor containing grid of images.
 
+    Example:
+        See this notebook
+        `here <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
     if not (torch.is_tensor(tensor) or
             (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
@@ -117,7 +121,8 @@ def save_image(
     format: Optional[str] = None,
     **kwargs
 ) -> None:
-    """Save a given Tensor into an image file.
+    """
+    Save a given Tensor into an image file.
 
     Args:
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
@@ -150,7 +155,7 @@ def draw_bounding_boxes(
     """
     Draws bounding boxes on given image.
     The values of the input image should be uint8 between 0 and 255.
-    If filled, Resulting Tensor should be saved as PNG image.
+    If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
         image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
@@ -166,6 +171,13 @@ def draw_bounding_boxes(
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
         font_size (int): The requested font size in points.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
+
+    Example:
+        See this notebook
+        `linked <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
@@ -209,7 +221,7 @@ def draw_bounding_boxes(
         if labels is not None:
             draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
 @torch.no_grad()
@@ -230,6 +242,13 @@ def draw_segmentation_masks(
         alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with segmentation masks plotted.
+
+    Example:
+        See this notebook
+        `attached <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
