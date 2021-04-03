@@ -1,8 +1,6 @@
 #include <ATen/ATen.h>
 #include <torch/library.h>
 #include <ATen/native/quantized/affine_quantizer.h>
-#include <ATen/quantized/Quantizer.h>
-#include <ATen/cpu/vec256/vec256.h>
 
 #include "../../roi_align.h"
 
@@ -14,7 +12,7 @@ namespace {
 template <typename T>
 void qroi_align_forward_kernel_impl(
     int n_rois,
-    const T* input,
+    const at::Tensor& t_input,
     const float & spatial_scale,
     int channels,
     int height,
@@ -23,9 +21,12 @@ void qroi_align_forward_kernel_impl(
     int pooled_width,
     int sampling_ratio,
     bool aligned,
-    const T* rois,
+    const at::Tensor& t_rois,
     T* output){
-
+  
+  const T* input = t_input.contiguous().data_ptr<T>();
+  const T* rois = t_rois.contiguous().data_ptr<T>();
+  
   for (int n = 0; n < n_rois; n++) {
     int index_n = n * channels * pooled_width * pooled_height;
 
@@ -101,7 +102,7 @@ void qroi_align_forward_kernel_impl(
           }
           output_val /= count;
 
-          output[index] = at::native::requantize_from_int<T>(1.f,  0, (int)output_val);  // TODO: this is wrong need to set scale and zero etc.
+          output[index] = at::native::quantize_val<T>(1.f,  0, output_val);  // TODO: this is wrong need to set scale and zero etc.
         } // for pw
       } // for ph
     } // for c
@@ -131,18 +132,20 @@ at::Tensor qroi_align_forward_kernel(
   auto height = input.size(2);
   auto width = input.size(3);
 
+  // FIXME: This is private, API might change:
+  // https://github.com/pytorch/pytorch/wiki/Introducing-Quantized-Tensor#quantized-tensor-apis
   at::Tensor output = at::_empty_affine_quantized(
-      {num_rois, channels, pooled_height, pooled_width}, input.options());
+      {num_rois, channels, pooled_height, pooled_width}, input.options(),
+       input.q_scale(), input.q_zero_point());
 
   if (output.numel() == 0)
     return output;
 
-  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_QINT_TYPES(
       input.scalar_type(), "qroi_align_forward_kernel", [&] {
         qroi_align_forward_kernel_impl<scalar_t>(
             num_rois,
-            input_.data_ptr<scalar_t>(),
+            input,
             spatial_scale,
             channels,
             height,
@@ -151,7 +154,7 @@ at::Tensor qroi_align_forward_kernel(
             pooled_width,
             sampling_ratio,
             aligned,
-            rois_.data_ptr<scalar_t>(),
+            rois,
             output.data_ptr<scalar_t>());
       });
   return output;
