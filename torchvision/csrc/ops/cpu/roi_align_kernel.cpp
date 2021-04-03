@@ -98,7 +98,7 @@ void roi_align_forward_kernel_impl(
               pre_calc_index += 1;
             }
           }
-          output_val /= count;
+          output_val /= count; // Average pooling
 
           output[index] = output_val;
         } // for pw

@@ -95,20 +95,25 @@ void qroi_align_forward_kernel_impl(
           int index = index_n_c + ph * pooled_width + pw;
 
           float output_val = 0.;
+          float sum_w = 0.;
           for (int iy = 0; iy < roi_bin_grid_h; iy++) {
             for (int ix = 0; ix < roi_bin_grid_w; ix++) {
               detail::PreCalc<float> pc = pre_calc[pre_calc_index];
 
-              output_val +=  // TODO: We can probably optimize the dequantization
-                  pc.w1 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos1]) +
-                  pc.w2 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos2]) +
-                  pc.w3 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos3]) +
-                  pc.w4 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos4]);
+              // to optimize computations we use the raw .val_ fields and we'll dequantize later
+              output_val +=
+                  pc.w1 * offset_input[pc.pos1].val_ +
+                  pc.w2 * offset_input[pc.pos2].val_ +
+                  pc.w3 * offset_input[pc.pos3].val_ +
+                  pc.w4 * offset_input[pc.pos4].val_;
+
+              sum_w += pc.w1 + pc.w2 + pc.w3 + pc.w4;
 
               pre_calc_index += 1;
             }
           }
-          output_val /= count;
+          output_val = input_scale * (output_val - input_zp * sum_w);  // dequantization
+          output_val /= count; // Average pooling
 
           output[index] = at::native::quantize_val<T>(input_scale, input_zp, output_val);
         } // for pw
