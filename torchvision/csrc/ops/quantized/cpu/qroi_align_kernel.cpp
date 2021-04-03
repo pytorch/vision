@@ -25,20 +25,25 @@ void qroi_align_forward_kernel_impl(
     T* output){
   
   const T* input = t_input.contiguous().data_ptr<T>();
+  int64_t input_zp = t_input.q_zero_point();
+  float input_scale = t_input.q_scale();
+
   const T* rois = t_rois.contiguous().data_ptr<T>();
+  int64_t rois_zp = t_rois.q_zero_point();
+  float rois_scale = t_rois.q_scale();
   
   for (int n = 0; n < n_rois; n++) {
     int index_n = n * channels * pooled_width * pooled_height;
 
     const T* offset_rois = rois + n * 5;
-    int roi_batch_ind = offset_rois[0].val_; // FIXME: This can be out of the range of the quantized type!!
+    int roi_batch_ind = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[0]); // FIXME: This can be out of the range of the quantized type!!
 
     // Do not using rounding; this implementation detail is critical
     float offset = aligned ? 0.5 : 0.;
-    float roi_start_w = offset_rois[1].val_ * spatial_scale - offset;
-    float roi_start_h = offset_rois[2].val_ * spatial_scale - offset;
-    float roi_end_w = offset_rois[3].val_ * spatial_scale - offset;
-    float roi_end_h = offset_rois[4].val_ * spatial_scale - offset;
+    float roi_start_w = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[1]) * spatial_scale - offset;
+    float roi_start_h = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[2]) * spatial_scale - offset;
+    float roi_end_w = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[3]) * spatial_scale - offset;
+    float roi_end_h = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[4]) * spatial_scale - offset;
 
     float roi_width = roi_end_w - roi_start_w;
     float roi_height = roi_end_h - roi_start_h;
@@ -93,21 +98,23 @@ void qroi_align_forward_kernel_impl(
           for (int iy = 0; iy < roi_bin_grid_h; iy++) {
             for (int ix = 0; ix < roi_bin_grid_w; ix++) {
               detail::PreCalc<float> pc = pre_calc[pre_calc_index];
-              output_val += pc.w1 * offset_input[pc.pos1].val_ +
-                  pc.w2 * offset_input[pc.pos2].val_ +
-                  pc.w3 * offset_input[pc.pos3].val_ + pc.w4 * offset_input[pc.pos4].val_;
+
+              output_val +=  // TODO: We can probably optimize the dequantization
+                  pc.w1 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos1]) +
+                  pc.w2 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos2]) +
+                  pc.w3 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos3]) +
+                  pc.w4 * at::native::dequantize_val(input_scale, input_zp, offset_input[pc.pos4]);
 
               pre_calc_index += 1;
             }
           }
           output_val /= count;
 
-          output[index] = at::native::quantize_val<T>(1.f,  0, output_val);  // TODO: this is wrong need to set scale and zero etc.
+          output[index] = at::native::quantize_val<T>(input_scale, input_zp, output_val);
         } // for pw
       } // for ph
     } // for c
   } // for n
-    
 }
 
 at::Tensor qroi_align_forward_kernel(
