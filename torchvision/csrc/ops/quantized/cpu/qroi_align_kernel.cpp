@@ -1,6 +1,6 @@
 #include <ATen/ATen.h>
-#include <torch/library.h>
 #include <ATen/native/quantized/affine_quantizer.h>
+#include <torch/library.h>
 
 #include "../../roi_align.h"
 
@@ -13,7 +13,7 @@ template <typename T>
 void qroi_align_forward_kernel_impl(
     int n_rois,
     const at::Tensor& t_input,
-    const float & spatial_scale,
+    const float& spatial_scale,
     int channels,
     int height,
     int width,
@@ -22,8 +22,7 @@ void qroi_align_forward_kernel_impl(
     int sampling_ratio,
     bool aligned,
     const at::Tensor& t_rois,
-    T* output){
-  
+    T* output) {
   const T* input = t_input.contiguous().data_ptr<T>();
   int64_t input_zp = t_input.q_zero_point();
   float input_scale = t_input.q_scale();
@@ -31,19 +30,33 @@ void qroi_align_forward_kernel_impl(
   const T* rois = t_rois.contiguous().data_ptr<T>();
   int64_t rois_zp = t_rois.q_zero_point();
   float rois_scale = t_rois.q_scale();
-  
+
   for (int n = 0; n < n_rois; n++) {
     int index_n = n * channels * pooled_width * pooled_height;
 
     const T* offset_rois = rois + n * 5;
-    int roi_batch_ind = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[0]); // FIXME: This can be out of the range of the quantized type!!
+    int roi_batch_ind = at::native::dequantize_val(
+        rois_scale, rois_zp, offset_rois[0]); // FIXME: This can be out of the
+                                              // range of the quantized type!!
 
     // Do not using rounding; this implementation detail is critical
     float offset = aligned ? 0.5 : 0.;
-    float roi_start_w = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[1]) * spatial_scale - offset;
-    float roi_start_h = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[2]) * spatial_scale - offset;
-    float roi_end_w = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[3]) * spatial_scale - offset;
-    float roi_end_h = at::native::dequantize_val(rois_scale, rois_zp, offset_rois[4]) * spatial_scale - offset;
+    float roi_start_w =
+        at::native::dequantize_val(rois_scale, rois_zp, offset_rois[1]) *
+            spatial_scale -
+        offset;
+    float roi_start_h =
+        at::native::dequantize_val(rois_scale, rois_zp, offset_rois[2]) *
+            spatial_scale -
+        offset;
+    float roi_end_w =
+        at::native::dequantize_val(rois_scale, rois_zp, offset_rois[3]) *
+            spatial_scale -
+        offset;
+    float roi_end_h =
+        at::native::dequantize_val(rois_scale, rois_zp, offset_rois[4]) *
+            spatial_scale -
+        offset;
 
     float roi_width = roi_end_w - roi_start_w;
     float roi_height = roi_end_h - roi_start_h;
@@ -65,7 +78,8 @@ void qroi_align_forward_kernel_impl(
 
     // We do average (integral) pooling inside a bin
     // When the grid is empty, output zeros.
-    const float count = std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
+    const float count =
+        std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
 
     // we want to precalculate indices and weights shared by all chanels,
     // this is the key point of optimization
@@ -100,9 +114,9 @@ void qroi_align_forward_kernel_impl(
             for (int ix = 0; ix < roi_bin_grid_w; ix++) {
               detail::PreCalc<float> pc = pre_calc[pre_calc_index];
 
-              // to optimize computations we use the raw .val_ fields and we'll dequantize later
-              output_val +=
-                  pc.w1 * offset_input[pc.pos1].val_ +
+              // to optimize computations we use the raw .val_ fields and we'll
+              // dequantize later
+              output_val += pc.w1 * offset_input[pc.pos1].val_ +
                   pc.w2 * offset_input[pc.pos2].val_ +
                   pc.w3 * offset_input[pc.pos3].val_ +
                   pc.w4 * offset_input[pc.pos4].val_;
@@ -112,10 +126,12 @@ void qroi_align_forward_kernel_impl(
               pre_calc_index += 1;
             }
           }
-          output_val = input_scale * (output_val - input_zp * sum_w);  // dequantization
+          output_val =
+              input_scale * (output_val - input_zp * sum_w); // dequantization
           output_val /= count; // Average pooling
 
-          output[index] = at::native::quantize_val<T>(input_scale, input_zp, output_val);
+          output[index] =
+              at::native::quantize_val<T>(input_scale, input_zp, output_val);
         } // for pw
       } // for ph
     } // for c
@@ -147,28 +163,29 @@ at::Tensor qroi_align_forward_kernel(
   // FIXME: This is private, API might change:
   // https://github.com/pytorch/pytorch/wiki/Introducing-Quantized-Tensor#quantized-tensor-apis
   at::Tensor output = at::_empty_affine_quantized(
-      {num_rois, channels, pooled_height, pooled_width}, input.options(),
-       input.q_scale(), input.q_zero_point());
+      {num_rois, channels, pooled_height, pooled_width},
+      input.options(),
+      input.q_scale(),
+      input.q_zero_point());
 
   if (output.numel() == 0)
     return output;
 
-  AT_DISPATCH_QINT_TYPES(
-      input.scalar_type(), "qroi_align_forward_kernel", [&] {
-        qroi_align_forward_kernel_impl<scalar_t>(
-            num_rois,
-            input,
-            spatial_scale,
-            channels,
-            height,
-            width,
-            pooled_height,
-            pooled_width,
-            sampling_ratio,
-            aligned,
-            rois,
-            output.data_ptr<scalar_t>());
-      });
+  AT_DISPATCH_QINT_TYPES(input.scalar_type(), "qroi_align_forward_kernel", [&] {
+    qroi_align_forward_kernel_impl<scalar_t>(
+        num_rois,
+        input,
+        spatial_scale,
+        channels,
+        height,
+        width,
+        pooled_height,
+        pooled_width,
+        sampling_ratio,
+        aligned,
+        rois,
+        output.data_ptr<scalar_t>());
+  });
   return output;
 }
 
