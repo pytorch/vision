@@ -45,7 +45,7 @@ struct PreCalc {
 // This helper computes the interpolation weights (w1, w2...) for every sampling
 // point of a given box. There are pool_height * pool_width * roi_bin_grid_h *
 // roi_bin_grid_w such sampling points.
-// 
+//
 // The weights (w1, w2...) are computed as the areas in this figure:
 // https://en.wikipedia.org/wiki/Bilinear_interpolation#/media/File:Bilinear_interpolation_visualisation.svg
 // and pos1, pos2 etc correspond to the indices of their respective pixels.
