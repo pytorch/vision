@@ -28,7 +28,7 @@ def roi_align(
             then the first column should contain the batch index. If a list of Tensors
             is passed, then each Tensor will correspond to the boxes for an element i
             in a batch.
-        output_size (int or Tuple[int, int]): the size of the output after the pooling
+        output_size (int or Tuple[int, int]): the size of the output (in bins or pixels) after the pooling
             is performed, as (height, width).
         spatial_scale (float): a scaling factor that maps the input coordinates to
             the box coordinates. Default: 1.0
@@ -38,8 +38,8 @@ def roi_align(
             <= 0, then an adaptive number of grid points are used (computed as
             ``ceil(roi_width / output_width)``, and likewise for height). Default: -1
         aligned (bool): If False, use the legacy implementation.
-            If True, pixel shift it by -0.5 for align more perfectly about two neighboring pixel indices.
-            This version is used in Detectron2
+            If True, pixel shift the box coordinates it by -0.5 for a better alignment with the two
+            neighboring pixel indices. This version is used in Detectron2
 
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
