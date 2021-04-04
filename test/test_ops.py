@@ -352,11 +352,6 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                         f"{scale}, {zero_point}, {qdtype}, {n_diff}, {diff},",
                     )
 
-                    if (scale, zero_point) == (1, 0):
-                        # in this case we can assert strict equality as the requantization of the output was the
-                        # identity
-                        self.assertTrue((qy.dequantize() == y.round()).all())
-
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
