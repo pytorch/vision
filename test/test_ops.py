@@ -313,45 +313,49 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
             rois[:, 3:] += rois[:, 1:3]  # make sure boxes aren't degenerate
             return rois
 
-        for scale, zero_point in ((1, 0), (2, 10), (0.1, 50)):
-            for qdtype in (torch.qint8, torch.quint8, torch.qint32):
+        for aligned in (True, False):
+            for scale, zero_point in ((1, 0), (2, 10), (0.1, 50)):
+                for qdtype in (torch.qint8, torch.quint8, torch.qint32):
 
-                x = torch.randint(50, 100, size=(num_batches, n_channels, img_size, img_size)).to(dtype)
-                qx = torch.quantize_per_tensor(x, scale=scale, zero_point=zero_point, dtype=qdtype)
+                    x = torch.randint(50, 100, size=(num_batches, n_channels, img_size, img_size)).to(dtype)
+                    qx = torch.quantize_per_tensor(x, scale=scale, zero_point=zero_point, dtype=qdtype)
 
-                rois = make_rois()
-                qrois = torch.quantize_per_tensor(rois, scale=scale, zero_point=zero_point, dtype=qdtype)
+                    rois = make_rois()
+                    qrois = torch.quantize_per_tensor(rois, scale=scale, zero_point=zero_point, dtype=qdtype)
 
-                x, rois = qx.dequantize(), qrois.dequantize()  # we want to pass the same inputs
+                    x, rois = qx.dequantize(), qrois.dequantize()  # we want to pass the same inputs
 
-                y = ops.roi_align(
-                    x,
-                    rois,
-                    output_size=pool_size,
-                    spatial_scale=1,
-                    sampling_ratio=-1,
-                    # aligned=aligned,
-                )
-                qy = ops.roi_align(
-                    qx,
-                    qrois,
-                    output_size=pool_size,
-                    spatial_scale=1,
-                    sampling_ratio=-1,
-                    # aligned=aligned,
-                )
+                    y = ops.roi_align(
+                        x,
+                        rois,
+                        output_size=pool_size,
+                        spatial_scale=1,
+                        sampling_ratio=-1,
+                        aligned=aligned,
+                    )
+                    qy = ops.roi_align(
+                        qx,
+                        qrois,
+                        output_size=pool_size,
+                        spatial_scale=1,
+                        sampling_ratio=-1,
+                        aligned=aligned,
+                    )
 
-                # The output qy is itself a quantized tensor and there might have been a loss of info when it was
-                # quantized. For a fair comparison we need to quantize y as well
-                quantized_float_y = torch.quantize_per_tensor(y, scale=scale, zero_point=zero_point, dtype=qdtype)
-                n_diff = (quantized_float_y != qy).sum()
-                diff = torch.abs((quantized_float_y.dequantize() - qy.dequantize())).sum()
-                self.assertTrue((qy == quantized_float_y).all(), f"{scale}, {zero_point}, {qdtype}, {n_diff}, {diff},")
+                    # The output qy is itself a quantized tensor and there might have been a loss of info when it was
+                    # quantized. For a fair comparison we need to quantize y as well
+                    quantized_float_y = torch.quantize_per_tensor(y, scale=scale, zero_point=zero_point, dtype=qdtype)
+                    n_diff = (quantized_float_y != qy).sum()
+                    diff = torch.abs((quantized_float_y.dequantize() - qy.dequantize())).sum()
+                    self.assertTrue(
+                        (qy == quantized_float_y).all(),
+                        f"{scale}, {zero_point}, {qdtype}, {n_diff}, {diff},",
+                    )
 
-                if (scale, zero_point) == (1, 0):
-                    # in this case we can assert strict equality as the requantization of the output was the
-                    # identity
-                    self.assertTrue((qy.dequantize() == y.round()).all())
+                    if (scale, zero_point) == (1, 0):
+                        # in this case we can assert strict equality as the requantization of the output was the
+                        # identity
+                        self.assertTrue((qy.dequantize() == y.round()).all())
 
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
