@@ -15,7 +15,6 @@ https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 """
 
 import jinja2
-from jinja2 import select_autoescape
 import yaml
 import os.path
 
@@ -296,7 +295,7 @@ if __name__ == "__main__":
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
-        autoescape=select_autoescape(enabled_extensions=('html', 'xml')),
+        autoescape=False,
         keep_trailing_newline=True,
     )
 
