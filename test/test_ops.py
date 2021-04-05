@@ -345,12 +345,24 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                     # The output qy is itself a quantized tensor and there might have been a loss of info when it was
                     # quantized. For a fair comparison we need to quantize y as well
                     quantized_float_y = torch.quantize_per_tensor(y, scale=scale, zero_point=zero_point, dtype=qdtype)
-                    n_diff = (quantized_float_y != qy).sum()
-                    diff = torch.abs((quantized_float_y.dequantize() - qy.dequantize())).sum()
-                    self.assertTrue(
-                        (qy == quantized_float_y).all(),
-                        f"{scale}, {zero_point}, {qdtype}, {n_diff}, {diff},",
-                    )
+
+                    try:
+                        # Ideally, we would assert this, which passes with (scale, zero) == (1, 0)
+                        self.assertTrue((qy == quantized_float_y).all())
+                    except AssertionError:
+                        # But because the computation aren't exactly the same between the 2 RoIAlign procedures, some
+                        # rounding error may lead to a difference of 2 in the output.
+                        # For example with (scale, zero) = (2, 10), 45.00000... will be quantized to 44
+                        # but 45.00000001 will be rounded to 46. We make sure below that:
+                        # - such discrepancies between qy and quantized_float_y are very rare (less then 5%)
+                        # - any difference between qy and quantized_float_y is == scale
+                        diff_idx = torch.where(qy != quantized_float_y)
+                        num_diff = diff_idx[0].numel()
+                        self.assertTrue(num_diff / qy.numel() < .05)
+
+                        abs_diff = torch.abs(qy[diff_idx].dequantize() - quantized_float_y[diff_idx].dequantize())
+                        t_scale = torch.full_like(abs_diff, fill_value=scale)
+                        self.assertTrue(torch.allclose(abs_diff, t_scale, atol=1e-5))
 
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
