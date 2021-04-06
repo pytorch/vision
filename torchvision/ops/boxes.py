@@ -134,7 +134,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
         size (Tuple[height, width]): size of the image
 
     Returns:
-        Tensor[N, 4]: clipped boxes 
+        Tensor[N, 4]: clipped boxes
     """
     dim = boxes.dim()
     boxes_x = boxes[..., 0::2]
