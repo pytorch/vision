@@ -7,7 +7,10 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
-from PIL import Image
+from PIL import Image, __version__ as PILLOW_VERSION
+
+
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
 boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
                      [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -120,8 +123,11 @@ class Tester(unittest.TestCase):
             res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
             res.save(path)
 
-        expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
-        self.assertTrue(torch.equal(result, expected))
+        if PILLOW_VERSION >= (8, 2):
+            # The reference image is only valid for new PIL versions
+            expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+            self.assertTrue(torch.equal(result, expected))
+
         # Check if modification is not in place
         self.assertTrue(torch.all(torch.eq(boxes, boxes_cp)).item())
         self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
