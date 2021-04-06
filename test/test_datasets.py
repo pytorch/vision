@@ -10,7 +10,12 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import svhn_root, places365_root, widerface_root, stl10_root
+from fakedata_generation import (
+    kitti_root,
+    places365_root,
+    stl10_root,
+    svhn_root,
+)
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -154,6 +159,19 @@ class Tester(DatasetTestcase):
 
             dataset = torchvision.datasets.Places365(root, download=True)
             self.assertIsInstance(repr(dataset), str)
+
+    def test_kitti(self):
+        with kitti_root() as root:
+            dataset = torchvision.datasets.Kitti(root)
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0][0], dataset[0][1]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.Kitti(root, split='test')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0][0], dataset[0][1]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+            self.assertEqual(target, None)
 
 
 class STL10Tester(DatasetTestcase):
