@@ -37,8 +37,8 @@ build:
   script_env:
     - CUDA_HOME
     - FORCE_CUDA
-    - NVCC_FLAGS
     - BUILD_VERSION
+    - TORCH_CUDA_ARCH_LIST
   features:
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
