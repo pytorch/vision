@@ -9,7 +9,7 @@ import numpy as np
 import unittest
 from typing import Sequence
 
-from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
+from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes, PILLOW_VERSION
 
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
@@ -105,6 +105,7 @@ class Tester(TransformsTester):
             'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    @unittest.skipIf(PILLOW_VERSION < (7,), "Lower PIL versions lead to slightly different results")
     def test_random_adjust_sharpness(self):
         fn_kwargs = meth_kwargs = {"sharpness_factor": 2.0}
         self._test_op(
