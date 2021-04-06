@@ -18,7 +18,7 @@ from collections import OrderedDict
 from _utils_internal import get_relative_path
 
 import numpy as np
-from PIL import Image, __version__ PILLOW_VERSION
+from PIL import Image, __version__ as PILLOW_VERSION
 
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
