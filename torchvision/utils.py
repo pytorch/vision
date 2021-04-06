@@ -187,8 +187,8 @@ def draw_bounding_boxes(
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
 
-    PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
-    if PILLOW_VERSION < (5, 3, 0):
+    pillow_version = tuple(int(x) for x in PILLOW_VERSION.split('.'))
+    if pillow_version < (5, 3, 0):
         raise ValueError("draw_bounding_boxes requires Pillow >= 5.3.0")
 
     ndarr = image.permute(1, 2, 0).numpy()
