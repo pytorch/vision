@@ -10,7 +10,7 @@ import unittest
 import math
 import random
 import numpy as np
-from PIL import Image
+from PIL import Image, __version__ as PIL_VERSION
 try:
     import accimage
 except ImportError:
@@ -1264,7 +1264,7 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
-    @unittest.skipIf(Image.__version__ >= '7', "Temporarily disabled")
+    @unittest.skipIf(PIL_VERSION >= '7', "Temporarily disabled")
     def test_adjust_saturation(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
