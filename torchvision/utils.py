@@ -4,7 +4,7 @@ import torch
 import math
 import warnings
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont, ImageColor
+from PIL import Image, ImageDraw, ImageFont, ImageColor, __version__ as PILLOW_VERSION
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks"]
 
@@ -186,6 +186,10 @@ def draw_bounding_boxes(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
+
+    PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
+    if PILLOW_VERSION < (5, 3, 0):
+        raise ValueError("draw_bounding_boxes requires Pillow >= 5.3.0")
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)

@@ -10,7 +10,7 @@ import unittest
 import math
 import random
 import numpy as np
-from PIL import Image, __version__ as PIL_VERSION
+from PIL import Image
 try:
     import accimage
 except ImportError:
@@ -21,7 +21,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import cycle_over, int_dtypes, float_dtypes
+from common_utils import cycle_over, int_dtypes, float_dtypes, PILLOW_VERSION
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -238,6 +238,7 @@ class Tester(unittest.TestCase):
             self.assertGreater(torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3,
                                torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 0, 0), "fill background requires PIL >= 5.0.0")
     def test_randomperspective_fill(self):
 
         # assert fill being either a Sequence or a Number
@@ -506,6 +507,7 @@ class Tester(unittest.TestCase):
         trans.__repr__()
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
+    @unittest.skipIf(PILLOW_VERSION < (5, 2, 0), "fill background requires PIL >= 5.2.0")
     def test_random_apply(self):
         random_state = random.getstate()
         random.seed(42)
@@ -1264,7 +1266,7 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
-    @unittest.skipIf(PIL_VERSION >= '7', "Temporarily disabled")
+    @unittest.skipIf(PILLOW_VERSION >= (7,), "Temporarily disabled")
     def test_adjust_saturation(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -1322,6 +1324,7 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
+    @unittest.skipIf(PILLOW_VERSION < (7,), "Lower PIL versions lead to slightly different results")
     def test_adjust_sharpness(self):
         x_shape = [4, 4, 3]
         x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
@@ -1489,6 +1492,7 @@ class Tester(unittest.TestCase):
 
         self.assertTrue(np.all(np.array(result_a) == np.array(result_b)))
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 2, 0), "fill background requires PIL >= 5.2.0")
     def test_rotate_fill(self):
         img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
 
@@ -1943,6 +1947,7 @@ class Tester(unittest.TestCase):
         )
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
+    @unittest.skipIf(PILLOW_VERSION < (7,), "Lower PIL versions lead to slightly different results")
     def test_random_adjust_sharpness(self):
         self._test_randomness(
             F.adjust_sharpness,
@@ -1966,6 +1971,7 @@ class Tester(unittest.TestCase):
             [{}]
         )
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 2, 0), "fill background requires PIL >= 5.2.0")
     def test_autoaugment(self):
         for policy in transforms.AutoAugmentPolicy:
             for fill in [None, 85, (128, 128, 128)]:

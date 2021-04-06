@@ -7,10 +7,9 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
-from PIL import Image, __version__ as PILLOW_VERSION
+from PIL import Image
+from common_utils import PILLOW_VERSION
 
-
-PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
 boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
                      [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -110,6 +109,7 @@ class Tester(unittest.TestCase):
             self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
                             'Pixel Image not stored in file object')
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 3, 0), "draw_bounding_box is only available for PIL >= 5.3.0")
     def test_draw_boxes(self):
         img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
         img_cp = img.clone()
@@ -132,6 +132,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.all(torch.eq(boxes, boxes_cp)).item())
         self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 3, 0), "draw_bounding_box is only available for PIL >= 5.3.0")
     def test_draw_boxes_vanilla(self):
         img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
         img_cp = img.clone()

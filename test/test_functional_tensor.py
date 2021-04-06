@@ -11,7 +11,7 @@ import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
 from torchvision.transforms import InterpolationMode
 
-from common_utils import TransformsTester
+from common_utils import TransformsTester, PILLOW_VERSION
 
 from typing import Dict, List, Sequence, Tuple
 
@@ -624,6 +624,7 @@ class Tester(TransformsTester):
                         )
                     )
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 0, 0), "affine requires PIL >= 5.0.0")
     def test_affine(self):
         # Tests on square and rectangular images
         scripted_affine = torch.jit.script(F.affine)
@@ -712,6 +713,7 @@ class Tester(TransformsTester):
                                     )
                                 )
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 2, 0), "rotate requires PIL >= 5.2.0")
     def test_rotate(self):
         # Tests on square image
         scripted_rotate = torch.jit.script(F.rotate)
@@ -788,6 +790,7 @@ class Tester(TransformsTester):
                             )
                         )
 
+    @unittest.skipIf(PILLOW_VERSION < (5, 0, 0), "perspective requires PIL >= 5.0.0")
     def test_perspective(self):
 
         from torchvision.transforms import RandomPerspective
