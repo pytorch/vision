@@ -20,8 +20,7 @@ class Stream {
   virtual ~Stream();
 
   // returns 0 - on success or negative error
-  // num_threads sets up the codec context for multithreading if needed
-  int openCodec(std::vector<DecoderMetadata>* metadata, int num_threads = 1);
+  int openCodec(std::vector<DecoderMetadata>* metadata);
   // returns 1 - if packet got consumed, 0 - if it's not, and < 0 on error
   int decodePacket(
       const AVPacket* packet,
