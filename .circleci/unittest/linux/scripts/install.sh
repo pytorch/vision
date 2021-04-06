@@ -29,7 +29,7 @@ conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
     # Install the minimal PILLOW version. Otherwise, let setup.py install the latest
-    conda install pillow==4.1.1
+    pip install pillow==4.1.1
 fi
 
 printf "* Installing torchvision\n"
