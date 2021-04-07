@@ -42,7 +42,7 @@ def roi_align(
             This version in Detectron2
 
     Returns:
-        output (Tensor[K, C, output_size[0], output_size[1]])
+        Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.
     """
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
@@ -57,7 +57,7 @@ def roi_align(
 
 class RoIAlign(nn.Module):
     """
-    See roi_align
+    See :func:`roi_align`.
     """
     def __init__(
         self,
