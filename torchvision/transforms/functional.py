@@ -55,7 +55,6 @@ pil_modes_mapping = {
 }
 
 _is_pil_image = F_pil._is_pil_image
-_parse_fill = F_pil._parse_fill
 
 
 def _get_image_size(img: Tensor) -> List[int]:
@@ -297,7 +296,7 @@ def to_pil_image(pic, mode=None):
 
 
 def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
-    """Normalize a tensor image with mean and standard deviation.
+    """Normalize a float tensor image with mean and standard deviation.
     This transform does not support PIL Image.
 
     .. note::
@@ -306,7 +305,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        tensor (Tensor): Float tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation inplace.
@@ -316,6 +315,9 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     """
     if not isinstance(tensor, torch.Tensor):
         raise TypeError('Input tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+
+    if not tensor.is_floating_point():
+        raise TypeError('Input tensor should be a float tensor. Got {}.'.format(tensor.dtype))
 
     if tensor.ndim < 3:
         raise ValueError('Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = '
@@ -342,6 +344,12 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    .. warning::
+        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
+        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
+        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
+        types.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
