@@ -174,12 +174,12 @@ at::Tensor qroi_align_forward_kernel(
     // Note: q_max relates to the input tensor, but we need that of the rois
     // tensor. They're the same since we make sure rois and input have the same
     // type above.
-    uint64_t max_indexable = std::numeric_limits<underlying_t>::max() + 1;
+    int64_t q_max = std::numeric_limits<underlying_t>::max();
     std::string err_msg = "There are " + std::to_string(input.size(0)) +
         " input images in the batch, but the RoIs tensor can only index up to " +
-        std::to_string(max_indexable) +
+        std::to_string(q_max + 1) +
         " images. Try to reduce the batch size.";
-    TORCH_CHECK(input.size(0) <= max_indexable, err_msg);
+    TORCH_CHECK(input.size(0) - 1 <= q_max, err_msg);
 
     qroi_align_forward_kernel_impl<scalar_t>(
         num_rois,
