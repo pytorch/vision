@@ -3,7 +3,7 @@ from typing import Any, List, Sequence
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance, ImageFilter, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 
 try:
     import accimage
