@@ -11,17 +11,18 @@ from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
 
-from .retinanet import RetinaNet, RetinaNetHead  # TODO: Refactor both to inherit properly
+from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead  # TODO: Refactor to inherit properly
 
 
 __all__ = ['SSD']
 
 
 class SSDHead(RetinaNetHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float,
+                 box_coder: det_utils.BoxCoder):
         nn.Module.__init__(self)
-        self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes)
-        self.regression_head = SSDRegressionHead(in_channels, num_anchors)
+        self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes, positive_fraction)
+        self.regression_head = SSDRegressionHead(in_channels, num_anchors, box_coder)
 
 
 class SSDScoringHead(nn.Module):
@@ -64,27 +65,26 @@ class SSDScoringHead(nn.Module):
 
 
 class SSDClassificationHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
         super().__init__(cls_logits, num_classes)
+        self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
         pass
 
 
-class SSDRegressionHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int]):
+class SSDRegressionHead(SSDScoringHead, RetinaNetRegressionHead):  # TODO: Refactor to avoid multiple inheritance
+    def __init__(self, in_channels: List[int], num_anchors: List[int], box_coder: det_utils.BoxCoder):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
-        super().__init__(bbox_reg, 4)
-
-    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
-                     matched_idxs: List[Tensor]) -> Tensor:
-        pass
+        SSDScoringHead.__init__(self, bbox_reg, 4)
+        self.box_coder = box_coder
+        self._use_smooth_l1 = True  # TODO: Discuss/refactor this workaround
 
 
 class SSD(RetinaNet):
@@ -95,7 +95,8 @@ class SSD(RetinaNet):
                  nms_thresh: float = 0.45,
                  detections_per_img: int = 200,
                  iou_thresh: float = 0.5,
-                 topk_candidates: int = 400):
+                 topk_candidates: int = 400,
+                 positive_fraction: float = 0.25):
         nn.Module.__init__(self)
 
         if aspect_ratios is None:
@@ -112,9 +113,11 @@ class SSD(RetinaNet):
 
         self.backbone = backbone
 
+        self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
+
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
         self.num_anchors = [2 + 2 * len(r) for r in aspect_ratios]
-        self.head = SSDHead(out_channels, self.num_anchors, num_classes)
+        self.head = SSDHead(out_channels, self.num_anchors, num_classes, positive_fraction, self.box_coder)
 
         self.anchor_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
 
@@ -123,8 +126,6 @@ class SSD(RetinaNet):
             iou_thresh,
             allow_low_quality_matches=True,
         )
-
-        self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]

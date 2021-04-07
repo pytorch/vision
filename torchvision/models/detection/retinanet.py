@@ -176,12 +176,14 @@ class RetinaNetRegressionHead(nn.Module):
                 torch.nn.init.zeros_(layer.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+        self._use_smooth_l1 = False
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
         losses = []
 
         bbox_regression = head_outputs['bbox_regression']
+        l1_loss = torch.nn.functional.smooth_l1_loss if self._use_smooth_l1 else torch.nn.functional.l1_loss
 
         for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
                 zip(targets, bbox_regression, anchors, matched_idxs):
@@ -198,7 +200,7 @@ class RetinaNetRegressionHead(nn.Module):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            losses.append(torch.nn.functional.l1_loss(
+            losses.append(l1_loss(
                 bbox_regression_per_image,
                 target_regression,
                 reduction='sum'
