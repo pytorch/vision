@@ -671,7 +671,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
 
     Returns:
        tuple: tuple (tl, tr, bl, br, center)
-                Corresponding top left, top right, bottom left, bottom right and center crop.
+       Corresponding top left, top right, bottom left, bottom right and center crop.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -717,8 +717,8 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
 
     Returns:
         tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
-            Corresponding top left, top right, bottom left, bottom right and
-            center crop and same for the flipped image.
+        Corresponding top left, top right, bottom left, bottom right and
+        center crop and same for the flipped image.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -1103,9 +1103,9 @@ def to_grayscale(img, num_output_channels=1):
 
     Returns:
         PIL Image: Grayscale version of the image.
-            if num_output_channels = 1 : returned image is single channel
 
-            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+        - if num_output_channels = 1 : returned image is single channel
+        - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if isinstance(img, Image.Image):
         return F_pil.to_grayscale(img, num_output_channels)
@@ -1128,9 +1128,9 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
     Returns:
         PIL Image or Tensor: Grayscale version of the image.
-            if num_output_channels = 1 : returned image is single channel
 
-            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+        - if num_output_channels = 1 : returned image is single channel
+        - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.to_grayscale(img, num_output_channels)
