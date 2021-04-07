@@ -84,7 +84,7 @@ class SSDRegressionHead(SSDScoringHead, RetinaNetRegressionHead):  # TODO: Refac
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
         SSDScoringHead.__init__(self, bbox_reg, 4)
         self.box_coder = box_coder
-        self._use_smooth_l1 = True  # TODO: Discuss/refactor this workaround
+        self._l1_loss = torch.nn.functional.smooth_l1_loss  # TODO: Discuss/refactor this workaround
 
 
 class SSD(RetinaNet):
