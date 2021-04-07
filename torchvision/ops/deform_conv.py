@@ -44,7 +44,7 @@ def deform_conv2d(
             convolution kernel. Default: None
 
     Returns:
-        output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution
+        Tensor[batch_sz, out_channels, out_h, out_w]: result of convolution
 
 
     Examples::
@@ -105,7 +105,7 @@ def deform_conv2d(
 
 class DeformConv2d(nn.Module):
     """
-    See deform_conv2d
+    See :func:`deform_conv2d`.
     """
 
     def __init__(
