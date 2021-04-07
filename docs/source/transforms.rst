@@ -12,14 +12,26 @@ This is useful if you have to build a more complex transformation pipeline
 
 Most transformations accept both `PIL <https://pillow.readthedocs.io>`_
 images and tensor images, although some transformations are :ref:`PIL-only
-<transforms_pil_only>` and some transformations are :ref:`tensor-only
-<transforms_tensor_only>`. The transformations that accept tensor images also
-accept batches of tensor images. A Tensor Image is a tensor with ``(C, H,
-W)`` shape, where ``C`` is a number of channels, ``H`` and ``W`` are image
-height and width. A batch of Tensor Images is a tensor of ``(B, C, H, W)``
-shape, where ``B`` is a number of images in the batch. Deterministic or
-random transformations applied on a batch of Tensor Images identically
-transform all the images of the batch.
+<transforms_pil_only>` and some are :ref:`tensor-only
+<transforms_tensor_only>`. The :ref:`conversion_transforms` may be used to
+convert to and from PIL images.
+
+The transformations that accept tensor images also accept batches of tensor
+images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
+number of channels, ``H`` and ``W`` are image height and width. A batch of
+Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
+of images in the batch.
+
+The expected range of the values of a tensor image is implicitely defined by
+the tensor dtype. Tensor images with a float dtype are expected to have
+values in ``[0, 1)``. Tensor images with an integer dtype are expected to
+have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
+that can be represented in that dtype.
+
+Randomized transformations will apply the same transformation to all the
+images of a given batch, but they will produce different transformations
+across calls. For reproducible transformations across calls, you may use
+:ref:`functional transforms <functional_transforms>`.
 
 .. warning::
 
@@ -149,6 +161,7 @@ Transforms on torch.\*Tensor only
 
 .. autoclass:: ConvertImageDtype
 
+.. _conversion_transforms:
 
 Conversion Transforms
 ---------------------
@@ -191,7 +204,8 @@ Functional Transforms
 Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don't contain a random number
 generator for their parameters.
-That means you have to specify/generate all parameters, but you can reuse the functional transform.
+That means you have to specify/generate all parameters, but the functional transform will give you
+reproducible results across calls.
 
 Example:
 you can apply a functional transform with the same parameters to multiple images like this:

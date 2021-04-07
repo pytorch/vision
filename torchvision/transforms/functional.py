@@ -1330,6 +1330,7 @@ def equalize(img: Tensor) -> Tensor:
         img (PIL Image or Tensor): Image on which equalize is applied.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
+            The tensor dtype must be ``torch.uint8`` and values are expected to be in ``[0, 255]``.
             If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
     Returns:
