@@ -11,7 +11,7 @@ from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
 
-from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead  # TODO: Refactor to inherit properly
+from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
 
 
 __all__ = ['SSD']
@@ -74,7 +74,28 @@ class SSDClassificationHead(SSDScoringHead):
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
-        pass
+        losses = []
+
+        cls_logits = head_outputs['cls_logits']
+
+        for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
+            gt_classes_target = targets_per_image['labels'][matched_idxs_per_image]
+            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduce=False)
+
+            # Hard Negative Sampling
+            foreground_idxs_per_image = matched_idxs_per_image >= 0
+            num_foreground = foreground_idxs_per_image.sum().item()
+
+            background_idxs_per_image = torch.logical_not(foreground_idxs_per_image)
+            num_background = matched_idxs_per_image.size(0) - num_foreground
+            num_negative = min(num_background, int(self.neg_to_pos_ratio * num_foreground))
+
+            foreground_loss = classification_loss[foreground_idxs_per_image]
+            background_loss = classification_loss[background_idxs_per_image].sort(descending=True)[0][:num_negative]
+
+            losses.append((foreground_loss.sum() + background_loss.sum()) / max(1, num_foreground))
+
+        return _sum(losses) / len(targets)
 
 
 class SSDRegressionHead(SSDScoringHead, RetinaNetRegressionHead):  # TODO: Refactor to avoid multiple inheritance
@@ -121,11 +142,7 @@ class SSD(RetinaNet):
 
         self.anchor_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
 
-        self.proposal_matcher = det_utils.Matcher(
-            iou_thresh,
-            iou_thresh,
-            allow_low_quality_matches=True,
-        )
+        self.proposal_matcher = det_utils.Matcher(iou_thresh, iou_thresh)
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
