@@ -20,14 +20,14 @@ def roi_align(
     Performs Region of Interest (RoI) Align operator with average pooling, as described in Mask R-CNN.
 
     Args:
-        input (Tensor[N, C, H, W]): input tensor
+        input (Tensor[N, C, H, W]): The input tensor, i.e. a batch with ``N`` feature maps
         boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in (x1, y1, x2, y2)
             format where the regions will be taken from.
             The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
-            If a single Tensor is passed,
-            then the first column should contain the batch index. If a list of Tensors
-            is passed, then each Tensor will correspond to the boxes for an element i
-            in a batch.
+            If a single Tensor is passed, then the first column should
+            contain the index of the corresponding feature map in the batch, i.e. a number in ``[0, N - 1]``.
+            If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
+            in the batch.
         output_size (int or Tuple[int, int]): the size of the output (in bins or pixels) after the pooling
             is performed, as (height, width).
         spatial_scale (float): a scaling factor that maps the input coordinates to
