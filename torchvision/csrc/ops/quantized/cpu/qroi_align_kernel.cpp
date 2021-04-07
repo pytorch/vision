@@ -2,7 +2,7 @@
 #include <ATen/native/quantized/affine_quantizer.h>
 #include <torch/library.h>
 
-#include "../../roi_align.h"
+#include "../../cpu/roi_align_common.h"
 
 namespace vision {
 namespace ops {

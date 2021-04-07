@@ -1,7 +1,7 @@
 #include <ATen/ATen.h>
 #include <torch/library.h>
 
-#include "../roi_align.h"
+#include "./roi_align_common.h"
 
 namespace vision {
 namespace ops {
