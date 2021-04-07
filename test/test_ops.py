@@ -304,7 +304,7 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
         pool_size = 5
         img_size = 10
         n_channels = 2
-        num_imgs = 2
+        num_imgs = 1
         dtype = torch.float
 
         def make_rois(num_rois=1000):
@@ -364,11 +364,11 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                         t_scale = torch.full_like(abs_diff, fill_value=scale)
                         self.assertTrue(torch.allclose(abs_diff, t_scale, atol=1e-5))
 
-        x = torch.randint(50, 100, size=(129, 3, 10, 10)).to(dtype)
+        x = torch.randint(50, 100, size=(2, 3, 10, 10)).to(dtype)
         qx = torch.quantize_per_tensor(x, scale=1, zero_point=0, dtype=torch.qint8)
         rois = make_rois(10)
         qrois = torch.quantize_per_tensor(rois, scale=1, zero_point=0, dtype=torch.qint8)
-        with self.assertRaisesRegex(RuntimeError, "There are 129 input images in the batch, but the RoIs tensor"):
+        with self.assertRaisesRegex(RuntimeError, "Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=pool_size)
 
 

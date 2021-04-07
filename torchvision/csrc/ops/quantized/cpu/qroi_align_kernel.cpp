@@ -35,8 +35,9 @@ void qroi_align_forward_kernel_impl(
     int index_n = n * channels * pooled_width * pooled_height;
 
     const T* offset_rois = rois + n * 5;
-    int roi_batch_ind = at::native::dequantize_val(
-        rois_scale, rois_zp, offset_rois[0]);
+
+    // FIXME: change this when batches of size > 1 are allowed
+    const int roi_batch_ind = 0;
 
     // Do not using rounding; this implementation detail is critical
     float offset = aligned ? 0.5 : 0.;
@@ -148,6 +149,13 @@ at::Tensor qroi_align_forward_kernel(
   TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
   TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
+  // The first column of the RoI tensor is an image index, but not all indices
+  // are representable depending on the quantization. For example 1, 3, 5...
+  // indices can't be represented when qscale is 2. To prevent any bug, we force
+  // a batch size of 1 and we ignore the first column
+  TORCH_CHECK(
+      input.size(0) == 1,
+      "Only one image per batch is allowed in roi_align when quantized tensors are passed.");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -171,16 +179,6 @@ at::Tensor qroi_align_forward_kernel(
     return output;
 
   AT_DISPATCH_QINT_TYPES(input.scalar_type(), "qroi_align_forward_kernel", [&] {
-    // Note: q_max relates to the input tensor, but we need that of the rois
-    // tensor. They're the same since we make sure rois and input have the same
-    // type above.
-    int64_t q_max = std::numeric_limits<underlying_t>::max();
-    std::string err_msg = "There are " + std::to_string(input.size(0)) +
-        " input images in the batch, but the RoIs tensor can only index up to " +
-        std::to_string(q_max + 1) +
-        " images. Try to reduce the batch size.";
-    TORCH_CHECK(input.size(0) - 1 <= q_max, err_msg);
-
     qroi_align_forward_kernel_impl<scalar_t>(
         num_rois,
         input,

@@ -112,7 +112,6 @@ void pre_calc_for_bilinear_interpolate(
   }
 }
 
-
 } // namespace detail
 } // namespace ops
 } // namespace vision
