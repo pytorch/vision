@@ -304,12 +304,12 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
         pool_size = 5
         img_size = 10
         n_channels = 2
-        num_batches = 2
+        num_imgs = 2
         dtype = torch.float
 
         def make_rois(num_rois=1000):
             rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
-            rois[:, 0] = torch.randint(0, num_batches, size=(num_rois,))  # set batch index
+            rois[:, 0] = torch.randint(0, num_imgs, size=(num_rois,))  # set batch index
             rois[:, 3:] += rois[:, 1:3]  # make sure boxes aren't degenerate
             return rois
 
@@ -317,7 +317,7 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
             for scale, zero_point in ((1, 0), (2, 10), (0.1, 50)):
                 for qdtype in (torch.qint8, torch.quint8, torch.qint32):
 
-                    x = torch.randint(50, 100, size=(num_batches, n_channels, img_size, img_size)).to(dtype)
+                    x = torch.randint(50, 100, size=(num_imgs, n_channels, img_size, img_size)).to(dtype)
                     qx = torch.quantize_per_tensor(x, scale=scale, zero_point=zero_point, dtype=qdtype)
 
                     rois = make_rois()
@@ -363,6 +363,13 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                         abs_diff = torch.abs(qy[diff_idx].dequantize() - quantized_float_y[diff_idx].dequantize())
                         t_scale = torch.full_like(abs_diff, fill_value=scale)
                         self.assertTrue(torch.allclose(abs_diff, t_scale, atol=1e-5))
+
+        x = torch.randint(50, 100, size=(129, 3, 10, 10)).to(dtype)
+        qx = torch.quantize_per_tensor(x, scale=0, zero_point=1, dtype=torch.qint8)
+        rois = make_rois(10)
+        qrois = torch.quantize_per_tensor(rois, scale=0, zero_point=1, dtype=torch.qint8)
+        with self.assertRaisesRegex(RuntimeError, "There are 129 input images in the batch, but the RoIs tensor"):
+            ops.roi_align(qx, qrois, output_size=pool_size)
 
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):

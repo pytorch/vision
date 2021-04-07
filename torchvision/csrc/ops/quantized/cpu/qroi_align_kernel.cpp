@@ -36,8 +36,7 @@ void qroi_align_forward_kernel_impl(
 
     const T* offset_rois = rois + n * 5;
     int roi_batch_ind = at::native::dequantize_val(
-        rois_scale, rois_zp, offset_rois[0]); // FIXME: This can be out of the
-                                              // range of the quantized type!!
+        rois_scale, rois_zp, offset_rois[0]);
 
     // Do not using rounding; this implementation detail is critical
     float offset = aligned ? 0.5 : 0.;
@@ -172,6 +171,16 @@ at::Tensor qroi_align_forward_kernel(
     return output;
 
   AT_DISPATCH_QINT_TYPES(input.scalar_type(), "qroi_align_forward_kernel", [&] {
+    // Note: q_max relates to the input tensor, but we need that of the rois
+    // tensor. They're the same since we make sure rois and input have the same
+    // type above.
+    uint64_t max_indexable = std::numeric_limits<underlying_t>::max() + 1;
+    std::string err_msg = "There are " + std::to_string(input.size(0)) +
+        " input images in the batch, but the RoIs tensor can only index up to " +
+        std::to_string(max_indexable) +
+        " images. Try to reduce the batch size.";
+    TORCH_CHECK(input.size(0) <= max_indexable, err_msg);
+
     qroi_align_forward_kernel_impl<scalar_t>(
         num_rois,
         input,
