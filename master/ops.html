@@ -95,7 +95,7 @@
             <a href="https://pytorch.org/tutorials">Tutorials</a>
           </li>
 
-          <li class="active">
+          <li class="active docs-active">
             <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
               <a class="resource-option with-down-orange-arrow">
                 Docs
@@ -190,7 +190,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+1498863 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+b7692ad ) &#x25BC</a>
     </div>
     
 
@@ -336,16 +336,11 @@ are expected to be in <code class="docutils literal notranslate"><span class="pr
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>int64 tensor with the indices</dt>
-<dd><p class="first last">of the elements that have been kept
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">int64 tensor with the indices of the elements that have been kept
 by NMS, sorted in decreasing order of scores</p>
-</dd>
-</dl>
-</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">keep (Tensor)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor</p>
 </td>
 </tr>
 </tbody>
@@ -372,16 +367,11 @@ are expected to be in <code class="docutils literal notranslate"><span class="pr
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>int64 tensor with the indices of</dt>
-<dd><p class="first last">the elements that have been kept by NMS, sorted
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">int64 tensor with the indices of the elements that have been kept by NMS, sorted
 in decreasing order of scores</p>
-</dd>
-</dl>
-</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">keep (Tensor)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor</p>
 </td>
 </tr>
 </tbody>
@@ -403,15 +393,11 @@ with <code class="docutils literal notranslate"><span class="pre">0</span> <span
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>indices of the boxes that have both sides</dt>
-<dd><p class="first last">larger than min_size</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">indices of the boxes that have both sides
+larger than min_size</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">keep (Tensor[K])</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[K]</p>
 </td>
 </tr>
 </tbody>
@@ -433,7 +419,10 @@ with <code class="docutils literal notranslate"><span class="pre">0</span> <span
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">clipped_boxes (Tensor[N, 4])</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">clipped boxes</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[N, 4]</p>
 </td>
 </tr>
 </tbody>
@@ -445,7 +434,8 @@ with <code class="docutils literal notranslate"><span class="pre">0</span> <span
 <code class="descclassname">torchvision.ops.</code><code class="descname">box_convert</code><span class="sig-paren">(</span><em>boxes: torch.Tensor</em>, <em>in_fmt: str</em>, <em>out_fmt: str</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.box_convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts boxes from given in_fmt to out_fmt.
 Supported in_fmt and out_fmt are:</p>
-<p>‘xyxy’: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.</p>
+<p>‘xyxy’: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
+This is the format that torchvision utilities expect.</p>
 <p>‘xywh’ : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.</p>
 <p>‘cxcywh’ : boxes are represented via centre, width and height, cx, cy being center of box, w, h
 being width and height.</p>
@@ -463,7 +453,7 @@ being width and height.</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Boxes into converted format.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">boxes (Tensor[N, 4])</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[N, 4]</p>
 </td>
 </tr>
 </tbody>
@@ -473,7 +463,7 @@ being width and height.</p>
 <dl class="function">
 <dt id="torchvision.ops.box_area">
 <code class="descclassname">torchvision.ops.</code><code class="descname">box_area</code><span class="sig-paren">(</span><em>boxes: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.box_area" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes the area of a set of bounding boxes, which are specified by its
+<dd><p>Computes the area of a set of bounding boxes, which are specified by their
 (x1, y1, x2, y2) coordinates.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -483,9 +473,9 @@ being width and height.</p>
 are expected to be in (x1, y1, x2, y2) format with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">area for each box</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the area for each box</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">area (Tensor[N])</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Tensor[N]</td>
 </tr>
 </tbody>
 </table>
@@ -494,7 +484,7 @@ are expected to be in (x1, y1, x2, y2) format with
 <dl class="function">
 <dt id="torchvision.ops.box_iou">
 <code class="descclassname">torchvision.ops.</code><code class="descname">box_iou</code><span class="sig-paren">(</span><em>boxes1: torch.Tensor</em>, <em>boxes2: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_iou"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.box_iou" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return intersection-over-union (Jaccard index) of boxes.</p>
+<dd><p>Return intersection-over-union (Jaccard index) between two sets of boxes.</p>
 <p>Both sets of boxes are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -502,15 +492,15 @@ are expected to be in (x1, y1, x2, y2) format with
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>boxes1</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – </li>
-<li><strong>boxes2</strong> (<em>Tensor</em><em>[</em><em>M</em><em>, </em><em>4</em><em>]</em>) – </li>
+<li><strong>boxes1</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – first set of boxes</li>
+<li><strong>boxes2</strong> (<em>Tensor</em><em>[</em><em>M</em><em>, </em><em>4</em><em>]</em>) – second set of boxes</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">iou (Tensor[N, M])</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[N, M]</p>
 </td>
 </tr>
 </tbody>
@@ -520,7 +510,7 @@ are expected to be in (x1, y1, x2, y2) format with
 <dl class="function">
 <dt id="torchvision.ops.generalized_box_iou">
 <code class="descclassname">torchvision.ops.</code><code class="descname">generalized_box_iou</code><span class="sig-paren">(</span><em>boxes1: torch.Tensor</em>, <em>boxes2: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/boxes.html#generalized_box_iou"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.generalized_box_iou" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return generalized intersection-over-union (Jaccard index) of boxes.</p>
+<dd><p>Return generalized intersection-over-union (Jaccard index) between two sets of boxes.</p>
 <p>Both sets of boxes are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -528,16 +518,16 @@ are expected to be in (x1, y1, x2, y2) format with
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>boxes1</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – </li>
-<li><strong>boxes2</strong> (<em>Tensor</em><em>[</em><em>M</em><em>, </em><em>4</em><em>]</em>) – </li>
+<li><strong>boxes1</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – first set of boxes</li>
+<li><strong>boxes2</strong> (<em>Tensor</em><em>[</em><em>M</em><em>, </em><em>4</em><em>]</em>) – second set of boxes</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the NxM matrix containing the pairwise generalized_IoU values
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the NxM matrix containing the pairwise generalized IoU values
 for every element in boxes1 and boxes2</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">generalized_iou (Tensor[N, M])</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[N, M]</p>
 </td>
 </tr>
 </tbody>
@@ -576,7 +566,10 @@ This version in Detectron2</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">output (Tensor[K, C, output_size[0], output_size[1]])</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The pooled RoIs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[K, C, output_size[0], output_size[1]]</p>
 </td>
 </tr>
 </tbody>
@@ -613,7 +606,10 @@ ceil(roi_width / pooled_w), and likewise for height). Default: -1</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">output (Tensor[K, C, output_size[0], output_size[1]])</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The pooled RoIs</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[K, C, output_size[0], output_size[1]]</p>
 </td>
 </tr>
 </tbody>
@@ -644,7 +640,10 @@ the box coordinates. Default: 1.0</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">output (Tensor[K, C, output_size[0], output_size[1]])</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The pooled RoIs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[K, C, output_size[0], output_size[1]]</p>
 </td>
 </tr>
 </tbody>
@@ -676,7 +675,10 @@ the box coordinates. Default: 1.0</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">output (Tensor[K, C, output_size[0], output_size[1]])</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The pooled RoIs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[K, C, output_size[0], output_size[1]]</p>
 </td>
 </tr>
 </tbody>
@@ -712,7 +714,7 @@ convolution kernel. Default: None</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">result of convolution</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">output (Tensor[batch_sz, out_channels, out_h, out_w])</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Tensor[batch_sz, out_channels, out_h, out_w]</p>
 </td>
 </tr>
 </tbody>
@@ -773,31 +775,31 @@ balance easy vs hard examples.</li>
 <dl class="class">
 <dt id="torchvision.ops.RoIAlign">
 <em class="property">class </em><code class="descclassname">torchvision.ops.</code><code class="descname">RoIAlign</code><span class="sig-paren">(</span><em>output_size: None</em>, <em>spatial_scale: float</em>, <em>sampling_ratio: int</em>, <em>aligned: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/roi_align.html#RoIAlign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.RoIAlign" title="Permalink to this definition">¶</a></dt>
-<dd><p>See roi_align</p>
+<dd><p>See <a class="reference internal" href="#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_align()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="torchvision.ops.PSRoIAlign">
 <em class="property">class </em><code class="descclassname">torchvision.ops.</code><code class="descname">PSRoIAlign</code><span class="sig-paren">(</span><em>output_size: int</em>, <em>spatial_scale: float</em>, <em>sampling_ratio: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/ps_roi_align.html#PSRoIAlign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.PSRoIAlign" title="Permalink to this definition">¶</a></dt>
-<dd><p>See ps_roi_align</p>
+<dd><p>See <a class="reference internal" href="#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_align()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="torchvision.ops.RoIPool">
 <em class="property">class </em><code class="descclassname">torchvision.ops.</code><code class="descname">RoIPool</code><span class="sig-paren">(</span><em>output_size: None</em>, <em>spatial_scale: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/roi_pool.html#RoIPool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.RoIPool" title="Permalink to this definition">¶</a></dt>
-<dd><p>See roi_pool</p>
+<dd><p>See <a class="reference internal" href="#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_pool()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="torchvision.ops.PSRoIPool">
 <em class="property">class </em><code class="descclassname">torchvision.ops.</code><code class="descname">PSRoIPool</code><span class="sig-paren">(</span><em>output_size: int</em>, <em>spatial_scale: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/ps_roi_pool.html#PSRoIPool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.PSRoIPool" title="Permalink to this definition">¶</a></dt>
-<dd><p>See ps_roi_pool</p>
+<dd><p>See <a class="reference internal" href="#torchvision.ops.ps_roi_pool" title="torchvision.ops.ps_roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_pool()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="torchvision.ops.DeformConv2d">
 <em class="property">class </em><code class="descclassname">torchvision.ops.</code><code class="descname">DeformConv2d</code><span class="sig-paren">(</span><em>in_channels: int</em>, <em>out_channels: int</em>, <em>kernel_size: int</em>, <em>stride: int = 1</em>, <em>padding: int = 0</em>, <em>dilation: int = 1</em>, <em>groups: int = 1</em>, <em>bias: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/deform_conv.html#DeformConv2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.DeformConv2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>See deform_conv2d</p>
+<dd><p>See <a class="reference internal" href="#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-func docutils literal notranslate"><span class="pre">deform_conv2d()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="class">
