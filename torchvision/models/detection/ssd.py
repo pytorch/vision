@@ -14,7 +14,7 @@ from .. import vgg
 from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
 
 
-__all__ = ['SSD']
+__all__ = ['SSD']  # TODO: Expose public methods, include it in models and write unit-tests for them
 
 
 class SSDHead(RetinaNetHead):
@@ -31,7 +31,7 @@ class SSDScoringHead(nn.Module):
         self.module_list = module_list
         self.num_columns = num_columns
 
-    def get_result_from_module_list(self, x: Tensor, idx: int) -> Tensor:
+    def _get_result_from_module_list(self, x: Tensor, idx: int) -> Tensor:
         """
         This is equivalent to self.module_list[idx](x),
         but torchscript doesn't support this yet
@@ -51,7 +51,7 @@ class SSDScoringHead(nn.Module):
         all_results = []
 
         for i, features in enumerate(x):
-            results = self.get_result_from_module_list(features, i)
+            results = self._get_result_from_module_list(features, i)
 
             # Permute output from (N, A * K, H, W) to (N, HWA, K).
             N, _, H, W = results.shape
