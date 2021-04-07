@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 from collections import OrderedDict
 from torch import nn, Tensor
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from . import _utils as det_utils
 from .anchor_utils import DBoxGenerator
@@ -27,7 +27,7 @@ class SSDHead(RetinaNetHead):
 
 class SSDScoringHead(nn.Module):
     def __init__(self, module_list: nn.ModuleList, num_columns: int):
-        super().__init__()
+        nn.Module.__init__(self)
         self.module_list = module_list
         self.num_columns = num_columns
 
