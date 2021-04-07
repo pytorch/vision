@@ -89,7 +89,7 @@ def get_video_backend():
     Returns the currently active video backend used to decode videos.
 
     Returns:
-        str: Name of the video backend. one of {'pyav', 'video_reader'}. 
+        str: Name of the video backend. one of {'pyav', 'video_reader'}.
     """
 
     return _video_backend
