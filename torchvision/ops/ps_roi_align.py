@@ -36,9 +36,6 @@ def ps_roi_align(
             then exactly ``sampling_ratio x sampling_ratio`` sampling points per bin are used. If
             <= 0, then an adaptive number of grid points are used (computed as
             ``ceil(roi_width / output_width)``, and likewise for height). Default: -1
-        aligned (bool): If False, use the legacy implementation.
-            If True, pixel shift the box coordinates it by -0.5 for a better alignment with the two
-            neighboring pixel indices. This version is used in Detectron2
 
     Returns:
         Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs
