@@ -30,7 +30,6 @@ at::Tensor _roi_align_backward(
     int64_t sampling_ratio,
     bool aligned);
 
-
 } // namespace detail
 
 } // namespace ops
