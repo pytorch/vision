@@ -1,9 +1,9 @@
+import csv
 import os
-from collections import namedtuple
-from typing import Any, Callable, NamedTuple, Optional, Tuple
+from collections import defaultdict
+from typing import Any, Callable, Dict, Optional, Tuple
 from urllib.error import URLError
 
-import pandas as pd
 from PIL import Image
 
 from .utils import download_and_extract_archive
@@ -64,26 +64,10 @@ class Kitti(VisionDataset):
             target_transform=target_transform,
             transforms=transforms,
         )
-        self.TargetTuple = namedtuple(
-            "TargetTuple",
-            [
-                "type",
-                "truncated",
-                "occluded",
-                "alpha",
-                "bbox",
-                "dimensions",
-                "location",
-                "rotation_y",
-            ],
-        )
         self.images = []
         self.targets = []
         self.root = root
         self.split = split
-        self.transform = transform
-        self.target_transform = target_transform
-        self.transforms = transforms
 
         if download:
             self.download()
@@ -109,7 +93,7 @@ class Kitti(VisionDataset):
             index (int): Index
         Returns:
             tuple: (image, target), where
-            target is a namedtuple with the following fields:
+            target is a dictionary with the following keys:
                 type: Int64Tensor[N]
                 truncated: FloatTensor[N]
                 occluded: Int64Tensor[N]
@@ -124,24 +108,22 @@ class Kitti(VisionDataset):
         target = None if self.split == "test" else self._parse_target(index)
         if self.transforms:
             image, target = self.transforms(image, target)
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            target = self.target_transform(target)
         return image, target
 
-    def _parse_target(self, index: int) -> NamedTuple:
-        target_df = pd.read_csv(self.targets[index], delimiter=" ", header=None)
-        return self.TargetTuple(
-            type=target_df.iloc[:, 0].values,
-            truncated=target_df.iloc[:, 1].values,
-            occluded=target_df.iloc[:, 2].values,
-            alpha=target_df.iloc[:, 3].values,
-            bbox=target_df.iloc[:, 4:8].values,
-            dimensions=target_df.iloc[:, 8:11].values,
-            location=target_df.iloc[:, 11:14].values,
-            rotation_y=target_df.iloc[:, 14].values,
-        )
+    def _parse_target(self, index: int) -> Dict[str, Any]:
+        target: Dict[str, Any] = defaultdict(list)
+        with open(self.targets[index]) as inp:
+            content = csv.reader(inp, delimiter=" ")
+            for line in content:
+                target["type"].append(line[0])
+                target["truncated"].append(line[1])
+                target["occluded"].append(line[2])
+                target["alpha"].append(line[3])
+                target["bbox"].append(line[4:8])
+                target["dimensions"].append(line[8:11])
+                target["location"].append(line[11:14])
+                target["rotation_y"].append(line[14])
+        return target
 
     def __len__(self) -> int:
         return len(self.images)
