@@ -1,7 +1,6 @@
 import csv
 import os
-from collections import defaultdict
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from urllib.error import URLError
 
 from PIL import Image
@@ -93,16 +92,15 @@ class Kitti(VisionDataset):
             index (int): Index
         Returns:
             tuple: (image, target), where
-            target is a dictionary with the following keys:
-                type: Int64Tensor[N]
-                truncated: FloatTensor[N]
-                occluded: Int64Tensor[N]
-                alpha: FloatTensor[N]
-                bbox: FloatTensor[N, 4]
-                dimensions: FloatTensor[N, 3]
-                locations: FloatTensor[N, 3]
-                rotation_y: FloatTensor[N]
-                score: FloatTensor[N]
+            target is a list of dictionaries with the following keys:
+                type: str
+                truncated: float
+                occluded: int
+                alpha: float
+                bbox: float[4]
+                dimensions: float[3]
+                locations: float[3]
+                rotation_y: float
         """
         image = Image.open(self.images[index])
         target = None if self.split == "test" else self._parse_target(index)
@@ -110,19 +108,21 @@ class Kitti(VisionDataset):
             image, target = self.transforms(image, target)
         return image, target
 
-    def _parse_target(self, index: int) -> Dict[str, Any]:
-        target: Dict[str, Any] = defaultdict(list)
+    def _parse_target(self, index: int) -> List:
+        target = []
         with open(self.targets[index]) as inp:
             content = csv.reader(inp, delimiter=" ")
             for line in content:
-                target["type"].append(line[0])
-                target["truncated"].append(line[1])
-                target["occluded"].append(line[2])
-                target["alpha"].append(line[3])
-                target["bbox"].append(line[4:8])
-                target["dimensions"].append(line[8:11])
-                target["location"].append(line[11:14])
-                target["rotation_y"].append(line[14])
+                target.append({
+                    "type": line[0],
+                    "truncated": float(line[1]),
+                    "occluded": int(line[2]),
+                    "alpha": float(line[3]),
+                    "bbox": [float(x) for x in line[4:8]],
+                    "dimensions": [float(x) for x in line[8:11]],
+                    "location": [float(x) for x in line[11:14]],
+                    "rotation_y": float(line[14]),
+                })
         return target
 
     def __len__(self) -> int:
