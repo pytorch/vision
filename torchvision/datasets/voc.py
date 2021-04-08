@@ -2,7 +2,11 @@ import os
 import tarfile
 import collections
 from .vision import VisionDataset
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element as ET_Element
+try:
+    from defusedxml.ElementTree import parse as ET_parse
+except ImportError:
+    from xml.etree.ElementTree import parse as ET_parse
 from PIL import Image
 from typing import Any, Callable, Dict, Optional, Tuple, List
 from .utils import download_and_extract_archive, verify_str_arg
@@ -203,14 +207,14 @@ class VOCDetection(_VOCBase):
             tuple: (image, target) where target is a dictionary of the XML tree.
         """
         img = Image.open(self.images[index]).convert("RGB")
-        target = self.parse_voc_xml(ET.parse(self.annotations[index]).getroot())
+        target = self.parse_voc_xml(ET_parse(self.annotations[index]).getroot())
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
         return img, target
 
-    def parse_voc_xml(self, node: ET.Element) -> Dict[str, Any]:
+    def parse_voc_xml(self, node: ET_Element) -> Dict[str, Any]:
         voc_dict: Dict[str, Any] = {}
         children = list(node)
         if children:

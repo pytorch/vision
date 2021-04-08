@@ -38,7 +38,7 @@ def ps_roi_align(
             ceil(roi_width / pooled_w), and likewise for height). Default: -1
 
     Returns:
-        output (Tensor[K, C, output_size[0], output_size[1]])
+        Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs
     """
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
@@ -55,7 +55,7 @@ def ps_roi_align(
 
 class PSRoIAlign(nn.Module):
     """
-    See ps_roi_align
+    See :func:`ps_roi_align`.
     """
     def __init__(
         self,
