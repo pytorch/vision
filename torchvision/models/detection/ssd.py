@@ -15,7 +15,7 @@ from ..utils import load_state_dict_from_url
 from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
 
 
-__all__ = ['SSD', 'ssd300_vgg16']  # FIXME: Expose public methods in models and write unit-tests for them
+__all__ = ['SSD', 'ssd300_vgg16']
 
 model_urls = {
     'ssd300_vgg16_coco': None,  # TODO: Add url with weights
@@ -92,6 +92,9 @@ class SSDClassificationHead(SSDScoringHead):
         cls_logits = head_outputs['cls_logits']
 
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
+            if targets_per_image['labels'].numel() == 0:  # TODO: Check this handles empty labels properly
+                losses.append(torch.zeros((1, ), dtype=cls_logits_per_image.dtype, device=cls_logits_per_image.device))
+                continue
             gt_classes_target = targets_per_image['labels'][matched_idxs_per_image]
             classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduce=False)
 
@@ -225,7 +228,7 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
             x = block(x)
             output.append(x)
 
-        return OrderedDict(((str(i), v) for i, v in enumerate(output)))
+        return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
 def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int = 3):
