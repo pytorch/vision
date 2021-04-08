@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import torch
 from common_utils import TestCase
 from torchvision.models.detection.anchor_utils import AnchorGenerator, DBoxGenerator
