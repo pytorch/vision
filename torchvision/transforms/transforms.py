@@ -841,7 +841,7 @@ class RandomResizedCrop(torch.nn.Module):
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
-                sized crop.
+            sized crop.
         """
         width, height = F._get_image_size(img)
         area = height * width
@@ -1464,8 +1464,9 @@ class Grayscale(torch.nn.Module):
 
     Returns:
         PIL Image: Grayscale version of the input.
-         - If ``num_output_channels == 1`` : returned image is single channel
-         - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
+
+        - If ``num_output_channels == 1`` : returned image is single channel
+        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
 
     """
 
