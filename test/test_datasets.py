@@ -1,23 +1,18 @@
 import contextlib
-import sys
 import os
 import unittest
 from unittest import mock
 import numpy as np
 import PIL
 from PIL import Image
-from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
-from common_utils import get_tmp_dir
 from fakedata_generation import (
-    kitti_root,
     places365_root,
     stl10_root,
     svhn_root,
 )
 import xml.etree.ElementTree as ET
-from urllib.request import Request, urlopen
 import itertools
 import datasets_utils
 import pathlib
@@ -159,19 +154,6 @@ class Tester(DatasetTestcase):
 
             dataset = torchvision.datasets.Places365(root, download=True)
             self.assertIsInstance(repr(dataset), str)
-
-    def test_kitti(self):
-        with kitti_root() as root:
-            dataset = torchvision.datasets.Kitti(root)
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0][0], dataset[0][1]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-
-            dataset = torchvision.datasets.Kitti(root, split='test')
-            self.assertEqual(len(dataset), 1)
-            img, target = dataset[0][0], dataset[0][1]
-            self.assertTrue(isinstance(img, PIL.Image.Image))
-            self.assertEqual(target, None)
 
 
 class STL10Tester(DatasetTestcase):
@@ -1718,6 +1700,44 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
     def test_classes(self, config):
         with self.create_dataset(config) as (dataset, info):
             self.assertSequenceEqual(dataset.classes, info["classes"])
+
+
+class KittiTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Kitti
+    FEATURE_TYPES = (PIL.Image.Image, (list, type(None)))  # test split returns None as target
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    def inject_fake_data(self, tmpdir, config):
+        kitti_dir = os.path.join(tmpdir, "Kitti", "raw")
+        os.makedirs(kitti_dir)
+
+        split_to_idx = split_to_num_examples = {
+            None: 1,
+            "train": 1,
+            "test": 2,
+        }
+
+        # We need to create all folders regardless of the split in config
+        for split in ("train", "test"):
+            split_idx = split_to_idx[split]
+            num_examples = split_to_num_examples[split]
+
+            datasets_utils.create_image_folder(
+                root=kitti_dir,
+                name=os.path.join(f"{split}ing", "image_2"),
+                file_name_fn=lambda image_idx: f"000{split_idx + image_idx}.png",
+                num_examples=num_examples,
+            )
+            if split == "train":
+                for image_idx in range(num_examples):
+                    target_file_dir = os.path.join(kitti_dir, f"{split}ing", "label_2")
+                    os.makedirs(target_file_dir)
+                    target_file_name = os.path.join(target_file_dir, f"000{split_idx + image_idx}.txt")
+                    target_contents = "Pedestrian 0.00 0 -0.20 712.40 143.00 810.73 307.92 1.89 0.48 1.20 1.84 1.47 8.41 0.01\n"  # noqa
+                    with open(target_file_name, "w") as target_file:
+                        target_file.write(target_contents)
+
+        return split_to_num_examples[config["split"]]
 
 
 if __name__ == "__main__":

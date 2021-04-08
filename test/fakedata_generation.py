@@ -404,36 +404,3 @@ def stl10_root(_extracted=False):
         data = dict(num_images_in_folds=num_images_in_folds, num_images_in_split=num_images_in_split, archive=archive)
 
         yield root, data
-
-
-@contextlib.contextmanager
-def kitti_root():
-    def _make_image(file):
-        PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
-
-    def _make_train_archive(root):
-        extracted_dir = os.path.join(root, 'training', 'image_2')
-        os.makedirs(extracted_dir)
-        _make_image(os.path.join(extracted_dir, '00000.png'))
-
-    def _make_target_archive(root):
-        extracted_dir = os.path.join(root, 'training', 'label_2')
-        os.makedirs(extracted_dir)
-        target_contents = 'Pedestrian 0.00 0 -0.20 712.40 143.00 810.73 307.92 1.89 0.48 1.20 1.84 1.47 8.41 0.01\n'
-        target_file = os.path.join(extracted_dir, '00000.txt')
-        with open(target_file, "w") as txt_file:
-            txt_file.write(target_contents)
-
-    def _make_test_archive(root):
-        extracted_dir = os.path.join(root, 'testing', 'image_2')
-        os.makedirs(extracted_dir)
-        _make_image(os.path.join(extracted_dir, '00001.png'))
-
-    with get_tmp_dir() as root:
-        raw_dir = os.path.join(root, "Kitti", "raw")
-        os.makedirs(raw_dir)
-        _make_train_archive(raw_dir)
-        _make_target_archive(raw_dir)
-        _make_test_archive(raw_dir)
-
-        yield root
