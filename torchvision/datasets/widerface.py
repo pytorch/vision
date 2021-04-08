@@ -37,7 +37,7 @@ class WIDERFace(VisionDataset):
 
     BASE_FOLDER = "widerface"
     FILE_LIST = [
-        # File ID                        MD5 Hash                            Filename
+        # File ID                             MD5 Hash                          Filename
         ("0B6eKvaijfFUDQUUwd21EckhUbWs", "3fedf70df600953d25982bcd13d91ba2", "WIDER_train.zip"),
         ("0B6eKvaijfFUDd3dIRmpvSk8tLUk", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
         ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip")

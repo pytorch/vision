@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import List, Tuple
+from typing import Tuple
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 from torchvision.extension import _assert_has_ops
@@ -28,9 +28,8 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
 
     Returns:
-        keep (Tensor): int64 tensor with the indices
-            of the elements that have been kept
-            by NMS, sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been kept
+        by NMS, sorted in decreasing order of scores
     """
     _assert_has_ops()
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
@@ -57,9 +56,8 @@ def batched_nms(
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
 
     Returns:
-        keep (Tensor): int64 tensor with the indices of
-            the elements that have been kept by NMS, sorted
-            in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been kept by NMS, sorted
+        in decreasing order of scores
     """
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
@@ -117,8 +115,8 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
         min_size (float): minimum size
 
     Returns:
-        keep (Tensor[K]): indices of the boxes that have both sides
-            larger than min_size
+        Tensor[K]: indices of the boxes that have both sides
+        larger than min_size
     """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
@@ -136,7 +134,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
         size (Tuple[height, width]): size of the image
 
     Returns:
-        clipped_boxes (Tensor[N, 4])
+        Tensor[N, 4]: clipped boxes
     """
     dim = boxes.dim()
     boxes_x = boxes[..., 0::2]
@@ -162,6 +160,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     Supported in_fmt and out_fmt are:
 
     'xyxy': boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
+    This is the format that torchvision utilities expect.
 
     'xywh' : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
 
@@ -174,7 +173,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh']
 
     Returns:
-        boxes (Tensor[N, 4]): Boxes into converted format.
+        Tensor[N, 4]: Boxes into converted format.
     """
 
     allowed_fmts = ("xyxy", "xywh", "cxcywh")
@@ -215,7 +214,7 @@ def _upcast(t: Tensor) -> Tensor:
 
 def box_area(boxes: Tensor) -> Tensor:
     """
-    Computes the area of a set of bounding boxes, which are specified by its
+    Computes the area of a set of bounding boxes, which are specified by their
     (x1, y1, x2, y2) coordinates.
 
     Args:
@@ -224,7 +223,7 @@ def box_area(boxes: Tensor) -> Tensor:
             ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Returns:
-        area (Tensor[N]): area for each box
+        Tensor[N]: the area for each box
     """
     boxes = _upcast(boxes)
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
@@ -249,17 +248,17 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
 
 def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
-    Return intersection-over-union (Jaccard index) of boxes.
+    Return intersection-over-union (Jaccard index) between two sets of boxes.
 
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
-        boxes1 (Tensor[N, 4])
-        boxes2 (Tensor[M, 4])
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
 
     Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
+        Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
@@ -269,17 +268,17 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 # Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
 def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
-    Return generalized intersection-over-union (Jaccard index) of boxes.
+    Return generalized intersection-over-union (Jaccard index) between two sets of boxes.
 
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
-        boxes1 (Tensor[N, 4])
-        boxes2 (Tensor[M, 4])
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
 
     Returns:
-        generalized_iou (Tensor[N, M]): the NxM matrix containing the pairwise generalized_IoU values
+        Tensor[N, M]: the NxM matrix containing the pairwise generalized IoU values
         for every element in boxes1 and boxes2
     """
 
