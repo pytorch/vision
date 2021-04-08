@@ -15,11 +15,18 @@ from ..utils import load_state_dict_from_url
 from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
 
 
-__all__ = ['SSD']  # TODO: Expose public methods, include it in models and write unit-tests for them
+__all__ = ['SSD', 'ssd300_vgg16']  # FIXME: Expose public methods in models and write unit-tests for them
 
 model_urls = {
     'ssd300_vgg16_coco': None,  # TODO: Add url with weights
 }
+
+
+def _xavier_init(conv: nn.Module):
+    for layer in conv.children():
+        if isinstance(layer, nn.Conv2d):
+            torch.nn.init.xavier_uniform_(layer.weight)
+            torch.nn.init.constant_(layer.bias, 0)
 
 
 class SSDHead(RetinaNetHead):
@@ -74,6 +81,7 @@ class SSDClassificationHead(SSDScoringHead):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
+        _xavier_init(cls_logits)
         super().__init__(cls_logits, num_classes)
         self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
@@ -108,6 +116,7 @@ class SSDRegressionHead(SSDScoringHead, RetinaNetRegressionHead):  # TODO: Refac
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
+        _xavier_init(bbox_reg)
         SSDScoringHead.__init__(self, bbox_reg, 4)
         self.box_coder = box_coder
         self._l1_loss = torch.nn.functional.smooth_l1_loss  # TODO: Discuss/refactor this workaround
@@ -120,8 +129,8 @@ class SSDFeatureExtractor(nn.Module):
 
 
 class SSD(RetinaNet):
-    def __init__(self, backbone: SSDFeatureExtractor, num_classes: int,
-                 size: int = 300, image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
+    def __init__(self, backbone: SSDFeatureExtractor, size: int, num_classes: int,
+                 image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
                  detections_per_img: int = 200,
@@ -192,14 +201,17 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
             *backbone[:maxpool4_pos]  # until conv4_3
         )
         fc = nn.Sequential(
-            *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # add modified maxpool5
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
             nn.ReLU(inplace=True)
         )
-        extra.insert(0, fc)
+        _xavier_init(fc)
+        extra.insert(0, nn.Sequential(
+            *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
+            fc,
+        ))
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
@@ -216,7 +228,7 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
         return OrderedDict(((str(i), v) for i, v in enumerate(output)))
 
 
-def _vgg_backbone(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int = 3):
+def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int = 3):
     backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
     # SDD300 case - page 4, Fig 2 of SSD paper
     extra = nn.ModuleList([
@@ -255,6 +267,7 @@ def _vgg_backbone(backbone_name: str, highres: bool, pretrained: bool, trainable
             nn.ReLU(inplace=True),
         ))
         aspect_ratios.append([2])
+    _xavier_init(extra)
 
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
@@ -280,8 +293,8 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_backbone("vgg16", False, pretrained_backbone, trainable_layers=trainable_backbone_layers)
-    model = SSD(backbone, num_classes, **kwargs)  # TODO: fix initializations in all new layers
+    backbone = _vgg_extractor("vgg16", False, pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    model = SSD(backbone, 300, num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:
