@@ -25,7 +25,7 @@ requirements:
     - libpng
     - ffmpeg >=4.2  # [not win]
     - jpeg
-    - pillow >=4.1.1
+    - pillow >=5.3.0
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
