@@ -1,0 +1,23 @@
+# GitHub Actions Bandit Workflow
+
+name: Bandit
+
+on:
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Task will fail if any high-severity issues are found
+      # Ignoring submodules
+      - name: Run Bandit Security Analysis
+        run: |
+              python -m pip install bandit
+              python -m bandit -r . -x ./third_party -lll

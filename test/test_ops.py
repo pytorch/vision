@@ -299,6 +299,78 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
         for aligned in (True, False):
             super()._test_forward(device, contiguous, x_dtype, rois_dtype, aligned=aligned)
 
+    def test_qroialign(self):
+        """Make sure quantized version of RoIAlign is close to float version"""
+        pool_size = 5
+        img_size = 10
+        n_channels = 2
+        num_imgs = 1
+        dtype = torch.float
+
+        def make_rois(num_rois=1000):
+            rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
+            rois[:, 0] = torch.randint(0, num_imgs, size=(num_rois,))  # set batch index
+            rois[:, 3:] += rois[:, 1:3]  # make sure boxes aren't degenerate
+            return rois
+
+        for aligned in (True, False):
+            for scale, zero_point in ((1, 0), (2, 10), (0.1, 50)):
+                for qdtype in (torch.qint8, torch.quint8, torch.qint32):
+
+                    x = torch.randint(50, 100, size=(num_imgs, n_channels, img_size, img_size)).to(dtype)
+                    qx = torch.quantize_per_tensor(x, scale=scale, zero_point=zero_point, dtype=qdtype)
+
+                    rois = make_rois()
+                    qrois = torch.quantize_per_tensor(rois, scale=scale, zero_point=zero_point, dtype=qdtype)
+
+                    x, rois = qx.dequantize(), qrois.dequantize()  # we want to pass the same inputs
+
+                    y = ops.roi_align(
+                        x,
+                        rois,
+                        output_size=pool_size,
+                        spatial_scale=1,
+                        sampling_ratio=-1,
+                        aligned=aligned,
+                    )
+                    qy = ops.roi_align(
+                        qx,
+                        qrois,
+                        output_size=pool_size,
+                        spatial_scale=1,
+                        sampling_ratio=-1,
+                        aligned=aligned,
+                    )
+
+                    # The output qy is itself a quantized tensor and there might have been a loss of info when it was
+                    # quantized. For a fair comparison we need to quantize y as well
+                    quantized_float_y = torch.quantize_per_tensor(y, scale=scale, zero_point=zero_point, dtype=qdtype)
+
+                    try:
+                        # Ideally, we would assert this, which passes with (scale, zero) == (1, 0)
+                        self.assertTrue((qy == quantized_float_y).all())
+                    except AssertionError:
+                        # But because the computation aren't exactly the same between the 2 RoIAlign procedures, some
+                        # rounding error may lead to a difference of 2 in the output.
+                        # For example with (scale, zero) = (2, 10), 45.00000... will be quantized to 44
+                        # but 45.00000001 will be rounded to 46. We make sure below that:
+                        # - such discrepancies between qy and quantized_float_y are very rare (less then 5%)
+                        # - any difference between qy and quantized_float_y is == scale
+                        diff_idx = torch.where(qy != quantized_float_y)
+                        num_diff = diff_idx[0].numel()
+                        self.assertTrue(num_diff / qy.numel() < .05)
+
+                        abs_diff = torch.abs(qy[diff_idx].dequantize() - quantized_float_y[diff_idx].dequantize())
+                        t_scale = torch.full_like(abs_diff, fill_value=scale)
+                        self.assertTrue(torch.allclose(abs_diff, t_scale, atol=1e-5))
+
+        x = torch.randint(50, 100, size=(2, 3, 10, 10)).to(dtype)
+        qx = torch.quantize_per_tensor(x, scale=1, zero_point=0, dtype=torch.qint8)
+        rois = make_rois(10)
+        qrois = torch.quantize_per_tensor(rois, scale=1, zero_point=0, dtype=torch.qint8)
+        with self.assertRaisesRegex(RuntimeError, "Only one image per batch is allowed"):
+            ops.roi_align(qx, qrois, output_size=pool_size)
+
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):

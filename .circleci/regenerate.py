@@ -15,6 +15,7 @@ https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 """
 
 import jinja2
+from jinja2 import select_autoescape
 import yaml
 import os.path
 
@@ -271,7 +272,6 @@ def ios_workflows(indentation=6, nightly=False):
         build_job_names.append(name)
         build_job = {
             'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}',
-            'context': 'org-member',
             'ios_arch': arch,
             'ios_platform': platform,
             'name': name,
@@ -296,7 +296,7 @@ if __name__ == "__main__":
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
-        autoescape=False,
+        autoescape=select_autoescape(enabled_extensions=('html', 'xml')),
         keep_trailing_newline=True,
     )
 
