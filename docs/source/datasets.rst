@@ -149,6 +149,13 @@ Kinetics-400
   :members: __getitem__
   :special-members:
 
+KITTI
+~~~~~~~~~
+
+.. autoclass:: Kitti
+  :members: __getitem__
+  :special-members:
+
 KMNIST
 ~~~~~~~~~~~~~
 

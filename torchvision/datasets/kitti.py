@@ -11,6 +11,7 @@ from .vision import VisionDataset
 
 class Kitti(VisionDataset):
     """`KITTI <http://www.cvlibs.net/datasets/kitti>`_ Dataset.
+
     Args:
         root (string): Root directory where images are downloaded to.
             Expects the following folder structure if download=False:
@@ -18,12 +19,12 @@ class Kitti(VisionDataset):
             .. code::
 
                 <root>
-                 └─ Kitti
-                     └─ raw
-                         ├── training
-                         |      ├── image_2
-                         |      └── label_2
-                         └── testing
+                    └── Kitti
+                        └─ raw
+                            ├── training
+                            |   ├── image_2
+                            |   └── label_2
+                            └── testing
                                 └── image_2
         split (string): The dataset split to use. One of {``train``, ``test``}.
             Defaults to ``train``.
@@ -36,6 +37,7 @@ class Kitti(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+
     """
 
     mirrors = [
@@ -76,9 +78,9 @@ class Kitti(VisionDataset):
             )
 
         location = "testing" if self.split == "test" else "training"
-        image_dir = os.path.join(self.raw_folder, location, self.image_dir_name)
+        image_dir = os.path.join(self._raw_folder, location, self.image_dir_name)
         if location == "training":
-            labels_dir = os.path.join(self.raw_folder, location, self.labels_dir_name)
+            labels_dir = os.path.join(self._raw_folder, location, self.labels_dir_name)
         for img_file in os.listdir(image_dir):
             self.images.append(os.path.join(image_dir, img_file))
             if location == "training":
@@ -88,19 +90,22 @@ class Kitti(VisionDataset):
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """Get item at a given index.
+
         Args:
             index (int): Index
         Returns:
             tuple: (image, target), where
             target is a list of dictionaries with the following keys:
-                type: str
-                truncated: float
-                occluded: int
-                alpha: float
-                bbox: float[4]
-                dimensions: float[3]
-                locations: float[3]
-                rotation_y: float
+
+            - type: str
+            - truncated: float
+            - occluded: int
+            - alpha: float
+            - bbox: float[4]
+            - dimensions: float[3]
+            - locations: float[3]
+            - rotation_y: float
+
         """
         image = Image.open(self.images[index])
         target = None if self.split == "test" else self._parse_target(index)
@@ -129,7 +134,7 @@ class Kitti(VisionDataset):
         return len(self.images)
 
     @property
-    def raw_folder(self) -> str:
+    def _raw_folder(self) -> str:
         return os.path.join(self.root, self.__class__.__name__, "raw")
 
     def _check_exists(self) -> bool:
@@ -139,7 +144,7 @@ class Kitti(VisionDataset):
         if self.split != "test":
             folders.append(self.labels_dir_name)
         return all(
-            os.path.isdir(os.path.join(self.raw_folder, location, fname))
+            os.path.isdir(os.path.join(self._raw_folder, location, fname))
             for fname in folders
         )
 
@@ -149,7 +154,7 @@ class Kitti(VisionDataset):
         if self._check_exists():
             return
 
-        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self._raw_folder, exist_ok=True)
 
         # download files
         for fname in self.resources:
@@ -159,7 +164,7 @@ class Kitti(VisionDataset):
                     print(f"Downloading {url}")
                     download_and_extract_archive(
                         url=url,
-                        download_root=self.raw_folder,
+                        download_root=self._raw_folder,
                         filename=fname,
                     )
                 except URLError as error:
