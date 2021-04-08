@@ -251,7 +251,7 @@ def _vgg_backbone(backbone_name: str, highres: bool, pretrained: bool, trainable
         extra.append(nn.Sequential(
             nn.Conv2d(256, 128, kernel_size=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3),  # conv12_2
+            nn.Conv2d(128, 256, kernel_size=4),  # conv12_2
             nn.ReLU(inplace=True),
         ))
         aspect_ratios.append([2])
