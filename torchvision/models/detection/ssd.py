@@ -10,11 +10,16 @@ from .anchor_utils import DBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
+from ..utils import load_state_dict_from_url
 
 from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
 
 
 __all__ = ['SSD']  # TODO: Expose public methods, include it in models and write unit-tests for them
+
+model_urls = {
+    'ssd300_vgg16_coco': None,  # TODO: Add url with weights
+}
 
 
 class SSDHead(RetinaNetHead):
@@ -250,8 +255,8 @@ def _vgg_backbone(backbone_name: str, pretrained: bool, trainable_layers: int = 
     return SSDFeatureExtractorVGG(backbone)
 
 
-def ssd_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91, pretrained_backbone: bool = True,
-              trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
+def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
+                 pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
 
@@ -262,5 +267,9 @@ def ssd_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int 
     backbone = _vgg_backbone("vgg16", pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = SSD(backbone, num_classes, **kwargs)  # TODO: fix initializations in all new layers
     if pretrained:
-        pass  # TODO: load pre-trained COCO weights
+        weights_name = 'ssd300_vgg16_coco'
+        if model_urls.get(weights_name, None) is None:
+            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
+        model.load_state_dict(state_dict)
     return model
