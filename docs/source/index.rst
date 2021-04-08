@@ -38,6 +38,12 @@ architectures, and common image transformations for computer vision.
    transforms
    utils
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   auto_examples/index
+
 .. automodule:: torchvision
    :members:
 

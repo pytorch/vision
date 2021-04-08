@@ -76,6 +76,11 @@ Transforms on PIL Image and torch.\*Tensor
 .. autoclass:: Pad
     :members:
 
+.. include:: gen_modules/backreferences/torchvision.transforms.Pad.examples
+.. raw:: html
+
+    <div style='clear:both'></div>
+
 .. autoclass:: RandomAffine
     :members:
 
@@ -107,6 +112,11 @@ Transforms on PIL Image and torch.\*Tensor
 
 .. autoclass:: Resize
     :members:
+
+.. include:: gen_modules/backreferences/torchvision.transforms.Resize.examples
+.. raw:: html
+
+    <div style='clear:both'></div>
 
 .. autoclass:: Scale
     :members:
