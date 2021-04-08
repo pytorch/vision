@@ -113,10 +113,15 @@ class SSDRegressionHead(SSDScoringHead, RetinaNetRegressionHead):  # TODO: Refac
         self._l1_loss = torch.nn.functional.smooth_l1_loss  # TODO: Discuss/refactor this workaround
 
 
+class SSDFeatureExtractor(nn.Module):
+    def __init__(self, aspect_ratios: List[List[int]]):
+        super().__init__()
+        self.aspect_ratios = aspect_ratios
+
+
 class SSD(RetinaNet):
-    def __init__(self, backbone: nn.Module, num_classes: int,
+    def __init__(self, backbone: SSDFeatureExtractor, num_classes: int,
                  size: int = 300, image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
-                 aspect_ratios: Optional[List[List[int]]] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
                  detections_per_img: int = 200,
@@ -125,9 +130,6 @@ class SSD(RetinaNet):
                  positive_fraction: float = 0.25):
         nn.Module.__init__(self)
 
-        if aspect_ratios is None:
-            aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-
         # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
         device = next(backbone.parameters()).device
         tmp_img = torch.empty((1, 3, size, size), device=device)
@@ -135,17 +137,17 @@ class SSD(RetinaNet):
         out_channels = [x[1] for x in tmp_sizes]
         feature_map_sizes = [x[2] for x in tmp_sizes]
 
-        assert len(feature_map_sizes) == len(aspect_ratios)
+        assert len(feature_map_sizes) == len(backbone.aspect_ratios)
 
         self.backbone = backbone
 
         self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
 
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
-        self.num_anchors = [2 + 2 * len(r) for r in aspect_ratios]
+        self.num_anchors = [2 + 2 * len(r) for r in backbone.aspect_ratios]
         self.head = SSDHead(out_channels, self.num_anchors, num_classes, positive_fraction, self.box_coder)
 
-        self.anchor_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
+        self.anchor_generator = DBoxGenerator(size, feature_map_sizes, backbone.aspect_ratios)
 
         self.proposal_matcher = det_utils.Matcher(iou_thresh, iou_thresh)
 
@@ -174,10 +176,9 @@ class SSD(RetinaNet):
         return [hw * A for hw in num_anchors_per_level]
 
 
-class SSDFeatureExtractorVGG(nn.Module):
-    # TODO: That's the SSD300 extractor. handle the SDD500 case as well. See page 11, footernote 5.
-    def __init__(self, backbone: nn.Module):
-        super().__init__()
+class SSDFeatureExtractorVGG(SSDFeatureExtractor):
+    def __init__(self, backbone: nn.Module, extra: nn.ModuleList, aspect_ratios: List[List[int]]):
+        super().__init__(aspect_ratios)
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
 
         # Patch ceil_mode for maxpool3 to get the same WxH output sizes as the paper
@@ -187,10 +188,10 @@ class SSDFeatureExtractorVGG(nn.Module):
         self.scale_weight = nn.Parameter(torch.ones(512) * 20)
 
         # Multiple Feature maps - page 4, Fig 2 of SSD paper
-        self.block1 = nn.Sequential(
+        self.features = nn.Sequential(
             *backbone[:maxpool4_pos]  # until conv4_3
         )
-        self.block2 = nn.Sequential(
+        fc = nn.Sequential(
             *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # add modified maxpool5
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
@@ -198,47 +199,62 @@ class SSDFeatureExtractorVGG(nn.Module):
             nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
             nn.ReLU(inplace=True)
         )
-        self.block3 = nn.Sequential(
-            nn.Conv2d(1024, 256, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
-            nn.ReLU(inplace=True),
-        )
-        self.block4 = nn.Sequential(
-            nn.Conv2d(512, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
-            nn.ReLU(inplace=True),
-        )
-        self.block5 = nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
-            nn.ReLU(inplace=True),
-        )
-        self.block6 = nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
-            nn.ReLU(inplace=True),
-        )
+        extra.insert(0, fc)
+        self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
         # L2 regularization + Rescaling of 1st block's feature map
-        x = self.block1(x)
+        x = self.features(x)
         rescaled = self.scale_weight.view(1, -1, 1, 1) * F.normalize(x)
         output = [rescaled]
 
         # Calculating Feature maps for the rest blocks
-        for block in (self.block2, self.block3, self.block4, self.block5, self.block6):
+        for block in self.extra:
             x = block(x)
             output.append(x)
 
         return OrderedDict(((str(i), v) for i, v in enumerate(output)))
 
 
-def _vgg_backbone(backbone_name: str, pretrained: bool, trainable_layers: int = 3):
+def _vgg_backbone(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int = 3):
     backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
+    # SDD300 case - page 4, Fig 2 of SSD paper
+    extra = nn.ModuleList([
+        nn.Sequential(
+            nn.Conv2d(1024, 256, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
+            nn.ReLU(inplace=True),
+        ),
+        nn.Sequential(
+            nn.Conv2d(512, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
+            nn.ReLU(inplace=True),
+        ),
+        nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
+            nn.ReLU(inplace=True),
+        ),
+        nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
+            nn.ReLU(inplace=True),
+        )
+    ])
+    aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
+    if highres:
+        # Additional layers for the SDD512 case. See page 11, footernote 5.
+        extra.append(nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3),  # conv12_2
+            nn.ReLU(inplace=True),
+        ))
+        aspect_ratios.append([2])
 
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
@@ -252,7 +268,7 @@ def _vgg_backbone(backbone_name: str, pretrained: bool, trainable_layers: int = 
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDFeatureExtractorVGG(backbone)
+    return SSDFeatureExtractorVGG(backbone, extra, aspect_ratios)
 
 
 def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
@@ -264,7 +280,7 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_backbone("vgg16", pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = _vgg_backbone("vgg16", False, pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = SSD(backbone, num_classes, **kwargs)  # TODO: fix initializations in all new layers
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
