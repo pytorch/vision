@@ -1,18 +1,18 @@
 import contextlib
+import sys
 import os
 import unittest
 from unittest import mock
 import numpy as np
 import PIL
 from PIL import Image
+from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
-from fakedata_generation import (
-    places365_root,
-    stl10_root,
-    svhn_root,
-)
+from common_utils import get_tmp_dir
+from fakedata_generation import svhn_root, places365_root, widerface_root, stl10_root
 import xml.etree.ElementTree as ET
+from urllib.request import Request, urlopen
 import itertools
 import datasets_utils
 import pathlib
@@ -1705,39 +1705,37 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
 class KittiTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Kitti
     FEATURE_TYPES = (PIL.Image.Image, (list, type(None)))  # test split returns None as target
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
 
     def inject_fake_data(self, tmpdir, config):
         kitti_dir = os.path.join(tmpdir, "Kitti", "raw")
         os.makedirs(kitti_dir)
 
-        split_to_idx = split_to_num_examples = {
-            None: 1,
-            "train": 1,
-            "test": 2,
+        split_to_num_examples = {
+            True: 1,
+            False: 2,
         }
 
-        # We need to create all folders regardless of the split in config
-        for split in ("train", "test"):
-            split_idx = split_to_idx[split]
-            num_examples = split_to_num_examples[split]
+        # We need to create all folders(training and testing).
+        for is_training in (True, False):
+            num_examples = split_to_num_examples[is_training]
 
             datasets_utils.create_image_folder(
                 root=kitti_dir,
-                name=os.path.join(f"{split}ing", "image_2"),
-                file_name_fn=lambda image_idx: f"000{split_idx + image_idx}.png",
+                name=os.path.join("training" if is_training else "testing", "image_2"),
+                file_name_fn=lambda image_idx: f"{image_idx:06d}.png",
                 num_examples=num_examples,
             )
-            if split == "train":
+            if is_training:
                 for image_idx in range(num_examples):
-                    target_file_dir = os.path.join(kitti_dir, f"{split}ing", "label_2")
+                    target_file_dir = os.path.join(kitti_dir, "training", "label_2")
                     os.makedirs(target_file_dir)
-                    target_file_name = os.path.join(target_file_dir, f"000{split_idx + image_idx}.txt")
+                    target_file_name = os.path.join(target_file_dir, f"{image_idx:06d}.txt")
                     target_contents = "Pedestrian 0.00 0 -0.20 712.40 143.00 810.73 307.92 1.89 0.48 1.20 1.84 1.47 8.41 0.01\n"  # noqa
                     with open(target_file_name, "w") as target_file:
                         target_file.write(target_contents)
 
-        return split_to_num_examples[config["split"]]
+        return split_to_num_examples[config["train"]]
 
 
 if __name__ == "__main__":

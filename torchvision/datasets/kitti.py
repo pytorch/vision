@@ -26,9 +26,9 @@ class Kitti(VisionDataset):
                             |   └── label_2
                             └── testing
                                 └── image_2
-        split (string): The dataset split to use. One of {``train``, ``test``}.
+        train (bool, optional): Use ``train`` split if true, else ``test`` split.
             Defaults to ``train``.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -53,7 +53,7 @@ class Kitti(VisionDataset):
     def __init__(
         self,
         root: str,
-        split: str = None,
+        train: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
@@ -68,7 +68,8 @@ class Kitti(VisionDataset):
         self.images = []
         self.targets = []
         self.root = root
-        self.split = split
+        self.train = train
+        self._location = "training" if self.train else "testing"
 
         if download:
             self.download()
@@ -77,13 +78,12 @@ class Kitti(VisionDataset):
                 "Dataset not found. You may use download=True to download it."
             )
 
-        location = "testing" if self.split == "test" else "training"
-        image_dir = os.path.join(self._raw_folder, location, self.image_dir_name)
-        if location == "training":
-            labels_dir = os.path.join(self._raw_folder, location, self.labels_dir_name)
+        image_dir = os.path.join(self._raw_folder, self._location, self.image_dir_name)
+        if self.train:
+            labels_dir = os.path.join(self._raw_folder, self._location, self.labels_dir_name)
         for img_file in os.listdir(image_dir):
             self.images.append(os.path.join(image_dir, img_file))
-            if location == "training":
+            if self.train:
                 self.targets.append(
                     os.path.join(labels_dir, f"{img_file.split('.')[0]}.txt")
                 )
@@ -108,7 +108,7 @@ class Kitti(VisionDataset):
 
         """
         image = Image.open(self.images[index])
-        target = None if self.split == "test" else self._parse_target(index)
+        target = self._parse_target(index) if self.train else None
         if self.transforms:
             image, target = self.transforms(image, target)
         return image, target
@@ -139,12 +139,11 @@ class Kitti(VisionDataset):
 
     def _check_exists(self) -> bool:
         """Check if the data directory exists."""
-        location = "testing" if self.split == "test" else "training"
         folders = [self.image_dir_name]
-        if self.split != "test":
+        if self.train:
             folders.append(self.labels_dir_name)
         return all(
-            os.path.isdir(os.path.join(self._raw_folder, location, fname))
+            os.path.isdir(os.path.join(self._raw_folder, self._location, fname))
             for fname in folders
         )
 
