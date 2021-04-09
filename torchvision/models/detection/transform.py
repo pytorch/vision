@@ -17,10 +17,10 @@ def _get_shape_onnx(image):
 
 
 @torch.jit.unused
-def _float_to_tensor_onnx(v):
-    # type: (float) -> float
+def _fake_cast_onnx(v):
+    # type: (Tensor) -> float
     # ONNX requires a tensor but here we fake its type for JIT.
-    return torch.tensor(v)
+    return v
 
 
 def _resize_image_and_masks(image, self_min_size, self_max_size, target):
@@ -32,10 +32,12 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
 
     min_size = torch.min(im_shape).to(dtype=torch.float32)
     max_size = torch.max(im_shape).to(dtype=torch.float32)
-    scale_factor = torch.min(self_min_size / min_size, self_max_size / max_size).item()
+    scale = torch.min(self_min_size / min_size, self_max_size / max_size)
 
     if torchvision._is_tracing():
-        scale_factor = _float_to_tensor_onnx(scale_factor)
+        scale_factor = _fake_cast_onnx(scale)
+    else:
+        scale_factor = scale.item()
 
     image = torch.nn.functional.interpolate(
         image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
