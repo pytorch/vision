@@ -276,15 +276,15 @@ def ios_workflows(indentation=6, nightly=False):
             'ios_platform': platform,
             'name': name,
         }
-        if nightly:
-            build_job['filters'] = gen_filter_branch_tree('nightly')
+        # if nightly:
+        #     build_job['filters'] = gen_filter_branch_tree('nightly')
         jobs.append({'binary_ios_build': build_job})
 
     if nightly:
         upload_job = {
             'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload',
             'context': 'org-member',
-            'filters': gen_filter_branch_tree('nightly'),
+            # 'filters': gen_filter_branch_tree('nightly'),
             'requires': build_job_names,
         }
         jobs.append({'binary_ios_upload': upload_job})
