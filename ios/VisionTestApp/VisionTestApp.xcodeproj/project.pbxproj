@@ -5829,8 +5829,26 @@
 					"$(PROJECT_DIR)/install/lib",
 				);
 				OTHER_LDFLAGS = (
-					"-all_load",
 					"$(inherited)",
+					"-ObjC",
+					"-l\"XNNPACK\"",
+					"-l\"c++\"",
+					"-l\"c10\"",
+					"-l\"clog\"",
+					"-l\"cpuinfo\"",
+					"-l\"eigen_blas\"",
+					"-l\"pthreadpool\"",
+					"-l\"pytorch_qnnpack\"",
+					"-l\"stdc++\"",
+					"-l\"torch\"",
+					"-l\"torch_cpu\"",
+					"-l\"torchvision_ops\"",
+					"-force_load",
+					"$(PROJECT_DIR)/install/lib/libtorch.a",
+					"-force_load",
+					"$(PROJECT_DIR)/install/lib/libtorch_cpu.a",
+					"-force_load",
+					"$(PROJECT_DIR)/install/lib/libtorchvision_ops.a",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.pytorch.ios.VisionTestApp.VisionTestApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -5861,8 +5879,26 @@
 					"$(PROJECT_DIR)/install/lib",
 				);
 				OTHER_LDFLAGS = (
-					"-all_load",
 					"$(inherited)",
+					"-ObjC",
+					"-l\"XNNPACK\"",
+					"-l\"c++\"",
+					"-l\"c10\"",
+					"-l\"clog\"",
+					"-l\"cpuinfo\"",
+					"-l\"eigen_blas\"",
+					"-l\"pthreadpool\"",
+					"-l\"pytorch_qnnpack\"",
+					"-l\"stdc++\"",
+					"-l\"torch\"",
+					"-l\"torch_cpu\"",
+					"-l\"torchvision_ops\"",
+					"-force_load",
+					"$(PROJECT_DIR)/install/lib/libtorch.a",
+					"-force_load",
+					"$(PROJECT_DIR)/install/lib/libtorch_cpu.a",
+					"-force_load",
+					"$(PROJECT_DIR)/install/lib/libtorchvision_ops.a",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.pytorch.ios.VisionTestApp.VisionTestApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
