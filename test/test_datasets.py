@@ -616,7 +616,6 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         split=("train", "valid", "test", "all"),
         target_type=("attr", "identity", "bbox", "landmarks", ["attr", "identity"]),
     )
-    REQUIRED_PACKAGES = ("pandas",)
 
     _SPLIT_TO_IDX = dict(train=0, valid=1, test=2)
 

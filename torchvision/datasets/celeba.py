@@ -1,10 +1,15 @@
+from collections import namedtuple
+import csv
 from functools import partial
 import torch
 import os
+import numpy as np
 import PIL
 from typing import Any, Callable, List, Optional, Union, Tuple
 from .vision import VisionDataset
 from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
+
+CSV = namedtuple("CSV", ["header", "index", "data"])
 
 
 class CelebA(VisionDataset):
@@ -61,7 +66,6 @@ class CelebA(VisionDataset):
             target_transform: Optional[Callable] = None,
             download: bool = False,
     ) -> None:
-        import pandas
         super(CelebA, self).__init__(root, transform=transform,
                                      target_transform=target_transform)
         self.split = split
@@ -88,23 +92,44 @@ class CelebA(VisionDataset):
         }
         split_ = split_map[verify_str_arg(split.lower(), "split",
                                           ("train", "valid", "test", "all"))]
+        splits = self._load_csv("list_eval_partition.txt", header=None, index_col=0)
+        identity = self._load_csv("identity_CelebA.txt", header=None, index_col=0)
+        bbox = self._load_csv("list_bbox_celeba.txt", header=1, index_col=0)
+        landmarks_align = self._load_csv("list_landmarks_align_celeba.txt", header=1, index_col=0)
+        attr = self._load_csv("list_attr_celeba.txt", header=1, index_col=0)
+
+        mask = slice(None) if split_ is None else (splits.data == split_).squeeze()
+
+        self.filename = splits.index
+        self.identity = identity.data[mask]
+        self.bbox = bbox.data[mask]
+        self.landmarks_align = landmarks_align.data[mask]
+        self.attr = attr.data[mask]
+        self.attr = (self.attr + 1) // 2  # map from {-1, 1} to {0, 1}
+        self.attr_names = attr.header
+
+    def _load_csv(
+        self,
+        filename: str,
+        header: int = None,
+        index_col: int = None
+    ) -> CSV:
+        data, indices, headers = [], [], []
 
         fn = partial(os.path.join, self.root, self.base_folder)
-        splits = pandas.read_csv(fn("list_eval_partition.txt"), delim_whitespace=True, header=None, index_col=0)
-        identity = pandas.read_csv(fn("identity_CelebA.txt"), delim_whitespace=True, header=None, index_col=0)
-        bbox = pandas.read_csv(fn("list_bbox_celeba.txt"), delim_whitespace=True, header=1, index_col=0)
-        landmarks_align = pandas.read_csv(fn("list_landmarks_align_celeba.txt"), delim_whitespace=True, header=1)
-        attr = pandas.read_csv(fn("list_attr_celeba.txt"), delim_whitespace=True, header=1)
+        with open(fn(filename)) as csv_file:
+            data = list(csv.reader(csv_file, delimiter=' ', skipinitialspace=True))
 
-        mask = slice(None) if split_ is None else (splits[1] == split_)
+        if header is not None:
+            headers = data[header]
+            data = data[header + 1:]
+        data_np = np.array(data)
 
-        self.filename = splits[mask].index.values
-        self.identity = torch.as_tensor(identity[mask].values)
-        self.bbox = torch.as_tensor(bbox[mask].values)
-        self.landmarks_align = torch.as_tensor(landmarks_align[mask].values)
-        self.attr = torch.as_tensor(attr[mask].values)
-        self.attr = (self.attr + 1) // 2  # map from {-1, 1} to {0, 1}
-        self.attr_names = list(attr.columns)
+        if index_col is not None:
+            indices = data_np[:, index_col]
+            data_np = np.delete(data_np, index_col, axis=1)
+
+        return CSV(headers, indices, torch.as_tensor(data_np.astype(int)))
 
     def _check_integrity(self) -> bool:
         for (_, md5, filename) in self.file_list:
