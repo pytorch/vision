@@ -40,9 +40,7 @@ class Kitti(VisionDataset):
 
     """
 
-    mirrors = [
-        "https://s3.eu-central-1.amazonaws.com/avg-kitti/",
-    ]
+    data_url = "https://s3.eu-central-1.amazonaws.com/avg-kitti/"
     resources = [
         "data_object_image_2.zip",
         "data_object_label_2.zip",
@@ -157,14 +155,13 @@ class Kitti(VisionDataset):
 
         # download files
         for fname in self.resources:
-            for mirror in self.mirrors:
-                url = f"{mirror}{fname}"
-                try:
-                    print(f"Downloading {url}")
-                    download_and_extract_archive(
-                        url=url,
-                        download_root=self._raw_folder,
-                        filename=fname,
-                    )
-                except URLError as error:
-                    print(f"Error downloading {fname}: {error}")
+            url = f"{self.data_url}{fname}"
+            try:
+                print(f"Downloading {url}")
+                download_and_extract_archive(
+                    url=url,
+                    download_root=self._raw_folder,
+                    filename=fname,
+                )
+            except URLError as error:
+                print(f"Error downloading {fname}: {error}")
