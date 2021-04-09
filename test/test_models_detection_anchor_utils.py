@@ -69,7 +69,7 @@ class Tester(TestCase):
 
     def test_dbox_generator(self):
         images = torch.zeros(2, 3, 15, 15)
-        features = [torch.rand(2, 8, 3, 3)]
+        features = [torch.zeros(2, 8, 3, 3)]
         image_shapes = [i.shape[-2:] for i in images]
         images = ImageList(images, image_shapes)
 
