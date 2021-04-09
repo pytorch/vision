@@ -190,7 +190,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+f35bf16 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+47a6a60 ) &#x25BC</a>
     </div>
     
 
@@ -543,7 +543,8 @@ for every element in boxes1 and boxes2</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</li>
+<li><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor
+If the tensor is quantized, we expect a batch size of <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">==</span> <span class="pre">1</span></code>.</li>
 <li><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
 format where the regions will be taken from.
 The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
