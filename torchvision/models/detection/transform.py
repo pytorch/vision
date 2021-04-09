@@ -10,34 +10,32 @@ from .roi_heads import paste_masks_in_image
 
 
 @torch.jit.unused
-def _resize_image_and_masks_onnx(image, self_min_size, self_max_size, target):
-    # type: (Tensor, float, float, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
+def _get_shape_onnx(image):
+    # type: (Tensor) -> Tensor
     from torch.onnx import operators
-    im_shape = operators.shape_as_tensor(image)[-2:]
-    min_size = torch.min(im_shape).to(dtype=torch.float32)
-    max_size = torch.max(im_shape).to(dtype=torch.float32)
-    scale_factor = torch.min(self_min_size / min_size, self_max_size / max_size)
+    return operators.shape_as_tensor(image)[-2:]
 
-    image = torch.nn.functional.interpolate(
-        image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
-        align_corners=False)[0]
 
-    if target is None:
-        return image, target
-
-    if "masks" in target:
-        mask = target["masks"]
-        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor, recompute_scale_factor=True)[:, 0].byte()
-        target["masks"] = mask
-    return image, target
+@torch.jit.unused
+def _float_to_tensor_onnx(v):
+    # type: (float) -> float
+    # ONNX requires a tensor but here we fake its type for JIT.
+    return torch.tensor(v)
 
 
 def _resize_image_and_masks(image, self_min_size, self_max_size, target):
     # type: (Tensor, float, float, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
-    im_shape = torch.tensor(image.shape[-2:])
+    if torchvision._is_tracing():
+        im_shape = _get_shape_onnx(image)
+    else:
+        im_shape = torch.tensor(image.shape[-2:])
+
     min_size = torch.min(im_shape).to(dtype=torch.float32)
     max_size = torch.max(im_shape).to(dtype=torch.float32)
     scale_factor = torch.min(self_min_size / min_size, self_max_size / max_size).item()
+
+    if torchvision._is_tracing():
+        scale_factor = _float_to_tensor_onnx(scale_factor)
 
     image = torch.nn.functional.interpolate(
         image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
@@ -144,10 +142,7 @@ class GeneralizedRCNNTransform(nn.Module):
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
-        if torchvision._is_tracing():
-            image, target = _resize_image_and_masks_onnx(image, size, float(self.max_size), target)
-        else:
-            image, target = _resize_image_and_masks(image, size, float(self.max_size), target)
+        image, target = _resize_image_and_masks(image, size, float(self.max_size), target)
 
         if target is None:
             return image, target
