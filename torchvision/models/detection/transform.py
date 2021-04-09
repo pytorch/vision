@@ -30,25 +30,33 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
     else:
         im_shape = torch.tensor(image.shape[-2:])
 
-    min_size = torch.min(im_shape).to(dtype=torch.float32)
-    max_size = torch.max(im_shape).to(dtype=torch.float32)
-    scale = torch.min(self_min_size / min_size, self_max_size / max_size)
-
-    if torchvision._is_tracing():
-        scale_factor = _fake_cast_onnx(scale)
+    if self_min_size == self_max_size:  # TODO: Improve this workaround
+        # Fixed size output. Assume width / height the same.
+        size = (int(self_min_size), int(self_min_size))
+        scale_factor = None
+        recompute_scale_factor = None
     else:
-        scale_factor = scale.item()
+        min_size = torch.min(im_shape).to(dtype=torch.float32)
+        max_size = torch.max(im_shape).to(dtype=torch.float32)
+        scale = torch.min(self_min_size / min_size, self_max_size / max_size)
 
-    image = torch.nn.functional.interpolate(
-        image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
-        align_corners=False)[0]
+        size = None
+        if torchvision._is_tracing():
+            scale_factor = _fake_cast_onnx(scale)
+        else:
+            scale_factor = scale.item()
+        recompute_scale_factor = True
+
+    image = torch.nn.functional.interpolate(image[None], size=size, scale_factor=scale_factor, mode='bilinear',
+                                            recompute_scale_factor=recompute_scale_factor, align_corners=False)[0]
 
     if target is None:
         return image, target
 
     if "masks" in target:
         mask = target["masks"]
-        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor, recompute_scale_factor=True)[:, 0].byte()
+        mask = F.interpolate(mask[:, None].float(), size=size, scale_factor=scale_factor,
+                             recompute_scale_factor=recompute_scale_factor)[:, 0].byte()
         target["masks"] = mask
     return image, target
 
