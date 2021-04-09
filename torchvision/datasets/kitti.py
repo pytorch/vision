@@ -1,7 +1,6 @@
 import csv
 import os
 from typing import Any, Callable, List, Optional, Tuple
-from urllib.error import URLError
 
 from PIL import Image
 
@@ -155,13 +154,8 @@ class Kitti(VisionDataset):
 
         # download files
         for fname in self.resources:
-            url = f"{self.data_url}{fname}"
-            try:
-                print(f"Downloading {url}")
-                download_and_extract_archive(
-                    url=url,
-                    download_root=self._raw_folder,
-                    filename=fname,
-                )
-            except URLError as error:
-                print(f"Error downloading {fname}: {error}")
+            download_and_extract_archive(
+                url=f"{self.data_url}{fname}",
+                download_root=self._raw_folder,
+                filename=fname,
+            )
