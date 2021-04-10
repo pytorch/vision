@@ -20,7 +20,7 @@
     </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.datasets.hmdb51 &mdash; Torchvision master documentation</title>
+  <title>torchvision.datasets.kitti &mdash; Torchvision master documentation</title>
   
 
   
@@ -274,7 +274,7 @@
         
           <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
         
-      <li>torchvision.datasets.hmdb51</li>
+      <li>torchvision.datasets.kitti</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -302,140 +302,168 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torchvision.datasets.hmdb51</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">glob</span>
+  <h1>Source code for torchvision.datasets.kitti</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">list_dir</span>
-<span class="kn">from</span> <span class="nn">.folder</span> <span class="kn">import</span> <span class="n">find_classes</span><span class="p">,</span> <span class="n">make_dataset</span>
-<span class="kn">from</span> <span class="nn">.video_utils</span> <span class="kn">import</span> <span class="n">VideoClips</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
-<div class="viewcode-block" id="HMDB51"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.HMDB51">[docs]</a><span class="k">class</span> <span class="nc">HMDB51</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    `HMDB51 &lt;http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/&gt;`_</span>
-<span class="sd">    dataset.</span>
-
-<span class="sd">    HMDB51 is an action recognition video dataset.</span>
-<span class="sd">    This dataset consider every video as a collection of video clips of fixed size, specified</span>
-<span class="sd">    by ``frames_per_clip``, where the step in frames between each clip is given by</span>
-<span class="sd">    ``step_between_clips``.</span>
-
-<span class="sd">    To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``</span>
-<span class="sd">    and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two</span>
-<span class="sd">    elements will come from video 1, and the next three elements from video 2.</span>
-<span class="sd">    Note that we drop clips which do not have exactly ``frames_per_clip`` elements, so not all</span>
-<span class="sd">    frames in a video might be present.</span>
-
-<span class="sd">    Internally, it uses a VideoClips object to handle clip creation.</span>
+<div class="viewcode-block" id="Kitti"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kitti">[docs]</a><span class="k">class</span> <span class="nc">Kitti</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;`KITTI &lt;http://www.cvlibs.net/datasets/kitti&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory of the HMDB51 Dataset.</span>
-<span class="sd">        annotation_path (str): Path to the folder containing the split files.</span>
-<span class="sd">        frames_per_clip (int): Number of frames in a clip.</span>
-<span class="sd">        step_between_clips (int): Number of frames between each clip.</span>
-<span class="sd">        fold (int, optional): Which fold to use. Should be between 1 and 3.</span>
-<span class="sd">        train (bool, optional): If ``True``, creates a dataset from the train split,</span>
-<span class="sd">            otherwise from the ``test`` split.</span>
-<span class="sd">        transform (callable, optional): A function/transform that takes in a TxHxWxC video</span>
-<span class="sd">            and returns a transformed version.</span>
+<span class="sd">        root (string): Root directory where images are downloaded to.</span>
+<span class="sd">            Expects the following folder structure if download=False:</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        tuple: A 3-tuple with the following entries:</span>
+<span class="sd">            .. code::</span>
 
-<span class="sd">            - video (Tensor[T, H, W, C]): The `T` video frames</span>
-<span class="sd">            - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels</span>
-<span class="sd">              and `L` is the number of points</span>
-<span class="sd">            - label (int): class of the video clip</span>
+<span class="sd">                &lt;root&gt;</span>
+<span class="sd">                    └── Kitti</span>
+<span class="sd">                        └─ raw</span>
+<span class="sd">                            ├── training</span>
+<span class="sd">                            |   ├── image_2</span>
+<span class="sd">                            |   └── label_2</span>
+<span class="sd">                            └── testing</span>
+<span class="sd">                                └── image_2</span>
+<span class="sd">        train (bool, optional): Use ``train`` split if true, else ``test`` split.</span>
+<span class="sd">            Defaults to ``train``.</span>
+<span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image</span>
+<span class="sd">            and returns a transformed version. E.g, ``transforms.ToTensor``</span>
+<span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
+<span class="sd">            target and transforms it.</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes input sample</span>
+<span class="sd">            and its target as entry and returns a transformed version.</span>
+<span class="sd">        download (bool, optional): If true, downloads the dataset from the internet and</span>
+<span class="sd">            puts it in root directory. If dataset is already downloaded, it is not</span>
+<span class="sd">            downloaded again.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">data_url</span> <span class="o">=</span> <span class="s2">&quot;http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar&quot;</span>
-    <span class="n">splits</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;md5&quot;</span><span class="p">:</span> <span class="s2">&quot;15e67781e70dcfbdce2d7dbb9b3344b5&quot;</span>
-    <span class="p">}</span>
-    <span class="n">TRAIN_TAG</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">TEST_TAG</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">data_url</span> <span class="o">=</span> <span class="s2">&quot;https://s3.eu-central-1.amazonaws.com/avg-kitti/&quot;</span>
+    <span class="n">resources</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;data_object_image_2.zip&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data_object_label_2.zip&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">image_dir_name</span> <span class="o">=</span> <span class="s2">&quot;image_2&quot;</span>
+    <span class="n">labels_dir_name</span> <span class="o">=</span> <span class="s2">&quot;label_2&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">annotation_path</span><span class="p">,</span> <span class="n">frames_per_clip</span><span class="p">,</span> <span class="n">step_between_clips</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">frame_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">_precomputed_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">_video_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">_video_height</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">_video_min_dimension</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">_audio_samples</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">HMDB51</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">fold</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;fold should be between 1 and 3, got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fold</span><span class="p">))</span>
-
-        <span class="n">extensions</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;avi&#39;</span><span class="p">,)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span> <span class="o">=</span> <span class="n">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
-            <span class="n">class_to_idx</span><span class="p">,</span>
-            <span class="n">extensions</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">root</span><span class="p">,</span>
+            <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span>
+            <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">,</span>
+            <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="n">video_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span> <span class="k">for</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">]</span>
-        <span class="n">video_clips</span> <span class="o">=</span> <span class="n">VideoClips</span><span class="p">(</span>
-            <span class="n">video_paths</span><span class="p">,</span>
-            <span class="n">frames_per_clip</span><span class="p">,</span>
-            <span class="n">step_between_clips</span><span class="p">,</span>
-            <span class="n">frame_rate</span><span class="p">,</span>
-            <span class="n">_precomputed_metadata</span><span class="p">,</span>
-            <span class="n">num_workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">,</span>
-            <span class="n">_video_width</span><span class="o">=</span><span class="n">_video_width</span><span class="p">,</span>
-            <span class="n">_video_height</span><span class="o">=</span><span class="n">_video_height</span><span class="p">,</span>
-            <span class="n">_video_min_dimension</span><span class="o">=</span><span class="n">_video_min_dimension</span><span class="p">,</span>
-            <span class="n">_audio_samples</span><span class="o">=</span><span class="n">_audio_samples</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="c1"># we bookkeep the full version of video clips because we want to be able</span>
-        <span class="c1"># to return the meta data of full version rather than the subset version of</span>
-        <span class="c1"># video clips</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">full_video_clips</span> <span class="o">=</span> <span class="n">video_clips</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fold</span> <span class="o">=</span> <span class="n">fold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="o">=</span> <span class="n">train</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_fold</span><span class="p">(</span><span class="n">video_paths</span><span class="p">,</span> <span class="n">annotation_path</span><span class="p">,</span> <span class="n">fold</span><span class="p">,</span> <span class="n">train</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span> <span class="o">=</span> <span class="n">video_clips</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="k">else</span> <span class="s2">&quot;testing&quot;</span>
+
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Dataset not found. You may use download=True to download it.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">image_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_dir_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
+            <span class="n">labels_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_dir_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">img_file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">image_dir</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">img_file</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">labels_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">img_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.txt&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+
+<div class="viewcode-block" id="Kitti.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kitti.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get item at a given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index (int): Index</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: (image, target), where</span>
+<span class="sd">            target is a list of dictionaries with the following keys:</span>
+
+<span class="sd">            - type: str</span>
+<span class="sd">            - truncated: float</span>
+<span class="sd">            - occluded: int</span>
+<span class="sd">            - alpha: float</span>
+<span class="sd">            - bbox: float[4]</span>
+<span class="sd">            - dimensions: float[3]</span>
+<span class="sd">            - locations: float[3]</span>
+<span class="sd">            - rotation_y: float</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_target</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
+            <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span></div>
+
+    <span class="k">def</span> <span class="nf">_parse_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="n">index</span><span class="p">])</span> <span class="k">as</span> <span class="n">inp</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="s2">&quot;truncated&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;occluded&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+                    <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+                    <span class="s2">&quot;bbox&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">]],</span>
+                    <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">11</span><span class="p">]],</span>
+                    <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">11</span><span class="p">:</span><span class="mi">14</span><span class="p">]],</span>
+                    <span class="s2">&quot;rotation_y&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">14</span><span class="p">]),</span>
+                <span class="p">})</span>
+        <span class="k">return</span> <span class="n">target</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_video_clips</span><span class="o">.</span><span class="n">metadata</span>
+    <span class="k">def</span> <span class="nf">_raw_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;raw&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_select_fold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">video_list</span><span class="p">,</span> <span class="n">annotations_dir</span><span class="p">,</span> <span class="n">fold</span><span class="p">,</span> <span class="n">train</span><span class="p">):</span>
-        <span class="n">target_tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRAIN_TAG</span> <span class="k">if</span> <span class="n">train</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">TEST_TAG</span>
-        <span class="n">split_pattern_name</span> <span class="o">=</span> <span class="s2">&quot;*test_split</span><span class="si">{}</span><span class="s2">.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fold</span><span class="p">)</span>
-        <span class="n">split_pattern_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="n">split_pattern_name</span><span class="p">)</span>
-        <span class="n">annotation_paths</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">split_pattern_path</span><span class="p">)</span>
-        <span class="n">selected_files</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="n">annotation_paths</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">fid</span><span class="p">:</span>
-                <span class="n">lines</span> <span class="o">=</span> <span class="n">fid</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
-                <span class="n">video_filename</span><span class="p">,</span> <span class="n">tag_string</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="n">tag</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tag_string</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="n">target_tag</span><span class="p">:</span>
-                    <span class="n">selected_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">video_filename</span><span class="p">)</span>
-        <span class="n">selected_files</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">selected_files</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Check if the data directory exists.&quot;&quot;&quot;</span>
+        <span class="n">folders</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_dir_name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
+            <span class="n">folders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_dir_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span><span class="p">,</span> <span class="n">fname</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">folders</span>
+        <span class="p">)</span>
 
-        <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">video_index</span><span class="p">,</span> <span class="n">video_path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">video_list</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span> <span class="ow">in</span> <span class="n">selected_files</span><span class="p">:</span>
-                <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">video_index</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Download the KITTI data if it doesn&#39;t exist already.&quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="n">indices</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
+            <span class="k">return</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">num_clips</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-        <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">video_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">get_clip</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
-        <span class="n">sample_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="n">video_idx</span><span class="p">]</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">class_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">sample_index</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">video</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">class_index</span></div>
+        <span class="c1"># download files</span>
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">:</span>
+            <span class="n">download_and_extract_archive</span><span class="p">(</span>
+                <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_url</span><span class="si">}{</span><span class="n">fname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">download_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span>
+                <span class="n">filename</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span>
+            <span class="p">)</span></div>
 </pre></div>
 
              </article>
