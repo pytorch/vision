@@ -21,6 +21,7 @@ def roi_align(
 
     Args:
         input (Tensor[N, C, H, W]): input tensor
+            If the tensor is quantized, we expect a batch size of ``N == 1``.
         boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in (x1, y1, x2, y2)
             format where the regions will be taken from.
             The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
