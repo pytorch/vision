@@ -93,7 +93,7 @@ class SSDClassificationHead(SSDScoringHead):
 
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
             foreground_idxs_per_image = matched_idxs_per_image >= 0
-            num_foreground = foreground_idxs_per_image.sum().item()
+            num_foreground = foreground_idxs_per_image.sum()
 
             gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
                                             device=targets_per_image['labels'].device)

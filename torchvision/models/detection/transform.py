@@ -30,17 +30,17 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
     else:
         im_shape = torch.tensor(image.shape[-2:])
 
+    size: Optional[List[int]] = None
+    scale_factor: Optional[float] = None
+    recompute_scale_factor: Optional[bool] = None
     if self_min_size == self_max_size:  # TODO: Improve this workaround
         # Fixed size output. Assume width / height the same.
-        size = (int(self_min_size), int(self_min_size))
-        scale_factor = None
-        recompute_scale_factor = None
+        size = [int(self_min_size), int(self_min_size)]
     else:
         min_size = torch.min(im_shape).to(dtype=torch.float32)
         max_size = torch.max(im_shape).to(dtype=torch.float32)
         scale = torch.min(self_min_size / min_size, self_max_size / max_size)
 
-        size = None
         if torchvision._is_tracing():
             scale_factor = _fake_cast_onnx(scale)
         else:
