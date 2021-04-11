@@ -78,15 +78,14 @@ class Tester(TestCase):
         dboxes = model(images, features)
 
         dboxes_output = torch.tensor([
-            [0.4650, 0.4650, 0.5350, 0.5350],
-            [0.4488, 0.4488, 0.5512, 0.5512],
-            [0.4505, 0.4753, 0.5495, 0.5247],
-            [0.4753, 0.4505, 0.5247, 0.5495]
+            [139.5000, 139.5000, 160.5000, 160.5000],
+            [134.6296, 134.6296, 165.3704, 165.3704],
+            [135.1508, 142.5754, 164.8492, 157.4246],
+            [142.5754, 135.1508, 157.4246, 164.8492]
         ])
 
-        tol = 0.0001
         self.assertEqual(len(dboxes), 2)
         self.assertEqual(tuple(dboxes[0].shape), (4, 4))
         self.assertEqual(tuple(dboxes[1].shape), (4, 4))
-        self.assertTrue(dboxes[0].allclose(dboxes_output, atol=tol))
-        self.assertTrue(dboxes[1].allclose(dboxes_output, atol=tol))
+        self.assertTrue(dboxes[0].allclose(dboxes_output))
+        self.assertTrue(dboxes[1].allclose(dboxes_output))
