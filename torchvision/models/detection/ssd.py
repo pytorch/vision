@@ -234,7 +234,7 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
 
 def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int = 3):
     backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
-    # SDD300 case - page 4, Fig 2 of SSD paper
+    # SSD300 case - page 4, Fig 2 of SSD paper
     extra = nn.ModuleList([
         nn.Sequential(
             nn.Conv2d(1024, 256, kernel_size=1),
@@ -263,7 +263,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainabl
     ])
     aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
     if highres:
-        # Additional layers for the SDD512 case. See page 11, footernote 5.
+        # Additional layers for the SSD512 case. See page 11, footernote 5.
         extra.append(nn.Sequential(
             nn.Conv2d(256, 128, kernel_size=1),
             nn.ReLU(inplace=True),

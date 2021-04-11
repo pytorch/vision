@@ -165,7 +165,7 @@ class DBoxGenerator(nn.Module):
     def __init__(self, size: int, feature_map_sizes: List[int], aspect_ratios: List[List[int]],
                  min_ratio: float = 0.15, max_ratio: float = 0.9, clip: bool = False):
         super().__init__()
-        self.size = size
+        self.size = size  # TODO: Remove assumption that width == height
         self.feature_map_sizes = feature_map_sizes
         self.aspect_ratios = aspect_ratios
 
