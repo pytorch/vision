@@ -99,7 +99,7 @@ class SSDClassificationHead(SSDScoringHead):
                                             device=targets_per_image['labels'].device)
             gt_classes_target[foreground_idxs_per_image] = \
                 targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]
-            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduce=False)
+            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduction='none')
 
             # Hard Negative Sampling
             background_idxs_per_image = torch.logical_not(foreground_idxs_per_image)
