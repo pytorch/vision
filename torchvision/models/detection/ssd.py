@@ -99,16 +99,16 @@ class SSDClassificationHead(SSDScoringHead):
                                             device=targets_per_image['labels'].device)
             gt_classes_target[foreground_idxs_per_image] = \
                 targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]
-            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target,
-                                                  reduce=False)
+            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduce=False)
 
             # Hard Negative Sampling
             background_idxs_per_image = torch.logical_not(foreground_idxs_per_image)
             num_background = matched_idxs_per_image.size(0) - num_foreground
-            num_negative = min(num_background, int(self.neg_to_pos_ratio * num_foreground))
+            num_negative = torch.min((self.neg_to_pos_ratio * num_foreground).to(dtype=num_background.dtype),
+                                     num_background)
 
             foreground_loss = classification_loss[foreground_idxs_per_image]
-            background_loss = classification_loss[background_idxs_per_image].sort(descending=True)[0][:num_negative]
+            background_loss = classification_loss[background_idxs_per_image].topk(num_negative, sorted=False)[0]
 
             losses.append((foreground_loss.sum() + background_loss.sum()) / max(1, num_foreground))
 
