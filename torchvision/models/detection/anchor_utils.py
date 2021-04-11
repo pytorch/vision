@@ -215,6 +215,6 @@ class DBoxGenerator(nn.Module):
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         dboxes = []
         for i in range(len(image_list.image_sizes)):
-            dboxes_in_image = torch.tensor(self._dboxes, dtype=dtype, device=device)
+            dboxes_in_image = self.size * torch.tensor(self._dboxes, dtype=dtype, device=device)
             dboxes.append(dboxes_in_image)
         return dboxes
