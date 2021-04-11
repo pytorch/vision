@@ -92,16 +92,17 @@ class SSDClassificationHead(SSDScoringHead):
         cls_logits = head_outputs['cls_logits']
 
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
-            if targets_per_image['labels'].numel() == 0:  # TODO: Check this handles empty labels properly
-                losses.append(torch.zeros((1, ), dtype=cls_logits_per_image.dtype, device=cls_logits_per_image.device))
-                continue
-            gt_classes_target = targets_per_image['labels'][matched_idxs_per_image]
-            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduce=False)
-
-            # Hard Negative Sampling
             foreground_idxs_per_image = matched_idxs_per_image >= 0
             num_foreground = foreground_idxs_per_image.sum().item()
 
+            gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
+                                            device=targets_per_image['labels'].device)
+            gt_classes_target[foreground_idxs_per_image] = \
+                targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]
+            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target,
+                                                  reduce=False)
+
+            # Hard Negative Sampling
             background_idxs_per_image = torch.logical_not(foreground_idxs_per_image)
             num_background = matched_idxs_per_image.size(0) - num_foreground
             num_negative = min(num_background, int(self.neg_to_pos_ratio * num_foreground))
