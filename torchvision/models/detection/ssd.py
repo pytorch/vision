@@ -23,7 +23,7 @@ model_urls = {
 
 
 def _xavier_init(conv: nn.Module):
-    for layer in conv.children():
+    for layer in conv.modules():
         if isinstance(layer, nn.Conv2d):
             torch.nn.init.xavier_uniform_(layer.weight)
             torch.nn.init.constant_(layer.bias, 0)
@@ -205,7 +205,7 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
             *backbone[:maxpool4_pos]  # until conv4_3
         )
         fc = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),  # add modified maxpool5
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=False),  # add modified maxpool5
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
