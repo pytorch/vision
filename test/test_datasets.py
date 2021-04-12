@@ -1701,5 +1701,41 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
             self.assertSequenceEqual(dataset.classes, info["classes"])
 
 
+class KittiTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Kitti
+    FEATURE_TYPES = (PIL.Image.Image, (list, type(None)))  # test split returns None as target
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        kitti_dir = os.path.join(tmpdir, "Kitti", "raw")
+        os.makedirs(kitti_dir)
+
+        split_to_num_examples = {
+            True: 1,
+            False: 2,
+        }
+
+        # We need to create all folders(training and testing).
+        for is_training in (True, False):
+            num_examples = split_to_num_examples[is_training]
+
+            datasets_utils.create_image_folder(
+                root=kitti_dir,
+                name=os.path.join("training" if is_training else "testing", "image_2"),
+                file_name_fn=lambda image_idx: f"{image_idx:06d}.png",
+                num_examples=num_examples,
+            )
+            if is_training:
+                for image_idx in range(num_examples):
+                    target_file_dir = os.path.join(kitti_dir, "training", "label_2")
+                    os.makedirs(target_file_dir)
+                    target_file_name = os.path.join(target_file_dir, f"{image_idx:06d}.txt")
+                    target_contents = "Pedestrian 0.00 0 -0.20 712.40 143.00 810.73 307.92 1.89 0.48 1.20 1.84 1.47 8.41 0.01\n"  # noqa
+                    with open(target_file_name, "w") as target_file:
+                        target_file.write(target_contents)
+
+        return split_to_num_examples[config["train"]]
+
+
 if __name__ == "__main__":
     unittest.main()

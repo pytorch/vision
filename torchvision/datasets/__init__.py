@@ -24,6 +24,7 @@ from .kinetics import Kinetics400
 from .hmdb51 import HMDB51
 from .ucf101 import UCF101
 from .places365 import Places365
+from .kitti import Kitti
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -34,4 +35,5 @@ __all__ = ('LSUN', 'LSUNClass',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'WIDERFace', 'SBDataset',
            'VisionDataset', 'USPS', 'Kinetics400', 'HMDB51', 'UCF101',
-           'Places365')
+           'Places365', 'Kitti',
+           )
