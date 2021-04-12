@@ -110,7 +110,7 @@ class CelebA(VisionDataset):
     def _load_csv(
         self,
         filename: str,
-        header: int = None,
+        header: Optional[int] = None,
     ) -> CSV:
         data, indices, headers = [], [], []
 
