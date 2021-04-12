@@ -2,7 +2,6 @@ import contextlib
 import sys
 import os
 import unittest
-from unittest import mock
 import numpy as np
 import PIL
 from PIL import Image
@@ -1725,13 +1724,20 @@ class KittiTestCase(datasets_utils.ImageDatasetTestCase):
 
 class SvhnTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SVHN
+    REQUIRED_PACKAGES = ("scipy",)
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test", "extra"))
 
     def inject_fake_data(self, tmpdir, config):
         import scipy.io as sio
 
-        num_examples = 2
-        file = f"{config['split']}_32x32.mat"
+        split = config["split"]
+        num_examples = {
+            "train": 2,
+            "test": 3,
+            "extra": 4,
+        }.get(split)
+
+        file = f"{split}_32x32.mat"
         images = np.zeros((32, 32, 3, num_examples), dtype=np.uint8)
         targets = np.zeros((num_examples,), dtype=np.uint8)
         sio.savemat(os.path.join(tmpdir, file), {'X': images, 'y': targets})
