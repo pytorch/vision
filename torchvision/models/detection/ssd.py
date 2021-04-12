@@ -15,7 +15,7 @@ from ..utils import load_state_dict_from_url
 from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
 
 
-__all__ = ['SSD', 'ssd300_vgg16']
+__all__ = ['SSD', 'SSDFeatureExtractor', 'ssd300_vgg16']
 
 model_urls = {
     'ssd300_vgg16_coco': None,  # TODO: Add url with weights
@@ -232,7 +232,7 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int = 3):
+def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int):
     backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
     # SSD300 case - page 4, Fig 2 of SSD paper
     extra = nn.ModuleList([
@@ -297,7 +297,7 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_extractor("vgg16", False, pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = _vgg_extractor("vgg16", False, pretrained_backbone, trainable_backbone_layers)
     model = SSD(backbone, 300, num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
