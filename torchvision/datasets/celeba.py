@@ -3,7 +3,6 @@ import csv
 from functools import partial
 import torch
 import os
-import numpy as np
 import PIL
 from typing import Any, Callable, List, Optional, Union, Tuple
 from .vision import VisionDataset
@@ -92,11 +91,11 @@ class CelebA(VisionDataset):
         }
         split_ = split_map[verify_str_arg(split.lower(), "split",
                                           ("train", "valid", "test", "all"))]
-        splits = self._load_csv("list_eval_partition.txt", header=None, index_col=0)
-        identity = self._load_csv("identity_CelebA.txt", header=None, index_col=0)
-        bbox = self._load_csv("list_bbox_celeba.txt", header=1, index_col=0)
-        landmarks_align = self._load_csv("list_landmarks_align_celeba.txt", header=1, index_col=0)
-        attr = self._load_csv("list_attr_celeba.txt", header=1, index_col=0)
+        splits = self._load_csv("list_eval_partition.txt")
+        identity = self._load_csv("identity_CelebA.txt")
+        bbox = self._load_csv("list_bbox_celeba.txt", header=1)
+        landmarks_align = self._load_csv("list_landmarks_align_celeba.txt", header=1)
+        attr = self._load_csv("list_attr_celeba.txt", header=1)
 
         mask = slice(None) if split_ is None else (splits.data == split_).squeeze()
 
@@ -112,7 +111,6 @@ class CelebA(VisionDataset):
         self,
         filename: str,
         header: int = None,
-        index_col: int = None
     ) -> CSV:
         data, indices, headers = [], [], []
 
@@ -123,13 +121,12 @@ class CelebA(VisionDataset):
         if header is not None:
             headers = data[header]
             data = data[header + 1:]
-        data_np = np.array(data)
 
-        if index_col is not None:
-            indices = data_np[:, index_col]
-            data_np = np.delete(data_np, index_col, axis=1)
+        indices = [row[0] for row in data]
+        data = [row[1:] for row in data]
+        data_int = [list(map(int, i)) for i in data]
 
-        return CSV(headers, indices, torch.as_tensor(data_np.astype(int)))
+        return CSV(headers, indices, torch.tensor(data_int))
 
     def _check_integrity(self) -> bool:
         for (_, md5, filename) in self.file_list:
