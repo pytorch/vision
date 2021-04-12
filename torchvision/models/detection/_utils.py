@@ -1,6 +1,7 @@
 import math
 
 import torch
+
 from torch import Tensor
 from typing import List, Tuple
 
@@ -342,6 +343,23 @@ class Matcher(object):
 
         pred_inds_to_update = gt_pred_pairs_of_highest_quality[1]
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
+
+
+class DBoxMatcher(Matcher):
+
+    def __init__(self, threshold):
+        super().__init__(threshold, threshold, allow_low_quality_matches=False)
+
+    def __call__(self, match_quality_matrix):
+        matches = super().__call__(match_quality_matrix)
+
+        # For each gt, find the prediction with which it has the highest quality
+        _, highest_quality_pred_foreach_gt = match_quality_matrix.max(dim=1)
+        matches[highest_quality_pred_foreach_gt] = torch.arange(highest_quality_pred_foreach_gt.size(0),
+                                                                dtype=torch.int64,
+                                                                device=highest_quality_pred_foreach_gt.device)
+
+        return matches
 
 
 def overwrite_eps(model, eps):

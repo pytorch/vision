@@ -162,7 +162,7 @@ class SSD(RetinaNet):
 
         self.anchor_generator = DBoxGenerator(size, feature_map_sizes, backbone.aspect_ratios)
 
-        self.proposal_matcher = det_utils.Matcher(iou_thresh, iou_thresh)
+        self.proposal_matcher = det_utils.DBoxMatcher(iou_thresh)
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
