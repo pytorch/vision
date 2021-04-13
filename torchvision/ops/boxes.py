@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import List, Tuple
+from typing import Tuple
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 from torchvision.extension import _assert_has_ops
