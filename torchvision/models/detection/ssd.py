@@ -190,8 +190,12 @@ class SSD(RetinaNet):
 
 
 class SSDFeatureExtractorVGG(SSDFeatureExtractor):
-    def __init__(self, backbone: nn.Module, extra: nn.ModuleList, aspect_ratios: List[List[int]]):
+    def __init__(self, backbone: nn.Module, highres: bool):
+        aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
+        if highres:
+            aspect_ratios.append([2])
         super().__init__(aspect_ratios)
+
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
 
         # Patch ceil_mode for maxpool3 to get the same WxH output sizes as the paper
@@ -204,6 +208,44 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
         self.features = nn.Sequential(
             *backbone[:maxpool4_pos]  # until conv4_3
         )
+
+        # SSD300 case - page 4, Fig 2 of SSD paper
+        extra = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv2d(1024, 256, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
+                nn.ReLU(inplace=True),
+            ),
+            nn.Sequential(
+                nn.Conv2d(512, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
+                nn.ReLU(inplace=True),
+            ),
+            nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
+                nn.ReLU(inplace=True),
+            ),
+            nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
+                nn.ReLU(inplace=True),
+            )
+        ])
+        if highres:
+            # Additional layers for the SSD512 case. See page 11, footernote 5.
+            extra.append(nn.Sequential(
+                nn.Conv2d(256, 128, kernel_size=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 256, kernel_size=4),  # conv12_2
+                nn.ReLU(inplace=True),
+            ))
+        _xavier_init(extra)
+
         fc = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=False),  # add modified maxpool5
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
@@ -234,44 +276,6 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
 
 def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int):
     backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
-    # SSD300 case - page 4, Fig 2 of SSD paper
-    extra = nn.ModuleList([
-        nn.Sequential(
-            nn.Conv2d(1024, 256, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
-            nn.ReLU(inplace=True),
-        ),
-        nn.Sequential(
-            nn.Conv2d(512, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
-            nn.ReLU(inplace=True),
-        ),
-        nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
-            nn.ReLU(inplace=True),
-        ),
-        nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
-            nn.ReLU(inplace=True),
-        )
-    ])
-    aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-    if highres:
-        # Additional layers for the SSD512 case. See page 11, footernote 5.
-        extra.append(nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=4),  # conv12_2
-            nn.ReLU(inplace=True),
-        ))
-        aspect_ratios.append([2])
-    _xavier_init(extra)
 
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
@@ -285,7 +289,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainabl
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDFeatureExtractorVGG(backbone, extra, aspect_ratios)
+    return SSDFeatureExtractorVGG(backbone, highres)
 
 
 def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
