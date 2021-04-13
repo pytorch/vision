@@ -55,7 +55,6 @@ pil_modes_mapping = {
 }
 
 _is_pil_image = F_pil._is_pil_image
-_parse_fill = F_pil._parse_fill
 
 
 def _get_image_size(img: Tensor) -> List[int]:

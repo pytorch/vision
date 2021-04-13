@@ -3,7 +3,7 @@ from typing import Any, List, Sequence
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance
 
 try:
     import accimage
@@ -147,7 +147,7 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        opts = _parse_fill(fill, img, "2.3.0", name="fill")
+        opts = _parse_fill(fill, img, name="fill")
         if img.mode == "P":
             palette = img.getpalette()
             image = ImageOps.expand(img, border=padding, **opts)
@@ -242,18 +242,8 @@ def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
 
 
 @torch.jit.unused
-def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
+def _parse_fill(fill, img, name="fillcolor"):
     # Process fill color for affine transforms
-    major_found, minor_found = (int(v) for v in PILLOW_VERSION.split('.')[:2])
-    major_required, minor_required = (int(v) for v in min_pil_version.split('.')[:2])
-    if major_found < major_required or (major_found == major_required and minor_found < minor_required):
-        if fill is None:
-            return {}
-        else:
-            msg = ("The option to fill background area of the transformed image, "
-                   "requires pillow>={}")
-            raise RuntimeError(msg.format(min_pil_version))
-
     num_bands = len(img.getbands())
     if fill is None:
         fill = 0
@@ -276,7 +266,7 @@ def affine(img, matrix, interpolation=0, fill=None):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     output_size = img.size
-    opts = _parse_fill(fill, img, '5.0.0')
+    opts = _parse_fill(fill, img)
     return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
 
 
@@ -285,7 +275,7 @@ def rotate(img, angle, interpolation=0, expand=False, center=None, fill=None):
     if not _is_pil_image(img):
         raise TypeError("img should be PIL Image. Got {}".format(type(img)))
 
-    opts = _parse_fill(fill, img, '5.2.0')
+    opts = _parse_fill(fill, img)
     return img.rotate(angle, interpolation, expand, center, **opts)
 
 
@@ -294,7 +284,7 @@ def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None)
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    opts = _parse_fill(fill, img, '5.0.0')
+    opts = _parse_fill(fill, img)
 
     return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 
