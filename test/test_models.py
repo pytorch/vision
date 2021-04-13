@@ -4,6 +4,7 @@ from itertools import product
 import functools
 import operator
 import torch
+import torch.fx
 import torch.nn as nn
 from torchvision import models
 import unittest
@@ -69,6 +70,13 @@ autocast_flaky_numerics = (
 
 
 class ModelTester(TestCase):
+
+    def check_fx_compatible(self, model, inputs):
+        model_fx = torch.fx.symbolic_trace(model)
+        out = model(inputs)
+        out_fx = model_fx(inputs)
+        self.assertTrue(out.equal(out_fx))
+
     def _test_classification_model(self, name, input_shape, dev):
         set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
@@ -81,6 +89,7 @@ class ModelTester(TestCase):
         self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
         self.assertEqual(out.shape[-1], 50)
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        self.check_fx_compatible(model, x)
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
