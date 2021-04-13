@@ -26,7 +26,8 @@ def _xavier_init(conv: nn.Module):
     for layer in conv.modules():
         if isinstance(layer, nn.Conv2d):
             torch.nn.init.xavier_uniform_(layer.weight)
-            torch.nn.init.constant_(layer.bias, 0)
+            if layer.bias is not None:
+                torch.nn.init.constant_(layer.bias, 0)
 
 
 class SSDHead(RetinaNetHead):
