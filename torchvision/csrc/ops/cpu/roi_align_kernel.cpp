@@ -117,7 +117,7 @@ void pre_calc_for_bilinear_interpolate(
 
 template <typename T>
 void roi_align_forward_kernel_impl(
-    int nthreads,
+    int n_rois,
     const T* input,
     const T& spatial_scale,
     int channels,
@@ -129,7 +129,6 @@ void roi_align_forward_kernel_impl(
     bool aligned,
     const T* rois,
     T* output) {
-  int n_rois = nthreads / channels / pooled_width / pooled_height;
   // (n, c, ph, pw) is an element in the pooled output
   // can be parallelized using omp
   // #pragma omp parallel for num_threads(32)
@@ -414,8 +413,6 @@ at::Tensor roi_align_forward_kernel(
   at::Tensor output = at::zeros(
       {num_rois, channels, pooled_height, pooled_width}, input.options());
 
-  auto output_size = num_rois * pooled_height * pooled_width * channels;
-
   if (output.numel() == 0)
     return output;
 
@@ -423,7 +420,7 @@ at::Tensor roi_align_forward_kernel(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "roi_align_forward_kernel", [&] {
         roi_align_forward_kernel_impl<scalar_t>(
-            output_size,
+            num_rois,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
