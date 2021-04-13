@@ -9,7 +9,11 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import places365_root, widerface_root, stl10_root
+from fakedata_generation import (
+    make_tar,
+    places365_root,
+    widerface_root,
+)
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -141,76 +145,68 @@ class Tester(DatasetTestcase):
             self.assertIsInstance(repr(dataset), str)
 
 
-class STL10Tester(DatasetTestcase):
-    @contextlib.contextmanager
-    def mocked_root(self):
-        with stl10_root() as (root, data):
-            yield root, data
+class STL10Tester(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.STL10
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test", "unlabeled", "train+unlabeled"))
 
-    @contextlib.contextmanager
-    def mocked_dataset(self, pre_extract=False, download=True, **kwargs):
-        with self.mocked_root() as (root, data):
-            if pre_extract:
-                utils.extract_archive(os.path.join(root, data["archive"]))
-            dataset = torchvision.datasets.STL10(root, download=download, **kwargs)
-            yield dataset, data
+    def inject_fake_data(self, tmpdir, config):
+        def make_binary_file(num_elements, root, name):
+            file_name = os.path.join(root, name)
+            np.zeros(num_elements, dtype=np.uint8).tofile(file_name)
 
-    def test_not_found(self):
-        with self.assertRaises(RuntimeError):
-            with self.mocked_dataset(download=False):
-                pass
+        def make_image_file(num_images, root, name, num_channels=3, height=96, width=96):
+            make_binary_file(num_images * num_channels * height * width, root, name)
 
-    def test_splits(self):
-        for split in ('train', 'train+unlabeled', 'unlabeled', 'test'):
-            with self.mocked_dataset(split=split) as (dataset, data):
-                num_images = sum([data["num_images_in_split"][part] for part in split.split("+")])
-                self.generic_classification_dataset_test(dataset, num_images=num_images)
+        def make_label_file(num_images, root, name):
+            make_binary_file(num_images, root, name)
 
-    def test_folds(self):
-        for fold in range(10):
-            with self.mocked_dataset(split="train", folds=fold) as (dataset, data):
-                num_images = data["num_images_in_folds"][fold]
-                self.assertEqual(len(dataset), num_images)
+        def make_class_names_file(root, name="class_names.txt"):
+            class_names = ("airplane", "bird")
+            with open(os.path.join(root, name), "w") as fh:
+                for cname in class_names:
+                    fh.write(f"{cname}\n")
 
-    def test_invalid_folds1(self):
-        with self.assertRaises(ValueError):
-            with self.mocked_dataset(folds=10):
-                pass
+        def make_fold_indices_file(root):
+            num_folds = 10
+            offset = 0
+            with open(os.path.join(root, "fold_indices.txt"), "w") as fh:
+                for fold in range(num_folds):
+                    line = " ".join([str(idx) for idx in range(offset, offset + fold + 1)])
+                    fh.write(f"{line}\n")
+                    offset += fold + 1
 
-    def test_invalid_folds2(self):
-        with self.assertRaises(ValueError):
-            with self.mocked_dataset(folds="0"):
-                pass
+            return tuple(range(1, num_folds + 1))
 
-    def test_transforms(self):
-        expected_image = "image"
-        expected_target = "target"
+        def make_train_files(root, num_unlabeled_images=1):
+            num_images_in_fold = make_fold_indices_file(root)
+            num_train_images = sum(num_images_in_fold)
 
-        def transform(image):
-            return expected_image
+            make_image_file(num_train_images, root, "train_X.bin")
+            make_label_file(num_train_images, root, "train_y.bin")
+            make_image_file(1, root, "unlabeled_X.bin")
 
-        def target_transform(target):
-            return expected_target
+            return dict(train=num_train_images, unlabeled=num_unlabeled_images)
 
-        with self.mocked_dataset(transform=transform, target_transform=target_transform) as (dataset, _):
-            actual_image, actual_target = dataset[0]
+        def make_test_files(root, num_images=2):
+            make_image_file(num_images, root, "test_X.bin")
+            make_label_file(num_images, root, "test_y.bin")
 
-            self.assertEqual(actual_image, expected_image)
-            self.assertEqual(actual_target, expected_target)
+            return dict(test=num_images)
 
-    def test_unlabeled(self):
-        with self.mocked_dataset(split="unlabeled") as (dataset, _):
-            labels = [dataset[idx][1] for idx in range(len(dataset))]
-            self.assertTrue(all([label == -1 for label in labels]))
+        def make_archive(root, name):
+            make_tar(root, name, name, compression="gz")
 
-    @unittest.mock.patch("torchvision.datasets.stl10.download_and_extract_archive")
-    def test_download_preexisting(self, mock):
-        with self.mocked_dataset(pre_extract=True) as (dataset, data):
-            mock.assert_not_called()
+        archive_name = "stl10_binary"
+        archive_folder = os.path.join(tmpdir, archive_name)
+        os.mkdir(archive_folder)
 
-    def test_repr_smoke(self):
-        with self.mocked_dataset() as (dataset, _):
-            self.assertIsInstance(repr(dataset), str)
+        num_images_in_split = make_train_files(archive_folder)
+        num_images_in_split.update(make_test_files(archive_folder))
+        make_class_names_file(archive_folder)
+        make_archive(tmpdir, archive_name)
+
+        return sum(num_images_in_split[part] for part in config["split"].split("+"))
 
 
 class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
