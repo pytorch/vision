@@ -1,7 +1,6 @@
-sphinx==1.7.3
+sphinx
 sphinx-gallery
 scikit-image
 matplotlib
 numpy
-sphinxcontrib-googleanalytics
 -e git+git://github.com/pytorch/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme

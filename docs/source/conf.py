@@ -23,22 +23,7 @@
 import torch
 import torchvision
 import pytorch_sphinx_theme
-from sphinxcontrib import googleanalytics
 
-
-# Wrap sphinxcontrib-googleanalytics setup() function to avoid a Sphinx warning:
-# "WARNING: extension ‘sphinxcontrib.googleanalytics’ returned an unsupported
-# object from its setup() function; it should return None or a metadata
-# dictionary"
-_googleanalytics_setup_original = googleanalytics.setup
-
-
-def _googleanalytics_setup_wrapper(app):
-    _googleanalytics_setup_original(app)
-    return {"version": "0.1"}
-
-
-googleanalytics.setup = _googleanalytics_setup_wrapper
 
 # -- General configuration ------------------------------------------------
 
@@ -59,7 +44,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.googleanalytics',
     'sphinx_gallery.gen_gallery',
 ]
 
@@ -73,9 +57,6 @@ sphinx_gallery_conf = {
 napoleon_use_ivar = True
 napoleon_numpy_docstring = False
 napoleon_google_docstring = True
-
-googleanalytics_id = 'UA-90545585-1'
-googleanalytics_enabled = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

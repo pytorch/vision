@@ -1,5 +1,17 @@
 {% extends "!layout.html" %}
 
+{%- block extrahead %}
+<!-- Google Analytics -->
+<script>
+  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+  ga('create', 'UA-90545585-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<!-- End Google Analytics -->
+{{ super() }}
+{% endblock %}
+
 {% block sidebartitle %}
     <div class="version">
       <a href='https://pytorch.org/vision/versions.html'>{{ version }} &#x25BC</a>
