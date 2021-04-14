@@ -122,6 +122,8 @@ class ModulePathTracer(torch.fx.Tracer):
 
 
 def IntermediateLayerGetter(model: nn.Module, return_layers: Dict[str, str]) -> nn.Module:
+    # TODO come up with a better name for this
+    # TODO have duplicate nodes but full coverage for module names
     return_layers = {str(k): str(v) for k, v in return_layers.items()}
 
     # Instantiate our ModulePathTracer and use that to trace the model
@@ -130,6 +132,12 @@ def IntermediateLayerGetter(model: nn.Module, return_layers: Dict[str, str]) -> 
 
     name = model.__class__.__name__ if isinstance(model, nn.Module) else model.__name__
     m = torch.fx.GraphModule(tracer.root, graph, name)
+
+
+    # check that all outputs in return_layers are present in the model
+    if not set(return_layers).issubset(tracer.node_to_originating_module.values()):
+        raise ValueError("return_layers are not present in model")
+
 
     # Get output node
     orig_output_node: Optional[torch.fx.Node] = None
@@ -149,9 +157,6 @@ def IntermediateLayerGetter(model: nn.Module, return_layers: Dict[str, str]) -> 
         if module_qualname in return_layers:
             output_node[return_layers[module_qualname]] = n
 
-    # TODO raise error if some of return layers don't exist
-    # TODO have duplicate nodes but full coverage for module names
-
     # and add them in the end of the graph
     with m.graph.inserting_after(nodes[-1]):
         m.graph.output(output_node)
@@ -160,5 +165,5 @@ def IntermediateLayerGetter(model: nn.Module, return_layers: Dict[str, str]) -> 
     m.recompile()
 
     # remove unused modules / parameters
-    m = torch.fx.GraphModule(m, m.graph)
+    m = torch.fx.GraphModule(m, m.graph, name)
     return m

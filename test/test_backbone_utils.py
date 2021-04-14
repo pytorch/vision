@@ -65,6 +65,10 @@ class IntermediateLayerGetterTester(unittest.TestCase):
             o2 = new_out_script[k]
             self.assertTrue(o1.equal(o2))
 
+        # check assert that non-existing keys raise error
+        with self.assertRaises(ValueError):
+            _ = IntermediateLayerGetter(model, {'layer5': '0'})
+
 
 if __name__ == "__main__":
     unittest.main()
