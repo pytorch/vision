@@ -41,7 +41,7 @@ class SBDataset(VisionDataset):
             if `mode='boundaries'` or PIL image if `mode='segmentation'`.
     """
 
-    url = "http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz"
+    url = "https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz"
     md5 = "82b4d87ceb2ed10f6038a1cba92111cb"
     filename = "benchmark.tgz"
 

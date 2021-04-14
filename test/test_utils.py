@@ -7,7 +7,13 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
-from PIL import Image
+from PIL import Image, __version__ as PILLOW_VERSION
+
+
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
+
+boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
+                     [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
 masks = torch.tensor([
     [
@@ -106,8 +112,8 @@ class Tester(unittest.TestCase):
 
     def test_draw_boxes(self):
         img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
-        boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
-                             [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        img_cp = img.clone()
+        boxes_cp = boxes.clone()
         labels = ["a", "b", "c", "d"]
         colors = ["green", "#FF00FF", (0, 255, 0), "red"]
         result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True)
@@ -117,11 +123,46 @@ class Tester(unittest.TestCase):
             res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
             res.save(path)
 
+        if PILLOW_VERSION >= (8, 2):
+            # The reference image is only valid for new PIL versions
+            expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+            self.assertTrue(torch.equal(result, expected))
+
+        # Check if modification is not in place
+        self.assertTrue(torch.all(torch.eq(boxes, boxes_cp)).item())
+        self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
+
+    def test_draw_boxes_vanilla(self):
+        img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+        img_cp = img.clone()
+        boxes_cp = boxes.clone()
+        result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_vanilla.png")
+        if not os.path.exists(path):
+            res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+            res.save(path)
+
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         self.assertTrue(torch.equal(result, expected))
+        # Check if modification is not in place
+        self.assertTrue(torch.all(torch.eq(boxes, boxes_cp)).item())
+        self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
+
+    def test_draw_invalid_boxes(self):
+        img_tp = ((1, 1, 1), (1, 2, 3))
+        img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
+        img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
+        boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
+                             [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        self.assertRaises(TypeError, utils.draw_bounding_boxes, img_tp, boxes)
+        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong1, boxes)
+        self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong2, boxes)
 
     def test_draw_segmentation_masks_colors(self):
         img = torch.full((3, 5, 5), 255, dtype=torch.uint8)
+        img_cp = img.clone()
+        masks_cp = masks.clone()
         colors = ["#FF00FF", (0, 255, 0), "red"]
         result = utils.draw_segmentation_masks(img, masks, colors=colors)
 
@@ -134,9 +175,14 @@ class Tester(unittest.TestCase):
 
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         self.assertTrue(torch.equal(result, expected))
+        # Check if modification is not in place
+        self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
+        self.assertTrue(torch.all(torch.eq(masks, masks_cp)).item())
 
     def test_draw_segmentation_masks_no_colors(self):
         img = torch.full((3, 20, 20), 255, dtype=torch.uint8)
+        img_cp = img.clone()
+        masks_cp = masks.clone()
         result = utils.draw_segmentation_masks(img, masks, colors=None)
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets",
@@ -148,6 +194,20 @@ class Tester(unittest.TestCase):
 
         expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
         self.assertTrue(torch.equal(result, expected))
+        # Check if modification is not in place
+        self.assertTrue(torch.all(torch.eq(img, img_cp)).item())
+        self.assertTrue(torch.all(torch.eq(masks, masks_cp)).item())
+
+    def test_draw_invalid_masks(self):
+        img_tp = ((1, 1, 1), (1, 2, 3))
+        img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
+        img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
+        img_wrong3 = torch.full((4, 5, 5), 255, dtype=torch.uint8)
+
+        self.assertRaises(TypeError, utils.draw_segmentation_masks, img_tp, masks)
+        self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong1, masks)
+        self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong2, masks)
+        self.assertRaises(ValueError, utils.draw_segmentation_masks, img_wrong3, masks)
 
 
 if __name__ == '__main__':

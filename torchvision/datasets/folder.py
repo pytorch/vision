@@ -32,9 +32,43 @@ def is_image_file(filename: str) -> bool:
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
+def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
+    """Finds the class folders in a dataset structured as follows:
+
+    .. code::
+
+        directory/
+        ├── class_x
+        │   ├── xxx.ext
+        │   ├── xxy.ext
+        │   └── ...
+        │       └── xxz.ext
+        └── class_y
+            ├── 123.ext
+            ├── nsdf3.ext
+            └── ...
+                └── asd932_.ext
+
+    Args:
+        directory (str): Root directory path.
+
+    Raises:
+        FileNotFoundError: If ``directory`` has no class folders.
+
+    Returns:
+        (Tuple[List[str], Dict[str, int]]): List of all classes and dictionary mapping each class to an index.
+    """
+    classes = sorted(entry.name for entry in os.scandir(directory) if entry.is_dir())
+    if not classes:
+        raise FileNotFoundError(f"Couldn't find any class folder in {directory}.")
+
+    class_to_idx = {cls_name: i for i, cls_name in enumerate(classes)}
+    return classes, class_to_idx
+
+
 def make_dataset(
     directory: str,
-    class_to_idx: Dict[str, int],
+    class_to_idx: Optional[Dict[str, int]] = None,
     extensions: Optional[Tuple[str, ...]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
 ) -> List[Tuple[str, int]]:
@@ -42,7 +76,8 @@ def make_dataset(
 
     Args:
         directory (str): root dataset directory
-        class_to_idx (Dict[str, int]): dictionary mapping class name to class index
+        class_to_idx (Optional[Dict[str, int]]): Dictionary mapping class name to class index. If omitted, is generated
+            by :func:`find_classes`.
         extensions (optional): A list of allowed extensions.
             Either extensions or is_valid_file should be passed. Defaults to None.
         is_valid_file (optional): A function that takes path of a file
@@ -51,21 +86,34 @@ def make_dataset(
             is_valid_file should not be passed. Defaults to None.
 
     Raises:
+        ValueError: In case ``class_to_idx`` is empty.
         ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.
+        FileNotFoundError: In case no valid file was found for any class.
 
     Returns:
         List[Tuple[str, int]]: samples of a form (path_to_sample, class)
     """
-    instances = []
     directory = os.path.expanduser(directory)
+
+    if class_to_idx is None:
+        _, class_to_idx = find_classes(directory)
+    elif not class_to_idx:
+        raise ValueError("'class_to_index' must have at least one entry to collect any samples.")
+
     both_none = extensions is None and is_valid_file is None
     both_something = extensions is not None and is_valid_file is not None
     if both_none or both_something:
         raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
+
     if extensions is not None:
+
         def is_valid_file(x: str) -> bool:
             return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
+
     is_valid_file = cast(Callable[[str], bool], is_valid_file)
+
+    instances = []
+    available_classes = set()
     for target_class in sorted(class_to_idx.keys()):
         class_index = class_to_idx[target_class]
         target_dir = os.path.join(directory, target_class)
@@ -77,6 +125,17 @@ def make_dataset(
                 if is_valid_file(path):
                     item = path, class_index
                     instances.append(item)
+
+                    if target_class not in available_classes:
+                        available_classes.add(target_class)
+
+    empty_classes = set(class_to_idx.keys()) - available_classes
+    if empty_classes:
+        msg = f"Found no valid file for the classes {', '.join(sorted(empty_classes))}. "
+        if extensions is not None:
+            msg += f"Supported extensions are: {', '.join(extensions)}"
+        raise FileNotFoundError(msg)
+
     return instances
 
 
@@ -123,13 +182,8 @@ class DatasetFolder(VisionDataset):
     ) -> None:
         super(DatasetFolder, self).__init__(root, transform=transform,
                                             target_transform=target_transform)
-        classes, class_to_idx = self._find_classes(self.root)
+        classes, class_to_idx = self.find_classes(self.root)
         samples = self.make_dataset(self.root, class_to_idx, extensions, is_valid_file)
-        if len(samples) == 0:
-            msg = "Found 0 files in subfolders of: {}\n".format(self.root)
-            if extensions is not None:
-                msg += "Supported extensions are: {}".format(",".join(extensions))
-            raise RuntimeError(msg)
 
         self.loader = loader
         self.extensions = extensions
@@ -148,23 +202,13 @@ class DatasetFolder(VisionDataset):
     ) -> List[Tuple[str, int]]:
         return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
-    def _find_classes(self, dir: str) -> Tuple[List[str], Dict[str, int]]:
+    def find_classes(self, dir: str) -> Tuple[List[str], Dict[str, int]]:
+        """Same as :func:`find_classes`.
+
+        This method can be overridden to only consider
+        a subset of classes, or to adapt to a different dataset directory structure.
         """
-        Finds the class folders in a dataset.
-
-        Args:
-            dir (string): Root directory path.
-
-        Returns:
-            tuple: (classes, class_to_idx) where classes are relative to (dir), and class_to_idx is a dictionary.
-
-        Ensures:
-            No class is a subdirectory of another.
-        """
-        classes = [d.name for d in os.scandir(dir) if d.is_dir()]
-        classes.sort()
-        class_to_idx = {cls_name: i for i, cls_name in enumerate(classes)}
-        return classes, class_to_idx
+        return find_classes(dir)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """

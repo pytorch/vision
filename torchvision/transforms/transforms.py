@@ -229,6 +229,12 @@ class Resize(torch.nn.Module):
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
+    .. warning::
+        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
+        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
+        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
+        types.
+
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
             (h, w), output size will be matched to this. If size is an int,
@@ -835,7 +841,7 @@ class RandomResizedCrop(torch.nn.Module):
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
-                sized crop.
+            sized crop.
         """
         width, height = F._get_image_size(img)
         area = height * width
@@ -1104,7 +1110,7 @@ class ColorJitter(torch.nn.Module):
             if not bound[0] <= value[0] <= value[1] <= bound[1]:
                 raise ValueError("{} values should be between {}".format(name, bound))
         else:
-            raise TypeError("{} should be a single number or a list/tuple with lenght 2.".format(name))
+            raise TypeError("{} should be a single number or a list/tuple with length 2.".format(name))
 
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
@@ -1458,8 +1464,9 @@ class Grayscale(torch.nn.Module):
 
     Returns:
         PIL Image: Grayscale version of the input.
-         - If ``num_output_channels == 1`` : returned image is single channel
-         - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
+
+        - If ``num_output_channels == 1`` : returned image is single channel
+        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
 
     """
 

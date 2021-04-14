@@ -32,7 +32,7 @@ def ps_roi_pool(
             the box coordinates. Default: 1.0
 
     Returns:
-        output (Tensor[K, C, output_size[0], output_size[1]])
+        Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.
     """
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
@@ -48,7 +48,7 @@ def ps_roi_pool(
 
 class PSRoIPool(nn.Module):
     """
-    See ps_roi_pool
+    See :func:`ps_roi_pool`.
     """
     def __init__(self, output_size: int, spatial_scale: float):
         super(PSRoIPool, self).__init__()
