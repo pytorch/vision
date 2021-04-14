@@ -6,7 +6,7 @@ from torch import nn
 from typing import Dict, Any, Callable, Tuple, Optional
 
 
-class IntermediateLayerGetter2(nn.ModuleDict):
+class IntermediateLayerGetter(nn.ModuleDict):
     """
     Module wrapper that returns intermediate layers from a model
 
@@ -121,7 +121,7 @@ class ModulePathTracer(torch.fx.Tracer):
         return proxy
 
 
-def IntermediateLayerGetter(model: nn.Module, return_layers: Dict[str, str]) -> nn.Module:
+def IntermediateLayerGetter2(model: nn.Module, return_layers: Dict[str, str]) -> nn.Module:
     # TODO come up with a better name for this
     # TODO have duplicate nodes but full coverage for module names
     return_layers = {str(k): str(v) for k, v in return_layers.items()}
