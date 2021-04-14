@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn.functional as F
 
@@ -22,12 +23,12 @@ model_urls = {
 }
 
 
-def _xavier_init(conv: nn.Module):
+def _xavier_init(conv: nn.Module, bias_value: float = 0.0):
     for layer in conv.modules():
         if isinstance(layer, nn.Conv2d):
             torch.nn.init.xavier_uniform_(layer.weight)
             if layer.bias is not None:
-                torch.nn.init.constant_(layer.bias, 0)
+                torch.nn.init.constant_(layer.bias, bias_value)
 
 
 class SSDHead(RetinaNetHead):
@@ -78,11 +79,12 @@ class SSDScoringHead(nn.Module):
 
 
 class SSDClassificationHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float,
+                 prior_probability: float = 0.01):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
-        _xavier_init(cls_logits)
+        _xavier_init(cls_logits, -math.log((1 - prior_probability) / prior_probability))
         super().__init__(cls_logits, num_classes)
         self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
