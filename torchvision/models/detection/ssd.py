@@ -136,8 +136,7 @@ class SSDFeatureExtractor(nn.Module):
 
 
 class SSD(RetinaNet):
-    def __init__(self, backbone: SSDFeatureExtractor, num_classes: int,
-                 min_size: int = 300, max_size: int = 600,
+    def __init__(self, backbone: SSDFeatureExtractor, size: int, num_classes: int,
                  image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
@@ -149,7 +148,7 @@ class SSD(RetinaNet):
 
         # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
         device = next(backbone.parameters()).device
-        tmp_img = torch.empty((1, 3, min_size, min_size), device=device)
+        tmp_img = torch.empty((1, 3, size, size), device=device)
         tmp_sizes = [x.size() for x in backbone(tmp_img).values()]
         out_channels = [x[1] for x in tmp_sizes]
 
@@ -171,7 +170,7 @@ class SSD(RetinaNet):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std,
+        self.transform = GeneralizedRCNNTransform(size, size, image_mean, image_std,
                                                   # TODO: Discuss/refactor these workarounds
                                                   size_divisible=1, exceed_max_size=True)
 
@@ -306,7 +305,7 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         pretrained_backbone = False
 
     backbone = _vgg_extractor("vgg16", False, pretrained_backbone, trainable_backbone_layers)
-    model = SSD(backbone, num_classes, **kwargs)
+    model = SSD(backbone, 300, num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:
