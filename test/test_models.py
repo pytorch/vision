@@ -75,7 +75,7 @@ class ModelTester(TestCase):
         model_fx = torch.fx.symbolic_trace(model)
         out = model(inputs)
         out_fx = model_fx(inputs)
-        self.assertTrue(out.equal(out_fx))
+        self.assertTrue(torch.allclose(out, out_fx))
 
     def _test_classification_model(self, name, input_shape, dev):
         set_rng_seed(0)
