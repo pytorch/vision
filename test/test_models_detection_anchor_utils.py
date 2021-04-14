@@ -22,10 +22,8 @@ class Tester(TestCase):
         return anchor_generator
 
     def _init_test_dbox_generator(self):
-        size = 300
-        feature_map_sizes = [1]
         aspect_ratios = [[2]]
-        dbox_generator = DBoxGenerator(size, feature_map_sizes, aspect_ratios)
+        dbox_generator = DBoxGenerator(aspect_ratios)
 
         return dbox_generator
 
@@ -69,7 +67,7 @@ class Tester(TestCase):
 
     def test_dbox_generator(self):
         images = torch.zeros(2, 3, 15, 15)
-        features = [torch.zeros(2, 8, 3, 3)]
+        features = [torch.zeros(2, 8, 1, 1)]
         image_shapes = [i.shape[-2:] for i in images]
         images = ImageList(images, image_shapes)
 
@@ -78,10 +76,10 @@ class Tester(TestCase):
         dboxes = model(images, features)
 
         dboxes_output = torch.tensor([
-            [139.5000, 139.5000, 160.5000, 160.5000],
-            [134.6296, 134.6296, 165.3704, 165.3704],
-            [135.1508, 142.5754, 164.8492, 157.4246],
-            [142.5754, 135.1508, 157.4246, 164.8492]
+            [6.9750, 6.9750, 8.0250, 8.0250],
+            [6.7315, 6.7315, 8.2685, 8.2685],
+            [6.7575, 7.1288, 8.2425, 7.8712],
+            [7.1288, 6.7575, 7.8712, 8.2425]
         ])
 
         self.assertEqual(len(dboxes), 2)

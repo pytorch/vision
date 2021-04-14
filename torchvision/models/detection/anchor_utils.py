@@ -162,28 +162,26 @@ class AnchorGenerator(nn.Module):
 
 class DBoxGenerator(nn.Module):
 
-    def __init__(self, size: int, feature_map_sizes: List[int], aspect_ratios: List[List[int]],
-                 min_ratio: float = 0.15, max_ratio: float = 0.9, clip: bool = False):
+    def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
+                 clip: bool = False):
         super().__init__()
-        self.size = size  # TODO: Remove assumption that width == height
-        self.feature_map_sizes = feature_map_sizes
         self.aspect_ratios = aspect_ratios
+        num_outputs = len(aspect_ratios)
 
         # Estimation of default boxes scales
         # Inspired from https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_pascal.py#L311-L317
         min_centile = int(100 * min_ratio)
         max_centile = int(100 * max_ratio)
         conv4_centile = min_centile // 2  # assume half of min_ratio as in paper
-        step = (max_centile - min_centile) // (len(feature_map_sizes) - 2)
+        step = (max_centile - min_centile) // (num_outputs - 2)
         centiles = [conv4_centile, min_centile]
         for c in range(min_centile, max_centile + 1, step):
             centiles.append(c + step)
         self.scales = [c / 100 for c in centiles]
 
-        # Default Boxes pre-calculation based on page 6 of SSD paper
+        self._wh_pairs = []
         clamp01 = (lambda x: max(min(x, 1.0), 0.0)) if clip else (lambda x: x)
-        self._dboxes = []
-        for k, f_k in enumerate(self.feature_map_sizes):
+        for k in range(num_outputs):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
             s_k = clamp01(self.scales[k])
             s_prime_k = clamp01(math.sqrt(self.scales[k] * self.scales[k + 1]))
@@ -196,25 +194,35 @@ class DBoxGenerator(nn.Module):
                 h = clamp01(self.scales[k] / sq_ar)
                 wh_pairs.extend([(w, h), (h, w)])
 
-            # Now add the default boxes for each width-height pair
-            for i, j in itertools.product(range(f_k), repeat=2):
-                cx = (i + 0.5) / f_k
-                cy = (j + 0.5) / f_k
-                self._dboxes.extend([cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h] for w, h in wh_pairs)
+            self._wh_pairs.append(wh_pairs)
 
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
-        s += 'size={size}'
-        s += ', feature_map_sizes={feature_map_sizes}'
-        s += ', aspect_ratios={aspect_ratios}'
+        s += 'aspect_ratios={aspect_ratios}'
         s += ', scales={scales}'
         s += ')'
         return s.format(**self.__dict__)
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
+        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
+        image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
+
+        # Default Boxes calculation based on page 6 of SSD paper
+        default_boxes: List[List[float]] = []
+        for k, f_k in enumerate(grid_sizes):
+            # Now add the default boxes for each width-height pair
+            for i in range(f_k[1]):
+                cx = (i + 0.5) / f_k[1]
+                for j in range(f_k[0]):
+                    cy = (j + 0.5) / f_k[0]
+                    default_boxes.extend([[cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h]
+                                          for w, h in self._wh_pairs[k]])
+
         dboxes = []
-        for i in range(len(image_list.image_sizes)):
-            dboxes_in_image = self.size * torch.tensor(self._dboxes, dtype=dtype, device=device)
+        for _ in image_list.image_sizes:
+            dboxes_in_image = torch.tensor(default_boxes, dtype=dtype, device=device)
+            dboxes_in_image[:, 0::2] *= image_size[1]
+            dboxes_in_image[:, 1::2] *= image_size[0]
             dboxes.append(dboxes_in_image)
         return dboxes
