@@ -166,7 +166,7 @@ class Tester(TransformsTester):
             self.assertLess(max_diff, 1e-5)
 
             s_hsv_img = scripted_fn(rgb_img)
-            self.assertTrue(hsv_img.allclose(s_hsv_img))
+            self.assertTrue(hsv_img.allclose(s_hsv_img, atol=1e-7))
 
         batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
         self._test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
