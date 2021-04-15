@@ -97,7 +97,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             # factor should be forced to int for torch jit script
             # otherwise factor is a float and image // factor can produce different results
             factor = int((input_max + 1) // (output_max + 1))
-            image = image // factor
+            image = torch.div(image, factor, rounding_mode='floor')
             return image.to(dtype)
         else:
             # factor should be forced to int for torch jit script
@@ -908,11 +908,13 @@ def _scale_channel(img_chan):
         hist = torch.bincount(img_chan.view(-1), minlength=256)
 
     nonzero_hist = hist[hist != 0]
-    step = nonzero_hist[:-1].sum() // 255
+    step = torch.div(nonzero_hist[:-1].sum(), 255, rounding_mode='floor')
     if step == 0:
         return img_chan
 
-    lut = (torch.cumsum(hist, 0) + (step // 2)) // step
+    lut = torch.div(
+        torch.cumsum(hist, 0) + torch.div(step, 2, rounding_mode='floor'),
+        step, rounding_mode='floor')
     lut = torch.nn.functional.pad(lut, [1, 0])[:-1].clamp(0, 255)
 
     return lut[img_chan.to(torch.int64)].to(torch.uint8)
