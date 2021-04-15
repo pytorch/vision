@@ -212,10 +212,10 @@ class DBoxGenerator(nn.Module):
         default_boxes: List[List[float]] = []
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
-            for i in range(f_k[1]):
-                cx = (i + 0.5) / f_k[1]
-                for j in range(f_k[0]):
-                    cy = (j + 0.5) / f_k[0]
+            for j in range(f_k[0]):
+                cy = (j + 0.5) / f_k[0]
+                for i in range(f_k[1]):
+                    cx = (i + 0.5) / f_k[1]
                     default_boxes.extend([[cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h]
                                           for w, h in self._wh_pairs[k]])
 
