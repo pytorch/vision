@@ -4,7 +4,7 @@
  *
  * Sphinx stylesheet -- basic theme.
  *
- * :copyright: Copyright 2007-2018 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2021 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -13,6 +13,12 @@
 
 div.clearer {
     clear: both;
+}
+
+div.section::after {
+    display: block;
+    content: '';
+    clear: left;
 }
 
 /* -- relbar ---------------------------------------------------------------- */
@@ -79,6 +85,10 @@ div.sphinxsidebar input {
     border: 1px solid #98dbcc;
     font-family: sans-serif;
     font-size: 1em;
+}
+
+div.sphinxsidebar #searchbox form.search {
+    overflow: hidden;
 }
 
 div.sphinxsidebar #searchbox input[type="text"] {
@@ -227,6 +237,16 @@ a.headerlink {
     visibility: hidden;
 }
 
+a.brackets:before,
+span.brackets > a:before{
+    content: "[";
+}
+
+a.brackets:after,
+span.brackets > a:after {
+    content: "]";
+}
+
 h1:hover > a.headerlink,
 h2:hover > a.headerlink,
 h3:hover > a.headerlink,
@@ -257,19 +277,25 @@ p.rubric {
     font-weight: bold;
 }
 
-img.align-left, .figure.align-left, object.align-left {
+img.align-left, figure.align-left, .figure.align-left, object.align-left {
     clear: left;
     float: left;
     margin-right: 1em;
 }
 
-img.align-right, .figure.align-right, object.align-right {
+img.align-right, figure.align-right, .figure.align-right, object.align-right {
     clear: right;
     float: right;
     margin-left: 1em;
 }
 
-img.align-center, .figure.align-center, object.align-center {
+img.align-center, figure.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+img.align-default, figure.align-default, .figure.align-default {
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -283,30 +309,41 @@ img.align-center, .figure.align-center, object.align-center {
     text-align: center;
 }
 
+.align-default {
+    text-align: center;
+}
+
 .align-right {
     text-align: right;
 }
 
 /* -- sidebars -------------------------------------------------------------- */
 
-div.sidebar {
+div.sidebar,
+aside.sidebar {
     margin: 0 0 0.5em 1em;
     border: 1px solid #ddb;
-    padding: 7px 7px 0 7px;
+    padding: 7px;
     background-color: #ffe;
     width: 40%;
     float: right;
+    clear: right;
+    overflow-x: auto;
 }
 
 p.sidebar-title {
     font-weight: bold;
 }
 
+div.admonition, div.topic, blockquote {
+    clear: left;
+}
+
 /* -- topics ---------------------------------------------------------------- */
 
 div.topic {
     border: 1px solid #ccc;
-    padding: 7px 7px 0 7px;
+    padding: 7px;
     margin: 10px 0 10px 0;
 }
 
@@ -328,10 +365,6 @@ div.admonition dt {
     font-weight: bold;
 }
 
-div.admonition dl {
-    margin-bottom: 0;
-}
-
 p.admonition-title {
     margin: 0px 10px 5px 0px;
     font-weight: bold;
@@ -342,14 +375,40 @@ div.body p.centered {
     margin-top: 25px;
 }
 
+/* -- content of sidebars/topics/admonitions -------------------------------- */
+
+div.sidebar > :last-child,
+aside.sidebar > :last-child,
+div.topic > :last-child,
+div.admonition > :last-child {
+    margin-bottom: 0;
+}
+
+div.sidebar::after,
+aside.sidebar::after,
+div.topic::after,
+div.admonition::after,
+blockquote::after {
+    display: block;
+    content: '';
+    clear: both;
+}
+
 /* -- tables ---------------------------------------------------------------- */
 
 table.docutils {
+    margin-top: 10px;
+    margin-bottom: 10px;
     border: 0;
     border-collapse: collapse;
 }
 
 table.align-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+table.align-default {
     margin-left: auto;
     margin-right: auto;
 }
@@ -387,22 +446,34 @@ table.citation td {
     border-bottom: none;
 }
 
+th > :first-child,
+td > :first-child {
+    margin-top: 0px;
+}
+
+th > :last-child,
+td > :last-child {
+    margin-bottom: 0px;
+}
+
 /* -- figures --------------------------------------------------------------- */
 
-div.figure {
+div.figure, figure {
     margin: 0.5em;
     padding: 0.5em;
 }
 
-div.figure p.caption {
+div.figure p.caption, figcaption {
     padding: 0.3em;
 }
 
-div.figure p.caption span.caption-number {
+div.figure p.caption span.caption-number,
+figcaption span.caption-number {
     font-style: italic;
 }
 
-div.figure p.caption span.caption-text {
+div.figure p.caption span.caption-text,
+figcaption span.caption-text {
 }
 
 /* -- field list styles ----------------------------------------------------- */
@@ -427,6 +498,17 @@ table.field-list td, table.field-list th {
     hyphens: manual;
 }
 
+/* -- hlist styles ---------------------------------------------------------- */
+
+table.hlist {
+    margin: 1em 0;
+}
+
+table.hlist td {
+    vertical-align: top;
+}
+
+
 /* -- other body styles ----------------------------------------------------- */
 
 ol.arabic {
@@ -449,11 +531,78 @@ ol.upperroman {
     list-style: upper-roman;
 }
 
+:not(li) > ol > li:first-child > :first-child,
+:not(li) > ul > li:first-child > :first-child {
+    margin-top: 0px;
+}
+
+:not(li) > ol > li:last-child > :last-child,
+:not(li) > ul > li:last-child > :last-child {
+    margin-bottom: 0px;
+}
+
+ol.simple ol p,
+ol.simple ul p,
+ul.simple ol p,
+ul.simple ul p {
+    margin-top: 0;
+}
+
+ol.simple > li:not(:first-child) > p,
+ul.simple > li:not(:first-child) > p {
+    margin-top: 0;
+}
+
+ol.simple p,
+ul.simple p {
+    margin-bottom: 0;
+}
+
+dl.footnote > dt,
+dl.citation > dt {
+    float: left;
+    margin-right: 0.5em;
+}
+
+dl.footnote > dd,
+dl.citation > dd {
+    margin-bottom: 0em;
+}
+
+dl.footnote > dd:after,
+dl.citation > dd:after {
+    content: "";
+    clear: both;
+}
+
+dl.field-list {
+    display: grid;
+    grid-template-columns: fit-content(30%) auto;
+}
+
+dl.field-list > dt {
+    font-weight: bold;
+    word-break: break-word;
+    padding-left: 0.5em;
+    padding-right: 5px;
+}
+
+dl.field-list > dt:after {
+    content: ":";
+}
+
+dl.field-list > dd {
+    padding-left: 0.5em;
+    margin-top: 0em;
+    margin-left: 0em;
+    margin-bottom: 0em;
+}
+
 dl {
     margin-bottom: 15px;
 }
 
-dd p {
+dd > :first-child {
     margin-top: 0px;
 }
 
@@ -465,6 +614,11 @@ dd {
     margin-top: 3px;
     margin-bottom: 10px;
     margin-left: 30px;
+}
+
+dl > dd:last-child,
+dl > dd:last-child > :last-child {
+    margin-bottom: 0;
 }
 
 dt:target, span.highlighted {
@@ -526,6 +680,12 @@ dl.glossary dt {
     font-style: oblique;
 }
 
+.classifier:before {
+    font-style: normal;
+    margin: 0.5em;
+    content: ":";
+}
+
 abbr, acronym {
     border-bottom: dotted 1px;
     cursor: help;
@@ -538,6 +698,10 @@ pre {
     overflow-y: hidden;  /* fixes display issues on Chrome browsers */
 }
 
+pre, div[class*="highlight-"] {
+    clear: both;
+}
+
 span.pre {
     -moz-hyphens: none;
     -ms-hyphens: none;
@@ -545,22 +709,57 @@ span.pre {
     hyphens: none;
 }
 
+div[class*="highlight-"] {
+    margin: 1em 0;
+}
+
 td.linenos pre {
-    padding: 5px 0px;
     border: 0;
     background-color: transparent;
     color: #aaa;
 }
 
 table.highlighttable {
-    margin-left: 0.5em;
+    display: block;
+}
+
+table.highlighttable tbody {
+    display: block;
+}
+
+table.highlighttable tr {
+    display: flex;
 }
 
 table.highlighttable td {
-    padding: 0 0.5em 0 0.5em;
+    margin: 0;
+    padding: 0;
+}
+
+table.highlighttable td.linenos {
+    padding-right: 0.5em;
+}
+
+table.highlighttable td.code {
+    flex: 1;
+    overflow: hidden;
+}
+
+.highlight .hll {
+    display: block;
+}
+
+div.highlight pre,
+table.highlighttable pre {
+    margin: 0;
+}
+
+div.code-block-caption + div {
+    margin-top: 0;
 }
 
 div.code-block-caption {
+    margin-top: 1em;
     padding: 2px 5px;
     font-size: small;
 }
@@ -569,8 +768,10 @@ div.code-block-caption code {
     background-color: transparent;
 }
 
-div.code-block-caption + div > div.highlight > pre {
-    margin-top: 0;
+table.highlighttable td.linenos,
+span.linenos,
+div.doctest > div.highlight span.gp {  /* gp: Generic.Prompt */
+    user-select: none;
 }
 
 div.code-block-caption span.caption-number {
@@ -582,11 +783,7 @@ div.code-block-caption span.caption-text {
 }
 
 div.literal-block-wrapper {
-    padding: 1em 1em 0;
-}
-
-div.literal-block-wrapper div.highlight {
-    margin: 0;
+    margin: 1em 0;
 }
 
 code.descname {
@@ -637,8 +834,7 @@ span.eqno {
 }
 
 span.eqno a.headerlink {
-    position: relative;
-    left: 0px;
+    position: absolute;
     z-index: 1;
 }
 

@@ -6,18 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-90545585-1']);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>torchvision &mdash; Torchvision master documentation</title>
@@ -40,7 +29,17 @@
   <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchvision.datasets" href="datasets.html" /> 
+    <link rel="next" title="torchvision.datasets" href="datasets.html" />
+<!-- Google Analytics -->
+<script>
+  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+  ga('create', 'UA-90545585-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<!-- End Google Analytics -->
+ 
+
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -189,7 +188,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+96a378d ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+4148d56 ) &#x25BC</a>
     </div>
     
 
@@ -391,64 +390,56 @@ architectures, and common image transformations for computer vision.</p>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
 </ul>
 </div>
-<span class="target" id="module-torchvision"></span><dl class="function">
+<span class="target" id="module-torchvision"></span><dl class="py function">
 <dt id="torchvision.get_image_backend">
-<code class="descclassname">torchvision.</code><code class="descname">get_image_backend</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#get_image_backend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.get_image_backend" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">torchvision.</span></code><code class="sig-name descname"><span class="pre">get_image_backend</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#get_image_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.get_image_backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the name of the package used to load images</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="torchvision.get_video_backend">
-<code class="descclassname">torchvision.</code><code class="descname">get_video_backend</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#get_video_backend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.get_video_backend" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">torchvision.</span></code><code class="sig-name descname"><span class="pre">get_video_backend</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#get_video_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.get_video_backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the currently active video backend used to decode videos.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Name of the video backend. one of {‘pyav’, ‘video_reader’}.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Name of the video backend. one of {‘pyav’, ‘video_reader’}.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="torchvision.set_image_backend">
-<code class="descclassname">torchvision.</code><code class="descname">set_image_backend</code><span class="sig-paren">(</span><em>backend</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#set_image_backend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.set_image_backend" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">torchvision.</span></code><code class="sig-name descname"><span class="pre">set_image_backend</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#set_image_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.set_image_backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specifies the package used to load images.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>backend</strong> (<em>string</em>) – Name of the image backend. one of {‘PIL’, ‘accimage’}.
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>backend</strong> (<em>string</em>) – Name of the image backend. one of {‘PIL’, ‘accimage’}.
 The <code class="xref py py-mod docutils literal notranslate"><span class="pre">accimage</span></code> package uses the Intel IPP library. It is
-generally faster than PIL, but does not support as many operations.</td>
-</tr>
-</tbody>
-</table>
+generally faster than PIL, but does not support as many operations.</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="torchvision.set_video_backend">
-<code class="descclassname">torchvision.</code><code class="descname">set_video_backend</code><span class="sig-paren">(</span><em>backend</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#set_video_backend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.set_video_backend" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">torchvision.</span></code><code class="sig-name descname"><span class="pre">set_video_backend</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision.html#set_video_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.set_video_backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specifies the package used to decode videos.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>backend</strong> (<em>string</em>) – Name of the video backend. one of {‘pyav’, ‘video_reader’}.
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>backend</strong> (<em>string</em>) – Name of the video backend. one of {‘pyav’, ‘video_reader’}.
 The <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyav</span></code> package uses the 3rd party PyAv library. It is a Pythonic
 binding for the FFmpeg libraries.
 The <code class="xref py py-mod docutils literal notranslate"><span class="pre">video_reader</span></code> package includes a native C++ implementation on
 top of FFMPEG libraries, and a python API of TorchScript custom operator.
-It is generally decoding faster than <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyav</span></code>, but perhaps is less robust.</td>
-</tr>
-</tbody>
-</table>
+It is generally decoding faster than <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyav</span></code>, but perhaps is less robust.</p>
+</dd>
+</dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Building with FFMPEG is disabled by default in the latest master. If you want to use the ‘video_reader’
+<p class="admonition-title">Note</p>
+<p>Building with FFMPEG is disabled by default in the latest master. If you want to use the ‘video_reader’
 backend, please compile torchvision from source.</p>
 </div>
 </dd></dl>
@@ -525,21 +516,10 @@ backend, please compile torchvision from source.</p>
   
 
      
-       <script type="text/javascript">
-           var DOCUMENTATION_OPTIONS = {
-               URL_ROOT:'./',
-               VERSION:'master',
-               LANGUAGE:'None',
-               COLLAPSE_INDEX:false,
-               FILE_SUFFIX:'.html',
-               HAS_SOURCE:  true,
-               SOURCELINK_SUFFIX: '.txt'
-           };
-       </script>
-         <script type="text/javascript" src="_static/jquery.js"></script>
-         <script type="text/javascript" src="_static/underscore.js"></script>
-         <script type="text/javascript" src="_static/doctools.js"></script>
-         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/doctools.js"></script>
      
 
   
