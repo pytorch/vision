@@ -256,3 +256,30 @@ def patched_make_field(self, types, domain, items, **kw):
 
 
 TypedField.make_field = patched_make_field
+
+
+def inject_minigalleries(app, what, name, obj, options, lines):
+    """Inject minigallery into docstrings.
+
+    This callback is called after the .. auto directives (like ..autoclass) have been processed,
+    and modifies the lines parameter inplace to add the .. minigallery that will show which examples
+    are using which object.
+
+    It's a bit hacky, but not *that* hacky when you consider that the recommended way is to do pretty much the same,
+    but instead with templates using autosummary (which we don't want to use):
+    (https://sphinx-gallery.github.io/stable/configuration.html#auto-documenting-your-api-with-links-to-examples)
+
+    For docs on autodoc-process-docstring, see the autodoc docs:
+    https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+    """
+
+    if what == "class":
+        lines.append(f".. minigallery:: {name}")
+        lines.append(f"    :add-heading: Examples using ``{name.split('.')[-1]}``:")
+        # avoid heading entirely to avoid warning. As a bonud it actually renders better
+        lines.append("    :heading-level: 9")
+        lines.append("\n")
+
+
+def setup(app):
+    app.connect('autodoc-process-docstring', inject_minigalleries);
