@@ -261,11 +261,14 @@ def heatmaps_to_keypoints(maps, rois):
         height_correction = heights[i] / roi_map_height
         roi_map = F.interpolate(
             maps[i][:, None], size=(roi_map_height, roi_map_width), mode='bicubic', align_corners=False)[:, 0]
+        # roi_map_probs = scores_to_probs(roi_map.copy())
         w = roi_map.shape[2]
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
         x_int = pos % w
         y_int = torch.div(pos - x_int, w, rounding_mode='floor')
+        # assert (roi_map_probs[k, y_int, x_int] ==
+        #         roi_map_probs[k, :, :].max())
         x = (x_int.float() + 0.5) * width_correction
         y = (y_int.float() + 0.5) * height_correction
         xy_preds[i, 0, :] = x + offset_x[i]
