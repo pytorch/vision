@@ -20,6 +20,10 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+
+from pathlib import Path
+import os
+
 import torch
 import torchvision
 import pytorch_sphinx_theme
@@ -259,7 +263,10 @@ TypedField.make_field = patched_make_field
 
 
 def inject_minigalleries(app, what, name, obj, options, lines):
-    """Inject minigallery into docstrings.
+    """Inject a minigallery into a docstring.
+
+    This avoids having to manually write the .. minigallery directive for every item we want a minigallery for,
+    as it would be easy to miss some.
 
     This callback is called after the .. auto directives (like ..autoclass) have been processed,
     and modifies the lines parameter inplace to add the .. minigallery that will show which examples
@@ -272,6 +279,15 @@ def inject_minigalleries(app, what, name, obj, options, lines):
     For docs on autodoc-process-docstring, see the autodoc docs:
     https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
     """
+
+    conf_file_path = Path(__file__).parent.absolute()
+    backrefs_path = conf_file_path / sphinx_gallery_conf['backreferences_dir'] / (name + '.examples')
+    if not (os.path.isfile(backrefs_path) and os.path.getsize(backrefs_path) > 0):
+        # We avoid showing the (empty) minigallery if there's nothing to show, i.e. if the object
+        # isn't used in any example.
+        # FIXME: this check can be removed once https://github.com/sphinx-gallery/sphinx-gallery/pull/813
+        # is merged and the new sphinx-gallery version (> 0.8.x) is released.
+        return
 
     if what == "class":
         lines.append(f".. minigallery:: {name}")
