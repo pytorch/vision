@@ -28,7 +28,6 @@ def plot(img, title="", with_orig=True, **kwargs):
     _plot(img, title, **kwargs)
 
 
-
 ####################################
 # Pad
 # ---
@@ -39,7 +38,7 @@ padded_img = tf.Pad(padding=30)(orig_img)
 plot(padded_img, "Padded image")
 
 ####################################
-# Resize 
+# Resize
 # ------
 # The :class:`~torchvision.transforms.Resize` transform
 # (see also :func:`~torchvision.transforms.functional.resize`)

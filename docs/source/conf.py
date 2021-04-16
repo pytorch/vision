@@ -52,10 +52,10 @@ extensions = [
 ]
 
 sphinx_gallery_conf = {
-     'examples_dirs': '../../gallery/',   # path to your example scripts
-     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
-     'backreferences_dir': 'gen_modules/backreferences',
-     'doc_module' : ('torchvision',),
+    'examples_dirs': '../../gallery/',   # path to your example scripts
+    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    'backreferences_dir': 'gen_modules/backreferences',
+    'doc_module': ('torchvision',),
 }
 
 napoleon_use_ivar = True
@@ -298,4 +298,4 @@ def inject_minigalleries(app, what, name, obj, options, lines):
 
 
 def setup(app):
-    app.connect('autodoc-process-docstring', inject_minigalleries);
+    app.connect('autodoc-process-docstring', inject_minigalleries)
