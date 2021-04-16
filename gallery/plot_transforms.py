@@ -19,7 +19,7 @@ orig_img = Image.open(Path('assets') / 'astronaut.jpg')
 
 def plot(img, title="", with_orig=True, **kwargs):
     def _plot(img, title, **kwargs):
-        plt.figure().suptitle("Original image", fontsize=25)
+        plt.figure().suptitle(title, fontsize=25)
         plt.imshow(np.asarray(img), **kwargs)
         plt.axis('off')
 
