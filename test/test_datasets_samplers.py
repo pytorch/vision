@@ -45,7 +45,7 @@ class Tester(unittest.TestCase):
             sampler = RandomClipSampler(video_clips, 3)
             self.assertEqual(len(sampler), 3 * 3)
             indices = torch.tensor(list(iter(sampler)))
-            videos = indices // 5
+            videos = torch.div(indices, 5, rounding_mode='floor')
             v_idxs, count = torch.unique(videos, return_counts=True)
             self.assertTrue(v_idxs.equal(torch.tensor([0, 1, 2])))
             self.assertTrue(count.equal(torch.tensor([3, 3, 3])))
@@ -62,7 +62,7 @@ class Tester(unittest.TestCase):
             indices.remove(0)
             indices.remove(1)
             indices = torch.tensor(indices) - 2
-            videos = indices // 5
+            videos = torch.div(indices, 5, rounding_mode='floor')
             v_idxs, count = torch.unique(videos, return_counts=True)
             self.assertTrue(v_idxs.equal(torch.tensor([0, 1])))
             self.assertTrue(count.equal(torch.tensor([3, 3])))
@@ -73,7 +73,7 @@ class Tester(unittest.TestCase):
             sampler = UniformClipSampler(video_clips, 3)
             self.assertEqual(len(sampler), 3 * 3)
             indices = torch.tensor(list(iter(sampler)))
-            videos = indices // 5
+            videos = torch.div(indices, 5, rounding_mode='floor')
             v_idxs, count = torch.unique(videos, return_counts=True)
             self.assertTrue(v_idxs.equal(torch.tensor([0, 1, 2])))
             self.assertTrue(count.equal(torch.tensor([3, 3, 3])))
