@@ -289,7 +289,7 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         # is merged and the new sphinx-gallery version (> 0.8.x) is released.
         return
 
-    if what == "class":
+    if what in ("class", "function"):
         lines.append(f".. minigallery:: {name}")
         lines.append(f"    :add-heading: Examples using ``{name.split('.')[-1]}``:")
         # avoid heading entirely to avoid warning. As a bonud it actually renders better
