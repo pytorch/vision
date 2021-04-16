@@ -3,48 +3,63 @@
 Illustration of transforms
 ==========================
 
-This file illustrates how torchvision transforms work on some images.
-
-(Note: this is super WIP)
+This example illustrates the various transforms available in :mod:`torchvision.transforms`.
 """
+
+from PIL import Image
+from pathlib import Path
+import matplotlib.pyplot as plt
+import numpy as np
+
+import torchvision.transforms as tf
+
+
+orig_img = Image.open(Path('assets') / 'astronaut.jpg')
+
+
+def plot(img, title="", with_orig=True, **kwargs):
+    def _plot(img, title, **kwargs):
+        plt.figure().suptitle("Original image", fontsize=25)
+        plt.imshow(np.asarray(img), **kwargs)
+        plt.axis('off')
+
+    if with_orig:
+        _plot(orig_img, "Original image")
+    _plot(img, title, **kwargs)
+
+
 
 ####################################
 # Pad
 # ---
-#
-# The :class:`~torchvision.transforms.Pad` transform is super cool
-
-# from PIL import Image
-# import matplotlib.pyplot as plt
-# plt.plot([1,2,3,4])
-from PIL import Image, ImageMath
-from skimage.data import astronaut
-import matplotlib.pyplot as plt
-import numpy as np
-from torchvision.transforms import Pad
-
-img = Image.fromarray(astronaut())
-
-plt.figure().suptitle("Before padding")
-plt.imshow(np.asarray(img))
-
-padded_img = Pad(padding=30)(img)
-plt.figure().suptitle("After padding")
-plt.imshow(np.asarray(padded_img))
+# The :class:`~torchvision.transforms.Pad` transform
+# (see also :func:`~torchvision.transforms.functional.pad`)
+# fills image borders with some pixel values.
+padded_img = tf.Pad(padding=30)(orig_img)
+plot(padded_img, "Padded image")
 
 ####################################
 # Resize 
 # ------
-#
-# The :class:`~torchvision.transforms.Resize` transform is even cooler
+# The :class:`~torchvision.transforms.Resize` transform
+# (see also :func:`~torchvision.transforms.functional.resize`)
+# resizes an image.
+resized_img = tf.Resize(size=30)(orig_img)
+plot(resized_img, "Resized image")
 
-from torchvision.transforms import Resize
-plt.figure().suptitle("Before resize")
-plt.imshow(np.asarray(img))
+####################################
+# ColorJitter
+# -----------
+# The :class:`~torchvision.transforms.ColorJitter` transform
+# randomly changes the brightness, saturation, and other properties of an image.
+jitted_img = tf.ColorJitter(brightness=.5, hue=.3)(orig_img)
+plot(jitted_img, "Jitted image")
 
-padded_img = Resize(size=30)(img)
-plt.figure().suptitle("After resize")
-plt.imshow(np.asarray(padded_img))
-
-
-print(np.exp(3))
+####################################
+# Grayscale
+# ---------
+# The :class:`~torchvision.transforms.Grayscale` transform
+# (see also :func:`~torchvision.transforms.functional.to_grayscale`)
+# converts an image to grayscale
+gray_img = tf.Grayscale()(orig_img)
+plot(gray_img, "Grayscale image", cmap='gray')
