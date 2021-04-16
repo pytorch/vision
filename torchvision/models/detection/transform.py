@@ -23,34 +23,40 @@ def _fake_cast_onnx(v):
     return v
 
 
-def _resize_image_and_masks(image, self_min_size, self_max_size, target, exceed_max_size):
-    # type: (Tensor, float, float, Optional[Dict[str, Tensor]], bool) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
+def _resize_image_and_masks(image: Tensor, self_min_size: float, self_max_size: float,
+                            target: Optional[Dict[str, Tensor]],
+                            fixed_size: Optional[Tuple[int, int]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
     if torchvision._is_tracing():
         im_shape = _get_shape_onnx(image)
     else:
         im_shape = torch.tensor(image.shape[-2:])
 
-    min_size = torch.min(im_shape).to(dtype=torch.float32)
-    max_size = torch.max(im_shape).to(dtype=torch.float32)
-    scale = self_min_size / min_size
-    if not exceed_max_size:
-        scale = torch.min(scale, self_max_size / max_size)
-
-    if torchvision._is_tracing():
-        scale_factor = _fake_cast_onnx(scale)
+    size: Optional[List[int]] = None
+    scale_factor: Optional[float] = None
+    recompute_scale_factor: Optional[bool] = None
+    if fixed_size is not None:
+        size = [fixed_size[1], fixed_size[0]]
     else:
-        scale_factor = scale.item()
+        min_size = torch.min(im_shape).to(dtype=torch.float32)
+        max_size = torch.max(im_shape).to(dtype=torch.float32)
+        scale = torch.min(self_min_size / min_size, self_max_size / max_size)
 
-    image = torch.nn.functional.interpolate(
-        image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
-        align_corners=False)[0]
+        if torchvision._is_tracing():
+            scale_factor = _fake_cast_onnx(scale)
+        else:
+            scale_factor = scale.item()
+        recompute_scale_factor = True
+
+    image = torch.nn.functional.interpolate(image[None], size=size, scale_factor=scale_factor, mode='bilinear',
+                                            recompute_scale_factor=recompute_scale_factor, align_corners=False)[0]
 
     if target is None:
         return image, target
 
     if "masks" in target:
         mask = target["masks"]
-        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor, recompute_scale_factor=True)[:, 0].byte()
+        mask = F.interpolate(mask[:, None].float(), size=size, scale_factor=scale_factor,
+                             recompute_scale_factor=recompute_scale_factor)[:, 0].byte()
         target["masks"] = mask
     return image, target
 
@@ -67,7 +73,7 @@ class GeneralizedRCNNTransform(nn.Module):
     It returns a ImageList for the inputs, and a List[Dict[Tensor]] for the targets
     """
 
-    def __init__(self, min_size, max_size, image_mean, image_std, size_divisible=32, exceed_max_size=False):
+    def __init__(self, min_size, max_size, image_mean, image_std, size_divisible=32, fixed_size=None):
         super(GeneralizedRCNNTransform, self).__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)
@@ -76,7 +82,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_mean = image_mean
         self.image_std = image_std
         self.size_divisible = size_divisible
-        self.exceed_max_size = exceed_max_size
+        self.fixed_size = fixed_size
 
     def forward(self,
                 images,       # type: List[Tensor]
@@ -148,7 +154,7 @@ class GeneralizedRCNNTransform(nn.Module):
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
-        image, target = _resize_image_and_masks(image, size, float(self.max_size), target, self.exceed_max_size)
+        image, target = _resize_image_and_masks(image, size, float(self.max_size), target, self.fixed_size)
 
         if target is None:
             return image, target
