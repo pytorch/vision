@@ -11,7 +11,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-import torchvision.transforms as tf
+import torchvision.transforms as T
 
 
 orig_img = Image.open(Path('assets') / 'astronaut.jpg')
@@ -34,7 +34,7 @@ def plot(img, title="", with_orig=True, **kwargs):
 # The :class:`~torchvision.transforms.Pad` transform
 # (see also :func:`~torchvision.transforms.functional.pad`)
 # fills image borders with some pixel values.
-padded_img = tf.Pad(padding=30)(orig_img)
+padded_img = T.Pad(padding=30)(orig_img)
 plot(padded_img, "Padded image")
 
 ####################################
@@ -43,7 +43,7 @@ plot(padded_img, "Padded image")
 # The :class:`~torchvision.transforms.Resize` transform
 # (see also :func:`~torchvision.transforms.functional.resize`)
 # resizes an image.
-resized_img = tf.Resize(size=30)(orig_img)
+resized_img = T.Resize(size=30)(orig_img)
 plot(resized_img, "Resized image")
 
 ####################################
@@ -51,7 +51,7 @@ plot(resized_img, "Resized image")
 # -----------
 # The :class:`~torchvision.transforms.ColorJitter` transform
 # randomly changes the brightness, saturation, and other properties of an image.
-jitted_img = tf.ColorJitter(brightness=.5, hue=.3)(orig_img)
+jitted_img = T.ColorJitter(brightness=.5, hue=.3)(orig_img)
 plot(jitted_img, "Jitted image")
 
 ####################################
@@ -60,5 +60,5 @@ plot(jitted_img, "Jitted image")
 # The :class:`~torchvision.transforms.Grayscale` transform
 # (see also :func:`~torchvision.transforms.functional.to_grayscale`)
 # converts an image to grayscale
-gray_img = tf.Grayscale()(orig_img)
+gray_img = T.Grayscale()(orig_img)
 plot(gray_img, "Grayscale image", cmap='gray')
