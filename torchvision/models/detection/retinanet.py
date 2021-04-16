@@ -176,7 +176,6 @@ class RetinaNetRegressionHead(nn.Module):
                 torch.nn.init.zeros_(layer.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
-        self._l1_loss = torch.nn.functional.l1_loss
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
@@ -199,7 +198,7 @@ class RetinaNetRegressionHead(nn.Module):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            losses.append(self._l1_loss(
+            losses.append(torch.nn.functional.l1_loss(
                 bbox_regression_per_image,
                 target_regression,
                 reduction='sum'
@@ -456,15 +455,6 @@ class RetinaNet(nn.Module):
 
         return detections
 
-    def _anchors_per_level(self, features: List[Tensor], HWA: int):
-        # recover level sizes
-        num_anchors_per_level = [x.size(2) * x.size(3) for x in features]
-        HW = 0
-        for v in num_anchors_per_level:
-            HW += v
-        A = HWA // HW
-        return [hw * A for hw in num_anchors_per_level]
-
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
@@ -542,7 +532,13 @@ class RetinaNet(nn.Module):
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:
             # recover level sizes
-            num_anchors_per_level = self._anchors_per_level(features, head_outputs['cls_logits'].size(1))
+            num_anchors_per_level = [x.size(2) * x.size(3) for x in features]
+            HW = 0
+            for v in num_anchors_per_level:
+                HW += v
+            HWA = head_outputs['cls_logits'].size(1)
+            A = HWA // HW
+            num_anchors_per_level = [hw * A for hw in num_anchors_per_level]
 
             # split outputs per level
             split_head_outputs: Dict[str, List[Tensor]] = {}

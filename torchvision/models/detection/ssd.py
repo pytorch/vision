@@ -1,10 +1,10 @@
-import math
 import torch
 import torch.nn.functional as F
+import warnings
 
 from collections import OrderedDict
 from torch import nn, Tensor
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from . import _utils as det_utils
 from .anchor_utils import DBoxGenerator
@@ -12,8 +12,7 @@ from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg, resnet
 from ..utils import load_state_dict_from_url
-
-from .retinanet import RetinaNet, RetinaNetHead, RetinaNetRegressionHead, _sum  # TODO: Refactor to inherit properly
+from ...ops import boxes as box_ops
 
 
 __all__ = ['SSD', 'SSDFeatureExtractor', 'ssd300_vgg16', 'ssd512_resnet50']
@@ -24,25 +23,46 @@ model_urls = {
 }
 
 
-def _xavier_init(conv: nn.Module, bias_value: float = 0.0):
+def _sum(x: List[Tensor]) -> Tensor:
+    res = x[0]
+    for i in x[1:]:
+        res = res + i
+    return res
+
+
+def _xavier_init(conv: nn.Module):
     for layer in conv.modules():
         if isinstance(layer, nn.Conv2d):
             torch.nn.init.xavier_uniform_(layer.weight)
             if layer.bias is not None:
-                torch.nn.init.constant_(layer.bias, bias_value)
+                torch.nn.init.constant_(layer.bias, 0.0)
 
 
-class SSDHead(RetinaNetHead):
+class SSDHead(nn.Module):
     def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float,
                  box_coder: det_utils.BoxCoder):
-        nn.Module.__init__(self)
+        super().__init__()
         self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes, positive_fraction)
         self.regression_head = SSDRegressionHead(in_channels, num_anchors, box_coder)
+
+    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
+                     matched_idxs: List[Tensor]) -> Dict[str, Tensor]:
+        return {
+            'bbox_regression': self.regression_head.compute_loss(targets, head_outputs['bbox_regression'], anchors,
+                                                                 matched_idxs),
+            'classification': self.classification_head.compute_loss(targets, head_outputs['cls_logits'], matched_idxs),
+        }
+
+    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
+        return {
+            'bbox_regression': self.regression_head(x),
+            'cls_logits': self.classification_head(x),
+        }
 
 
 class SSDScoringHead(nn.Module):
     def __init__(self, module_list: nn.ModuleList, num_columns: int):
-        nn.Module.__init__(self)
+        super().__init__()
         self.module_list = module_list
         self.num_columns = num_columns
 
@@ -80,54 +100,87 @@ class SSDScoringHead(nn.Module):
 
 
 class SSDClassificationHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float,
-                 prior_probability: float = 0.01):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
-        _xavier_init(cls_logits, -math.log((1 - prior_probability) / prior_probability))
         super().__init__(cls_logits, num_classes)
         self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
-    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor],
-                     matched_idxs: List[Tensor]) -> Tensor:
-        losses = []
-
-        cls_logits = head_outputs['cls_logits']
-
+    def compute_loss(self, targets: List[Dict[str, Tensor]], cls_logits: Tensor, matched_idxs: List[Tensor]) -> Tensor:
+        # Match original targets with anchors
+        cls_targets = []
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
             foreground_idxs_per_image = matched_idxs_per_image >= 0
-            num_foreground = foreground_idxs_per_image.sum()
 
             gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
                                             device=targets_per_image['labels'].device)
             gt_classes_target[foreground_idxs_per_image] = \
                 targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]
-            classification_loss = F.cross_entropy(cls_logits_per_image, gt_classes_target, reduction='none')
 
-            # Hard Negative Sampling
-            background_idxs_per_image = torch.logical_not(foreground_idxs_per_image)
-            num_background = matched_idxs_per_image.size(0) - num_foreground
-            num_negative = torch.min((self.neg_to_pos_ratio * num_foreground).to(dtype=num_background.dtype),
-                                     num_background)
+            cls_targets.append(gt_classes_target)
 
-            foreground_loss = classification_loss[foreground_idxs_per_image]
-            background_loss = classification_loss[background_idxs_per_image].topk(num_negative, sorted=False)[0]
+        cls_targets = torch.stack(cls_targets)
 
-            losses.append((foreground_loss.sum() + background_loss.sum()) / max(1, num_foreground))
+        # Calculate loss
+        num_classes = cls_logits.size(-1)
+        cls_loss = F.cross_entropy(
+            cls_logits.view(-1, num_classes),
+            cls_targets.view(-1),
+            reduction='none'
+        ).view(cls_targets.size())
 
-        return _sum(losses) / len(targets)
+        # Hard Negative Sampling
+        foreground_idxs = cls_targets > 0
+        num_negative = self.neg_to_pos_ratio * foreground_idxs.sum(1, keepdim=True)
+        num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
+        negative_loss = cls_loss.clone()
+        negative_loss[foreground_idxs] = -float('inf')  # use -inf to detect positive values that creeped in the sample
+        values, idx = negative_loss.sort(1, descending=True)
+        background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
+
+        loss = (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / max(1, foreground_idxs.sum())
+        return loss
 
 
-class SSDRegressionHead(SSDScoringHead, RetinaNetRegressionHead):  # TODO: Refactor to avoid multiple inheritance
+class SSDRegressionHead(SSDScoringHead):
+
+    __annotations__ = {
+        'box_coder': det_utils.BoxCoder,
+    }
+
     def __init__(self, in_channels: List[int], num_anchors: List[int], box_coder: det_utils.BoxCoder):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
-        _xavier_init(bbox_reg)
-        SSDScoringHead.__init__(self, bbox_reg, 4)
+        super().__init__(bbox_reg, 4)
         self.box_coder = box_coder
-        self._l1_loss = torch.nn.functional.smooth_l1_loss  # TODO: Discuss/refactor this workaround
+
+    def compute_loss(self, targets: List[Dict[str, Tensor]], bbox_regression: Tensor, anchors: List[Tensor],
+                     matched_idxs: List[Tensor]) -> Tensor:
+        losses = []
+        for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
+                zip(targets, bbox_regression, anchors, matched_idxs):
+            # determine only the foreground indices, ignore the rest
+            foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
+            num_foreground = foreground_idxs_per_image.numel()
+
+            # select only the foreground boxes
+            matched_gt_boxes_per_image = targets_per_image['boxes'][matched_idxs_per_image[foreground_idxs_per_image]]
+            bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
+            anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
+
+            # compute the regression targets
+            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+
+            # compute the loss
+            losses.append(torch.nn.functional.smooth_l1_loss(
+                bbox_regression_per_image,
+                target_regression,
+                reduction='sum'
+            ) / max(1, num_foreground))
+
+        return _sum(losses) / max(1, len(targets))
 
 
 class SSDFeatureExtractor(nn.Module):
@@ -136,7 +189,12 @@ class SSDFeatureExtractor(nn.Module):
         self.aspect_ratios = aspect_ratios
 
 
-class SSD(RetinaNet):
+class SSD(nn.Module):
+    __annotations__ = {
+        'box_coder': det_utils.BoxCoder,
+        'proposal_matcher': det_utils.Matcher,
+    }
+
     def __init__(self, backbone: SSDFeatureExtractor, size: int, num_classes: int,
                  image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
                  score_thresh: float = 0.01,
@@ -145,7 +203,7 @@ class SSD(RetinaNet):
                  iou_thresh: float = 0.5,
                  topk_candidates: int = 400,
                  positive_fraction: float = 0.25):
-        nn.Module.__init__(self)
+        super().__init__()
 
         # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
         device = next(backbone.parameters()).device
@@ -183,14 +241,142 @@ class SSD(RetinaNet):
         # used only on torchscript mode
         self._has_warned = False
 
-    def _anchors_per_level(self, features: List[Tensor], HWA: int):
-        # TODO: Discuss/refactor this workaround
-        num_anchors_per_level = [x.size(2) * x.size(3) * anchors for x, anchors in zip(features, self.num_anchors)]
-        HW = 0
-        for v in num_anchors_per_level:
-            HW += v
-        A = HWA // HW
-        return [hw * A for hw in num_anchors_per_level]
+    @torch.jit.unused
+    def eager_outputs(self, losses: Dict[str, Tensor],
+                      detections: List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+        if self.training:
+            return losses
+
+        return detections
+
+    def forward(self, images: List[Tensor],
+                targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+        if self.training and targets is None:
+            raise ValueError("In training mode, targets should be passed")
+
+        if self.training:
+            assert targets is not None
+            for target in targets:
+                boxes = target["boxes"]
+                if isinstance(boxes, torch.Tensor):
+                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
+                        raise ValueError("Expected target boxes to be a tensor"
+                                         "of shape [N, 4], got {:}.".format(
+                                             boxes.shape))
+                else:
+                    raise ValueError("Expected target boxes to be of type "
+                                     "Tensor, got {:}.".format(type(boxes)))
+
+        # get the original image sizes
+        original_image_sizes: List[Tuple[int, int]] = []
+        for img in images:
+            val = img.shape[-2:]
+            assert len(val) == 2
+            original_image_sizes.append((val[0], val[1]))
+
+        # transform the input
+        images, targets = self.transform(images, targets)
+
+        # Check for degenerate boxes
+        if targets is not None:
+            for target_idx, target in enumerate(targets):
+                boxes = target["boxes"]
+                degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+                if degenerate_boxes.any():
+                    # print the first degenerate box
+                    bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
+                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    raise ValueError("All bounding boxes should have positive height and width."
+                                     " Found invalid box {} for target at index {}."
+                                     .format(degen_bb, target_idx))
+
+        # get the features from the backbone
+        features = self.backbone(images.tensors)
+        if isinstance(features, torch.Tensor):
+            features = OrderedDict([('0', features)])
+
+        features = list(features.values())
+
+        # compute the retinanet heads outputs using the features
+        head_outputs = self.head(features)
+
+        # create the set of anchors
+        anchors = self.anchor_generator(images, features)
+
+        losses = {}
+        detections: List[Dict[str, Tensor]] = []
+        if self.training:
+            assert targets is not None
+
+            matched_idxs = []
+            for anchors_per_image, targets_per_image in zip(anchors, targets):
+                if targets_per_image['boxes'].numel() == 0:
+                    matched_idxs.append(torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64,
+                                                   device=anchors_per_image.device))
+                    continue
+
+                match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
+                matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+
+            losses = self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
+        else:
+            detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
+            detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
+
+        if torch.jit.is_scripting():
+            if not self._has_warned:
+                warnings.warn("RetinaNet always returns a (Losses, Detections) tuple in scripting")
+                self._has_warned = True
+            return losses, detections
+        return self.eager_outputs(losses, detections)
+
+    def postprocess_detections(self, head_outputs: Dict[str, Tensor], image_anchors: List[Tensor],
+                               image_shapes: List[Tuple[int, int]]) -> List[Dict[str, Tensor]]:
+        bbox_regression = head_outputs['bbox_regression']
+        pred_scores = F.softmax(head_outputs['cls_logits'], dim=-1)
+
+        num_classes = pred_scores.size(-1)
+        device = pred_scores.device
+
+        detections: List[Dict[str, Tensor]] = []
+
+        for boxes, scores, anchors, image_shape in zip(bbox_regression, pred_scores, image_anchors, image_shapes):
+            boxes = self.box_coder.decode_single(boxes, anchors)
+            boxes = box_ops.clip_boxes_to_image(boxes, image_shape)
+
+            image_boxes = []
+            image_scores = []
+            image_labels = []
+            for label in range(1, num_classes):
+                score = scores[:, label]
+
+                keep_idxs = score > self.score_thresh
+                score = score[keep_idxs]
+                box = boxes[keep_idxs]
+
+                # keep only topk scoring predictions
+                num_topk = min(self.topk_candidates, score.size(0))
+                score, idxs = score.topk(num_topk)
+                box = box[idxs]
+
+                image_boxes.append(box)
+                image_scores.append(score)
+                image_labels.append(torch.full_like(score, fill_value=label, dtype=torch.int64, device=device))
+
+            image_boxes = torch.cat(image_boxes, dim=0)
+            image_scores = torch.cat(image_scores, dim=0)
+            image_labels = torch.cat(image_labels, dim=0)
+
+            # non-maximum suppression
+            keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
+            keep = keep[:self.detections_per_img]
+
+            detections.append({
+                'boxes': image_boxes[keep],
+                'scores': image_scores[keep],
+                'labels': image_labels[keep],
+            })
+        return detections
 
 
 class SSDFeatureExtractorVGG(SSDFeatureExtractor):
