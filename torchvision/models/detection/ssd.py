@@ -297,7 +297,7 @@ class SSD(nn.Module):
 
         features = list(features.values())
 
-        # compute the retinanet heads outputs using the features
+        # compute the ssd heads outputs using the features
         head_outputs = self.head(features)
 
         # create the set of anchors
@@ -325,7 +325,7 @@ class SSD(nn.Module):
 
         if torch.jit.is_scripting():
             if not self._has_warned:
-                warnings.warn("RetinaNet always returns a (Losses, Detections) tuple in scripting")
+                warnings.warn("SSD always returns a (Losses, Detections) tuple in scripting")
                 self._has_warned = True
             return losses, detections
         return self.eager_outputs(losses, detections)
