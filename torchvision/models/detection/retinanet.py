@@ -428,7 +428,7 @@ class RetinaNet(nn.Module):
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
 
-                anchor_idxs = topk_idxs // num_classes
+                anchor_idxs = torch.div(topk_idxs, num_classes, rounding_mode='floor')
                 labels_per_level = topk_idxs % num_classes
 
                 boxes_per_level = self.box_coder.decode_single(box_regression_per_level[anchor_idxs],

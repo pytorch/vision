@@ -53,7 +53,6 @@ class LazyImporter:
     MODULES = (
         "av",
         "lmdb",
-        "pandas",
         "pycocotools",
         "requests",
         "scipy.io",

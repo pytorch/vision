@@ -60,7 +60,7 @@ at::Tensor qnms_kernel_impl(
       continue;
     keep[num_to_keep++] = i;
 
-    // We explicitely cast coordinates to float so that the code can be
+    // We explicitly cast coordinates to float so that the code can be
     // vectorized.
     float ix1val = x1[i].val_;
     float iy1val = y1[i].val_;
