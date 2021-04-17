@@ -113,9 +113,15 @@ def main(args):
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-        args.start_epoch = checkpoint['epoch'] + 1
+        try:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+            args.start_epoch = checkpoint['epoch'] + 1
+        except Exception as e:
+            if args.test_only:
+                pass
+            else:
+                raise e
 
     if args.test_only:
         evaluate(model, data_loader_test, device=device)
