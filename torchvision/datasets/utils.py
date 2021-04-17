@@ -44,11 +44,23 @@ def gen_bar_updater() -> Callable[[int, int, int], None]:
     return bar_update
 
 
-def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
+def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024, hash_dir: bool = False) -> str:
     md5 = hashlib.md5()
-    with open(fpath, 'rb') as f:
-        for chunk in iter(lambda: f.read(chunk_size), b''):
-            md5.update(chunk)
+
+    if os.path.isdir(fpath):
+        if not hash_dir:
+            raise RuntimeError(f'{fpath} is a directory. Set hash_dir to True to hash its contents.')
+            
+        files = [os.path.join(root_dir, f) for root_dir, dirs, fn in os.walk(fpath) for f in fn]
+        
+    else:
+        files = [fpath]
+
+    for fp in sorted(files):
+      with open(fp, 'rb') as f:
+          for chunk in iter(lambda: f.read(chunk_size), b''):
+              md5.update(chunk) 
+                
     return md5.hexdigest()
 
 
