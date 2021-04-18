@@ -104,11 +104,12 @@ class SSDClassificationHead(SSDScoringHead):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
+        # _xavier_init(cls_logits)
         super().__init__(cls_logits, num_classes)
         self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], cls_logits: Tensor, matched_idxs: List[Tensor]) -> Tensor:
-        # Match original targets with anchors
+        # Match original targets with default boxes
         cls_targets = []
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
             foreground_idxs_per_image = matched_idxs_per_image >= 0
@@ -153,6 +154,7 @@ class SSDRegressionHead(SSDScoringHead):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
+        # _xavier_init(bbox_reg)
         super().__init__(bbox_reg, 4)
         self.box_coder = box_coder
 
@@ -283,7 +285,6 @@ class SSD(nn.Module):
                 boxes = target["boxes"]
                 degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
                 if degenerate_boxes.any():
-                    # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     raise ValueError("All bounding boxes should have positive height and width."
