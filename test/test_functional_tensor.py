@@ -31,10 +31,11 @@ class Tester(TransformsTester):
             transformed_img = fn(img_tensor, **fn_kwargs)
             self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
 
-        scripted_fn = torch.jit.script(fn)
-        # scriptable function test
-        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
-        self.assertTrue(transformed_batch.allclose(s_transformed_batch, atol=scripted_fn_atol))
+        if scripted_fn_atol >= 0:
+            scripted_fn = torch.jit.script(fn)
+            # scriptable function test
+            s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+            self.assertTrue(transformed_batch.allclose(s_transformed_batch, atol=scripted_fn_atol))
 
     def test_assert_image_tensor(self):
         shape = (100,)
@@ -822,9 +823,14 @@ class Tester(TransformsTester):
                 if dt is not None:
                     batch_tensors = batch_tensors.to(dtype=dt)
 
+                # Ignore the equivalence between scripted and regular function on float16 cuda. The pixels at
+                # the border may be entirely different due to small rounding errors.
+                scripted_fn_atol = -1 if (dt == torch.float16 and self.device == "cuda") else 1e-8
+
                 for spoints, epoints in test_configs:
                     self._test_fn_on_batch(
-                        batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=NEAREST
+                        batch_tensors, F.perspective, scripted_fn_atol=scripted_fn_atol,
+                        startpoints=spoints, endpoints=epoints, interpolation=NEAREST
                     )
 
         # assert changed type warning
