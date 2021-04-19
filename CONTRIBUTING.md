@@ -123,15 +123,7 @@ cd docs
 make html
 ```
 
-#### Local deployment
-
-Please, use python 3.X for the command below:
-```bash
-cd docs/build/html
-python -m http.server <port>
-# e.g. python -m http.server 1234
-```
-Then open the browser at `0.0.0.0:<port>` (e.g. `0.0.0.0:1234`)
+Then open `docs/build/html/index.html` in your favorite browser.
 
 ### New model
 
