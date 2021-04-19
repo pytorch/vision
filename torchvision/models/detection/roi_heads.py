@@ -266,7 +266,7 @@ def heatmaps_to_keypoints(maps, rois):
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
         x_int = pos % w
-        y_int = (pos - x_int) // w
+        y_int = torch.div(pos - x_int, w, rounding_mode='floor')
         # assert (roi_map_probs[k, y_int, x_int] ==
         #         roi_map_probs[k, :, :].max())
         x = (x_int.float() + 0.5) * width_correction
