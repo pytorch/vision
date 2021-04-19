@@ -19,6 +19,15 @@ docset: html
 	cp $(SPHINXPROJ).docset/icon.png $(SPHINXPROJ).docset/icon@2x.png
 	convert $(SPHINXPROJ).docset/icon@2x.png -resize 16x16 $(SPHINXPROJ).docset/icon.png
 
+html-noplot:  # Avoids running the gallery examples, which may take time
+	$(SPHINXBUILD) -D plot_gallery=0 -b html $(ASPHINXOPTS)  "$(BUILDDIR)"/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+clean:
+	rm -rf $(BUILDDIR)/*
+	rm -rf auto_examples/
+
 .PHONY: help Makefile docset
 
 # Catch-all target: route all unknown targets to Sphinx using the new
