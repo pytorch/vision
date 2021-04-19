@@ -1,4 +1,4 @@
-sphinx
+sphinx==2.4.4
 sphinx-gallery
 matplotlib
 numpy
