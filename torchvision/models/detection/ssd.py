@@ -160,6 +160,7 @@ class SSDRegressionHead(SSDScoringHead):
 
     def compute_loss(self, targets: List[Dict[str, Tensor]], bbox_regression: Tensor, anchors: List[Tensor],
                      matched_idxs: List[Tensor]) -> Tensor:
+        N = 0
         losses = []
         for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
                 zip(targets, bbox_regression, anchors, matched_idxs):
@@ -176,13 +177,14 @@ class SSDRegressionHead(SSDScoringHead):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
+            N += num_foreground
             losses.append(torch.nn.functional.smooth_l1_loss(
                 bbox_regression_per_image,
                 target_regression,
                 reduction='sum'
-            ) / max(1, num_foreground))
+            ))
 
-        return _sum(losses) / max(1, len(targets))
+        return _sum(losses) / max(1, N)
 
 
 class SSDFeatureExtractor(nn.Module):
