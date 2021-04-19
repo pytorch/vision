@@ -150,63 +150,81 @@ class STL10Tester(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "test", "unlabeled", "train+unlabeled"))
 
+    @staticmethod
+    def _make_binary_file(num_elements, root, name):
+        file_name = os.path.join(root, name)
+        np.zeros(num_elements, dtype=np.uint8).tofile(file_name)
+
+    def _make_image_file(self, num_images, root, name, num_channels=3, height=96, width=96):
+        self._make_binary_file(num_images * num_channels * height * width, root, name)
+
+    def _make_label_file(self, num_images, root, name):
+        self._make_binary_file(num_images, root, name)
+
+    @staticmethod
+    def _make_class_names_file(root, name="class_names.txt"):
+        class_names = ("airplane", "bird")
+        with open(os.path.join(root, name), "w") as fh:
+            for cname in class_names:
+                fh.write(f"{cname}\n")
+
+    @staticmethod
+    def _make_fold_indices_file(root):
+        num_folds = 10
+        offset = 0
+        with open(os.path.join(root, "fold_indices.txt"), "w") as fh:
+            for fold in range(num_folds):
+                line = " ".join([str(idx) for idx in range(offset, offset + fold + 1)])
+                fh.write(f"{line}\n")
+                offset += fold + 1
+
+        return tuple(range(1, num_folds + 1))
+
+    def _make_train_files(self, root, num_unlabeled_images=1):
+        num_images_in_fold = self._make_fold_indices_file(root)
+        num_train_images = sum(num_images_in_fold)
+
+        self._make_image_file(num_train_images, root, "train_X.bin")
+        self._make_label_file(num_train_images, root, "train_y.bin")
+        self._make_image_file(1, root, "unlabeled_X.bin")
+
+        return dict(train=num_train_images, unlabeled=num_unlabeled_images)
+
+    def _make_test_files(self, root, num_images=2):
+        self._make_image_file(num_images, root, "test_X.bin")
+        self._make_label_file(num_images, root, "test_y.bin")
+
+        return dict(test=num_images)
+
     def inject_fake_data(self, tmpdir, config):
-        def make_binary_file(num_elements, root, name):
-            file_name = os.path.join(root, name)
-            np.zeros(num_elements, dtype=np.uint8).tofile(file_name)
+        root_folder = os.path.join(tmpdir, "stl10_binary")
+        os.mkdir(root_folder)
 
-        def make_image_file(num_images, root, name, num_channels=3, height=96, width=96):
-            make_binary_file(num_images * num_channels * height * width, root, name)
-
-        def make_label_file(num_images, root, name):
-            make_binary_file(num_images, root, name)
-
-        def make_class_names_file(root, name="class_names.txt"):
-            class_names = ("airplane", "bird")
-            with open(os.path.join(root, name), "w") as fh:
-                for cname in class_names:
-                    fh.write(f"{cname}\n")
-
-        def make_fold_indices_file(root):
-            num_folds = 10
-            offset = 0
-            with open(os.path.join(root, "fold_indices.txt"), "w") as fh:
-                for fold in range(num_folds):
-                    line = " ".join([str(idx) for idx in range(offset, offset + fold + 1)])
-                    fh.write(f"{line}\n")
-                    offset += fold + 1
-
-            return tuple(range(1, num_folds + 1))
-
-        def make_train_files(root, num_unlabeled_images=1):
-            num_images_in_fold = make_fold_indices_file(root)
-            num_train_images = sum(num_images_in_fold)
-
-            make_image_file(num_train_images, root, "train_X.bin")
-            make_label_file(num_train_images, root, "train_y.bin")
-            make_image_file(1, root, "unlabeled_X.bin")
-
-            return dict(train=num_train_images, unlabeled=num_unlabeled_images)
-
-        def make_test_files(root, num_images=2):
-            make_image_file(num_images, root, "test_X.bin")
-            make_label_file(num_images, root, "test_y.bin")
-
-            return dict(test=num_images)
-
-        def make_archive(root, name):
-            make_tar(root, name, name, compression="gz")
-
-        archive_name = "stl10_binary"
-        archive_folder = os.path.join(tmpdir, archive_name)
-        os.mkdir(archive_folder)
-
-        num_images_in_split = make_train_files(archive_folder)
-        num_images_in_split.update(make_test_files(archive_folder))
-        make_class_names_file(archive_folder)
-        make_archive(tmpdir, archive_name)
+        num_images_in_split = self._make_train_files(root_folder)
+        num_images_in_split.update(self._make_test_files(root_folder))
+        self._make_class_names_file(root_folder)
 
         return sum(num_images_in_split[part] for part in config["split"].split("+"))
+
+    def test_folds(self):
+        for fold in range(10):
+            with self.create_dataset(split="train", folds=fold) as (dataset, _):
+                self.assertEqual(len(dataset), fold + 1)
+
+    def test_unlabeled(self):
+        with self.create_dataset(split="unlabeled") as (dataset, _):
+            labels = [dataset[idx][1] for idx in range(len(dataset))]
+            self.assertTrue(all(label == -1 for label in labels))
+
+    def test_invalid_folds1(self):
+        with self.assertRaises(ValueError):
+            with self.create_dataset(folds=10):
+                pass
+
+    def test_invalid_folds2(self):
+        with self.assertRaises(ValueError):
+            with self.create_dataset(folds="0"):
+                pass
 
 
 class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
