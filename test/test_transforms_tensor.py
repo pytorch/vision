@@ -117,7 +117,8 @@ class Tester(TransformsTester):
     def test_random_autocontrast(self):
         # We check the max abs difference because on some (very rare) pixels, the actual value may be different
         # between PIL and tensors due to floating approximations.
-        self._test_op('autocontrast', 'RandomAutocontrast', test_exact_match=False, agg_method='max', tol=(1 + 1e-5))
+        self._test_op('autocontrast', 'RandomAutocontrast', test_exact_match=False, agg_method='max',
+                        tol=(1 + 1e-5), allowed_percentage_diff=.05)
 
     def test_random_equalize(self):
         self._test_op('equalize', 'RandomEqualize')
