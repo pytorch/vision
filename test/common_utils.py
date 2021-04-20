@@ -376,6 +376,9 @@ class TransformsTester(unittest.TestCase):
             np_pil_image = np_pil_image[:, :, None]
         pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
         # error value can be mean absolute error, max abs error
+        # Convert to float to avoid underflow when computing absolute difference
+        tensor = tensor.to(torch.float)
+        pil_tensor = pil_tensor.to(torch.float)
         err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
         self.assertTrue(
             err < tol,
