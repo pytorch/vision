@@ -72,32 +72,32 @@ autocast_flaky_numerics = (
 
 
 class ModelTester(TestCase):
-    def _test_classification_model(self, name, input_shape, dev):
+    def _test_classification_model(self, model_name, input_shape, dev):
         set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
-        model = models.__dict__[name](num_classes=50)
+        model = models.__dict__[model_name](num_classes=50)
         model.eval().to(device=dev)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        # self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
+        self.assertExpected(out.cpu(), model_name, prec=0.1)
         self.assertEqual(out.shape[-1], 50)
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 # See autocast_flaky_numerics comment at top of file.
-                # if name not in autocast_flaky_numerics:
-                #     self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
+                if model_name not in autocast_flaky_numerics:
+                    self.assertExpected(out.cpu(), model_name, prec=0.1)
                 self.assertEqual(out.shape[-1], 50)
 
-    def _test_segmentation_model(self, name, dev):
+    def _test_segmentation_model(self, model_name, dev):
         set_rng_seed(0)
         # passing num_classes equal to a number other than 21 helps in making the test's
         # expected file size smaller
-        model = models.segmentation.__dict__[name](num_classes=10, pretrained_backbone=False)
+        model = models.segmentation.__dict__[model_name](num_classes=10, pretrained_backbone=False)
         model.eval().to(device=dev)
         input_shape = (1, 3, 32, 32)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
@@ -106,18 +106,16 @@ class ModelTester(TestCase):
 
         def check_out(out):
             prec = 0.01
-            strip_suffix = f"_{dev}"
             try:
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
-                # self.assertExpected(out.cpu(), prec=prec, strip_suffix=strip_suffix)
-                pass
+                self.assertExpected(out.cpu(), model_name, prec=prec)
             except AssertionError:
                 # Unfortunately some segmentation models are flaky with autocast
                 # so instead of validating the probability scores, check that the class
                 # predictions match.
-                expected_file = self._get_expected_file(strip_suffix=strip_suffix)
+                expected_file = self._get_expected_file(model_name)
                 expected = torch.load(expected_file)
                 self.assertEqual(out.argmax(dim=1), expected.argmax(dim=1), prec=prec)
                 return False  # Partial validation performed
@@ -126,13 +124,13 @@ class ModelTester(TestCase):
 
         full_validation = check_out(out)
 
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)["out"]
                 # See autocast_flaky_numerics comment at top of file.
-                if name not in autocast_flaky_numerics:
+                if model_name not in autocast_flaky_numerics:
                     full_validation &= check_out(out)
 
         if not full_validation:
@@ -143,18 +141,18 @@ class ModelTester(TestCase):
             warnings.warn(msg, RuntimeWarning)
             raise unittest.SkipTest(msg)
 
-    def _test_detection_model(self, name, dev):
+    def _test_detection_model(self, model_name, dev):
         set_rng_seed(0)
         kwargs = {}
-        if "retinanet" in name:
+        if "retinanet" in model_name:
             # Reduce the default threshold to ensure the returned boxes are not empty.
             kwargs["score_thresh"] = 0.01
-        elif "fasterrcnn_mobilenet_v3_large" in name:
+        elif "fasterrcnn_mobilenet_v3_large" in model_name:
             kwargs["box_score_thresh"] = 0.02076
-            if "fasterrcnn_mobilenet_v3_large_320_fpn" in name:
+            if "fasterrcnn_mobilenet_v3_large_320_fpn" in model_name:
                 kwargs["rpn_pre_nms_top_n_test"] = 1000
                 kwargs["rpn_post_nms_top_n_test"] = 1000
-        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
+        model = models.detection.__dict__[model_name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
@@ -192,19 +190,18 @@ class ModelTester(TestCase):
 
             output = map_nested_tensor_object(out, tensor_map_fn=compact)
             prec = 0.01
-            strip_suffix = f"_{dev}"
             try:
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
-                # self.assertExpected(output, prec=prec, strip_suffix=strip_suffix)
-                pass
+                self.assertExpected(output, model_name, prec=prec)
+                raise AssertionError
             except AssertionError:
                 # Unfortunately detection models are flaky due to the unstable sort
                 # in NMS. If matching across all outputs fails, use the same approach
                 # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
                 # scores.
-                expected_file = self._get_expected_file(strip_suffix=strip_suffix)
+                expected_file = self._get_expected_file(model_name)
                 expected = torch.load(expected_file)
                 self.assertEqual(output[0]["scores"], expected[0]["scores"], prec=prec)
 
@@ -217,13 +214,13 @@ class ModelTester(TestCase):
             return True  # Full validation performed
 
         full_validation = check_out(out)
-        self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
+        self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(model_input)
                 # See autocast_flaky_numerics comment at top of file.
-                if name not in autocast_flaky_numerics:
+                if model_name not in autocast_flaky_numerics:
                     full_validation &= check_out(out)
 
         if not full_validation:
@@ -234,9 +231,9 @@ class ModelTester(TestCase):
             warnings.warn(msg, RuntimeWarning)
             raise unittest.SkipTest(msg)
 
-    def _test_detection_model_validation(self, name):
+    def _test_detection_model_validation(self, model_name):
         set_rng_seed(0)
-        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
+        model = models.detection.__dict__[model_name](num_classes=50, pretrained_backbone=False)
         input_shape = (3, 300, 300)
         x = [torch.rand(input_shape)]
 
@@ -437,7 +434,7 @@ _devs = [torch.device("cpu"), torch.device("cuda")] if torch.cuda.is_available()
 @pytest.mark.parametrize('model_name', get_available_classification_models())
 @pytest.mark.parametrize('dev', _devs)
 def test_classification_model(model_name, dev):
-    input_shape = (1, 3, 224, 224) if model_name == 'inception_v3' else (1, 3, 299, 299)
+    input_shape = (1, 3, 299, 299) if model_name == 'inception_v3' else (1, 3, 224, 224)
     ModelTester()._test_classification_model(model_name, input_shape, dev)
 
 
