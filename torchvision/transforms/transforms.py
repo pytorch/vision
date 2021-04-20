@@ -241,7 +241,9 @@ class Resize(torch.nn.Module):
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
             (size * height / width, size).
-            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
@@ -345,7 +347,10 @@ class Pad(torch.nn.Module):
             is used to pad all borders. If sequence of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
@@ -523,7 +528,10 @@ class RandomCrop(torch.nn.Module):
             is used to pad all borders. If sequence of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
@@ -792,7 +800,9 @@ class RandomResizedCrop(torch.nn.Module):
         size (int or sequence): expected output size of the crop, for each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
-            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,
             before resizing. The scale is defined with respect to the area of the original image.
         ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
