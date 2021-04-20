@@ -141,7 +141,7 @@ class Tester(DatasetTestcase):
             self.assertIsInstance(repr(dataset), str)
 
 
-class STL10Tester(datasets_utils.ImageDatasetTestCase):
+class STL10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.STL10
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "test", "unlabeled", "train+unlabeled"))
@@ -151,17 +151,18 @@ class STL10Tester(datasets_utils.ImageDatasetTestCase):
         file_name = os.path.join(root, name)
         np.zeros(num_elements, dtype=np.uint8).tofile(file_name)
 
-    def _make_image_file(self, num_images, root, name, num_channels=3, height=96, width=96):
-        self._make_binary_file(num_images * num_channels * height * width, root, name)
+    @staticmethod
+    def _make_image_file(num_images, root, name, num_channels=3, height=96, width=96):
+        STL10TestCase._make_binary_file(num_images * num_channels * height * width, root, name)
 
-    def _make_label_file(self, num_images, root, name):
-        self._make_binary_file(num_images, root, name)
+    @staticmethod
+    def _make_label_file(num_images, root, name):
+        STL10TestCase._make_binary_file(num_images, root, name)
 
     @staticmethod
     def _make_class_names_file(root, name="class_names.txt"):
-        class_names = ("airplane", "bird")
         with open(os.path.join(root, name), "w") as fh:
-            for cname in class_names:
+            for cname in ("airplane", "bird"):
                 fh.write(f"{cname}\n")
 
     @staticmethod
@@ -176,19 +177,21 @@ class STL10Tester(datasets_utils.ImageDatasetTestCase):
 
         return tuple(range(1, num_folds + 1))
 
-    def _make_train_files(self, root, num_unlabeled_images=1):
-        num_images_in_fold = self._make_fold_indices_file(root)
+    @staticmethod
+    def _make_train_files(root, num_unlabeled_images=1):
+        num_images_in_fold = STL10TestCase._make_fold_indices_file(root)
         num_train_images = sum(num_images_in_fold)
 
-        self._make_image_file(num_train_images, root, "train_X.bin")
-        self._make_label_file(num_train_images, root, "train_y.bin")
-        self._make_image_file(1, root, "unlabeled_X.bin")
+        STL10TestCase._make_image_file(num_train_images, root, "train_X.bin")
+        STL10TestCase._make_label_file(num_train_images, root, "train_y.bin")
+        STL10TestCase._make_image_file(1, root, "unlabeled_X.bin")
 
         return dict(train=num_train_images, unlabeled=num_unlabeled_images)
 
-    def _make_test_files(self, root, num_images=2):
-        self._make_image_file(num_images, root, "test_X.bin")
-        self._make_label_file(num_images, root, "test_y.bin")
+    @staticmethod
+    def _make_test_files(root, num_images=2):
+        STL10TestCase._make_image_file(num_images, root, "test_X.bin")
+        STL10TestCase._make_label_file(num_images, root, "test_y.bin")
 
         return dict(test=num_images)
 
