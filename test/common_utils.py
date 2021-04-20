@@ -127,7 +127,7 @@ class TestCase(unittest.TestCase):
     def assertExpected(self, output, name, prec=None):
         r"""
         Test that a python value matches the recorded contents of a file
-        derived from a model name. The value must be
+        based on a "check" name. The value must be
         pickable with `torch.save`. This file
         is placed in the 'expect' directory in the same directory
         as the test script. You can automatically update the recorded test
