@@ -87,7 +87,7 @@ class Kinetics(VisionDataset):
     def __init__(
         self,
         root: str,
-        n_classes: int = 400,
+        num_classes: str = "400",
         split: str = "train",
         frame_rate: float = None,
         frames_per_clip: int = 5,
