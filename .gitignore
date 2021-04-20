@@ -10,6 +10,8 @@ torchvision/version.py
 */**/*~
 *~
 docs/build
+docs/source/auto_examples/
+docs/source/gen_modules/
 .coverage
 htmlcov
 .*.swp
