@@ -1183,7 +1183,8 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
             like ``(kx, ky)`` or a single integer for square kernels.
 
             .. note::
-                In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: ``[ksize, ]``.
+                In torchscript mode kernel_size as single int is not supported, use a sequence of
+                length 1: ``[ksize, ]``.
         sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
