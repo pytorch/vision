@@ -27,6 +27,10 @@
 
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/gallery-rendered-html.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
 <!-- Google Analytics -->
@@ -187,7 +191,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+09ea51a ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+718dac6 ) &#x25BC</a>
     </div>
     
 
@@ -211,7 +215,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Package Reference</span></p>
+              <p><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../io.html">torchvision.io</a></li>
@@ -220,7 +224,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">torchvision.utils</a></li>
 </ul>
-<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<p><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../auto_examples/index.html">Example gallery</a></li>
+</ul>
+<p><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -545,7 +553,9 @@
 <span class="sd">            smaller edge of the image will be matched to this number.</span>
 <span class="sd">            i.e, if height &gt; width, then image will be rescaled to</span>
 <span class="sd">            (size * height / width, size).</span>
-<span class="sd">            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
 <span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
 <span class="sd">            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.</span>
 <span class="sd">            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and</span>
@@ -649,7 +659,10 @@
 <span class="sd">            is used to pad all borders. If sequence of length 2 is provided this is the padding</span>
 <span class="sd">            on left/right and top/bottom respectively. If a sequence of length 4 is provided</span>
 <span class="sd">            this is the padding for the left, top, right and bottom borders respectively.</span>
-<span class="sd">            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode padding as single int is not supported, use a sequence of</span>
+<span class="sd">                length 1: ``[padding, ]``.</span>
 <span class="sd">        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of</span>
 <span class="sd">            length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            This value is only used when the padding_mode is constant.</span>
@@ -827,7 +840,10 @@
 <span class="sd">            is used to pad all borders. If sequence of length 2 is provided this is the padding</span>
 <span class="sd">            on left/right and top/bottom respectively. If a sequence of length 4 is provided</span>
 <span class="sd">            this is the padding for the left, top, right and bottom borders respectively.</span>
-<span class="sd">            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode padding as single int is not supported, use a sequence of</span>
+<span class="sd">                length 1: ``[padding, ]``.</span>
 <span class="sd">        pad_if_needed (boolean): It will pad the image if smaller than the</span>
 <span class="sd">            desired size to avoid raising an exception. Since cropping is done</span>
 <span class="sd">            after padding, the padding seems to be done at a random offset.</span>
@@ -1096,7 +1112,9 @@
 <span class="sd">        size (int or sequence): expected output size of the crop, for each edge. If size is an</span>
 <span class="sd">            int instead of sequence like (h, w), a square output size ``(size, size)`` is</span>
 <span class="sd">            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</span>
-<span class="sd">            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
 <span class="sd">        scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,</span>
 <span class="sd">            before resizing. The scale is defined with respect to the area of the original image.</span>
 <span class="sd">        ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before</span>
@@ -2295,6 +2313,8 @@
          <script src="../../../_static/jquery.js"></script>
          <script src="../../../_static/underscore.js"></script>
          <script src="../../../_static/doctools.js"></script>
+         <script src="../../../_static/language_data.js"></script>
+         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   

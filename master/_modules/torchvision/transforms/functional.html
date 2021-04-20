@@ -27,6 +27,10 @@
 
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/gallery-rendered-html.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
 <!-- Google Analytics -->
@@ -187,7 +191,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+09ea51a ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+718dac6 ) &#x25BC</a>
     </div>
     
 
@@ -211,7 +215,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Package Reference</span></p>
+              <p><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../io.html">torchvision.io</a></li>
@@ -220,7 +224,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">torchvision.utils</a></li>
 </ul>
-<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<p><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../auto_examples/index.html">Example gallery</a></li>
+</ul>
+<p><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -662,7 +670,9 @@
 <span class="sd">            the smaller edge of the image will be matched to this number maintaining</span>
 <span class="sd">            the aspect ratio. i.e, if height &gt; width, then image will be rescaled to</span>
 <span class="sd">            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.</span>
-<span class="sd">            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.</span>
 <span class="sd">        interpolation (InterpolationMode): Desired interpolation enum defined by</span>
 <span class="sd">            :class:`torchvision.transforms.InterpolationMode`.</span>
 <span class="sd">            Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,</span>
@@ -717,7 +727,10 @@
 <span class="sd">            is used to pad all borders. If sequence of length 2 is provided this is the padding</span>
 <span class="sd">            on left/right and top/bottom respectively. If a sequence of length 4 is provided</span>
 <span class="sd">            this is the padding for the left, top, right and bottom borders respectively.</span>
-<span class="sd">            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode padding as single int is not supported, use a sequence of</span>
+<span class="sd">                length 1: ``[padding, ]``.</span>
 <span class="sd">        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.</span>
 <span class="sd">            If a tuple of length 3, it is used to fill R, G, B channels respectively.</span>
 <span class="sd">            This value is only used when the padding_mode is constant.</span>
@@ -912,9 +925,10 @@
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
 <span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">            In torchscript mode single int/float value is not supported, please use a sequence</span>
-<span class="sd">            of length 1: ``[value, ]``.</span>
-<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode single int/float value is not supported, please use a sequence</span>
+<span class="sd">                of length 1: ``[value, ]``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        PIL Image or Tensor: transformed Image.</span>
@@ -1242,9 +1256,10 @@
 <span class="sd">            Default is the center of the image.</span>
 <span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">            In torchscript mode single int/float value is not supported, please use a sequence</span>
-<span class="sd">            of length 1: ``[value, ]``.</span>
-<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.2.0``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode single int/float value is not supported, please use a sequence</span>
+<span class="sd">                of length 1: ``[value, ]``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        PIL Image or Tensor: Rotated image.</span>
@@ -1314,9 +1329,10 @@
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
 <span class="sd">        fill (sequence or number, optional): Pixel fill value for the area outside the transformed</span>
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">            In torchscript mode single int/float value is not supported, please use a sequence</span>
-<span class="sd">            of length 1: ``[value, ]``.</span>
-<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode single int/float value is not supported, please use a sequence</span>
+<span class="sd">                of length 1: ``[value, ]``.</span>
 <span class="sd">        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.</span>
 <span class="sd">            Please use the ``fill`` parameter instead.</span>
 <span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
@@ -1477,13 +1493,19 @@
 <span class="sd">        img (PIL Image or Tensor): Image to be blurred</span>
 <span class="sd">        kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers</span>
 <span class="sd">            like ``(kx, ky)`` or a single integer for square kernels.</span>
-<span class="sd">            In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: ``[ksize, ]``.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode kernel_size as single int is not supported, use a sequence of</span>
+<span class="sd">                length 1: ``[ksize, ]``.</span>
 <span class="sd">        sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a</span>
 <span class="sd">            sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the</span>
 <span class="sd">            same sigma in both X/Y directions. If None, then it is computed using</span>
 <span class="sd">            ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.</span>
-<span class="sd">            Default, None. In torchscript mode sigma as single float is</span>
-<span class="sd">            not supported, use a sequence of length 1: ``[sigma, ]``.</span>
+<span class="sd">            Default, None.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                In torchscript mode sigma as single float is</span>
+<span class="sd">                not supported, use a sequence of length 1: ``[sigma, ]``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        PIL Image or Tensor: Gaussian Blurred version of the image.</span>
@@ -1695,6 +1717,8 @@
          <script src="../../../_static/jquery.js"></script>
          <script src="../../../_static/underscore.js"></script>
          <script src="../../../_static/doctools.js"></script>
+         <script src="../../../_static/language_data.js"></script>
+         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   
