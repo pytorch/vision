@@ -100,7 +100,7 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def _get_expected_file(self, model_name=None):
+    def _get_expected_file(self, name=None):
         # NB: we take __file__ from the module that defined the test
         # class, so we place the expect directory where the test script
         # lives, NOT where test/common_utils.py lives.
@@ -111,7 +111,9 @@ class TestCase(unittest.TestCase):
             os.path.realpath(sys.modules[module_id].__file__),
             "expect")
 
-        expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + model_name)
+        # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
+        # We hardcode it here to avoid having to re-generate the reference files
+        expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
@@ -122,7 +124,7 @@ class TestCase(unittest.TestCase):
 
         return expected_file
 
-    def assertExpected(self, output, model_name, prec=None):
+    def assertExpected(self, output, name, prec=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from a model name. The value must be
@@ -131,7 +133,7 @@ class TestCase(unittest.TestCase):
         as the test script. You can automatically update the recorded test
         output using --accept.
         """
-        expected_file = self._get_expected_file(model_name)
+        expected_file = self._get_expected_file(name)
 
         if ACCEPT:
             filename = {os.path.basename(expected_file)}
