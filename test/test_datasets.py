@@ -2,7 +2,6 @@ import contextlib
 import sys
 import os
 import unittest
-from unittest import mock
 import numpy as np
 import PIL
 from PIL import Image
@@ -10,7 +9,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import svhn_root, places365_root, widerface_root, stl10_root
+from fakedata_generation import places365_root
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -57,20 +56,6 @@ class DatasetTestcase(unittest.TestCase):
 
 
 class Tester(DatasetTestcase):
-    @mock.patch('torchvision.datasets.SVHN._check_integrity')
-    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
-    def test_svhn(self, mock_check):
-        mock_check.return_value = True
-        with svhn_root() as root:
-            dataset = torchvision.datasets.SVHN(root, split="train")
-            self.generic_classification_dataset_test(dataset, num_images=2)
-
-            dataset = torchvision.datasets.SVHN(root, split="test")
-            self.generic_classification_dataset_test(dataset, num_images=2)
-
-            dataset = torchvision.datasets.SVHN(root, split="extra")
-            self.generic_classification_dataset_test(dataset, num_images=2)
-
     def test_places365(self):
         for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
             with places365_root(split=split, small=small) as places365:
@@ -156,76 +141,89 @@ class Tester(DatasetTestcase):
             self.assertIsInstance(repr(dataset), str)
 
 
-class STL10Tester(DatasetTestcase):
-    @contextlib.contextmanager
-    def mocked_root(self):
-        with stl10_root() as (root, data):
-            yield root, data
+class STL10TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.STL10
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test", "unlabeled", "train+unlabeled"))
 
-    @contextlib.contextmanager
-    def mocked_dataset(self, pre_extract=False, download=True, **kwargs):
-        with self.mocked_root() as (root, data):
-            if pre_extract:
-                utils.extract_archive(os.path.join(root, data["archive"]))
-            dataset = torchvision.datasets.STL10(root, download=download, **kwargs)
-            yield dataset, data
+    @staticmethod
+    def _make_binary_file(num_elements, root, name):
+        file_name = os.path.join(root, name)
+        np.zeros(num_elements, dtype=np.uint8).tofile(file_name)
 
-    def test_not_found(self):
-        with self.assertRaises(RuntimeError):
-            with self.mocked_dataset(download=False):
-                pass
+    @staticmethod
+    def _make_image_file(num_images, root, name, num_channels=3, height=96, width=96):
+        STL10TestCase._make_binary_file(num_images * num_channels * height * width, root, name)
 
-    def test_splits(self):
-        for split in ('train', 'train+unlabeled', 'unlabeled', 'test'):
-            with self.mocked_dataset(split=split) as (dataset, data):
-                num_images = sum([data["num_images_in_split"][part] for part in split.split("+")])
-                self.generic_classification_dataset_test(dataset, num_images=num_images)
+    @staticmethod
+    def _make_label_file(num_images, root, name):
+        STL10TestCase._make_binary_file(num_images, root, name)
+
+    @staticmethod
+    def _make_class_names_file(root, name="class_names.txt"):
+        with open(os.path.join(root, name), "w") as fh:
+            for cname in ("airplane", "bird"):
+                fh.write(f"{cname}\n")
+
+    @staticmethod
+    def _make_fold_indices_file(root):
+        num_folds = 10
+        offset = 0
+        with open(os.path.join(root, "fold_indices.txt"), "w") as fh:
+            for fold in range(num_folds):
+                line = " ".join([str(idx) for idx in range(offset, offset + fold + 1)])
+                fh.write(f"{line}\n")
+                offset += fold + 1
+
+        return tuple(range(1, num_folds + 1))
+
+    @staticmethod
+    def _make_train_files(root, num_unlabeled_images=1):
+        num_images_in_fold = STL10TestCase._make_fold_indices_file(root)
+        num_train_images = sum(num_images_in_fold)
+
+        STL10TestCase._make_image_file(num_train_images, root, "train_X.bin")
+        STL10TestCase._make_label_file(num_train_images, root, "train_y.bin")
+        STL10TestCase._make_image_file(1, root, "unlabeled_X.bin")
+
+        return dict(train=num_train_images, unlabeled=num_unlabeled_images)
+
+    @staticmethod
+    def _make_test_files(root, num_images=2):
+        STL10TestCase._make_image_file(num_images, root, "test_X.bin")
+        STL10TestCase._make_label_file(num_images, root, "test_y.bin")
+
+        return dict(test=num_images)
+
+    def inject_fake_data(self, tmpdir, config):
+        root_folder = os.path.join(tmpdir, "stl10_binary")
+        os.mkdir(root_folder)
+
+        num_images_in_split = self._make_train_files(root_folder)
+        num_images_in_split.update(self._make_test_files(root_folder))
+        self._make_class_names_file(root_folder)
+
+        return sum(num_images_in_split[part] for part in config["split"].split("+"))
 
     def test_folds(self):
         for fold in range(10):
-            with self.mocked_dataset(split="train", folds=fold) as (dataset, data):
-                num_images = data["num_images_in_folds"][fold]
-                self.assertEqual(len(dataset), num_images)
+            with self.create_dataset(split="train", folds=fold) as (dataset, _):
+                self.assertEqual(len(dataset), fold + 1)
+
+    def test_unlabeled(self):
+        with self.create_dataset(split="unlabeled") as (dataset, _):
+            labels = [dataset[idx][1] for idx in range(len(dataset))]
+            self.assertTrue(all(label == -1 for label in labels))
 
     def test_invalid_folds1(self):
         with self.assertRaises(ValueError):
-            with self.mocked_dataset(folds=10):
+            with self.create_dataset(folds=10):
                 pass
 
     def test_invalid_folds2(self):
         with self.assertRaises(ValueError):
-            with self.mocked_dataset(folds="0"):
+            with self.create_dataset(folds="0"):
                 pass
-
-    def test_transforms(self):
-        expected_image = "image"
-        expected_target = "target"
-
-        def transform(image):
-            return expected_image
-
-        def target_transform(target):
-            return expected_target
-
-        with self.mocked_dataset(transform=transform, target_transform=target_transform) as (dataset, _):
-            actual_image, actual_target = dataset[0]
-
-            self.assertEqual(actual_image, expected_image)
-            self.assertEqual(actual_target, expected_target)
-
-    def test_unlabeled(self):
-        with self.mocked_dataset(split="unlabeled") as (dataset, _):
-            labels = [dataset[idx][1] for idx in range(len(dataset))]
-            self.assertTrue(all([label == -1 for label in labels]))
-
-    @unittest.mock.patch("torchvision.datasets.stl10.download_and_extract_archive")
-    def test_download_preexisting(self, mock):
-        with self.mocked_dataset(pre_extract=True) as (dataset, data):
-            mock.assert_not_called()
-
-    def test_repr_smoke(self):
-        with self.mocked_dataset() as (dataset, _):
-            self.assertIsInstance(repr(dataset), str)
 
 
 class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
@@ -616,7 +614,6 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         split=("train", "valid", "test", "all"),
         target_type=("attr", "identity", "bbox", "landmarks", ["attr", "identity"]),
     )
-    REQUIRED_PACKAGES = ("pandas",)
 
     _SPLIT_TO_IDX = dict(train=0, valid=1, test=2)
 
@@ -1700,6 +1697,64 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
     def test_classes(self, config):
         with self.create_dataset(config) as (dataset, info):
             self.assertSequenceEqual(dataset.classes, info["classes"])
+
+
+class KittiTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Kitti
+    FEATURE_TYPES = (PIL.Image.Image, (list, type(None)))  # test split returns None as target
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir, config):
+        kitti_dir = os.path.join(tmpdir, "Kitti", "raw")
+        os.makedirs(kitti_dir)
+
+        split_to_num_examples = {
+            True: 1,
+            False: 2,
+        }
+
+        # We need to create all folders(training and testing).
+        for is_training in (True, False):
+            num_examples = split_to_num_examples[is_training]
+
+            datasets_utils.create_image_folder(
+                root=kitti_dir,
+                name=os.path.join("training" if is_training else "testing", "image_2"),
+                file_name_fn=lambda image_idx: f"{image_idx:06d}.png",
+                num_examples=num_examples,
+            )
+            if is_training:
+                for image_idx in range(num_examples):
+                    target_file_dir = os.path.join(kitti_dir, "training", "label_2")
+                    os.makedirs(target_file_dir)
+                    target_file_name = os.path.join(target_file_dir, f"{image_idx:06d}.txt")
+                    target_contents = "Pedestrian 0.00 0 -0.20 712.40 143.00 810.73 307.92 1.89 0.48 1.20 1.84 1.47 8.41 0.01\n"  # noqa
+                    with open(target_file_name, "w") as target_file:
+                        target_file.write(target_contents)
+
+        return split_to_num_examples[config["train"]]
+
+
+class SvhnTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SVHN
+    REQUIRED_PACKAGES = ("scipy",)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test", "extra"))
+
+    def inject_fake_data(self, tmpdir, config):
+        import scipy.io as sio
+
+        split = config["split"]
+        num_examples = {
+            "train": 2,
+            "test": 3,
+            "extra": 4,
+        }.get(split)
+
+        file = f"{split}_32x32.mat"
+        images = np.zeros((32, 32, 3, num_examples), dtype=np.uint8)
+        targets = np.zeros((num_examples,), dtype=np.uint8)
+        sio.savemat(os.path.join(tmpdir, file), {'X': images, 'y': targets})
+        return num_examples
 
 
 if __name__ == "__main__":

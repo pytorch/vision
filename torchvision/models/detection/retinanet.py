@@ -386,7 +386,8 @@ class RetinaNet(nn.Module):
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image['boxes'].numel() == 0:
-                matched_idxs.append(torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64))
+                matched_idxs.append(torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64,
+                                               device=anchors_per_image.device))
                 continue
 
             match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
@@ -427,7 +428,7 @@ class RetinaNet(nn.Module):
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
 
-                anchor_idxs = topk_idxs // num_classes
+                anchor_idxs = torch.div(topk_idxs, num_classes, rounding_mode='floor')
                 labels_per_level = topk_idxs % num_classes
 
                 boxes_per_level = self.box_coder.decode_single(box_regression_per_level[anchor_idxs],

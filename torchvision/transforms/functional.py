@@ -358,7 +358,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
-            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
@@ -413,7 +415,10 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             is used to pad all borders. If sequence of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
@@ -608,9 +613,10 @@ def perspective(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
 
     Returns:
         PIL Image or Tensor: transformed Image.
@@ -744,8 +750,8 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         brightness_factor (float):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
@@ -764,8 +770,8 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
@@ -784,8 +790,8 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
@@ -815,9 +821,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
-        If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -848,9 +854,9 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): PIL Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
-        If img is PIL Image, modes with transparency (alpha channel) are not supported.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, modes with transparency (alpha channel) are not supported.
         gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
@@ -938,9 +944,10 @@ def rotate(
             Default is the center of the image.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -1010,9 +1017,10 @@ def affine(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
         fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
@@ -1173,13 +1181,19 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         img (PIL Image or Tensor): Image to be blurred
         kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
-            In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: ``[ksize, ]``.
+
+            .. note::
+                In torchscript mode kernel_size as single int is not supported, use a sequence of
+                length 1: ``[ksize, ]``.
         sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
-            Default, None. In torchscript mode sigma as single float is
-            not supported, use a sequence of length 1: ``[sigma, ]``.
+            Default, None.
+
+            .. note::
+                In torchscript mode sigma as single float is
+                not supported, use a sequence of length 1: ``[sigma, ]``.
 
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
@@ -1286,8 +1300,8 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         sharpness_factor (float):  How much to adjust the sharpness. Can be
             any non negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
