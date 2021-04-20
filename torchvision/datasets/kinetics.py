@@ -203,7 +203,7 @@ class Kinetics(VisionDataset):
         kinetics_dir, _ = path.split(self.root)
         tar_path = path.join(kinetics_dir, "tars")
 
-        if self._num_download_workers < 2:
+        if self._num_download_workers > 1:
             for line in file_url:
                 line = str(line.decode("utf-8")).replace("\n", "")
                 dl_wrap(tar_path, self.root, line)
