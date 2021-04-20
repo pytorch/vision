@@ -245,9 +245,9 @@ class Kinetics(VisionDataset):
                         os.path.join(self.root, file),
                         os.path.join(self.root, label, file),
                     )
-                except:
+                except Exception as error:
                     warnings.warn(
-                        f"Unexpected error while processing {ytid}:", sys.exc_info()[0]
+                        f"Unexpected error while processing {ytid}: {error}"
                     )
 
     @property
@@ -352,4 +352,3 @@ class Kinetics400(Kinetics):
             _audio_samples=_audio_samples,
             download=False,
         )
-
