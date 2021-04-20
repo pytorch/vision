@@ -92,7 +92,7 @@ plot(affined_img, "Affine transformed image")
 
 ####################################
 # RandomCrop
-# ------------
+# ----------
 # The :class:`~torchvision.transforms.RandomCrop` transform
 # (see also :func:`~torchvision.transforms.functional.crop`)
 # performs random crop transform on an image.
@@ -101,7 +101,7 @@ plot(randomcrop_img, "Random Cropped transformed  image")
 
 ####################################
 # RandomGrayscale
-# ------------
+# ---------------
 # The :class:`~torchvision.transforms.RandomGrayscale`)
 # (see also :func:`~torchvision.transforms.functional.rgb_to_grayscale`)
 # performs random gray scale transform on an image.
@@ -110,7 +110,7 @@ plot(randomgray_img, "Random Gray Scale  image")
 
 ####################################
 # RandomResizedCrop
-# ------------
+# -----------------
 # The :class:`~torchvision.transforms.RandomResizedCrop`)
 # (see also :func:`~torchvision.transforms.functional.resized_crop`)
 # performs random resize crop transform on an image.
@@ -119,7 +119,7 @@ plot(randresizecrop_img, "Random Resize Crop  image")
 
 ####################################
 # RandomHorizontalFlip
-# ------------
+# --------------------
 # The :class:`~torchvision.transforms.RandomHorizontalFlip`)
 # (see also :func:`~torchvision.transforms.functional.hflip`)
 # performs random horizontal flip transform on an image.
@@ -128,7 +128,7 @@ plot(randhorizon_img, "Random horizontal flip of  image")
 
 ####################################
 # RandomVerticalFlip
-# ------------
+# ------------------
 # The :class:`~torchvision.transforms.RandomVerticalFlip`)
 # (see also :func:`~torchvision.transforms.functional.vflip`)
 # performs random vertical flip transform on an image.
@@ -145,7 +145,7 @@ gausblur_img = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.4, 3.0))(orig_img)
 plot(gausblur_img, "Gaussian Blur of  image")
 ####################################
 # RandomApply
-# ------------
+# -----------
 # The :class:`~torchvision.transforms.RandomApply`)
 # (see also :func:`~torchvision.transforms.functional.transforms`)
 # performs random operation of transform on an image with probability.
