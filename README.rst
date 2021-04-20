@@ -26,6 +26,8 @@ supported Python versions.
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.8.0``                | ``0.9.0``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
 | ``1.7.1``                | ``0.8.2``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.7.0``                | ``0.8.1``                | ``>=3.6``                       |
@@ -137,7 +139,7 @@ In order to get the torchvision operators registered with torch (eg. for the JIT
 
 Documentation
 =============
-You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
+You can find the API documentation on the pytorch website: https://pytorch.org/vision/stable/index.html
 
 Contributing
 ============

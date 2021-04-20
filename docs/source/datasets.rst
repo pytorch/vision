@@ -24,6 +24,18 @@ All the datasets have almost similar API. They all have two common arguments:
 
 .. currentmodule:: torchvision.datasets
 
+
+Caltech
+~~~~~~~
+
+.. autoclass:: Caltech101
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Caltech256
+  :members: __getitem__
+  :special-members:
+
 CelebA
 ~~~~~~
 
@@ -137,6 +149,13 @@ Kinetics-400
   :members: __getitem__
   :special-members:
 
+KITTI
+~~~~~~~~~
+
+.. autoclass:: Kitti
+  :members: __getitem__
+  :special-members:
+
 KMNIST
 ~~~~~~~~~~~~~
 
@@ -192,6 +211,13 @@ SBU
   :members: __getitem__
   :special-members:
 
+SEMEION
+~~~~~~~
+
+.. autoclass:: SEMEION
+  :members: __getitem__
+  :special-members:
+
 STL10
 ~~~~~
 
@@ -231,3 +257,9 @@ VOC
   :members: __getitem__
   :special-members:
 
+WIDERFace
+~~~~~~~~~
+
+.. autoclass:: WIDERFace
+  :members: __getitem__
+  :special-members:

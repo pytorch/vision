@@ -2,7 +2,11 @@ import os
 import tarfile
 import collections
 from .vision import VisionDataset
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element as ET_Element
+try:
+    from defusedxml.ElementTree import parse as ET_parse
+except ImportError:
+    from xml.etree.ElementTree import parse as ET_parse
 from PIL import Image
 from typing import Any, Callable, Dict, Optional, Tuple, List
 from .utils import download_and_extract_archive, verify_str_arg
@@ -87,10 +91,9 @@ class _VOCBase(VisionDataset):
         valid_image_sets = ["train", "trainval", "val"]
         if year == "2007":
             valid_image_sets.append("test")
-            key = "2007-test"
-        else:
-            key = year
         self.image_set = verify_str_arg(image_set, "image_set", valid_image_sets)
+
+        key = "2007-test" if year == "2007" and image_set == "test" else year
         dataset_year_dict = DATASET_YEAR_DICT[key]
 
         self.url = dataset_year_dict["url"]
@@ -204,14 +207,14 @@ class VOCDetection(_VOCBase):
             tuple: (image, target) where target is a dictionary of the XML tree.
         """
         img = Image.open(self.images[index]).convert("RGB")
-        target = self.parse_voc_xml(ET.parse(self.annotations[index]).getroot())
+        target = self.parse_voc_xml(ET_parse(self.annotations[index]).getroot())
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
         return img, target
 
-    def parse_voc_xml(self, node: ET.Element) -> Dict[str, Any]:
+    def parse_voc_xml(self, node: ET_Element) -> Dict[str, Any]:
         voc_dict: Dict[str, Any] = {}
         children = list(node)
         if children:

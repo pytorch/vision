@@ -24,17 +24,18 @@ class Tester(TransformsTester):
     def setUp(self):
         self.device = "cpu"
 
-    def _test_fn_on_batch(self, batch_tensors, fn, **fn_kwargs):
+    def _test_fn_on_batch(self, batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
         transformed_batch = fn(batch_tensors, **fn_kwargs)
         for i in range(len(batch_tensors)):
             img_tensor = batch_tensors[i, ...]
             transformed_img = fn(img_tensor, **fn_kwargs)
             self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
 
-        scripted_fn = torch.jit.script(fn)
-        # scriptable function test
-        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
-        self.assertTrue(transformed_batch.allclose(s_transformed_batch))
+        if scripted_fn_atol >= 0:
+            scripted_fn = torch.jit.script(fn)
+            # scriptable function test
+            s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+            self.assertTrue(transformed_batch.allclose(s_transformed_batch, atol=scripted_fn_atol))
 
     def test_assert_image_tensor(self):
         shape = (100,)
@@ -166,7 +167,7 @@ class Tester(TransformsTester):
             self.assertLess(max_diff, 1e-5)
 
             s_hsv_img = scripted_fn(rgb_img)
-            self.assertTrue(hsv_img.allclose(s_hsv_img))
+            self.assertTrue(hsv_img.allclose(s_hsv_img, atol=1e-7))
 
         batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
         self._test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
@@ -348,7 +349,7 @@ class Tester(TransformsTester):
                     atol = 1.0
                 self.assertTrue(adjusted_tensor.allclose(scripted_result, atol=atol), msg=msg)
 
-                self._test_fn_on_batch(batch_tensors, fn, **config)
+                self._test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=atol, **config)
 
     def test_adjust_brightness(self):
         self._test_adjust_fn(
@@ -822,9 +823,14 @@ class Tester(TransformsTester):
                 if dt is not None:
                     batch_tensors = batch_tensors.to(dtype=dt)
 
+                # Ignore the equivalence between scripted and regular function on float16 cuda. The pixels at
+                # the border may be entirely different due to small rounding errors.
+                scripted_fn_atol = -1 if (dt == torch.float16 and self.device == "cuda") else 1e-8
+
                 for spoints, epoints in test_configs:
                     self._test_fn_on_batch(
-                        batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=NEAREST
+                        batch_tensors, F.perspective, scripted_fn_atol=scripted_fn_atol,
+                        startpoints=spoints, endpoints=epoints, interpolation=NEAREST
                     )
 
         # assert changed type warning
@@ -976,6 +982,18 @@ class CUDATester(Tester):
 
     def setUp(self):
         self.device = "cuda"
+
+    def test_scale_channel(self):
+        """Make sure that _scale_channel gives the same results on CPU and GPU as
+        histc or bincount are used depending on the device.
+        """
+        # TODO: when # https://github.com/pytorch/pytorch/issues/53194 is fixed,
+        # only use bincount and remove that test.
+        size = (1_000,)
+        img_chan = torch.randint(0, 256, size=size).to('cpu')
+        scaled_cpu = F_t._scale_channel(img_chan)
+        scaled_cuda = F_t._scale_channel(img_chan.to('cuda'))
+        self.assertTrue(scaled_cpu.equal(scaled_cuda.to('cpu')))
 
 
 if __name__ == '__main__':

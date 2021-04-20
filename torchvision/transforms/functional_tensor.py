@@ -97,7 +97,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             # factor should be forced to int for torch jit script
             # otherwise factor is a float and image // factor can produce different results
             factor = int((input_max + 1) // (output_max + 1))
-            image = image // factor
+            image = torch.div(image, factor, rounding_mode='floor')
             return image.to(dtype)
         else:
             # factor should be forced to int for torch jit script
@@ -498,11 +498,7 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
 
     if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
         short, long = (w, h) if w <= h else (h, w)
-
-        if isinstance(size, int):
-            requested_new_short = size
-        else:
-            requested_new_short = size[0]
+        requested_new_short = size if isinstance(size, int) else size[0]
 
         if short == requested_new_short:
             return img
@@ -902,14 +898,23 @@ def autocontrast(img: Tensor) -> Tensor:
 
 
 def _scale_channel(img_chan):
-    hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
+    # TODO: we should expect bincount to always be faster than histc, but this
+    # isn't always the case. Once
+    # https://github.com/pytorch/pytorch/issues/53194 is fixed, remove the if
+    # block and only use bincount.
+    if img_chan.is_cuda:
+        hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
+    else:
+        hist = torch.bincount(img_chan.view(-1), minlength=256)
 
     nonzero_hist = hist[hist != 0]
-    step = nonzero_hist[:-1].sum() // 255
+    step = torch.div(nonzero_hist[:-1].sum(), 255, rounding_mode='floor')
     if step == 0:
         return img_chan
 
-    lut = (torch.cumsum(hist, 0) + (step // 2)) // step
+    lut = torch.div(
+        torch.cumsum(hist, 0) + torch.div(step, 2, rounding_mode='floor'),
+        step, rounding_mode='floor')
     lut = torch.nn.functional.pad(lut, [1, 0])[:-1].clamp(0, 255)
 
     return lut[img_chan.to(torch.int64)].to(torch.uint8)
