@@ -458,8 +458,6 @@ def test_detection_model_validation(model_name):
 @pytest.mark.parametrize('model_name', get_available_video_models())
 @pytest.mark.parametrize('dev', _devs)
 def test_video_model(model_name, dev):
-    if 'r2plus1d_18' in model_name:
-        return
     ModelTester()._test_video_model(model_name, dev)
 
 
