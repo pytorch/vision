@@ -95,36 +95,57 @@ plot(affined_img, "Affine transformed image")
 # ----------
 # The :class:`~torchvision.transforms.RandomCrop` transform
 # (see also :func:`~torchvision.transforms.functional.crop`)
-# performs random crop transform on an image.
+# crops an image at a random location.
 random_crop_img = T.RandomCrop(size=(128, 128))(orig_img)
-plot(random_crop_img, "Random Cropped transformed  image")
+plot(random_crop_img, "Random crop")
 
 ####################################
 # RandomResizedCrop
 # -----------------
 # The :class:`~torchvision.transforms.RandomResizedCrop` transform
 # (see also :func:`~torchvision.transforms.functional.resized_crop`)
-# performs random resize crop transform on an image.
+# crops an image at a random location, and then resizes the crop to a given
+# size.
 rand_resize_crop_img = T.RandomResizedCrop(size=(32, 32))(orig_img)
-plot(rand_resize_crop_img, "Random Resize Crop  image")
+plot(rand_resize_crop_img, "Random resized crop")
 
 ####################################
 # RandomHorizontalFlip
 # --------------------
 # The :class:`~torchvision.transforms.RandomHorizontalFlip` transform
 # (see also :func:`~torchvision.transforms.functional.hflip`)
-# performs random horizontal flip transform on an image.
-rand_horizon_img = T.RandomHorizontalFlip(p=0.6)(orig_img)
-plot(rand_horizon_img, "Random horizontal flip of  image")
+# performs horizontal flip of an image, with a given probability.
+#
+# .. note::
+#   Since the transform is applied randomly, the two images below may actually be
+#   the same.
+rand_horizon_img = T.RandomHorizontalFlip(p=0.5)(orig_img)
+plot(rand_horizon_img, "Random horizontal flip")
 
 ####################################
 # RandomVerticalFlip
 # ------------------
 # The :class:`~torchvision.transforms.RandomVerticalFlip` transform
 # (see also :func:`~torchvision.transforms.functional.vflip`)
-# performs random vertical flip transform on an image.
-rand_verti_img = T.RandomVerticalFlip(p=0.6)(orig_img)
-plot(rand_verti_img, "Random vertical flip of  image")
+# performs vertical flip of an image, with a given probability.
+#
+# .. note::
+#   Since the transform is applied randomly, the two images below may actually be
+#   the same.
+rand_verti_img = T.RandomVerticalFlip(p=0.5)(orig_img)
+plot(rand_verti_img, "Random vertical flip")
+
+####################################
+# RandomApply
+# -----------
+# The :class:`~torchvision.transforms.RandomApply` transform
+# randomly applies a list of transforms, with a given probability
+#
+# .. note::
+#   Since the transform is applied randomly, the two images below may actually be
+#   the same.
+ran_img = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)(orig_img)
+plot(ran_img, "Random Apply transform")
 
 ####################################
 # GaussianBlur
@@ -133,12 +154,4 @@ plot(rand_verti_img, "Random vertical flip of  image")
 # (see also :func:`~torchvision.transforms.functional.gaussian_blur`)
 # performs gaussianblur transform on an image.
 gaus_blur_img = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.4, 3.0))(orig_img)
-plot(gaus_blur_img, "Gaussian Blur of  image")
-####################################
-# RandomApply
-# -----------
-# The :class:`~torchvision.transforms.RandomApply` transform
-# (see also :func:`~torchvision.transforms.functional.transforms`)
-# performs random operation of transform on an image with probability.
-ran_img = T.RandomApply(transforms=[T.RandomCrop(size=(8, 8))], p=0.5)(orig_img)
-plot(ran_img, "Random Apply  of  image")
+plot(gaus_blur_img, "Gaussian Blur of image")
