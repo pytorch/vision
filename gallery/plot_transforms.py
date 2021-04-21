@@ -47,6 +47,25 @@ resized_img = T.Resize(size=30)(orig_img)
 plot(resized_img, "Resized image")
 
 ####################################
+# CenterCrop
+# ----------
+# The :class:`~torchvision.transforms.CenterCrop` transform
+# (see also :func:`~torchvision.transforms.functional.centercrop`)
+# Crops the image to center
+center_cropped_img = T.CenterCrop(size=(100, 100))(orig_img)
+plot(center_cropped_img, "Center Cropped Image")
+
+
+####################################
+# FiveCrop
+# --------
+# The :class:`~torchvision.transforms.FiveCrop` transform
+# (see also :func:`~torchvision.transforms.functional.centercrop`)
+# Crop the given image into four corners and the centre crop.
+five_cropped_img = T.FiveCrop(size=(100, 100))(orig_img)
+plot(five_cropped_img, "Five Cropped Image")
+
+####################################
 # ColorJitter
 # -----------
 # The :class:`~torchvision.transforms.ColorJitter` transform
