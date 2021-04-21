@@ -359,7 +359,7 @@ class Pad(torch.nn.Module):
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
-            - constant: pads with a constant value, this value is specified with fill.
+            - constant: pads with a constant value, this value is specified with fill
 
             - edge: pads with the last value at the edge of the image.
               If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
@@ -541,7 +541,7 @@ class RandomCrop(torch.nn.Module):
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
-            - constant: pads with a constant value, this value is specified with fill.
+            - constant: pads with a constant value, this value is specified with fill
 
             - edge: pads with the last value at the edge of the image.
               If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
