@@ -370,7 +370,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ```size` might be overruled, i.e the
+            ``max_size``. As a result, ``size`` might be overruled, i.e the
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
@@ -424,22 +424,21 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value on the edge of the image,
-                    if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
+            - edge: pads with the last value at the edge of the image.
+              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
-            - reflect: pads with reflection of image (without repeating the last value on the edge)
+            - reflect: pads with reflection of image without repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+              will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
-                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
-
-            - symmetric: pads with reflection of image (repeating the last value on the edge)
-
-                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
+            - symmetric: pads with reflection of image repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+              will result in [2, 1, 1, 2, 3, 4, 4, 3]
 
     Returns:
         PIL Image or Tensor: Padded image.
