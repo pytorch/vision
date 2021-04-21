@@ -100,28 +100,20 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def _get_expected_file(self, subname=None, strip_suffix=None):
-        def remove_prefix_suffix(text, prefix, suffix):
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-            if suffix is not None and text.endswith(suffix):
-                text = text[:len(text) - len(suffix)]
-            return text
+    def _get_expected_file(self, name=None):
         # NB: we take __file__ from the module that defined the test
         # class, so we place the expect directory where the test script
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
-        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
 
         # Determine expected file based on environment
         expected_file_base = get_relative_path(
             os.path.realpath(sys.modules[module_id].__file__),
             "expect")
 
-        # Set expected_file based on subname.
-        expected_file = os.path.join(expected_file_base, munged_id)
-        if subname:
-            expected_file += "_" + subname
+        # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
+        # We hardcode it here to avoid having to re-generate the reference files
+        expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
@@ -132,25 +124,16 @@ class TestCase(unittest.TestCase):
 
         return expected_file
 
-    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
+    def assertExpected(self, output, name, prec=None):
         r"""
         Test that a python value matches the recorded contents of a file
-        derived from the name of this test and subname.  The value must be
+        based on a "check" name. The value must be
         pickable with `torch.save`. This file
         is placed in the 'expect' directory in the same directory
         as the test script. You can automatically update the recorded test
         output using --accept.
-
-        If you call this multiple times in a single function, you must
-        give a unique subname each time.
-
-        strip_suffix allows different tests that expect similar numerics, e.g.
-        "test_xyz_cuda" and "test_xyz_cpu", to use the same pickled data.
-        test_xyz_cuda would pass strip_suffix="_cuda", test_xyz_cpu would pass
-        strip_suffix="_cpu", and they would both use a data file name based on
-        "test_xyz".
         """
-        expected_file = self._get_expected_file(subname, strip_suffix)
+        expected_file = self._get_expected_file(name)
 
         if ACCEPT:
             filename = {os.path.basename(expected_file)}
