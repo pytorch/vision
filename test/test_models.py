@@ -9,6 +9,8 @@ from torchvision import models
 import unittest
 import warnings
 
+import pytest
+
 
 def get_available_classification_models():
     # TODO add a registration mechanism to torchvision.models
@@ -79,7 +81,7 @@ class ModelTester(TestCase):
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
+        self.assertExpected(out.cpu(), name, prec=0.1)
         self.assertEqual(out.shape[-1], 50)
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
@@ -88,7 +90,7 @@ class ModelTester(TestCase):
                 out = model(x)
                 # See autocast_flaky_numerics comment at top of file.
                 if name not in autocast_flaky_numerics:
-                    self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
+                    self.assertExpected(out.cpu(), name, prec=0.1)
                 self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name, dev):
@@ -104,17 +106,16 @@ class ModelTester(TestCase):
 
         def check_out(out):
             prec = 0.01
-            strip_suffix = f"_{dev}"
             try:
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
-                self.assertExpected(out.cpu(), prec=prec, strip_suffix=strip_suffix)
+                self.assertExpected(out.cpu(), name, prec=prec)
             except AssertionError:
                 # Unfortunately some segmentation models are flaky with autocast
                 # so instead of validating the probability scores, check that the class
                 # predictions match.
-                expected_file = self._get_expected_file(strip_suffix=strip_suffix)
+                expected_file = self._get_expected_file(name)
                 expected = torch.load(expected_file)
                 self.assertEqual(out.argmax(dim=1), expected.argmax(dim=1), prec=prec)
                 return False  # Partial validation performed
@@ -189,18 +190,18 @@ class ModelTester(TestCase):
 
             output = map_nested_tensor_object(out, tensor_map_fn=compact)
             prec = 0.01
-            strip_suffix = f"_{dev}"
             try:
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
-                self.assertExpected(output, prec=prec, strip_suffix=strip_suffix)
+                self.assertExpected(output, name, prec=prec)
+                raise AssertionError
             except AssertionError:
                 # Unfortunately detection models are flaky due to the unstable sort
                 # in NMS. If matching across all outputs fails, use the same approach
                 # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
                 # scores.
-                expected_file = self._get_expected_file(strip_suffix=strip_suffix)
+                expected_file = self._get_expected_file(name)
                 expected = torch.load(expected_file)
                 self.assertEqual(output[0]["scores"], expected[0]["scores"], prec=prec)
 
@@ -430,50 +431,35 @@ class ModelTester(TestCase):
 _devs = [torch.device("cpu"), torch.device("cuda")] if torch.cuda.is_available() else [torch.device("cpu")]
 
 
-for model_name in get_available_classification_models():
-    for dev in _devs:
-        # for-loop bodies don't define scopes, so we have to save the variables
-        # we want to close over in some way
-        def do_test(self, model_name=model_name, dev=dev):
-            input_shape = (1, 3, 224, 224)
-            if model_name in ['inception_v3']:
-                input_shape = (1, 3, 299, 299)
-            self._test_classification_model(model_name, input_shape, dev)
-
-        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
+@pytest.mark.parametrize('model_name', get_available_classification_models())
+@pytest.mark.parametrize('dev', _devs)
+def test_classification_model(model_name, dev):
+    input_shape = (1, 3, 299, 299) if model_name == 'inception_v3' else (1, 3, 224, 224)
+    ModelTester()._test_classification_model(model_name, input_shape, dev)
 
 
-for model_name in get_available_segmentation_models():
-    for dev in _devs:
-        # for-loop bodies don't define scopes, so we have to save the variables
-        # we want to close over in some way
-        def do_test(self, model_name=model_name, dev=dev):
-            self._test_segmentation_model(model_name, dev)
-
-        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
+@pytest.mark.parametrize('model_name', get_available_segmentation_models())
+@pytest.mark.parametrize('dev', _devs)
+def test_segmentation_model(model_name, dev):
+    ModelTester()._test_segmentation_model(model_name, dev)
 
 
-for model_name in get_available_detection_models():
-    for dev in _devs:
-        # for-loop bodies don't define scopes, so we have to save the variables
-        # we want to close over in some way
-        def do_test(self, model_name=model_name, dev=dev):
-            self._test_detection_model(model_name, dev)
-
-        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
-
-    def do_validation_test(self, model_name=model_name):
-        self._test_detection_model_validation(model_name)
-
-    setattr(ModelTester, "test_" + model_name + "_validation", do_validation_test)
+@pytest.mark.parametrize('model_name', get_available_detection_models())
+@pytest.mark.parametrize('dev', _devs)
+def test_detection_model(model_name, dev):
+    ModelTester()._test_detection_model(model_name, dev)
 
 
-for model_name in get_available_video_models():
-    for dev in _devs:
-        def do_test(self, model_name=model_name, dev=dev):
-            self._test_video_model(model_name, dev)
+@pytest.mark.parametrize('model_name', get_available_detection_models())
+def test_detection_model_validation(model_name):
+    ModelTester()._test_detection_model_validation(model_name)
 
-        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
+
+@pytest.mark.parametrize('model_name', get_available_video_models())
+@pytest.mark.parametrize('dev', _devs)
+def test_video_model(model_name, dev):
+    ModelTester()._test_video_model(model_name, dev)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])
