@@ -35,16 +35,17 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Example gallery" href="index.html" />
-<!-- Google Analytics -->
-<script>
-  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-  ga('create', 'UA-90545585-1', 'auto');
-  ga('send', 'pageview');
-</script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
-<!-- End Google Analytics -->
- 
-
+  <!-- Google Analytics -->
+  
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-117752657-2', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src='https://www.google-analytics.com/analytics.js'></script>
+  
+  <!-- End Google Analytics -->
+  
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -193,7 +194,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+718dac6 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+df35f06 ) &#x25BC</a>
     </div>
     
 
@@ -453,7 +454,118 @@ performs random affine transform on an image.</p>
 <li><img alt="Affine transformed image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_014.png" />
 </li>
 </ul>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.306 seconds)</p>
+</section>
+<section id="randomcrop">
+<h2>RandomCrop<a class="headerlink" href="#randomcrop" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomCrop" title="torchvision.transforms.RandomCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomCrop</span></code></a> transform
+(see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.crop" title="torchvision.transforms.functional.crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">crop()</span></code></a>)
+crops an image at a random location.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">crop</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">RandomCrop</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">))(</span><span class="n">orig_img</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="s2">&quot;Random crop&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Original image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_015.png" />
+</li>
+<li><img alt="Random crop" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_016.png" />
+</li>
+</ul>
+</section>
+<section id="randomresizedcrop">
+<h2>RandomResizedCrop<a class="headerlink" href="#randomresizedcrop" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomResizedCrop" title="torchvision.transforms.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> transform
+(see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.resized_crop" title="torchvision.transforms.functional.resized_crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">resized_crop()</span></code></a>)
+crops an image at a random location, and then resizes the crop to a given
+size.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">resized_crop</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">RandomResizedCrop</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">))(</span><span class="n">orig_img</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="s2">&quot;Random resized crop&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Original image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_017.png" />
+</li>
+<li><img alt="Random resized crop" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_018.png" />
+</li>
+</ul>
+</section>
+<section id="randomhorizontalflip">
+<h2>RandomHorizontalFlip<a class="headerlink" href="#randomhorizontalflip" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomHorizontalFlip" title="torchvision.transforms.RandomHorizontalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a> transform
+(see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.hflip" title="torchvision.transforms.functional.hflip"><code class="xref py py-func docutils literal notranslate"><span class="pre">hflip()</span></code></a>)
+performs horizontal flip of an image, with a given probability.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since the transform is applied randomly, the two images below may actually be
+the same.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">random_hflip</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)(</span><span class="n">orig_img</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">random_hflip</span><span class="p">,</span> <span class="s2">&quot;Random horizontal flip&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Original image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_019.png" />
+</li>
+<li><img alt="Random horizontal flip" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_020.png" />
+</li>
+</ul>
+</section>
+<section id="randomverticalflip">
+<h2>RandomVerticalFlip<a class="headerlink" href="#randomverticalflip" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomVerticalFlip" title="torchvision.transforms.RandomVerticalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomVerticalFlip</span></code></a> transform
+(see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.vflip" title="torchvision.transforms.functional.vflip"><code class="xref py py-func docutils literal notranslate"><span class="pre">vflip()</span></code></a>)
+performs vertical flip of an image, with a given probability.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since the transform is applied randomly, the two images below may actually be
+the same.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">random_vflip</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">RandomVerticalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)(</span><span class="n">orig_img</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">random_vflip</span><span class="p">,</span> <span class="s2">&quot;Random vertical flip&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Original image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_021.png" />
+</li>
+<li><img alt="Random vertical flip" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_022.png" />
+</li>
+</ul>
+</section>
+<section id="randomapply">
+<h2>RandomApply<a class="headerlink" href="#randomapply" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomApply" title="torchvision.transforms.RandomApply"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomApply</span></code></a> transform
+randomly applies a list of transforms, with a given probability</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since the transform is applied randomly, the two images below may actually be
+the same.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">random_apply</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">RandomApply</span><span class="p">(</span><span class="n">transforms</span><span class="o">=</span><span class="p">[</span><span class="n">T</span><span class="o">.</span><span class="n">RandomCrop</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">))],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)(</span><span class="n">orig_img</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">random_apply</span><span class="p">,</span> <span class="s2">&quot;Random Apply transform&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Original image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_023.png" />
+</li>
+<li><img alt="Random Apply transform" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_024.png" />
+</li>
+</ul>
+</section>
+<section id="gaussianblur">
+<h2>GaussianBlur<a class="headerlink" href="#gaussianblur" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.GaussianBlur" title="torchvision.transforms.GaussianBlur"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBlur</span></code></a> transform
+(see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.gaussian_blur" title="torchvision.transforms.functional.gaussian_blur"><code class="xref py py-func docutils literal notranslate"><span class="pre">gaussian_blur()</span></code></a>)
+performs gaussianblur transform on an image.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gaus_blur_img</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))(</span><span class="n">orig_img</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">gaus_blur_img</span><span class="p">,</span> <span class="s2">&quot;Gaussian Blur of image&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img alt="Original image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_025.png" />
+</li>
+<li><img alt="Gaussian Blur of image" class="sphx-glr-multi-img" src="../_images/sphx_glr_plot_transforms_026.png" />
+</li>
+</ul>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.613 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2fc879ef12ea97750926a04c0a48c66b/plot_transforms.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms.py</span></code></a></p>
@@ -515,6 +627,12 @@ performs random affine transform on an image.</p>
 <li><a class="reference internal" href="#randomperspective">RandomPerspective</a></li>
 <li><a class="reference internal" href="#randomrotation">RandomRotation</a></li>
 <li><a class="reference internal" href="#randomaffine">RandomAffine</a></li>
+<li><a class="reference internal" href="#randomcrop">RandomCrop</a></li>
+<li><a class="reference internal" href="#randomresizedcrop">RandomResizedCrop</a></li>
+<li><a class="reference internal" href="#randomhorizontalflip">RandomHorizontalFlip</a></li>
+<li><a class="reference internal" href="#randomverticalflip">RandomVerticalFlip</a></li>
+<li><a class="reference internal" href="#randomapply">RandomApply</a></li>
+<li><a class="reference internal" href="#gaussianblur">GaussianBlur</a></li>
 </ul>
 </li>
 </ul>

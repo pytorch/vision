@@ -287,12 +287,13 @@ The :class:`~torchvision.transforms.RandomAffine` transform
 (see also :func:`~torchvision.transforms.functional.affine`)
 performs random affine transform on an image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-92
+.. GENERATED FROM PYTHON SOURCE LINES 90-93
 
 .. code-block:: default
 
     affined_img = T.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.5, 0.75))(orig_img)
     plot(affined_img, "Affine transformed image")
+
 
 
 
@@ -315,10 +316,243 @@ performs random affine transform on an image.
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 94-99
+
+RandomCrop
+----------
+The :class:`~torchvision.transforms.RandomCrop` transform
+(see also :func:`~torchvision.transforms.functional.crop`)
+crops an image at a random location.
+
+.. GENERATED FROM PYTHON SOURCE LINES 99-102
+
+.. code-block:: default
+
+    crop = T.RandomCrop(size=(128, 128))(orig_img)
+    plot(crop, "Random crop")
+
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_015.png
+          :alt: Original image
+          :class: sphx-glr-multi-img
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_016.png
+          :alt: Random crop
+          :class: sphx-glr-multi-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 103-109
+
+RandomResizedCrop
+-----------------
+The :class:`~torchvision.transforms.RandomResizedCrop` transform
+(see also :func:`~torchvision.transforms.functional.resized_crop`)
+crops an image at a random location, and then resizes the crop to a given
+size.
+
+.. GENERATED FROM PYTHON SOURCE LINES 109-112
+
+.. code-block:: default
+
+    resized_crop = T.RandomResizedCrop(size=(32, 32))(orig_img)
+    plot(resized_crop, "Random resized crop")
+
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_017.png
+          :alt: Original image
+          :class: sphx-glr-multi-img
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_018.png
+          :alt: Random resized crop
+          :class: sphx-glr-multi-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 113-122
+
+RandomHorizontalFlip
+--------------------
+The :class:`~torchvision.transforms.RandomHorizontalFlip` transform
+(see also :func:`~torchvision.transforms.functional.hflip`)
+performs horizontal flip of an image, with a given probability.
+
+.. note::
+  Since the transform is applied randomly, the two images below may actually be
+  the same.
+
+.. GENERATED FROM PYTHON SOURCE LINES 122-125
+
+.. code-block:: default
+
+    random_hflip = T.RandomHorizontalFlip(p=0.5)(orig_img)
+    plot(random_hflip, "Random horizontal flip")
+
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_019.png
+          :alt: Original image
+          :class: sphx-glr-multi-img
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_020.png
+          :alt: Random horizontal flip
+          :class: sphx-glr-multi-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 126-135
+
+RandomVerticalFlip
+------------------
+The :class:`~torchvision.transforms.RandomVerticalFlip` transform
+(see also :func:`~torchvision.transforms.functional.vflip`)
+performs vertical flip of an image, with a given probability.
+
+.. note::
+  Since the transform is applied randomly, the two images below may actually be
+  the same.
+
+.. GENERATED FROM PYTHON SOURCE LINES 135-138
+
+.. code-block:: default
+
+    random_vflip = T.RandomVerticalFlip(p=0.5)(orig_img)
+    plot(random_vflip, "Random vertical flip")
+
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_021.png
+          :alt: Original image
+          :class: sphx-glr-multi-img
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_022.png
+          :alt: Random vertical flip
+          :class: sphx-glr-multi-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 139-147
+
+RandomApply
+-----------
+The :class:`~torchvision.transforms.RandomApply` transform
+randomly applies a list of transforms, with a given probability
+
+.. note::
+  Since the transform is applied randomly, the two images below may actually be
+  the same.
+
+.. GENERATED FROM PYTHON SOURCE LINES 147-150
+
+.. code-block:: default
+
+    random_apply = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)(orig_img)
+    plot(random_apply, "Random Apply transform")
+
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_023.png
+          :alt: Original image
+          :class: sphx-glr-multi-img
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_024.png
+          :alt: Random Apply transform
+          :class: sphx-glr-multi-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 151-156
+
+GaussianBlur
+------------
+The :class:`~torchvision.transforms.GaussianBlur` transform
+(see also :func:`~torchvision.transforms.functional.gaussian_blur`)
+performs gaussianblur transform on an image.
+
+.. GENERATED FROM PYTHON SOURCE LINES 156-158
+
+.. code-block:: default
+
+    gaus_blur_img = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.4, 3.0))(orig_img)
+    plot(gaus_blur_img, "Gaussian Blur of image")
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_025.png
+          :alt: Original image
+          :class: sphx-glr-multi-img
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_transforms_026.png
+          :alt: Gaussian Blur of image
+          :class: sphx-glr-multi-img
+
+
+
+
+
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.306 seconds)
+   **Total running time of the script:** ( 0 minutes  2.613 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:

@@ -36,16 +36,17 @@
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="torchvision.transforms" href="transforms.html" />
     <link rel="prev" title="torchvision.models" href="models.html" />
-<!-- Google Analytics -->
-<script>
-  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-  ga('create', 'UA-90545585-1', 'auto');
-  ga('send', 'pageview');
-</script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
-<!-- End Google Analytics -->
- 
-
+  <!-- Google Analytics -->
+  
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', 'UA-117752657-2', 'auto');
+      ga('send', 'pageview');
+    </script>
+    <script async src='https://www.google-analytics.com/analytics.js'></script>
+  
+  <!-- End Google Analytics -->
+  
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -194,7 +195,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+718dac6 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+df35f06 ) &#x25BC</a>
     </div>
     
 
@@ -516,31 +517,32 @@ for every element in boxes1 and boxes2</p>
 <dl class="function">
 <dt id="torchvision.ops.roi_align">
 <code class="sig-prename descclassname">torchvision.ops.</code><code class="sig-name descname">roi_align</code><span class="sig-paren">(</span><em class="sig-param">input: torch.Tensor</em>, <em class="sig-param">boxes: torch.Tensor</em>, <em class="sig-param">output_size: None</em>, <em class="sig-param">spatial_scale: float = 1.0</em>, <em class="sig-param">sampling_ratio: int = -1</em>, <em class="sig-param">aligned: bool = False</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/ops/roi_align.html#roi_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.ops.roi_align" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Region of Interest (RoI) Align operator described in Mask R-CNN</p>
+<dd><p>Performs Region of Interest (RoI) Align operator with average pooling, as described in Mask R-CNN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
+contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.
 If the tensor is quantized, we expect a batch size of <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">==</span> <span class="pre">1</span></code>.</p></li>
 <li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
 format where the regions will be taken from.
 The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed,
-then the first column should contain the batch index. If a list of Tensors
-is passed, then each Tensor will correspond to the boxes for an element i
-in a batch</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output after the cropping
-is performed, as (height, width)</p></li>
+If a single Tensor is passed, then the first column should
+contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
+If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
+in the batch.</p></li>
+<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output (in bins or pixels) after the pooling
+is performed, as (height, width).</p></li>
 <li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – a scaling factor that maps the input coordinates to
 the box coordinates. Default: 1.0</p></li>
 <li><p><strong>sampling_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of sampling points in the interpolation grid
 used to compute the output value of each pooled output bin. If &gt; 0,
-then exactly sampling_ratio x sampling_ratio grid points are used. If
+then exactly <code class="docutils literal notranslate"><span class="pre">sampling_ratio</span> <span class="pre">x</span> <span class="pre">sampling_ratio</span></code> sampling points per bin are used. If
 &lt;= 0, then an adaptive number of grid points are used (computed as
-ceil(roi_width / pooled_w), and likewise for height). Default: -1</p></li>
+<code class="docutils literal notranslate"><span class="pre">ceil(roi_width</span> <span class="pre">/</span> <span class="pre">output_width)</span></code>, and likewise for height). Default: -1</p></li>
 <li><p><strong>aligned</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If False, use the legacy implementation.
-If True, pixel shift it by -0.5 for align more perfectly about two neighboring pixel indices.
-This version in Detectron2</p></li>
+If True, pixel shift the box coordinates it by -0.5 for a better alignment with the two
+neighboring pixel indices. This version is used in Detectron2</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -560,23 +562,24 @@ mentioned in Light-Head R-CNN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</p></li>
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
+contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.</p></li>
 <li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
 format where the regions will be taken from.
 The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed,
-then the first column should contain the batch index. If a list of Tensors
-is passed, then each Tensor will correspond to the boxes for an element i
-in a batch</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output after the cropping
-is performed, as (height, width)</p></li>
+If a single Tensor is passed, then the first column should
+contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
+If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
+in the batch.</p></li>
+<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output (in bins or pixels) after the pooling
+is performed, as (height, width).</p></li>
 <li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – a scaling factor that maps the input coordinates to
 the box coordinates. Default: 1.0</p></li>
 <li><p><strong>sampling_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of sampling points in the interpolation grid
-used to compute the output value of each pooled output bin. If &gt; 0
-then exactly sampling_ratio x sampling_ratio grid points are used.
-If &lt;= 0, then an adaptive number of grid points are used (computed as
-ceil(roi_width / pooled_w), and likewise for height). Default: -1</p></li>
+used to compute the output value of each pooled output bin. If &gt; 0,
+then exactly <code class="docutils literal notranslate"><span class="pre">sampling_ratio</span> <span class="pre">x</span> <span class="pre">sampling_ratio</span></code> sampling points per bin are used. If
+&lt;= 0, then an adaptive number of grid points are used (computed as
+<code class="docutils literal notranslate"><span class="pre">ceil(roi_width</span> <span class="pre">/</span> <span class="pre">output_width)</span></code>, and likewise for height). Default: -1</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -595,14 +598,15 @@ ceil(roi_width / pooled_w), and likewise for height). Default: -1</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</p></li>
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
+contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.</p></li>
 <li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
 format where the regions will be taken from.
 The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed,
-then the first column should contain the batch index. If a list of Tensors
-is passed, then each Tensor will correspond to the boxes for an element i
-in a batch</p></li>
+If a single Tensor is passed, then the first column should
+contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
+If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
+in the batch.</p></li>
 <li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output after the cropping
 is performed, as (height, width)</p></li>
 <li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – a scaling factor that maps the input coordinates to
@@ -626,16 +630,17 @@ described in R-FCN</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – input tensor</p></li>
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
+contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.</p></li>
 <li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
 format where the regions will be taken from.
 The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed,
-then the first column should contain the batch index. If a list of Tensors
-is passed, then each Tensor will correspond to the boxes for an element i
-in a batch</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output after the cropping
-is performed, as (height, width)</p></li>
+If a single Tensor is passed, then the first column should
+contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
+If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
+in the batch.</p></li>
+<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – the size of the output (in bins or pixels) after the pooling
+is performed, as (height, width).</p></li>
 <li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – a scaling factor that maps the input coordinates to
 the box coordinates. Default: 1.0</p></li>
 </ul>
