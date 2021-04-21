@@ -361,8 +361,9 @@ class Pad(torch.nn.Module):
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value at the edge of the image,
-                    if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
+            - edge: pads with the last value at the edge of the image
+
+                If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
             - reflect: pads with reflection of image without repeating the last value on the edge
 
@@ -540,22 +541,24 @@ class RandomCrop(torch.nn.Module):
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
 
-             - constant: pads with a constant value, this value is specified with fill
+            - constant: pads with a constant value, this value is specified with fill
 
-             - edge: pads with the last value on the edge of the image
+            - edge: pads with the last value at the edge of the image
 
-             - reflect: pads with reflection of image (without repeating the last value on the edge)
+                If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
-                padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+            - reflect: pads with reflection of image without repeating the last value on the edge
+
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
                 will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-             - symmetric: pads with reflection of image (repeating the last value on the edge)
+            - symmetric: pads with reflection of image repeating the last value on the edge
 
-                padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
                 will result in [2, 1, 1, 2, 3, 4, 4, 3]
-
     """
 
     @staticmethod
