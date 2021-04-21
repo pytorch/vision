@@ -1663,15 +1663,15 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         split=("train-standard", "train-challenge", "val"),
         small=(False, True),
     )
-    CATEGORIES = "categories_places365.txt"
+    _CATEGORIES = "categories_places365.txt"
     # {split: file}
-    FILE_LISTS = {
+    _FILE_LISTS = {
         "train-standard": "places365_train_standard.txt",
         "train-challenge": "places365_train_challenge.txt",
         "val": "places365_val.txt",
     }
     # {(split, small): folder_name}
-    IMAGES = {
+    _IMAGES = {
         ("train-standard", False): "data_large_standard",
         ("train-challenge", False): "data_large_challenge",
         ("val", False): "val_large",
@@ -1680,16 +1680,16 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         ("val", True): "val_256",
     }
     # (class, idx)
-    CATEGORIES_CONTENT = (
+    _CATEGORIES_CONTENT = (
         ("/a/airfield", 0),
         ("/a/apartment_building/outdoor", 8),
         ("/b/badlands", 30),
     )
     # (file, idx)
-    FILE_LIST_CONTENT = (
+    _FILE_LIST_CONTENT = (
         ("Places365_val_00000001.png", 0),
         *((f"{category}/Places365_train_00000001.png", idx)
-          for category, idx in CATEGORIES_CONTENT),
+          for category, idx in _CATEGORIES_CONTENT),
     )
 
     @staticmethod
@@ -1702,11 +1702,11 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
 
     @staticmethod
     def _make_categories_txt(root, name):
-        return Places365TestCase._make_txt(root, name, Places365TestCase.CATEGORIES_CONTENT)
+        return Places365TestCase._make_txt(root, name, Places365TestCase._CATEGORIES_CONTENT)
 
     @staticmethod
     def _make_file_list_txt(root, name):
-        return Places365TestCase._make_txt(root, name, Places365TestCase.FILE_LIST_CONTENT)
+        return Places365TestCase._make_txt(root, name, Places365TestCase._FILE_LIST_CONTENT)
 
     @staticmethod
     def _make_image(file_name, size):
@@ -1715,14 +1715,14 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
 
     @staticmethod
     def _make_devkit_archive(root, split):
-        Places365TestCase._make_categories_txt(root, Places365TestCase.CATEGORIES)
-        Places365TestCase._make_file_list_txt(root, Places365TestCase.FILE_LISTS[split])
+        Places365TestCase._make_categories_txt(root, Places365TestCase._CATEGORIES)
+        Places365TestCase._make_file_list_txt(root, Places365TestCase._FILE_LISTS[split])
 
     @staticmethod
     def _make_images_archive(root, split, small):
-        folder_name = Places365TestCase.IMAGES[(split, small)]
+        folder_name = Places365TestCase._IMAGES[(split, small)]
         image_size = (256, 256) if small else (512, random.randint(512, 1024))
-        files, idcs = zip(*Places365TestCase.FILE_LIST_CONTENT)
+        files, idcs = zip(*Places365TestCase._FILE_LIST_CONTENT)
         images = [f.lstrip("/").replace("/", os.sep) for f in files]
         for image in images:
             Places365TestCase._make_image(os.path.join(root, folder_name, image), image_size)
@@ -1734,12 +1734,12 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         return len(self._make_images_archive(tmpdir, config['split'], config['small']))
 
     def test_classes(self):
-        classes = list(map(lambda x: x[0], self.CATEGORIES_CONTENT))
+        classes = list(map(lambda x: x[0], self._CATEGORIES_CONTENT))
         with self.create_dataset() as (dataset, _):
             self.assertEqual(dataset.classes, classes)
 
     def test_class_to_idx(self):
-        class_to_idx = dict(self.CATEGORIES_CONTENT)
+        class_to_idx = dict(self._CATEGORIES_CONTENT)
         with self.create_dataset() as (dataset, _):
             self.assertEqual(dataset.class_to_idx, class_to_idx)
 
