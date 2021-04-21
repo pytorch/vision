@@ -358,7 +358,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
-            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
@@ -368,7 +370,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ```size` might be overruled, i.e the
+            ``max_size``. As a result, ``size`` might be overruled, i.e the
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
@@ -413,28 +415,30 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             is used to pad all borders. If sequence of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value on the edge of the image,
-                    if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
+            - edge: pads with the last value at the edge of the image.
+              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
-            - reflect: pads with reflection of image (without repeating the last value on the edge)
+            - reflect: pads with reflection of image without repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+              will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
-                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
-
-            - symmetric: pads with reflection of image (repeating the last value on the edge)
-
-                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
+            - symmetric: pads with reflection of image repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+              will result in [2, 1, 1, 2, 3, 4, 4, 3]
 
     Returns:
         PIL Image or Tensor: Padded image.
@@ -608,9 +612,10 @@ def perspective(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
 
     Returns:
         PIL Image or Tensor: transformed Image.
@@ -938,9 +943,10 @@ def rotate(
             Default is the center of the image.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -1010,9 +1016,10 @@ def affine(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
         fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
@@ -1173,13 +1180,19 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         img (PIL Image or Tensor): Image to be blurred
         kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
-            In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: ``[ksize, ]``.
+
+            .. note::
+                In torchscript mode kernel_size as single int is not supported, use a sequence of
+                length 1: ``[ksize, ]``.
         sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
-            Default, None. In torchscript mode sigma as single float is
-            not supported, use a sequence of length 1: ``[sigma, ]``.
+            Default, None.
+
+            .. note::
+                In torchscript mode sigma as single float is
+                not supported, use a sequence of length 1: ``[sigma, ]``.
 
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
