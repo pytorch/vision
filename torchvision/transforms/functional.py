@@ -370,7 +370,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
-            ``max_size``. As a result, ```size` might be overruled, i.e the
+            ``max_size``. As a result, ``size`` might be overruled, i.e the
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
