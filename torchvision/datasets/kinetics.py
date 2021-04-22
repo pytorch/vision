@@ -121,10 +121,8 @@ class Kinetics(VisionDataset):
 
         if download:
             self.download_and_process_videos()
-        # init folder dataset at the end
         super().__init__(self.root)
 
-        # and then figure out the rest
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root, class_to_idx, extensions, is_valid_file=None
