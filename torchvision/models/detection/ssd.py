@@ -104,7 +104,7 @@ class SSDClassificationHead(SSDScoringHead):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
-        # _xavier_init(cls_logits)
+        _xavier_init(cls_logits)
         super().__init__(cls_logits, num_classes)
         self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
@@ -134,11 +134,12 @@ class SSDClassificationHead(SSDScoringHead):
         # Hard Negative Sampling
         foreground_idxs = cls_targets > 0
         num_negative = self.neg_to_pos_ratio * foreground_idxs.sum(1, keepdim=True)
-        num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
+        # num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
         negative_loss = cls_loss.clone()
         negative_loss[foreground_idxs] = -float('inf')  # use -inf to detect positive values that creeped in the sample
         values, idx = negative_loss.sort(1, descending=True)
-        background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
+        # background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
+        background_idxs = idx.sort(1)[1] < num_negative
 
         loss = (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / max(1, foreground_idxs.sum())
         return loss
@@ -154,7 +155,7 @@ class SSDRegressionHead(SSDScoringHead):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
-        # _xavier_init(bbox_reg)
+        _xavier_init(bbox_reg)
         super().__init__(bbox_reg, 4)
         self.box_coder = box_coder
 

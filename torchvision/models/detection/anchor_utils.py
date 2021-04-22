@@ -163,9 +163,10 @@ class AnchorGenerator(nn.Module):
 class DBoxGenerator(nn.Module):
 
     def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
-                 clip: bool = False):
+                 clip: bool = True):
         super().__init__()
         self.aspect_ratios = aspect_ratios
+        self.clip = clip
         num_outputs = len(aspect_ratios)
 
         # Estimation of default boxes scales
@@ -180,18 +181,17 @@ class DBoxGenerator(nn.Module):
         self.scales = [c / 100 for c in centiles]
 
         self._wh_pairs = []
-        clamp01 = (lambda x: max(min(x, 1.0), 0.0)) if clip else (lambda x: x)
         for k in range(num_outputs):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
-            s_k = clamp01(self.scales[k])
-            s_prime_k = clamp01(math.sqrt(self.scales[k] * self.scales[k + 1]))
+            s_k = self.scales[k]
+            s_prime_k = math.sqrt(self.scales[k] * self.scales[k + 1])
             wh_pairs = [(s_k, s_k), (s_prime_k, s_prime_k)]
 
             # Adding 2 pairs for each aspect ratio of the feature map k
             for ar in self.aspect_ratios[k]:
                 sq_ar = math.sqrt(ar)
-                w = clamp01(self.scales[k] * sq_ar)
-                h = clamp01(self.scales[k] / sq_ar)
+                w = self.scales[k] * sq_ar
+                h = self.scales[k] / sq_ar
                 wh_pairs.extend([(w, h), (h, w)])
 
             self._wh_pairs.append(wh_pairs)
@@ -216,12 +216,15 @@ class DBoxGenerator(nn.Module):
                 cy = (j + 0.5) / f_k[0]
                 for i in range(f_k[1]):
                     cx = (i + 0.5) / f_k[1]
-                    default_boxes.extend([[cx - 0.5 * w, cy - 0.5 * h, cx + 0.5 * w, cy + 0.5 * h]
-                                          for w, h in self._wh_pairs[k]])
+                    default_boxes.extend([[cx, cy, w, h] for w, h in self._wh_pairs[k]])
 
         dboxes = []
         for _ in image_list.image_sizes:
             dboxes_in_image = torch.tensor(default_boxes, dtype=dtype, device=device)
+            if self.clip:
+                dboxes_in_image.clamp_(min=0, max=1)
+            dboxes_in_image = torch.cat([dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
+                                         dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]], -1)
             dboxes_in_image[:, 0::2] *= image_size[1]
             dboxes_in_image[:, 1::2] *= image_size[0]
             dboxes.append(dboxes_in_image)
