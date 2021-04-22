@@ -36,7 +36,7 @@ class Kinetics(VisionDataset):
     frames in a video might be present.
 
     Args:
-        root (string): Root directory of the (split of the) Kinetics Dataset. 
+        root (string): Root directory of the (split of the) Kinetics Dataset.
             Directory should be structured as follows:
             .. code::
 
@@ -49,7 +49,7 @@ class Kinetics(VisionDataset):
                     ├── clipx.avi
                     └── ...
             If the split is not defined, it is appended using the split argument.
-        n_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700 
+        n_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700
         split (str): split of the dataset to consider; currently supports ["train", "val"]
         frame_rate (float): If not None, interpolate different frame rate for each clip.
         frames_per_clip (int): number of frames in a clip
@@ -68,7 +68,7 @@ class Kinetics(VisionDataset):
             - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
               and `L` is the number of points in torch.float tensor
             - label (int): class of the video clip
-    
+
     Raises:
         RuntimeError: If ``download is True`` and the image archive is already extracted.
     """
@@ -146,7 +146,7 @@ class Kinetics(VisionDataset):
 
     def _set_up_paths(self, root, split) -> None:
         """Sets up self.root and self.split to avoid confusion.
-        Split in the root (e.g. kinetics/val) overrides the setting in 
+        Split in the root (e.g. kinetics/val) overrides the setting in
         the split.
         """
         self.split = split
@@ -177,7 +177,7 @@ class Kinetics(VisionDataset):
         print("Elapsed time overall in mins ", (toc2 - tic) / 60)
 
     def _download_videos(self) -> None:
-        """download tarballs containing the video to 
+        """download tarballs containing the video to
         "tars" folder and extract them into the _split_ folder
         where split is one of the official dataset splits.
 
@@ -215,11 +215,11 @@ class Kinetics(VisionDataset):
             poolproc.map(part, lines)
 
     def _make_ds_structure(self):
-        """move videos from 
+        """move videos from
         root/
             ├── clip1.avi
             ├── clip2.avi
-        
+
         to the correct format as described below:
         root/
             ├── class1
