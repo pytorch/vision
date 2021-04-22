@@ -1,10 +1,6 @@
 name: SeeBuiltDocs
 
-on:
-  pull_request:
-    branches: [ master ]
-
-  workflow_dispatch:
+on: [status]
 
 jobs:
   circleci_artifacts_redirector_job:
