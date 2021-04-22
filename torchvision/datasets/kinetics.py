@@ -19,6 +19,7 @@ from .vision import VisionDataset
 def _dl_wrap(tarpath, videopath, line):
     download_and_extract_archive(line, tarpath, videopath)
 
+
 class Kinetics(VisionDataset):
     """` Generic Kinetics <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
     dataset.
@@ -116,7 +117,6 @@ class Kinetics(VisionDataset):
 
         if annotation_path is not None:
             self.annotations = annotation_path
-            
 
         if download:
             self.download_and_process_videos()
@@ -199,7 +199,9 @@ class Kinetics(VisionDataset):
         annotation_path = path.join(kinetics_dir, "annotations")
 
         # download annotations
-        download_url(self._ANNOTATION[self.n_classes].format(split=self.split), annotation_path)
+        download_url(
+            self._ANNOTATION[self.n_classes].format(split=self.split), annotation_path
+        )
         self.annotations = os.path.join(annotation_path, f"{self.split}.csv")
 
         if self._num_download_workers == 1:
@@ -211,8 +213,6 @@ class Kinetics(VisionDataset):
             lines = [str(line.decode("utf-8")).replace("\n", "") for line in file_url]
             poolproc = Pool(self._num_download_workers)
             poolproc.map(part, lines)
-
-
 
     def _make_ds_structure(self):
         """move videos from 
@@ -230,15 +230,24 @@ class Kinetics(VisionDataset):
         with open(self.annotations) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                f = file_tmp.format(ytid=row['youtube_id'],start=int(row['time_start']), end=int(row['time_end']))
-                label = row["label"].replace(" ", "_").replace("'", "").replace("(", "").replace(")", "")
+                f = file_tmp.format(
+                    ytid=row["youtube_id"],
+                    start=int(row["time_start"]),
+                    end=int(row["time_end"]),
+                )
+                label = (
+                    row["label"]
+                    .replace(" ", "_")
+                    .replace("'", "")
+                    .replace("(", "")
+                    .replace(")", "")
+                )
                 os.makedirs(os.path.join(self.root, label), exist_ok=True)
                 existing_file = os.path.join(self.root, f)
                 if os.path.isfile(existing_file):
                     os.replace(
-                            existing_file,
-                            os.path.join(self.root, label, f),
-                        )
+                        existing_file, os.path.join(self.root, label, f),
+                    )
 
     @property
     def metadata(self):
@@ -327,7 +336,7 @@ class Kinetics400(Kinetics):
 
         super(Kinetics400, self).__init__(
             root=root,
-            n_classes=400,
+            num_classes="400",
             frame_rate=frame_rate,
             step_between_clips=step_between_clips,
             frames_per_clip=frames_per_clip,
