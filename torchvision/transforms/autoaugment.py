@@ -13,6 +13,8 @@ __all__ = ["AutoAugmentPolicy", "AutoAugment"]
 class AutoAugmentPolicy(Enum):
     """AutoAugment policies learned on different datasets.
     Available policies are IMAGENET, CIFAR10 and SVHN.
+
+    Hellooooooo
     """
     IMAGENET = "imagenet"
     CIFAR10 = "cifar10"
