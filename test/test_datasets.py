@@ -9,7 +9,6 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from torchvision.datasets import utils
 from common_utils import get_tmp_dir
-from fakedata_generation import compute_md5
 import xml.etree.ElementTree as ET
 from urllib.request import Request, urlopen
 import itertools
@@ -1704,15 +1703,14 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         with open(file, "w") as fh:
             for text, idx in seq:
                 fh.write(f"{text} {idx}\n")
-        return name, compute_md5(file)
 
     @staticmethod
     def _make_categories_txt(root, name):
-        return Places365TestCase._make_txt(root, name, Places365TestCase._CATEGORIES_CONTENT)
+        Places365TestCase._make_txt(root, name, Places365TestCase._CATEGORIES_CONTENT)
 
     @staticmethod
     def _make_file_list_txt(root, name):
-        return Places365TestCase._make_txt(root, name, Places365TestCase._FILE_LIST_CONTENT)
+        Places365TestCase._make_txt(root, name, Places365TestCase._FILE_LIST_CONTENT)
 
     @staticmethod
     def _make_image(file_name, size):
