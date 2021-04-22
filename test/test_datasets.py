@@ -1010,11 +1010,17 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
         with super().create_dataset(*args, **kwargs) as output:
             yield output
             # Currently datasets.LSUN caches the keys in the current directory rather than in the root directory. Thus,
-            # this creates a number of unique _cache_* files in the current directory that will not be removed together
+            # this creates a number of _cache_* files in the current directory that will not be removed together
             # with the temporary directory
             for file in os.listdir(os.getcwd()):
                 if file.startswith("_cache_"):
-                    os.remove(file)
+                    try:
+                        os.remove(file)
+                    except FileNotFoundError:
+                        # When the same test is run in parallel (in fb internal tests), a thread may remove another
+                        # thread's file. We should be able to remove the try/except when
+                        # https://github.com/pytorch/vision/issues/825 is fixed.
+                        pass
 
     def _parse_classes(self, classes):
         if not isinstance(classes, str):
