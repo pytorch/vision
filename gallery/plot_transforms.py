@@ -51,7 +51,7 @@ plot(resized_img, "Resized image")
 # ----------
 # The :class:`~torchvision.transforms.CenterCrop` transform
 # (see also :func:`~torchvision.transforms.functional.center_crop`)
-# Crops the given image at the center.
+# crops the given image at the center.
 center_cropped_img = T.CenterCrop(size=(100, 100))(orig_img)
 plot(center_cropped_img, "Center Cropped Image")
 
@@ -61,7 +61,7 @@ plot(center_cropped_img, "Center Cropped Image")
 # --------
 # The :class:`~torchvision.transforms.FiveCrop` transform
 # (see also :func:`~torchvision.transforms.functional.five_crop`)
-# Crop the given image into four corners and the central crop.
+# crops the given image into four corners and the central crop.
 (img1, img2, img3, img4, img5) = T.FiveCrop(size=(100, 100))(orig_img)
 plot(img1, "Top Left Corner Image")
 plot(img2, "Top Right Corner Image", with_orig=False)
@@ -119,8 +119,8 @@ plot(affined_img, "Affine transformed image")
 # The :class:`~torchvision.transforms.RandomCrop` transform
 # (see also :func:`~torchvision.transforms.functional.crop`)
 # crops an image at a random location.
-crop = T.RandomCrop(size=(128, 128))(orig_img)
-plot(crop, "Random crop")
+crop_img = T.RandomCrop(size=(128, 128))(orig_img)
+plot(crop_img, "Random crop")
 
 ####################################
 # RandomResizedCrop
@@ -129,8 +129,8 @@ plot(crop, "Random crop")
 # (see also :func:`~torchvision.transforms.functional.resized_crop`)
 # crops an image at a random location, and then resizes the crop to a given
 # size.
-resized_crop = T.RandomResizedCrop(size=(32, 32))(orig_img)
-plot(resized_crop, "Random resized crop")
+resized_crop_img = T.RandomResizedCrop(size=(32, 32))(orig_img)
+plot(resized_crop_img, "Random resized crop")
 
 ####################################
 # RandomHorizontalFlip
@@ -142,8 +142,8 @@ plot(resized_crop, "Random resized crop")
 # .. note::
 #   Since the transform is applied randomly, the two images below may actually be
 #   the same.
-random_hflip = T.RandomHorizontalFlip(p=0.5)(orig_img)
-plot(random_hflip, "Random horizontal flip")
+random_hflip_img = T.RandomHorizontalFlip(p=0.5)(orig_img)
+plot(random_hflip_img, "Random horizontal flip")
 
 ####################################
 # RandomVerticalFlip
@@ -155,8 +155,8 @@ plot(random_hflip, "Random horizontal flip")
 # .. note::
 #   Since the transform is applied randomly, the two images below may actually be
 #   the same.
-random_vflip = T.RandomVerticalFlip(p=0.5)(orig_img)
-plot(random_vflip, "Random vertical flip")
+random_vflip_img = T.RandomVerticalFlip(p=0.5)(orig_img)
+plot(random_vflip_img, "Random vertical flip")
 
 ####################################
 # RandomApply
@@ -167,8 +167,8 @@ plot(random_vflip, "Random vertical flip")
 # .. note::
 #   Since the transform is applied randomly, the two images below may actually be
 #   the same.
-random_apply = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)(orig_img)
-plot(random_apply, "Random Apply transform")
+random_apply_img = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)(orig_img)
+plot(random_apply_img, "Random Apply transform")
 
 ####################################
 # GaussianBlur
