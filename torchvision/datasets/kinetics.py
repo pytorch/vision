@@ -1,17 +1,16 @@
 import urllib
 import time
 import os
-import sys
 import warnings
 
 
 from os import path
-import pandas as pd
+import csv
 from typing import Callable, Optional
 from functools import partial
 from multiprocessing import Pool
 
-from .utils import download_and_extract_archive
+from .utils import download_and_extract_archive, download_url
 from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
@@ -74,14 +73,14 @@ class Kinetics(VisionDataset):
     """
 
     _FILES = {
-        400: "https://s3.amazonaws.com/kinetics/400/{split}/k400_{split}_path.txt",
-        600: "https://s3.amazonaws.com/kinetics/600/{split}/k600_{split}_path.txt",
-        700: "https://s3.amazonaws.com/kinetics/700_2020/{split}/k700_2020_{split}_path.txt",
+        "400": "https://s3.amazonaws.com/kinetics/400/{split}/k400_{split}_path.txt",
+        "600": "https://s3.amazonaws.com/kinetics/600/{split}/k600_{split}_path.txt",
+        "700": "https://s3.amazonaws.com/kinetics/700_2020/{split}/k700_2020_{split}_path.txt",
     }
     _ANNOTATION = {
-        400: "https://s3.amazonaws.com/kinetics/400/annotations/{split}.csv",
-        600: "https://s3.amazonaws.com/kinetics/600/annotations/{split}.txt",
-        700: "https://s3.amazonaws.com/kinetics/700_2020/annotations/{split}.csv",
+        "400": "https://s3.amazonaws.com/kinetics/400/annotations/{split}.csv",
+        "600": "https://s3.amazonaws.com/kinetics/600/annotations/{split}.txt",
+        "700": "https://s3.amazonaws.com/kinetics/700_2020/annotations/{split}.csv",
     }
 
     def __init__(
@@ -108,21 +107,16 @@ class Kinetics(VisionDataset):
 
         # TODO: support test
         assert split in ["train", "val"]
-        assert n_classes in [400, 700]
-        self.n_classes = n_classes
+        assert num_classes in ["400", "600", "700"]
+        self.n_classes = num_classes
         self.extensions = extensions
         self._num_download_workers = _num_download_workers
 
-        # set up self.root and self.split
         self._set_up_paths(root, split)
 
-        # load annotation files
         if annotation_path is not None:
-            self.annotations = pd.read_csv(annotation_path)
-        else:
-            self.annotations = pd.read_csv(
-                self._ANNOTATION[self.n_classes].format(split=self.split)
-            )
+            self.annotations = annotation_path
+            
 
         if download:
             self.download_and_process_videos()
@@ -174,7 +168,7 @@ class Kinetics(VisionDataset):
         in the expected format
         """
         tic = time.time()
-        _ = self._download_videos()
+        self._download_videos()
         toc = time.time()
         print("Elapsed time for downloading in mins ", (toc - tic) / 60)
         self._make_ds_structure()
@@ -182,7 +176,7 @@ class Kinetics(VisionDataset):
         print("Elapsed time for processing in mins ", (toc2 - toc) / 60)
         print("Elapsed time overall in mins ", (toc2 - tic) / 60)
 
-    def _download_videos(self) -> int:
+    def _download_videos(self) -> None:
         """download tarballs containing the video to 
         "tars" folder and extract them into the _split_ folder
         where split is one of the official dataset splits.
@@ -202,17 +196,21 @@ class Kinetics(VisionDataset):
         )
         kinetics_dir, _ = path.split(self.root)
         tar_path = path.join(kinetics_dir, "tars")
+        annotation_path = path.join(kinetics_dir, "annotations")
 
-        if self._num_download_workers > 1:
+        # download annotations
+        download_url(self._ANNOTATION[self.n_classes].format(split=self.split), annotation_path)
+        self.annotations = os.path.join(annotation_path, f"{self.split}.csv")
+
+        if self._num_download_workers == 1:
             for line in file_url:
                 line = str(line.decode("utf-8")).replace("\n", "")
-                dl_wrap(tar_path, self.root, line)
+                download_and_extract_archive(line, tar_path, self.root)
         else:
             part = partial(_dl_wrap, tar_path, self.root)
             lines = [str(line.decode("utf-8")).replace("\n", "") for line in file_url]
             poolproc = Pool(self._num_download_workers)
             poolproc.map(part, lines)
-        return 0
 
 
 
@@ -228,27 +226,19 @@ class Kinetics(VisionDataset):
             │   ├── clip1.avi
 
         """
-        for file in os.listdir(self.root):
-            if file.endswith(self.extensions):
-                ytid = file[:11]
-                try:
-                    df = self.annotations[self.annotations.youtube_id == ytid]
-                    label = (
-                        df.label.item()
-                        .replace(" ", "_")
-                        .replace("'", "")
-                        .replace("(", "")
-                        .replace(")", "")
-                    )
-                    os.makedirs(os.path.join(self.root, label), exist_ok=True)
+        file_tmp = "{ytid}_{start:06}_{end:06}.mp4"
+        with open(self.annotations) as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                f = file_tmp.format(ytid=row['youtube_id'],start=int(row['time_start']), end=int(row['time_end']))
+                label = row["label"].replace(" ", "_").replace("'", "").replace("(", "").replace(")", "")
+                os.makedirs(os.path.join(self.root, label), exist_ok=True)
+                existing_file = os.path.join(self.root, f)
+                if os.path.isfile(existing_file):
                     os.replace(
-                        os.path.join(self.root, file),
-                        os.path.join(self.root, label, file),
-                    )
-                except Exception as error:
-                    warnings.warn(
-                        f"Unexpected error while processing {ytid}: {error}"
-                    )
+                            existing_file,
+                            os.path.join(self.root, label, f),
+                        )
 
     @property
     def metadata(self):
