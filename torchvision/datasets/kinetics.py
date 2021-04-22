@@ -113,7 +113,8 @@ class Kinetics(VisionDataset):
         self.extensions = extensions
         self._num_download_workers = _num_download_workers
 
-        self._set_up_paths(root, split)
+        self.root = root
+        self.split = split
 
         if annotation_path is not None:
             self.annotations = annotation_path
@@ -143,24 +144,6 @@ class Kinetics(VisionDataset):
             _audio_channels=_audio_channels,
         )
         self.transform = transform
-
-    def _set_up_paths(self, root, split) -> None:
-        """Sets up self.root and self.split to avoid confusion.
-        Split in the root (e.g. kinetics/val) overrides the setting in
-        the split.
-        """
-        self.split = split
-        if path.basename(root) == split:
-            self.root = root
-        elif path.basename(root) in ["train", "val"]:
-            self.root = root
-            self.split = path.basename(root)
-            warnings.warn(
-                f"Root {root} points to a different split than {split}."
-                f"Assigning self.split to {self.split}."
-            )
-        else:
-            self.root = path.join(root, split)
 
     def download_and_process_videos(self) -> None:
         """
