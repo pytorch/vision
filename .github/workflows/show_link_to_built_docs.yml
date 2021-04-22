@@ -1,4 +1,11 @@
-on: [status]
+name: SeeBuiltDocs
+
+on:
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-latest
