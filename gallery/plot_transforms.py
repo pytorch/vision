@@ -17,7 +17,7 @@ import torchvision.transforms as T
 orig_img = Image.open(Path('assets') / 'astronaut.jpg')
 
 
-def plot(img, title="", with_orig=True, **kwargs):
+def plot(img, title: str = "", with_orig: bool = True, **kwargs):
     def _plot(img, title, **kwargs):
         plt.figure().suptitle(title, fontsize=25)
         plt.imshow(np.asarray(img), **kwargs)
@@ -50,8 +50,8 @@ plot(resized_img, "Resized image")
 # CenterCrop
 # ----------
 # The :class:`~torchvision.transforms.CenterCrop` transform
-# (see also :func:`~torchvision.transforms.functional.centercrop`)
-# Crops the image to center
+# (see also :func:`~torchvision.transforms.functional.center_crop`)
+# Crops the given image at the center.
 center_cropped_img = T.CenterCrop(size=(100, 100))(orig_img)
 plot(center_cropped_img, "Center Cropped Image")
 
@@ -60,10 +60,14 @@ plot(center_cropped_img, "Center Cropped Image")
 # FiveCrop
 # --------
 # The :class:`~torchvision.transforms.FiveCrop` transform
-# (see also :func:`~torchvision.transforms.functional.centercrop`)
-# Crop the given image into four corners and the centre crop.
-five_cropped_img = T.FiveCrop(size=(100, 100))(orig_img)
-plot(five_cropped_img, "Five Cropped Image")
+# (see also :func:`~torchvision.transforms.functional.five_crop`)
+# Crop the given image into four corners and the central crop.
+(img1, img2, img3, img4, img5) = T.FiveCrop(size=(100, 100))(orig_img)
+plot(img1, "Top Left Corner Image")
+plot(img2, "Top Right Corner Image", with_orig=False)
+plot(img3, "Bottom Left Corner Image", with_orig=False)
+plot(img4, "Bottom Right Corner Image", with_orig=False)
+plot(img5, "Center Image", with_orig=False)
 
 ####################################
 # ColorJitter
