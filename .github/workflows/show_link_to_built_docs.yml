@@ -14,3 +14,4 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           artifact-path: 0/docs/index.html
           circleci-jobs: build_docs
+          job-title: See the built docs here!
