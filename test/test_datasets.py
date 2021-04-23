@@ -1747,6 +1747,11 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset() as (dataset, _):
             self.assertEqual(dataset.class_to_idx, class_to_idx)
 
+    def test_images_download_preexisting(self):
+        with self.assertRaises(RuntimeError):
+            with self.create_dataset({'download': True}):
+                pass
+
 
 if __name__ == "__main__":
     unittest.main()
