@@ -127,7 +127,7 @@ Then open `docs/build/html/index.html` in your favorite browser.
 
 The docs are also automatically built when you submit a PR. The job that
 builds the docs is named `build_docs`. If that job passes, a link to the
-rendered docs will be available in the `build_docs artifact` job.
+rendered docs will be available in a job called `See the built docs here!`.
 
 ### New model
 
