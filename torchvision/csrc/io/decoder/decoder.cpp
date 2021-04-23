@@ -381,7 +381,7 @@ bool Decoder::init(
     cleanUp();
     return false;
   }
-
+  // not sure what this does?
   onInit();
 
   if (params.startOffset != 0) {
