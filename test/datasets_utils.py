@@ -44,7 +44,7 @@ class UsageError(Exception):
 
 
 class LazyImporter:
-    r"""Lazy importer for additional dependicies.
+    r"""Lazy importer for additional dependencies.
 
     Some datasets require additional packages that are no direct dependencies of torchvision. Instances of this class
     provide modules listed in MODULES as attributes. They are only imported when accessed.
