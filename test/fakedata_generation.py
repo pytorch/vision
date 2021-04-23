@@ -1,19 +1,17 @@
 import os
 import contextlib
+import hashlib
+import pickle
+import re
 import tarfile
-import json
+import unittest.mock
+from distutils import dir_util
+
 import numpy as np
 import PIL
 import torch
+
 from common_utils import get_tmp_dir
-import pickle
-import random
-from itertools import cycle
-from torchvision.io.video import write_video
-import unittest.mock
-import hashlib
-from distutils import dir_util
-import re
 
 
 def mock_class_attribute(stack, target, new):
