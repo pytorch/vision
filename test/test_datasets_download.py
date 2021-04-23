@@ -23,7 +23,6 @@ from torchvision.datasets.utils import (
 )
 
 from common_utils import get_tmp_dir
-from fakedata_generation import places365_root
 
 
 def limit_requests_per_time(min_secs_between_requests=2.0):
@@ -220,17 +219,6 @@ def root():
     dir_util.remove_tree(ROOT)
 
 
-def places365():
-    with log_download_attempts(patch=False) as urls_and_md5s:
-        for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
-            with places365_root(split=split, small=small) as places365:
-                root, data = places365
-
-                datasets.Places365(root, split=split, small=small, download=True)
-
-    return make_download_configs(urls_and_md5s, name="Places365")
-
-
 def caltech101():
     return collect_download_configs(lambda: datasets.Caltech101(ROOT, download=True), name="Caltech101")
 
@@ -342,26 +330,6 @@ def semeion():
     )
 
 
-def stl10():
-    return collect_download_configs(
-        lambda: datasets.STL10(ROOT, download=True),
-        name="STL10",
-    )
-
-
-def svhn():
-    return itertools.chain(
-        *[
-            collect_download_configs(
-                lambda: datasets.SVHN(ROOT, split=split, download=True),
-                name=f"SVHN, {split}",
-                file="svhn",
-            )
-            for split in ("train", "test", "extra")
-        ]
-    )
-
-
 def usps():
     return itertools.chain(
         *[
@@ -383,14 +351,6 @@ def celeba():
     )
 
 
-def widerface():
-    return collect_download_configs(
-        lambda: datasets.WIDERFace(ROOT, download=True),
-        name="WIDERFace",
-        file="widerface",
-    )
-
-
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -404,7 +364,6 @@ def make_parametrize_kwargs(download_configs):
 @pytest.mark.parametrize(
     **make_parametrize_kwargs(
         itertools.chain(
-            places365(),
             caltech101(),
             caltech256(),
             cifar10(),
@@ -421,11 +380,8 @@ def make_parametrize_kwargs(download_configs):
             sbdataset(),
             sbu(),
             semeion(),
-            stl10(),
-            svhn(),
             usps(),
             celeba(),
-            widerface(),
         )
     )
 )
