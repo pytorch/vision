@@ -1,4 +1,4 @@
-name: Show CI job with links to build docs
+name: Show CI job with links to built docs
 
 on:
   status
