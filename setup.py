@@ -375,7 +375,7 @@ def get_extensions():
 
             if not library_found:
                 print('{0} header files were not found, disabling ffmpeg '
-                      'support')
+                      'support'.format(library))
                 has_ffmpeg = False
 
     if has_ffmpeg:
