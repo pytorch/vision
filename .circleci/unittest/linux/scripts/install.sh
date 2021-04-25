@@ -33,5 +33,7 @@ if [ $PYTHON_VERSION == "3.6" ]; then
     pip install pillow==5.3.0
 fi
 
+export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+
 printf "* Installing torchvision\n"
 python setup.py develop
