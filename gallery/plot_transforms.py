@@ -178,3 +178,25 @@ plot(random_apply_img, "Random Apply transformed Image")
 # performs gaussianblur transform on an image.
 gaus_blur_img = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.4, 3.0))(orig_img)
 plot(gaus_blur_img, "Gaussian Blurred Image")
+
+
+####################################
+# AutoAugment
+# -----------
+# The :class:`~torchvision.transforms.AutoAugment` transform
+# AutoAugments data based on available AutoAugmentation Policies.
+# Use :class:`torchvision.transforms.AutoAugmentPolicy` to create policies.
+# Available  policies are IMAGENET, CIFAR10 and SVHN.
+
+cifar10_policy = T.AutoAugmentPolicy.CIFAR10
+imagenet_policy = T.AutoAugmentPolicy.IMAGENET
+svhn_policy = T.AutoAugmentPolicy.SVHN
+
+cifar_img = T.AutoAugment(cifar10_policy)(orig_img)
+imagenet_img = T.AutoAugment(imagenet_policy)(orig_img)
+svhn_img = T.AutoAugment(svhn_policy)(orig_img)
+
+
+plot(cifar_img, "Cifar10 Transformed Image")
+plot(imagenet_img, "Imagenet Transformed Image", with_orig=False)
+plot(svhn_img, "SVHN Transformed Image", with_orig=False)
