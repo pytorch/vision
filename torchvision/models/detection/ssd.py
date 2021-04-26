@@ -21,9 +21,9 @@ model_urls = {
 }
 
 backbone_urls = {
-    # We port the features of a VGG16 backbone trained by amdegroot because unlike one on TorchVision, it uses the same
-    # input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-    'vgg16_features': 'https://download.pytorch.org/models/vgg16_features-amdegroot.pth'  # TODO: upload
+    # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
+    # same input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
+    'vgg16_features': 'https://download.pytorch.org/models/vgg16_features-amdegroot.pth'
 }
 
 
@@ -153,7 +153,6 @@ class SSD(nn.Module):
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
         self.transform = GeneralizedRCNNTransform(min(size), max(size), image_mean, image_std,
-                                                  # TODO: Discuss/refactor these workarounds
                                                   size_divisible=1, fixed_size=size)
 
         self.score_thresh = score_thresh
