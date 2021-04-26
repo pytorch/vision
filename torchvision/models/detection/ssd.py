@@ -15,7 +15,7 @@ from ..utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
 
 
-__all__ = ['SSD', 'SSDFeatureExtractor', 'ssd300_vgg16']
+__all__ = ['SSD', 'ssd300_vgg16']
 
 model_urls = {
     'ssd300_vgg16_coco': None,  # TODO: Add url with weights
@@ -113,21 +113,14 @@ class SSDRegressionHead(SSDScoringHead):
         super().__init__(bbox_reg, 4)
 
 
-class SSDFeatureExtractor(nn.Module):
-    def __init__(self, aspect_ratios: List[List[int]]):
-        super().__init__()
-        self.aspect_ratios = aspect_ratios
-
-
 class SSD(nn.Module):
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
     }
 
-    def __init__(self, backbone: SSDFeatureExtractor, size: Tuple[int, int], num_classes: int,
+    def __init__(self, backbone: nn.Module, anchor_generator: DBoxGenerator, size: Tuple[int, int], num_classes: int,
                  image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
-                 dbox_steps: Optional[List[int]] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
                  detections_per_img: int = 200,
@@ -142,19 +135,17 @@ class SSD(nn.Module):
         tmp_sizes = [x.size() for x in backbone(tmp_img).values()]
         out_channels = [x[1] for x in tmp_sizes]
 
-        assert len(out_channels) == len(backbone.aspect_ratios)
-        if dbox_steps is not None:
-            assert len(out_channels) == len(dbox_steps)
+        assert len(out_channels) == len(anchor_generator.aspect_ratios)
 
         self.backbone = backbone
+
+        self.anchor_generator = anchor_generator
 
         self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
 
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
-        self.num_anchors = [2 + 2 * len(r) for r in backbone.aspect_ratios]
+        self.num_anchors = [2 + 2 * len(r) for r in anchor_generator.aspect_ratios]
         self.head = SSDHead(out_channels, self.num_anchors, num_classes)
-
-        self.anchor_generator = DBoxGenerator(backbone.aspect_ratios, steps=dbox_steps)
 
         self.proposal_matcher = det_utils.DBoxMatcher(iou_thresh)
 
@@ -372,12 +363,9 @@ class SSD(nn.Module):
         return detections
 
 
-class SSDFeatureExtractorVGG(SSDFeatureExtractor):
+class SSDFeatureExtractorVGG(nn.Module):
     def __init__(self, backbone: nn.Module, highres: bool):
-        aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-        if highres:
-            aspect_ratios.append([2])
-        super().__init__(aspect_ratios)
+        super().__init__()
 
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
 
@@ -494,8 +482,9 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         pretrained_backbone = False
 
     backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
-    model = SSD(backbone, (300, 300), num_classes, image_mean=[123., 117., 104.], image_std=[1., 1., 1.],
-                dbox_steps=[8, 16, 32, 64, 100, 300], **kwargs)
+    anchor_generator = DBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]], steps=[8, 16, 32, 64, 100, 300])
+    model = SSD(backbone, anchor_generator, (300, 300), num_classes,
+                image_mean=[123., 117., 104.], image_std=[1., 1., 1.], **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:
