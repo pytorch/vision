@@ -39,19 +39,10 @@ def _xavier_init(conv: nn.Module):
 
 
 class SSDHead(nn.Module):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float,
-                 box_coder: det_utils.BoxCoder):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
         super().__init__()
-        self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes, positive_fraction)
-        self.regression_head = SSDRegressionHead(in_channels, num_anchors, box_coder)
-
-    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
-                     matched_idxs: List[Tensor]) -> Dict[str, Tensor]:
-        return {
-            'bbox_regression': self.regression_head.compute_loss(targets, head_outputs['bbox_regression'], anchors,
-                                                                 matched_idxs),
-            'classification': self.classification_head.compute_loss(targets, head_outputs['cls_logits'], matched_idxs),
-        }
+        self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes)
+        self.regression_head = SSDRegressionHead(in_channels, num_anchors)
 
     def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
         return {
@@ -100,92 +91,21 @@ class SSDScoringHead(nn.Module):
 
 
 class SSDClassificationHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int, positive_fraction: float):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
         _xavier_init(cls_logits)
         super().__init__(cls_logits, num_classes)
-        self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
-
-    def compute_loss(self, targets: List[Dict[str, Tensor]], cls_logits: Tensor, matched_idxs: List[Tensor]) -> Tensor:
-        # Match original targets with default boxes
-        cls_targets = []
-        for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
-            foreground_idxs_per_image = matched_idxs_per_image >= 0
-
-            gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
-                                            device=targets_per_image['labels'].device)
-            gt_classes_target[foreground_idxs_per_image] = \
-                targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]
-
-            cls_targets.append(gt_classes_target)
-
-        cls_targets = torch.stack(cls_targets)
-
-        # Calculate loss
-        num_classes = cls_logits.size(-1)
-        cls_loss = F.cross_entropy(
-            cls_logits.view(-1, num_classes),
-            cls_targets.view(-1),
-            reduction='none'
-        ).view(cls_targets.size())
-
-        # Hard Negative Sampling
-        foreground_idxs = cls_targets > 0
-        num_negative = self.neg_to_pos_ratio * foreground_idxs.sum(1, keepdim=True)
-        # num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
-        negative_loss = cls_loss.clone()
-        negative_loss[foreground_idxs] = -float('inf')  # use -inf to detect positive values that creeped in the sample
-        values, idx = negative_loss.sort(1, descending=True)
-        # background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
-        background_idxs = idx.sort(1)[1] < num_negative
-
-        loss = (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / max(1, foreground_idxs.sum())
-        return loss
 
 
 class SSDRegressionHead(SSDScoringHead):
-
-    __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-    }
-
-    def __init__(self, in_channels: List[int], num_anchors: List[int], box_coder: det_utils.BoxCoder):
+    def __init__(self, in_channels: List[int], num_anchors: List[int]):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
         _xavier_init(bbox_reg)
         super().__init__(bbox_reg, 4)
-        self.box_coder = box_coder
-
-    def compute_loss(self, targets: List[Dict[str, Tensor]], bbox_regression: Tensor, anchors: List[Tensor],
-                     matched_idxs: List[Tensor]) -> Tensor:
-        N = 0
-        losses = []
-        for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
-                zip(targets, bbox_regression, anchors, matched_idxs):
-            # determine only the foreground indices, ignore the rest
-            foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
-            num_foreground = foreground_idxs_per_image.numel()
-
-            # select only the foreground boxes
-            matched_gt_boxes_per_image = targets_per_image['boxes'][matched_idxs_per_image[foreground_idxs_per_image]]
-            bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
-            anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
-
-            # compute the regression targets
-            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
-
-            # compute the loss
-            N += num_foreground
-            losses.append(torch.nn.functional.smooth_l1_loss(
-                bbox_regression_per_image,
-                target_regression,
-                reduction='sum'
-            ))
-
-        return _sum(losses) / max(1, N)
 
 
 class SSDFeatureExtractor(nn.Module):
@@ -224,7 +144,7 @@ class SSD(nn.Module):
 
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
         self.num_anchors = [2 + 2 * len(r) for r in backbone.aspect_ratios]
-        self.head = SSDHead(out_channels, self.num_anchors, num_classes, positive_fraction, self.box_coder)
+        self.head = SSDHead(out_channels, self.num_anchors, num_classes)
 
         self.anchor_generator = DBoxGenerator(backbone.aspect_ratios)
 
@@ -242,6 +162,7 @@ class SSD(nn.Module):
         self.nms_thresh = nms_thresh
         self.detections_per_img = detections_per_img
         self.topk_candidates = topk_candidates
+        self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
         # used only on torchscript mode
         self._has_warned = False
@@ -253,6 +174,66 @@ class SSD(nn.Module):
             return losses
 
         return detections
+
+    def compute_loss(self, targets: List[Dict[str, Tensor]], head_outputs: Dict[str, Tensor], anchors: List[Tensor],
+                     matched_idxs: List[Tensor]) -> Dict[str, Tensor]:
+        bbox_regression = head_outputs['bbox_regression']
+        cls_logits = head_outputs['cls_logits']
+
+        # Match original targets with default boxes
+        num_foreground = 0
+        bbox_loss = []
+        cls_targets = []
+        for targets_per_image, bbox_regression_per_image, cls_logits_per_image, anchors_per_image, \
+            matched_idxs_per_image in zip(targets, bbox_regression, cls_logits, anchors, matched_idxs):
+            # produce the matching between boxes and targets
+            foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
+            foreground_matched_idxs_per_image = matched_idxs_per_image[foreground_idxs_per_image]
+            num_foreground += foreground_matched_idxs_per_image.numel()
+
+            # Calculate regression loss
+            matched_gt_boxes_per_image = targets_per_image['boxes'][foreground_matched_idxs_per_image]
+            bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
+            anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
+            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+            bbox_loss.append(torch.nn.functional.smooth_l1_loss(
+                bbox_regression_per_image,
+                target_regression,
+                reduction='sum'
+            ))
+
+            # Estimate ground truth for class targets
+            gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
+                                            device=targets_per_image['labels'].device)
+            gt_classes_target[foreground_idxs_per_image] = \
+                targets_per_image['labels'][foreground_matched_idxs_per_image]
+            cls_targets.append(gt_classes_target)
+
+        cls_targets = torch.stack(cls_targets)
+
+        # Calculate classification loss
+        num_classes = cls_logits.size(-1)
+        cls_loss = F.cross_entropy(
+            cls_logits.view(-1, num_classes),
+            cls_targets.view(-1),
+            reduction='none'
+        ).view(cls_targets.size())
+
+        # Hard Negative Sampling
+        foreground_idxs = cls_targets > 0
+        num_negative = self.neg_to_pos_ratio * foreground_idxs.sum(1, keepdim=True)
+        # num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
+        negative_loss = cls_loss.clone()
+        negative_loss[foreground_idxs] = -float('inf')  # use -inf to detect positive values that creeped in the sample
+        values, idx = negative_loss.sort(1, descending=True)
+        # background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
+        background_idxs = idx.sort(1)[1] < num_negative
+
+        N = max(1, num_foreground)
+        return {
+            'bbox_regression': _sum(bbox_loss) / N,
+            'classification': (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / N,
+        }
 
     def forward(self, images: List[Tensor],
                 targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
@@ -322,7 +303,7 @@ class SSD(nn.Module):
                 match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
                 matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
-            losses = self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
+            losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
         else:
             detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
