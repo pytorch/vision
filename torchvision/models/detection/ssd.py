@@ -14,7 +14,6 @@ from .. import vgg
 from ..utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
 
-
 __all__ = ['SSD', 'ssd300_vgg16']
 
 model_urls = {
@@ -183,8 +182,8 @@ class SSD(nn.Module):
         num_foreground = 0
         bbox_loss = []
         cls_targets = []
-        for targets_per_image, bbox_regression_per_image, cls_logits_per_image, anchors_per_image, \
-            matched_idxs_per_image in zip(targets, bbox_regression, cls_logits, anchors, matched_idxs):
+        for (targets_per_image, bbox_regression_per_image, cls_logits_per_image, anchors_per_image,
+             matched_idxs_per_image) in zip(targets, bbox_regression, cls_logits, anchors, matched_idxs):
             # produce the matching between boxes and targets
             foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
             foreground_matched_idxs_per_image = matched_idxs_per_image[foreground_idxs_per_image]
