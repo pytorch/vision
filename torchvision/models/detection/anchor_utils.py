@@ -163,9 +163,12 @@ class AnchorGenerator(nn.Module):
 class DBoxGenerator(nn.Module):
 
     def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
-                 clip: bool = True):
+                 steps: Optional[List[int]] = None, clip: bool = True):
         super().__init__()
+        if steps is not None:
+            assert len(aspect_ratios) == len(steps)
         self.aspect_ratios = aspect_ratios
+        self.steps = steps
         self.clip = clip
         num_outputs = len(aspect_ratios)
 
@@ -213,9 +216,9 @@ class DBoxGenerator(nn.Module):
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
             for j in range(f_k[0]):
-                cy = (j + 0.5) / f_k[0]
+                cy = (j + 0.5) / (float(f_k[0]) if self.steps is None else image_size[1] / self.steps[k])
                 for i in range(f_k[1]):
-                    cx = (i + 0.5) / f_k[1]
+                    cx = (i + 0.5) / (float(f_k[1]) if self.steps is None else image_size[0] / self.steps[k])
                     default_boxes.extend([[cx, cy, w, h] for w, h in self._wh_pairs[k]])
 
         dboxes = []

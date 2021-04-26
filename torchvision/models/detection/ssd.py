@@ -10,7 +10,7 @@ from . import _utils as det_utils
 from .anchor_utils import DBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
-from .. import vgg, resnet
+from .. import vgg
 from ..utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
 
@@ -19,6 +19,12 @@ __all__ = ['SSD', 'SSDFeatureExtractor', 'ssd300_vgg16']
 
 model_urls = {
     'ssd300_vgg16_coco': None,  # TODO: Add url with weights
+}
+
+backbone_urls = {
+    # We port the features of a VGG16 backbone trained by amdegroot because unlike one on TorchVision, it uses the same
+    # input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
+    'vgg16_features': 'https://download.pytorch.org/models/vgg16_features-amdegroot.pth'  # TODO: upload
 }
 
 
@@ -121,6 +127,7 @@ class SSD(nn.Module):
 
     def __init__(self, backbone: SSDFeatureExtractor, size: Tuple[int, int], num_classes: int,
                  image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
+                 dbox_steps: Optional[List[int]] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
                  detections_per_img: int = 200,
@@ -136,6 +143,8 @@ class SSD(nn.Module):
         out_channels = [x[1] for x in tmp_sizes]
 
         assert len(out_channels) == len(backbone.aspect_ratios)
+        if dbox_steps is not None:
+            assert len(out_channels) == len(dbox_steps)
 
         self.backbone = backbone
 
@@ -145,7 +154,7 @@ class SSD(nn.Module):
         self.num_anchors = [2 + 2 * len(r) for r in backbone.aspect_ratios]
         self.head = SSDHead(out_channels, self.num_anchors, num_classes)
 
-        self.anchor_generator = DBoxGenerator(backbone.aspect_ratios)
+        self.anchor_generator = DBoxGenerator(backbone.aspect_ratios, steps=dbox_steps)
 
         self.proposal_matcher = det_utils.DBoxMatcher(iou_thresh)
 
@@ -448,8 +457,17 @@ class SSDFeatureExtractorVGG(SSDFeatureExtractor):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, pretrained: bool, trainable_layers: int):
-    backbone = vgg.__dict__[backbone_name](pretrained=pretrained).features
+def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
+    if backbone_name in backbone_urls:
+        # Use custom backbones more appropriate for SSD
+        arch = backbone_name.split('_')[0]
+        backbone = vgg.__dict__[arch](pretrained=False, progress=progress).features
+        if pretrained:
+            state_dict = load_state_dict_from_url(backbone_urls[backbone_name], progress=progress)
+            backbone.load_state_dict(state_dict)
+    else:
+        # Use standard backbones from TorchVision
+        backbone = vgg.__dict__[backbone_name](pretrained=pretrained, progress=progress).features
 
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
@@ -475,8 +493,9 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_extractor("vgg16", False, pretrained_backbone, trainable_backbone_layers)
-    model = SSD(backbone, (300, 300), num_classes, **kwargs)
+    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
+    model = SSD(backbone, (300, 300), num_classes, image_mean=[123., 117., 104.], image_std=[1., 1., 1.],
+                dbox_steps=[8, 16, 32, 64, 100, 300], **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:
