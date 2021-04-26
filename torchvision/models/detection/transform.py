@@ -319,7 +319,15 @@ class RandomIoUCrop(nn.Module):
 
     def forward(self, img: Tensor,
                 target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
-        assert target is not None
+        if target is None:
+            raise ValueError("The targets can't be None for this transform.")
+
+        if isinstance(img, torch.Tensor):
+            if img.ndimension() not in {2, 3}:
+                raise ValueError('image should be 2/3 dimensional. Got {} dimensions.'.format(img.ndimension()))
+            elif img.ndimension() == 2:
+                img = img.unsqueeze(0)
+
         orig_w, orig_h = F._get_image_size(img)
 
         while True:
