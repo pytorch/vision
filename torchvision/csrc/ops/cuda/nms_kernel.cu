@@ -1,4 +1,5 @@
 #include <ATen/ATen.h>
+#include <ATen/AccumulateType.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/library.h>
@@ -20,9 +21,10 @@ __device__ inline bool devIoU(
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
-  T interS = width * height;
-  T Sa = (a[2] - a[0]) * (a[3] - a[1]);
-  T Sb = (b[2] - b[0]) * (b[3] - b[1]);
+  using acc_T = at::acc_type<T, /*is_cuda=*/true>;
+  acc_T interS = (acc_T)width * height;
+  acc_T Sa = ((acc_T)a[2] - a[0]) * (a[3] - a[1]);
+  acc_T Sb = ((acc_T)b[2] - b[0]) * (b[3] - b[1]);
   return (interS / (Sa + Sb - interS)) > threshold;
 }
 

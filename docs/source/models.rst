@@ -64,6 +64,7 @@ These can be constructed by passing ``pretrained=True``:
     shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
     mobilenet_v2 = models.mobilenet_v2(pretrained=True)
     mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
+    mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
     wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
     mnasnet = models.mnasnet1_0(pretrained=True)
@@ -115,38 +116,41 @@ or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 ImageNet 1-crop error rates (224x224)
 
 ================================  =============   =============
-Network                           Top-1 error     Top-5 error
+Model                             Acc@1           Acc@5
 ================================  =============   =============
-AlexNet                           43.45           20.91
-VGG-11                            30.98           11.37
-VGG-13                            30.07           10.75
-VGG-16                            28.41           9.62
-VGG-19                            27.62           9.12
-VGG-11 with batch normalization   29.62           10.19
-VGG-13 with batch normalization   28.45           9.63
-VGG-16 with batch normalization   26.63           8.50
-VGG-19 with batch normalization   25.76           8.15
-ResNet-18                         30.24           10.92
-ResNet-34                         26.70           8.58
-ResNet-50                         23.85           7.13
-ResNet-101                        22.63           6.44
-ResNet-152                        21.69           5.94
-SqueezeNet 1.0                    41.90           19.58
-SqueezeNet 1.1                    41.81           19.38
-Densenet-121                      25.35           7.83
-Densenet-169                      24.00           7.00
-Densenet-201                      22.80           6.43
-Densenet-161                      22.35           6.20
-Inception v3                      22.55           6.44
-GoogleNet                         30.22           10.47
-ShuffleNet V2                     30.64           11.68
-MobileNet V2                      28.12           9.71
-MobileNet V3 Large                25.96           8.66
-ResNeXt-50-32x4d                  22.38           6.30
-ResNeXt-101-32x8d                 20.69           5.47
-Wide ResNet-50-2                  21.49           5.91
-Wide ResNet-101-2                 21.16           5.72
-MNASNet 1.0                       26.49           8.456
+AlexNet                           56.522          79.066
+VGG-11                            69.020          88.628
+VGG-13                            69.928          89.246
+VGG-16                            71.592          90.382
+VGG-19                            72.376          90.876
+VGG-11 with batch normalization   70.370          89.810
+VGG-13 with batch normalization   71.586          90.374
+VGG-16 with batch normalization   73.360          91.516
+VGG-19 with batch normalization   74.218          91.842
+ResNet-18                         69.758          89.078
+ResNet-34                         73.314          91.420
+ResNet-50                         76.130          92.862
+ResNet-101                        77.374          93.546
+ResNet-152                        78.312          94.046
+SqueezeNet 1.0                    58.092          80.420
+SqueezeNet 1.1                    58.178          80.624
+Densenet-121                      74.434          91.972
+Densenet-169                      75.600          92.806
+Densenet-201                      76.896          93.370
+Densenet-161                      77.138          93.560
+Inception v3                      77.294          93.450
+GoogleNet                         69.778          89.530
+ShuffleNet V2 x1.0                69.362          88.316
+ShuffleNet V2 x0.5                60.552          81.746
+MobileNet V2                      71.878          90.286
+MobileNet V3 Large                74.042          91.340
+MobileNet V3 Small                67.668          87.402
+ResNeXt-50-32x4d                  77.618          93.698
+ResNeXt-101-32x8d                 79.312          94.526
+Wide ResNet-50-2                  78.468          94.086
+Wide ResNet-101-2                 78.848          94.284
+MNASNet 1.0                       73.456          91.510
+MNASNet 0.5                       67.734          87.490
 ================================  =============   =============
 
 
@@ -276,7 +280,6 @@ a model with random weights by calling its constructor:
     inception_v3 = models.quantization.inception_v3()
     mobilenet_v2 = models.quantization.mobilenet_v2()
     mobilenet_v3_large = models.quantization.mobilenet_v3_large()
-    mobilenet_v3_small = models.quantization.mobilenet_v3_small()
     resnet18 = models.quantization.resnet18()
     resnet50 = models.quantization.resnet50()
     resnext101_32x8d = models.quantization.resnext101_32x8d()

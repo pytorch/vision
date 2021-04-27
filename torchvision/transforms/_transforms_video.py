@@ -2,6 +2,7 @@
 
 import numbers
 import random
+import warnings
 
 from torchvision.transforms import (
     RandomCrop,
@@ -19,6 +20,11 @@ __all__ = [
     "ToTensorVideo",
     "RandomHorizontalFlipVideo",
 ]
+
+
+warnings.warn(
+    "The _transforms_video module is deprecated. Please use the transforms module instead."
+)
 
 
 class RandomCropVideo(RandomCrop):

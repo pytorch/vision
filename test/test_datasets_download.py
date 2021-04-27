@@ -3,19 +3,26 @@ import itertools
 import time
 import unittest.mock
 from datetime import datetime
+from distutils import dir_util
 from os import path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
+import tempfile
 import warnings
 
 import pytest
 
 from torchvision import datasets
-from torchvision.datasets.utils import download_url, check_integrity, download_file_from_google_drive
+from torchvision.datasets.utils import (
+    download_url,
+    check_integrity,
+    download_file_from_google_drive,
+    _get_redirect_url,
+    USER_AGENT,
+)
 
 from common_utils import get_tmp_dir
-from fakedata_generation import places365_root
 
 
 def limit_requests_per_time(min_secs_between_requests=2.0):
@@ -46,22 +53,28 @@ def limit_requests_per_time(min_secs_between_requests=2.0):
 urlopen = limit_requests_per_time()(urlopen)
 
 
-def resolve_redirects(max_redirects=3):
+def resolve_redirects(max_hops=3):
     def outer_wrapper(fn):
         def inner_wrapper(request, *args, **kwargs):
-            url = initial_url = request.full_url if isinstance(request, Request) else request
+            initial_url = request.full_url if isinstance(request, Request) else request
+            url = _get_redirect_url(initial_url, max_hops=max_hops)
 
-            for _ in range(max_redirects + 1):
-                response = fn(request, *args, **kwargs)
+            if url == initial_url:
+                return fn(request, *args, **kwargs)
 
-                if response.url == url or response.url is None:
-                    if url != initial_url:
-                        warnings.warn(f"The URL {initial_url} ultimately redirects to {url}.")
-                    return response
+            warnings.warn(f"The URL {initial_url} ultimately redirects to {url}.")
 
-                url = response.url
-            else:
-                raise RecursionError(f"Request to {initial_url} exceeded {max_redirects} redirects.")
+            if not isinstance(request, Request):
+                return fn(url, *args, **kwargs)
+
+            request_attrs = {
+                attr: getattr(request, attr) for attr in ("data", "headers", "origin_req_host", "unverifiable")
+            }
+            # the 'method' attribute does only exist if the request was created with it
+            if hasattr(request, "method"):
+                request_attrs["method"] = request.method
+
+            return fn(Request(url, **request_attrs), *args, **kwargs)
 
         return inner_wrapper
 
@@ -148,7 +161,7 @@ def assert_server_response_ok():
 
 
 def assert_url_is_accessible(url, timeout=5.0):
-    request = Request(url, headers=dict(method="HEAD"))
+    request = Request(url, headers={"User-Agent": USER_AGENT}, method="HEAD")
     with assert_server_response_ok():
         urlopen(request, timeout=timeout)
 
@@ -158,7 +171,8 @@ def assert_file_downloads_correctly(url, md5, timeout=5.0):
         file = path.join(root, path.basename(url))
         with assert_server_response_ok():
             with open(file, "wb") as fh:
-                response = urlopen(url, timeout=timeout)
+                request = Request(url, headers={"User-Agent": USER_AGENT})
+                response = urlopen(request, timeout=timeout)
                 fh.write(response.read())
 
         assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
@@ -194,38 +208,51 @@ def collect_download_configs(dataset_loader, name=None, **kwargs):
     return make_download_configs(urls_and_md5s, name)
 
 
+# This is a workaround since fixtures, such as the built-in tmp_dir, can only be used within a test but not within a
+# parametrization. Thus, we use a single root directory for all datasets and remove it when all download tests are run.
+ROOT = tempfile.mkdtemp()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def root():
+    yield ROOT
+    dir_util.remove_tree(ROOT)
+
+
 def places365():
-    with log_download_attempts(patch=False) as urls_and_md5s:
-        for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
-            with places365_root(split=split, small=small) as places365:
-                root, data = places365
-
-                datasets.Places365(root, split=split, small=small, download=True)
-
-    return make_download_configs(urls_and_md5s, name="Places365")
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.Places365(ROOT, split=split, small=small, download=True),
+                name=f"Places365, {split}, {'small' if small else 'large'}",
+                file="places365",
+            )
+            for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True))
+        ]
+    )
 
 
 def caltech101():
-    return collect_download_configs(lambda: datasets.Caltech101(".", download=True), name="Caltech101")
+    return collect_download_configs(lambda: datasets.Caltech101(ROOT, download=True), name="Caltech101")
 
 
 def caltech256():
-    return collect_download_configs(lambda: datasets.Caltech256(".", download=True), name="Caltech256")
+    return collect_download_configs(lambda: datasets.Caltech256(ROOT, download=True), name="Caltech256")
 
 
 def cifar10():
-    return collect_download_configs(lambda: datasets.CIFAR10(".", download=True), name="CIFAR10")
+    return collect_download_configs(lambda: datasets.CIFAR10(ROOT, download=True), name="CIFAR10")
 
 
 def cifar100():
-    return collect_download_configs(lambda: datasets.CIFAR100(".", download=True), name="CIFAR100")
+    return collect_download_configs(lambda: datasets.CIFAR100(ROOT, download=True), name="CIFAR100")
 
 
 def voc():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.VOCSegmentation(".", year=year, download=True),
+                lambda: datasets.VOCSegmentation(ROOT, year=year, download=True),
                 name=f"VOC, {year}",
                 file="voc",
             )
@@ -235,27 +262,28 @@ def voc():
 
 
 def mnist():
-    return collect_download_configs(lambda: datasets.MNIST(".", download=True), name="MNIST")
+    with unittest.mock.patch.object(datasets.MNIST, "mirrors", datasets.MNIST.mirrors[-1:]):
+        return collect_download_configs(lambda: datasets.MNIST(ROOT, download=True), name="MNIST")
 
 
 def fashion_mnist():
-    return collect_download_configs(lambda: datasets.FashionMNIST(".", download=True), name="FashionMNIST")
+    return collect_download_configs(lambda: datasets.FashionMNIST(ROOT, download=True), name="FashionMNIST")
 
 
 def kmnist():
-    return collect_download_configs(lambda: datasets.KMNIST(".", download=True), name="KMNIST")
+    return collect_download_configs(lambda: datasets.KMNIST(ROOT, download=True), name="KMNIST")
 
 
 def emnist():
     # the 'split' argument can be any valid one, since everything is downloaded anyway
-    return collect_download_configs(lambda: datasets.EMNIST(".", split="byclass", download=True), name="EMNIST")
+    return collect_download_configs(lambda: datasets.EMNIST(ROOT, split="byclass", download=True), name="EMNIST")
 
 
 def qmnist():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.QMNIST(".", what=what, download=True),
+                lambda: datasets.QMNIST(ROOT, what=what, download=True),
                 name=f"QMNIST, {what}",
                 file="mnist",
             )
@@ -268,7 +296,7 @@ def omniglot():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.Omniglot(".", background=background, download=True),
+                lambda: datasets.Omniglot(ROOT, background=background, download=True),
                 name=f"Omniglot, {'background' if background else 'evaluation'}",
             )
             for background in (True, False)
@@ -280,7 +308,7 @@ def phototour():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.PhotoTour(".", name=name, download=True),
+                lambda: datasets.PhotoTour(ROOT, name=name, download=True),
                 name=f"PhotoTour, {name}",
                 file="phototour",
             )
@@ -293,7 +321,7 @@ def phototour():
 
 def sbdataset():
     return collect_download_configs(
-        lambda: datasets.SBDataset(".", download=True),
+        lambda: datasets.SBDataset(ROOT, download=True),
         name="SBDataset",
         file="voc",
     )
@@ -301,7 +329,7 @@ def sbdataset():
 
 def sbu():
     return collect_download_configs(
-        lambda: datasets.SBU(".", download=True),
+        lambda: datasets.SBU(ROOT, download=True),
         name="SBU",
         file="sbu",
     )
@@ -309,7 +337,7 @@ def sbu():
 
 def semeion():
     return collect_download_configs(
-        lambda: datasets.SEMEION(".", download=True),
+        lambda: datasets.SEMEION(ROOT, download=True),
         name="SEMEION",
         file="semeion",
     )
@@ -317,7 +345,7 @@ def semeion():
 
 def stl10():
     return collect_download_configs(
-        lambda: datasets.STL10(".", download=True),
+        lambda: datasets.STL10(ROOT, download=True),
         name="STL10",
     )
 
@@ -326,7 +354,7 @@ def svhn():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.SVHN(".", split=split, download=True),
+                lambda: datasets.SVHN(ROOT, split=split, download=True),
                 name=f"SVHN, {split}",
                 file="svhn",
             )
@@ -339,7 +367,7 @@ def usps():
     return itertools.chain(
         *[
             collect_download_configs(
-                lambda: datasets.USPS(".", train=train, download=True),
+                lambda: datasets.USPS(ROOT, train=train, download=True),
                 name=f"USPS, {'train' if train else 'test'}",
                 file="usps",
             )
@@ -350,7 +378,7 @@ def usps():
 
 def celeba():
     return collect_download_configs(
-        lambda: datasets.CelebA(".", download=True),
+        lambda: datasets.CelebA(ROOT, download=True),
         name="CelebA",
         file="celeba",
     )
@@ -358,9 +386,22 @@ def celeba():
 
 def widerface():
     return collect_download_configs(
-        lambda: datasets.WIDERFace(".", download=True),
+        lambda: datasets.WIDERFace(ROOT, download=True),
         name="WIDERFace",
         file="widerface",
+    )
+
+
+def kitti():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda train=train: datasets.Kitti(ROOT, train=train, download=True),
+                name=f"Kitti, {'train' if train else 'test'}",
+                file="kitti",
+            )
+            for train in (True, False)
+        ]
     )
 
 
@@ -399,6 +440,7 @@ def make_parametrize_kwargs(download_configs):
             usps(),
             celeba(),
             widerface(),
+            kitti(),
         )
     )
 )

@@ -1,8 +1,9 @@
 channels:
   - pytorch
   - defaults
+  # use conda-forge for python v3.9+
+  - conda-forge
 dependencies:
-  - numpy
   - pytest
   - pytest-cov
   - codecov

@@ -1,5 +1,5 @@
 from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -23,7 +23,19 @@ class Kinetics400(VisionDataset):
     Internally, it uses a VideoClips object to handle clip creation.
 
     Args:
-        root (string): Root directory of the Kinetics-400 Dataset.
+        root (string): Root directory of the Kinetics-400 Dataset. Should be structured as follows:
+
+            .. code::
+
+                root/
+                ├── class1
+                │   ├── clip1.avi
+                │   ├── clip2.avi
+                │   └── ...
+                └── class2
+                    ├── clipx.avi
+                    └── ...
+
         frames_per_clip (int): number of frames in a clip
         step_between_clips (int): number of frames between each clip
         transform (callable, optional): A function/transform that  takes in a TxHxWxC video
@@ -44,10 +56,8 @@ class Kinetics400(VisionDataset):
                  _video_min_dimension=0, _audio_samples=0, _audio_channels=0):
         super(Kinetics400, self).__init__(root)
 
-        classes = list(sorted(list_dir(root)))
-        class_to_idx = {classes[i]: i for i in range(len(classes))}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
-        self.classes = classes
         video_list = [x[0] for x in self.samples]
         self.video_clips = VideoClips(
             video_list,

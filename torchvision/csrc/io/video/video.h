@@ -27,13 +27,11 @@ struct Video : torch::CustomClassHolder {
   std::tuple<torch::Tensor, double> Next();
 
  private:
-  bool video_any_frame = false; // add this to input parameters?
   bool succeeded = false; // decoder init flag
   // seekTS and doSeek act as a flag - if it's not set, next function simply
   // retruns the next frame. If it's set, we look at the global seek
   // time in comination with any_frame settings
   double seekTS = -1;
-  bool doSeek = false;
 
   void _getDecoderParams(
       double videoStartS,

@@ -7,6 +7,7 @@ from torchvision.transforms import InterpolationMode
 import numpy as np
 
 import unittest
+from typing import Sequence
 
 from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
 
@@ -19,7 +20,7 @@ class Tester(TransformsTester):
     def setUp(self):
         self.device = "cpu"
 
-    def _test_functional_op(self, func, fn_kwargs):
+    def _test_functional_op(self, func, fn_kwargs, test_exact_match=True, **match_kwargs):
         if fn_kwargs is None:
             fn_kwargs = {}
 
@@ -27,7 +28,10 @@ class Tester(TransformsTester):
         tensor, pil_img = self._create_data(height=10, width=10, device=self.device)
         transformed_tensor = f(tensor, **fn_kwargs)
         transformed_pil_img = f(pil_img, **fn_kwargs)
-        self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+        if test_exact_match:
+            self.compareTensorToPIL(transformed_tensor, transformed_pil_img, **match_kwargs)
+        else:
+            self.approxEqualTensorToPIL(transformed_tensor, transformed_pil_img, **match_kwargs)
 
     def _test_transform_vs_scripted(self, transform, s_transform, tensor, msg=None):
         torch.manual_seed(12)
@@ -79,9 +83,9 @@ class Tester(TransformsTester):
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
 
-    def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
-        self._test_functional_op(func, fn_kwargs)
-        self._test_class_op(method, meth_kwargs)
+    def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+        self._test_functional_op(func, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+        self._test_class_op(method, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
     def test_random_horizontal_flip(self):
         self._test_op('hflip', 'RandomHorizontalFlip')
@@ -111,10 +115,12 @@ class Tester(TransformsTester):
         )
 
     def test_random_autocontrast(self):
-        self._test_op('autocontrast', 'RandomAutocontrast')
+        # We check the max abs difference because on some (very rare) pixels, the actual value may be different
+        # between PIL and tensors due to floating approximations.
+        self._test_op('autocontrast', 'RandomAutocontrast', test_exact_match=False, agg_method='max',
+                      tol=(1 + 1e-5), allowed_percentage_diff=.05)
 
     def test_random_equalize(self):
-        torch.set_deterministic(False)
         self._test_op('equalize', 'RandomEqualize')
 
     def test_color_jitter(self):
@@ -323,32 +329,29 @@ class Tester(TransformsTester):
 
         tensor, _ = self._create_data(height=34, width=36, device=self.device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-        script_fn = torch.jit.script(F.resize)
 
         for dt in [None, torch.float32, torch.float64]:
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
             for size in [32, 34, [32, ], [32, 32], (32, 32), [34, 35]]:
-                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+                for max_size in (None, 35, 1000):
+                    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
+                        continue  # Not supported
+                    for interpolation in [BILINEAR, BICUBIC, NEAREST]:
 
-                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
+                        if isinstance(size, int):
+                            script_size = [size, ]
+                        else:
+                            script_size = size
 
-                    if isinstance(size, int):
-                        script_size = [size, ]
-                    else:
-                        script_size = size
-
-                    s_resized_tensor = script_fn(tensor, size=script_size, interpolation=interpolation)
-                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
-
-                    transform = T.Resize(size=script_size, interpolation=interpolation)
-                    s_transform = torch.jit.script(transform)
-                    self._test_transform_vs_scripted(transform, s_transform, tensor)
-                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                        transform = T.Resize(size=script_size, interpolation=interpolation, max_size=max_size)
+                        s_transform = torch.jit.script(transform)
+                        self._test_transform_vs_scripted(transform, s_transform, tensor)
+                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
-            script_fn.save(os.path.join(tmp_dir, "t_resize.pt"))
+            s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
 
     def test_resized_crop(self):
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
@@ -449,12 +452,15 @@ class Tester(TransformsTester):
         )
 
     def test_normalize(self):
+        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         tensor, _ = self._create_data(26, 34, device=self.device)
-        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
 
+        with self.assertRaisesRegex(TypeError, r"Input tensor should be a float tensor"):
+            fn(tensor)
+
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
         tensor = tensor.to(dtype=torch.float32) / 255.0
         # test for class interface
-        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         scripted_fn = torch.jit.script(fn)
 
         self._test_transform_vs_scripted(fn, scripted_fn, tensor)
@@ -480,7 +486,6 @@ class Tester(TransformsTester):
         # We skip some tests from _test_transform_vs_scripted_on_batch as
         # results for scripted and non-scripted transformations are not exactly the same
         torch.manual_seed(12)
-        torch.set_deterministic(True)
         transformed_batch = fn(batch_tensors)
         torch.manual_seed(12)
         s_transformed_batch = scripted_fn(batch_tensors)
@@ -648,6 +653,7 @@ class Tester(TransformsTester):
 class CUDATester(Tester):
 
     def setUp(self):
+        torch.set_deterministic(False)
         self.device = "cuda"
 
 

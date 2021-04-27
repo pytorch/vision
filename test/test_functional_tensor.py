@@ -13,7 +13,7 @@ from torchvision.transforms import InterpolationMode
 
 from common_utils import TransformsTester
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
@@ -24,17 +24,18 @@ class Tester(TransformsTester):
     def setUp(self):
         self.device = "cpu"
 
-    def _test_fn_on_batch(self, batch_tensors, fn, **fn_kwargs):
+    def _test_fn_on_batch(self, batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
         transformed_batch = fn(batch_tensors, **fn_kwargs)
         for i in range(len(batch_tensors)):
             img_tensor = batch_tensors[i, ...]
             transformed_img = fn(img_tensor, **fn_kwargs)
             self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
 
-        scripted_fn = torch.jit.script(fn)
-        # scriptable function test
-        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
-        self.assertTrue(transformed_batch.allclose(s_transformed_batch))
+        if scripted_fn_atol >= 0:
+            scripted_fn = torch.jit.script(fn)
+            # scriptable function test
+            s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+            self.assertTrue(transformed_batch.allclose(s_transformed_batch, atol=scripted_fn_atol))
 
     def test_assert_image_tensor(self):
         shape = (100,)
@@ -166,7 +167,7 @@ class Tester(TransformsTester):
             self.assertLess(max_diff, 1e-5)
 
             s_hsv_img = scripted_fn(rgb_img)
-            self.assertTrue(hsv_img.allclose(s_hsv_img))
+            self.assertTrue(hsv_img.allclose(s_hsv_img, atol=1e-7))
 
         batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
         self._test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
@@ -348,7 +349,7 @@ class Tester(TransformsTester):
                     atol = 1.0
                 self.assertTrue(adjusted_tensor.allclose(scripted_result, atol=atol), msg=msg)
 
-                self._test_fn_on_batch(batch_tensors, fn, **config)
+                self._test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=atol, **config)
 
     def test_adjust_brightness(self):
         self._test_adjust_fn(
@@ -409,45 +410,57 @@ class Tester(TransformsTester):
                 batch_tensors = batch_tensors.to(dt)
 
             for size in [32, 26, [32, ], [32, 32], (32, 32), [26, 35]]:
-                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
-                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
-                    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
+                for max_size in (None, 33, 40, 1000):
+                    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
+                        continue  # unsupported, see assertRaises below
+                    for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+                        resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size)
+                        resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
 
-                    self.assertEqual(
-                        resized_tensor.size()[1:], resized_pil_img.size[::-1], msg="{}, {}".format(size, interpolation)
-                    )
-
-                    if interpolation not in [NEAREST, ]:
-                        # We can not check values if mode = NEAREST, as results are different
-                        # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
-                        # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
-                        resized_tensor_f = resized_tensor
-                        # we need to cast to uint8 to compare with PIL image
-                        if resized_tensor_f.dtype == torch.uint8:
-                            resized_tensor_f = resized_tensor_f.to(torch.float)
-
-                        # Pay attention to high tolerance for MAE
-                        self.approxEqualTensorToPIL(
-                            resized_tensor_f, resized_pil_img, tol=8.0, msg="{}, {}".format(size, interpolation)
+                        self.assertEqual(
+                            resized_tensor.size()[1:], resized_pil_img.size[::-1],
+                            msg="{}, {}".format(size, interpolation)
                         )
 
-                    if isinstance(size, int):
-                        script_size = [size, ]
-                    else:
-                        script_size = size
+                        if interpolation not in [NEAREST, ]:
+                            # We can not check values if mode = NEAREST, as results are different
+                            # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
+                            # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
+                            resized_tensor_f = resized_tensor
+                            # we need to cast to uint8 to compare with PIL image
+                            if resized_tensor_f.dtype == torch.uint8:
+                                resized_tensor_f = resized_tensor_f.to(torch.float)
 
-                    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
-                    self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
+                            # Pay attention to high tolerance for MAE
+                            self.approxEqualTensorToPIL(
+                                resized_tensor_f, resized_pil_img, tol=8.0, msg="{}, {}".format(size, interpolation)
+                            )
 
-                    self._test_fn_on_batch(
-                        batch_tensors, F.resize, size=script_size, interpolation=interpolation
-                    )
+                        if isinstance(size, int):
+                            script_size = [size, ]
+                        else:
+                            script_size = size
+
+                        resize_result = script_fn(tensor, size=script_size, interpolation=interpolation,
+                                                  max_size=max_size)
+                        self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
+
+                        self._test_fn_on_batch(
+                            batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size
+                        )
 
         # assert changed type warning
         with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.resize(tensor, size=32, interpolation=2)
             res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
+
+        for img in (tensor, pil_img):
+            exp_msg = "max_size should only be passed if size specifies the length of the smaller edge"
+            with self.assertRaisesRegex(ValueError, exp_msg):
+                F.resize(img, size=(32, 34), max_size=35)
+            with self.assertRaisesRegex(ValueError, "max_size = 32 must be strictly greater"):
+                F.resize(img, size=32, max_size=32)
 
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:
@@ -810,9 +823,14 @@ class Tester(TransformsTester):
                 if dt is not None:
                     batch_tensors = batch_tensors.to(dtype=dt)
 
+                # Ignore the equivalence between scripted and regular function on float16 cuda. The pixels at
+                # the border may be entirely different due to small rounding errors.
+                scripted_fn_atol = -1 if (dt == torch.float16 and self.device == "cuda") else 1e-8
+
                 for spoints, epoints in test_configs:
                     self._test_fn_on_batch(
-                        batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=NEAREST
+                        batch_tensors, F.perspective, scripted_fn_atol=scripted_fn_atol,
+                        startpoints=spoints, endpoints=epoints, interpolation=NEAREST
                     )
 
         # assert changed type warning
@@ -964,6 +982,18 @@ class CUDATester(Tester):
 
     def setUp(self):
         self.device = "cuda"
+
+    def test_scale_channel(self):
+        """Make sure that _scale_channel gives the same results on CPU and GPU as
+        histc or bincount are used depending on the device.
+        """
+        # TODO: when # https://github.com/pytorch/pytorch/issues/53194 is fixed,
+        # only use bincount and remove that test.
+        size = (1_000,)
+        img_chan = torch.randint(0, 256, size=size).to('cpu')
+        scaled_cpu = F_t._scale_channel(img_chan)
+        scaled_cuda = F_t._scale_channel(img_chan.to('cuda'))
+        self.assertTrue(scaled_cpu.equal(scaled_cuda.to('cpu')))
 
 
 if __name__ == '__main__':

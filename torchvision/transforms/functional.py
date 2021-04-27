@@ -55,7 +55,6 @@ pil_modes_mapping = {
 }
 
 _is_pil_image = F_pil._is_pil_image
-_parse_fill = F_pil._parse_fill
 
 
 def _get_image_size(img: Tensor) -> List[int]:
@@ -104,6 +103,8 @@ def to_tensor(pic):
     if _is_numpy(pic) and not _is_numpy_image(pic):
         raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
+    default_float_dtype = torch.get_default_dtype()
+
     if isinstance(pic, np.ndarray):
         # handle numpy array
         if pic.ndim == 2:
@@ -112,14 +113,14 @@ def to_tensor(pic):
         img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
-            return img.float().div(255)
+            return img.to(dtype=default_float_dtype).div(255)
         else:
             return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
         pic.copyto(nppic)
-        return torch.from_numpy(nppic)
+        return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
     if pic.mode == 'I':
@@ -137,7 +138,7 @@ def to_tensor(pic):
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
-        return img.float().div(255)
+        return img.to(dtype=default_float_dtype).div(255)
     else:
         return img
 
@@ -295,7 +296,7 @@ def to_pil_image(pic, mode=None):
 
 
 def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
-    """Normalize a tensor image with mean and standard deviation.
+    """Normalize a float tensor image with mean and standard deviation.
     This transform does not support PIL Image.
 
     .. note::
@@ -304,7 +305,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        tensor (Tensor): Float tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation inplace.
@@ -314,6 +315,9 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     """
     if not isinstance(tensor, torch.Tensor):
         raise TypeError('Input tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+
+    if not tensor.is_floating_point():
+        raise TypeError('Input tensor should be a float tensor. Got {}.'.format(tensor.dtype))
 
     if tensor.ndim < 3:
         raise ValueError('Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = '
@@ -335,10 +339,17 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return tensor
 
 
-def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR) -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+           max_size: Optional[int] = None) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    .. warning::
+        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
+        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
+        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
+        types.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -347,12 +358,22 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
-            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        max_size (int, optional): The maximum allowed for the longer edge of
+            the resized image: if the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``, then
+            the image is resized again so that the longer edge is equal to
+            ``max_size``. As a result, ``size`` might be overruled, i.e the
+            smaller edge may be shorter than ``size``. This is only supported
+            if ``size`` is an int (or a sequence of length 1 in torchscript
+            mode).
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -370,9 +391,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
 
     if not isinstance(img, torch.Tensor):
         pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.resize(img, size=size, interpolation=pil_interpolation)
+        return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
-    return F_t.resize(img, size=size, interpolation=interpolation.value)
+    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size)
 
 
 def scale(*args, **kwargs):
@@ -394,28 +415,30 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             is used to pad all borders. If sequence of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value on the edge of the image,
-                    if input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
+            - edge: pads with the last value at the edge of the image.
+              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
-            - reflect: pads with reflection of image (without repeating the last value on the edge)
+            - reflect: pads with reflection of image without repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+              will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
-                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
-
-            - symmetric: pads with reflection of image (repeating the last value on the edge)
-
-                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
+            - symmetric: pads with reflection of image repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+              will result in [2, 1, 1, 2, 3, 4, 4, 3]
 
     Returns:
         PIL Image or Tensor: Padded image.
@@ -589,9 +612,10 @@ def perspective(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
 
     Returns:
         PIL Image or Tensor: transformed Image.
@@ -652,7 +676,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
 
     Returns:
        tuple: tuple (tl, tr, bl, br, center)
-                Corresponding top left, top right, bottom left, bottom right and center crop.
+       Corresponding top left, top right, bottom left, bottom right and center crop.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -698,8 +722,8 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
 
     Returns:
         tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
-            Corresponding top left, top right, bottom left, bottom right and
-            center crop and same for the flipped image.
+        Corresponding top left, top right, bottom left, bottom right and
+        center crop and same for the flipped image.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -725,8 +749,8 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         brightness_factor (float):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
@@ -745,8 +769,8 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
@@ -765,8 +789,8 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
@@ -796,9 +820,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
-        If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -829,9 +853,9 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): PIL Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
-        If img is PIL Image, modes with transparency (alpha channel) are not supported.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, modes with transparency (alpha channel) are not supported.
         gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
@@ -919,9 +943,10 @@ def rotate(
             Default is the center of the image.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -991,9 +1016,10 @@ def affine(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a sequence
-            of length 1: ``[value, ]``.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+            .. note::
+                In torchscript mode single int/float value is not supported, please use a sequence
+                of length 1: ``[value, ]``.
         fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
@@ -1084,9 +1110,9 @@ def to_grayscale(img, num_output_channels=1):
 
     Returns:
         PIL Image: Grayscale version of the image.
-            if num_output_channels = 1 : returned image is single channel
 
-            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+        - if num_output_channels = 1 : returned image is single channel
+        - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if isinstance(img, Image.Image):
         return F_pil.to_grayscale(img, num_output_channels)
@@ -1109,9 +1135,9 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
     Returns:
         PIL Image or Tensor: Grayscale version of the image.
-            if num_output_channels = 1 : returned image is single channel
 
-            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+        - if num_output_channels = 1 : returned image is single channel
+        - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.to_grayscale(img, num_output_channels)
@@ -1154,13 +1180,19 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         img (PIL Image or Tensor): Image to be blurred
         kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
-            In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: ``[ksize, ]``.
+
+            .. note::
+                In torchscript mode kernel_size as single int is not supported, use a sequence of
+                length 1: ``[ksize, ]``.
         sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
-            Default, None. In torchscript mode sigma as single float is
-            not supported, use a sequence of length 1: ``[sigma, ]``.
+            Default, None.
+
+            .. note::
+                In torchscript mode sigma as single float is
+                not supported, use a sequence of length 1: ``[sigma, ]``.
 
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
@@ -1267,8 +1299,8 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
         sharpness_factor (float):  How much to adjust the sharpness. Can be
             any non negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
@@ -1311,6 +1343,7 @@ def equalize(img: Tensor) -> Tensor:
         img (PIL Image or Tensor): Image on which equalize is applied.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
+            The tensor dtype must be ``torch.uint8`` and values are expected to be in ``[0, 255]``.
             If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
     Returns:

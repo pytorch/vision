@@ -67,7 +67,7 @@ requirements = [
     pytorch_dep,
 ]
 
-pillow_ver = ' >= 4.1.1'
+pillow_ver = ' >= 5.3.0'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
@@ -138,8 +138,11 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp')) + glob.glob(os.path.join(extensions_dir, 'ops',
                                                                                           '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) + glob.glob(
-        os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp'))
+    source_cpu = (
+        glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'quantized', 'cpu', '*.cpp'))
+    )
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':
@@ -181,9 +184,7 @@ def get_extensions():
 
     define_macros = []
 
-    extra_compile_args = {
-        'cxx': []
-    }
+    extra_compile_args = {'cxx': []}
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
@@ -198,13 +199,12 @@ def get_extensions():
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
-        extra_compile_args['nvcc'] = nvcc_flags
+        extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
+
         extra_compile_args['cxx'].append('/MP')
-    elif sys.platform == 'linux':
-        extra_compile_args['cxx'].append('-fopenmp')
 
     debug_mode = os.getenv('DEBUG', '0') == '1'
     if debug_mode:

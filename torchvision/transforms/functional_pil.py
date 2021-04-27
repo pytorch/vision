@@ -3,7 +3,7 @@ from typing import Any, List, Sequence
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance, ImageFilter, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance
 
 try:
     import accimage
@@ -147,7 +147,7 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        opts = _parse_fill(fill, img, "2.3.0", name="fill")
+        opts = _parse_fill(fill, img, name="fill")
         if img.mode == "P":
             palette = img.getpalette()
             image = ImageOps.expand(img, border=padding, **opts)
@@ -204,43 +204,46 @@ def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Imag
 
 
 @torch.jit.unused
-def resize(img, size, interpolation=Image.BILINEAR):
+def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     if not (isinstance(size, int) or (isinstance(size, Sequence) and len(size) in (1, 2))):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
 
-    if isinstance(size, int) or len(size) == 1:
-        if isinstance(size, Sequence):
-            size = size[0]
+    if isinstance(size, Sequence) and len(size) == 1:
+        size = size[0]
+    if isinstance(size, int):
         w, h = img.size
-        if (w <= h and w == size) or (h <= w and h == size):
+
+        short, long = (w, h) if w <= h else (h, w)
+        if short == size:
             return img
-        if w < h:
-            ow = size
-            oh = int(size * h / w)
-            return img.resize((ow, oh), interpolation)
-        else:
-            oh = size
-            ow = int(size * w / h)
-            return img.resize((ow, oh), interpolation)
+
+        new_short, new_long = size, int(size * long / short)
+
+        if max_size is not None:
+            if max_size <= size:
+                raise ValueError(
+                    f"max_size = {max_size} must be strictly greater than the requested "
+                    f"size for the smaller edge size = {size}"
+                )
+            if new_long > max_size:
+                new_short, new_long = int(max_size * new_short / new_long), max_size
+
+        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
+        return img.resize((new_w, new_h), interpolation)
     else:
+        if max_size is not None:
+            raise ValueError(
+                "max_size should only be passed if size specifies the length of the smaller edge, "
+                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+            )
         return img.resize(size[::-1], interpolation)
 
 
 @torch.jit.unused
-def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
+def _parse_fill(fill, img, name="fillcolor"):
     # Process fill color for affine transforms
-    major_found, minor_found = (int(v) for v in PILLOW_VERSION.split('.')[:2])
-    major_required, minor_required = (int(v) for v in min_pil_version.split('.')[:2])
-    if major_found < major_required or (major_found == major_required and minor_found < minor_required):
-        if fill is None:
-            return {}
-        else:
-            msg = ("The option to fill background area of the transformed image, "
-                   "requires pillow>={}")
-            raise RuntimeError(msg.format(min_pil_version))
-
     num_bands = len(img.getbands())
     if fill is None:
         fill = 0
@@ -263,7 +266,7 @@ def affine(img, matrix, interpolation=0, fill=None):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     output_size = img.size
-    opts = _parse_fill(fill, img, '5.0.0')
+    opts = _parse_fill(fill, img)
     return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
 
 
@@ -272,7 +275,7 @@ def rotate(img, angle, interpolation=0, expand=False, center=None, fill=None):
     if not _is_pil_image(img):
         raise TypeError("img should be PIL Image. Got {}".format(type(img)))
 
-    opts = _parse_fill(fill, img, '5.2.0')
+    opts = _parse_fill(fill, img)
     return img.rotate(angle, interpolation, expand, center, **opts)
 
 
@@ -281,7 +284,7 @@ def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None)
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    opts = _parse_fill(fill, img, '5.0.0')
+    opts = _parse_fill(fill, img)
 
     return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 

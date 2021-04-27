@@ -3,11 +3,6 @@
 #include <torchvision/vision.h>
 #include <torchvision/ops/nms.h>
 
-#ifdef _WIN32
-// Windows only
-// This is necessary until operators are automatically registered on include
-static auto _nms = &vision::ops::nms;
-#endif
 
 int main() {
   torch::DeviceType device_type;

@@ -8,7 +8,7 @@ torchvision
     :target: https://pepy.tech/project/torchvision
 
 .. image:: https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v
-    :target: https://pytorch.org/docs/stable/torchvision/index.html
+    :target: https://pytorch.org/vision/stable/index.html
 
 
 The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
@@ -25,6 +25,8 @@ supported Python versions.
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.8.0``                | ``0.9.0``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.7.1``                | ``0.8.2``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
@@ -137,7 +139,7 @@ In order to get the torchvision operators registered with torch (eg. for the JIT
 
 Documentation
 =============
-You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
+You can find the API documentation on the pytorch website: https://pytorch.org/vision/stable/index.html
 
 Contributing
 ============

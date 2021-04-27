@@ -15,11 +15,14 @@ https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 """
 
 import jinja2
+from jinja2 import select_autoescape
 import yaml
 import os.path
 
 
-PYTHON_VERSIONS = ["3.6", "3.7", "3.8"]
+PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
+
+RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
 
 def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
@@ -27,12 +30,15 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102", "cu110"],
-                                "win": ["cpu", "cu101", "cu102", "cu110"],
+            cu_versions_dict = {"linux": ["cpu", "cu101", "cu102", "cu111", "rocm4.0.1", "rocm4.1"],
+                                "win": ["cpu", "cu101", "cu102", "cu111"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
                 for cu_version in cu_versions:
+                    # ROCm conda packages not yet supported
+                    if cu_version.startswith('rocm') and btype == "conda":
+                        continue
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         fb = filter_branch
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
@@ -90,7 +96,8 @@ def upload_doc_job(filter_branch):
     }
 
     if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch)
+        job["filters"] = gen_filter_branch_tree(filter_branch,
+                                                tags_list=RC_PATTERN)
     return [{"upload_docs": job}]
 
 
@@ -99,14 +106,28 @@ manylinux_images = {
     "cu101": "pytorch/manylinux-cuda101",
     "cu102": "pytorch/manylinux-cuda102",
     "cu110": "pytorch/manylinux-cuda110",
+    "cu111": "pytorch/manylinux-cuda111",
+    "cu112": "pytorch/manylinux-cuda112",
 }
 
 
 def get_manylinux_image(cu_version):
-    cu_suffix = "102"
-    if cu_version.startswith('cu'):
+    if cu_version == "cpu":
+        return "pytorch/manylinux-cuda102"
+    elif cu_version.startswith('cu'):
         cu_suffix = cu_version[len('cu'):]
-    return f"pytorch/manylinux-cuda{cu_suffix}"
+        return f"pytorch/manylinux-cuda{cu_suffix}"
+    elif cu_version.startswith('rocm'):
+        rocm_suffix = cu_version[len('rocm'):]
+        return f"pytorch/manylinux-rocm:{rocm_suffix}"
+
+
+def get_conda_image(cu_version):
+    if cu_version == "cpu":
+        return "pytorch/conda-builder:cpu"
+    elif cu_version.startswith('cu'):
+        cu_suffix = cu_version[len('cu'):]
+        return f"pytorch/conda-builder:cuda{cu_suffix}"
 
 
 def generate_base_workflow(base_workflow_name, python_version, cu_version,
@@ -123,6 +144,9 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
 
     if os_type != "win":
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
+        # ROCm conda packages not yet supported
+        if "rocm" not in cu_version:
+            d["conda_docker_image"] = get_conda_image(cu_version)
 
     if filter_branch is not None:
         d["filters"] = {
@@ -140,8 +164,11 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     return {w: d}
 
 
-def gen_filter_branch_tree(*branches):
-    return {"branches": {"only": [b for b in branches]}}
+def gen_filter_branch_tree(*branches, tags_list=None):
+    filter_dict = {"branches": {"only": [b for b in branches]}}
+    if tags_list is not None:
+        filter_dict["tags"] = {"only": tags_list}
+    return filter_dict
 
 
 def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, filter_branch=None):
@@ -235,12 +262,41 @@ def cmake_workflows(indentation=6):
     return indent(indentation, jobs)
 
 
+def ios_workflows(indentation=6, nightly=False):
+    jobs = []
+    build_job_names = []
+    name_prefix = "nightly_" if nightly else ""
+    env_prefix = "nightly-" if nightly else ""
+    for arch, platform in [('x86_64', 'SIMULATOR'), ('arm64', 'OS')]:
+        name = f'{name_prefix}binary_libtorchvision_ops_ios_12.0.0_{arch}'
+        build_job_names.append(name)
+        build_job = {
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}',
+            'ios_arch': arch,
+            'ios_platform': platform,
+            'name': name,
+        }
+        if nightly:
+            build_job['filters'] = gen_filter_branch_tree('nightly')
+        jobs.append({'binary_ios_build': build_job})
+
+    if nightly:
+        upload_job = {
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload',
+            'context': 'org-member',
+            'filters': gen_filter_branch_tree('nightly'),
+            'requires': build_job_names,
+        }
+        jobs.append({'binary_ios_upload': upload_job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
-        autoescape=False,
+        autoescape=select_autoescape(enabled_extensions=('html', 'xml')),
         keep_trailing_newline=True,
     )
 
@@ -249,4 +305,5 @@ if __name__ == "__main__":
             build_workflows=build_workflows,
             unittest_workflows=unittest_workflows,
             cmake_workflows=cmake_workflows,
+            ios_workflows=ios_workflows,
         ))
