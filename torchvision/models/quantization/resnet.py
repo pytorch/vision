@@ -2,8 +2,7 @@ import torch
 from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
 import torch.nn as nn
 from torchvision.models.utils import load_state_dict_from_url
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
-from torch._jit_internal import Optional
+from torch.quantization import fuse_modules
 from .utils import _replace_relu, quantize_model
 
 __all__ = ['QuantizableResNet', 'resnet18', 'resnet50',
