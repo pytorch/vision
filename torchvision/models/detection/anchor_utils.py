@@ -1,5 +1,4 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-import itertools
 import math
 import torch
 from torch import nn, Tensor
