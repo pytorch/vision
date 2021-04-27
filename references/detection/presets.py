@@ -14,7 +14,7 @@ class DetectionPresetTrain:
         else:
             self.transforms = T.Compose([
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToTensor(),
+                T.ToTensor(scaling=scaling),
             ])
 
     def __call__(self, img, target):
