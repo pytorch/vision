@@ -47,9 +47,15 @@ class RandomHorizontalFlip(T.RandomHorizontalFlip):
 
 
 class ToTensor(nn.Module):
+    def __init__(self, scaling: bool = True):
+        super().__init__()
+        self.scaling = scaling
+
     def forward(self, image: Tensor,
                 target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         image = F.to_tensor(image)
+        if not self.scaling:
+            image *= 255
         return image, target
 
 
@@ -135,7 +141,7 @@ class RandomZoomOut(nn.Module):
     def __init__(self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1., 4.), p: float = 0.5):
         super().__init__()
         if fill is None:
-            fill = [0, 0, 0]
+            fill = [0., 0., 0.]
         self.fill = fill
         self.side_range = side_range
         if side_range[0] < 1. or side_range[0] > side_range[1]:
