@@ -184,14 +184,9 @@ plot(gaus_blur_img, "Gaussian Blurred Image")
 # AutoAugment
 # -----------
 # The :class:`~torchvision.transforms.AutoAugment` transform
-# automatically augments data based on available AutoAugmentation Policies.
-# Use :class:`torchvision.transforms.AutoAugmentPolicy` to create policies.
-cifar10_policy = T.AutoAugmentPolicy.CIFAR10
-imagenet_policy = T.AutoAugmentPolicy.IMAGENET
-svhn_policy = T.AutoAugmentPolicy.SVHN
-
-policies = [cifar10_policy, imagenet_policy, svhn_policy]
-
+# automatically augments data based on a given auto-augmentation policy.
+# See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policies.
+policies = [T.AutoAugmentPolicy.CIFAR10, T.AutoAugmentPolicy.IMAGENET, T.AutoAugmentPolicy.SVHN]
 num_cols = 5
 fig, axs = plt.subplots(nrows=len(policies), ncols=num_cols)
 fig.suptitle("Auto-augmented images with different policies")
