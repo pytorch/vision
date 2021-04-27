@@ -17,13 +17,12 @@ def _flip_coco_person_keypoints(kps, width):
     return flipped_data
 
 
-class Compose(nn.Module):
+class Compose(object):
     def __init__(self, transforms):
         super().__init__()
-        self.transforms = nn.ModuleList(transforms)
+        self.transforms = transforms
 
-    def forward(self, image: Tensor,
-                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def __call__(self, image, target):
         for t in self.transforms:
             image, target = t(image, target)
         return image, target
