@@ -178,3 +178,26 @@ plot(random_apply_img, "Random Apply transformed Image")
 # performs gaussianblur transform on an image.
 gaus_blur_img = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.4, 3.0))(orig_img)
 plot(gaus_blur_img, "Gaussian Blurred Image")
+
+
+####################################
+# AutoAugment
+# -----------
+# The :class:`~torchvision.transforms.AutoAugment` transform
+# automatically augments data based on a given auto-augmentation policy.
+# See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policies.
+policies = [T.AutoAugmentPolicy.CIFAR10, T.AutoAugmentPolicy.IMAGENET, T.AutoAugmentPolicy.SVHN]
+num_cols = 5
+fig, axs = plt.subplots(nrows=len(policies), ncols=num_cols)
+fig.suptitle("Auto-augmented images with different policies")
+
+for pol_idx, policy in enumerate(policies):
+    auto_augmenter = T.AutoAugment(policy)
+    for col in range(num_cols):
+        augmented_img = auto_augmenter(orig_img)
+
+        ax = axs[pol_idx, col]
+        ax.imshow(np.asarray(augmented_img))
+        ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+        if col == 0:
+            ax.set(ylabel=str(policy).split('.')[-1])
