@@ -197,7 +197,7 @@ class RandomZoomOut(nn.Module):
 
 class RandomPhotometricDistort(nn.Module):
     def __init__(self, contrast: Tuple[float] = (0.5, 1.5), saturation: Tuple[float] = (0.5, 1.5),
-                 hue: Tuple[float] = (-0.05, 0.05), brightness: Tuple[float] = (0.875 , 1.125), p: float = 0.5):
+                 hue: Tuple[float] = (-0.05, 0.05), brightness: Tuple[float] = (0.875, 1.125), p: float = 0.5):
         super().__init__()
         self._brightness = T.ColorJitter(brightness=brightness)
         self._contrast = T.ColorJitter(contrast=contrast)
