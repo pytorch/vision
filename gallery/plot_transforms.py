@@ -14,6 +14,9 @@ import numpy as np
 import torchvision.transforms as T
 
 
+# plt.rcParams["savefig.pad_inches"] = 0
+plt.rcParams["savefig.bbox"] = 'tight'
+
 orig_img = Image.open(Path('assets') / 'astronaut.jpg')
 
 
@@ -142,8 +145,27 @@ plot(resized_crop_img, "Random resized cropped Image")
 # .. note::
 #   Since the transform is applied randomly, the two images below may actually be
 #   the same.
-random_hflip_img = T.RandomHorizontalFlip(p=0.5)(orig_img)
-plot(random_hflip_img, "Random horizontal flipped Image")
+
+# random_hflip_img = T.RandomHorizontalFlip(p=0.5)(orig_img)
+# plot(random_hflip_img, "Random horizontal flipped Image")
+
+num_cols = 5
+fig, axs = plt.subplots(nrows=1, ncols=num_cols, figsize=(10, 5))
+
+transform = T.RandomHorizontalFlip(p=0.5)
+for col in range(num_cols):
+    ax = axs[col]
+
+    if col == 0:
+        img = orig_img
+        ax.set(title='Original image')
+    else:
+        img = transform(orig_img)
+
+    ax.imshow(np.asarray(img))
+    ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+plt.tight_layout()
+
 
 ####################################
 # RandomVerticalFlip
