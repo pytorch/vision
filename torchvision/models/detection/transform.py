@@ -382,7 +382,7 @@ class RandomIoUCrop(nn.Module):
 
 
 class RandomZoomOut(nn.Module):
-    def __init__(self, fill: Optional[List[int]] = None, side_range: Tuple[float, float] = (1., 4.), p=0.5):
+    def __init__(self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1., 4.), p: float = 0.5):
         super().__init__()
         if fill is None:
             fill = [0, 0, 0]
@@ -396,10 +396,16 @@ class RandomZoomOut(nn.Module):
     def _get_fill_value(self, is_pil):
         # type: (bool) -> int
         # We fake the type to make it work on JIT
-        return tuple(self.fill) if is_pil else 0
+        return tuple(int(x) for x in self.fill) if is_pil else 0
 
     def forward(self, img: Tensor,
                 target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        if isinstance(img, torch.Tensor):
+            if img.ndimension() not in {2, 3}:
+                raise ValueError('image should be 2/3 dimensional. Got {} dimensions.'.format(img.ndimension()))
+            elif img.ndimension() == 2:
+                img = img.unsqueeze(0)
+
         if torch.rand(1) < self.p:
             return img, target
 
@@ -428,5 +434,57 @@ class RandomZoomOut(nn.Module):
         if target is not None:
             target["boxes"][:, 0::2] += left
             target["boxes"][:, 1::2] += top
+
+        return img, target
+
+
+class RandomPhotometricDistort(nn.Module):
+    def __init__(self, contrast: Tuple[float] = (0.5, 1.5), saturation: Tuple[float] = (0.5, 1.5),
+                 hue: Tuple[float] = (-0.05, 0.05), brightness: Tuple[float] = (0.875 , 1.125), p: float = 0.5):
+        super().__init__()
+        self._brightness = T.ColorJitter(brightness=brightness)
+        self._contrast = T.ColorJitter(contrast=contrast)
+        self._hue = T.ColorJitter(hue=hue)
+        self._saturation = T.ColorJitter(saturation=saturation)
+        self.p = p
+
+    def forward(self, img: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        if isinstance(img, torch.Tensor):
+            if img.ndimension() not in {2, 3}:
+                raise ValueError('image should be 2/3 dimensional. Got {} dimensions.'.format(img.ndimension()))
+            elif img.ndimension() == 2:
+                img = img.unsqueeze(0)
+
+        r = torch.rand(7)
+
+        if r[0] < self.p:
+            img = self._brightness(img)
+
+        contrast_before = r[1] < 0.5
+        if contrast_before:
+            if r[2] < self.p:
+                img = self._contrast(img)
+
+        if r[3] < self.p:
+            img = self._saturation(img)
+
+        if r[4] < self.p:
+            img = self._hue(img)
+
+        if not contrast_before:
+            if r[5] < self.p:
+                img = self._contrast(img)
+
+        if r[6] < self.p:
+            channels = F._get_image_num_channels(img)
+            permutation = torch.randperm(channels)
+
+            is_pil = F._is_pil_image(img)
+            if is_pil:
+                img = F.to_tensor(img)
+            img = img[..., permutation, :, :]
+            if is_pil:
+                img = F.to_pil_image(img)
 
         return img, target
