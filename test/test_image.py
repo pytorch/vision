@@ -86,6 +86,7 @@ class ImageTester(unittest.TestCase):
                 data = read_file(img_path)
                 img_ljpeg = decode_image(data, mode=mode)
                 img_nvjpeg = torch.ops.image.decode_jpeg_cuda(data, mode.value, 'cuda')
+                # img_nvjpeg = decode_jpeg(data, mode=mode.value, device='cuda')
 
                 # Some difference expected between jpeg implementations
                 self.assertTrue((img_ljpeg.float() - img_nvjpeg.cpu().float()).abs().mean() < 2.)
