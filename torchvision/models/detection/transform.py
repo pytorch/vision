@@ -379,3 +379,54 @@ class RandomIoUCrop(nn.Module):
                 img = F.crop(img, top, left, new_h, new_w)
 
                 return img, target
+
+
+class RandomZoomOut(nn.Module):
+    def __init__(self, fill: Optional[List[int]] = None, side_range: Tuple[float, float] = (1., 4.), p=0.5):
+        super().__init__()
+        if fill is None:
+            fill = [0, 0, 0]
+        self.fill = fill
+        self.side_range = side_range
+        if side_range[0] < 1. or side_range[0] > side_range[1]:
+            raise ValueError("Invalid canvas side range provided {}.".format(side_range))
+        self.p = p
+
+    @torch.jit.unused
+    def _get_fill_value(self, is_pil):
+        # type: (bool) -> int
+        # We fake the type to make it work on JIT
+        return tuple(self.fill) if is_pil else 0
+
+    def forward(self, img: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        if torch.rand(1) < self.p:
+            return img, target
+
+        orig_w, orig_h = F._get_image_size(img)
+
+        r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
+        canvas_width = int(orig_w * r)
+        canvas_height = int(orig_h * r)
+
+        r = torch.rand(2)
+        left = int((canvas_width - orig_w) * r[0])
+        top = int((canvas_height - orig_h) * r[1])
+        right = canvas_width - (left + orig_w)
+        bottom = canvas_height - (top + orig_h)
+
+        if torch.jit.is_scripting():
+            fill = 0
+        else:
+            fill = self._get_fill_value(F._is_pil_image(img))
+
+        img = F.pad(img, [left, top, right, bottom], fill=fill)
+        if isinstance(img, torch.Tensor):
+            v = torch.tensor(self.fill, device=img.device, dtype=img.dtype).view(-1, 1, 1)
+            img[..., :top, :] = img[..., :, :left] = img[..., (top + orig_h):, :] = img[..., :, (left + orig_w):] = v
+
+        if target is not None:
+            target["boxes"][:, 0::2] += left
+            target["boxes"][:, 1::2] += top
+
+        return img, target
