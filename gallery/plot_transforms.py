@@ -184,50 +184,25 @@ plot(gaus_blur_img, "Gaussian Blurred Image")
 # AutoAugment
 # -----------
 # The :class:`~torchvision.transforms.AutoAugment` transform
-# Automatically augments data based on available AutoAugmentation Policies.
+# automatically augments data based on available AutoAugmentation Policies.
 # Use :class:`torchvision.transforms.AutoAugmentPolicy` to create policies.
 cifar10_policy = T.AutoAugmentPolicy.CIFAR10
 imagenet_policy = T.AutoAugmentPolicy.IMAGENET
 svhn_policy = T.AutoAugmentPolicy.SVHN
 
-cifar_img1 = T.AutoAugment(cifar10_policy)(orig_img)
-cifar_img2 = T.AutoAugment(cifar10_policy)(orig_img)
-cifar_img3 = T.AutoAugment(cifar10_policy)(orig_img)
-cifar_img4 = T.AutoAugment(cifar10_policy)(orig_img)
-cifar_img5 = T.AutoAugment(cifar10_policy)(orig_img)
+policies = [cifar10_policy, imagenet_policy, svhn_policy]
 
-imagenet_img1 = T.AutoAugment(imagenet_policy)(orig_img)
-imagenet_img2 = T.AutoAugment(imagenet_policy)(orig_img)
-imagenet_img3 = T.AutoAugment(imagenet_policy)(orig_img)
-imagenet_img4 = T.AutoAugment(imagenet_policy)(orig_img)
-imagenet_img5 = T.AutoAugment(imagenet_policy)(orig_img)
+num_cols = 5
+fig, axs = plt.subplots(nrows=len(policies), ncols=num_cols)
+fig.suptitle("Auto-augmented images with different policies")
 
-svhn_img1 = T.AutoAugment(svhn_policy)(orig_img)
-svhn_img2 = T.AutoAugment(svhn_policy)(orig_img)
-svhn_img3 = T.AutoAugment(svhn_policy)(orig_img)
-svhn_img4 = T.AutoAugment(svhn_policy)(orig_img)
-svhn_img5 = T.AutoAugment(svhn_policy)(orig_img)
+for pol_idx, policy in enumerate(policies):
+    auto_augmenter = T.AutoAugment(policy)
+    for col in range(num_cols):
+        augmented_img = auto_augmenter(orig_img)
 
-# Cifar10 Policy
-
-plot(cifar_img1, "Cifar10 Transformed Image1")
-plot(cifar_img2, "Cifar10 Transformed Image2", with_orig=False)
-plot(cifar_img3, "Cifar10 Transformed Image3", with_orig=False)
-plot(cifar_img4, "Cifar10 Transformed Image4", with_orig=False)
-plot(cifar_img5, "Cifar10 Transformed Image5", with_orig=False)
-
-# Imagenet Policy
-
-plot(imagenet_img1, "Imagenet Transformed Image1")
-plot(imagenet_img2, "Imagenet Transformed Image2", with_orig=False)
-plot(imagenet_img3, "Imagenet Transformed Image3", with_orig=False)
-plot(imagenet_img4, "Imagenet Transformed Image4", with_orig=False)
-plot(imagenet_img5, "Imagenet Transformed Image5", with_orig=False)
-
-# SVHN Policy
-
-plot(svhn_img1, "SVHN Transformed Image1")
-plot(svhn_img2, "SVHN Transformed Image2", with_orig=False)
-plot(svhn_img3, "SVHN Transformed Image3", with_orig=False)
-plot(svhn_img4, "SVHN Transformed Image4", with_orig=False)
-plot(svhn_img5, "SVHN Transformed Image5", with_orig=False)
+        ax = axs[pol_idx, col]
+        ax.imshow(np.asarray(augmented_img))
+        ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+        if col == 0:
+            ax.set(ylabel=str(policy).split('.')[-1])
