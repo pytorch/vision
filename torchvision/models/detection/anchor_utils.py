@@ -202,7 +202,9 @@ class DBoxGenerator(nn.Module):
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
         s += 'aspect_ratios={aspect_ratios}'
+        s += ', clip={clip}'
         s += ', scales={scales}'
+        s += ', steps={steps}'
         s += ')'
         return s.format(**self.__dict__)
 
