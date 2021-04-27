@@ -21,6 +21,7 @@ from . import functional_tensor as F_t
 
 class InterpolationMode(Enum):
     """Interpolation modes
+    Available interpolation methods are ``nearest``, ``bilinear`` ``bicubic`` ``box`` ``hamming`` and ``lanczos``.
     """
     NEAREST = "nearest"
     BILINEAR = "bilinear"
