@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 """
 Implements the Generalized R-CNN framework
 """
