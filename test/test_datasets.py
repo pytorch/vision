@@ -1,43 +1,24 @@
+import bz2
 import contextlib
-import sys
-import os
-import unittest
-import numpy as np
-import PIL
-from PIL import Image
-from torch._utils_internal import get_file_path_2
-import torchvision
-from torchvision.datasets import utils
-from common_utils import get_tmp_dir
-import xml.etree.ElementTree as ET
-from urllib.request import Request, urlopen
+import io
 import itertools
-import datasets_utils
+import os
 import pathlib
 import pickle
-from torchvision import datasets
-import torch
-import shutil
 import json
 import random
-import bz2
-import torch.nn.functional as F
+import shutil
 import string
-import io
+import unittest
+import xml.etree.ElementTree as ET
 import zipfile
 
-
-try:
-    import scipy
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
-
-try:
-    import av
-    HAS_PYAV = True
-except ImportError:
-    HAS_PYAV = False
+import PIL
+import datasets_utils
+import numpy as np
+import torch
+import torch.nn.functional as F
+from torchvision import datasets
 
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -946,7 +927,7 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
                 key = "".join(random.choice(hexdigits_lowercase) for _ in range(40)).encode()
 
                 buffer = io.BytesIO()
-                Image.open(file).save(buffer, format)
+                PIL.Image.open(file).save(buffer, format)
                 buffer.seek(0)
                 value = buffer.read()
 
