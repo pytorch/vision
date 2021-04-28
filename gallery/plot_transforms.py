@@ -46,6 +46,7 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
 
     plt.tight_layout()
 
+
 ####################################
 # Pad
 # ---
@@ -204,7 +205,7 @@ plot(transformed_imgs)
 # The :class:`~torchvision.transforms.RandomVerticalFlip` transform
 # (see also :func:`~torchvision.transforms.functional.vflip`)
 # performs vertical flip of an image, with a given probability.
-vflipper= T.RandomVerticalFlip(p=0.5)
+vflipper = T.RandomVerticalFlip(p=0.5)
 transformed_imgs = [vflipper(orig_img) for _ in range(4)]
 plot(transformed_imgs)
 
