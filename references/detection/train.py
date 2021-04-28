@@ -60,7 +60,8 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args.data_augmentation), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args.data_augmentation),
+                                       args.data_path)
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args.data_augmentation), args.data_path)
 
     print("Creating data loaders")
