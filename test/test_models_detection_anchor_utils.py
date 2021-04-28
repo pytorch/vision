@@ -65,13 +65,13 @@ class Tester(TestCase):
         self.assertEqual(anchors[0], anchors_output)
         self.assertEqual(anchors[1], anchors_output)
 
-    def test_dbox_generator(self):
+    def test_defaultbox_generator(self):
         images = torch.zeros(2, 3, 15, 15)
         features = [torch.zeros(2, 8, 1, 1)]
         image_shapes = [i.shape[-2:] for i in images]
         images = ImageList(images, image_shapes)
 
-        model = self._init_test_dbox_generator()
+        model = self._init_test_defaultbox_generator()
         model.eval()
         dboxes = model(images, features)
 
