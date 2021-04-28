@@ -345,7 +345,7 @@ class Matcher(object):
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
 
 
-class DBoxMatcher(Matcher):
+class SSDMatcher(Matcher):
 
     def __init__(self, threshold):
         super().__init__(threshold, threshold, allow_low_quality_matches=False)

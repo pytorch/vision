@@ -158,7 +158,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
 
-class DBoxGenerator(nn.Module):
+class DefaultBoxGenerator(nn.Module):
 
     def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
                  steps: Optional[List[int]] = None, clip: bool = True):

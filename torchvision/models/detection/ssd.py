@@ -7,7 +7,7 @@ from torch import nn, Tensor
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import _utils as det_utils
-from .anchor_utils import DBoxGenerator
+from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
@@ -111,7 +111,7 @@ class SSD(nn.Module):
         'proposal_matcher': det_utils.Matcher,
     }
 
-    def __init__(self, backbone: nn.Module, anchor_generator: DBoxGenerator, size: Tuple[int, int], num_classes: int,
+    def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator, size: Tuple[int, int], num_classes: int,
                  image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
@@ -139,7 +139,7 @@ class SSD(nn.Module):
         self.num_anchors = [2 + 2 * len(r) for r in anchor_generator.aspect_ratios]
         self.head = SSDHead(out_channels, self.num_anchors, num_classes)
 
-        self.proposal_matcher = det_utils.DBoxMatcher(iou_thresh)
+        self.proposal_matcher = det_utils.SSDMatcher(iou_thresh)
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
@@ -474,7 +474,7 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         pretrained_backbone = False
 
     backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
-    anchor_generator = DBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]], steps=[8, 16, 32, 64, 100, 300])
+    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]], steps=[8, 16, 32, 64, 100, 300])
     model = SSD(backbone, anchor_generator, (300, 300), num_classes,
                 image_mean=[123., 117., 104.], image_std=[1., 1., 1.], **kwargs)
     if pretrained:

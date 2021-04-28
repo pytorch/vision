@@ -1,6 +1,6 @@
 import torch
 from common_utils import TestCase
-from torchvision.models.detection.anchor_utils import AnchorGenerator, DBoxGenerator
+from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
 
 
@@ -21,9 +21,9 @@ class Tester(TestCase):
 
         return anchor_generator
 
-    def _init_test_dbox_generator(self):
+    def _init_test_defaultbox_generator(self):
         aspect_ratios = [[2]]
-        dbox_generator = DBoxGenerator(aspect_ratios)
+        dbox_generator = DefaultBoxGenerator(aspect_ratios)
 
         return dbox_generator
 
