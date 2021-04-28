@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include <gtest/gtest.h>
 #include <torch/script.h>
 #include <torch/torch.h>
