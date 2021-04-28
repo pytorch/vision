@@ -111,8 +111,10 @@ class SSD(nn.Module):
         'proposal_matcher': det_utils.Matcher,
     }
 
-    def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator, size: Tuple[int, int], num_classes: int,
+    def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator,
+                 size: Tuple[int, int], num_classes: int,
                  image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
+                 head: Optional[nn.Module] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
                  detections_per_img: int = 200,
@@ -121,22 +123,23 @@ class SSD(nn.Module):
                  positive_fraction: float = 0.25):
         super().__init__()
 
-        # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
-        device = next(backbone.parameters()).device
-        tmp_img = torch.zeros((1, 3, size[1], size[0]), device=device)
-        tmp_sizes = [x.size() for x in backbone(tmp_img).values()]
-        out_channels = [x[1] for x in tmp_sizes]
-
-        assert len(out_channels) == len(anchor_generator.aspect_ratios)
-
         self.backbone = backbone
 
         self.anchor_generator = anchor_generator
 
         self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
 
-        self.num_anchors = self.anchor_generator.num_anchors_per_location()
-        self.head = SSDHead(out_channels, self.num_anchors, num_classes)
+        if head is None:
+            if hasattr(backbone, 'out_channels'):
+                out_channels = backbone.out_channels
+            else:
+                out_channels = det_utils.retrieve_out_channels(backbone, size)
+
+            assert len(out_channels) == len(anchor_generator.aspect_ratios)
+
+            num_anchors = self.anchor_generator.num_anchors_per_location()
+            head = SSDHead(out_channels, num_anchors, num_classes)
+        self.head = head
 
         self.proposal_matcher = det_utils.SSDMatcher(iou_thresh)
 
