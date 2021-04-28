@@ -485,7 +485,7 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
     backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers, True)
     anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]], steps=[8, 16, 32, 64, 100, 300])
     model = SSD(backbone, anchor_generator, (300, 300), num_classes,
-                image_mean=[123., 117., 104.], image_std=[1., 1., 1.], **kwargs)
+                image_mean=[0.48235, 0.45882, 0.40784], image_std=[1., 1., 1.], **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:
