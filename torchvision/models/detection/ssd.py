@@ -355,7 +355,7 @@ class SSD(nn.Module):
 
 
 class SSDFeatureExtractorVGG(nn.Module):
-    def __init__(self, backbone: nn.Module, highres: bool):
+    def __init__(self, backbone: nn.Module, highres: bool, rescaling: bool):
         super().__init__()
 
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
@@ -421,8 +421,13 @@ class SSDFeatureExtractorVGG(nn.Module):
             fc,
         ))
         self.extra = extra
+        self.rescaling = rescaling
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
+        # Undo the 0-1 scaling of toTensor. Necessary for some backbones.
+        if self.rescaling:
+            x *= 255
+
         # L2 regularization + Rescaling of 1st block's feature map
         x = self.features(x)
         rescaled = self.scale_weight.view(1, -1, 1, 1) * F.normalize(x)
@@ -436,7 +441,8 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
+def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int,
+                   rescaling: bool):
     if backbone_name in backbone_urls:
         # Use custom backbones more appropriate for SSD
         arch = backbone_name.split('_')[0]
@@ -460,7 +466,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDFeatureExtractorVGG(backbone, highres)
+    return SSDFeatureExtractorVGG(backbone, highres, rescaling)
 
 
 def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
@@ -472,7 +478,7 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
+    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers, True)
     anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]], steps=[8, 16, 32, 64, 100, 300])
     model = SSD(backbone, anchor_generator, (300, 300), num_classes,
                 image_mean=[123., 117., 104.], image_std=[1., 1., 1.], **kwargs)

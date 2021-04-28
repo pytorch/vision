@@ -45,15 +45,9 @@ class RandomHorizontalFlip(T.RandomHorizontalFlip):
 
 
 class ToTensor(nn.Module):
-    def __init__(self, scaling: bool = True):
-        super().__init__()
-        self.scaling = scaling
-
     def forward(self, image: Tensor,
                 target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         image = F.to_tensor(image)
-        if not self.scaling:
-            image *= 255
         return image, target
 
 

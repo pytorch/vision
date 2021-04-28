@@ -2,28 +2,30 @@ import transforms as T
 
 
 class DetectionPresetTrain:
-    def __init__(self, hflip_prob=0.5, ssd_augmentation=False, mean=(123., 117., 104.), scaling=True):
-        if ssd_augmentation:
+    def __init__(self, data_augmentation, hflip_prob=0.5, mean=(123., 117., 104.)):
+        if data_augmentation == 'hflip':
+            self.transforms = T.Compose([
+                T.RandomHorizontalFlip(p=hflip_prob),
+                T.ToTensor(),
+            ])
+        elif data_augmentation == 'ssd':
             self.transforms = T.Compose([
                 T.RandomPhotometricDistort(),
                 T.RandomZoomOut(fill=list(mean)),
                 T.RandomIoUCrop(),
                 T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToTensor(scaling=scaling),
+                T.ToTensor(),
             ])
         else:
-            self.transforms = T.Compose([
-                T.RandomHorizontalFlip(p=hflip_prob),
-                T.ToTensor(scaling=scaling),
-            ])
+            raise ValueError(f'Unknown data augmentation policy "{data_augmentation}"')
 
     def __call__(self, img, target):
         return self.transforms(img, target)
 
 
 class DetectionPresetEval:
-    def __init__(self, scaling=True):
-        self.transforms = T.ToTensor(scaling=scaling)
+    def __init__(self):
+        self.transforms = T.ToTensor()
 
     def __call__(self, img, target):
         return self.transforms(img, target)
