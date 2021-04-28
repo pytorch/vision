@@ -17,7 +17,7 @@ from ...ops import boxes as box_ops
 __all__ = ['SSD', 'ssd300_vgg16']
 
 model_urls = {
-    'ssd300_vgg16_coco': None,  # TODO: Add url with weights
+    'ssd300_vgg16_coco': None,  # TODO: Add url with weights + add the model on the documentation and references readme
 }
 
 backbone_urls = {
@@ -121,6 +121,7 @@ class SSD(nn.Module):
                  iou_thresh: float = 0.5,
                  topk_candidates: int = 400,
                  positive_fraction: float = 0.25):
+        # TODO: Add documentation
         super().__init__()
 
         self.backbone = backbone

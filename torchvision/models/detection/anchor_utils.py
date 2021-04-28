@@ -162,6 +162,7 @@ class DefaultBoxGenerator(nn.Module):
 
     def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
                  steps: Optional[List[int]] = None, clip: bool = True):
+        # TODO: Add documentation
         super().__init__()
         if steps is not None:
             assert len(aspect_ratios) == len(steps)
