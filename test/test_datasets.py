@@ -20,12 +20,6 @@ import torch
 import torch.nn.functional as F
 from torchvision import datasets
 
-try:
-    import scipy
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
-
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.STL10

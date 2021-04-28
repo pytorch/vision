@@ -17,7 +17,7 @@ Stream::Stream(
 
 Stream::~Stream() {
   if (frame_) {
-    av_free(frame_); // Copyright 2004-present Facebook. All Rights Reserved.
+    av_free(frame_);
   }
   if (codecCtx_) {
     avcodec_free_context(&codecCtx_);
