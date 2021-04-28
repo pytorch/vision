@@ -27,13 +27,6 @@ backbone_urls = {
 }
 
 
-def _sum(x: List[Tensor]) -> Tensor:
-    res = x[0]
-    for i in x[1:]:
-        res = res + i
-    return res
-
-
 def _xavier_init(conv: nn.Module):
     for layer in conv.modules():
         if isinstance(layer, nn.Conv2d):
@@ -206,6 +199,7 @@ class SSD(nn.Module):
                 targets_per_image['labels'][foreground_matched_idxs_per_image]
             cls_targets.append(gt_classes_target)
 
+        bbox_loss = torch.stack(bbox_loss)
         cls_targets = torch.stack(cls_targets)
 
         # Calculate classification loss
@@ -228,7 +222,7 @@ class SSD(nn.Module):
 
         N = max(1, num_foreground)
         return {
-            'bbox_regression': _sum(bbox_loss) / N,
+            'bbox_regression': bbox_loss.sum() / N,
             'classification': (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / N,
         }
 
