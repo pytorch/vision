@@ -197,6 +197,10 @@ class DefaultBoxGenerator(nn.Module):
 
             self._wh_pairs.append(wh_pairs)
 
+    def num_anchors_per_location(self):
+        # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
+        return [2 + 2 * len(r) for r in self.aspect_ratios]
+
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
         s += 'aspect_ratios={aspect_ratios}'

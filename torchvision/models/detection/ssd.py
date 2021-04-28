@@ -135,8 +135,7 @@ class SSD(nn.Module):
 
         self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
 
-        # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
-        self.num_anchors = [2 + 2 * len(r) for r in anchor_generator.aspect_ratios]
+        self.num_anchors = self.anchor_generator.num_anchors_per_location()
         self.head = SSDHead(out_channels, self.num_anchors, num_classes)
 
         self.proposal_matcher = det_utils.SSDMatcher(iou_thresh)
