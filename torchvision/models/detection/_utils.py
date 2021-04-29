@@ -1,7 +1,7 @@
 import math
-
 import torch
 
+from collections import OrderedDict
 from torch import Tensor
 from typing import List, Tuple
 
@@ -386,6 +386,7 @@ def retrieve_out_channels(model, size):
 
     Args:
         model (nn.Module): The model for which we estimate the out_channels.
+            It should return a single Tensor or an OrderedDict[Tensor].
         size (Tuple[int, int]): The size (wxh) of the input.
 
     Returns:
@@ -398,7 +399,10 @@ def retrieve_out_channels(model, size):
         # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
         device = next(model.parameters()).device
         tmp_img = torch.zeros((1, 3, size[1], size[0]), device=device)
-        out_channels = [x.size(1) for x in model(tmp_img).values()]
+        features = model(tmp_img)
+        if isinstance(features, torch.Tensor):
+            features = OrderedDict([('0', features)])
+        out_channels = [x.size(1) for x in features.values()]
 
     if in_training:
         model.train()
