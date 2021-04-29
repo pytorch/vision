@@ -476,7 +476,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
 def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
                  pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5)
 
     if pretrained:
         # no need to download the backbone if pretrained is set
