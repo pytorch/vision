@@ -381,17 +381,18 @@ Object Detection, Instance Segmentation and Person Keypoint Detection
 The models subpackage contains definitions for the following model
 architectures for detection:
 
-- `Faster R-CNN ResNet-50 FPN <https://arxiv.org/abs/1506.01497>`_
-- `Mask R-CNN ResNet-50 FPN <https://arxiv.org/abs/1703.06870>`_
+- `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
+- `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
+- `RetinaNet <https://arxiv.org/abs/1708.02002>`_
+- `SSD <https://arxiv.org/abs/1512.02325>`_
 
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
 in torchvision.
 
 The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
-The models internally resize the images so that they have a minimum size
-of ``800``. This option can be changed by passing the option ``min_size``
-to the constructor of the models.
+The models internally resize the images but the behaviour varies depending
+on the model. Check the constructor of the models for more information.
 
 
 For object detection and instance segmentation, the pre-trained
@@ -425,6 +426,7 @@ Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
+SSD VGG16                               25.0     -         -
 Mask R-CNN ResNet-50 FPN                37.9     34.6      -
 ======================================  =======  ========  ===========
 
@@ -483,6 +485,7 @@ Faster R-CNN ResNet-50 FPN              0.2288               0.0590             
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
+SSD VGG16                               0.2100               0.0760              1.5
 Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
 ======================================  ===================  ==================  ===========
@@ -500,6 +503,12 @@ RetinaNet
 ------------
 
 .. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
+
+
+SSD
+------------
+
+.. autofunction:: torchvision.models.detection.ssd300_vgg16
 
 
 Mask R-CNN
