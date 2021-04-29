@@ -215,6 +215,12 @@ Decoder::~Decoder() {
   cleanUp();
 }
 
+// Initialise the format context that holds information about the container and
+// fill it with minimal information about the format (codecs are not opened
+// here). Function reads in intformation about the streams from the container
+// into inputCtx and then passes it to decoder::openStreams. Finally, if seek is
+// specified, it seeks into the correct frame (note, the seek defined here is
+// "precise" seek.
 bool Decoder::init(
     const DecoderParameters& params,
     DecoderInCallback&& in,
@@ -396,6 +402,8 @@ bool Decoder::init(
   return true;
 }
 
+// open appropriate CODEC for every type of stream and move it to the class
+// variable `streams_` and make sure it is in range for decoding
 bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
   for (int i = 0; i < inputCtx_->nb_streams; i++) {
     // - find the corespondent format at params_.formats set
@@ -478,6 +486,10 @@ void Decoder::cleanUp() {
   seekableBuffer_.shutdown();
 }
 
+// function does actual work, derived class calls it in working thread
+// periodically. On success method returns 0, ENOADATA on EOF, ETIMEDOUT if
+// no frames got decoded in the specified timeout time, and error on
+// unrecoverable error.
 int Decoder::getFrame(size_t workingTimeInMs) {
   if (inRange_.none()) {
     return ENODATA;
@@ -594,11 +606,13 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   return 0;
 }
 
+// find stream by stream index
 Stream* Decoder::findByIndex(int streamIndex) const {
   auto it = streams_.find(streamIndex);
   return it != streams_.end() ? it->second.get() : nullptr;
 }
 
+// find stream by type; note finds only the first stream of a given type
 Stream* Decoder::findByType(const MediaFormat& format) const {
   for (auto& stream : streams_) {
     if (stream.second->getMediaFormat().type == format.type) {
@@ -608,6 +622,8 @@ Stream* Decoder::findByType(const MediaFormat& format) const {
   return nullptr;
 }
 
+// given the stream and packet, decode the frame buffers into the
+// DecoderOutputMessage data structure via stream::decodePacket function.
 int Decoder::processPacket(
     Stream* stream,
     AVPacket* packet,
