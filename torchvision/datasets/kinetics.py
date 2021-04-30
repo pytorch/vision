@@ -42,12 +42,12 @@ class Kinetics(VisionDataset):
 
                 root/
                 ├── class1
-                │   ├── clip1.avi
-                │   ├── clip2.avi
+                │   ├── clip1.mp4
+                │   ├── clip2.mp4
                 │   ├── clip3.mp4
                 │   └── ...
                 └── class2
-                    ├── clipx.avi
+                    ├── clipx.mp4
                     └── ...
             If the split is not defined, it is appended using the split argument.
         num_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700
@@ -303,6 +303,7 @@ class Kinetics400(Kinetics):
         _video_min_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
+        **kwargs
     ):
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
