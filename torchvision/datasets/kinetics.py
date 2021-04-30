@@ -306,9 +306,8 @@ class Kinetics400(Kinetics):
         _audio_channels=0,
     ):
         warnings.warn(
-            "torchvision now supports multiple versions of Kinetics"
-            "datasets, available via Kinetics class with a separate "
-            "n_classes parameter. This function might get deprecated in the future."
+            "Kinetics400 is deprecated and will be removed in a future release."
+            "It was replaced by Kinetics(..., n_classes="400")".
         )
 
         super(Kinetics400, self).__init__(
