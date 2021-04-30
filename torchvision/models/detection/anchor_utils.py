@@ -68,7 +68,7 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype: torch.dtype, device: torch.device):
-        self.cell_anchors = [torch.as_tensor(cell_anchor, dtype=dtype, device=device)
+        self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device)
                              for cell_anchor in self.cell_anchors]
 
     def num_anchors_per_location(self):
