@@ -179,7 +179,6 @@ class Kinetics(VisionDataset):
         tar_path = path.join(kinetics_dir, "tars")
         annotation_path = path.join(kinetics_dir, "annotations")
 
-        # download annotations
         download_url(
             self._ANNOTATION[self.n_classes].format(split=self.split), annotation_path
         )
