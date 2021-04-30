@@ -121,10 +121,8 @@ class Kinetics(VisionDataset):
 
         if download:
             self.download_and_process_videos()
-        # init folder dataset at the end
         super().__init__(self.root)
 
-        # and then figure out the rest
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
 
@@ -145,10 +143,7 @@ class Kinetics(VisionDataset):
         self.transform = transform
 
     def download_and_process_videos(self) -> None:
-        """
-        downloads all the videos to the _root_ folder
-        in the expected format
-        """
+        """Downloads all the videos to the _root_ folder in the expected format."""
         tic = time.time()
         self._download_videos()
         toc = time.time()
@@ -180,7 +175,6 @@ class Kinetics(VisionDataset):
         tar_path = path.join(kinetics_dir, "tars")
         annotation_path = path.join(kinetics_dir, "annotations")
 
-        # download annotations
         download_url(
             self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path
         )
@@ -311,9 +305,8 @@ class Kinetics400(Kinetics):
         _audio_channels=0,
     ):
         warnings.warn(
-            "torchvision now supports multiple versions of Kinetics"
-            "datasets, available via Kinetics class with a separate "
-            "num_classes parameter. This function might get deprecated in the future."
+            "Kinetics400 is deprecated and will be removed in a future release."
+            "It was replaced by Kinetics(..., num_classes="400")".
         )
 
         super(Kinetics400, self).__init__(
