@@ -10,7 +10,7 @@ from typing import Callable, Optional
 from functools import partial
 from multiprocessing import Pool
 
-from .utils import download_and_extract_archive, download_url
+from .utils import download_and_extract_archive, download_url, verify_str_arg
 from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
@@ -107,8 +107,8 @@ class Kinetics(VisionDataset):
     ) -> None:
 
         # TODO: support test
-        assert split in ["train", "val"]
-        assert num_classes in ["400", "600", "700"]
+        verify_str_arg(split, arg="split", valid_values=['train', 'val'])
+        verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
         self.n_classes = num_classes
         self.extensions = extensions
         self._num_download_workers = _num_download_workers
