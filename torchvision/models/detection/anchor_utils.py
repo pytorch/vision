@@ -1,7 +1,7 @@
 import torch
 from torch import nn, Tensor
 
-from typing import List, Optional
+from typing import List
 from .image_list import ImageList
 
 
@@ -27,7 +27,7 @@ class AnchorGenerator(nn.Module):
     """
 
     __annotations__ = {
-        "cell_anchors": Optional[List[torch.Tensor]],
+        "cell_anchors": List[torch.Tensor],
     }
 
     def __init__(
