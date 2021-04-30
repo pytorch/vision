@@ -144,10 +144,7 @@ class Kinetics(VisionDataset):
         self.transform = transform
 
     def download_and_process_videos(self) -> None:
-        """
-        downloads all the videos to the _root_ folder
-        in the expected format
-        """
+        """Downloads all the videos to the _root_ folder in the expected format."""
         tic = time.time()
         self._download_videos()
         toc = time.time()
