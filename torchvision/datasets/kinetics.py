@@ -73,12 +73,12 @@ class Kinetics(VisionDataset):
         RuntimeError: If ``download is True`` and the image archive is already extracted.
     """
 
-    _FILES = {
+    _TAR_URLS = {
         "400": "https://s3.amazonaws.com/kinetics/400/{split}/k400_{split}_path.txt",
         "600": "https://s3.amazonaws.com/kinetics/600/{split}/k600_{split}_path.txt",
         "700": "https://s3.amazonaws.com/kinetics/700_2020/{split}/k700_2020_{split}_path.txt",
     }
-    _ANNOTATION = {
+    _ANNOTATION_URLS = {
         "400": "https://s3.amazonaws.com/kinetics/400/annotations/{split}.csv",
         "600": "https://s3.amazonaws.com/kinetics/600/annotations/{split}.txt",
         "700": "https://s3.amazonaws.com/kinetics/700_2020/annotations/{split}.csv",
@@ -126,9 +126,8 @@ class Kinetics(VisionDataset):
 
         # and then figure out the rest
         self.classes, class_to_idx = find_classes(self.root)
-        self.samples = make_dataset(
-            self.root, class_to_idx, extensions, is_valid_file=None
-        )
+        self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
+
         video_list = [x[0] for x in self.samples]
         self.video_clips = VideoClips(
             video_list,
@@ -175,7 +174,7 @@ class Kinetics(VisionDataset):
             )
 
         file_url = urllib.request.urlopen(
-            self._FILES[self.n_classes].format(split=self.split)
+            self._TAR_URLS[self.n_classes].format(split=self.split)
         )
         kinetics_dir, _ = path.split(self.root)
         tar_path = path.join(kinetics_dir, "tars")
@@ -183,7 +182,7 @@ class Kinetics(VisionDataset):
 
         # download annotations
         download_url(
-            self._ANNOTATION[self.n_classes].format(split=self.split), annotation_path
+            self._ANNOTATION_URLS[self.n_classes].format(split=self.split), annotation_path
         )
         self.annotations = os.path.join(annotation_path, f"{self.split}.csv")
 
