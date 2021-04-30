@@ -296,7 +296,7 @@ class Kinetics400(Kinetics):
         frames_per_clip,
         step_between_clips=1,
         frame_rate=None,
-        extensions=("avi",),
+        extensions=("avi", "mp4"),
         transform=None,
         _precomputed_metadata=None,
         num_workers=1,
