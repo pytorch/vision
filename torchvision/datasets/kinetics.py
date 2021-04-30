@@ -44,6 +44,7 @@ class Kinetics(VisionDataset):
                 ├── class1
                 │   ├── clip1.avi
                 │   ├── clip2.avi
+                │   ├── clip3.mp4
                 │   └── ...
                 └── class2
                     ├── clipx.avi
@@ -269,6 +270,7 @@ class Kinetics400(Kinetics):
                 ├── class1
                 │   ├── clip1.avi
                 │   ├── clip2.avi
+                │   ├── clip3.mp4
                 │   └── ...
                 └── class2
                     ├── clipx.avi
@@ -306,7 +308,7 @@ class Kinetics400(Kinetics):
     ):
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
-            "It was replaced by Kinetics(..., num_classes="400")".
+            "It was replaced by Kinetics(..., num_classes=\"400\")".
         )
 
         super(Kinetics400, self).__init__(
