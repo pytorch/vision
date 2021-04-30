@@ -49,7 +49,7 @@ class Kinetics(VisionDataset):
                     ├── clipx.avi
                     └── ...
             If the split is not defined, it is appended using the split argument.
-        n_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700
+        num_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700
         split (str): split of the dataset to consider; currently supports ["train", "val"]
         frame_rate (float): If not None, interpolate different frame rate for each clip.
         frames_per_clip (int): number of frames in a clip
@@ -109,7 +109,7 @@ class Kinetics(VisionDataset):
         # TODO: support test
         verify_str_arg(split, arg="split", valid_values=['train', 'val'])
         verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
-        self.n_classes = num_classes
+        self.num_classes = num_classes
         self.extensions = extensions
         self._num_download_workers = _num_download_workers
 
@@ -174,7 +174,7 @@ class Kinetics(VisionDataset):
             )
 
         file_url = urllib.request.urlopen(
-            self._TAR_URLS[self.n_classes].format(split=self.split)
+            self._TAR_URLS[self.num_classes].format(split=self.split)
         )
         kinetics_dir, _ = path.split(self.root)
         tar_path = path.join(kinetics_dir, "tars")
@@ -182,7 +182,7 @@ class Kinetics(VisionDataset):
 
         # download annotations
         download_url(
-            self._ANNOTATION_URLS[self.n_classes].format(split=self.split), annotation_path
+            self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path
         )
         self.annotations = os.path.join(annotation_path, f"{self.split}.csv")
 
@@ -313,7 +313,7 @@ class Kinetics400(Kinetics):
         warnings.warn(
             "torchvision now supports multiple versions of Kinetics"
             "datasets, available via Kinetics class with a separate "
-            "n_classes parameter. This function might get deprecated in the future."
+            "num_classes parameter. This function might get deprecated in the future."
         )
 
         super(Kinetics400, self).__init__(
