@@ -1,4 +1,3 @@
-import urllib
 import time
 import os
 import warnings
@@ -167,25 +166,26 @@ class Kinetics(VisionDataset):
                 f"delete the directory."
             )
 
-        file_url = urllib.request.urlopen(
-            self._TAR_URLS[self.num_classes].format(split=self.split)
-        )
-        kinetics_dir, _ = path.split(self.root)
+        kinetics_dir, split = path.split(self.root)
+        assert split == self.split
         tar_path = path.join(kinetics_dir, "tars")
         annotation_path = path.join(kinetics_dir, "annotations")
+        file_list_path = path.join(kinetics_dir, "files")
 
-        download_url(
-            self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path
-        )
-        self.annotations = os.path.join(annotation_path, f"{self.split}.csv")
+        split_url = self._TAR_URLS[self.num_classes].format(split=self.split)
+        download_url(split_url, file_list_path)
+        list_video_urls = open(path.join(file_list_path, path.basename(split_url)), "r")
+
+        download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
+        self.annotations = path.join(annotation_path, f"{self.split}.csv")
 
         if self._num_download_workers == 1:
-            for line in file_url:
-                line = str(line.decode("utf-8")).replace("\n", "")
+            for line in list_video_urls.readlines():
+                line = str(line).replace("\n", "")
                 download_and_extract_archive(line, tar_path, self.root)
         else:
             part = partial(_dl_wrap, tar_path, self.root)
-            lines = [str(line.decode("utf-8")).replace("\n", "") for line in file_url]
+            lines = [str(line).replace("\n", "") for line in list_video_urls.readlines()]
             poolproc = Pool(self._num_download_workers)
             poolproc.map(part, lines)
 
@@ -217,11 +217,11 @@ class Kinetics(VisionDataset):
                     .replace("(", "")
                     .replace(")", "")
                 )
-                os.makedirs(os.path.join(self.root, label), exist_ok=True)
-                existing_file = os.path.join(self.root, f)
-                if os.path.isfile(existing_file):
+                os.makedirs(path.join(self.root, label), exist_ok=True)
+                existing_file = path.join(self.root, f)
+                if path.isfile(existing_file):
                     os.replace(
-                        existing_file, os.path.join(self.root, label, f),
+                        existing_file, path.join(self.root, label, f),
                     )
 
     @property
@@ -307,8 +307,7 @@ class Kinetics400(Kinetics):
     ):
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
-            "It was replaced by Kinetics(..., num_classes=\"400\")".
-        )
+            "It was replaced by Kinetics(..., num_classes=\"400\").")
 
         super(Kinetics400, self).__init__(
             root=root,
