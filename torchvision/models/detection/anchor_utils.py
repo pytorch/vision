@@ -2,7 +2,7 @@ import math
 import torch
 from torch import nn, Tensor
 
-from typing import List
+from typing import List, Optional
 from .image_list import ImageList
 
 
