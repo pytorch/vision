@@ -173,10 +173,13 @@ class Kinetics(VisionDataset):
         file_list_path = path.join(kinetics_dir, "files")
 
         split_url = self._TAR_URLS[self.num_classes].format(split=self.split)
-        download_url(split_url, file_list_path)
-        list_video_urls = open(path.join(file_list_path, path.basename(split_url)), "r")
+        split_url_filepath = path.join(file_list_path, path.basename(split_url))
+        if not path.isfile(split_url_filepath):
+            download_url(split_url, file_list_path)
+        list_video_urls = open(split_url_filepath, "r")
 
-        download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
+        if not path.isfile(path.join(annotation_path, f"{self.split}.csv")):
+            download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
         self.annotations = path.join(annotation_path, f"{self.split}.csv")
 
         if self._num_download_workers == 1:
