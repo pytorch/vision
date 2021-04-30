@@ -146,7 +146,8 @@ class SSD(nn.Module):
             on
         image_std (Tuple[float, float, float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
-        head:
+        head (nn.Module, optional): Module run on top of the backbone features. Defaults to a module containing
+            a classification and regression module.
         score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
         detections_per_img (int): Number of best detections to keep after NMS.
