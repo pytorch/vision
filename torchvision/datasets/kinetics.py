@@ -155,13 +155,11 @@ class Kinetics(VisionDataset):
         print("Elapsed time overall in mins ", (toc2 - tic) / 60)
 
     def _download_videos(self) -> None:
-        """download tarballs containing the video to
-        "tars" folder and extract them into the _split_ folder
-        where split is one of the official dataset splits.
+        """download tarballs containing the video to "tars" folder and extract them into the _split_ folder where
+        split is one of the official dataset splits.
 
         Raises:
-            RuntimeError: if download folder exists, break to prevent
-              downloading entire dataset again.
+            RuntimeError: if download folder exists, break to prevent downloading entire dataset again.
         """
         if path.exists(self.root):
             raise RuntimeError(
