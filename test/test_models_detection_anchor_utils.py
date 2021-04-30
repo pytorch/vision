@@ -1,7 +1,6 @@
-from collections import OrderedDict
 import torch
 from common_utils import TestCase
-from torchvision.models.detection.anchor_utils import AnchorGenerator
+from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
 
 
@@ -21,6 +20,12 @@ class Tester(TestCase):
         anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
 
         return anchor_generator
+
+    def _init_test_defaultbox_generator(self):
+        aspect_ratios = [[2]]
+        dbox_generator = DefaultBoxGenerator(aspect_ratios)
+
+        return dbox_generator
 
     def get_features(self, images):
         s0, s1 = images.shape[-2:]
@@ -59,3 +64,26 @@ class Tester(TestCase):
         self.assertEqual(tuple(anchors[1].shape), (9, 4))
         self.assertEqual(anchors[0], anchors_output)
         self.assertEqual(anchors[1], anchors_output)
+
+    def test_defaultbox_generator(self):
+        images = torch.zeros(2, 3, 15, 15)
+        features = [torch.zeros(2, 8, 1, 1)]
+        image_shapes = [i.shape[-2:] for i in images]
+        images = ImageList(images, image_shapes)
+
+        model = self._init_test_defaultbox_generator()
+        model.eval()
+        dboxes = model(images, features)
+
+        dboxes_output = torch.tensor([
+            [6.9750, 6.9750, 8.0250, 8.0250],
+            [6.7315, 6.7315, 8.2685, 8.2685],
+            [6.7575, 7.1288, 8.2425, 7.8712],
+            [7.1288, 6.7575, 7.8712, 8.2425]
+        ])
+
+        self.assertEqual(len(dboxes), 2)
+        self.assertEqual(tuple(dboxes[0].shape), (4, 4))
+        self.assertEqual(tuple(dboxes[1].shape), (4, 4))
+        self.assertTrue(dboxes[0].allclose(dboxes_output))
+        self.assertTrue(dboxes[1].allclose(dboxes_output))
