@@ -426,7 +426,7 @@ Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
-SSD VGG16                               25.0     -         -
+SSD VGG16                               25.1     -         -
 Mask R-CNN ResNet-50 FPN                37.9     34.6      -
 ======================================  =======  ========  ===========
 
@@ -485,7 +485,7 @@ Faster R-CNN ResNet-50 FPN              0.2288               0.0590             
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
-SSD VGG16                               0.2100               0.0760              1.5
+SSD VGG16                               0.2093               0.0744              1.5
 Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
 ======================================  ===================  ==================  ===========

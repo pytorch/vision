@@ -17,7 +17,7 @@ from ...ops import boxes as box_ops
 __all__ = ['SSD', 'ssd300_vgg16']
 
 model_urls = {
-    'ssd300_vgg16_coco': 'https://download.pytorch.org/models/ssd300_vgg16_coco-d69bfef3.pth',
+    'ssd300_vgg16_coco': 'https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth',
 }
 
 backbone_urls = {
