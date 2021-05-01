@@ -93,14 +93,14 @@ class SSDLiteRegressionHead(SSDScoringHead):
 
 
 class SSDLiteFeatureExtractorMobileNet(nn.Module):
-    def __init__(self, backbone: nn.Module, C45_positions: Tuple[int, int], norm_layer: Callable[..., nn.Module],
+    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module],
                  width_mult: float = 1.0, min_depth: int = 16):
         super().__init__()
 
-        C4_end, C5_end = (i + 1 for i in C45_positions)
+        assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
-            nn.Sequential(*backbone[:C4_end]),  # until end of C4
-            nn.Sequential(*backbone[C4_end:C5_end]),  # from end of C4 until end of C5
+            nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),  # from start until C4 expansion layer
+            nn.Sequential(backbone[c4_pos].block[1:], *backbone[c4_pos + 1:]),  # from C4 depthwise until end
         )
 
         get_depth = lambda d: max(min_depth, int(d * width_mult))  # noqa: E731
@@ -147,8 +147,7 @@ def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, t
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    C45_positions = (stage_indices[num_stages - 2], stage_indices[num_stages - 1])
-    return SSDLiteFeatureExtractorMobileNet(backbone, C45_positions, norm_layer)
+    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer)
 
 
 def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
