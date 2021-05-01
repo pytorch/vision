@@ -108,8 +108,14 @@ def main(args):
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    args.lr_scheduler = args.lr_scheduler.lower()
+    if args.lr_scheduler == 'multisteplr':
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    elif args.lr_scheduler == 'cosineannealinglr':
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(data_loader) * args.epochs)
+    else:
+        raise RuntimeError("Invalid lr scheduler '{}'. Only MultiStepLR and CosineAnnealingLR "
+                           "are supported.".format(args.lr_scheduler))
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -169,9 +175,13 @@ if __name__ == "__main__":
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
+    parser.add_argument('--lr-scheduler', default="multisteplr", help='the lr scheduler (default: multisteplr)')
+    parser.add_argument('--lr-step-size', default=8, type=int,
+                        help='decrease lr every step-size epochs (multisteplr scheduler only)')
+    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int,
+                        help='decrease lr every step-size epochs (multisteplr scheduler only)')
+    parser.add_argument('--lr-gamma', default=0.1, type=float,
+                        help='decrease lr by a factor of lr-gamma (multisteplr scheduler only)')
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
