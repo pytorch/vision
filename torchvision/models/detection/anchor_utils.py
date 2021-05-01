@@ -161,9 +161,12 @@ class DefaultBoxGenerator(nn.Module):
 
         # Estimation of default boxes scales
         if scales is None:
-            range_ratio = max_ratio - min_ratio
-            self.scales = [min_ratio + range_ratio * k / (num_outputs - 1.0) for k in range(num_outputs)]
-            self.scales.append(1.0)
+            if num_outputs > 1:
+                range_ratio = max_ratio - min_ratio
+                self.scales = [min_ratio + range_ratio * k / (num_outputs - 1.0) for k in range(num_outputs)]
+                self.scales.append(1.0)
+            else:
+                self.scales = [min_ratio, max_ratio]
         else:
             self.scales = scales
 
