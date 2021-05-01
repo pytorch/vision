@@ -1,17 +1,23 @@
 import torch
 
+from collections import OrderedDict
 from functools import partial
 from torch import nn, Tensor
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .ssd import SSDScoringHead
+from . import _utils as det_utils
+from .ssd import SSD, SSDScoringHead
+from .anchor_utils import DefaultBoxGenerator
+from .backbone_utils import _validate_trainable_layers
+from .. import mobilenet
 from ..mobilenetv3 import ConvBNActivation
+from ..utils import load_state_dict_from_url
 
 
-__all__ = []
+__all__ = ['ssdlite320_mobilenet_v3_large']
 
 model_urls = {
-    # TODO: add weights
+    'ssd320_mobilenet_v3_large_coco': None  # TODO: add weights
 }
 
 
@@ -87,13 +93,17 @@ class SSDLiteRegressionHead(SSDScoringHead):
 
 
 class SSDLiteFeatureExtractorMobileNet(nn.Module):
-    def __init__(self, backbone: nn.Module, norm_layer: Callable[..., nn.Module], width_mult: float = 1.0,
-                 min_depth: int = 16):
+    def __init__(self, backbone: nn.Module, C45_positions: Tuple[int, int], norm_layer: Callable[..., nn.Module],
+                 width_mult: float = 1.0, min_depth: int = 16):
         super().__init__()
 
-        self.features = None  # TODO: fix this
+        C4_end, C5_end = (i + 1 for i in C45_positions)
+        self.features = nn.Sequential(
+            nn.Sequential(*backbone[:C4_end]),  # until end of C4
+            nn.Sequential(*backbone[C4_end:C5_end]),  # from end of C4 until end of C5
+        )
 
-        get_depth = lambda d: max(min_depth, int(d * width_mult))
+        get_depth = lambda d: max(min_depth, int(d * width_mult))  # noqa: E731
         extra = nn.ModuleList([
             _extra_block(backbone[-1].out_channels, get_depth(512), norm_layer),
             _extra_block(get_depth(512), get_depth(256), norm_layer),
@@ -105,20 +115,77 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        pass # TODO: fix this
+        # Get feature maps from backbone and extra. Can't be refactored due to JIT limitations.
+        output = []
+        for block in self.features:
+            x = block(x)
+            output.append(x)
+
+        for block in self.extra:
+            x = block(x)
+            output.append(x)
+
+        return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
 def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, trainable_layers: int,
                          norm_layer: Callable[..., nn.Module]):
-    pass
+    backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, progress=progress,
+                                                 norm_layer=norm_layer).features
+
+    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
+    num_stages = len(stage_indices)
+
+    # find the index of the layer from which we wont freeze
+    assert 0 <= trainable_layers <= num_stages
+    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+
+    for b in backbone[:freeze_before]:
+        for parameter in b.parameters():
+            parameter.requires_grad_(False)
+
+    C45_positions = (stage_indices[num_stages - 2], stage_indices[num_stages - 1])
+    return SSDLiteFeatureExtractorMobileNet(backbone, C45_positions, norm_layer)
 
 
-def ssd320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
+def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
                               pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None,
                               norm_layer: Optional[Callable[..., nn.Module]] = None,
                               **kwargs: Any):
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6)
+
+    if pretrained:
+        pretrained_backbone = False
 
     if norm_layer is None:
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
-    pass # TODO: add this
+    backbone = _mobilenet_extractor("mobilenet_v3_large", progress, pretrained_backbone, trainable_backbone_layers,
+                                    norm_layer)
+
+    size = (320, 320)
+    anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
+    out_channels = det_utils.retrieve_out_channels(backbone, size)
+    num_anchors = anchor_generator.num_anchors_per_location()
+    assert len(out_channels) == len(anchor_generator.aspect_ratios)
+
+    defaults = {
+        "score_thresh": 1e-8,
+        "nms_thresh": 0.6,
+        "detections_per_img": 100,
+        "topk_candidates": 100,
+    }
+    kwargs = {**defaults, **kwargs}
+    model = SSD(backbone, anchor_generator, size, num_classes,
+                head=SSDLiteHead(out_channels, num_anchors, num_classes, norm_layer), **kwargs)
+
+    if pretrained:
+        weights_name = 'ssdlite320_mobilenet_v3_large_coco'
+        if model_urls.get(weights_name, None) is None:
+            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
+        model.load_state_dict(state_dict)
+    return model

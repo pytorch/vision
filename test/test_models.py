@@ -45,6 +45,7 @@ script_model_unwrapper = {
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
+    "ssdlite320_mobilenet_v3_large": lambda x: x[1],
 }
 
 
