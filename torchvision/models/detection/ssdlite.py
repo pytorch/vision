@@ -1,8 +1,11 @@
-from .ssd import SSDScoringHead
-from ..mobilenetv3 import ConvBNActivation
+import torch
 
+from functools import partial
 from torch import nn, Tensor
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from .ssd import SSDScoringHead
+from ..mobilenetv3 import ConvBNActivation
 
 
 __all__ = []
@@ -42,6 +45,14 @@ def _extra_block(in_channels: int, out_channels: int, norm_layer: Callable[..., 
     )
 
 
+def _normal_init(conv: nn.Module):
+    for layer in conv.modules():
+        if isinstance(layer, nn.Conv2d):
+            torch.nn.init.normal_(layer.weight, mean=0.0, std=0.03)
+            if layer.bias is not None:
+                torch.nn.init.constant_(layer.bias, 0.0)
+
+
 class SSDLiteHead(nn.Module):
     def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int,
                  norm_layer: Callable[..., nn.Module]):
@@ -62,7 +73,7 @@ class SSDLiteClassificationHead(SSDScoringHead):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(_prediction_block(channels, num_classes * anchors, 3, norm_layer))
-        # _xavier_init(cls_logits)
+        _normal_init(cls_logits)
         super().__init__(cls_logits, num_classes)
 
 
@@ -71,11 +82,11 @@ class SSDLiteRegressionHead(SSDScoringHead):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(_prediction_block(channels, 4 * anchors, 3, norm_layer))
-        # _xavier_init(bbox_reg)
+        _normal_init(bbox_reg)
         super().__init__(bbox_reg, 4)
 
 
-class SSDLiteFeatureExtractorMobileNetV3(nn.Module):
+class SSDLiteFeatureExtractorMobileNet(nn.Module):
     def __init__(self, backbone: nn.Module, norm_layer: Callable[..., nn.Module], width_mult: float = 1.0,
                  min_depth: int = 16):
         super().__init__()
@@ -89,9 +100,25 @@ class SSDLiteFeatureExtractorMobileNetV3(nn.Module):
             _extra_block(get_depth(256), get_depth(256), norm_layer),
             _extra_block(get_depth(256), get_depth(128), norm_layer),
         ])
-        # _xavier_init(extra)
+        _normal_init(extra)
 
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
         pass # TODO: fix this
+
+
+def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, trainable_layers: int,
+                         norm_layer: Callable[..., nn.Module]):
+    pass
+
+
+def ssd320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
+                              pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None,
+                              norm_layer: Optional[Callable[..., nn.Module]] = None,
+                              **kwargs: Any):
+
+    if norm_layer is None:
+        norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
+
+    pass # TODO: add this
