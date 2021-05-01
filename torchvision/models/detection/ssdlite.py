@@ -130,6 +130,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
 def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, trainable_layers: int,
                          norm_layer: Callable[..., nn.Module]):
+    # TODO: support width_mult
     backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, progress=progress,
                                                  norm_layer=norm_layer).features
 
