@@ -151,9 +151,9 @@ def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, t
 
 
 def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
-                              pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None,
-                              norm_layer: Optional[Callable[..., nn.Module]] = None,
-                              **kwargs: Any):
+                                  pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None,
+                                  norm_layer: Optional[Callable[..., nn.Module]] = None,
+                                  **kwargs: Any):
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6)
 
