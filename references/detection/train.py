@@ -47,8 +47,8 @@ def get_dataset(name, image_set, transform, data_path):
     return ds, num_classes
 
 
-def get_transform(train):
-    return presets.DetectionPresetTrain() if train else presets.DetectionPresetEval()
+def get_transform(train, data_augmentation):
+    return presets.DetectionPresetTrain(data_augmentation) if train else presets.DetectionPresetEval()
 
 
 def main(args):
@@ -60,8 +60,9 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args.data_augmentation),
+                                       args.data_path)
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args.data_augmentation), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
@@ -179,6 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('--rpn-score-thresh', default=None, type=float, help='rpn score threshold for faster-rcnn')
     parser.add_argument('--trainable-backbone-layers', default=None, type=int,
                         help='number of trainable layers of backbone')
+    parser.add_argument('--data-augmentation', default="hflip", help='data augmentation policy (default: hflip)')
     parser.add_argument(
         "--test-only",
         dest="test_only",
