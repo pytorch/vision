@@ -195,7 +195,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+b044586 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+fb2d66c ) &#x25BC</a>
     </div>
     
 
@@ -327,52 +327,11 @@ For example:</p>
                                           <span class="n">num_workers</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">nThreads</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The following datasets are available:</p>
-<div class="contents local topic" id="datasets">
-<p class="topic-title">Datasets</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="#caltech" id="id22">Caltech</a></p></li>
-<li><p><a class="reference internal" href="#celeba" id="id23">CelebA</a></p></li>
-<li><p><a class="reference internal" href="#cifar" id="id24">CIFAR</a></p></li>
-<li><p><a class="reference internal" href="#cityscapes" id="id25">Cityscapes</a></p></li>
-<li><p><a class="reference internal" href="#coco" id="id26">COCO</a></p>
-<ul>
-<li><p><a class="reference internal" href="#captions" id="id27">Captions</a></p></li>
-<li><p><a class="reference internal" href="#detection" id="id28">Detection</a></p></li>
-</ul>
-</li>
-<li><p><a class="reference internal" href="#datasetfolder" id="id29">DatasetFolder</a></p></li>
-<li><p><a class="reference internal" href="#emnist" id="id30">EMNIST</a></p></li>
-<li><p><a class="reference internal" href="#fakedata" id="id31">FakeData</a></p></li>
-<li><p><a class="reference internal" href="#fashion-mnist" id="id32">Fashion-MNIST</a></p></li>
-<li><p><a class="reference internal" href="#flickr" id="id33">Flickr</a></p></li>
-<li><p><a class="reference internal" href="#hmdb51" id="id34">HMDB51</a></p></li>
-<li><p><a class="reference internal" href="#imagefolder" id="id35">ImageFolder</a></p></li>
-<li><p><a class="reference internal" href="#imagenet" id="id36">ImageNet</a></p></li>
-<li><p><a class="reference internal" href="#kinetics-400" id="id37">Kinetics-400</a></p></li>
-<li><p><a class="reference internal" href="#kitti" id="id38">KITTI</a></p></li>
-<li><p><a class="reference internal" href="#kmnist" id="id39">KMNIST</a></p></li>
-<li><p><a class="reference internal" href="#lsun" id="id40">LSUN</a></p></li>
-<li><p><a class="reference internal" href="#mnist" id="id41">MNIST</a></p></li>
-<li><p><a class="reference internal" href="#omniglot" id="id42">Omniglot</a></p></li>
-<li><p><a class="reference internal" href="#phototour" id="id43">PhotoTour</a></p></li>
-<li><p><a class="reference internal" href="#places365" id="id44">Places365</a></p></li>
-<li><p><a class="reference internal" href="#qmnist" id="id45">QMNIST</a></p></li>
-<li><p><a class="reference internal" href="#sbd" id="id46">SBD</a></p></li>
-<li><p><a class="reference internal" href="#sbu" id="id47">SBU</a></p></li>
-<li><p><a class="reference internal" href="#semeion" id="id48">SEMEION</a></p></li>
-<li><p><a class="reference internal" href="#stl10" id="id49">STL10</a></p></li>
-<li><p><a class="reference internal" href="#svhn" id="id50">SVHN</a></p></li>
-<li><p><a class="reference internal" href="#ucf101" id="id51">UCF101</a></p></li>
-<li><p><a class="reference internal" href="#usps" id="id52">USPS</a></p></li>
-<li><p><a class="reference internal" href="#voc" id="id53">VOC</a></p></li>
-<li><p><a class="reference internal" href="#widerface" id="id54">WIDERFace</a></p></li>
-</ul>
-</div>
 <p>All the datasets have almost similar API. They all have two common arguments:
-<code class="docutils literal notranslate"><span class="pre">transform</span></code> and  <code class="docutils literal notranslate"><span class="pre">target_transform</span></code> to transform the input and target respectively.</p>
+<code class="docutils literal notranslate"><span class="pre">transform</span></code> and  <code class="docutils literal notranslate"><span class="pre">target_transform</span></code> to transform the input and target respectively.
+You can also create your own datasets using the provided <a class="reference internal" href="#base-classes-datasets"><span class="std std-ref">base classes</span></a>.</p>
 <section id="caltech">
-<h2><a class="toc-backref" href="#id22">Caltech</a><a class="headerlink" href="#caltech" title="Permalink to this headline">¶</a></h2>
+<h2>Caltech<a class="headerlink" href="#caltech" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Caltech101">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Caltech101</code><span class="sig-paren">(</span><em class="sig-param">root: str, target_type: Union[List[str], str] = 'category', transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/caltech.html#Caltech101"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Caltech101" title="Permalink to this definition">¶</a></dt>
@@ -457,7 +416,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="celeba">
-<h2><a class="toc-backref" href="#id23">CelebA</a><a class="headerlink" href="#celeba" title="Permalink to this headline">¶</a></h2>
+<h2>CelebA<a class="headerlink" href="#celeba" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.CelebA">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">CelebA</code><span class="sig-paren">(</span><em class="sig-param">root: str, split: str = 'train', target_type: Union[List[str], str] = 'attr', transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/celeba.html#CelebA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CelebA" title="Permalink to this definition">¶</a></dt>
@@ -496,7 +455,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="cifar">
-<h2><a class="toc-backref" href="#id24">CIFAR</a><a class="headerlink" href="#cifar" title="Permalink to this headline">¶</a></h2>
+<h2>CIFAR<a class="headerlink" href="#cifar" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.CIFAR10">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">CIFAR10</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/cifar.html#CIFAR10"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CIFAR10" title="Permalink to this definition">¶</a></dt>
@@ -545,7 +504,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="cityscapes">
-<h2><a class="toc-backref" href="#id25">Cityscapes</a><a class="headerlink" href="#cityscapes" title="Permalink to this headline">¶</a></h2>
+<h2>Cityscapes<a class="headerlink" href="#cityscapes" title="Permalink to this headline">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Requires Cityscape to be downloaded.</p>
@@ -616,13 +575,13 @@ than one item. Otherwise target is a json object if target_type=”polygon”, e
 
 </section>
 <section id="coco">
-<h2><a class="toc-backref" href="#id26">COCO</a><a class="headerlink" href="#coco" title="Permalink to this headline">¶</a></h2>
+<h2>COCO<a class="headerlink" href="#coco" title="Permalink to this headline">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>These require the <a class="reference external" href="https://github.com/pdollar/coco/tree/master/PythonAPI">COCO API to be installed</a></p>
 </div>
 <section id="captions">
-<h3><a class="toc-backref" href="#id27">Captions</a><a class="headerlink" href="#captions" title="Permalink to this headline">¶</a></h3>
+<h3>Captions<a class="headerlink" href="#captions" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="torchvision.datasets.CocoCaptions">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">CocoCaptions</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">annFile: str</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">transforms: Optional[Callable] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoCaptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoCaptions" title="Permalink to this definition">¶</a></dt>
@@ -669,7 +628,7 @@ and returns a transformed version.</p></li>
 
 </section>
 <section id="detection">
-<h3><a class="toc-backref" href="#id28">Detection</a><a class="headerlink" href="#detection" title="Permalink to this headline">¶</a></h3>
+<h3>Detection<a class="headerlink" href="#detection" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
 <dt id="torchvision.datasets.CocoDetection">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">CocoDetection</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">annFile: str</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">transforms: Optional[Callable] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/coco.html#CocoDetection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.CocoDetection" title="Permalink to this definition">¶</a></dt>
@@ -692,60 +651,8 @@ and returns a transformed version.</p></li>
 
 </section>
 </section>
-<section id="datasetfolder">
-<h2><a class="toc-backref" href="#id29">DatasetFolder</a><a class="headerlink" href="#datasetfolder" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="torchvision.datasets.DatasetFolder">
-<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">DatasetFolder</code><span class="sig-paren">(</span><em class="sig-param">root: str, loader: Callable[[str], Any], extensions: Optional[Tuple[str, ...]] = None, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, is_valid_file: Optional[Callable[[str], bool]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/folder.html#DatasetFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.DatasetFolder" title="Permalink to this definition">¶</a></dt>
-<dd><p>A generic data loader where the samples are arranged in this way:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="n">xxx</span><span class="o">.</span><span class="n">ext</span>
-<span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="n">xxy</span><span class="o">.</span><span class="n">ext</span>
-<span class="n">root</span><span class="o">/</span><span class="n">class_x</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">ext</span>
-
-<span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="mf">123.</span><span class="n">ext</span>
-<span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="n">nsdf3</span><span class="o">.</span><span class="n">ext</span>
-<span class="n">root</span><span class="o">/</span><span class="n">class_y</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">ext</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>root</strong> (<em>string</em>) – Root directory path.</p></li>
-<li><p><strong>loader</strong> (<em>callable</em>) – A function to load a sample given its path.</p></li>
-<li><p><strong>extensions</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>[</em><em>string</em><em>]</em>) – A list of allowed extensions.
-both extensions and is_valid_file should not be passed.</p></li>
-<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in
-a sample and returns a transformed version.
-E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code> for images.</p></li>
-<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes
-in the target and transforms it.</p></li>
-<li><p><strong>is_valid_file</strong> – A function that takes path of a file
-and check if the file is a valid file (used to check of corrupt files)
-both extensions and is_valid_file should not be passed.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="torchvision.datasets.DatasetFolder.__getitem__">
-<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="reference internal" href="_modules/torchvision/datasets/folder.html#DatasetFolder.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.DatasetFolder.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>(sample, target) where target is class_index of the target class.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 <section id="emnist">
-<h2><a class="toc-backref" href="#id30">EMNIST</a><a class="headerlink" href="#emnist" title="Permalink to this headline">¶</a></h2>
+<h2>EMNIST<a class="headerlink" href="#emnist" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.EMNIST">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">EMNIST</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">split: str</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/mnist.html#EMNIST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.EMNIST" title="Permalink to this definition">¶</a></dt>
@@ -774,7 +681,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="fakedata">
-<h2><a class="toc-backref" href="#id31">FakeData</a><a class="headerlink" href="#fakedata" title="Permalink to this headline">¶</a></h2>
+<h2>FakeData<a class="headerlink" href="#fakedata" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.FakeData">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">FakeData</code><span class="sig-paren">(</span><em class="sig-param">size: int = 1000</em>, <em class="sig-param">image_size: Tuple[int</em>, <em class="sig-param">int</em>, <em class="sig-param">int] = (3</em>, <em class="sig-param">224</em>, <em class="sig-param">224)</em>, <em class="sig-param">num_classes: int = 10</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">random_offset: int = 0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/fakedata.html#FakeData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.FakeData" title="Permalink to this definition">¶</a></dt>
@@ -798,7 +705,7 @@ generate each image. Default: 0</p></li>
 
 </section>
 <section id="fashion-mnist">
-<h2><a class="toc-backref" href="#id32">Fashion-MNIST</a><a class="headerlink" href="#fashion-mnist" title="Permalink to this headline">¶</a></h2>
+<h2>Fashion-MNIST<a class="headerlink" href="#fashion-mnist" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.FashionMNIST">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">FashionMNIST</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/mnist.html#FashionMNIST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.FashionMNIST" title="Permalink to this definition">¶</a></dt>
@@ -824,7 +731,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="flickr">
-<h2><a class="toc-backref" href="#id33">Flickr</a><a class="headerlink" href="#flickr" title="Permalink to this headline">¶</a></h2>
+<h2>Flickr<a class="headerlink" href="#flickr" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Flickr8k">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Flickr8k</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">ann_file: str</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/flickr.html#Flickr8k"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Flickr8k" title="Permalink to this definition">¶</a></dt>
@@ -895,7 +802,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="hmdb51">
-<h2><a class="toc-backref" href="#id34">HMDB51</a><a class="headerlink" href="#hmdb51" title="Permalink to this headline">¶</a></h2>
+<h2>HMDB51<a class="headerlink" href="#hmdb51" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.HMDB51">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">HMDB51</code><span class="sig-paren">(</span><em class="sig-param">root</em>, <em class="sig-param">annotation_path</em>, <em class="sig-param">frames_per_clip</em>, <em class="sig-param">step_between_clips=1</em>, <em class="sig-param">frame_rate=None</em>, <em class="sig-param">fold=1</em>, <em class="sig-param">train=True</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">_precomputed_metadata=None</em>, <em class="sig-param">num_workers=1</em>, <em class="sig-param">_video_width=0</em>, <em class="sig-param">_video_height=0</em>, <em class="sig-param">_video_min_dimension=0</em>, <em class="sig-param">_audio_samples=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/hmdb51.html#HMDB51"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.HMDB51" title="Permalink to this definition">¶</a></dt>
@@ -944,56 +851,8 @@ and <cite>L</cite> is the number of points</p></li>
 </dd></dl>
 
 </section>
-<section id="imagefolder">
-<h2><a class="toc-backref" href="#id35">ImageFolder</a><a class="headerlink" href="#imagefolder" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="torchvision.datasets.ImageFolder">
-<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">ImageFolder</code><span class="sig-paren">(</span><em class="sig-param">root: str, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, loader: Callable[[str], Any] = &lt;function default_loader&gt;, is_valid_file: Optional[Callable[[str], bool]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/folder.html#ImageFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.ImageFolder" title="Permalink to this definition">¶</a></dt>
-<dd><p>A generic data loader where the images are arranged in this way:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxx</span><span class="o">.</span><span class="n">png</span>
-<span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxy</span><span class="o">.</span><span class="n">png</span>
-<span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">png</span>
-
-<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="mf">123.</span><span class="n">png</span>
-<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="n">nsdf3</span><span class="o">.</span><span class="n">png</span>
-<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">png</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>root</strong> (<em>string</em>) – Root directory path.</p></li>
-<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that  takes in an PIL image
-and returns a transformed version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code></p></li>
-<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the
-target and transforms it.</p></li>
-<li><p><strong>loader</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function to load an image given its path.</p></li>
-<li><p><strong>is_valid_file</strong> – A function that takes path of an Image file
-and check if the file is a valid file (used to check of corrupt files)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="torchvision.datasets.ImageFolder.__getitem__">
-<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="headerlink" href="#torchvision.datasets.ImageFolder.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>(sample, target) where target is class_index of the target class.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 <section id="imagenet">
-<h2><a class="toc-backref" href="#id36">ImageNet</a><a class="headerlink" href="#imagenet" title="Permalink to this headline">¶</a></h2>
+<h2>ImageNet<a class="headerlink" href="#imagenet" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.ImageNet">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">ImageNet</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">split: str = 'train'</em>, <em class="sig-param">download: Optional[str] = None</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/imagenet.html#ImageNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.ImageNet" title="Permalink to this definition">¶</a></dt>
@@ -1019,7 +878,7 @@ target and transforms it.</p></li>
 </div>
 </section>
 <section id="kinetics-400">
-<h2><a class="toc-backref" href="#id37">Kinetics-400</a><a class="headerlink" href="#kinetics-400" title="Permalink to this headline">¶</a></h2>
+<h2>Kinetics-400<a class="headerlink" href="#kinetics-400" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Kinetics400">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Kinetics400</code><span class="sig-paren">(</span><em class="sig-param">root</em>, <em class="sig-param">frames_per_clip</em>, <em class="sig-param">step_between_clips=1</em>, <em class="sig-param">frame_rate=None</em>, <em class="sig-param">extensions=('avi'</em>, <em class="sig-param">)</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">_precomputed_metadata=None</em>, <em class="sig-param">num_workers=1</em>, <em class="sig-param">_video_width=0</em>, <em class="sig-param">_video_height=0</em>, <em class="sig-param">_video_min_dimension=0</em>, <em class="sig-param">_audio_samples=0</em>, <em class="sig-param">_audio_channels=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/kinetics.html#Kinetics400"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Kinetics400" title="Permalink to this definition">¶</a></dt>
@@ -1076,7 +935,7 @@ and <cite>L</cite> is the number of points</p></li>
 
 </section>
 <section id="kitti">
-<h2><a class="toc-backref" href="#id38">KITTI</a><a class="headerlink" href="#kitti" title="Permalink to this headline">¶</a></h2>
+<h2>KITTI<a class="headerlink" href="#kitti" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Kitti">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Kitti</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">transforms: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/kitti.html#Kitti"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Kitti" title="Permalink to this definition">¶</a></dt>
@@ -1144,7 +1003,7 @@ target is a list of dictionaries with the following keys:</p>
 
 </section>
 <section id="kmnist">
-<h2><a class="toc-backref" href="#id39">KMNIST</a><a class="headerlink" href="#kmnist" title="Permalink to this headline">¶</a></h2>
+<h2>KMNIST<a class="headerlink" href="#kmnist" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.KMNIST">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">KMNIST</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/mnist.html#KMNIST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.KMNIST" title="Permalink to this definition">¶</a></dt>
@@ -1170,7 +1029,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="lsun">
-<h2><a class="toc-backref" href="#id40">LSUN</a><a class="headerlink" href="#lsun" title="Permalink to this headline">¶</a></h2>
+<h2>LSUN<a class="headerlink" href="#lsun" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.LSUN">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">LSUN</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">classes: Union[str</em>, <em class="sig-param">List[str]] = 'train'</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/lsun.html#LSUN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.LSUN" title="Permalink to this definition">¶</a></dt>
@@ -1208,7 +1067,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="mnist">
-<h2><a class="toc-backref" href="#id41">MNIST</a><a class="headerlink" href="#mnist" title="Permalink to this headline">¶</a></h2>
+<h2>MNIST<a class="headerlink" href="#mnist" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.MNIST">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">MNIST</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/mnist.html#MNIST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.MNIST" title="Permalink to this definition">¶</a></dt>
@@ -1234,7 +1093,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="omniglot">
-<h2><a class="toc-backref" href="#id42">Omniglot</a><a class="headerlink" href="#omniglot" title="Permalink to this headline">¶</a></h2>
+<h2>Omniglot<a class="headerlink" href="#omniglot" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Omniglot">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Omniglot</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">background: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/omniglot.html#Omniglot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Omniglot" title="Permalink to this definition">¶</a></dt>
@@ -1260,7 +1119,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="phototour">
-<h2><a class="toc-backref" href="#id43">PhotoTour</a><a class="headerlink" href="#phototour" title="Permalink to this headline">¶</a></h2>
+<h2>PhotoTour<a class="headerlink" href="#phototour" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.PhotoTour">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">PhotoTour</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">name: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/phototour.html#PhotoTour"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.PhotoTour" title="Permalink to this definition">¶</a></dt>
@@ -1308,7 +1167,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="places365">
-<h2><a class="toc-backref" href="#id44">Places365</a><a class="headerlink" href="#places365" title="Permalink to this headline">¶</a></h2>
+<h2>Places365<a class="headerlink" href="#places365" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Places365">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Places365</code><span class="sig-paren">(</span><em class="sig-param">root: str, split: str = 'train-standard', small: bool = False, download: bool = False, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, loader: Callable[[str], Any] = &lt;function default_loader&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/places365.html#Places365"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Places365" title="Permalink to this definition">¶</a></dt>
@@ -1317,7 +1176,7 @@ downloaded again.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>root</strong> (<em>string</em>) – Root directory of the Places365 dataset.</p></li>
-<li><p><strong>split</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset split. Can be one of <code class="docutils literal notranslate"><span class="pre">train-standard</span></code> (default), <code class="docutils literal notranslate"><span class="pre">train-challendge</span></code>,
+<li><p><strong>split</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset split. Can be one of <code class="docutils literal notranslate"><span class="pre">train-standard</span></code> (default), <code class="docutils literal notranslate"><span class="pre">train-challenge</span></code>,
 <code class="docutils literal notranslate"><span class="pre">val</span></code>.</p></li>
 <li><p><strong>small</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, uses the small images, i. e. resized to 256 x 256 pixels, instead of the
 high resolution ones.</p></li>
@@ -1341,7 +1200,7 @@ target and transforms it.</p></li>
 
 </section>
 <section id="qmnist">
-<h2><a class="toc-backref" href="#id45">QMNIST</a><a class="headerlink" href="#qmnist" title="Permalink to this headline">¶</a></h2>
+<h2>QMNIST<a class="headerlink" href="#qmnist" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.QMNIST">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">QMNIST</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">what: Optional[str] = None</em>, <em class="sig-param">compat: bool = True</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/mnist.html#QMNIST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.QMNIST" title="Permalink to this definition">¶</a></dt>
@@ -1380,7 +1239,7 @@ training set ot the testing set.  Default: True.</p></li>
 
 </section>
 <section id="sbd">
-<h2><a class="toc-backref" href="#id46">SBD</a><a class="headerlink" href="#sbd" title="Permalink to this headline">¶</a></h2>
+<h2>SBD<a class="headerlink" href="#sbd" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.SBDataset">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">SBDataset</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">image_set: str = 'train'</em>, <em class="sig-param">mode: str = 'boundaries'</em>, <em class="sig-param">download: bool = False</em>, <em class="sig-param">transforms: Optional[Callable] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/sbd.html#SBDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.SBDataset" title="Permalink to this definition">¶</a></dt>
@@ -1420,7 +1279,7 @@ if <cite>mode=’boundaries’</cite> or PIL image if <cite>mode=’segmentation
 
 </section>
 <section id="sbu">
-<h2><a class="toc-backref" href="#id47">SBU</a><a class="headerlink" href="#sbu" title="Permalink to this headline">¶</a></h2>
+<h2>SBU<a class="headerlink" href="#sbu" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.SBU">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">SBU</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/sbu.html#SBU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.SBU" title="Permalink to this definition">¶</a></dt>
@@ -1460,7 +1319,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="semeion">
-<h2><a class="toc-backref" href="#id48">SEMEION</a><a class="headerlink" href="#semeion" title="Permalink to this headline">¶</a></h2>
+<h2>SEMEION<a class="headerlink" href="#semeion" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.SEMEION">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">SEMEION</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/semeion.html#SEMEION"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.SEMEION" title="Permalink to this definition">¶</a></dt>
@@ -1500,7 +1359,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="stl10">
-<h2><a class="toc-backref" href="#id49">STL10</a><a class="headerlink" href="#stl10" title="Permalink to this headline">¶</a></h2>
+<h2>STL10<a class="headerlink" href="#stl10" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.STL10">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">STL10</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">split: str = 'train'</em>, <em class="sig-param">folds: Optional[int] = None</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/stl10.html#STL10"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.STL10" title="Permalink to this definition">¶</a></dt>
@@ -1545,7 +1404,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="svhn">
-<h2><a class="toc-backref" href="#id50">SVHN</a><a class="headerlink" href="#svhn" title="Permalink to this headline">¶</a></h2>
+<h2>SVHN<a class="headerlink" href="#svhn" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.SVHN">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">SVHN</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">split: str = 'train'</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/svhn.html#SVHN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.SVHN" title="Permalink to this definition">¶</a></dt>
@@ -1594,7 +1453,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="ucf101">
-<h2><a class="toc-backref" href="#id51">UCF101</a><a class="headerlink" href="#ucf101" title="Permalink to this headline">¶</a></h2>
+<h2>UCF101<a class="headerlink" href="#ucf101" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.UCF101">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">UCF101</code><span class="sig-paren">(</span><em class="sig-param">root</em>, <em class="sig-param">annotation_path</em>, <em class="sig-param">frames_per_clip</em>, <em class="sig-param">step_between_clips=1</em>, <em class="sig-param">frame_rate=None</em>, <em class="sig-param">fold=1</em>, <em class="sig-param">train=True</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">_precomputed_metadata=None</em>, <em class="sig-param">num_workers=1</em>, <em class="sig-param">_video_width=0</em>, <em class="sig-param">_video_height=0</em>, <em class="sig-param">_video_min_dimension=0</em>, <em class="sig-param">_audio_samples=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/ucf101.html#UCF101"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.UCF101" title="Permalink to this definition">¶</a></dt>
@@ -1643,7 +1502,7 @@ and <cite>L</cite> is the number of points</p></li>
 
 </section>
 <section id="usps">
-<h2><a class="toc-backref" href="#id52">USPS</a><a class="headerlink" href="#usps" title="Permalink to this headline">¶</a></h2>
+<h2>USPS<a class="headerlink" href="#usps" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.USPS">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">USPS</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">train: bool = True</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/usps.html#USPS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.USPS" title="Permalink to this definition">¶</a></dt>
@@ -1687,7 +1546,7 @@ downloaded again.</p></li>
 
 </section>
 <section id="voc">
-<h2><a class="toc-backref" href="#id53">VOC</a><a class="headerlink" href="#voc" title="Permalink to this headline">¶</a></h2>
+<h2>VOC<a class="headerlink" href="#voc" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.VOCSegmentation">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">VOCSegmentation</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">year: str = '2012'</em>, <em class="sig-param">image_set: str = 'train'</em>, <em class="sig-param">download: bool = False</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">transforms: Optional[Callable] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/voc.html#VOCSegmentation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.VOCSegmentation" title="Permalink to this definition">¶</a></dt>
@@ -1773,7 +1632,7 @@ and returns a transformed version.</p></li>
 
 </section>
 <section id="widerface">
-<h2><a class="toc-backref" href="#id54">WIDERFace</a><a class="headerlink" href="#widerface" title="Permalink to this headline">¶</a></h2>
+<h2>WIDERFace<a class="headerlink" href="#widerface" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.WIDERFace">
 <em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">WIDERFace</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">split: str = 'train'</em>, <em class="sig-param">transform: Optional[Callable] = None</em>, <em class="sig-param">target_transform: Optional[Callable] = None</em>, <em class="sig-param">download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/widerface.html#WIDERFace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.WIDERFace" title="Permalink to this definition">¶</a></dt>
@@ -1814,6 +1673,167 @@ downloaded again.</p></li>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>(image, target) where target is a dict of annotations for all faces in the image.
 target=None for the test split.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="base-classes-for-custom-datasets">
+<span id="base-classes-datasets"></span><h2>Base classes for custom datasets<a class="headerlink" href="#base-classes-for-custom-datasets" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="torchvision.datasets.DatasetFolder">
+<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">DatasetFolder</code><span class="sig-paren">(</span><em class="sig-param">root: str, loader: Callable[[str], Any], extensions: Optional[Tuple[str, ...]] = None, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, is_valid_file: Optional[Callable[[str], bool]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/folder.html#DatasetFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.DatasetFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic data loader.</p>
+<p>This default directory structure can be customized by overriding the
+<a class="reference internal" href="#torchvision.datasets.DatasetFolder.find_classes" title="torchvision.datasets.DatasetFolder.find_classes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_classes()</span></code></a> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<em>string</em>) – Root directory path.</p></li>
+<li><p><strong>loader</strong> (<em>callable</em>) – A function to load a sample given its path.</p></li>
+<li><p><strong>extensions</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)"><em>tuple</em></a><em>[</em><em>string</em><em>]</em>) – A list of allowed extensions.
+both extensions and is_valid_file should not be passed.</p></li>
+<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in
+a sample and returns a transformed version.
+E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code> for images.</p></li>
+<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes
+in the target and transforms it.</p></li>
+<li><p><strong>is_valid_file</strong> – A function that takes path of a file
+and check if the file is a valid file (used to check of corrupt files)
+both extensions and is_valid_file should not be passed.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="torchvision.datasets.DatasetFolder.__getitem__">
+<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="reference internal" href="_modules/torchvision/datasets/folder.html#DatasetFolder.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.DatasetFolder.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(sample, target) where target is class_index of the target class.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchvision.datasets.DatasetFolder.find_classes">
+<code class="sig-name descname">find_classes</code><span class="sig-paren">(</span><em class="sig-param">directory: str</em><span class="sig-paren">)</span> &#x2192; Tuple[List[str], Dict[str, int]]<a class="reference internal" href="_modules/torchvision/datasets/folder.html#DatasetFolder.find_classes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.DatasetFolder.find_classes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the class folders in a dataset structured as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>directory/
+├── class_x
+│   ├── xxx.ext
+│   ├── xxy.ext
+│   └── ...
+│       └── xxz.ext
+└── class_y
+    ├── 123.ext
+    ├── nsdf3.ext
+    └── ...
+    └── asd932_.ext
+</pre></div>
+</div>
+<p>This method can be overridden to only consider
+a subset of classes, or to adapt to a different dataset directory structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Root directory path, corresponding to <code class="docutils literal notranslate"><span class="pre">self.root</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.9)"><strong>FileNotFoundError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">dir</span></code> has no class folders.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of all classes and dictionary mapping each class to an index.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(Tuple[List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a>], Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a>]])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchvision.datasets.DatasetFolder.make_dataset">
+<em class="property">static </em><code class="sig-name descname">make_dataset</code><span class="sig-paren">(</span><em class="sig-param">directory: str, class_to_idx: Dict[str, int], extensions: Optional[Tuple[str, ...]] = None, is_valid_file: Optional[Callable[[str], bool]] = None</em><span class="sig-paren">)</span> &#x2192; List[Tuple[str, int]]<a class="reference internal" href="_modules/torchvision/datasets/folder.html#DatasetFolder.make_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.DatasetFolder.make_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a list of samples of a form (path_to_sample, class).</p>
+<p>This can be overridden to e.g. read files from a compressed zip file instead of from the disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – root dataset directory, corresponding to <code class="docutils literal notranslate"><span class="pre">self.root</span></code>.</p></li>
+<li><p><strong>class_to_idx</strong> (<em>Dict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em>) – Dictionary mapping class name to class index.</p></li>
+<li><p><strong>extensions</strong> (<em>optional</em>) – A list of allowed extensions.
+Either extensions or is_valid_file should be passed. Defaults to None.</p></li>
+<li><p><strong>is_valid_file</strong> (<em>optional</em>) – A function that takes path of a file
+and checks if the file is a valid file
+(used to check of corrupt files) both extensions and
+is_valid_file should not be passed. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><strong>ValueError</strong></a> – In case <code class="docutils literal notranslate"><span class="pre">class_to_idx</span></code> is empty.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.9)"><strong>ValueError</strong></a> – In case <code class="docutils literal notranslate"><span class="pre">extensions</span></code> and <code class="docutils literal notranslate"><span class="pre">is_valid_file</span></code> are None or both are not None.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.9)"><strong>FileNotFoundError</strong></a> – In case no valid file was found for any class.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>samples of a form (path_to_sample, class)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[Tuple[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)">int</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="torchvision.datasets.ImageFolder">
+<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">ImageFolder</code><span class="sig-paren">(</span><em class="sig-param">root: str, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, loader: Callable[[str], Any] = &lt;function default_loader&gt;, is_valid_file: Optional[Callable[[str], bool]] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/folder.html#ImageFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.ImageFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic data loader where the images are arranged in this way by default:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxx</span><span class="o">.</span><span class="n">png</span>
+<span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="n">xxy</span><span class="o">.</span><span class="n">png</span>
+<span class="n">root</span><span class="o">/</span><span class="n">dog</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">xxz</span><span class="o">.</span><span class="n">png</span>
+
+<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="mf">123.</span><span class="n">png</span>
+<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="n">nsdf3</span><span class="o">.</span><span class="n">png</span>
+<span class="n">root</span><span class="o">/</span><span class="n">cat</span><span class="o">/</span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="n">asd932_</span><span class="o">.</span><span class="n">png</span>
+</pre></div>
+</div>
+<p>This class inherits from <a class="reference internal" href="#torchvision.datasets.DatasetFolder" title="torchvision.datasets.DatasetFolder"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetFolder</span></code></a> so
+the same methods can be overridden to customize the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<em>string</em>) – Root directory path.</p></li>
+<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that  takes in an PIL image
+and returns a transformed version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code></p></li>
+<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the
+target and transforms it.</p></li>
+<li><p><strong>loader</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function to load an image given its path.</p></li>
+<li><p><strong>is_valid_file</strong> – A function that takes path of an Image file
+and check if the file is a valid file (used to check of corrupt files)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="torchvision.datasets.ImageFolder.__getitem__">
+<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="headerlink" href="#torchvision.datasets.ImageFolder.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(sample, target) where target is class_index of the target class.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
@@ -1879,13 +1899,11 @@ target=None for the test split.</p>
 <li><a class="reference internal" href="#detection">Detection</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#datasetfolder">DatasetFolder</a></li>
 <li><a class="reference internal" href="#emnist">EMNIST</a></li>
 <li><a class="reference internal" href="#fakedata">FakeData</a></li>
 <li><a class="reference internal" href="#fashion-mnist">Fashion-MNIST</a></li>
 <li><a class="reference internal" href="#flickr">Flickr</a></li>
 <li><a class="reference internal" href="#hmdb51">HMDB51</a></li>
-<li><a class="reference internal" href="#imagefolder">ImageFolder</a></li>
 <li><a class="reference internal" href="#imagenet">ImageNet</a></li>
 <li><a class="reference internal" href="#kinetics-400">Kinetics-400</a></li>
 <li><a class="reference internal" href="#kitti">KITTI</a></li>
@@ -1905,6 +1923,7 @@ target=None for the test split.</p>
 <li><a class="reference internal" href="#usps">USPS</a></li>
 <li><a class="reference internal" href="#voc">VOC</a></li>
 <li><a class="reference internal" href="#widerface">WIDERFace</a></li>
+<li><a class="reference internal" href="#base-classes-for-custom-datasets">Base classes for custom datasets</a></li>
 </ul>
 </li>
 </ul>

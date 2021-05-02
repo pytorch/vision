@@ -192,7 +192,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+b044586 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+fb2d66c ) &#x25BC</a>
     </div>
     
 
@@ -346,30 +346,9 @@
 
 
 <span class="k">def</span> <span class="nf">find_classes</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-    <span class="sd">&quot;&quot;&quot;Finds the class folders in a dataset structured as follows:</span>
+    <span class="sd">&quot;&quot;&quot;Finds the class folders in a dataset.</span>
 
-<span class="sd">    .. code::</span>
-
-<span class="sd">        directory/</span>
-<span class="sd">        ├── class_x</span>
-<span class="sd">        │   ├── xxx.ext</span>
-<span class="sd">        │   ├── xxy.ext</span>
-<span class="sd">        │   └── ...</span>
-<span class="sd">        │       └── xxz.ext</span>
-<span class="sd">        └── class_y</span>
-<span class="sd">            ├── 123.ext</span>
-<span class="sd">            ├── nsdf3.ext</span>
-<span class="sd">            └── ...</span>
-<span class="sd">                └── asd932_.ext</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        directory (str): Root directory path.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        FileNotFoundError: If ``directory`` has no class folders.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        (Tuple[List[str], Dict[str, int]]): List of all classes and dictionary mapping each class to an index.</span>
+<span class="sd">    See :class:`DatasetFolder` for details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">classes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span> <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_dir</span><span class="p">())</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">classes</span><span class="p">:</span>
@@ -387,24 +366,10 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
     <span class="sd">&quot;&quot;&quot;Generates a list of samples of a form (path_to_sample, class).</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        directory (str): root dataset directory</span>
-<span class="sd">        class_to_idx (Optional[Dict[str, int]]): Dictionary mapping class name to class index. If omitted, is generated</span>
-<span class="sd">            by :func:`find_classes`.</span>
-<span class="sd">        extensions (optional): A list of allowed extensions.</span>
-<span class="sd">            Either extensions or is_valid_file should be passed. Defaults to None.</span>
-<span class="sd">        is_valid_file (optional): A function that takes path of a file</span>
-<span class="sd">            and checks if the file is a valid file</span>
-<span class="sd">            (used to check of corrupt files) both extensions and</span>
-<span class="sd">            is_valid_file should not be passed. Defaults to None.</span>
+<span class="sd">    See :class:`DatasetFolder` for details.</span>
 
-<span class="sd">    Raises:</span>
-<span class="sd">        ValueError: In case ``class_to_idx`` is empty.</span>
-<span class="sd">        ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.</span>
-<span class="sd">        FileNotFoundError: In case no valid file was found for any class.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        List[Tuple[str, int]]: samples of a form (path_to_sample, class)</span>
+<span class="sd">    Note: The class_to_idx parameter is here optional and will use the logic of the ``find_classes`` function</span>
+<span class="sd">    by default.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
 
@@ -453,15 +418,10 @@
 
 
 <div class="viewcode-block" id="DatasetFolder"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.DatasetFolder">[docs]</a><span class="k">class</span> <span class="nc">DatasetFolder</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A generic data loader where the samples are arranged in this way: ::</span>
+    <span class="sd">&quot;&quot;&quot;A generic data loader.</span>
 
-<span class="sd">        root/class_x/xxx.ext</span>
-<span class="sd">        root/class_x/xxy.ext</span>
-<span class="sd">        root/class_x/[...]/xxz.ext</span>
-
-<span class="sd">        root/class_y/123.ext</span>
-<span class="sd">        root/class_y/nsdf3.ext</span>
-<span class="sd">        root/class_y/[...]/asd932_.ext</span>
+<span class="sd">    This default directory structure can be customized by overriding the</span>
+<span class="sd">    :meth:`find_classes` method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (string): Root directory path.</span>
@@ -506,22 +466,72 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">]</span>
 
-    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="DatasetFolder.make_dataset"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.DatasetFolder.make_dataset">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">make_dataset</span><span class="p">(</span>
         <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">class_to_idx</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
         <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">is_valid_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-        <span class="k">return</span> <span class="n">make_dataset</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">,</span> <span class="n">is_valid_file</span><span class="o">=</span><span class="n">is_valid_file</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Generates a list of samples of a form (path_to_sample, class).</span>
 
-    <span class="k">def</span> <span class="nf">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-        <span class="sd">&quot;&quot;&quot;Same as :func:`find_classes`.</span>
+<span class="sd">        This can be overridden to e.g. read files from a compressed zip file instead of from the disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            directory (str): root dataset directory, corresponding to ``self.root``.</span>
+<span class="sd">            class_to_idx (Dict[str, int]): Dictionary mapping class name to class index.</span>
+<span class="sd">            extensions (optional): A list of allowed extensions.</span>
+<span class="sd">                Either extensions or is_valid_file should be passed. Defaults to None.</span>
+<span class="sd">            is_valid_file (optional): A function that takes path of a file</span>
+<span class="sd">                and checks if the file is a valid file</span>
+<span class="sd">                (used to check of corrupt files) both extensions and</span>
+<span class="sd">                is_valid_file should not be passed. Defaults to None.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: In case ``class_to_idx`` is empty.</span>
+<span class="sd">            ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.</span>
+<span class="sd">            FileNotFoundError: In case no valid file was found for any class.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Tuple[str, int]]: samples of a form (path_to_sample, class)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">class_to_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># prevent potential bug since make_dataset() would use the class_to_idx logic of the</span>
+            <span class="c1"># find_classes() function, instead of using that of the find_classes() method, which</span>
+            <span class="c1"># is potentially overridden and thus could have a different logic.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The class_to_idx parameter cannot be None.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">make_dataset</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">,</span> <span class="n">is_valid_file</span><span class="o">=</span><span class="n">is_valid_file</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DatasetFolder.find_classes"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.DatasetFolder.find_classes">[docs]</a>    <span class="k">def</span> <span class="nf">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Find the class folders in a dataset structured as follows::</span>
+
+<span class="sd">            directory/</span>
+<span class="sd">            ├── class_x</span>
+<span class="sd">            │   ├── xxx.ext</span>
+<span class="sd">            │   ├── xxy.ext</span>
+<span class="sd">            │   └── ...</span>
+<span class="sd">            │       └── xxz.ext</span>
+<span class="sd">            └── class_y</span>
+<span class="sd">                ├── 123.ext</span>
+<span class="sd">                ├── nsdf3.ext</span>
+<span class="sd">                └── ...</span>
+<span class="sd">                └── asd932_.ext</span>
 
 <span class="sd">        This method can be overridden to only consider</span>
 <span class="sd">        a subset of classes, or to adapt to a different dataset directory structure.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            directory(str): Root directory path, corresponding to ``self.root``</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: If ``dir`` has no class folders.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (Tuple[List[str], Dict[str, int]]): List of all classes and dictionary mapping each class to an index.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">find_classes</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">find_classes</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DatasetFolder.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.DatasetFolder.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -573,7 +583,7 @@
 
 
 <div class="viewcode-block" id="ImageFolder"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.ImageFolder">[docs]</a><span class="k">class</span> <span class="nc">ImageFolder</span><span class="p">(</span><span class="n">DatasetFolder</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A generic data loader where the images are arranged in this way: ::</span>
+    <span class="sd">&quot;&quot;&quot;A generic data loader where the images are arranged in this way by default: ::</span>
 
 <span class="sd">        root/dog/xxx.png</span>
 <span class="sd">        root/dog/xxy.png</span>
@@ -582,6 +592,9 @@
 <span class="sd">        root/cat/123.png</span>
 <span class="sd">        root/cat/nsdf3.png</span>
 <span class="sd">        root/cat/[...]/asd932_.png</span>
+
+<span class="sd">    This class inherits from :class:`~torchvision.datasets.DatasetFolder` so</span>
+<span class="sd">    the same methods can be overridden to customize the dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (string): Root directory path.</span>
