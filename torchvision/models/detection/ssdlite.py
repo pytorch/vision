@@ -93,9 +93,11 @@ class SSDLiteRegressionHead(SSDScoringHead):
 
 
 class SSDLiteFeatureExtractorMobileNet(nn.Module):
-    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module],
-                 width_mult: float = 1.0, min_depth: int = 16):
+    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], **kwargs: Any):
         super().__init__()
+        # non-public config parameters
+        min_depth = kwargs.pop('_min_depth', 16)
+        width_mult = kwargs.pop('_width_mult', 1.0)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
@@ -129,10 +131,9 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
 
 def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, trainable_layers: int,
-                         norm_layer: Callable[..., nn.Module]):
-    # TODO: support width_mult
+                         norm_layer: Callable[..., nn.Module], **kwargs: Any):
     backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, progress=progress,
-                                                 norm_layer=norm_layer).features
+                                                 norm_layer=norm_layer, **kwargs).features
 
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
@@ -147,7 +148,7 @@ def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, t
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer)
+    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer, **kwargs)
 
 
 def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
@@ -164,7 +165,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
     backbone = _mobilenet_extractor("mobilenet_v3_large", progress, pretrained_backbone, trainable_backbone_layers,
-                                    norm_layer)
+                                    norm_layer, _width_mult=1.0)
 
     size = (320, 320)
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
