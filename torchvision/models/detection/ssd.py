@@ -667,7 +667,8 @@ def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes
         pretrained_backbone = False
 
     backbone = _resnet_extractor("resnet50", pretrained_backbone, trainable_backbone_layers)
-    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]])
+    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+                                           scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05])
     model = SSD(backbone, anchor_generator, (512, 512), num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd512_resnet50_coco'
