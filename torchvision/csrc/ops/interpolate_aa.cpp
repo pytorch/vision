@@ -19,6 +19,7 @@ at::Tensor interpolate_linear_aa(
 
 namespace detail {
 
+// TODO: Implement backward function
 // at::Tensor _interpolate_linear_aa_backward(
 //     const at::Tensor& grad,
 //     at::IntArrayRef output_size,
@@ -31,7 +32,8 @@ namespace detail {
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::interpolate_linear_aa(Tensor input, int[] output_size, bool align_corners) -> Tensor"));
+      "torchvision::_interpolate_linear_aa(Tensor input, int[] output_size, bool align_corners) -> Tensor"));
+  // TODO: Implement backward function
   // m.def(TORCH_SELECTIVE_SCHEMA(
   //     "torchvision::_interpolate_linear_aa_backward(Tensor grad, Tensor rois,
   //     float spatial_scale, int pooled_height, int pooled_width, int

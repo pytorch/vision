@@ -473,6 +473,10 @@ class Tester(TransformsTester):
                 F.resize(img, size=32, max_size=32)
 
     def test_resize_antialias(self):
+
+        if self.device == "cuda":
+            self.skipTest("Not implemented for CUDA device")
+
         script_fn = torch.jit.script(F.resize)
         tensor, pil_img = self._create_data(320, 290, device=self.device)
 
@@ -486,7 +490,7 @@ class Tester(TransformsTester):
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
 
-            for size in [[96, 72], ]:
+            for size in [[96, 72], [96, 420]]:
                 for interpolation in [BILINEAR, ]:
                     resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, antialias=True)
                     resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
@@ -505,7 +509,8 @@ class Tester(TransformsTester):
                         resized_tensor_f, resized_pil_img, tol=0.5, msg=f"{size}, {interpolation}, {dt}"
                     )
                     self.approxEqualTensorToPIL(
-                        resized_tensor_f, resized_pil_img, tol=1.0 + 1e-5, agg_method="max", msg=f"{size}, {interpolation}, {dt}"
+                        resized_tensor_f, resized_pil_img, tol=1.0 + 1e-5, agg_method="max",
+                        msg=f"{size}, {interpolation}, {dt}"
                     )
 
                     if isinstance(size, int):

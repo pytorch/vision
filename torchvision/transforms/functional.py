@@ -379,6 +379,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
             ``InterpolationMode.BILINEAR`` only mode.
 
+            .. warning::
+                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
+
     Returns:
         PIL Image or Tensor: Resized image.
     """
@@ -394,7 +397,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
-        if antialias is not None:
+        if antialias is not None and not antialias:
             warnings.warn(
                 "Anti-alias option is always applied for PIL Image input. Argument antialias is ignored."
             )

@@ -6,13 +6,14 @@
 namespace vision {
 namespace ops {
 
-VISION_API at::Tensor interpolate_linear_aa(
+VISION_API at::Tensor _interpolate_linear_aa(
     const at::Tensor& input,
     at::IntArrayRef output_size,
     bool align_corners = false);
 
 namespace detail {
 
+// TODO: Implement backward function
 // at::Tensor _interpolate_linear_aa_backward(
 //     const at::Tensor& grad,
 //     at::IntArrayRef output_size,

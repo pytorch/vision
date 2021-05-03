@@ -475,6 +475,7 @@ at::Tensor interpolate_linear_aa_forward_kernel(
   return output;
 }
 
+// TODO: Implement backward function
 // at::Tensor interpolate_linear_aa_backward_kernel(
 //     const at::Tensor& grad) {
 //   return grad_input;
@@ -484,8 +485,9 @@ at::Tensor interpolate_linear_aa_forward_kernel(
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::interpolate_linear_aa"),
+      TORCH_SELECTIVE_NAME("torchvision::_interpolate_linear_aa"),
       TORCH_FN(interpolate_linear_aa_forward_kernel));
+  // TODO: Implement backward function
   //   m.impl(
   //       TORCH_SELECTIVE_NAME("torchvision::_interpolate_linear_aa_backward"),
   //       TORCH_FN(interpolate_linear_aa_backward_kernel));
