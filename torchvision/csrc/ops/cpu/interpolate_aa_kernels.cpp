@@ -188,7 +188,7 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
       int& out_interp_size) {
     scalar_t scale = area_pixel_compute_scale<scalar_t>(
         input_size, output_size, align_corners, opt_scale);
-    TORCH_INTERNAL_ASSERT(antialias && scale > 1.0);
+    TORCH_INTERNAL_ASSERT(antialias);
 
     return _compute_indices_weights_aa(
         input_size,
@@ -224,7 +224,8 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
       scalar_t scale,
       int& out_interp_size) {
     int interp_size = HelperInterpLinear<index_t, scalar_t>::interp_size;
-    scalar_t support = (interp_size / 2) * scale;
+    scalar_t support =
+        (scale > 1.0) ? (interp_size / 2) * scale : interp_size / 2 * 1.0;
     interp_size = (int)ceilf(support) * 2 + 1;
 
     // return interp_size
@@ -257,7 +258,7 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
           empty(new_shape, CPU(c10::CppTypeToScalarType<index_t>())));
     }
 
-    scalar_t center, total_w, invscale = 1.0 / scale;
+    scalar_t center, total_w, invscale = (scale > 1.0) ? 1.0 / scale : 1.0;
     index_t zero = static_cast<index_t>(0);
     int64_t* idx_ptr_xmin = output[0].data_ptr<index_t>();
     int64_t* idx_ptr_size = output[1].data_ptr<index_t>();

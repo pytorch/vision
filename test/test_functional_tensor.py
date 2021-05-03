@@ -490,7 +490,7 @@ class Tester(TransformsTester):
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
 
-            for size in [[96, 72], [96, 420]]:
+            for size in [[96, 72], [96, 420], [420, 72]]:
                 for interpolation in [BILINEAR, ]:
                     resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, antialias=True)
                     resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
@@ -519,7 +519,7 @@ class Tester(TransformsTester):
                         script_size = size
 
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, antialias=True)
-                    self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
+                    self.assertTrue(resized_tensor.equal(resize_result), msg=f"{size}, {interpolation}, {dt}")
 
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:

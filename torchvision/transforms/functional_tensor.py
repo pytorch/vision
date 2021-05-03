@@ -536,9 +536,9 @@ def resize(
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    if antialias and (new_w < w and new_h < h):
+    if antialias:
         # Apply antialias for donwsampling on both dims
-        img = torch.ops.torchvision.interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+        img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
     else:
         img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
