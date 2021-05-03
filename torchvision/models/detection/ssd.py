@@ -572,70 +572,39 @@ class SSDFeatureExtractorResNet(nn.Module):
         super().__init__()
 
         self.features = nn.Sequential(
-            backbone.conv1,
-            backbone.bn1,
-            backbone.relu,
-            backbone.maxpool,
-            backbone.layer1,
-            backbone.layer2,
+            nn.Sequential(
+                backbone.conv1,
+                backbone.bn1,
+                backbone.relu,
+                backbone.maxpool,
+                backbone.layer1,
+                backbone.layer2,
+            ),
             backbone.layer3,
             backbone.layer4,
         )
 
-        # Patch last block's strides to get valid output sizes
-        for m in self.features[-1][0].modules():
-            if hasattr(m, 'stride'):
-                m.stride = 1
-
         backbone_out_channels = self.features[-1][-1].bn3.num_features
         extra = nn.ModuleList([
             nn.Sequential(
-                nn.Conv2d(backbone_out_channels, 256, kernel_size=1, bias=False),
-                nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2, bias=False),
-                nn.BatchNorm2d(512),
-                nn.ReLU(inplace=True),
-            ),
-            nn.Sequential(
-                nn.Conv2d(512, 256, kernel_size=1, bias=False),
-                nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2, bias=False),
-                nn.BatchNorm2d(512),
-                nn.ReLU(inplace=True),
-            ),
-            nn.Sequential(
-                nn.Conv2d(512, 128, kernel_size=1, bias=False),
-                nn.BatchNorm2d(128),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2, bias=False),
+                nn.Conv2d(backbone_out_channels, 256, kernel_size=3, padding=1, stride=2, bias=False),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
             ),
             nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1, bias=False),
-                nn.BatchNorm2d(128),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=3, bias=False),
+                nn.Conv2d(256, 256, kernel_size=3, padding=1, stride=2, bias=False),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
             ),
-            nn.Sequential(
-                nn.Conv2d(256, 128, kernel_size=1, bias=False),
-                nn.BatchNorm2d(128),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(128, 256, kernel_size=2, bias=False),
-                nn.BatchNorm2d(256),
-                nn.ReLU(inplace=True),
-            )
         ])
         _xavier_init(extra)
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        x = self.features(x)
-        output = [x]
+        output = []
+        for block in self.features:
+            x = block(x)
+            output.append(x)
 
         for block in self.extra:
             x = block(x)
@@ -667,8 +636,7 @@ def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes
         pretrained_backbone = False
 
     backbone = _resnet_extractor("resnet50", pretrained_backbone, trainable_backbone_layers)
-    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]],
-                                           scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05])
+    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2]], min_ratio=0.04)
     model = SSD(backbone, anchor_generator, (512, 512), num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd512_resnet50_coco'
