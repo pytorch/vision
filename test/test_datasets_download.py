@@ -391,6 +391,25 @@ def widerface():
     )
 
 
+def kinetics():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda: datasets.Kinetics(
+                    path.join(ROOT, "Kinetics", split),
+                    frames_per_clip=1,
+                    num_classes=num_classes,
+                    split=split,
+                    download=True,
+                ),
+                name=f"Kinetics, {num_classes}, {split}",
+                file="kinetics",
+            )
+            for num_classes, split in itertools.product(("400", "600", "700"), ("train", "val"))
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -426,6 +445,7 @@ def make_parametrize_kwargs(download_configs):
             usps(),
             celeba(),
             widerface(),
+            kinetics(),
         )
     )
 )
