@@ -1,3 +1,4 @@
+import os
 import sys
 from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed, IN_CIRCLE_CI
 from collections import OrderedDict
