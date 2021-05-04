@@ -22,7 +22,6 @@ try:
     if os.name == 'nt':
         # Load the image extension using LoadLibraryExW
         import ctypes
-        import sys
 
         kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
         with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
