@@ -87,10 +87,10 @@ class Kinetics(VisionDataset):
     def __init__(
         self,
         root: str,
+        frames_per_clip: int,
         num_classes: str = "400",
         split: str = "train",
         frame_rate: float = None,
-        frames_per_clip: int = 5,
         step_between_clips: int = 1,
         annotation_path: str = None,
         transform: Optional[Callable] = None,
@@ -121,6 +121,8 @@ class Kinetics(VisionDataset):
 
         if download:
             self.download_and_process_videos()
+
+        print("HERE")
         super().__init__(self.root)
 
         self.classes, class_to_idx = find_classes(self.root)
