@@ -62,3 +62,30 @@ plot(jitted_img, "Jitted image")
 # converts an image to grayscale
 gray_img = T.Grayscale()(orig_img)
 plot(gray_img, "Grayscale image", cmap='gray')
+
+####################################
+# RandomPerspective
+# -----------------
+# The :class:`~torchvision.transforms.RandomPerspective` transform
+# (see also :func:`~torchvision.transforms.functional.perspective`)
+# performs random perspective transform on an image.
+perspectived_img = T.RandomPerspective(distortion_scale=0.6, p=1.0)(orig_img)
+plot(perspectived_img, "Perspective transformed image")
+
+####################################
+# RandomRotation
+# --------------
+# The :class:`~torchvision.transforms.RandomRotation` transform
+# (see also :func:`~torchvision.transforms.functional.rotate`)
+# rotates an image with random angle.
+rotated_img = T.RandomRotation(degrees=(30, 70))(orig_img)
+plot(rotated_img, "Rotated image")
+
+####################################
+# RandomAffine
+# ------------
+# The :class:`~torchvision.transforms.RandomAffine` transform
+# (see also :func:`~torchvision.transforms.functional.affine`)
+# performs random affine transform on an image.
+affined_img = T.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.5, 0.75))(orig_img)
+plot(affined_img, "Affine transformed image")
