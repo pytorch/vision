@@ -47,17 +47,6 @@ ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
 
 
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--accept', action='store_true')
-args, remaining = parser.parse_known_args()
-if not ACCEPT:
-    ACCEPT = args.accept
-for i, arg in enumerate(sys.argv):
-    if arg == '--accept':
-        del sys.argv[i]
-        break
-
-
 class MapNestedTensorObjectImpl(object):
     def __init__(self, tensor_map_fn):
         self.tensor_map_fn = tensor_map_fn
@@ -119,8 +108,9 @@ class TestCase(unittest.TestCase):
         if not ACCEPT and not os.path.exists(expected_file):
             raise RuntimeError(
                 f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
-                "to accept the current output, run:\n"
-                f"python {__main__.__file__} {munged_id} --accept")
+                "to accept the current output, re-run the failing test after setting the EXPECTTEST_ACCEPT "
+                "env variable. For example: EXPECTTEST_ACCEPT=1 pytest test/test_models.py -k alexnet"
+            )
 
         return expected_file
 
