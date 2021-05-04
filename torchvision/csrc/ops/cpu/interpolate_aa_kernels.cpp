@@ -32,13 +32,6 @@ static inline scalar_t interpolate_aa_single_dim_zero_strides(
 
   scalar_t output = t * wts;
   int j = 1;
-
-  // Using partial loop unroll gives a small speed-up
-  for (; j < 2; j++) {
-    wts = *(scalar_t*)&wts_ptr[j * sizeof(scalar_t)];
-    t = *(scalar_t*)&src_min[j * ids_stride];
-    output += t * wts;
-  }
   for (; j < ids_size; j++) {
     wts = *(scalar_t*)&wts_ptr[j * sizeof(scalar_t)];
     t = *(scalar_t*)&src_min[j * ids_stride];
@@ -66,12 +59,6 @@ static inline scalar_t interpolate_aa_single_dim(
 
   scalar_t output = t * wts;
   int j = 1;
-  // Using partial loop unroll gives a small speed-up
-  for (; j < 2; j++) {
-    wts = *(scalar_t*)&wts_ptr[j * sizeof(scalar_t)];
-    t = *(scalar_t*)&src_min[j * ids_stride];
-    output += t * wts;
-  }
   for (; j < ids_size; j++) {
     wts = *(scalar_t*)&wts_ptr[j * sizeof(scalar_t)];
     t = *(scalar_t*)&src_min[j * ids_stride];
@@ -225,7 +212,7 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
       int& out_interp_size) {
     int interp_size = HelperInterpLinear<index_t, scalar_t>::interp_size;
     scalar_t support =
-        (scale > 1.0) ? (interp_size / 2) * scale : interp_size / 2 * 1.0;
+        (scale >= 1.0) ? (interp_size / 2) * scale : interp_size / 2 * 1.0;
     interp_size = (int)ceilf(support) * 2 + 1;
 
     // return interp_size
@@ -258,7 +245,7 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
           empty(new_shape, CPU(c10::CppTypeToScalarType<index_t>())));
     }
 
-    scalar_t center, total_w, invscale = (scale > 1.0) ? 1.0 / scale : 1.0;
+    scalar_t center, total_w, invscale = (scale >= 1.0) ? 1.0 / scale : 1.0;
     index_t zero = static_cast<index_t>(0);
     int64_t* idx_ptr_xmin = output[0].data_ptr<index_t>();
     int64_t* idx_ptr_size = output[1].data_ptr<index_t>();
