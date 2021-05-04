@@ -466,6 +466,7 @@ def test_video_model(model_name, dev):
     print(os.getenv("CIRCLECI"))
     print(os.getenv("CIRCLE_PULL_REQUEST"))
     print(os.getenv("IN_CIRCLE_CI"))
+    print(os.getenv("HELLO"))
     print(f"{IN_CIRCLE_CI}")
     print(f"{dev}")
     print(f"{dev.type}")
