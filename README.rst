@@ -139,7 +139,7 @@ In order to get the torchvision operators registered with torch (eg. for the JIT
 
 Documentation
 =============
-You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
+You can find the API documentation on the pytorch website: https://pytorch.org/vision/stable/index.html
 
 Contributing
 ============
