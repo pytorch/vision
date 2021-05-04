@@ -1,5 +1,4 @@
 import os
-import tarfile
 import collections
 from .vision import VisionDataset
 from xml.etree.ElementTree import Element as ET_Element
