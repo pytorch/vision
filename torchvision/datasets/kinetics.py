@@ -35,20 +35,21 @@ class Kinetics(VisionDataset):
     frames in a video might be present.
 
     Args:
-        root (string): Root directory of the (split of the) Kinetics Dataset.
+        root (string): Root directory of the Kinetics Dataset.
             Directory should be structured as follows:
             .. code::
 
                 root/
-                ├── class1
-                │   ├── clip1.mp4
-                │   ├── clip2.mp4
-                │   ├── clip3.mp4
-                │   └── ...
-                └── class2
-                    ├── clipx.mp4
-                    └── ...
-            If the split is not defined, it is appended using the split argument.
+                ├── split
+                │   ├──  class1
+                │   │   ├──  clip1.mp4
+                │   │   ├──  clip2.mp4
+                │   │   ├──  clip3.mp4
+                │   │   ├──  ...
+                │   ├──  class2
+                │   │   ├──   clipx.mp4
+                │   │    └── ...
+            Split is appended using the split argument.
         num_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700
         split (str): split of the dataset to consider; currently supports ["train", "val"]
         frame_rate (float): If not None, interpolate different frame rate for each clip.
@@ -113,7 +114,10 @@ class Kinetics(VisionDataset):
         self.extensions = extensions
         self._num_download_workers = _num_download_workers
 
-        self.root = root
+        if path.basename(root) != split:
+            self.root = path.join(root, split)
+        else:
+            self.root = root
         self.split = split
 
         if annotation_path is not None:
@@ -122,7 +126,6 @@ class Kinetics(VisionDataset):
         if download:
             self.download_and_process_videos()
 
-        print("HERE")
         super().__init__(self.root)
 
         self.classes, class_to_idx = find_classes(self.root)
@@ -167,9 +170,9 @@ class Kinetics(VisionDataset):
                 f"The directory {self.root} already exists. If you want to re-download or re-extract the images, "
                 f"delete the directory."
             )
-
+        # check that the assignment was made properly
         kinetics_dir, split = path.split(self.root)
-        assert split == self.split
+        assert split == self.split, 'File folder assignment not done properly'
         tar_path = path.join(kinetics_dir, "tars")
         annotation_path = path.join(kinetics_dir, "annotations")
         file_list_path = path.join(kinetics_dir, "files")
@@ -314,8 +317,10 @@ class Kinetics400(Kinetics):
             "Kinetics400 is deprecated and will be removed in a future release."
             "It was replaced by Kinetics(..., num_classes=\"400\").")
 
+        kinetics_dir, split = path.split(root)
         super(Kinetics400, self).__init__(
-            root=root,
+            root=kinetics_dir,
+            split=split,
             num_classes="400",
             frame_rate=frame_rate,
             step_between_clips=step_between_clips,

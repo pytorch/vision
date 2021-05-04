@@ -396,7 +396,7 @@ def kinetics():
         *[
             collect_download_configs(
                 lambda: datasets.Kinetics(
-                    path.join(ROOT, "Kinetics", split),
+                    path.join(ROOT, f"Kinetics_{num_classes}"),
                     frames_per_clip=1,
                     num_classes=num_classes,
                     split=split,

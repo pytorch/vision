@@ -1066,16 +1066,15 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
 
 class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics
-    # DEFAULT_CONFIG = {"frames_per_clip": 1}
-    # ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-    #     split=("train", "val")
-    # )
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "val"), num_classes=("400", "600", "700")
+    )
 
     
     def inject_fake_data(self, tmpdir, config):
         classes = ("Abseiling", "Zumba")
         num_videos_per_class = 2
-        #tmpdir = pathlib.Path(tmpdir) / config['split']
+        tmpdir = pathlib.Path(tmpdir) / config['split']
         digits = string.ascii_letters + string.digits + "-_"
         for cls in classes:
             datasets_utils.create_video_folder(
@@ -1084,18 +1083,25 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
                 lambda _: f"{datasets_utils.create_random_string(11, digits)}.mp4",
                 num_videos_per_class,
             )
-        # ret = {'num_examples': num_videos_per_class * len(classes)}
         return num_videos_per_class * len(classes)
 
 class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics400
-    # DEFAULT_CONFIG = {"frames_per_clip": 1}
+
+    def dataset_args(self, tmpdir, config):
+        # note: train is here hardcoded by default bc we expect the user to supply it,
+        # but that requirement have changed in subsequent version of the dataset
+        root = pathlib.Path(tmpdir) / "train"
+        return root, 1
 
     def inject_fake_data(self, tmpdir, config):
         classes = ("Abseiling", "Zumba")
         num_videos_per_class = 2
 
         digits = string.ascii_letters + string.digits + "-_"
+        # note: train is here hardcoded by default bc we expect the user to supply it,
+        # but that requirement have changed in subsequent version of the dataset
+        tmpdir = pathlib.Path(tmpdir) / "train"
         for cls in classes:
             datasets_utils.create_video_folder(
                 tmpdir,
