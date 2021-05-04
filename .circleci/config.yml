@@ -622,6 +622,7 @@ jobs:
     environment:
       image_name: "pytorch/manylinux-cuda101"
       PYTHON_VERSION: << parameters.python_version >>
+      HELLO: "WTF"
     steps:
       - checkout
       - designate_upload_channel
