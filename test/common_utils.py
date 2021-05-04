@@ -43,7 +43,7 @@ def set_rng_seed(seed):
     np.random.seed(seed)
 
 
-ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
+ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
 
 
@@ -121,7 +121,7 @@ class TestCase(unittest.TestCase):
         pickable with `torch.save`. This file
         is placed in the 'expect' directory in the same directory
         as the test script. You can automatically update the recorded test
-        output using --accept.
+        output using an EXPECTTEST_ACCEPT=1 env variable.
         """
         expected_file = self._get_expected_file(name)
 
