@@ -1,4 +1,3 @@
-import os
 import sys
 from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed, IN_CIRCLE_CI
 from collections import OrderedDict
@@ -460,19 +459,6 @@ def test_detection_model_validation(model_name):
 @pytest.mark.parametrize('model_name', get_available_video_models())
 @pytest.mark.parametrize('dev', _devs)
 def test_video_model(model_name, dev):
-    print()
-    print(os.getenv("CI"))
-    print(os.getenv("CIRCLE_BRANCH"))
-    print(os.getenv("CIRCLECI"))
-    print(os.getenv("CIRCLE_PULL_REQUEST"))
-    print(os.getenv("IN_CIRCLE_CI"))
-    print(os.getenv("HELLO"))
-    print(f"{IN_CIRCLE_CI}")
-    print(f"{dev}")
-    print(f"{dev.type}")
-    print(f"{model_name}")
-    print(f"{sys.platform}")
-    print("-" * 30)
     if IN_CIRCLE_CI and 'cuda' in dev.type and model_name == 'r2plus1d_18' and sys.platform == 'linux':
         # FIXME: Failure should fixed and test re-actived. See https://github.com/pytorch/vision/issues/3702
         pytest.skip('r2plus1d_18 fails on CircleCI linux GPU machines.')

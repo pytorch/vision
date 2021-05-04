@@ -143,7 +143,6 @@ binary_common: &binary_common
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
-    IN_CIRCLE_CI: "true"
 
 torchvision_ios_params: &torchvision_ios_params
   parameters:
@@ -622,7 +621,6 @@ jobs:
     environment:
       image_name: "pytorch/manylinux-cuda101"
       PYTHON_VERSION: << parameters.python_version >>
-      HELLO: "WTF"
     steps:
       - checkout
       - designate_upload_channel
@@ -650,7 +648,7 @@ jobs:
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
-          command: docker run -e IN_CIRCLE_CI -e CIRCLECI -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
+          command: docker run -e CIRCLECI -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
       - run:
           name: Post Process
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
