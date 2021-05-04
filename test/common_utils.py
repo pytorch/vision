@@ -25,6 +25,7 @@ PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
 IN_CIRCLE_CI = os.getenv("CIRCLECI", 'false') == 'true'
 
+
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
     tmp_dir = tempfile.mkdtemp(**kwargs)
