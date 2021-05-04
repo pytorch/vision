@@ -48,6 +48,14 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --lr-steps 16 22 --aspect-ratio-group-factor 3 --lr 0.01
 ```
 
+### SSD VGG16
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --dataset coco --model ssd300_vgg16 --epochs 120\
+    --lr-steps 80 110 --aspect-ratio-group-factor 3 --lr 0.002 --batch-size 4\
+    --weight-decay 0.0005 --data-augmentation ssd
+```
+
 
 ### Mask R-CNN
 ```
