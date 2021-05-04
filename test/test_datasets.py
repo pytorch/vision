@@ -961,7 +961,6 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
         other_annotations.remove(current_annotation)
         for name in other_annotations:
             self._create_annotation_file(root, name, other_videos)
-
         return len(current_videos)
 
     def _annotation_file_name(self, fold, train):
@@ -1070,7 +1069,6 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
         split=("train", "val"), num_classes=("400", "600", "700")
     )
 
-    
     def inject_fake_data(self, tmpdir, config):
         classes = ("Abseiling", "Zumba")
         num_videos_per_class = 2
@@ -1084,6 +1082,7 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
                 num_videos_per_class,
             )
         return num_videos_per_class * len(classes)
+
 
 class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics400
