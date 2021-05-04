@@ -127,6 +127,7 @@ html_theme_options = {
     'logo_only': True,
     'pytorch_project': 'docs',
     'navigation_with_keys': True,
+    'analytics_id': 'UA-117752657-2',
 }
 
 html_logo = '_static/img/pytorch-logo-dark.svg'
