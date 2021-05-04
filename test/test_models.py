@@ -195,7 +195,6 @@ class ModelTester(TestCase):
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
                 self.assertExpected(output, name, prec=prec)
-                raise AssertionError
             except AssertionError:
                 # Unfortunately detection models are flaky due to the unstable sort
                 # in NMS. If matching across all outputs fails, use the same approach
