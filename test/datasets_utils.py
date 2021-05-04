@@ -1,4 +1,3 @@
-import collections.abc
 import contextlib
 import functools
 import importlib
@@ -15,7 +14,6 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 
 import PIL
 import PIL.Image
-
 import torch
 import torchvision.datasets
 import torchvision.io
