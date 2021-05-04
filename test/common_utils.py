@@ -23,7 +23,7 @@ from PIL import Image
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
-
+IN_CIRCLE_CI = os.getenv("CIRCLECI", 'false') == 'true'
 
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
