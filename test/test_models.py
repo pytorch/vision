@@ -459,6 +459,11 @@ def test_detection_model_validation(model_name):
 @pytest.mark.parametrize('model_name', get_available_video_models())
 @pytest.mark.parametrize('dev', _devs)
 def test_video_model(model_name, dev):
+    print()
+    print(os.getenv("CI"))
+    print(os.getenv("CIRCLE_BRANCH"))
+    print(os.getenv("CIRCLECI"))
+    print(os.getenv("CIRCLE_PULL_REQUEST"))
     print(f"{IN_CIRCLE_CI}")
     print(f"{dev}")
     print(f"{dev.type}")
