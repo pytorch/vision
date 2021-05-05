@@ -968,20 +968,11 @@ class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
 class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics400
 
-    def dataset_args(self, tmpdir, config):
-        # note: train is here hardcoded by default bc we expect the user to supply it,
-        # but that requirement have changed in subsequent version of the dataset
-        root = pathlib.Path(tmpdir) / "train"
-        return root, 1
-
     def inject_fake_data(self, tmpdir, config):
         classes = ("Abseiling", "Zumba")
         num_videos_per_class = 2
 
         digits = string.ascii_letters + string.digits + "-_"
-        # note: train is here hardcoded by default bc we expect the user to supply it,
-        # but that requirement have changed in subsequent version of the dataset
-        tmpdir = pathlib.Path(tmpdir) / "train"
         for cls in classes:
             datasets_utils.create_video_folder(
                 tmpdir,
