@@ -46,6 +46,9 @@ show(grid)
 # The boxes are in ``(xmin, ymin, xmax, ymax)`` format
 # from torchvision.utils import draw_bounding_boxes
 
+from torchvision.utils import draw_bounding_boxes
+
+
 boxes = torch.tensor([[100, 400, 500, 740], [500, 200, 800, 580]], dtype=torch.float)
 labels = ["grass", "racoon"]
 colors = ["blue", "yellow"]
@@ -117,4 +120,10 @@ masks = output['out'].squeeze(0)
 
 umbrellas_int = T.ConvertImageDtype(dtype=torch.uint8)(umbrellas)
 result = draw_segmentation_masks(umbrellas_int, masks, alpha=0.2)
+show(result)
+
+#####################################
+# We can adjust alpha to show the masks with a different transparency level:
+
+result = draw_segmentation_masks(umbrellas_int, masks, alpha=0.6)
 show(result)

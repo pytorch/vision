@@ -231,7 +231,7 @@ def draw_segmentation_masks(
     Args:
         image (Tensor): Tensor of shape (3 x H x W) and dtype uint8.
         masks (Tensor): Tensor of shape (num_masks, H, W). Each containing probability of predicted class.
-        alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.
+        alpha (float): Float number between 0 and 1 denoting factor of transparency of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
 
