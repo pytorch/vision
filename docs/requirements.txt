@@ -1,2 +1,5 @@
-sphinx
+sphinx==2.4.4
+sphinx-gallery>=0.9.0
+matplotlib
+numpy
 -e git+git://github.com/pytorch/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme

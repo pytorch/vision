@@ -23,6 +23,7 @@ from PIL import Image
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
 
 
 @contextlib.contextmanager
@@ -43,19 +44,8 @@ def set_rng_seed(seed):
     np.random.seed(seed)
 
 
-ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
+ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
-
-
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--accept', action='store_true')
-args, remaining = parser.parse_known_args()
-if not ACCEPT:
-    ACCEPT = args.accept
-for i, arg in enumerate(sys.argv):
-    if arg == '--accept':
-        del sys.argv[i]
-        break
 
 
 class MapNestedTensorObjectImpl(object):
@@ -100,57 +90,41 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def _get_expected_file(self, subname=None, strip_suffix=None):
-        def remove_prefix_suffix(text, prefix, suffix):
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-            if suffix is not None and text.endswith(suffix):
-                text = text[:len(text) - len(suffix)]
-            return text
+    def _get_expected_file(self, name=None):
         # NB: we take __file__ from the module that defined the test
         # class, so we place the expect directory where the test script
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
-        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
 
         # Determine expected file based on environment
         expected_file_base = get_relative_path(
             os.path.realpath(sys.modules[module_id].__file__),
             "expect")
 
-        # Set expected_file based on subname.
-        expected_file = os.path.join(expected_file_base, munged_id)
-        if subname:
-            expected_file += "_" + subname
+        # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
+        # We hardcode it here to avoid having to re-generate the reference files
+        expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
             raise RuntimeError(
                 f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
-                "to accept the current output, run:\n"
-                f"python {__main__.__file__} {munged_id} --accept")
+                "to accept the current output, re-run the failing test after setting the EXPECTTEST_ACCEPT "
+                "env variable. For example: EXPECTTEST_ACCEPT=1 pytest test/test_models.py -k alexnet"
+            )
 
         return expected_file
 
-    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
+    def assertExpected(self, output, name, prec=None):
         r"""
         Test that a python value matches the recorded contents of a file
-        derived from the name of this test and subname.  The value must be
+        based on a "check" name. The value must be
         pickable with `torch.save`. This file
         is placed in the 'expect' directory in the same directory
         as the test script. You can automatically update the recorded test
-        output using --accept.
-
-        If you call this multiple times in a single function, you must
-        give a unique subname each time.
-
-        strip_suffix allows different tests that expect similar numerics, e.g.
-        "test_xyz_cuda" and "test_xyz_cpu", to use the same pickled data.
-        test_xyz_cuda would pass strip_suffix="_cuda", test_xyz_cpu would pass
-        strip_suffix="_cpu", and they would both use a data file name based on
-        "test_xyz".
+        output using an EXPECTTEST_ACCEPT=1 env variable.
         """
-        expected_file = self._get_expected_file(subname, strip_suffix)
+        expected_file = self._get_expected_file(name)
 
         if ACCEPT:
             filename = {os.path.basename(expected_file)}
@@ -370,12 +344,22 @@ class TransformsTester(unittest.TestCase):
             msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
         self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
 
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean"):
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
+                               allowed_percentage_diff=None):
         np_pil_image = np.array(pil_image)
         if np_pil_image.ndim == 2:
             np_pil_image = np_pil_image[:, :, None]
         pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+
+        if allowed_percentage_diff is not None:
+            # Assert that less than a given %age of pixels are different
+            self.assertTrue(
+                (tensor != pil_tensor).to(torch.float).mean() <= allowed_percentage_diff
+            )
         # error value can be mean absolute error, max abs error
+        # Convert to float to avoid underflow when computing absolute difference
+        tensor = tensor.to(torch.float)
+        pil_tensor = pil_tensor.to(torch.float)
         err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
         self.assertTrue(
             err < tol,
@@ -419,3 +403,27 @@ def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
     kwargs_only = kwargs.copy()
     kwargs_only.update(dict(zip(arg_names, args)))
     return kwargs_only
+
+
+def cpu_and_gpu():
+    import pytest  # noqa
+    # ignore CPU tests in RE as they're already covered by another contbuild
+    IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
+    IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
+    CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
+
+    devices = [] if IN_RE_WORKER else ['cpu']
+
+    if torch.cuda.is_available():
+        cuda_marks = ()
+    elif IN_FBCODE:
+        # Dont collect cuda tests on fbcode if the machine doesnt have a GPU
+        # This avoids skipping the tests. More robust would be to detect if
+        # we're in sancastle instead of fbcode?
+        cuda_marks = pytest.mark.dont_collect()
+    else:
+        cuda_marks = pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG)
+
+    devices.append(pytest.param('cuda', marks=cuda_marks))
+
+    return devices
