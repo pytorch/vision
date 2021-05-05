@@ -4,7 +4,7 @@ Visualization utilities
 =======================
 
 This example illustrates some of the utilities that torchvision offers for
-visualizing images, bounding boxes and segmentation masks.
+visualizing images, bounding boxes, and segmentation masks.
 """
 
 
