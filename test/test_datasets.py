@@ -841,6 +841,7 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
         other_annotations.remove(current_annotation)
         for name in other_annotations:
             self._create_annotation_file(root, name, other_videos)
+
         return len(current_videos)
 
     def _annotation_file_name(self, fold, train):
