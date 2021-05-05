@@ -125,7 +125,6 @@ class Kinetics(VisionDataset):
 
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
-
         video_list = [x[0] for x in self.samples]
         self.video_clips = VideoClips(
             video_list,
