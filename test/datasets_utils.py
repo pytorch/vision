@@ -637,7 +637,11 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
-        args_without_default = argspec.args[1:-len(argspec.defaults)]
+        # edge case if dataset doesn't have default parameters
+        if argspec.defaults:
+            args_without_default = argspec.args[1:-len(argspec.defaults)]
+        else:
+            args_without_default = argspec.args[1:]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
         @functools.wraps(inject_fake_data)
