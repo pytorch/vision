@@ -103,28 +103,35 @@ class Kinetics(VisionDataset):
         _video_min_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
+        **kwargs
     ) -> None:
 
         # TODO: support test
-        verify_str_arg(split, arg="split", valid_values=['train', 'val'])
+        verify_str_arg(split, arg="split", valid_values=['train', 'val', 'unknown'])
         verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
         self.num_classes = num_classes
         self.extensions = extensions
         self.num_download_workers = num_download_workers
 
-        if path.basename(root) != split:
-            self.root = path.join(root, split)
+        _use_legacy_structure = kwargs.get('_use_legacy_structure', False)
+        if _use_legacy_structure:
+            print("Using legacy structure")
+            self.root = root
+            self.split_folder = root
+            self.split = "unknown"
+            assert download == False, "Cannot download the videos using legacy_structure."
         else:
             self.root = root
-        self.split = split
+            self.split_folder = path.join(root, split)
+            self.split = split
 
         if download:
             self.download_and_process_videos()
 
-        super().__init__(self.root)
+        super().__init__(self.split_folder)
 
-        self.classes, class_to_idx = find_classes(self.root)
-        self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
+        self.classes, class_to_idx = find_classes(self.split_folder)
+        self.samples = make_dataset(self.split_folder, class_to_idx, extensions, is_valid_file=None)
         video_list = [x[0] for x in self.samples]
         self.video_clips = VideoClips(
             video_list,
@@ -159,17 +166,15 @@ class Kinetics(VisionDataset):
         Raises:
             RuntimeError: if download folder exists, break to prevent downloading entire dataset again.
         """
-        if path.exists(self.root):
+        if path.exists(self.split_folder):
             raise RuntimeError(
-                f"The directory {self.root} already exists. If you want to re-download or re-extract the images, "
+                f"The directory {self.split_folder} already exists. If you want to re-download or re-extract the images, "
                 f"delete the directory."
             )
         # check that the assignment was made properly
-        kinetics_dir, split = path.split(self.root)
-        assert split == self.split, 'File folder assignment not done properly'
-        tar_path = path.join(kinetics_dir, "tars")
-        annotation_path = path.join(kinetics_dir, "annotations")
-        file_list_path = path.join(kinetics_dir, "files")
+        tar_path = path.join(self.root, "tars")
+        annotation_path = path.join(self.root, "annotations")
+        file_list_path = path.join(self.root, "files")
 
         split_url = self._TAR_URLS[self.num_classes].format(split=self.split)
         split_url_filepath = path.join(file_list_path, path.basename(split_url))
@@ -184,21 +189,21 @@ class Kinetics(VisionDataset):
         if self.num_download_workers == 1:
             for line in list_video_urls.readlines():
                 line = str(line).replace("\n", "")
-                download_and_extract_archive(line, tar_path, self.root)
+                download_and_extract_archive(line, tar_path, self.split_folder)
         else:
-            part = partial(_dl_wrap, tar_path, self.root)
+            part = partial(_dl_wrap, tar_path, self.split_folder)
             lines = [str(line).replace("\n", "") for line in list_video_urls.readlines()]
             poolproc = Pool(self.num_download_workers)
             poolproc.map(part, lines)
 
     def _make_ds_structure(self):
         """move videos from
-        root/
+        split_folder/
             ├── clip1.avi
             ├── clip2.avi
 
         to the correct format as described below:
-        root/
+        split_folder/
             ├── class1
             │   ├── clip1.avi
 
@@ -219,11 +224,11 @@ class Kinetics(VisionDataset):
                     .replace("(", "")
                     .replace(")", "")
                 )
-                os.makedirs(path.join(self.root, label), exist_ok=True)
-                existing_file = path.join(self.root, f)
+                os.makedirs(path.join(self.split_folder, label), exist_ok=True)
+                existing_file = path.join(self.split_folder, f)
                 if path.isfile(existing_file):
                     os.replace(
-                        existing_file, path.join(self.root, label, f),
+                        existing_file, path.join(self.split_folder, label, f),
                     )
 
     @property
@@ -300,11 +305,9 @@ class Kinetics400(Kinetics):
             "Kinetics400 is deprecated and will be removed in a future release."
             "It was replaced by Kinetics(..., num_classes=\"400\").")
 
-        kinetics_dir, split = path.split(root)
         super(Kinetics400, self).__init__(
-            root=kinetics_dir,
-            split=split,
-            num_classes="400",
-            download=False,
+            root=root,
+            frames_per_clip=frames_per_clip,
+            _use_legacy_structure=True,
             **kwargs,
         )
