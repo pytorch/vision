@@ -40,10 +40,6 @@ def make_grid(
 
     Returns:
         grid (Tensor): the tensor containing grid of images.
-
-    Example:
-        See this notebook
-        `here <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
     if not (torch.is_tensor(tensor) or
             (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
@@ -174,10 +170,6 @@ def draw_bounding_boxes(
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
-
-    Example:
-        See this notebook
-        `linked <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
@@ -245,10 +237,6 @@ def draw_segmentation_masks(
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with segmentation masks plotted.
-
-    Example:
-        See this notebook
-        `attached <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
