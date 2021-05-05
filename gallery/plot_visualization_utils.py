@@ -8,15 +8,12 @@ visualizing bounding boxes and segmentation masks.
 """
 
 
-from pathlib import Path
-
 import torch
 import numpy as np
 import scipy.misc
 import matplotlib.pyplot as plt
 
 import torchvision.transforms as T
-from torchvision.io import read_image
 
 
 plt.rcParams["savefig.bbox"] = 'tight'
