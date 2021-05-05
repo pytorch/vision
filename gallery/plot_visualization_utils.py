@@ -26,6 +26,7 @@ def show(img):
     plt.imshow(np.transpose(img, (1, 2, 0)))
     plt.axis('off')
 
+
 ####################################
 # Visualizing Bounding Boxes
 # --------------------------
