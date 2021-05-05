@@ -59,7 +59,7 @@ class Kinetics(VisionDataset):
             and returns a transformed version.
         download (bool): Download the official version of the dataset to root folder.
         num_workers (int): Use multiple workers for VideoClips creation
-        _num_download_workers (int): Use multiprocessing in order to speed up download.
+        num_download_workers (int): Use multiprocessing in order to speed up download.
 
     Returns:
         tuple: A 3-tuple with the following entries:
@@ -97,7 +97,7 @@ class Kinetics(VisionDataset):
         download: bool = False,
         num_workers: int = 1,
         _precomputed_metadata=None,
-        _num_download_workers=1,
+        num_download_workers=1,
         _video_width=0,
         _video_height=0,
         _video_min_dimension=0,
@@ -110,7 +110,7 @@ class Kinetics(VisionDataset):
         verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
         self.num_classes = num_classes
         self.extensions = extensions
-        self._num_download_workers = _num_download_workers
+        self.num_download_workers = num_download_workers
 
         if path.basename(root) != split:
             self.root = path.join(root, split)
@@ -181,14 +181,14 @@ class Kinetics(VisionDataset):
             download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
         self.annotations = path.join(annotation_path, f"{self.split}.csv")
 
-        if self._num_download_workers == 1:
+        if self.num_download_workers == 1:
             for line in list_video_urls.readlines():
                 line = str(line).replace("\n", "")
                 download_and_extract_archive(line, tar_path, self.root)
         else:
             part = partial(_dl_wrap, tar_path, self.root)
             lines = [str(line).replace("\n", "") for line in list_video_urls.readlines()]
-            poolproc = Pool(self._num_download_workers)
+            poolproc = Pool(self.num_download_workers)
             poolproc.map(part, lines)
 
     def _make_ds_structure(self):
