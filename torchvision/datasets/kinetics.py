@@ -9,7 +9,7 @@ from typing import Callable, Optional
 from functools import partial
 from multiprocessing import Pool
 
-from .utils import download_and_extract_archive, download_url, verify_str_arg
+from .utils import download_and_extract_archive, download_url, verify_str_arg, check_integrity
 from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
@@ -173,11 +173,11 @@ class Kinetics(VisionDataset):
 
         split_url = self._TAR_URLS[self.num_classes].format(split=self.split)
         split_url_filepath = path.join(file_list_path, path.basename(split_url))
-        if not path.isfile(split_url_filepath):
+        if not check_integrity(split_url_filepath):
             download_url(split_url, file_list_path)
         list_video_urls = open(split_url_filepath, "r")
 
-        if not path.isfile(path.join(annotation_path, f"{self.split}.csv")):
+        if not check_integrity(path.join(annotation_path, f"{self.split}.csv")):
             download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
         self.annotations = path.join(annotation_path, f"{self.split}.csv")
 
