@@ -55,7 +55,6 @@ class Kinetics(VisionDataset):
         frame_rate (float): If not None, interpolate different frame rate for each clip.
         frames_per_clip (int): number of frames in a clip
         step_between_clips (int): number of frames between each clip
-        annotation_path (str): path to official Kinetics annotation file.
         transform (callable, optional): A function/transform that  takes in a TxHxWxC video
             and returns a transformed version.
         download (bool): Download the official version of the dataset to root folder.
@@ -93,7 +92,6 @@ class Kinetics(VisionDataset):
         split: str = "train",
         frame_rate: float = None,
         step_between_clips: int = 1,
-        annotation_path: str = None,
         transform: Optional[Callable] = None,
         extensions=("avi", "mp4"),
         download: bool = False,
@@ -119,9 +117,6 @@ class Kinetics(VisionDataset):
         else:
             self.root = root
         self.split = split
-
-        if annotation_path is not None:
-            self.annotations = annotation_path
 
         if download:
             self.download_and_process_videos()
