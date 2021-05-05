@@ -71,7 +71,7 @@ class Kinetics(VisionDataset):
             - label (int): class of the video clip
 
     Raises:
-        RuntimeError: If ``download is True`` and the image archive is already extracted.
+        RuntimeError: If ``download is True`` and the video archives are already extracted.
     """
 
     _TAR_URLS = {
