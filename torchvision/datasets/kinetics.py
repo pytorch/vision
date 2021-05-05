@@ -299,17 +299,6 @@ class Kinetics400(Kinetics):
         self,
         root,
         frames_per_clip,
-        step_between_clips=1,
-        frame_rate=None,
-        extensions=("avi", "mp4"),
-        transform=None,
-        _precomputed_metadata=None,
-        num_workers=1,
-        _video_width=0,
-        _video_height=0,
-        _video_min_dimension=0,
-        _audio_samples=0,
-        _audio_channels=0,
         **kwargs
     ):
         warnings.warn(
