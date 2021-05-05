@@ -98,6 +98,8 @@ def main(args):
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
                                                               **kwargs)
     model.to(device)
+    if args.distributed and args.sync_bn:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model_without_ddp = model
     if args.distributed:
@@ -191,6 +193,12 @@ if __name__ == "__main__":
     parser.add_argument('--trainable-backbone-layers', default=None, type=int,
                         help='number of trainable layers of backbone')
     parser.add_argument('--data-augmentation', default="hflip", help='data augmentation policy (default: hflip)')
+    parser.add_argument(
+        "--sync-bn",
+        dest="sync_bn",
+        help="Use sync batch norm",
+        action="store_true",
+    )
     parser.add_argument(
         "--test-only",
         dest="test_only",
