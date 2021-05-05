@@ -25,22 +25,26 @@ def show(img):
 
 
 ####################################
-# Visualizing Bounding Boxes
-# --------------------------
-# We will draw some bounding boxes on that cute racoon:
+# Visualizing a grid of images
+# ----------------------------
+# The :func:`~torchvision.utils.make_grid` function can be used to create a
+# tensor that represents multiple images in a grid.  This util requires a single
+# image of dtype ``uint8`` as input.
 
-from torchvision.utils import draw_bounding_boxes
-
+from torchvision.utils import make_grid
 
 racoon = T.ToTensor()(scipy.misc.face().copy())
 racoon_int = T.ConvertImageDtype(dtype=torch.uint8)(racoon)
-show(racoon_int)
+grid = make_grid([racoon_int, racoon_int, racoon_int])
+show(grid)
 
-#####################################
+####################################
+# Visualizing Bounding Boxes
+# --------------------------
 # We can use :func:`~torchvision.utils.draw_bounding_boxes` to draw boxes on an
 # image. We can set the colors, labels, width as well as font and font size !
-# This util requires a single image of dtype ``uint8`` as input.
 # The boxes are in ``(xmin, ymin, xmax, ymax)`` format
+# from torchvision.utils import draw_bounding_boxes
 
 boxes = torch.tensor([[100, 400, 500, 740], [500, 200, 800, 580]], dtype=torch.float)
 labels = ["grass", "racoon"]
@@ -58,7 +62,7 @@ show(result)
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 
 
-model = fasterrcnn_resnet50_fpn(pretrained=True)
+model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
 
 outputs = model(racoon.unsqueeze(0))
@@ -106,7 +110,7 @@ show(umbrellas)
 from torchvision.models.segmentation import fcn_resnet50
 
 
-model = fcn_resnet50(pretrained=True)
+model = fcn_resnet50(pretrained=True, progress=False)
 model = model.eval()
 output = model(umbrellas.unsqueeze(0))
 masks = output['out'].squeeze(0)
