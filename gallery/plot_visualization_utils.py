@@ -33,6 +33,7 @@ def show(img):
 
 from torchvision.utils import draw_bounding_boxes
 
+
 racoon = T.ToTensor()(scipy.misc.face().copy())
 racoon_int = T.ConvertImageDtype(dtype=torch.uint8)(racoon)
 show(racoon_int)
@@ -57,6 +58,7 @@ show(result)
 # :func:`~torchvision.models.detection.retinanet_resnet50_fpn`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
+
 
 model = fasterrcnn_resnet50_fpn(pretrained=True)
 model = model.eval()
@@ -84,6 +86,7 @@ from torchvision.utils import draw_segmentation_masks
 from PIL import Image
 import requests
 
+
 url = "http://images.cocodataset.org/val2017/000000281759.jpg"
 umbrellas = Image.open(requests.get(url, stream=True).raw)
 umbrellas = T.ToTensor()(umbrellas)
@@ -103,6 +106,7 @@ show(umbrellas)
 # of dtype `uint8`.
 
 from torchvision.models.segmentation import fcn_resnet50
+
 
 model = fcn_resnet50(pretrained=True)
 model = model.eval()
