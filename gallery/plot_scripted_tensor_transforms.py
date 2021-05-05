@@ -7,9 +7,19 @@ This example illustrates various features that are now supported by the image
 transformations on Tensor images. In particular, we show how image transforms
 can be performed on GPU, and how one can also script them using JIT compilation.
 
+Prior to v0.8.0, transforms in torchvision have traditionally been PIL-centric
+and presented multiple limitations due to that. Now, since v0.8.0, transforms
+implementations are Tensor and PIL compatible and we can achieve the following
+new features:
+
+- transform multi-band torch tensor images (with more than 3-4 channels)
+- torchscript transforms together with your model for deployment
+- support for GPU acceleration
+- batched transformation such as for videos
+- read and decode data directly as torch tensor with torchscript support (for PNG and JPEG image formats)
+
 .. note::
-    These features are only possible with **Tensor** images. PIL images do not
-    support GPU transforms or JIT compilation.
+    These features are only possible with **Tensor** images.
 """
 
 from pathlib import Path
@@ -70,11 +80,12 @@ show([transformed_dog1, transformed_dog2])
 # -----------------------------------------------------------
 # We now show how to combine image transformations and a model forward pass,
 # while using ``torch.jit.script`` to obtain a single scripted module.
-# 
+#
 # Let's define a ``Predictor`` module that transforms the input tensor and then
 # applies an ImageNet model on it.
 
 from torchvision.models import resnet18
+
 
 class Predictor(nn.Module):
 
@@ -82,7 +93,7 @@ class Predictor(nn.Module):
         super().__init__()
         self.resnet18 = resnet18(pretrained=True).eval()
         self.transforms = nn.Sequential(
-            T.Resize([256, ]), # We use single int value inside a list due to torchscript type restrictions
+            T.Resize([256, ]),  # We use single int value inside a list due to torchscript type restrictions
             T.CenterCrop(224),
             T.ConvertImageDtype(torch.float),
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -93,6 +104,7 @@ class Predictor(nn.Module):
             x = self.transforms(x)
             y_pred = self.resnet18(x)
             return y_pred.argmax(dim=1)
+
 
 ####################################
 # Now, let's define scripted and non-scripted instances of ``Predictor`` and
