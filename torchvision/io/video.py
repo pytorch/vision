@@ -329,7 +329,7 @@ def _can_read_timestamps_from_packets(container: "av.container.Container") -> bo
     codec_context = container.streams[0].codec_context
     if codec_context is None:
         return False
-    
+
     extradata = codec_context.extradata
     if extradata is None:
         return False
