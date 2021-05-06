@@ -453,7 +453,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given image at specified location and output size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then cropped.
 
     Args:
         img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
