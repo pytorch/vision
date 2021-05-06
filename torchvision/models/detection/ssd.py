@@ -18,7 +18,7 @@ __all__ = ['SSD', 'ssd300_vgg16', 'ssd512_resnet50']
 
 model_urls = {
     'ssd300_vgg16_coco': 'https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth',
-    'ssd512_resnet50_coco': None,  # TODO: add weights
+    'ssd512_resnet50_coco': 'https://download.pytorch.org/models/ssd512_resnet50_coco-d6d7edbb.pth',
 }
 
 backbone_urls = {
@@ -665,7 +665,7 @@ def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes
 
     Example:
 
-        >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
+        >>> model = torchvision.models.detection.ssd512_resnet50(pretrained=True)
         >>> model.eval()
         >>> x = [torch.rand(3, 512, 512), torch.rand(3, 750, 600)]
         >>> predictions = model(x)

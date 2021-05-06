@@ -56,6 +56,14 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --weight-decay 0.0005 --data-augmentation ssd
 ```
 
+### SSD ResNet-50
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --dataset coco --model ssd512_resnet50 --epochs 120\
+    --lr-steps 80 110 --aspect-ratio-group-factor 3 --lr 0.002 --batch-size 4\
+    --weight-decay 0.0005 --data-augmentation ssd
+```
+
 
 ### Mask R-CNN
 ```
