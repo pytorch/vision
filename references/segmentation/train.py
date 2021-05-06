@@ -172,9 +172,9 @@ def main(args):
     print('Training time {}'.format(total_time_str))
 
 
-def parse_args():
+def get_args_parser(add_help=True):
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Segmentation Training')
+    parser = argparse.ArgumentParser(description='PyTorch Segmentation Training', add_help=add_help)
 
     parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset path')
     parser.add_argument('--dataset', default='coco', help='dataset name')
@@ -215,10 +215,9 @@ def parse_args():
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = get_args_parser().parse_args()
     main(args)
