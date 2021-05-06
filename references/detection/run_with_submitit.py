@@ -6,13 +6,13 @@ import os
 import uuid
 from pathlib import Path
 
-import train as detection
+import train
 import submitit
 
 
 def parse_args():
-    detection_parser = detection.get_args_parser()
-    parser = argparse.ArgumentParser("Submitit for detection", parents=[detection_parser])
+    train_parser = train.get_args_parser(add_help=False)
+    parser = argparse.ArgumentParser("Submitit for train", parents=[train_parser], add_help=True)
     parser.add_argument("--ngpus", default=8, type=int, help="Number of gpus to request on each node")
     parser.add_argument("--nodes", default=4, type=int, help="Number of nodes to request")
     parser.add_argument("--timeout", default=60, type=int, help="Duration of the job")
@@ -44,10 +44,10 @@ class Trainer(object):
         self.args = args
 
     def __call__(self):
-        import train as detection
+        import train
 
         self._setup_gpu_args()
-        detection.main(self.args)
+        train.main(self.args)
 
     def checkpoint(self):
         import os

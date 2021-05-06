@@ -51,9 +51,9 @@ def get_transform(train, data_augmentation):
     return presets.DetectionPresetTrain(data_augmentation) if train else presets.DetectionPresetEval()
 
 
-def get_args_parser():
+def get_args_parser(add_help=True):
     import argparse
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser(description='PyTorch Detection Training', add_help=add_help)
 
     parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
     parser.add_argument('--dataset', default='coco', help='dataset')
@@ -107,6 +107,9 @@ def get_args_parser():
 
 
 def main(args):
+    if args.output_dir:
+        utils.mkdir(args.output_dir)
+
     utils.init_distributed_mode(args)
     print(args)
 
@@ -203,8 +206,4 @@ def main(args):
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
-
-    if args.output_dir:
-        utils.mkdir(args.output_dir)
-
     main(args)
