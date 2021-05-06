@@ -528,13 +528,13 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
 def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
                  pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
     """
-    Constructs an SSD model with a VGG16 backbone. See `SSD` for more details.
+    Constructs an SSD model with input size 300x300 and a VGG16 backbone. See `SSD` for more details.
 
     Example:
 
         >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
         >>> model.eval()
-        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> x = [torch.rand(3, 300, 300), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
@@ -660,6 +660,24 @@ def _resnet_extractor(backbone_name: str, pretrained: bool, trainable_layers: in
 
 def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
                     pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
+    """
+    Constructs an SSD model with input size 512x512 and a ResNet50 backbone. See `SSD` for more details.
+
+    Example:
+
+        >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 512, 512), torch.rand(3, 750, 600)]
+        >>> predictions = model(x)
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+    """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5)
 
