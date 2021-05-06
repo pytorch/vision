@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 from torch import Tensor
 from typing import List, Tuple

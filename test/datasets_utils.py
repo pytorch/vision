@@ -1,4 +1,3 @@
-import collections.abc
 import contextlib
 import functools
 import importlib
@@ -15,7 +14,6 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 
 import PIL
 import PIL.Image
-
 import torch
 import torchvision.datasets
 import torchvision.io
@@ -44,7 +42,7 @@ class UsageError(Exception):
 
 
 class LazyImporter:
-    r"""Lazy importer for additional dependicies.
+    r"""Lazy importer for additional dependencies.
 
     Some datasets require additional packages that are no direct dependencies of torchvision. Instances of this class
     provide modules listed in MODULES as attributes. They are only imported when accessed.

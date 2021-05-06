@@ -8,7 +8,6 @@ import numpy as np
 import torch
 
 from . import _video_opt
-from ._video_opt import VideoMetaData
 
 
 try:

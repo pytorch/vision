@@ -1,19 +1,17 @@
 import os
 import contextlib
+import hashlib
+import pickle
+import re
 import tarfile
-import json
+import unittest.mock
+from distutils import dir_util
+
 import numpy as np
 import PIL
 import torch
+
 from common_utils import get_tmp_dir
-import pickle
-import random
-from itertools import cycle
-from torchvision.io.video import write_video
-import unittest.mock
-import hashlib
-from distutils import dir_util
-import re
 
 
 def mock_class_attribute(stack, target, new):
@@ -208,103 +206,3 @@ def widerface_root():
         _make_annotations_archive(root_base)
 
         yield root
-
-
-@contextlib.contextmanager
-def places365_root(split="train-standard", small=False):
-    VARIANTS = {
-        "train-standard": "standard",
-        "train-challenge": "challenge",
-        "val": "standard",
-    }
-    # {split: file}
-    DEVKITS = {
-        "train-standard": "filelist_places365-standard.tar",
-        "train-challenge": "filelist_places365-challenge.tar",
-        "val": "filelist_places365-standard.tar",
-    }
-    CATEGORIES = "categories_places365.txt"
-    # {split: file}
-    FILE_LISTS = {
-        "train-standard": "places365_train_standard.txt",
-        "train-challenge": "places365_train_challenge.txt",
-        "val": "places365_train_standard.txt",
-    }
-    # {(split, small): (archive, folder_default, folder_renamed)}
-    IMAGES = {
-        ("train-standard", False): ("train_large_places365standard.tar", "data_large", "data_large_standard"),
-        ("train-challenge", False): ("train_large_places365challenge.tar", "data_large", "data_large_challenge"),
-        ("val", False): ("val_large.tar", "val_large", "val_large"),
-        ("train-standard", True): ("train_256_places365standard.tar", "data_256", "data_256_standard"),
-        ("train-challenge", True): ("train_256_places365challenge.tar", "data_256", "data_256_challenge"),
-        ("val", True): ("val_256.tar", "val_256", "val_256"),
-    }
-
-    # (class, idx)
-    CATEGORIES_CONTENT = (("/a/airfield", 0), ("/a/apartment_building/outdoor", 8), ("/b/badlands", 30))
-    # (file, idx)
-    FILE_LIST_CONTENT = (
-        ("Places365_val_00000001.png", 0),
-        *((f"{category}/Places365_train_00000001.png", idx) for category, idx in CATEGORIES_CONTENT),
-    )
-
-    def mock_target(attr, partial="torchvision.datasets.places365.Places365"):
-        return f"{partial}.{attr}"
-
-    def make_txt(root, name, seq):
-        file = os.path.join(root, name)
-        with open(file, "w") as fh:
-            for string, idx in seq:
-                fh.write(f"{string} {idx}\n")
-        return name, compute_md5(file)
-
-    def make_categories_txt(root, name):
-        return make_txt(root, name, CATEGORIES_CONTENT)
-
-    def make_file_list_txt(root, name):
-        return make_txt(root, name, FILE_LIST_CONTENT)
-
-    def make_image(file, size):
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-        PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(file)
-
-    def make_devkit_archive(stack, root, split):
-        archive = DEVKITS[split]
-        files = []
-
-        meta = make_categories_txt(root, CATEGORIES)
-        mock_class_attribute(stack, mock_target("_CATEGORIES_META"), meta)
-        files.append(meta[0])
-
-        meta = {split: make_file_list_txt(root, FILE_LISTS[split])}
-        mock_class_attribute(stack, mock_target("_FILE_LIST_META"), meta)
-        files.extend([item[0] for item in meta.values()])
-
-        meta = {VARIANTS[split]: make_tar(root, archive, *files)}
-        mock_class_attribute(stack, mock_target("_DEVKIT_META"), meta)
-
-    def make_images_archive(stack, root, split, small):
-        archive, folder_default, folder_renamed = IMAGES[(split, small)]
-
-        image_size = (256, 256) if small else (512, random.randint(512, 1024))
-        files, idcs = zip(*FILE_LIST_CONTENT)
-        images = [file.lstrip("/").replace("/", os.sep) for file in files]
-        for image in images:
-            make_image(os.path.join(root, folder_default, image), image_size)
-
-        meta = {(split, small): make_tar(root, archive, folder_default)}
-        mock_class_attribute(stack, mock_target("_IMAGES_META"), meta)
-
-        return [(os.path.join(root, folder_renamed, image), idx) for image, idx in zip(images, idcs)]
-
-    with contextlib.ExitStack() as stack, get_tmp_dir() as root:
-        make_devkit_archive(stack, root, split)
-        class_to_idx = dict(CATEGORIES_CONTENT)
-        classes = list(class_to_idx.keys())
-
-        data = {"class_to_idx": class_to_idx, "classes": classes}
-        data["imgs"] = make_images_archive(stack, root, split, small)
-
-        clean_dir(root, ".tar$")
-
-        yield root, data

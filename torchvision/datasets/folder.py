@@ -33,30 +33,9 @@ def is_image_file(filename: str) -> bool:
 
 
 def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
-    """Finds the class folders in a dataset structured as follows:
+    """Finds the class folders in a dataset.
 
-    .. code::
-
-        directory/
-        ├── class_x
-        │   ├── xxx.ext
-        │   ├── xxy.ext
-        │   └── ...
-        │       └── xxz.ext
-        └── class_y
-            ├── 123.ext
-            ├── nsdf3.ext
-            └── ...
-                └── asd932_.ext
-
-    Args:
-        directory (str): Root directory path.
-
-    Raises:
-        FileNotFoundError: If ``directory`` has no class folders.
-
-    Returns:
-        (Tuple[List[str], Dict[str, int]]): List of all classes and dictionary mapping each class to an index.
+    See :class:`DatasetFolder` for details.
     """
     classes = sorted(entry.name for entry in os.scandir(directory) if entry.is_dir())
     if not classes:
@@ -74,24 +53,10 @@ def make_dataset(
 ) -> List[Tuple[str, int]]:
     """Generates a list of samples of a form (path_to_sample, class).
 
-    Args:
-        directory (str): root dataset directory
-        class_to_idx (Optional[Dict[str, int]]): Dictionary mapping class name to class index. If omitted, is generated
-            by :func:`find_classes`.
-        extensions (optional): A list of allowed extensions.
-            Either extensions or is_valid_file should be passed. Defaults to None.
-        is_valid_file (optional): A function that takes path of a file
-            and checks if the file is a valid file
-            (used to check of corrupt files) both extensions and
-            is_valid_file should not be passed. Defaults to None.
+    See :class:`DatasetFolder` for details.
 
-    Raises:
-        ValueError: In case ``class_to_idx`` is empty.
-        ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.
-        FileNotFoundError: In case no valid file was found for any class.
-
-    Returns:
-        List[Tuple[str, int]]: samples of a form (path_to_sample, class)
+    Note: The class_to_idx parameter is here optional and will use the logic of the ``find_classes`` function
+    by default.
     """
     directory = os.path.expanduser(directory)
 
@@ -140,15 +105,10 @@ def make_dataset(
 
 
 class DatasetFolder(VisionDataset):
-    """A generic data loader where the samples are arranged in this way: ::
+    """A generic data loader.
 
-        root/class_x/xxx.ext
-        root/class_x/xxy.ext
-        root/class_x/[...]/xxz.ext
-
-        root/class_y/123.ext
-        root/class_y/nsdf3.ext
-        root/class_y/[...]/asd932_.ext
+    This default directory structure can be customized by overriding the
+    :meth:`find_classes` method.
 
     Args:
         root (string): Root directory path.
@@ -200,15 +160,65 @@ class DatasetFolder(VisionDataset):
         extensions: Optional[Tuple[str, ...]] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
     ) -> List[Tuple[str, int]]:
+        """Generates a list of samples of a form (path_to_sample, class).
+
+        This can be overridden to e.g. read files from a compressed zip file instead of from the disk.
+
+        Args:
+            directory (str): root dataset directory, corresponding to ``self.root``.
+            class_to_idx (Dict[str, int]): Dictionary mapping class name to class index.
+            extensions (optional): A list of allowed extensions.
+                Either extensions or is_valid_file should be passed. Defaults to None.
+            is_valid_file (optional): A function that takes path of a file
+                and checks if the file is a valid file
+                (used to check of corrupt files) both extensions and
+                is_valid_file should not be passed. Defaults to None.
+
+        Raises:
+            ValueError: In case ``class_to_idx`` is empty.
+            ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.
+            FileNotFoundError: In case no valid file was found for any class.
+
+        Returns:
+            List[Tuple[str, int]]: samples of a form (path_to_sample, class)
+        """
+        if class_to_idx is None:
+            # prevent potential bug since make_dataset() would use the class_to_idx logic of the
+            # find_classes() function, instead of using that of the find_classes() method, which
+            # is potentially overridden and thus could have a different logic.
+            raise ValueError(
+                "The class_to_idx parameter cannot be None."
+            )
         return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
-    def find_classes(self, dir: str) -> Tuple[List[str], Dict[str, int]]:
-        """Same as :func:`find_classes`.
+    def find_classes(self, directory: str) -> Tuple[List[str], Dict[str, int]]:
+        """Find the class folders in a dataset structured as follows::
+
+            directory/
+            ├── class_x
+            │   ├── xxx.ext
+            │   ├── xxy.ext
+            │   └── ...
+            │       └── xxz.ext
+            └── class_y
+                ├── 123.ext
+                ├── nsdf3.ext
+                └── ...
+                └── asd932_.ext
 
         This method can be overridden to only consider
         a subset of classes, or to adapt to a different dataset directory structure.
+
+        Args:
+            directory(str): Root directory path, corresponding to ``self.root``
+
+        Raises:
+            FileNotFoundError: If ``dir`` has no class folders.
+
+        Returns:
+            (Tuple[List[str], Dict[str, int]]): List of all classes and dictionary mapping each class to an index.
         """
-        return find_classes(dir)
+        return find_classes(directory)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
@@ -260,7 +270,7 @@ def default_loader(path: str) -> Any:
 
 
 class ImageFolder(DatasetFolder):
-    """A generic data loader where the images are arranged in this way: ::
+    """A generic data loader where the images are arranged in this way by default: ::
 
         root/dog/xxx.png
         root/dog/xxy.png
@@ -269,6 +279,9 @@ class ImageFolder(DatasetFolder):
         root/cat/123.png
         root/cat/nsdf3.png
         root/cat/[...]/asd932_.png
+
+    This class inherits from :class:`~torchvision.datasets.DatasetFolder` so
+    the same methods can be overridden to customize the dataset.
 
     Args:
         root (string): Root directory path.
