@@ -189,7 +189,7 @@ class Tester(TransformsTester):
         )
 
         # Test transforms.functional.crop including outside the image area
-        fn_kwargs = {"top": 7, "left": 8, "height": 4, "width": 5}
+        fn_kwargs = {"top": -2, "left": 8, "height": 4, "width": 5}
         self._test_functional_op('crop', fn_kwargs=fn_kwargs)
 
         sizes = [5, [5, ], [6, 6]]
