@@ -57,8 +57,8 @@ def deform_conv2d(
         >>> #  [p6 p7 p8]]
         >>> # The 18 corresponding offsets will be:
         >>> # [p0_offset_h, p0_offset_w, p1_offset_h, p1_offset_w, p2_offset_h, ..., p8_offset_w]
-        >>> # ``_h`` means pixel offset in the height direction (i.e. p0 -> p6),
-        >>> # ``_w`` means pixel offset in the width direction (i.e. p0 -> p2).
+        >>> # ``_h`` means pixel offset in the height direction (i.e. p0 -> p3 -> p6),
+        >>> # ``_w`` means pixel offset in the width direction (i.e. p0 -> p1 -> p2).
         >>> offset = torch.rand(4, 2 * kh * kw, 8, 8)
         >>> mask = torch.rand(4, kh * kw, 8, 8)
         >>> out = deform_conv2d(input, offset, weight, mask=mask)
