@@ -568,26 +568,37 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
 
 
 class SSDFeatureExtractorResNet(nn.Module):
-    def __init__(self, backbone: resnet.ResNet, highres: bool):
+    def __init__(self, backbone: resnet.ResNet):
         super().__init__()
 
         self.features = nn.Sequential(
-            nn.Sequential(
-                backbone.conv1,
-                backbone.bn1,
-                backbone.relu,
-                backbone.maxpool,
-                backbone.layer1,
-                backbone.layer2,
-            ),
+            backbone.conv1,
+            backbone.bn1,
+            backbone.relu,
+            backbone.maxpool,
+            backbone.layer1,
+            backbone.layer2,
             backbone.layer3,
             backbone.layer4,
         )
+
+        # Patch last block's strides to get valid output sizes
+        for m in self.features[-1][0].modules():
+            if hasattr(m, 'stride'):
+                m.stride = 1
 
         backbone_out_channels = self.features[-1][-1].bn3.num_features
         extra = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(backbone_out_channels, 256, kernel_size=1, bias=False),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2, bias=False),
+                nn.BatchNorm2d(512),
+                nn.ReLU(inplace=True),
+            ),
+            nn.Sequential(
+                nn.Conv2d(512, 256, kernel_size=1, bias=False),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2, bias=False),
@@ -610,24 +621,21 @@ class SSDFeatureExtractorResNet(nn.Module):
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
             ),
-        ])
-        if highres:
-            extra.append(nn.Sequential(
+            nn.Sequential(
                 nn.Conv2d(256, 128, kernel_size=1, bias=False),
                 nn.BatchNorm2d(128),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 256, kernel_size=2, bias=False),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
-            ))
+            )
+        ])
         _xavier_init(extra)
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        output = []
-        for block in self.features:
-            x = block(x)
-            output.append(x)
+        x = self.features(x)
+        output = [x]
 
         for block in self.extra:
             x = block(x)
@@ -636,8 +644,8 @@ class SSDFeatureExtractorResNet(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _resnet_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
-    backbone = resnet.__dict__[backbone_name](pretrained=pretrained, progress=progress)
+def _resnet_extractor(backbone_name: str, pretrained: bool, trainable_layers: int):
+    backbone = resnet.__dict__[backbone_name](pretrained=pretrained)
 
     assert 0 <= trainable_layers <= 5
     layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1', 'conv1'][:trainable_layers]
@@ -647,7 +655,7 @@ def _resnet_extractor(backbone_name: str, highres: bool, progress: bool, pretrai
         if all([not name.startswith(layer) for layer in layers_to_train]):
             parameter.requires_grad_(False)
 
-    return SSDFeatureExtractorResNet(backbone, highres)
+    return SSDFeatureExtractorResNet(backbone)
 
 
 def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
@@ -658,10 +666,9 @@ def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes
     if pretrained:
         pretrained_backbone = False
 
-    backbone = _resnet_extractor("resnet50", True, progress, pretrained_backbone, trainable_backbone_layers)
-    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2], [2]],
-                                           scales=[0.04, 0.1, 0.26, 0.42, 0.58, 0.74, 0.9, 1.06],
-                                           steps=[8, 16, 32, 64, 128, 256, 512])
+    backbone = _resnet_extractor("resnet50", pretrained_backbone, trainable_backbone_layers)
+    anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+                                           scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05])
     model = SSD(backbone, anchor_generator, (512, 512), num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd512_resnet50_coco'
