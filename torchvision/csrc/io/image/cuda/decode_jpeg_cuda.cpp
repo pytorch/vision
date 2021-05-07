@@ -4,7 +4,6 @@
 
 #if NVJPEG_FOUND
 #include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
 #include <nvjpeg.h>
 #endif
 
@@ -145,7 +144,7 @@ torch::Tensor decode_jpeg_cuda(
     out_image.pitch[c] = 0;
   }
 
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream(device.index());
 
   nvjpegStatus_t decode_status = nvjpegDecode(
       nvjpeg_handle,
