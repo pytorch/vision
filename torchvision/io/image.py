@@ -166,7 +166,7 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
-            supported for CUDA version >= TODO
+            supported for CUDA version >= 10.1
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])

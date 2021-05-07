@@ -98,8 +98,8 @@ torch::Tensor decode_jpeg_cuda(
   switch (mode) {
     case IMAGE_READ_MODE_UNCHANGED:
       num_channels_output = num_channels;
-      // For some reason, setting out_format to NVJPEG_OUTPUT_UNCHANGED will not
-      // properly decode RGB images (it's fine for grayscale), so we set
+      // For some reason, setting output_format to NVJPEG_OUTPUT_UNCHANGED will
+      // not properly decode RGB images (it's fine for grayscale), so we set
       // output_format manually here
       if (num_channels == 1) {
         ouput_format = NVJPEG_OUTPUT_Y;
