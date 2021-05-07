@@ -316,5 +316,6 @@ def test_decode_jpeg_cuda_errors():
     with pytest.raises(RuntimeError, match="Expected a cuda device"):
         torch.ops.image.decode_jpeg_cuda(data, ImageReadMode.UNCHANGED.value, 'cpu')
 
+
 if __name__ == '__main__':
     unittest.main()

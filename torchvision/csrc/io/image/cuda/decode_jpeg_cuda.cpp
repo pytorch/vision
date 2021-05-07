@@ -105,11 +105,11 @@ torch::Tensor decode_jpeg_cuda(
         ouput_format = NVJPEG_OUTPUT_Y;
       } else if (num_channels == 3) {
         ouput_format = NVJPEG_OUTPUT_RGB;
-      }
-      else {
+      } else {
         nvjpegJpegStateDestroy(jpeg_state);
         TORCH_CHECK(
-            false, "When mode is UNCHANGED, only 1 or 3 input channels are allowed.");
+            false,
+            "When mode is UNCHANGED, only 1 or 3 input channels are allowed.");
       }
       break;
     case IMAGE_READ_MODE_GRAY:
