@@ -337,7 +337,7 @@ jobs:
   binary_macos_wheel:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -397,7 +397,7 @@ jobs:
   binary_macos_conda:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -648,7 +648,7 @@ jobs:
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
-          command: docker run -e CIRCLECI -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
       - run:
           name: Post Process
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
@@ -739,7 +739,7 @@ jobs:
   unittest_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "9.4.1"
     resource_class: large
     steps:
       - checkout
@@ -815,7 +815,7 @@ jobs:
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
       - designate_upload_channel

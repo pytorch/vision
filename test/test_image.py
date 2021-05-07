@@ -3,10 +3,11 @@ import io
 import os
 import unittest
 
+import pytest
 import numpy as np
 import torch
 from PIL import Image
-from common_utils import get_tmp_dir
+from common_utils import get_tmp_dir, needs_cuda
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
@@ -74,24 +75,6 @@ class ImageTester(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             decode_jpeg(torch.empty((100), dtype=torch.uint8))
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_decode_jpeg_cuda(self):
-        conversion = [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB]
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            if Image.open(img_path).mode == 'CMYK':
-                # not supported
-                continue
-            for mode in conversion:
-                data = read_file(img_path)
-                img_ljpeg = decode_image(data, mode=mode)
-                img_nvjpeg = decode_jpeg(data, mode=mode, device='cuda:0')
-
-                img_nvjpeg2 = decode_jpeg(data, mode=mode, device='cuda:1')
-                self.assertTrue((img_nvjpeg.cpu().float() - img_nvjpeg2.cpu().float()).abs().mean() < 1e-10)
-
-                # Some difference expected between jpeg implementations
-                self.assertTrue((img_ljpeg.float() - img_nvjpeg.cpu().float()).abs().mean() < 2.)
 
     def test_damaged_images(self):
         # Test image with bad Huffman encoding (should not raise)
@@ -295,6 +278,43 @@ class ImageTester(unittest.TestCase):
             self.assertEqual(content, saved_content)
             os.unlink(fpath)
 
+
+@needs_cuda
+@pytest.mark.parametrize('mode', [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
+@pytest.mark.parametrize('img_path', get_images(IMAGE_ROOT, ".jpg"))
+@pytest.mark.parametrize('scripted', (False, True))
+def test_decode_jpeg_cuda(mode, img_path, scripted):
+    if 'cmyk' in img_path:
+        pytest.xfail("Decoding a CMYK jpeg isn't supported")
+    tester = ImageTester()
+    data = read_file(img_path)
+    img = decode_image(data, mode=mode)
+    f = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
+    img_nvjpeg = f(data, mode=mode, device='cuda')
+
+    # Some difference expected between jpeg implementations
+    tester.assertTrue((img.float() - img_nvjpeg.cpu().float()).abs().mean() < 2)
+
+
+@needs_cuda
+@pytest.mark.parametrize('cuda_device', ('cuda', 'cuda:0', torch.device('cuda')))
+def test_decode_jpeg_cuda_device_param(cuda_device):
+    """Make sure we can pass a string or a torch.device as device param"""
+    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    decode_jpeg(data, device=cuda_device)
+
+
+@needs_cuda
+def test_decode_jpeg_cuda_errors():
+    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
+        decode_jpeg(data.reshape(-1, 1), device='cuda')
+    with pytest.raises(RuntimeError, match="input tensor must be on CPU"):
+        decode_jpeg(data.to('cuda'), device='cuda')
+    with pytest.raises(RuntimeError, match="Expected a torch.uint8 tensor"):
+        decode_jpeg(data.to(torch.float), device='cuda')
+    with pytest.raises(RuntimeError, match="Expected a cuda device"):
+        torch.ops.image.decode_jpeg_cuda(data, ImageReadMode.UNCHANGED.value, 'cpu')
 
 if __name__ == '__main__':
     unittest.main()
