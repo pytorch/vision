@@ -4,6 +4,7 @@
 
 #if NVJPEG_FOUND
 #include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include <nvjpeg.h>
 #endif
 
@@ -41,6 +42,8 @@ torch::Tensor decode_jpeg_cuda(
       "Expected a non empty 1-dimensional tensor");
 
   TORCH_CHECK(device.is_cuda(), "Expected a cuda device")
+
+  at::cuda::CUDAGuard device_guard(device);
 
   // Create global nvJPEG handle
   if (nvjpeg_handle == nullptr) {
