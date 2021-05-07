@@ -184,7 +184,7 @@ plot(invertered_imgs)
 # (see also :func:`~torchvision.transforms.functional.posterize`)
 # randomly posterizes the image by reducing the number of bits
 # of each color channel.
-posterizer = T.RandomPosterize(bits=4)
+posterizer = T.RandomPosterize(bits=2)
 posterized_imgs = [posterizer(orig_img) for _ in range(4)]
 plot(posterized_imgs)
 
