@@ -188,13 +188,19 @@ def main(args):
         train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
         lr_scheduler.step()
         if args.output_dir:
-            utils.save_on_master({
+            checkpoint = {
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args,
-                'epoch': epoch},
+                'epoch': epoch
+            }
+            utils.save_on_master(
+                checkpoint,
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+            utils.save_on_master(
+                checkpoint,
+                os.path.join(args.output_dir, 'checkpoint.pth'))
 
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)
