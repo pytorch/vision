@@ -170,19 +170,19 @@ class DefaultBoxGenerator(nn.Module):
         else:
             self.scales = scales
 
-        self._wh_pairs = []
+        self._wh_pairs: List[List[List[int]]] = []
         for k in range(num_outputs):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
             s_k = self.scales[k]
             s_prime_k = math.sqrt(self.scales[k] * self.scales[k + 1])
-            wh_pairs = [(s_k, s_k), (s_prime_k, s_prime_k)]
+            wh_pairs = [[s_k, s_k], [s_prime_k, s_prime_k]]
 
             # Adding 2 pairs for each aspect ratio of the feature map k
             for ar in self.aspect_ratios[k]:
                 sq_ar = math.sqrt(ar)
                 w = self.scales[k] * sq_ar
                 h = self.scales[k] / sq_ar
-                wh_pairs.extend([(w, h), (h, w)])
+                wh_pairs.extend([[w, h], [h, w]])
 
             self._wh_pairs.append(wh_pairs)
 
