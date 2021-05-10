@@ -208,7 +208,7 @@ class DefaultBoxGenerator(nn.Module):
             shift_y = shift_y.reshape(-1)
 
             shifts = torch.stack((shift_x, shift_y) * len(self._wh_pairs[k]), dim=-1).reshape(-1, 2)
-            wh_pairs = torch.as_tensor(self._wh_pairs[k] * f_k[0] * f_k[1], dtype=dtype)
+            wh_pairs = torch.as_tensor(self._wh_pairs[k] * (f_k[0] * f_k[1]), dtype=dtype)
 
             default_box = torch.cat((shifts, wh_pairs), dim=1)
 
