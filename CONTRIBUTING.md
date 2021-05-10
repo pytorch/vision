@@ -125,6 +125,10 @@ make html
 
 Then open `docs/build/html/index.html` in your favorite browser.
 
+The docs are also automatically built when you submit a PR. The job that
+builds the docs is named `build_docs`. You can access the rendered docs by
+clicking on that job and then going to the "Artifacts" tab.
+
 ### New model
 
 More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
