@@ -170,7 +170,11 @@ class DefaultBoxGenerator(nn.Module):
         else:
             self.scales = scales
 
-        self._wh_pairs: List[List[List[int]]] = []
+        self._wh_pairs = self._generate_wh_pairs(num_outputs)
+
+    def _generate_wh_pairs(self, num_outputs: int, dtype: torch.dtype = torch.float32,
+                           device: torch.device = torch.device("cpu")) -> List[Tensor]:
+        _wh_pairs: List[Tensor] = []
         for k in range(num_outputs):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
             s_k = self.scales[k]
@@ -184,7 +188,8 @@ class DefaultBoxGenerator(nn.Module):
                 h = self.scales[k] / sq_ar
                 wh_pairs.extend([[w, h], [h, w]])
 
-            self._wh_pairs.append(wh_pairs)
+            _wh_pairs.append(torch.as_tensor(wh_pairs, dtype=dtype, device=device))
+        return _wh_pairs
 
     def num_anchors_per_location(self):
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
@@ -192,7 +197,7 @@ class DefaultBoxGenerator(nn.Module):
 
     # Default Boxes calculation based on page 6 of SSD paper
     def _grid_default_boxes(self, grid_sizes: List[List[int]], image_size: List[int],
-                           dtype: torch.dtype = torch.float32) -> Tensor:
+                            dtype: torch.dtype = torch.float32) -> Tensor:
         default_boxes = []
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
@@ -208,7 +213,7 @@ class DefaultBoxGenerator(nn.Module):
             shift_y = shift_y.reshape(-1)
 
             shifts = torch.stack((shift_x, shift_y) * len(self._wh_pairs[k]), dim=-1).reshape(-1, 2)
-            wh_pairs = torch.as_tensor(self._wh_pairs[k] * (f_k[0] * f_k[1]), dtype=dtype)
+            wh_pairs = self._wh_pairs[k].repeat((f_k[0] * f_k[1]), 1)
 
             default_box = torch.cat((shifts, wh_pairs), dim=1)
 
