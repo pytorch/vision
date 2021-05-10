@@ -13,15 +13,20 @@ import numpy as np
 import scipy.misc
 import matplotlib.pyplot as plt
 
-import torchvision.transforms as T
+import torchvision.transforms.functional as F
 
 
 plt.rcParams["savefig.bbox"] = 'tight'
 
 
-def show(img):
-    plt.imshow(np.transpose(img, (1, 2, 0)))
-    plt.axis('off')
+def show(imgs):
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+    fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    for i, img in enumerate(imgs):
+        img = F.to_pil_image(img.to('cpu'))
+        axs[0, i].imshow(np.asarray(img))
+        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
 ####################################
@@ -32,10 +37,13 @@ def show(img):
 # image of dtype ``uint8`` as input.
 
 from torchvision.utils import make_grid
+from torchvision.io import read_image
+from pathlib import Path
 
-racoon = T.ToTensor()(scipy.misc.face().copy())
-racoon_int = T.ConvertImageDtype(dtype=torch.uint8)(racoon)
-grid = make_grid([racoon_int, racoon_int, racoon_int])
+dog1_int = read_image(str(Path('assets') / 'dog1.jpg'))
+dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
+
+grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
 show(grid)
 
 ####################################
@@ -49,11 +57,11 @@ show(grid)
 from torchvision.utils import draw_bounding_boxes
 
 
-boxes = torch.tensor([[100, 400, 500, 740], [500, 200, 800, 580]], dtype=torch.float)
-labels = ["grass", "racoon"]
+boxes = torch.tensor([[50, 50, 100, 200], [210, 150, 350, 430]], dtype=torch.float)
 colors = ["blue", "yellow"]
-result = draw_bounding_boxes(racoon_int, boxes, labels=labels, colors=colors, width=10)
+result = draw_bounding_boxes(dog1_int, boxes, colors=colors, width=5)
 show(result)
+
 
 #####################################
 # Naturally, we can also plot bounding boxes produced by torchvision detection
@@ -63,22 +71,27 @@ show(result)
 # :func:`~torchvision.models.detection.retinanet_resnet50_fpn`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision.transforms.functional import  convert_image_dtype
 
+
+dog1_float = convert_image_dtype(dog1_int, dtype=torch.float)
+dog2_float = convert_image_dtype(dog2_int, dtype=torch.float)
+batch = torch.stack([dog1_float, dog2_float])
 
 model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
 
-outputs = model(racoon.unsqueeze(0))
+outputs = model(batch)
 print(outputs)
 
 #####################################
-# Let's plot the top 5 boxes detected by our model
+# Let's plot the boxes detected by our model
 
-boxes = outputs[0]['boxes']
-colors = ["blue", "red", "green", "yellow", "orange"]
-
-result = draw_bounding_boxes(racoon_int, boxes=boxes[:5], colors=colors, width=10)
-show(result)
+dogs_with_boxes = [
+    draw_bounding_boxes(dog_int, boxes=output['boxes'], width=4)
+    for dog_int, output in zip((dog1_int, dog2_int), outputs)
+]
+show(dogs_with_boxes)
 
 #####################################
 # Visualizing Segmentation Masks
@@ -86,19 +99,8 @@ show(result)
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
 # draw segmentation amasks on images. We can set the colors as well as
 # transparency of masks.
-
-from torchvision.utils import draw_segmentation_masks
-from PIL import Image
-from pathlib import Path
-
-
-people = Image.open(Path('assets') / 'people.jpg')
-people = T.ToTensor()(people)
-show(people)
-
-#####################################
-# Let's draw a few maks! The masks contain tensors denoting probabilites of each
-# class.  Here is demo with torchvision's FCN Resnet-50, loaded with
+#
+# Here is demo with torchvision's FCN Resnet-50, loaded with
 # :func:`~torchvision.models.segmentation.fcn_resnet50`.
 # You can also try using
 # DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`)
@@ -110,19 +112,37 @@ show(people)
 # of dtype `uint8`.
 
 from torchvision.models.segmentation import fcn_resnet50
+from torchvision.utils import draw_segmentation_masks
 
 
 model = fcn_resnet50(pretrained=True, progress=False)
 model = model.eval()
-output = model(people.unsqueeze(0))
-masks = output['out'].squeeze(0)
 
-people_int = T.ConvertImageDtype(dtype=torch.uint8)(people)
-result = draw_segmentation_masks(people_int, masks, alpha=0.2)
-show(result)
+# The model expects the batch to be normalized
+batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+outputs = model(batch)
+
+dogs_with_masks = [
+    draw_segmentation_masks(dog_int, masks=output.squeeze(), alpha=0.6)
+    for dog_int, output in zip((dog1_int, dog2_int), outputs['out'])
+]
+show(dogs_with_masks)
+
 
 #####################################
-# We can adjust alpha to show the masks with a different transparency level:
+# The output of a Mask-RCNN model is slightly different but can be plotted too:
 
-result = draw_segmentation_masks(people_int, masks, alpha=0.6)
-show(result)
+from torchvision.models.detection import maskrcnn_resnet50_fpn
+model = maskrcnn_resnet50_fpn(pretrained=True, progress=False)
+model = model.eval()
+
+outputs = model(batch)
+
+dogs_with_masks = [
+    draw_segmentation_masks(
+        dog_int,
+        masks=F.convert_image_dtype(output['masks'], torch.float).squeeze(),
+        alpha=0.6
+    ) for dog_int, output in zip((dog1_int, dog2_int), outputs)
+]
+show(dogs_with_masks)
