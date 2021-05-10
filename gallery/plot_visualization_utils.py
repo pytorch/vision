@@ -89,13 +89,12 @@ show(result)
 
 from torchvision.utils import draw_segmentation_masks
 from PIL import Image
-import requests
+from pathlib import Path
 
 
-url = "http://images.cocodataset.org/val2017/000000281759.jpg"
-umbrellas = Image.open(requests.get(url, stream=True).raw)
-umbrellas = T.ToTensor()(umbrellas)
-show(umbrellas)
+people = Image.open(Path('assets') / 'people.jpg')
+people = T.ToTensor()(people)
+show(people)
 
 #####################################
 # Let's draw a few maks! The masks contain tensors denoting probabilites of each
@@ -115,15 +114,15 @@ from torchvision.models.segmentation import fcn_resnet50
 
 model = fcn_resnet50(pretrained=True, progress=False)
 model = model.eval()
-output = model(umbrellas.unsqueeze(0))
+output = model(people.unsqueeze(0))
 masks = output['out'].squeeze(0)
 
-umbrellas_int = T.ConvertImageDtype(dtype=torch.uint8)(umbrellas)
-result = draw_segmentation_masks(umbrellas_int, masks, alpha=0.2)
+people_int = T.ConvertImageDtype(dtype=torch.uint8)(people)
+result = draw_segmentation_masks(people_int, masks, alpha=0.2)
 show(result)
 
 #####################################
 # We can adjust alpha to show the masks with a different transparency level:
 
-result = draw_segmentation_masks(umbrellas_int, masks, alpha=0.6)
+result = draw_segmentation_masks(people_int, masks, alpha=0.6)
 show(result)
