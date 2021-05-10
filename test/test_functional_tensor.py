@@ -1018,5 +1018,52 @@ def test_perspective_interpolation_warning(tester):
         tester.assertTrue(res1.equal(res2))
 
 
+@pytest.mark.parametrize('device', ["cpu", ])
+@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+@pytest.mark.parametrize('size', [[96, 72], [96, 420], [420, 72]])
+@pytest.mark.parametrize('interpolation', [BILINEAR, ])
+def test_resize_antialias(device, dt, size, interpolation, tester):
+
+    if dt == torch.float16 and device == "cpu":
+        # skip float16 on CPU case
+        return
+
+    script_fn = torch.jit.script(F.resize)
+    tensor, pil_img = tester._create_data(320, 290, device=device)
+
+    if dt is not None:
+        # This is a trivial cast to float of uint8 data to test all cases
+        tensor = tensor.to(dt)
+
+    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, antialias=True)
+    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
+
+    tester.assertEqual(
+        resized_tensor.size()[1:], resized_pil_img.size[::-1],
+        msg=f"{size}, {interpolation}, {dt}"
+    )
+
+    resized_tensor_f = resized_tensor
+    # we need to cast to uint8 to compare with PIL image
+    if resized_tensor_f.dtype == torch.uint8:
+        resized_tensor_f = resized_tensor_f.to(torch.float)
+
+    tester.approxEqualTensorToPIL(
+        resized_tensor_f, resized_pil_img, tol=0.5, msg=f"{size}, {interpolation}, {dt}"
+    )
+    tester.approxEqualTensorToPIL(
+        resized_tensor_f, resized_pil_img, tol=1.0 + 1e-5, agg_method="max",
+        msg=f"{size}, {interpolation}, {dt}"
+    )
+
+    if isinstance(size, int):
+        script_size = [size, ]
+    else:
+        script_size = size
+
+    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, antialias=True)
+    tester.assertTrue(resized_tensor.equal(resize_result), msg=f"{size}, {interpolation}, {dt}")
+
+
 if __name__ == '__main__':
     unittest.main()
