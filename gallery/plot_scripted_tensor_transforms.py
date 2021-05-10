@@ -33,7 +33,7 @@ from torchvision.io import read_image
 
 
 plt.rcParams["savefig.bbox"] = 'tight'
-torch.manual_seed(1)
+torch.manual_seed(0)
 
 
 def show(imgs):
@@ -113,8 +113,7 @@ class Predictor(nn.Module):
 predictor = Predictor().to(device)
 scripted_predictor = torch.jit.script(predictor).to(device)
 
-# -320 to stack images of the same size
-batch = torch.stack([dog1[:, -320:, :], dog2[:, -320:, :]]).to(device)
+batch = torch.stack([dog1, dog2]).to(device)
 
 res = predictor(batch)
 res_scripted = scripted_predictor(batch)
