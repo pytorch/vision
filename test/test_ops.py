@@ -121,6 +121,7 @@ class RoIOpTester(OpTester):
         pass
 
     def expected_fn(*args, **kwargs):
+        # hello
         pass
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
