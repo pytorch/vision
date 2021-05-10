@@ -348,6 +348,10 @@ class Tester(unittest.TestCase):
 
                 self.assertEqual((owidth, oheight), result.size)
 
+        with self.assertWarnsRegex(UserWarning, r"Anti-alias option is always applied for PIL Image input"):
+            t = transforms.Resize(osize, antialias=False)
+            t(img)
+
     def test_random_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
