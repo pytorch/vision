@@ -191,7 +191,7 @@ class DefaultBoxGenerator(nn.Module):
         return [2 + 2 * len(r) for r in self.aspect_ratios]
 
     # Default Boxes calculation based on page 6 of SSD paper
-    def grid_default_boxes(self, grid_sizes: List[List[int]], image_size: List[int],
+    def _grid_default_boxes(self, grid_sizes: List[List[int]], image_size: List[int],
                            dtype: torch.dtype = torch.float32) -> Tensor:
         default_boxes = []
         for k, f_k in enumerate(grid_sizes):
@@ -229,7 +229,7 @@ class DefaultBoxGenerator(nn.Module):
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
-        default_boxes = self.grid_default_boxes(grid_sizes, image_size, dtype=dtype)
+        default_boxes = self._grid_default_boxes(grid_sizes, image_size, dtype=dtype)
         default_boxes = default_boxes.to(device)
 
         dboxes = []
