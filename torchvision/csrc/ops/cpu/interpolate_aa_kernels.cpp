@@ -27,13 +27,13 @@ static inline scalar_t interpolate_aa_single_dim_zero_strides(
 
   scalar_t t = *(scalar_t*)&src_min[0];
   index_t wts_idx = *(index_t*)&data[4][0];
-  char* wts_ptr = &data[3][wts_idx];
-  scalar_t wts = *(scalar_t*)&wts_ptr[0];
+  scalar_t* wts_ptr = (scalar_t*)&data[3][wts_idx];
+  scalar_t wts = wts_ptr[0];
 
   scalar_t output = t * wts;
   int j = 1;
   for (; j < ids_size; j++) {
-    wts = *(scalar_t*)&wts_ptr[j * sizeof(scalar_t)];
+    wts = wts_ptr[j];
     t = *(scalar_t*)&src_min[j * ids_stride];
     output += t * wts;
   }
@@ -54,13 +54,13 @@ static inline scalar_t interpolate_aa_single_dim(
 
   scalar_t t = *(scalar_t*)&src_min[0];
   index_t wts_idx = *(index_t*)&data[4][i * strides[4]];
-  char* wts_ptr = &data[3][wts_idx];
-  scalar_t wts = *(scalar_t*)&wts_ptr[0];
+  scalar_t* wts_ptr = (scalar_t*)&data[3][wts_idx];
+  scalar_t wts = wts_ptr[0];
 
   scalar_t output = t * wts;
   int j = 1;
   for (; j < ids_size; j++) {
-    wts = *(scalar_t*)&wts_ptr[j * sizeof(scalar_t)];
+    wts = wts_ptr[j];
     t = *(scalar_t*)&src_min[j * ids_stride];
     output += t * wts;
   }

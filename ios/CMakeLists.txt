@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.4.1)
 set(TARGET torchvision_ops)
 project(${TARGET} CXX)
 set(CMAKE_CXX_STANDARD 14)
@@ -14,8 +14,9 @@ file(GLOB VISION_SRCS
 # Remove interpolate_aa sources as they are temporary code
 # see https://github.com/pytorch/vision/pull/3761
 # and using TensorIterator unavailable with iOS
-# FILTER was added in CMake>=3.6 => 3.4.1 -> 3.6
-list(FILTER VISION_SRCS EXCLUDE REGEX ".+(interpolate_aa).+")
+list(REMOVE_ITEM VISION_SRCS "${CMAKE_CURRENT_LIST_DIR}/../torchvision/csrc/ops/cpu/interpolate_aa_kernels.cpp")
+list(REMOVE_ITEM VISION_SRCS "${CMAKE_CURRENT_LIST_DIR}/../torchvision/csrc/ops/interpolate_aa.cpp")
+list(REMOVE_ITEM VISION_SRCS "${CMAKE_CURRENT_LIST_DIR}/../torchvision/csrc/ops/interpolate_aa.h")
 
 add_library(${TARGET} STATIC
   ${VISION_SRCS}
