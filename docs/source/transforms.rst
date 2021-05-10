@@ -38,7 +38,16 @@ across calls. For reproducible transformations across calls, you may use
 The following examples illustate the use of the available transforms:
 
     * :ref:`sphx_glr_auto_examples_plot_transforms.py`
+
+        .. figure:: ../source/auto_examples/images/sphx_glr_plot_transforms_001.png
+            :align: center
+            :scale: 65%
+
     * :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py`
+
+        .. figure:: ../source/auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_001.png
+            :align: center
+            :scale: 30%
 
 .. warning::
 
