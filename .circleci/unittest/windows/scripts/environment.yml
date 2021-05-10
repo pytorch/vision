@@ -9,7 +9,8 @@ dependencies:
   - codecov
   - pip
   - libpng
-  - jpeg
+  # NOTE: Pinned to fix issues with size_t on Windows
+  - jpeg <=9b
   - ca-certificates
   - pip:
     - future
