@@ -17,7 +17,8 @@ from ..utils import load_state_dict_from_url
 __all__ = ['ssdlite320_mobilenet_v3_large']
 
 model_urls = {
-    'ssd320_mobilenet_v3_large_coco': None  # TODO: add weights
+    'ssdlite320_mobilenet_v3_large_coco':
+        'https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth'
 }
 
 
@@ -164,6 +165,27 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
                                   pretrained_backbone: bool = False, trainable_backbone_layers: Optional[int] = None,
                                   norm_layer: Optional[Callable[..., nn.Module]] = None,
                                   **kwargs: Any):
+    """
+    Constructs an SSDlite model with a MobileNetV3 Large backbone. See `SSD` for more details.
+
+    Example:
+
+        >>> model = torchvision.models.detection.ssdlite320_mobilenet_v3_large(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 320, 320), torch.rand(3, 500, 400)]
+        >>> predictions = model(x)
+
+    Args:
+        norm_layer:
+        **kwargs:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+        norm_layer (callable, optional): Module specifying the normalization layer to use.
+    """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6)
 
@@ -186,10 +208,10 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
     assert len(out_channels) == len(anchor_generator.aspect_ratios)
 
     defaults = {
-        "score_thresh": 1e-8,
-        "nms_thresh": 0.6,
-        "detections_per_img": 100,
-        "topk_candidates": 100,
+        "score_thresh": 0.001,
+        "nms_thresh": 0.55,
+        "detections_per_img": 300,
+        "topk_candidates": 300,
     }
     kwargs = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, size, num_classes,
