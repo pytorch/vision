@@ -47,7 +47,7 @@ grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
 show(grid)
 
 ####################################
-# Visualizing Bounding Boxes
+# Visualizing bounding boxes
 # --------------------------
 # We can use :func:`~torchvision.utils.draw_bounding_boxes` to draw boxes on an
 # image. We can set the colors, labels, width as well as font and font size !
@@ -85,16 +85,18 @@ outputs = model(batch)
 print(outputs)
 
 #####################################
-# Let's plot the boxes detected by our model
+# Let's plot the boxes detected by our model. We will only plot the boxes with a
+# score greater than a given threshold.
 
+threshold = .8
 dogs_with_boxes = [
-    draw_bounding_boxes(dog_int, boxes=output['boxes'], width=4)
+    draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > threshold], width=4)
     for dog_int, output in zip((dog1_int, dog2_int), outputs)
 ]
 show(dogs_with_boxes)
 
 #####################################
-# Visualizing Segmentation Masks
+# Visualizing segmentation masks
 # ------------------------------
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
 # draw segmentation amasks on images. We can set the colors as well as
@@ -123,26 +125,7 @@ batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)
 outputs = model(batch)
 
 dogs_with_masks = [
-    draw_segmentation_masks(dog_int, masks=output.squeeze(), alpha=0.6)
-    for dog_int, output in zip((dog1_int, dog2_int), outputs['out'])
-]
-show(dogs_with_masks)
-
-
-#####################################
-# The output of a Mask-RCNN model is slightly different but can be plotted too:
-
-from torchvision.models.detection import maskrcnn_resnet50_fpn
-model = maskrcnn_resnet50_fpn(pretrained=True, progress=False)
-model = model.eval()
-
-outputs = model(batch)
-
-dogs_with_masks = [
-    draw_segmentation_masks(
-        dog_int,
-        masks=F.convert_image_dtype(output['masks'], torch.float).squeeze(),
-        alpha=0.6
-    ) for dog_int, output in zip((dog1_int, dog2_int), outputs)
+    draw_segmentation_masks(dog_int, masks=masks, alpha=0.6)
+    for dog_int, masks in zip((dog1_int, dog2_int), outputs['out'])
 ]
 show(dogs_with_masks)
