@@ -117,7 +117,6 @@ class RoIOpTester(OpTester):
         pass
 
     def get_script_fn(*args, **kwargs):
-        # Hello
         pass
 
     def expected_fn(*args, **kwargs):
