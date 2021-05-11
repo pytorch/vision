@@ -40,10 +40,6 @@ def make_grid(
 
     Returns:
         grid (Tensor): the tensor containing grid of images.
-
-    Example:
-        See this notebook
-        `here <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
     if not (torch.is_tensor(tensor) or
             (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
@@ -174,10 +170,6 @@ def draw_bounding_boxes(
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
-
-    Example:
-        See this notebook
-        `linked <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
@@ -239,16 +231,12 @@ def draw_segmentation_masks(
     Args:
         image (Tensor): Tensor of shape (3 x H x W) and dtype uint8.
         masks (Tensor): Tensor of shape (num_masks, H, W). Each containing probability of predicted class.
-        alpha (float): Float number between 0 and 1 denoting factor of transpaerency of masks.
+        alpha (float): Float number between 0 and 1 denoting factor of transparency of masks.
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of masks. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with segmentation masks plotted.
-
-    Example:
-        See this notebook
-        `attached <https://github.com/pytorch/vision/blob/master/examples/python/visualization_utils.ipynb>`_
     """
 
     if not isinstance(image, torch.Tensor):
