@@ -160,6 +160,14 @@ torchvision_ios_params: &torchvision_ios_params
     IOS_ARCH: << parameters.ios_arch >>
     IOS_PLATFORM: << parameters.ios_platform >>
 
+torchvision_android_params: &torchvision_android_params
+  parameters:
+    build_environment:
+      type: string
+      default: ""
+  environment:
+    BUILD_ENVIRONMENT: << parameters.build_environment >>
+
 smoke_test_common: &smoke_test_common
   <<: *binary_common
   docker:
@@ -394,6 +402,42 @@ jobs:
           cat "$script"
           source "$script"
 
+  binary_android_build:
+    <<: *torchvision_android_params
+    docker:
+      - image: circleci/android:api-29-ndk
+    resource_class: xlarge
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run:
+        name: Build
+        no_output_timeout: "1h"
+        command: |
+          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_build.sh"
+          cat "$script"
+          source "$script"
+    - store_artifacts:
+        path: ~/workspace/artifacts
+
+  binary_android_upload:
+    <<: *torchvision_android_params
+    docker:
+      - image: circleci/android:api-29-ndk
+    resource_class: xlarge
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run:
+        name: Upload
+        no_output_timeout: "1h"
+        command: |
+          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_upload.sh"
+          cat "$script"
+          source "$script"
+
   binary_macos_conda:
     <<: *binary_common
     macos:
@@ -536,7 +580,7 @@ jobs:
             fi
             conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install Pillow
+            conda install Pillow>=5.3.0
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
@@ -934,6 +978,7 @@ workflows:
       - torchhub_test
       - torch_onnx_test
       {{ ios_workflows() }}
+      {{ android_workflows() }}
 
   unittest:
     jobs:
@@ -954,6 +999,7 @@ workflows:
       - torchhub_test
       - torch_onnx_test
       {{ ios_workflows(nightly=True) }}
+      {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
     triggers:

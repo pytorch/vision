@@ -14,7 +14,7 @@ dependencies:
   - ca-certificates
   - pip:
     - future
-    - pillow>=4.1.1
+    - pillow >=5.3.0
     - scipy
     - av
     - dataclasses

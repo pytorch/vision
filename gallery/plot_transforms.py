@@ -3,7 +3,8 @@
 Illustration of transforms
 ==========================
 
-This example illustrates the various transforms available in :mod:`torchvision.transforms`.
+This example illustrates the various transforms available in :ref:`the
+torchvision.transforms module <transforms>`.
 """
 
 from PIL import Image

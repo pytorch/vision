@@ -470,7 +470,13 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     return img
 
 
-def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_size: Optional[int] = None) -> Tensor:
+def resize(
+    img: Tensor,
+    size: List[int],
+    interpolation: str = "bilinear",
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = None
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(size, (int, tuple, list)):
@@ -493,6 +499,12 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
                 "max_size should only be passed if size specifies the length of the smaller edge, "
                 "i.e. size should be an int or a sequence of length 1 in torchscript mode."
             )
+
+    if antialias is None:
+        antialias = False
+
+    if antialias and interpolation not in ["bilinear", ]:
+        raise ValueError("Antialias option is supported for bilinear interpolation mode only")
 
     w, h = _get_image_size(img)
 
@@ -524,7 +536,11 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
+    if antialias:
+        # Apply antialias for donwsampling on both dims
+        img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+    else:
+        img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
