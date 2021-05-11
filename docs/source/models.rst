@@ -426,8 +426,9 @@ Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
-SSD VGG16                               25.1     -         -
-SSD ResNet-50                           30.2     -         -
+SSD300 VGG16                            25.1     -         -
+SSD512 ResNet-50                        30.2     -         -
+SSDlite320 MobileNetV3-Large            21.3     -         -
 Mask R-CNN ResNet-50 FPN                37.9     34.6      -
 ======================================  =======  ========  ===========
 
@@ -486,8 +487,9 @@ Faster R-CNN ResNet-50 FPN              0.2288               0.0590             
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
-SSD VGG16                               0.2093               0.0744              1.5
-SSD ResNet-50                           0.2316               0.0772              3.0
+SSD300 VGG16                            0.2093               0.0744              1.5
+SSD512 ResNet-50                        0.2316               0.0772              3.0
+SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
 Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
 ======================================  ===================  ==================  ===========
@@ -512,6 +514,12 @@ SSD
 
 .. autofunction:: torchvision.models.detection.ssd300_vgg16
 .. autofunction:: torchvision.models.detection.ssd512_resnet50
+
+
+SSDlite
+------------
+
+.. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
 
 
 Mask R-CNN
