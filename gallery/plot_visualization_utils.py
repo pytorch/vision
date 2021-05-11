@@ -71,7 +71,7 @@ show(result)
 # :func:`~torchvision.models.detection.retinanet_resnet50_fpn`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
-from torchvision.transforms.functional import  convert_image_dtype
+from torchvision.transforms.functional import convert_image_dtype
 
 
 dog1_float = convert_image_dtype(dog1_int, dtype=torch.float)
