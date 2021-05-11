@@ -48,7 +48,7 @@ torch::Tensor decode_jpeg_cuda(
   at::cuda::CUDAGuard device_guard(device);
 
   // Create global nvJPEG handle
-  static std::once_flag nvjpeg_handle_creation_flag;
+  std::once_flag nvjpeg_handle_creation_flag;
   std::call_once(nvjpeg_handle_creation_flag, []() {
     if (nvjpeg_handle == nullptr) {
       nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
