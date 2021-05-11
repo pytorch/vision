@@ -120,7 +120,7 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
 
     Args:
         input (Tensor[channels, image_height, image_width]): int8 image tensor of
-            `c` channels, where `c` must 3 or 1.
+            ``c`` channels, where ``c`` must 3 or 1.
         compression_level (int): Compression factor for the resulting file, it must be a number
             between 0 and 9. Default: 6
 
@@ -165,7 +165,7 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
             available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
-            with ``nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
+            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
             supported for CUDA version >= 10.1
 
     Returns:
