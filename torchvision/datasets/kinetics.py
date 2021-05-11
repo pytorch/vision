@@ -50,10 +50,10 @@ class Kinetics(VisionDataset):
                 │   │   ├──   clipx.mp4
                 │   │    └── ...
             Split is appended using the split argument.
+        frames_per_clip (int): number of frames in a clip
         num_classes (int): select between Kinetics-400, Kinetics-600, and Kinetics-700
         split (str): split of the dataset to consider; currently supports ["train", "val"]
         frame_rate (float): If not None, interpolate different frame rate for each clip.
-        frames_per_clip (int): number of frames in a clip
         step_between_clips (int): number of frames between each clip
         transform (callable, optional): A function/transform that  takes in a TxHxWxC video
             and returns a transformed version.
