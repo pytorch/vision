@@ -97,12 +97,12 @@ class Kinetics(VisionDataset):
         download: bool = False,
         num_download_workers: int = 1,
         num_workers: int = 1,
-        _precomputed_metadata=None,
-        _video_width=0,
-        _video_height=0,
-        _video_min_dimension=0,
-        _audio_samples=0,
-        _audio_channels=0,
+        _precomputed_metadata = None,
+        _video_width: int = 0,
+        _video_height: int = 0,
+        _video_min_dimension: int = 0,
+        _audio_samples: int = 0,
+        _audio_channels: int = 0,
         **kwargs
     ) -> None:
 
