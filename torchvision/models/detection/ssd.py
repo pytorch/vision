@@ -545,6 +545,9 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    if "size" in kwargs:
+        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5)
 
@@ -556,8 +559,13 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
     anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]],
                                            scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05],
                                            steps=[8, 16, 32, 64, 100, 300])
-    model = SSD(backbone, anchor_generator, (300, 300), num_classes,
-                image_mean=[0.48235, 0.45882, 0.40784], image_std=[1., 1., 1.], **kwargs)
+
+    defaults = {
+        "image_mean": [0.48235, 0.45882, 0.40784],
+        "image_std": [1., 1., 1.],
+    }
+    kwargs = {**defaults, **kwargs}
+    model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:
@@ -678,6 +686,9 @@ def ssd512_resnet50(pretrained: bool = False, progress: bool = True, num_classes
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    if "size" in kwargs:
+        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5)
 

@@ -1,4 +1,5 @@
 import torch
+import warnings
 
 from collections import OrderedDict
 from functools import partial
@@ -186,6 +187,9 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
     """
+    if "size" in kwargs:
+        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6)
 

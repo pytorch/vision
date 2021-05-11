@@ -504,20 +504,20 @@ Faster R-CNN
 
 
 RetinaNet
-------------
+---------
 
 .. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
 
 
 SSD
-------------
+---
 
 .. autofunction:: torchvision.models.detection.ssd300_vgg16
 .. autofunction:: torchvision.models.detection.ssd512_resnet50
 
 
 SSDlite
-------------
+-------
 
 .. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
 
