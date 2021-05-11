@@ -213,7 +213,9 @@ class DefaultBoxGenerator(nn.Module):
             shift_y = shift_y.reshape(-1)
 
             shifts = torch.stack((shift_x, shift_y) * len(self._wh_pairs[k]), dim=-1).reshape(-1, 2)
-            wh_pairs = self._wh_pairs[k].repeat((f_k[0] * f_k[1]), 1)
+            # Clipping the default boxes while the boxes are encoded in format (cx, cy, w, h)
+            _wh_pair = self._wh_pairs[k].clamp(min=0, max=1) if self.clip else self._wh_pairs[k]
+            wh_pairs = _wh_pair.repeat((f_k[0] * f_k[1]), 1)
 
             default_box = torch.cat((shifts, wh_pairs), dim=1)
 
@@ -240,8 +242,6 @@ class DefaultBoxGenerator(nn.Module):
         dboxes = []
         for _ in image_list.image_sizes:
             dboxes_in_image = default_boxes
-            if self.clip:
-                dboxes_in_image.clamp_(min=0, max=1)
             dboxes_in_image = torch.cat([dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
                                          dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]], -1)
             dboxes_in_image[:, 0::2] *= image_size[1]
