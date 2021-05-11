@@ -315,8 +315,23 @@ def get_extensions():
             image_library += [jpeg_lib]
             image_include += [jpeg_include]
 
+    # Locating nvjpeg
+    # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
+    nvjpeg_found = (
+        extension is CUDAExtension and
+        CUDA_HOME is not None and
+        os.path.exists(os.path.join(CUDA_HOME, 'include', 'nvjpeg.h'))
+    )
+
+    print('NVJPEG found: {0}'.format(nvjpeg_found))
+    image_macros += [('NVJPEG_FOUND', str(int(nvjpeg_found)))]
+    if nvjpeg_found:
+        print('Building torchvision with NVJPEG image support')
+        image_link_flags.append('nvjpeg')
+
     image_path = os.path.join(extensions_dir, 'io', 'image')
-    image_src = glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+    image_src = (glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+                 + glob.glob(os.path.join(image_path, 'cuda', '*.cpp')))
 
     if png_found or jpeg_found:
         ext_modules.append(extension(
