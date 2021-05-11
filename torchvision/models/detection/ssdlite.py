@@ -167,7 +167,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
                                   norm_layer: Optional[Callable[..., nn.Module]] = None,
                                   **kwargs: Any):
     """
-    Constructs an SSDlite model with a MobileNetV3 Large backbone. See `SSD` for more details.
+    Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone. See `SSD` for more details.
 
     Example:
 
