@@ -208,11 +208,11 @@ class Kinetics(VisionDataset):
             │   ├── clip1.avi
 
         """
-        file_tmp = "{ytid}_{start:06}_{end:06}.mp4"
+        file_fmtstr = "{ytid}_{start:06}_{end:06}.mp4"
         with open(self.annotations) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                f = file_tmp.format(
+                f = file_fmtstr.format(
                     ytid=row["youtube_id"],
                     start=int(row["time_start"]),
                     end=int(row["time_end"]),
