@@ -108,8 +108,7 @@ class Kinetics(VisionDataset):
 
         # TODO: support test
         verify_str_arg(split, arg="split", valid_values=['train', 'val', 'unknown'])
-        verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
-        self.num_classes = num_classes
+        self.num_classes = verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
         self.extensions = extensions
         self.num_download_workers = num_download_workers
 
