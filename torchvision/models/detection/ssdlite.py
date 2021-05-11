@@ -212,11 +212,12 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         "nms_thresh": 0.55,
         "detections_per_img": 300,
         "topk_candidates": 300,
+        "image_mean": [0., 0., 0.],
+        "image_std": [1., 1., 1.],
     }
     kwargs = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, size, num_classes,
-                head=SSDLiteHead(out_channels, num_anchors, num_classes, norm_layer),
-                image_mean=[0., 0., 0.], image_std=[1., 1., 1.], **kwargs)
+                head=SSDLiteHead(out_channels, num_anchors, num_classes, norm_layer), **kwargs)
 
     if pretrained:
         weights_name = 'ssdlite320_mobilenet_v3_large_coco'
