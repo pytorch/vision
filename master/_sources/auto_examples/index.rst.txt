@@ -12,7 +12,28 @@ Below is a gallery of examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in torchvision.transforms.">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
+     :alt: Tensor transforms and JIT
+
+     :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_scripted_tensor_transforms
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ...">
 
 .. only:: html
 

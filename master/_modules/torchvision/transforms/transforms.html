@@ -167,7 +167,7 @@
           </li>
 
           <li>
-            <a href="https://github.com/pytorch/pytorch">Github</a>
+            <a href="https://github.com/pytorch/pytorch">GitHub</a>
           </li>
         </ul>
       </div>
@@ -194,7 +194,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+5540df1 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+ae8dc4e ) &#x25BC</a>
     </div>
     
 
@@ -572,10 +572,16 @@
 <span class="sd">            smaller edge may be shorter than ``size``. This is only supported</span>
 <span class="sd">            if ``size`` is an int (or a sequence of length 1 in torchscript</span>
 <span class="sd">            mode).</span>
+<span class="sd">        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias</span>
+<span class="sd">            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for</span>
+<span class="sd">            ``InterpolationMode.BILINEAR`` only mode.</span>
+
+<span class="sd">            .. warning::</span>
+<span class="sd">                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Size should be int or sequence. Got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">size</span><span class="p">)))</span>
@@ -593,6 +599,7 @@
             <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">antialias</span> <span class="o">=</span> <span class="n">antialias</span>
 
 <div class="viewcode-block" id="Resize.forward"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Resize.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -602,12 +609,12 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Rescaled image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">antialias</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">interpolate_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(size=</span><span class="si">{0}</span><span class="s1">, interpolation=</span><span class="si">{1}</span><span class="s1">, max_size=</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolate_str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(size=</span><span class="si">{0}</span><span class="s1">, interpolation=</span><span class="si">{1}</span><span class="s1">, max_size=</span><span class="si">{2}</span><span class="s1">, antialias=</span><span class="si">{3}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolate_str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">antialias</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Scale"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.Scale">[docs]</a><span class="k">class</span> <span class="nc">Scale</span><span class="p">(</span><span class="n">Resize</span><span class="p">):</span>
@@ -1012,7 +1019,6 @@
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
 <span class="sd">        fill (sequence or number): Pixel fill value for the area outside the transformed</span>
 <span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distortion_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
@@ -1524,7 +1530,6 @@
 <span class="sd">            Default is the center of the image.</span>
 <span class="sd">        fill (sequence or number): Pixel fill value for the area outside the rotated</span>
 <span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.2.0``.</span>
 <span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
 <span class="sd">            Please use the ``interpolation`` parameter instead.</span>
 
@@ -1635,7 +1640,6 @@
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
 <span class="sd">        fill (sequence or number): Pixel fill value for the area outside the transformed</span>
 <span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">            If input is PIL Image, the options is only available for ``Pillow&gt;=5.0.0``.</span>
 <span class="sd">        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.</span>
 <span class="sd">            Please use the ``fill`` parameter instead.</span>
 <span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>

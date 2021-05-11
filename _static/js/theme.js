@@ -1002,12 +1002,6 @@ $(document).ready(function() {
   }
 });
 
-// Get the card link from the card's link attribute
-
-$(".tutorials-card").on("click", function() {
-    window.location = $(this).attr("link");
-});
-
 // Build an array from each tag that's present
 
 var tagList = $(".tutorials-card-container").map(function() {
