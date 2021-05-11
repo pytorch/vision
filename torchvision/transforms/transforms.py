@@ -257,10 +257,16 @@ class Resize(torch.nn.Module):
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
+            ``InterpolationMode.BILINEAR`` only mode.
+
+            .. warning::
+                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
 
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
@@ -278,6 +284,7 @@ class Resize(torch.nn.Module):
             interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def forward(self, img):
         """
@@ -287,12 +294,12 @@ class Resize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation, self.max_size)
+        return F.resize(img, self.size, self.interpolation, self.max_size, self.antialias)
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2})'.format(
-            self.size, interpolate_str, self.max_size)
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2}, antialias={3})'.format(
+            self.size, interpolate_str, self.max_size, self.antialias)
 
 
 class Scale(Resize):
