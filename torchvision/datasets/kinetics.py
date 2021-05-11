@@ -171,9 +171,7 @@ class Kinetics(VisionDataset):
                 f"The directory {self.split_folder} already exists. If you want to re-download or re-extract the images, "
                 f"delete the directory."
             )
-        # check that the assignment was made properly
         tar_path = path.join(self.root, "tars")
-        annotation_path = path.join(self.root, "annotations")
         file_list_path = path.join(self.root, "files")
 
         split_url = self._TAR_URLS[self.num_classes].format(split=self.split)
@@ -182,9 +180,6 @@ class Kinetics(VisionDataset):
             download_url(split_url, file_list_path)
         list_video_urls = open(split_url_filepath, "r")
 
-        if not check_integrity(path.join(annotation_path, f"{self.split}.csv")):
-            download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
-        self.annotations = path.join(annotation_path, f"{self.split}.csv")
 
         if self.num_download_workers == 1:
             for line in list_video_urls.readlines():
@@ -208,8 +203,13 @@ class Kinetics(VisionDataset):
             │   ├── clip1.avi
 
         """
+        annotation_path = path.join(self.root, "annotations")
+        if not check_integrity(path.join(annotation_path, f"{self.split}.csv")):
+            download_url(self._ANNOTATION_URLS[self.num_classes].format(split=self.split), annotation_path)
+        annotations = path.join(annotation_path, f"{self.split}.csv")
+
         file_fmtstr = "{ytid}_{start:06}_{end:06}.mp4"
-        with open(self.annotations) as csvfile:
+        with open(annotations) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 f = file_fmtstr.format(
