@@ -95,7 +95,7 @@ class Kinetics(VisionDataset):
         transform: Optional[Callable] = None,
         extensions: Tuple[str, ...] = ("avi", "mp4"),
         download: bool = False,
-        num_download_workers=1,
+        num_download_workers: int = 1,
         num_workers: int = 1,
         _precomputed_metadata=None,
         _video_width=0,
