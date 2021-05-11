@@ -299,11 +299,20 @@ class Kinetics400(Kinetics):
         self,
         root,
         frames_per_clip,
+        num_classes = None,
+        split = None,
+        download = None,
+        num_download_workers = None,
         **kwargs
     ):
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
             "It was replaced by Kinetics(..., num_classes=\"400\").")
+        if any(value is not None for value in (num_classes, split, download, num_download_workers)):
+            raise RuntimeError(
+                "Usage of 'num_classes', 'split', 'download', or 'num_download_workers' is not supported in Kinetics400. "
+                "Please use Kinetics instead."
+            )
 
         super(Kinetics400, self).__init__(
             root=root,
