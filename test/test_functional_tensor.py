@@ -1021,7 +1021,7 @@ def test_perspective_interpolation_warning(tester):
 @pytest.mark.parametrize('device', ["cpu", ])
 @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize('size', [[96, 72], [96, 420], [420, 72]])
-@pytest.mark.parametrize('interpolation', [BILINEAR, ])
+@pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
 def test_resize_antialias(device, dt, size, interpolation, tester):
 
     if dt == torch.float16 and device == "cpu":
@@ -1051,8 +1051,13 @@ def test_resize_antialias(device, dt, size, interpolation, tester):
     tester.approxEqualTensorToPIL(
         resized_tensor_f, resized_pil_img, tol=0.5, msg=f"{size}, {interpolation}, {dt}"
     )
+
+    accepted_tol = 1.0 + 1e-5
+    if interpolation == BICUBIC:
+        accepted_tol = 10.0
+
     tester.approxEqualTensorToPIL(
-        resized_tensor_f, resized_pil_img, tol=1.0 + 1e-5, agg_method="max",
+        resized_tensor_f, resized_pil_img, tol=accepted_tol, agg_method="max",
         msg=f"{size}, {interpolation}, {dt}"
     )
 
