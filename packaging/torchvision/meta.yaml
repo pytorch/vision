@@ -52,7 +52,7 @@ test:
   requires:
     - pytest
     - scipy
-    - av >=8.0.1
+    - av
     # NOTE: Pinned to fix issues with size_t on Windows
     - jpeg <=9b
     - ca-certificates
