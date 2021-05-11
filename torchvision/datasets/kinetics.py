@@ -118,7 +118,7 @@ class Kinetics(VisionDataset):
             self.root = root
             self.split_folder = root
             self.split = "unknown"
-            assert download == False, "Cannot download the videos using legacy_structure."
+            assert not download, "Cannot download the videos using legacy_structure."
         else:
             self.root = root
             self.split_folder = path.join(root, split)
