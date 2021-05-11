@@ -5,7 +5,7 @@ import warnings
 
 from os import path
 import csv
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 from functools import partial
 from multiprocessing import Pool
 
@@ -49,7 +49,7 @@ class Kinetics(VisionDataset):
                 │   ├──  class2
                 │   │   ├──   clipx.mp4
                 │   │    └── ...
-            Split is appended using the split argument.
+            Note: split is appended automatically using the split argument.
         frames_per_clip (int): number of frames in a clip
         num_classes (int): select between Kinetics-400 (default), Kinetics-600, and Kinetics-700
         split (str): split of the dataset to consider; supports ``"train"`` (default) ``"val"``
@@ -107,22 +107,20 @@ class Kinetics(VisionDataset):
     ) -> None:
 
         # TODO: support test
-        verify_str_arg(split, arg="split", valid_values=['train', 'val', 'unknown'])
         self.num_classes = verify_str_arg(num_classes, arg="num_classes", valid_values=["400", "600", "700"])
         self.extensions = extensions
         self.num_download_workers = num_download_workers
 
+        self.root = root
         _use_legacy_structure = kwargs.get('_use_legacy_structure', False)
         if _use_legacy_structure:
             print("Using legacy structure")
-            self.root = root
             self.split_folder = root
             self.split = "unknown"
             assert not download, "Cannot download the videos using legacy_structure."
         else:
-            self.root = root
             self.split_folder = path.join(root, split)
-            self.split = split
+            self.split = verify_str_arg(split, arg="split", valid_values=["train", "val"])
 
         if download:
             self.download_and_process_videos()
