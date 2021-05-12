@@ -103,7 +103,7 @@ class Kinetics(VisionDataset):
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
         _audio_channels: int = 0,
-        **kwargs
+        _use_legacy_structure: bool = False,
     ) -> None:
 
         # TODO: support test
@@ -112,7 +112,6 @@ class Kinetics(VisionDataset):
         self.num_download_workers = num_download_workers
 
         self.root = root
-        _use_legacy_structure = kwargs.get('_use_legacy_structure', False)
         if _use_legacy_structure:
             print("Using legacy structure")
             self.split_folder = root
