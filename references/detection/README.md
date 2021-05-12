@@ -48,7 +48,7 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --lr-steps 16 22 --aspect-ratio-group-factor 3 --lr 0.01
 ```
 
-### SSD VGG16
+### SSD300 VGG16
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco --model ssd300_vgg16 --epochs 120\
@@ -56,7 +56,7 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --weight-decay 0.0005 --data-augmentation ssd
 ```
 
-### SSDlite MobileNetV3-Large
+### SSDlite320 MobileNetV3-Large
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco --model ssdlite320_mobilenet_v3_large --epochs 660\
