@@ -16,6 +16,12 @@ class DetectionPresetTrain:
                 T.RandomHorizontalFlip(p=hflip_prob),
                 T.ToTensor(),
             ])
+        elif data_augmentation == 'ssdlite':
+            self.transforms = T.Compose([
+                T.RandomIoUCrop(),
+                T.RandomHorizontalFlip(p=hflip_prob),
+                T.ToTensor(),
+            ])
         else:
             raise ValueError(f'Unknown data augmentation policy "{data_augmentation}"')
 

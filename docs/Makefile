@@ -26,7 +26,7 @@ html-noplot:  # Avoids running the gallery examples, which may take time
 
 clean:
 	rm -rf $(BUILDDIR)/*
-	rm -rf auto_examples/
+	rm -rf $(SOURCEDIR)/auto_examples/
 
 .PHONY: help Makefile docset
 

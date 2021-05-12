@@ -48,7 +48,7 @@ if [[ "$(uname)" == Darwin ]]; then
     bin_path=$(dirname $python_exec)
     env_path=$(dirname $bin_path)
     for whl in *.whl; do
-        DYLD_LIBRARY_PATH="$env_path/lib/:$DYLD_LIBRARY_PATH" delocate-wheel -v $whl
+        DYLD_FALLBACK_LIBRARY_PATH="$env_path/lib/:$DYLD_FALLBACK_LIBRARY_PATH" delocate-wheel -v $whl
     done
 else
     if [[ "$OSTYPE" == "msys" ]]; then
