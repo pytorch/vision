@@ -197,7 +197,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+ae8dc4e ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+0cfcb52 ) &#x25BC</a>
     </div>
     
 
@@ -563,6 +563,17 @@ of that type and returns it.</p>
 </section>
 <section id="image">
 <h2>Image<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="torchvision.io.ImageReadMode">
+<em class="property">class </em><code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">ImageReadMode</code><a class="reference internal" href="_modules/torchvision/io/image.html#ImageReadMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.ImageReadMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Support for various modes while reading images.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code> for loading the image as-is,
+<code class="docutils literal notranslate"><span class="pre">ImageReadMode.GRAY</span></code> for converting to grayscale,
+<code class="docutils literal notranslate"><span class="pre">ImageReadMode.GRAY_ALPHA</span></code> for grayscale with transparency,
+<code class="docutils literal notranslate"><span class="pre">ImageReadMode.RGB</span></code> for RGB and <code class="docutils literal notranslate"><span class="pre">ImageReadMode.RGB_ALPHA</span></code> for
+RGB with transparency.</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="torchvision.io.read_image">
 <code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">read_image</code><span class="sig-paren">(</span><em class="sig-param">path: str</em>, <em class="sig-param">mode: torchvision.io.image.ImageReadMode = &lt;ImageReadMode.UNCHANGED: 0&gt;</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#read_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.read_image" title="Permalink to this definition">¶</a></dt>
@@ -573,9 +584,9 @@ The values of the output tensor are uint8 between 0 and 255.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – path of the JPEG or PNG image.</p></li>
-<li><p><strong>mode</strong> (<em>ImageReadMode</em>) – the read mode used for optionally converting the image.
-Default: <cite>ImageReadMode.UNCHANGED</cite>.
-See <cite>ImageReadMode</cite> class for more information on various
+<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally converting the image.
+Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
+See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
 available modes.</p></li>
 </ul>
 </dd>
@@ -584,10 +595,16 @@ available modes.</p></li>
 </dd>
 </dl>
 <p>Examples using <code class="docutils literal notranslate"><span class="pre">read_image</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><figure class="align-default" id="id1">
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id1">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><figure class="align-default" id="id2">
 <img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
 <figcaption>
-<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </figcaption>
 </figure>
 </div><div class="sphx-glr-clear"></div></dd></dl>
@@ -604,9 +621,9 @@ The values of the output tensor are uint8 between 0 and 255.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input</strong> (<em>Tensor</em>) – a one dimensional uint8 tensor containing the raw bytes of the
 PNG or JPEG image.</p></li>
-<li><p><strong>mode</strong> (<em>ImageReadMode</em>) – the read mode used for optionally converting the image.
-Default: <cite>ImageReadMode.UNCHANGED</cite>.
-See <cite>ImageReadMode</cite> class for more information on various
+<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally converting the image.
+Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
+See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
 available modes.</p></li>
 </ul>
 </dd>
@@ -625,7 +642,7 @@ of its corresponding JPEG file.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em><em>)</em>) – int8 image tensor of
-<cite>c</cite> channels, where <cite>c</cite> must be 1 or 3.</p></li>
+<code class="docutils literal notranslate"><span class="pre">c</span></code> channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must be 1 or 3.</p></li>
 <li><p><strong>quality</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Quality of the resulting JPEG file, it must be a number between
 1 and 100. Default: 75</p></li>
 </ul>
@@ -644,14 +661,42 @@ of its corresponding JPEG file.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.io.decode_jpeg">
+<code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">decode_jpeg</code><span class="sig-paren">(</span><em class="sig-param">input: torch.Tensor</em>, <em class="sig-param">mode: torchvision.io.image.ImageReadMode = &lt;ImageReadMode.UNCHANGED: 0&gt;</em>, <em class="sig-param">device: str = 'cpu'</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#decode_jpeg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.decode_jpeg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes a JPEG image into a 3 dimensional RGB Tensor.
+Optionally converts the image to the desired format.
+The values of the output tensor are uint8 between 0 and 255.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>1</em><em>]</em>) – a one dimensional uint8 tensor containing
+the raw bytes of the JPEG image. This tensor must be on CPU,
+regardless of the <code class="docutils literal notranslate"><span class="pre">device</span></code> parameter.</p></li>
+<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally
+converting the image. Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
+See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
+available modes.</p></li>
+<li><p><strong>device</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><em>torch.device</em>) – The device on which the decoded image will
+be stored. If a cuda device is specified, the image will be decoded
+with <a class="reference external" href="https://developer.nvidia.com/nvjpeg">nvjpeg</a>. This is only
+supported for CUDA version &gt;= 10.1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>output (Tensor[image_channels, image_height, image_width])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.io.write_jpeg">
 <code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">write_jpeg</code><span class="sig-paren">(</span><em class="sig-param">input: torch.Tensor</em>, <em class="sig-param">filename: str</em>, <em class="sig-param">quality: int = 75</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io/image.html#write_jpeg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.write_jpeg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of <cite>c</cite>
-channels, where <cite>c</cite> must be 1 or 3.</p></li>
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of <code class="docutils literal notranslate"><span class="pre">c</span></code>
+channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must be 1 or 3.</p></li>
 <li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Path to save the image.</p></li>
 <li><p><strong>quality</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Quality of the resulting JPEG file, it must be a number
 between 1 and 100. Default: 75</p></li>
@@ -669,7 +714,7 @@ of its corresponding PNG file.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of
-<cite>c</cite> channels, where <cite>c</cite> must 3 or 1.</p></li>
+<code class="docutils literal notranslate"><span class="pre">c</span></code> channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must 3 or 1.</p></li>
 <li><p><strong>compression_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Compression factor for the resulting file, it must be a number
 between 0 and 9. Default: 6</p></li>
 </ul>
@@ -688,6 +733,29 @@ between 0 and 9. Default: 6</p></li>
 </dd></dl>
 
 <dl class="function">
+<dt id="torchvision.io.decode_png">
+<code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">decode_png</code><span class="sig-paren">(</span><em class="sig-param">input: torch.Tensor</em>, <em class="sig-param">mode: torchvision.io.image.ImageReadMode = &lt;ImageReadMode.UNCHANGED: 0&gt;</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#decode_png"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.decode_png" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes a PNG image into a 3 dimensional RGB Tensor.
+Optionally converts the image to the desired format.
+The values of the output tensor are uint8 between 0 and 255.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>1</em><em>]</em>) – a one dimensional uint8 tensor containing
+the raw bytes of the PNG image.</p></li>
+<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally
+converting the image. Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
+See <cite>ImageReadMode</cite> class for more information on various
+available modes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>output (Tensor[image_channels, image_height, image_width])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="torchvision.io.write_png">
 <code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">write_png</code><span class="sig-paren">(</span><em class="sig-param">input: torch.Tensor</em>, <em class="sig-param">filename: str</em>, <em class="sig-param">compression_level: int = 6</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io/image.html#write_png"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.write_png" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images)
@@ -696,10 +764,40 @@ and saves it in a PNG file.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of
-<cite>c</cite> channels, where <cite>c</cite> must be 1 or 3.</p></li>
+<code class="docutils literal notranslate"><span class="pre">c</span></code> channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must be 1 or 3.</p></li>
 <li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – Path to save the image.</p></li>
 <li><p><strong>compression_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Compression factor for the resulting file, it must be a number
 between 0 and 9. Default: 6</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.io.read_file">
+<code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">read_file</code><span class="sig-paren">(</span><em class="sig-param">path: str</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/io/image.html#read_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.read_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and outputs the bytes contents of a file as a uint8 Tensor
+with one dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – the path to the file to be read</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>data (Tensor)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="torchvision.io.write_file">
+<code class="sig-prename descclassname">torchvision.io.</code><code class="sig-name descname">write_file</code><span class="sig-paren">(</span><em class="sig-param">filename: str</em>, <em class="sig-param">data: torch.Tensor</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/torchvision/io/image.html#write_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.io.write_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the contents of a uint8 tensor with one dimension to a
+file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – the path to the file to be written</p></li>
+<li><p><strong>data</strong> (<em>Tensor</em>) – the contents to be written to the output file</p></li>
 </ul>
 </dd>
 </dl>
