@@ -409,6 +409,8 @@ def kinetics():
             for num_classes, split in itertools.product(("400", "600", "700"), ("train", "val"))
         ]
     )
+
+
 def kitti():
     return itertools.chain(
         *[
