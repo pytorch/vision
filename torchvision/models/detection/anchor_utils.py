@@ -206,8 +206,8 @@ class DefaultBoxGenerator(nn.Module):
             else:
                 y_f_k, x_f_k = f_k
 
-            shifts_x = (torch.arange(0, f_k[1], dtype=dtype) + 0.5) / x_f_k
-            shifts_y = (torch.arange(0, f_k[0], dtype=dtype) + 0.5) / y_f_k
+            shifts_x = ((torch.arange(0, f_k[1]) + 0.5) / x_f_k).to(dtype=dtype)
+            shifts_y = ((torch.arange(0, f_k[0]) + 0.5) / y_f_k).to(dtype=dtype)
             shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)

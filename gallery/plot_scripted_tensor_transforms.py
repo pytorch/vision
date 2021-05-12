@@ -34,7 +34,7 @@ from torchvision.io import read_image
 
 
 plt.rcParams["savefig.bbox"] = 'tight'
-torch.manual_seed(0)
+torch.manual_seed(1)
 
 
 def show(imgs):
