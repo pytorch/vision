@@ -5,7 +5,7 @@ import warnings
 
 from os import path
 import csv
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from multiprocessing import Pool
 
@@ -97,7 +97,7 @@ class Kinetics(VisionDataset):
         download: bool = False,
         num_download_workers: int = 1,
         num_workers: int = 1,
-        _precomputed_metadata = None,
+        _precomputed_metadata: Optional[Dict] = None,
         _video_width: int = 0,
         _video_height: int = 0,
         _video_min_dimension: int = 0,
@@ -164,8 +164,8 @@ class Kinetics(VisionDataset):
         """
         if path.exists(self.split_folder):
             raise RuntimeError(
-                f"The directory {self.split_folder} already exists. If you want to re-download or re-extract the images, "
-                f"delete the directory."
+                f"The directory {self.split_folder} already exists. "
+                f"If you want to re-download or re-extract the images, delete the directory."
             )
         tar_path = path.join(self.root, "tars")
         file_list_path = path.join(self.root, "files")
@@ -175,7 +175,6 @@ class Kinetics(VisionDataset):
         if not check_integrity(split_url_filepath):
             download_url(split_url, file_list_path)
         list_video_urls = open(split_url_filepath, "r")
-
 
         if self.num_download_workers == 1:
             for line in list_video_urls.readlines():
