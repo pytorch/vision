@@ -24,8 +24,7 @@ def show(imgs):
         imgs = [imgs]
     fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
     for i, img in enumerate(imgs):
-        img = img.detach()
-        img = F.to_pil_image(img)
+        img = F.to_pil_image(img.to('cpu'))
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
@@ -51,8 +50,9 @@ show(grid)
 # Visualizing bounding boxes
 # --------------------------
 # We can use :func:`~torchvision.utils.draw_bounding_boxes` to draw boxes on an
-# image. We can set the colors, labels, width as well as font and font size.
-# The boxes are in ``(xmin, ymin, xmax, ymax)`` format.
+# image. We can set the colors, labels, width as well as font and font size !
+# The boxes are in ``(xmin, ymin, xmax, ymax)`` format
+# from torchvision.utils import draw_bounding_boxes
 
 from torchvision.utils import draw_bounding_boxes
 
@@ -99,68 +99,33 @@ show(dogs_with_boxes)
 # Visualizing segmentation masks
 # ------------------------------
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
-# draw segmentation amasks on images.
+# draw segmentation amasks on images. We can set the colors as well as
+# transparency of masks.
 #
-# We will see how to use it with torchvision's FCN Resnet-50, loaded with
+# Here is demo with torchvision's FCN Resnet-50, loaded with
 # :func:`~torchvision.models.segmentation.fcn_resnet50`.
 # You can also try using
 # DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`)
 # or lraspp mobilenet models
 # (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
 #
-# Let's start by looking at the ouput of the model. Remember that in general,
-# images must be normalized before they're passed to the model.
+# Like :func:`~torchvision.utils.draw_bounding_boxes`,
+# :func:`~torchvision.utils.draw_segmentation_masks` requires a single RGB image
+# of dtype `uint8`.
 
-from torchvision.models.segmentation import fcn_resnet50
-from torchvision.utils import draw_segmentation_masks
+# from torchvision.models.segmentation import fcn_resnet50
+# from torchvision.utils import draw_segmentation_masks
 
 
-model = fcn_resnet50(pretrained=True, progress=False)
-model = model.eval()
+# model = fcn_resnet50(pretrained=True, progress=False)
+# model = model.eval()
 
-normalized_batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-output = model(normalized_batch)['out']
-print(output.shape, output.min().item(), output.max().item())
+# # The model expects the batch to be normalized
+# batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+# outputs = model(batch)
 
-#####################################
-# As we can see above, the output of the segmentation model is a tensor of shape
-# ``(batch_size, num_classes, H, W)``. Each value is a non-normalized score
-# and can normalize them into ``[0, 1]`` by using a softmax. After the softmax,
-# we can interpret each value as a probability indicating how likely a given
-# pixel is to belong to a given class. 
-# 
-# Let's plot the masks that have been detected for the dog class and for the
-# boat class:
-
-seg_classes = [
-    '__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-]
-seg_class_to_idx = {cls: idx for (idx, cls) in enumerate(seg_classes)}
-
-# We normalize the masks of each image in the batch independently
-normalized_masks = torch.stack([torch.nn.Softmax(dim=0)(masks) for masks in output])
-
-dog_and_boat_masks = [
-    normalized_masks[img_idx, seg_class_to_idx[cls]]
-    for img_idx in range(batch.shape[0])
-    for cls in ('dog', 'boat')
-]
-
-show(dog_and_boat_masks)
-
-#####################################
-# As expected, the model is confident about the dog class, but not so much for
-# the boat class.
-#
-# The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
-# plots those masks on top of the original image. This function expects the
-# masks to be boolean masks, but our masks above contain probabilities in ``[0,
-# 1]``. To get boolean masks, we can do the following:
-
-# dogs_with_dog_masks = [
-#     draw_segmentation_masks(dog_int, masks=output[img_idx, seg_class_to_idx['dog']], alpha=0.6)
-#     for img_idx, dog_int in enumerate(dog1_int, dog2_int)
+# dogs_with_masks = [
+#     draw_segmentation_masks(dog_int, masks=masks, alpha=0.6)
+#     for dog_int, masks in zip((dog1_int, dog2_int), outputs['out'])
 # ]
 # show(dogs_with_masks)
