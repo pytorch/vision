@@ -5,7 +5,7 @@ import warnings
 
 from os import path
 import csv
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 from functools import partial
 from multiprocessing import Pool
 
@@ -293,13 +293,13 @@ class Kinetics400(Kinetics):
 
     def __init__(
         self,
-        root,
-        frames_per_clip,
-        num_classes = None,
-        split = None,
-        download = None,
-        num_download_workers = None,
-        **kwargs
+        root: str,
+        frames_per_clip: int,
+        num_classes: Any = None,
+        split: Any = None,
+        download: Any = None,
+        num_download_workers: Any = None,
+        **kwargs: Any
     ):
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
