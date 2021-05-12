@@ -173,7 +173,7 @@ def test_draw_segmentation_masks(dtype, colors, alpha):
     num_masks, h, w = 2, 100, 100
     img = torch.randint(0, 256, size=(3, h, w), dtype=dtype)
     masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool)
-    
+
     # For testing we enforce that there's no overlap between the masks. The
     # current behaviour is that the last mask's color will take priority when
     # masks overlap, but this makes testing slightly harder so we don't really
@@ -208,7 +208,7 @@ def test_draw_segmentation_masks(dtype, colors, alpha):
             assert (out[:, mask] == color[:, None]).all()
         else:
             assert (out[:, mask] == img[:, mask]).all()
-        
+
 
 def test_draw_segmentation_masks_int_vs_float():
     """Make sure float and uint8 dtypes produce similar images"""

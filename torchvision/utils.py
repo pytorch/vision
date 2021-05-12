@@ -216,7 +216,7 @@ def draw_bounding_boxes(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
-# @torch.no_grad()
+@torch.no_grad()
 def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
@@ -262,17 +262,17 @@ def draw_segmentation_masks(
     num_masks = masks.size()[0]
     if colors is not None and num_masks > len(colors):
         raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
-    
+
     if colors is None:
         colors = _generate_color_palette(num_masks)
- 
+
     if not isinstance(colors, list):
         colors = [colors]
     if not isinstance(colors[0], (tuple, str)):
         raise ValueError("colors must be a tuple or a string, or a list thereof")
     if isinstance(colors[0], tuple) and len(colors[0]) != 3:
         raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
-        
+
     out_dtype = image.dtype
 
     colors_ = []
@@ -283,7 +283,7 @@ def draw_segmentation_masks(
         if out_dtype == torch.float:
             color /= 255
         colors_.append(color)
-    
+
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
     for mask, color in zip(masks, colors_):
