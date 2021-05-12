@@ -257,7 +257,7 @@ def draw_segmentation_masks(
     if masks.dtype != torch.bool:
         raise ValueError(f"The masks must be of dtype bool. Got {masks.dtype}")
     if masks.shape[-2:] != image.shape[-2:]:
-        raise ValueError(f"The image and the masks must have the same height and width")
+        raise ValueError("The image and the masks must have the same height and width")
 
     num_masks = masks.size()[0]
     if colors is not None and num_masks > len(colors):
