@@ -39,10 +39,14 @@ def show(imgs):
 
 from torchvision.utils import make_grid
 from torchvision.io import read_image
+from torchvision.transforms.functional import convert_image_dtype
 from pathlib import Path
 
+
 dog1_int = read_image(str(Path('assets') / 'dog1.jpg'))
+dog1 = convert_image_dtype(dog1_int, dtype=torch.float)
 dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
+dog2 = convert_image_dtype(dog2_int, dtype=torch.float)
 
 grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
 show(grid)
@@ -59,7 +63,7 @@ from torchvision.utils import draw_bounding_boxes
 
 boxes = torch.tensor([[50, 50, 100, 200], [210, 150, 350, 430]], dtype=torch.float)
 colors = ["blue", "yellow"]
-result = draw_bounding_boxes(dog1_int, boxes, colors=colors, width=5)
+result = draw_bounding_boxes(dog1, boxes, colors=colors, width=5)
 show(result)
 
 
@@ -71,12 +75,9 @@ show(result)
 # :func:`~torchvision.models.detection.retinanet_resnet50_fpn`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
-from torchvision.transforms.functional import convert_image_dtype
 
 
-dog1_float = convert_image_dtype(dog1_int, dtype=torch.float)
-dog2_float = convert_image_dtype(dog2_int, dtype=torch.float)
-batch = torch.stack([dog1_float, dog2_float])
+batch = torch.stack([dog1, dog2])
 
 model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
@@ -90,8 +91,8 @@ print(outputs)
 
 threshold = .8
 dogs_with_boxes = [
-    draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > threshold], width=4)
-    for dog_int, output in zip((dog1_int, dog2_int), outputs)
+    draw_bounding_boxes(dog, boxes=output['boxes'][output['scores'] > threshold], width=4)
+    for dog, output in zip((dog1, dog2), outputs)
 ]
 show(dogs_with_boxes)
 
@@ -208,7 +209,7 @@ dog1_all_classes_masks = dog1_masks.argmax(class_dim) == torch.arange(num_classe
 print(f"dog1_masks shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}")
 print(f"dog1_all_classes_masks = {dog1_all_classes_masks.shape}, dtype = {dog1_all_classes_masks.dtype}")
 
-dog_with_all_masks = draw_segmentation_masks(dog1_float, masks=dog1_all_classes_masks, alpha=.4)
+dog_with_all_masks = draw_segmentation_masks(dog1, masks=dog1_all_classes_masks, alpha=.4)
 show(dog_with_all_masks)
 
 #####################################
@@ -320,7 +321,7 @@ print(f"shape = {dog1_bool_masks.shape}, dtype = {dog1_bool_masks.dtype}")
 # There's an extra dimension (1) to the masks. We need to remove it
 dog1_bool_masks = dog1_bool_masks.squeeze(1)
 
-show(draw_segmentation_masks(dog1_float, dog1_bool_masks, alpha=0.1))
+show(draw_segmentation_masks(dog1, dog1_bool_masks, alpha=0.1))
 
 #####################################
 # The model seems to have properly detected the dog, but it also confused trees

@@ -136,7 +136,7 @@ def save_image(
     im.save(fp, format=format)
 
 
-@torch.no_grad()
+# @torch.no_grad()
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
@@ -150,7 +150,7 @@ def draw_bounding_boxes(
 
     """
     Draws bounding boxes on given image.
-    The values of the input image should be uint8 between 0 and 255.
+    The values of the input image should be uint8 between 0 and 255 or float between 0 and 1.
     If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
@@ -174,46 +174,51 @@ def draw_bounding_boxes(
 
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype != torch.uint8:
-        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dtype not in (torch.uint8, torch.float):
+        raise ValueError(f"Tensor with dtype uint8 or float expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
 
+    dtype = image.dtype
     ndarr = image.permute(1, 2, 0).numpy()
+    if dtype == torch.float:
+        ndarr = np.clip(ndarr * 255, 0, 255).astype(np.uint8)
     img_to_draw = Image.fromarray(ndarr)
 
     img_boxes = boxes.to(torch.int64).tolist()
 
-    if fill:
-        draw = ImageDraw.Draw(img_to_draw, "RGBA")
+    if colors is None:
+        colors = [None] * len(img_boxes)
+    if labels is None:
+        labels = [None] * len(img_boxes)
 
-    else:
-        draw = ImageDraw.Draw(img_to_draw)
+    draw = ImageDraw.Draw(img_to_draw, "RGBA")
 
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
-    for i, bbox in enumerate(img_boxes):
-        if colors is None:
-            color = None
-        else:
-            color = colors[i]
+    for bbox, color, label in zip(img_boxes, colors, labels):
 
         if fill:
             if color is None:
-                fill_color = (255, 255, 255, 100)
+                fill_color = (255, 255, 255)
             elif isinstance(color, str):
                 # This will automatically raise Error if rgb cannot be parsed.
-                fill_color = ImageColor.getrgb(color) + (100,)
+                fill_color = ImageColor.getrgb(color)
             elif isinstance(color, tuple):
-                fill_color = color + (100,)
-            draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
+                fill_color = color
+            fill_color = fill_color + (100,)
         else:
-            draw.rectangle(bbox, width=width, outline=color)
+            fill_color = None
 
-        if labels is not None:
-            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+        draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+        if label is not None:
+            draw.text((bbox[0], bbox[1]), label, fill=color, font=txt_font)
+
+    out = torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=dtype)
+    if dtype == torch.float:
+        out /= 255
+    return out
 
 
 @torch.no_grad()
