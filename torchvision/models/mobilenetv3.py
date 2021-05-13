@@ -184,7 +184,8 @@ class MobileNetV3(nn.Module):
         return self._forward_impl(x)
 
 
-def _mobilenet_v3_conf(arch: str, width_mult: float = 1.0, reduced_tail: bool = False, dilated: bool = False):
+def _mobilenet_v3_conf(arch: str, width_mult: float = 1.0, reduced_tail: bool = False, dilated: bool = False,
+                       **kwargs: Any):
     reduce_divider = 2 if reduced_tail else 1
     dilation = 2 if dilated else 1
 
