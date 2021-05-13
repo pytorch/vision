@@ -113,7 +113,8 @@ show(dogs_with_boxes)
 # (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
 #
 # Let's start by looking at the ouput of the model. Remember that in general,
-# images must be normalized before they're passed to the model.
+# images must be normalized before they're passed to a semantic segmentation
+# model.
 
 from torchvision.models.segmentation import fcn_resnet50
 
@@ -127,10 +128,10 @@ print(output.shape, output.min().item(), output.max().item())
 
 #####################################
 # As we can see above, the output of the segmentation model is a tensor of shape
-# ``(batch_size, num_classes, H, W)``. Each value is a non-normalized score and
-# can normalize them into ``[0, 1]`` by using a softmax. After the softmax, we
-# can interpret each value as a probability indicating how likely a given pixel
-# is to belong to a given class.
+# ``(batch_size, num_classes, H, W)``. Each value is a non-normalized score, and
+# we can normalize them into ``[0, 1]`` by using a softmax. After the softmax,
+# we can interpret each value as a probability indicating how likely a given
+# pixel is to belong to a given class.
 #
 # Let's plot the masks that have been detected for the dog class and for the
 # boat class:
@@ -176,10 +177,10 @@ show([m.float() for m in boolean_dog_masks])
 # .. note::
 #   While we're using the ``normalized_masks`` here, we would have
 #   gotten the same result by using the non-normalized scores of the model
-#   directly (as the softmax operation perserves the order).
+#   directly (as the softmax operation preserves the order).
 #
 # Now that we have boolean masks, we can use them with
-# :func:~torchvision.utils.draw_segmentation_masks to plot them on top of the
+# :func:`~torchvision.utils.draw_segmentation_masks` to plot them on top of the
 # original images:
 
 from torchvision.utils import draw_segmentation_masks
@@ -212,13 +213,14 @@ show(dog_with_all_masks)
 
 #####################################
 # We can see in the image above that only 2 masks were drawn: the mask for the
-# background and the mask for the dog. This is because the model thinkgs that
-# only these 2 classes are the most likely ones across all the pixels. It the
+# background and the mask for the dog. This is because the model thinks that
+# only these 2 classes are the most likely ones across all the pixels. If the
 # model had detected another class as the most likely among other pixels, we
 # would have seen its mask above.
 #
 # Removing the background mask is as simple as passing
-# ``masks=dog1_all_classes_masks[1:]``.
+# ``masks=dog1_all_classes_masks[1:]``, because the background class is the
+# class with index 0.
 #
 # Let's now do the same but for an entire batch of images. The code is similar
 # but involves a bit more juggling with the dimensions.
@@ -280,6 +282,7 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
 # Here the masks corresponds to probabilities indicating, for each pixel, how
 # likely it is to belong to the predicted label of that instance. Those
 # predicted labels correspond to the 'labels' element in the same output dict.
+# Let's see which labels were predicted for the instances of the first image.
 
 inst_classes = [
     '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -302,11 +305,11 @@ print("For the first dog, the following instances were detected:")
 print([inst_classes[label] for label in dog1_output['labels']])
 
 #####################################
-# Interestingly, the models detects two persons in the image. Let's go ahead and
+# Interestingly, the model detects two persons in the image. Let's go ahead and
 # plot those masks. Since :func:`~torchvision.utils.draw_segmentation_masks`
-# expects boolean mask, we need to convert those probabilities into boolean
+# expects boolean masks, we need to convert those probabilities into boolean
 # values. Remember that the semantic of those masks is "How likely is this pixel
-# to belong to this predicted class?". As a result, a natural way of converting
+# to belong to the predicted class?". As a result, a natural way of converting
 # those masks into boolean values is to threshold them with the 0.5 probability
 # (one could also choose a different threshold).
 
@@ -330,7 +333,7 @@ print(dog1_output['scores'])
 # Clearly the model is less confident about the dog detection than it is about
 # the people detections. That's good news. When plotting the masks, we can ask
 # for only those that have a good score. Let's use a score threshold of .75
-# here, and also plot the mask of the second dog.
+# here, and also plot the masks of the second dog.
 
 score_threshold = .75
 
