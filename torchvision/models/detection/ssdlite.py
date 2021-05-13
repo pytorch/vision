@@ -195,7 +195,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
     backbone = _mobilenet_extractor("mobilenet_v3_large", progress, pretrained_backbone, trainable_backbone_layers,
-                                    norm_layer, reduced_tail=reduce_tail)
+                                    norm_layer, reduced_tail=reduce_tail, **kwargs)
 
     size = (320, 320)
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
