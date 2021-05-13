@@ -226,7 +226,7 @@ def draw_segmentation_masks(
 
     """
     Draws segmentation masks on given RGB image.
-    The values of the input image should be uint8 between 0 and 255.
+    The values of the input image should be uint8 between 0 and 255, or float values between 0 and 1.
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
