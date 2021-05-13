@@ -99,7 +99,9 @@ show(dogs_with_boxes)
 # Visualizing segmentation masks
 # ------------------------------
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
-# draw segmentation amasks on images.
+# draw segmentation amasks on images. Semantic segmentation and instance
+# segmentation models have different outputs, so we will treat each
+# independently.
 # 
 # Semantic segmentation models
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -114,7 +116,6 @@ show(dogs_with_boxes)
 # images must be normalized before they're passed to the model.
 
 from torchvision.models.segmentation import fcn_resnet50
-from torchvision.utils import draw_segmentation_masks
 
 
 model = fcn_resnet50(pretrained=True, progress=False)
@@ -134,18 +135,18 @@ print(output.shape, output.min().item(), output.max().item())
 # Let's plot the masks that have been detected for the dog class and for the
 # boat class:
 
-seg_classes = [
+sem_classes = [
     '__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
     'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
     'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
 ]
-seg_class_to_idx = {cls: idx for (idx, cls) in enumerate(seg_classes)}
+sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(sem_classes)}
 
 # We normalize the masks of each image in the batch independently
 normalized_masks = torch.stack([torch.nn.Softmax(dim=0)(masks) for masks in output])
 
 dog_and_boat_masks = [
-    normalized_masks[img_idx, seg_class_to_idx[cls]]
+    normalized_masks[img_idx, sem_class_to_idx[cls]]
     for img_idx in range(batch.shape[0])
     for cls in ('dog', 'boat')
 ]
@@ -162,9 +163,10 @@ show(dog_and_boat_masks)
 # 1]``. To get boolean masks, we can do the following:
 
 class_dim = 1
-boolean_dog_masks = (normalized_masks.argmax(class_dim) == seg_class_to_idx['dog'])
+boolean_dog_masks = (normalized_masks.argmax(class_dim) == sem_class_to_idx['dog'])
 print(f"shape = {boolean_dog_masks.shape}, dtype = {boolean_dog_masks.dtype}")
 show([m.float() for m in boolean_dog_masks])
+
 
 #####################################
 # The line above where we define ``boolean_dog_masks`` is a bit cryptic, but you
@@ -179,6 +181,8 @@ show([m.float() for m in boolean_dog_masks])
 # Now that we have boolean masks, we can use them with
 # :func:~torchvision.utils.draw_segmentation_masks to plot them on top of the
 # original images:
+
+from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=0.3)
@@ -237,5 +241,111 @@ show(dogs_with_masks)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Instance segmentation models have a significantly different output from the
-# semantic segmentation models. We will see here blahblah TODO
+# semantic segmentation models. We will see here how to plot the masks for such
+# models. Let's start by analyzing the output of a Mask-RCNN model. Note that
+# these models don't require the images to be normalized, so we don't need to
+# use the normalized batch.
+
+from torchvision.models.detection import maskrcnn_resnet50_fpn
+model = maskrcnn_resnet50_fpn(pretrained=True, progress=False)
+model = model.eval()
+
+output = model(batch)
+print(output)
+
+#####################################
+# Let's break this down. For each image in the batch, the model outputs some
+# detections (or instances). The number of detection varies for each input
+# image. Each instance is described by its bounding box, its label, its score
+# and its mask.
 # 
+# The way the output is organized is as follows: the output is a list of length
+# ``batch_size``. Each entry in the list corresponds to an input image, and it
+# is a dict with keys 'boxes', 'labels', 'scores', and 'masks'. Each value
+# associated to those keys has ``num_instances`` elements in it.  In our case
+# above there are 3 instances detected in the first image, and 2 instances in
+# the second one.
+# 
+# The boxes can be plotted with :func:`~torchvision.utils.draw_bounding_boxes`
+# as above, but here we're more interested in the masks. These masks are quite
+# different from the masks that we saw above for the semantic segmentation
+# models.
+
+dog1_output = output[0]
+dog1_masks = dog1_output['masks']
+print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype},
+        min = {dog1_masks.min()}, max = {dog1_masks.max()}")
+
+#####################################
+# Here the masks corresponds to probabilities indicating, for each pixel, how
+# likely it is to belong to the predicted label of that instance. Those
+# predicted labels correspond to the 'labels' element in the same output dict.
+
+inst_classes = [
+    '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+    'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
+    'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+    'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
+    'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+    'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
+    'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
+    'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+    'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
+    'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+]
+
+inst_class_to_idx = {cls: idx for (idx, cls) in enumerate(inst_classes)}
+
+print("For the first dog, the following instances were detected:")
+print([inst_classes[label] for label in dog1_output['labels']])
+
+#####################################
+# Interestingly, the models detects two persons in the image. Let's go ahead and
+# plot those masks. Since :func:`~torchvision.utils.draw_segmentation_masks`
+# expects boolean mask, we need to convert those probabilities into boolean
+# values. Remember that the semantic of those masks is "How likely is this pixel
+# to belong to this predicted class?". As a result, a natural way of converting
+# those masks into boolean values is to threshold them with the 0.5 probability
+# (one could also choose a different threshold).
+
+proba_threshold = 0.5
+dog1_bool_masks = dog1_output['masks'] > proba_threshold
+print(f"shape = {dog1_bool_masks.shape}, dtype = {dog1_bool_masks.dtype}")
+
+# There's an extra dimension (1) to the masks. We need to remove it
+dog1_bool_masks = dog1_bool_masks.squeeze(1)
+
+show(draw_segmentation_masks(dog1_float, dog1_bool_masks, alpha=0.1))
+
+#####################################
+# The model seems to have properly detected the dog, but it also confused trees
+# with people. Looking more closely at the scores will help us plotting more
+# relevant masks:
+
+print(dog1_output['scores'])
+
+#####################################
+# Clearly the model is less confident about the dog detection than it is about
+# the people detections. That's good news. When plotting the masks, we can ask
+# for only those that have a good score. Let's use a score threshold of .75
+# here, and also plot the mask of the second dog.
+
+score_threshold = .75
+
+boolean_masks = [
+    out['masks'][out['scores'] > score_threshold] > proba_threshold
+    for out in output
+]
+
+dogs_with_masks = [
+    draw_segmentation_masks(img, mask.squeeze(1))
+    for img, mask in zip(batch, boolean_masks)
+]
+show(dogs_with_masks)
+
+#####################################
+# The two 'people' masks in the first image where not selected because they have
+# a lower score than the score threshold. Similarly in the second image, the
+# instance with class 15 (which corresponds to 'bench') was not selected.
