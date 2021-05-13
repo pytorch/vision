@@ -197,7 +197,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+0cfcb52 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+dfb6139 ) &#x25BC</a>
     </div>
     
 
@@ -1572,7 +1572,7 @@ the instances set of COCO train2017 and evaluated on COCO val2017.</p>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p>SSD VGG16</p></td>
+<tr class="row-even"><td><p>SSD300 VGG16</p></td>
 <td><p>25.1</p></td>
 <td><ul class="simple">
 <li></li>
@@ -1583,7 +1583,7 @@ the instances set of COCO train2017 and evaluated on COCO val2017.</p>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p>SSDlite MobileNetV3-Large</p></td>
+<tr class="row-odd"><td><p>SSDlite320 MobileNetV3-Large</p></td>
 <td><p>21.3</p></td>
 <td><ul class="simple">
 <li></li>
@@ -1701,12 +1701,12 @@ precision-recall.</p>
 <td><p>0.0939</p></td>
 <td><p>4.1</p></td>
 </tr>
-<tr class="row-even"><td><p>SSD VGG16</p></td>
+<tr class="row-even"><td><p>SSD300 VGG16</p></td>
 <td><p>0.2093</p></td>
 <td><p>0.0744</p></td>
 <td><p>1.5</p></td>
 </tr>
-<tr class="row-odd"><td><p>SSDlite MobileNetV3-Large</p></td>
+<tr class="row-odd"><td><p>SSDlite320 MobileNetV3-Large</p></td>
 <td><p>0.1773</p></td>
 <td><p>0.0906</p></td>
 <td><p>1.5</p></td>
@@ -1917,11 +1917,11 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 <dl class="function">
 <dt id="torchvision.models.detection.ssd300_vgg16">
 <code class="sig-prename descclassname">torchvision.models.detection.</code><code class="sig-name descname">ssd300_vgg16</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">num_classes: int = 91</em>, <em class="sig-param">pretrained_backbone: bool = True</em>, <em class="sig-param">trainable_backbone_layers: Optional[int] = None</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/ssd.html#ssd300_vgg16"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.ssd300_vgg16" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructs an SSD model with a VGG16 backbone. See <cite>SSD</cite> for more details.</p>
+<dd><p>Constructs an SSD model with input size 300x300 and a VGG16 backbone. See <cite>SSD</cite> for more details.</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">ssd300_vgg16</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1945,7 +1945,7 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 <dl class="function">
 <dt id="torchvision.models.detection.ssdlite320_mobilenet_v3_large">
 <code class="sig-prename descclassname">torchvision.models.detection.</code><code class="sig-name descname">ssdlite320_mobilenet_v3_large</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False, progress: bool = True, num_classes: int = 91, pretrained_backbone: bool = False, trainable_backbone_layers: Optional[int] = None, norm_layer: Optional[Callable[[...], torch.nn.modules.module.Module]] = None, **kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/ssdlite.html#ssdlite320_mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructs an SSDlite model with a MobileNetV3 Large backbone. See <cite>SSD</cite> for more details.</p>
+<dd><p>Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone. See <cite>SSD</cite> for more details.</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">ssdlite320_mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
