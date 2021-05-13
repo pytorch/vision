@@ -77,7 +77,6 @@ from torchvision.transforms.functional import convert_image_dtype
 dog1_float = convert_image_dtype(dog1_int, dtype=torch.float)
 dog2_float = convert_image_dtype(dog2_int, dtype=torch.float)
 batch = torch.stack([dog1_float, dog2_float])
-batch = torch.stack([dog1_int, dog2_int])
 
 model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
