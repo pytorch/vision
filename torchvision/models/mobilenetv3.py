@@ -106,7 +106,8 @@ class MobileNetV3(nn.Module):
             last_channel: int,
             num_classes: int = 1000,
             block: Optional[Callable[..., nn.Module]] = None,
-            norm_layer: Optional[Callable[..., nn.Module]] = None
+            norm_layer: Optional[Callable[..., nn.Module]] = None,
+            **kwargs: Any
     ) -> None:
         """
         MobileNet V3 main class
