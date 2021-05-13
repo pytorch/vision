@@ -163,7 +163,7 @@ class Tester(unittest.TestCase):
 
 @pytest.mark.parametrize('dtype', (torch.float, torch.uint8))
 @pytest.mark.parametrize('colors', [
-    # None,
+    None,
     ['red', 'blue'],
     ['#FF00FF', (1, 34, 122)],
 ])
