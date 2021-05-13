@@ -152,13 +152,33 @@ class Tester(unittest.TestCase):
 
     def test_draw_invalid_boxes(self):
         img_tp = ((1, 1, 1), (1, 2, 3))
-        img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
+        img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.int)
         img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
         boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
                              [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
         self.assertRaises(TypeError, utils.draw_bounding_boxes, img_tp, boxes)
         self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong1, boxes)
         self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong2, boxes)
+
+
+@pytest.mark.parametrize('fill', (False, True))
+def test_draw_bounding_boxes_int_vs_float(fill):
+    """Make sure float and uint8 dtypes produce similar images"""
+    h, w = 500, 500
+    img_int = torch.randint(0, 256, size=(3, h, w), dtype=torch.uint8)
+    img_float = F.convert_image_dtype(img_int, torch.float)
+
+    boxes = torch.tensor([[50, 50, 100, 200], [210, 150, 350, 430]], dtype=torch.float)
+    out_int = utils.draw_bounding_boxes(image=img_int, boxes=boxes, colors=['red', 'blue'], fill=fill)
+    out_float = utils.draw_bounding_boxes(image=img_float, boxes=boxes, colors=['red', 'blue'], fill=fill)
+
+    assert out_int.dtype == img_int.dtype
+    assert out_float.dtype == img_float.dtype
+
+    out_float_int = F.convert_image_dtype(out_float, torch.uint8).int()
+    out_int = out_int.int()
+
+    assert (out_int - out_float_int).abs().max() <= 1
 
 
 @pytest.mark.parametrize('dtype', (torch.float, torch.uint8))
