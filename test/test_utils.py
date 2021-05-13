@@ -167,7 +167,7 @@ class Tester(unittest.TestCase):
     ['red', 'blue'],
     ['#FF00FF', (1, 34, 122)],
 ])
-@pytest.mark.parametrize('alpha', (0, 1))
+@pytest.mark.parametrize('alpha', (0, .5, .7, 1))
 def test_draw_segmentation_masks(dtype, colors, alpha):
     """This test makes sure that masks draw their corresponding color where they should"""
     num_masks, h, w = 2, 100, 100
@@ -185,12 +185,6 @@ def test_draw_segmentation_masks(dtype, colors, alpha):
     assert out.dtype == dtype
     assert out is not img
 
-    if dtype == torch.float:
-        # makes comparisons below easier
-        img = F.convert_image_dtype(img, torch.uint8)
-        out = F.convert_image_dtype(out, torch.uint8)
-    img, out = img.float(), out.float()  # avoids underflows etc.
-
     # Make sure the image didn't change where there's no mask
     masked_pixels = masks[0] | masks[1]
     assert (img[:, ~masked_pixels] == out[:, ~masked_pixels]).all()
@@ -203,11 +197,20 @@ def test_draw_segmentation_masks(dtype, colors, alpha):
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
         color = torch.tensor(color, dtype=dtype)
+        if dtype == torch.float:
+            color /= 255
 
         if alpha == 0:
             assert (out[:, mask] == color[:, None]).all()
-        else:
+        elif alpha == 1:
             assert (out[:, mask] == img[:, mask]).all()
+
+        interpolated_color = (img[:, mask] * alpha + color[:, None] * (1 - alpha))
+        max_diff = (out[:, mask] - interpolated_color).abs().max()
+        if dtype == torch.uint8:
+            assert max_diff <= 1
+        else:
+            assert max_diff <= 1e-5
 
 
 def test_draw_segmentation_masks_int_vs_float():
