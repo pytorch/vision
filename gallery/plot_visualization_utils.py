@@ -102,16 +102,16 @@ show(dogs_with_boxes)
 # draw segmentation amasks on images. Semantic segmentation and instance
 # segmentation models have different outputs, so we will treat each
 # independently.
-# 
+#
 # Semantic segmentation models
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# 
+#
 # We will see how to use it with torchvision's FCN Resnet-50, loaded with
 # :func:`~torchvision.models.segmentation.fcn_resnet50`.  You can also try using
 # DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`) or
 # lraspp mobilenet models
 # (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
-# 
+#
 # Let's start by looking at the ouput of the model. Remember that in general,
 # images must be normalized before they're passed to the model.
 
@@ -130,8 +130,8 @@ print(output.shape, output.min().item(), output.max().item())
 # ``(batch_size, num_classes, H, W)``. Each value is a non-normalized score and
 # can normalize them into ``[0, 1]`` by using a softmax. After the softmax, we
 # can interpret each value as a probability indicating how likely a given pixel
-# is to belong to a given class. 
-# 
+# is to belong to a given class.
+#
 # Let's plot the masks that have been detected for the dog class and for the
 # boat class:
 
@@ -156,7 +156,7 @@ show(dog_and_boat_masks)
 #####################################
 # As expected, the model is confident about the dog class, but not so much for
 # the boat class.
-# 
+#
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
 # plots those masks on top of the original image. This function expects the
 # masks to be boolean masks, but our masks above contain probabilities in ``[0,
@@ -172,12 +172,12 @@ show([m.float() for m in boolean_dog_masks])
 # The line above where we define ``boolean_dog_masks`` is a bit cryptic, but you
 # can read it as the following query: "For which pixels is 'dog' the most likely
 # class?"
-# 
+#
 # .. note::
 #   While we're using the ``normalized_masks`` here, we would have
 #   gotten the same result by using the non-normalized scores of the model
 #   directly (as the softmax operation perserves the order).
-# 
+#
 # Now that we have boolean masks, we can use them with
 # :func:~torchvision.utils.draw_segmentation_masks to plot them on top of the
 # original images:
@@ -195,7 +195,7 @@ show(dogs_with_masks)
 # many masks as there are classes. Let's ask the same query as above, but this
 # time for *all* classes, not just the dog class: "For each pixel and each class
 # C, is class C the most most likely class?"
-# 
+#
 # This one is a bit more involved, so we'll first show how to do it with a
 # single image, and then we'll generalize to the batch
 
@@ -216,10 +216,10 @@ show(dog_with_all_masks)
 # only these 2 classes are the most likely ones across all the pixels. It the
 # model had detected another class as the most likely among other pixels, we
 # would have seen its mask above.
-# 
+#
 # Removing the background mask is as simple as passing
 # ``masks=dog1_all_classes_masks[1:]``.
-# 
+#
 # Let's now do the same but for an entire batch of images. The code is similar
 # but involves a bit more juggling with the dimensions.
 
@@ -258,14 +258,14 @@ print(output)
 # detections (or instances). The number of detection varies for each input
 # image. Each instance is described by its bounding box, its label, its score
 # and its mask.
-# 
+#
 # The way the output is organized is as follows: the output is a list of length
 # ``batch_size``. Each entry in the list corresponds to an input image, and it
 # is a dict with keys 'boxes', 'labels', 'scores', and 'masks'. Each value
 # associated to those keys has ``num_instances`` elements in it.  In our case
 # above there are 3 instances detected in the first image, and 2 instances in
 # the second one.
-# 
+#
 # The boxes can be plotted with :func:`~torchvision.utils.draw_bounding_boxes`
 # as above, but here we're more interested in the masks. These masks are quite
 # different from the masks that we saw above for the semantic segmentation
@@ -273,8 +273,8 @@ print(output)
 
 dog1_output = output[0]
 dog1_masks = dog1_output['masks']
-print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype},
-        min = {dog1_masks.min()}, max = {dog1_masks.max()}")
+print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
+      f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
 
 #####################################
 # Here the masks corresponds to probabilities indicating, for each pixel, how
