@@ -95,11 +95,9 @@ class SSDLiteRegressionHead(SSDScoringHead):
 
 
 class SSDLiteFeatureExtractorMobileNet(nn.Module):
-    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], **kwargs: Any):
+    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], width_mult: float = 1.0,
+                 min_depth: int = 16, **kwargs: Any):
         super().__init__()
-        # non-public config parameters
-        min_depth = kwargs.pop('_min_depth', 16)
-        width_mult = kwargs.pop('_width_mult', 1.0)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
@@ -197,7 +195,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
     backbone = _mobilenet_extractor("mobilenet_v3_large", progress, pretrained_backbone, trainable_backbone_layers,
-                                    norm_layer, _reduced_tail=reduce_tail, _width_mult=1.0)
+                                    norm_layer, reduced_tail=reduce_tail)
 
     size = (320, 320)
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
