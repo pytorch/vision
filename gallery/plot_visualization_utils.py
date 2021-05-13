@@ -77,6 +77,7 @@ from torchvision.transforms.functional import convert_image_dtype
 dog1_float = convert_image_dtype(dog1_int, dtype=torch.float)
 dog2_float = convert_image_dtype(dog2_int, dtype=torch.float)
 batch = torch.stack([dog1_float, dog2_float])
+batch = torch.stack([dog1_int, dog2_int])
 
 model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
@@ -94,38 +95,3 @@ dogs_with_boxes = [
     for dog_int, output in zip((dog1_int, dog2_int), outputs)
 ]
 show(dogs_with_boxes)
-
-#####################################
-# Visualizing segmentation masks
-# ------------------------------
-# The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
-# draw segmentation amasks on images. We can set the colors as well as
-# transparency of masks.
-#
-# Here is demo with torchvision's FCN Resnet-50, loaded with
-# :func:`~torchvision.models.segmentation.fcn_resnet50`.
-# You can also try using
-# DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`)
-# or lraspp mobilenet models
-# (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
-#
-# Like :func:`~torchvision.utils.draw_bounding_boxes`,
-# :func:`~torchvision.utils.draw_segmentation_masks` requires a single RGB image
-# of dtype `uint8`.
-
-# from torchvision.models.segmentation import fcn_resnet50
-# from torchvision.utils import draw_segmentation_masks
-
-
-# model = fcn_resnet50(pretrained=True, progress=False)
-# model = model.eval()
-
-# # The model expects the batch to be normalized
-# batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-# outputs = model(batch)
-
-# dogs_with_masks = [
-#     draw_segmentation_masks(dog_int, masks=masks, alpha=0.6)
-#     for dog_int, masks in zip((dog1_int, dog2_int), outputs['out'])
-# ]
-# show(dogs_with_masks)
