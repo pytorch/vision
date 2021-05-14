@@ -1018,11 +1018,13 @@ def test_perspective_interpolation_warning(tester):
         tester.assertTrue(res1.equal(res2))
 
 
-@pytest.mark.parametrize('device', ["cpu", ])
+@pytest.mark.parametrize('device', ["cpu", "cuda"])
 @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize('size', [[96, 72], [96, 420], [420, 72]])
 @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
 def test_resize_antialias(device, dt, size, interpolation, tester):
+
+    torch.manual_seed(12)
 
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
