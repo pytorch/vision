@@ -929,8 +929,8 @@ jobs:
             conda activate ./env
             pushd docs
             pip install -r requirements.txt
-            ls source/auto_examples/
             ls source
+            ls source/auto_examples/
             make html
             popd
       - save_cache:
