@@ -137,6 +137,11 @@ html_logo = '_static/img/pytorch-logo-dark.svg'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# TODO: remove this once https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed
+html_css_files = [
+    'css/custom_torchvision.css',
+]
+
 # html_style_path = 'css/pytorch_theme.css'
 # html_context = {
 #    'css_files': [
