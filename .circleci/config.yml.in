@@ -916,6 +916,10 @@ jobs:
       - run:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
+      - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
       - restore_cache:
           {% raw %}
           keys:
