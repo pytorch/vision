@@ -147,6 +147,7 @@ You can also choose to only build a subset of the examples by using the
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
+
 ### New model
 
 More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
