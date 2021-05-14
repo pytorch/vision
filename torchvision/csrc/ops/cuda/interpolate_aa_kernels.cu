@@ -9,8 +9,8 @@
 #include <ATen/Utils.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAApplyUtils.cuh>
-#include <ATen/native/cuda/UpSample.cuh>
 #include <ATen/native/cuda/KernelUtils.cuh>
+#include <ATen/native/cuda/UpSample.cuh>
 
 // Below is experimental temporary code before merging it to PyTorch
 namespace at {
@@ -66,15 +66,15 @@ __device__ __forceinline__ static void _compute_weights(
     const int64_t input_size,
     const accscalar_t scale,
     const accscalar_t support,
-    scalar_t * wt_ptr,
+    scalar_t* wt_ptr,
     int64_t interp_size,
     filter_fn_t filter_fn,
-    int64_t & xmin,
-    int64_t & xmax) {
-
+    int64_t& xmin,
+    int64_t& xmax) {
   accscalar_t invscale = (scale >= 1.0) ? 1.0 / scale : 1.0;
   accscalar_t center = scale * (i + 0.5);
-  xmin = max(static_cast<int64_t>(center - support + 0.5), static_cast<int64_t>(0));
+  xmin = max(
+      static_cast<int64_t>(center - support + 0.5), static_cast<int64_t>(0));
   xmax = min(static_cast<int64_t>(center + support + 0.5), input_size) - xmin;
 
   accscalar_t total_w = 0.0;
@@ -94,18 +94,16 @@ __device__ __forceinline__ static void _compute_weights(
   }
 }
 
-
 template <typename scalar_t, typename accscalar_t>
 __device__ __forceinline__ static accscalar_t interpolate_aa_single_dim(
-  scalar_t * src,
-  scalar_t * weights,
-  int64_t size) {
-
+    scalar_t* src,
+    scalar_t* weights,
+    int64_t size) {
   scalar_t t = static_cast<accscalar_t>(*src);
   scalar_t wts = static_cast<accscalar_t>(weights[0]);
   accscalar_t output = t * wts;
 
-  int64_t j = 1 ;
+  int64_t j = 1;
   for (; j < size; j++) {
     wts = static_cast<accscalar_t>(weights[j]);
     t = static_cast<accscalar_t>(*(src + j));
@@ -113,7 +111,6 @@ __device__ __forceinline__ static accscalar_t interpolate_aa_single_dim(
   }
   return output;
 }
-
 
 template <typename scalar_t, typename accscalar_t, int interp_size>
 C10_LAUNCH_BOUNDS_1(1024)
@@ -124,7 +121,6 @@ __global__ void upsample_gen2d_out_frame(
     const bool align_corners,
     const PackedTensorAccessor64<scalar_t, 4> idata,
     PackedTensorAccessor64<scalar_t, 4> odata) {
-
   int index = threadIdx.x + blockIdx.x * blockDim.x;
 
   const int batchsize = idata.size(0);
@@ -151,9 +147,9 @@ __global__ void upsample_gen2d_out_frame(
     }
 
     const accscalar_t support_h = static_cast<accscalar_t>(
-      (rheight >= 1.0) ? (interp_size * 0.5) * rheight : interp_size * 0.5);
+        (rheight >= 1.0) ? (interp_size * 0.5) * rheight : interp_size * 0.5);
     const accscalar_t support_w = static_cast<accscalar_t>(
-      (rwidth >= 1.0) ? (interp_size * 0.5) * rwidth : interp_size * 0.5);
+        (rwidth >= 1.0) ? (interp_size * 0.5) * rwidth : interp_size * 0.5);
 
     const int interp_height = (int)ceilf(support_h) * 2 + 1;
     const int interp_width = (int)ceilf(support_w) * 2 + 1;
@@ -166,42 +162,74 @@ __global__ void upsample_gen2d_out_frame(
 
     // Compute weights
     int64_t xmin, xsize, ymin, ysize;
-    typedef scalar_t(*filter_fn_t)(scalar_t);
+    typedef scalar_t (*filter_fn_t)(scalar_t);
     if (interp_size == 2) {
       _compute_weights<scalar_t, accscalar_t, filter_fn_t>(
-          w2, width1, rwidth, support_w, wx, interp_width, bilinear_filter, xmin, xsize);
+          w2,
+          width1,
+          rwidth,
+          support_w,
+          wx,
+          interp_width,
+          bilinear_filter,
+          xmin,
+          xsize);
       _compute_weights<scalar_t, accscalar_t, filter_fn_t>(
-          h2, height1, rheight, support_h, wy, interp_height, bilinear_filter, ymin, ysize);
+          h2,
+          height1,
+          rheight,
+          support_h,
+          wy,
+          interp_height,
+          bilinear_filter,
+          ymin,
+          ysize);
     } else if (interp_size == 4) {
       _compute_weights<scalar_t, accscalar_t, filter_fn_t>(
-        w2, width1, rwidth, support_w, wx, interp_width, bicubic_filter, xmin, xsize);
+          w2,
+          width1,
+          rwidth,
+          support_w,
+          wx,
+          interp_width,
+          bicubic_filter,
+          xmin,
+          xsize);
       _compute_weights<scalar_t, accscalar_t, filter_fn_t>(
-          h2, height1, rheight, support_h, wy, interp_height, bicubic_filter, ymin, ysize);
+          h2,
+          height1,
+          rheight,
+          support_h,
+          wy,
+          interp_height,
+          bicubic_filter,
+          ymin,
+          ysize);
     }
 
     for (int n = 0; n < batchsize; n++) {
       for (int c = 0; c < channels; ++c) {
-
         // interpolate on x-axis for ymin to ymin + ysize
         for (int64_t y = 0; y < ysize; y++) {
-
-          // copy data into the buffer for faster memory access
+          // copy data into the local buffer and use
+          // interpolate_aa_single_dim method
           for (int x = 0; x < xsize; x++) {
             buffer1[x] = idata[n][c][ymin + y][xmin + x];
           }
 
           buffer2[y] = static_cast<scalar_t>(
-              interpolate_aa_single_dim<scalar_t, accscalar_t>(buffer1, wx, xsize));
+              interpolate_aa_single_dim<scalar_t, accscalar_t>(
+                  buffer1, wx, xsize));
         }
         odata[n][c][h2][w2] = static_cast<scalar_t>(
-            interpolate_aa_single_dim<scalar_t, accscalar_t>(buffer2, wy, ysize));
+            interpolate_aa_single_dim<scalar_t, accscalar_t>(
+                buffer2, wy, ysize));
       }
     }
   }
 }
 
-
-template<int interp_size>
+template <int interp_size>
 static void upsample_gen2d_out_cuda_template(
     const Tensor& output,
     const Tensor& input,
@@ -209,7 +237,6 @@ static void upsample_gen2d_out_cuda_template(
     bool align_corners,
     c10::optional<double> scales_h,
     c10::optional<double> scales_w) {
-
   TensorArg input_arg{input, "input", 1}, output_arg{output, "output", 2};
   checkAllSameGPU("upsample_gen2d_out_cuda", {input_arg, output_arg});
 
@@ -245,16 +272,11 @@ static void upsample_gen2d_out_cuda_template(
         TORCH_CHECK(rwidth < 127, "Max supported scale factor is 127");
 
         upsample_gen2d_out_frame<scalar_t, accscalar_t, interp_size>
-          <<<cuda::ATenCeilDiv(num_kernels, num_threads),
-            num_threads,
-            0,
-            stream>>>(
-              num_kernels,
-              rheight,
-              rwidth,
-              align_corners,
-              idata,
-              odata);
+            <<<cuda::ATenCeilDiv(num_kernels, num_threads),
+               num_threads,
+               0,
+               stream>>>(
+                num_kernels, rheight, rwidth, align_corners, idata, odata);
         C10_CUDA_KERNEL_LAUNCH_CHECK();
       });
 }
@@ -263,7 +285,6 @@ static void upsample_gen2d_out_cuda_template(
 } // namespace native
 } // namespace at
 
-
 namespace vision {
 namespace ops {
 
@@ -271,8 +292,8 @@ namespace {
 
 // Copied from "UpSample.h" as we can not use UpSample.h with UpSample.cuh
 static std::array<int64_t, 4> upsample_2d_common_check(
-  at::IntArrayRef input_size, at::IntArrayRef output_size
-) {
+    at::IntArrayRef input_size,
+    at::IntArrayRef output_size) {
   TORCH_CHECK(
       output_size.size() == 2,
       "It is expected output_size equals to 2, but got size ",
@@ -308,18 +329,17 @@ static std::array<int64_t, 4> upsample_2d_common_check(
   return {nbatch, channels, output_height, output_width};
 }
 
-
-template<int interp_size>
+template <int interp_size>
 at::Tensor interpolate_gen2d_aa_forward_kernel(
-  const at::Tensor& input,
-  at::IntArrayRef output_size,
-  bool align_corners) {
-
+    const at::Tensor& input,
+    at::IntArrayRef output_size,
+    bool align_corners) {
   c10::optional<c10::ArrayRef<double>> scale_factors = {};
 
   // Copied from UpSampleBilinear2d.cpp
   auto output = at::empty({0}, input.options());
-  auto osize = at::native::upsample::compute_output_size(input.sizes(), output_size, scale_factors);
+  auto osize = at::native::upsample::compute_output_size(
+      input.sizes(), output_size, scale_factors);
   auto scale_h = at::native::upsample_cuda::get_scale_value(scale_factors, 0);
   auto scale_w = at::native::upsample_cuda::get_scale_value(scale_factors, 1);
 
@@ -327,39 +347,38 @@ at::Tensor interpolate_gen2d_aa_forward_kernel(
 
   // Allow for empty batch size but not other dimensions
   TORCH_CHECK(
-      input.numel() != 0 || c10::multiply_integers(input.sizes().begin() + 1, input.sizes().end()),
+      input.numel() != 0 ||
+          c10::multiply_integers(
+              input.sizes().begin() + 1, input.sizes().end()),
       "Non-empty 4D data tensor expected but got a tensor with sizes ",
       input.sizes());
 
   output.resize_(full_output_size, input.suggest_memory_format());
 
   at::native::internal_upsample::upsample_gen2d_out_cuda_template<interp_size>(
-    output,
-    input,
-    {full_output_size[2], full_output_size[3]},
-    align_corners,
-    scale_h,
-    scale_w
-  );
+      output,
+      input,
+      {full_output_size[2], full_output_size[3]},
+      align_corners,
+      scale_h,
+      scale_w);
   return output;
 }
-
 
 at::Tensor interpolate_linear_aa_forward_kernel(
     const at::Tensor& input,
     at::IntArrayRef output_size,
     bool align_corners) {
-
-    return interpolate_gen2d_aa_forward_kernel<2>(input, output_size, align_corners);
+  return interpolate_gen2d_aa_forward_kernel<2>(
+      input, output_size, align_corners);
 }
 
-
 at::Tensor interpolate_bicubic_aa_forward_kernel(
-  const at::Tensor& input,
-  at::IntArrayRef output_size,
-  bool align_corners) {
-
-  return interpolate_gen2d_aa_forward_kernel<4>(input, output_size, align_corners);
+    const at::Tensor& input,
+    at::IntArrayRef output_size,
+    bool align_corners) {
+  return interpolate_gen2d_aa_forward_kernel<4>(
+      input, output_size, align_corners);
 }
 
 } // namespace
