@@ -936,7 +936,7 @@ jobs:
       - save_cache:
           key: TheKey
           paths:
-            - "./docs/source/auto_examples/*.md5"
+            - "./docs/source/auto_examples"
       - persist_to_workspace:
           root: ./
           paths:
