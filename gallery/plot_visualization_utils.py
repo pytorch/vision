@@ -45,8 +45,6 @@ dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
 
 grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
 show(grid)
-print("Hellowww")
-print("Hellowww")
 
 ####################################
 # Visualizing bounding boxes

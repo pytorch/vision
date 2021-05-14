@@ -180,7 +180,6 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.all(torch.eq(masks, masks_cp)).item())
 
     def test_draw_segmentation_masks_no_colors(self):
-
         img = torch.full((3, 20, 20), 255, dtype=torch.uint8)
         img_cp = img.clone()
         masks_cp = masks.clone()
