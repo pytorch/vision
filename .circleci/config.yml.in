@@ -917,8 +917,10 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - restore_cache:
+          {% raw %}
           keys:
-            - TheKey2
+            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
       - run:
           name: Build docs
           command: |
@@ -929,14 +931,14 @@ jobs:
             conda activate ./env
             pushd docs
             pip install -r requirements.txt
-            ls source
-            # ls source/auto_examples/
             make html
             popd
       - save_cache:
-          key: TheKey2
+          {% raw %}
+          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
           paths:
-            - "./docs/source/auto_examples"
+            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:
