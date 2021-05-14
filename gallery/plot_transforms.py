@@ -280,3 +280,4 @@ plot(transformed_imgs)
 applier = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)
 transformed_imgs = [applier(orig_img) for _ in range(4)]
 plot(transformed_imgs)
+print("yo")
