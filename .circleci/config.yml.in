@@ -918,7 +918,7 @@ jobs:
           command: .circleci/unittest/linux/scripts/install.sh
       - restore_cache:
           keys:
-            - TheKey
+            - TheKey2
       - run:
           name: Build docs
           command: |
@@ -934,7 +934,7 @@ jobs:
             make html
             popd
       - save_cache:
-          key: TheKey
+          key: TheKey2
           paths:
             - "./docs/source/auto_examples"
       - persist_to_workspace:
