@@ -916,6 +916,9 @@ jobs:
       - run:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
+      - restore_cache:
+          keys:
+            - TheKey
       - run:
           name: Build docs
           command: |
@@ -928,6 +931,10 @@ jobs:
             pip install -r requirements.txt
             make html
             popd
+      - save_cache:
+          key: TheKey
+          paths:
+            - "./docs/source/auto_examples/*.md5"
       - persist_to_workspace:
           root: ./
           paths:
