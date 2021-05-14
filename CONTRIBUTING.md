@@ -145,7 +145,7 @@ the examples.
 You can also choose to only build a subset of the examples by using the
 ``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
-with "tranforms" in their name.
+with "transforms" in their name.
 
 ### New model
 
