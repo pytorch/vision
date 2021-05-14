@@ -141,66 +141,7 @@ void ti_cpu_upsample_generic_aa(
 // Helper structs to use with ti_upsample_generic_Nd_kernel_impl
 template <typename index_t, typename scalar_t>
 struct HelperInterpBase {
-  static inline void init_indices_weights(
-      std::vector<Tensor>& output,
-      int64_t output_size,
-      int64_t ndims,
-      int64_t reshape_dim,
-      int interp_size) {
-    auto new_shape = std::vector<int64_t>(ndims, 1);
-    new_shape[reshape_dim] = output_size;
-
-    for (int j = 0; j < interp_size; j++) {
-      output.emplace_back(
-          empty(new_shape, CPU(c10::CppTypeToScalarType<index_t>())));
-      output.emplace_back(
-          empty(new_shape, CPU(c10::CppTypeToScalarType<scalar_t>())));
-    }
-  }
-};
-
-template <typename index_t, typename scalar_t>
-struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
-  static const int interp_size = 2;
-
-  static inline std::vector<Tensor> compute_indices_weights(
-      int64_t input_size,
-      int64_t output_size,
-      int64_t stride,
-      int64_t ndims,
-      int64_t reshape_dim,
-      bool align_corners,
-      const c10::optional<double> opt_scale,
-      bool antialias,
-      int& out_interp_size) {
-    scalar_t scale = area_pixel_compute_scale<scalar_t>(
-        input_size, output_size, align_corners, opt_scale);
-    TORCH_INTERNAL_ASSERT(antialias);
-
-    return _compute_indices_weights_aa(
-        input_size,
-        output_size,
-        stride,
-        ndims,
-        reshape_dim,
-        align_corners,
-        scale,
-        out_interp_size);
-  }
-
-  // taken from
-  // https://github.com/python-pillow/Pillow/blob/6812205f18ca4ef54372e87e1a13ce4a859434df/
-  // src/libImaging/Resample.c#L20-L29
-  static inline scalar_t _filter(scalar_t x) {
-    if (x < 0.0) {
-      x = -x;
-    }
-    if (x < 1.0) {
-      return 1.0 - x;
-    }
-    return 0.0;
-  }
-
+  template <typename filter_fn_t>
   static inline std::vector<Tensor> _compute_indices_weights_aa(
       int64_t input_size,
       int64_t output_size,
@@ -209,14 +150,15 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
       int64_t reshape_dim,
       bool align_corners,
       scalar_t scale,
-      int& out_interp_size) {
-    int interp_size = HelperInterpLinear<index_t, scalar_t>::interp_size;
+      int& in_out_interp_size,
+      filter_fn_t filter_fn) {
+    int interp_size = in_out_interp_size;
     scalar_t support =
-        (scale >= 1.0) ? (interp_size / 2) * scale : interp_size / 2 * 1.0;
+        (scale >= 1.0) ? (interp_size * 0.5) * scale : interp_size * 0.5;
     interp_size = (int)ceilf(support) * 2 + 1;
 
     // return interp_size
-    out_interp_size = interp_size;
+    in_out_interp_size = interp_size;
 
     std::vector<Tensor> output;
     auto new_shape = std::vector<int64_t>(ndims, 1);
@@ -269,7 +211,7 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
 
       total_w = 0.0;
       for (j = 0; j < xmax; j++) {
-        scalar_t w = _filter((j + xmin - center + 0.5) * invscale);
+        scalar_t w = filter_fn((j + xmin - center + 0.5) * invscale);
         wt_ptr[i * interp_size + j] = w;
         total_w += w;
       }
@@ -284,6 +226,102 @@ struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
       }
     }
     return output;
+  }
+};
+
+template <typename index_t, typename scalar_t>
+struct HelperInterpLinear : public HelperInterpBase<index_t, scalar_t> {
+  static const int interp_size = 2;
+
+  // taken from
+  // https://github.com/python-pillow/Pillow/blob/6812205f18ca4ef54372e87e1a13ce4a859434df/
+  // src/libImaging/Resample.c#L20-L29
+  static inline scalar_t _filter(scalar_t x) {
+    if (x < 0.0) {
+      x = -x;
+    }
+    if (x < 1.0) {
+      return 1.0 - x;
+    }
+    return 0.0;
+  }
+
+  static inline std::vector<Tensor> compute_indices_weights(
+      int64_t input_size,
+      int64_t output_size,
+      int64_t stride,
+      int64_t ndims,
+      int64_t reshape_dim,
+      bool align_corners,
+      const c10::optional<double> opt_scale,
+      bool antialias,
+      int& out_interp_size) {
+    TORCH_INTERNAL_ASSERT(antialias);
+    scalar_t scale = area_pixel_compute_scale<scalar_t>(
+        input_size, output_size, align_corners, opt_scale);
+
+    out_interp_size = HelperInterpLinear<index_t, scalar_t>::interp_size;
+    return HelperInterpLinear<index_t, scalar_t>::_compute_indices_weights_aa(
+        input_size,
+        output_size,
+        stride,
+        ndims,
+        reshape_dim,
+        align_corners,
+        scale,
+        out_interp_size,
+        _filter);
+  }
+};
+
+template <typename index_t, typename scalar_t>
+struct HelperInterpCubic : public HelperInterpBase<index_t, scalar_t> {
+  static const int interp_size = 4;
+
+  static inline std::vector<Tensor> compute_indices_weights(
+      int64_t input_size,
+      int64_t output_size,
+      int64_t stride,
+      int64_t ndims,
+      int64_t reshape_dim,
+      bool align_corners,
+      const c10::optional<double> opt_scale,
+      bool antialias,
+      int& out_interp_size) {
+    TORCH_INTERNAL_ASSERT(antialias);
+    scalar_t scale = area_pixel_compute_scale<scalar_t>(
+        input_size, output_size, align_corners, opt_scale);
+
+    out_interp_size = HelperInterpCubic<index_t, scalar_t>::interp_size;
+    return HelperInterpCubic<index_t, scalar_t>::_compute_indices_weights_aa(
+        input_size,
+        output_size,
+        stride,
+        ndims,
+        reshape_dim,
+        align_corners,
+        scale,
+        out_interp_size,
+        _filter);
+  }
+
+  // taken from
+  // https://github.com/python-pillow/Pillow/blob/6812205f18ca4ef54372e87e1a13ce4a859434df/
+  // src/libImaging/Resample.c#L46-L62
+  static inline scalar_t _filter(scalar_t x) {
+    // https://en.wikipedia.org/wiki/Bicubic_interpolation#Bicubic_convolution_algorithm
+#define a -0.5
+    if (x < 0.0) {
+      x = -x;
+    }
+    if (x < 1.0) {
+      return ((a + 2.0) * x - (a + 3.0)) * x * x + 1;
+    }
+    if (x < 2.0) {
+      return (((x - 5) * x + 8) * x - 4) * a;
+    }
+    return 0.0;
+#undef a
   }
 };
 
@@ -396,7 +434,7 @@ void ti_separable_upsample_generic_Nd_kernel_impl(
         index_t,
         out_ndims,
         scale_t,
-        HelperInterpLinear>(
+        F>(
         temp_output, temp_input, interp_dim, align_corners, scales, antialias);
     temp_input = temp_output;
   }
@@ -404,8 +442,7 @@ void ti_separable_upsample_generic_Nd_kernel_impl(
       index_t,
       out_ndims,
       scale_t,
-      HelperInterpLinear>(
-      output, temp_input, 2, align_corners, scales, antialias);
+      F>(output, temp_input, 2, align_corners, scales, antialias);
 }
 
 void _ti_upsample_bilinear2d_kernel_impl(
@@ -420,6 +457,21 @@ void _ti_upsample_bilinear2d_kernel_impl(
       2,
       scale_t,
       HelperInterpLinear>(
+      output, input, align_corners, {scales_h, scales_w}, antialias);
+}
+
+void _ti_upsample_bicubic2d_kernel_impl(
+    Tensor& output,
+    const Tensor& input,
+    bool align_corners,
+    c10::optional<double> scales_h,
+    c10::optional<double> scales_w,
+    bool antialias) {
+  ti_separable_upsample_generic_Nd_kernel_impl<
+      int64_t,
+      2,
+      scale_t,
+      HelperInterpCubic>(
       output, input, align_corners, {scales_h, scales_w}, antialias);
 }
 
@@ -463,6 +515,37 @@ at::Tensor interpolate_linear_aa_forward_kernel(
   return output;
 }
 
+at::Tensor interpolate_bicubic_aa_forward_kernel(
+    const at::Tensor& input,
+    at::IntArrayRef output_size,
+    bool align_corners) {
+  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
+
+  c10::optional<c10::ArrayRef<double>> scale_factors = {};
+
+  // Copied from UpSampleBilinear2d.cpp
+  auto output = at::empty({0}, input.options());
+  auto osize = at::native::upsample::compute_output_size(
+      input.sizes(), output_size, scale_factors);
+  auto scale_h = at::native::upsample::get_scale_value(scale_factors, 0);
+  auto scale_w = at::native::upsample::get_scale_value(scale_factors, 1);
+  auto full_output_size =
+      at::native::upsample_2d_common_check(input.sizes(), osize);
+
+  // Allow for empty batch size but not other dimensions
+  TORCH_CHECK(
+      input.numel() != 0 ||
+          c10::multiply_integers(
+              input.sizes().begin() + 1, input.sizes().end()),
+      "Non-empty 4D data tensor expected but got a tensor with sizes ",
+      input.sizes());
+
+  output.resize_(full_output_size, input.suggest_memory_format());
+  at::native::internal_upsample::_ti_upsample_bicubic2d_kernel_impl(
+      output, input, align_corners, scale_h, scale_w, /*antialias=*/true);
+  return output;
+}
+
 // TODO: Implement backward function
 // at::Tensor interpolate_linear_aa_backward_kernel(
 //     const at::Tensor& grad) {
@@ -475,6 +558,10 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::_interpolate_linear_aa"),
       TORCH_FN(interpolate_linear_aa_forward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_interpolate_bicubic_aa"),
+      TORCH_FN(interpolate_bicubic_aa_forward_kernel));
+
   // TODO: Implement backward function
   //   m.impl(
   //       TORCH_SELECTIVE_NAME("torchvision::_interpolate_linear_aa_backward"),

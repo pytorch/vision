@@ -106,7 +106,8 @@ class MobileNetV3(nn.Module):
             last_channel: int,
             num_classes: int = 1000,
             block: Optional[Callable[..., nn.Module]] = None,
-            norm_layer: Optional[Callable[..., nn.Module]] = None
+            norm_layer: Optional[Callable[..., nn.Module]] = None,
+            **kwargs: Any
     ) -> None:
         """
         MobileNet V3 main class
@@ -184,11 +185,10 @@ class MobileNetV3(nn.Module):
         return self._forward_impl(x)
 
 
-def _mobilenet_v3_conf(arch: str, params: Dict[str, Any]):
-    # non-public config parameters
-    reduce_divider = 2 if params.pop('_reduced_tail', False) else 1
-    dilation = 2 if params.pop('_dilated', False) else 1
-    width_mult = params.pop('_width_mult', 1.0)
+def _mobilenet_v3_conf(arch: str, width_mult: float = 1.0, reduced_tail: bool = False, dilated: bool = False,
+                       **kwargs: Any):
+    reduce_divider = 2 if reduced_tail else 1
+    dilation = 2 if dilated else 1
 
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
     adjust_channels = partial(InvertedResidualConfig.adjust_channels, width_mult=width_mult)
@@ -260,7 +260,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     arch = "mobilenet_v3_large"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, kwargs)
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
     return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
 
 
@@ -274,5 +274,5 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     arch = "mobilenet_v3_small"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, kwargs)
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
     return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
