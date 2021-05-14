@@ -1018,7 +1018,7 @@ def test_perspective_interpolation_warning(tester):
         tester.assertTrue(res1.equal(res2))
 
 
-@pytest.mark.parametrize('device', ["cpu", "cuda"])
+@pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize('size', [[96, 72], [96, 420], [420, 72]])
 @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
