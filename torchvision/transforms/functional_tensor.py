@@ -503,8 +503,8 @@ def resize(
     if antialias is None:
         antialias = False
 
-    if antialias and interpolation not in ["bilinear", ]:
-        raise ValueError("Antialias option is supported for bilinear interpolation mode only")
+    if antialias and interpolation not in ["bilinear", "bicubic"]:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
     w, h = _get_image_size(img)
 
@@ -537,8 +537,10 @@ def resize(
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
     if antialias:
-        # Apply antialias for donwsampling on both dims
-        img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+        if interpolation == "bilinear":
+            img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+        elif interpolation == "bicubic":
+            img = torch.ops.torchvision._interpolate_bicubic_aa(img, [new_h, new_w], align_corners=False)
     else:
         img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
