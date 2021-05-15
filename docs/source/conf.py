@@ -137,15 +137,6 @@ html_logo = '_static/img/pytorch-logo-dark.svg'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# html_style_path = 'css/pytorch_theme.css'
-# html_context = {
-#    'css_files': [
-#        'https://fonts.googleapis.com/css?family=Lato',
-#        '_static/css/pytorch_theme.css'
-#    ],
-# }
-
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
