@@ -122,7 +122,32 @@ class ModulePathTracer(torch.fx.Tracer):
         return proxy
 
 
-def IntermediateLayerGetter2(model: nn.Module, return_layers: Dict[str, str]) -> nn.Module:
+def get_intermediate_layers(model: nn.Module, return_layers: Dict[str, str]) -> nn.Module:
+    """
+    Creates a new FX-based module that returns intermediate layers from a given model.
+    This is achieved by re-writing the computation graph of the model via FX to return
+    the requested layers.
+
+    All unused layers are removed, together with their corresponding parameters.
+
+    Args:
+        model (nn.Module): model on which we will extract the features
+        return_layers (Dict[name, new_name]): a dict containing the names
+            of the modules for which the activations will be returned as
+            the key of the dict, and the value of the dict is the name
+            of the returned activation (which the user can specify).
+
+    Examples::
+
+        >>> m = torchvision.models.resnet18(pretrained=True)
+        >>> # extract layer1 and layer3, giving as names `feat1` and feat2`
+        >>> new_m = torchvision.models._utils.get_intermediate_layers(m,
+        >>>     {'layer1': 'feat1', 'layer3': 'feat2'})
+        >>> out = new_m(torch.rand(1, 3, 224, 224))
+        >>> print([(k, v.shape) for k, v in out.items()])
+        >>>     [('feat1', torch.Size([1, 64, 56, 56])),
+        >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
+    """
     # TODO come up with a better name for this
     # TODO have duplicate nodes but full coverage for module names
     return_layers = {str(k): str(v) for k, v in return_layers.items()}
@@ -134,11 +159,9 @@ def IntermediateLayerGetter2(model: nn.Module, return_layers: Dict[str, str]) ->
     name = model.__class__.__name__ if isinstance(model, nn.Module) else model.__name__
     m = torch.fx.GraphModule(tracer.root, graph, name)
 
-
     # check that all outputs in return_layers are present in the model
     if not set(return_layers).issubset(tracer.node_to_originating_module.values()):
         raise ValueError("return_layers are not present in model")
-
 
     # Get output node
     orig_output_node: Optional[torch.fx.Node] = None

@@ -4,7 +4,7 @@ import torch
 import torchvision
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
-from torchvision.models._utils import IntermediateLayerGetter, IntermediateLayerGetter2
+from torchvision.models._utils import IntermediateLayerGetter, get_intermediate_layers
 
 
 class ResnetFPNBackboneTester(unittest.TestCase):
@@ -34,7 +34,7 @@ class IntermediateLayerGetterTester(unittest.TestCase):
         return_layers = {'layer2': '5', 'layer4': 'pool'}
 
         old_model = IntermediateLayerGetter(model, return_layers).eval()
-        new_model = IntermediateLayerGetter2(model, return_layers).eval()
+        new_model = get_intermediate_layers(model, return_layers).eval()
 
         # check that we have same parameters
         for (n1, p1), (n2, p2) in zip(old_model.named_parameters(), new_model.named_parameters()):
@@ -67,7 +67,7 @@ class IntermediateLayerGetterTester(unittest.TestCase):
 
         # check assert that non-existing keys raise error
         with self.assertRaises(ValueError):
-            _ = IntermediateLayerGetter2(model, {'layer5': '0'})
+            _ = get_intermediate_layers(model, {'layer5': '0'})
 
 
 if __name__ == "__main__":
