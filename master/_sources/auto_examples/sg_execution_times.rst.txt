@@ -5,12 +5,12 @@
 
 Computation times
 =================
-**00:16.806** total execution time for **auto_examples** files:
+**00:16.573** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_transforms.py` (``plot_transforms.py``)                                 | 00:07.800 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 00:07.346 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 00:07.344 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_transforms.py` (``plot_transforms.py``)                                 | 00:07.250 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:01.662 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:01.978 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
