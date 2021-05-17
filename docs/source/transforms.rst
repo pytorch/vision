@@ -136,6 +136,24 @@ Transforms on PIL Image and torch.\*Tensor
 .. autoclass:: GaussianBlur
     :members:
 
+.. autoclass:: RandomInvert
+    :members:
+
+.. autoclass:: RandomPosterize
+    :members:
+
+.. autoclass:: RandomSolarize
+    :members:
+
+.. autoclass:: RandomAdjustSharpness
+    :members:
+
+.. autoclass:: RandomAutocontrast
+    :members:
+
+.. autoclass:: RandomEqualize
+    :members:
+
 .. _transforms_pil_only:
 
 Transforms on PIL Image only
