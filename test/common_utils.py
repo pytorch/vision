@@ -279,7 +279,6 @@ class TestCase(unittest.TestCase):
         with freeze_rng_state():
             eager_out = nn_module(*args)
 
-        return sm
         with freeze_rng_state():
             script_out = sm(*args)
             if unwrapper:
