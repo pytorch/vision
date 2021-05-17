@@ -142,8 +142,7 @@ sem_classes = [
 ]
 sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(sem_classes)}
 
-# We normalize the masks of each image in the batch independently
-normalized_masks = torch.stack([torch.nn.functional.softmax(masks, dim=0) for masks in output])
+normalized_masks = torch.nn.functional.softmax(output, dim=1)
 
 dog_and_boat_masks = [
     normalized_masks[img_idx, sem_class_to_idx[cls]]
