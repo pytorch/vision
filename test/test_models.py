@@ -216,7 +216,6 @@ class ModelTester(TestCase):
             return True  # Full validation performed
 
         full_validation = check_out(out)
-        return
         self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == torch.device("cuda"):
