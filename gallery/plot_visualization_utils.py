@@ -184,7 +184,7 @@ show([m.float() for m in boolean_dog_masks])
 from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
-    draw_segmentation_masks(img, masks=mask, alpha=0.3)
+    draw_segmentation_masks(img, masks=mask, alpha=0.7)
     for img, mask in zip(batch_int, boolean_dog_masks)
 ]
 show(dogs_with_masks)
@@ -206,7 +206,7 @@ dog1_all_classes_masks = dog1_masks.argmax(class_dim) == torch.arange(num_classe
 print(f"dog1_masks shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}")
 print(f"dog1_all_classes_masks = {dog1_all_classes_masks.shape}, dtype = {dog1_all_classes_masks.dtype}")
 
-dog_with_all_masks = draw_segmentation_masks(dog1_int, masks=dog1_all_classes_masks, alpha=.4)
+dog_with_all_masks = draw_segmentation_masks(dog1_int, masks=dog1_all_classes_masks, alpha=.6)
 show(dog_with_all_masks)
 
 #####################################
@@ -230,7 +230,7 @@ print(f"shape = {all_classes_masks.shape}, dtype = {all_classes_masks.dtype}")
 all_classes_masks = all_classes_masks.swapaxes(0, 1)
 
 dogs_with_masks = [
-    draw_segmentation_masks(img, masks=mask, alpha=.4)
+    draw_segmentation_masks(img, masks=mask, alpha=.6)
     for img, mask in zip(batch_int, all_classes_masks)
 ]
 show(dogs_with_masks)
@@ -318,7 +318,7 @@ print(f"shape = {dog1_bool_masks.shape}, dtype = {dog1_bool_masks.dtype}")
 # There's an extra dimension (1) to the masks. We need to remove it
 dog1_bool_masks = dog1_bool_masks.squeeze(1)
 
-show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.1))
+show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 
 #####################################
 # The model seems to have properly detected the dog, but it also confused trees
