@@ -1,6 +1,8 @@
-from common_utils import set_rng_seed
+from torch._C import PyTorchFileReader
+from common_utils import needs_cuda, doesnt_need_cuda
 import math
 import unittest
+import pytest
 
 import numpy as np
 
@@ -437,8 +439,8 @@ class MultiScaleRoIAlignTester(unittest.TestCase):
         self.assertEqual(t.__repr__(), expected_string)
 
 
-class NMSTester(unittest.TestCase):
-    def reference_nms(self, boxes, scores, iou_threshold):
+class TestNMS:
+    def _reference_nms(self, boxes, scores, iou_threshold):
         """
         Args:
             box_scores (N, 5): boxes in corner-form and probabilities.
@@ -478,65 +480,73 @@ class NMSTester(unittest.TestCase):
         scores = torch.rand(N)
         return boxes, scores
 
-    def test_nms(self):
+    @doesnt_need_cuda
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    def test_nms_ref(self, iou):
         err_msg = 'NMS incompatible between CPU and reference implementation for IoU={}'
-        for iou in [0.2, 0.5, 0.8]:
-            boxes, scores = self._create_tensors_with_iou(1000, iou)
-            keep_ref = self.reference_nms(boxes, scores, iou)
-            keep = ops.nms(boxes, scores, iou)
-            self.assertTrue(torch.allclose(keep, keep_ref), err_msg.format(iou))
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(4), torch.rand(3), 0.5)
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 5), torch.rand(3), 0.5)
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(3, 2), 0.5)
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        keep_ref = self._reference_nms(boxes, scores, iou)
+        keep = ops.nms(boxes, scores, iou)
+        assert torch.allclose(keep, keep_ref), err_msg.format(iou)
 
-    def test_qnms(self):
+    @doesnt_need_cuda
+    def test_nms_input_errors(self):
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(4), torch.rand(3), 0.5)
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(3, 5), torch.rand(3), 0.5)
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(3, 4), torch.rand(3, 2), 0.5)
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(3, 4), torch.rand(4), 0.5)
+
+    @doesnt_need_cuda
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
+    def test_qnms(self, iou, scale, zero_point):
         # Note: we compare qnms vs nms instead of qnms vs reference implementation.
         # This is because with the int convertion, the trick used in _create_tensors_with_iou
         # doesn't really work (in fact, nms vs reference implem will also fail with ints)
         err_msg = 'NMS and QNMS give different results for IoU={}'
-        for iou in [0.2, 0.5, 0.8]:
-            for scale, zero_point in ((1, 0), (2, 50), (3, 10)):
-                boxes, scores = self._create_tensors_with_iou(1000, iou)
-                scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
 
-                qboxes = torch.quantize_per_tensor(boxes, scale=scale, zero_point=zero_point,
-                                                   dtype=torch.quint8)
-                qscores = torch.quantize_per_tensor(scores, scale=scale, zero_point=zero_point,
-                                                    dtype=torch.quint8)
+        qboxes = torch.quantize_per_tensor(boxes, scale=scale, zero_point=zero_point, dtype=torch.quint8)
+        qscores = torch.quantize_per_tensor(scores, scale=scale, zero_point=zero_point, dtype=torch.quint8)
 
-                boxes = qboxes.dequantize()
-                scores = qscores.dequantize()
+        boxes = qboxes.dequantize()
+        scores = qscores.dequantize()
 
-                keep = ops.nms(boxes, scores, iou)
-                qkeep = ops.nms(qboxes, qscores, iou)
+        keep = ops.nms(boxes, scores, iou)
+        qkeep = ops.nms(qboxes, qscores, iou)
 
-                self.assertTrue(torch.allclose(qkeep, keep), err_msg.format(iou))
+        assert torch.allclose(qkeep, keep), err_msg.format(iou)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_nms_cuda(self, dtype=torch.float64):
+    @needs_cuda
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    def test_nms_cuda(self, iou, dtype=torch.float64):
         tol = 1e-3 if dtype is torch.half else 1e-5
         err_msg = 'NMS incompatible between CPU and CUDA for IoU={}'
 
-        for iou in [0.2, 0.5, 0.8]:
-            boxes, scores = self._create_tensors_with_iou(1000, iou)
-            r_cpu = ops.nms(boxes, scores, iou)
-            r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        r_cpu = ops.nms(boxes, scores, iou)
+        r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
 
-            is_eq = torch.allclose(r_cpu, r_cuda.cpu())
-            if not is_eq:
-                # if the indices are not the same, ensure that it's because the scores
-                # are duplicate
-                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
-            self.assertTrue(is_eq, err_msg.format(iou))
+        is_eq = torch.allclose(r_cpu, r_cuda.cpu())
+        if not is_eq:
+            # if the indices are not the same, ensure that it's because the scores
+            # are duplicate
+            is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
+        assert is_eq, err_msg.format(iou)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_autocast(self):
-        for dtype in (torch.float, torch.half):
-            with torch.cuda.amp.autocast():
-                self.test_nms_cuda(dtype=dtype)
+    @needs_cuda
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    @pytest.mark.parametrize("dtype", (torch.float, torch.half))
+    def test_autocast(self, iou, dtype):
+        with torch.cuda.amp.autocast():
+            self.test_nms_cuda(iou=iou, dtype=dtype)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    @needs_cuda
     def test_nms_cuda_float16(self):
         boxes = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
                               [285.1472, 188.7374, 1192.4984, 851.0669],
@@ -546,8 +556,9 @@ class NMSTester(unittest.TestCase):
         iou_thres = 0.2
         keep32 = ops.nms(boxes, scores, iou_thres)
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
-        self.assertTrue(torch.all(torch.eq(keep32, keep16)))
+        assert torch.all(torch.eq(keep32, keep16))
 
+    @doesnt_need_cuda
     def test_batched_nms_implementations(self):
         """Make sure that both implementations of batched_nms yield identical results"""
 
@@ -564,11 +575,11 @@ class NMSTester(unittest.TestCase):
         keep_trick = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
         err_msg = "The vanilla and the trick implementation yield different nms outputs."
-        self.assertTrue(torch.allclose(keep_vanilla, keep_trick), err_msg)
+        assert torch.allclose(keep_vanilla, keep_trick), err_msg
 
         # Also make sure an empty tensor is returned if boxes is empty
         empty = torch.empty((0,), dtype=torch.int64)
-        self.assertTrue(torch.allclose(empty, ops.batched_nms(empty, None, None, None)))
+        assert torch.allclose(empty, ops.batched_nms(empty, None, None, None))
 
 
 class DeformConvTester(OpTester, unittest.TestCase):

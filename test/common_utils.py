@@ -409,6 +409,7 @@ def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
 
 
 def cpu_and_gpu():
+    # TODO: make this properly handle CircleCI
     import pytest  # noqa
 
     # ignore CPU tests in RE as they're already covered by another contbuild
@@ -430,6 +431,7 @@ def cpu_and_gpu():
 
 
 def needs_cuda(test_func):
+    # TODO: make this properly handle CircleCI
     import pytest  # noqa
 
     if IN_FBCODE and not IN_RE_WORKER:
@@ -441,3 +443,14 @@ def needs_cuda(test_func):
         return test_func
     else:
         return pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG)(test_func)
+
+
+def doesnt_need_cuda(test_func):
+    # TODO: make this properly handle CircleCI
+    import pytest  # noqa
+
+    if IN_RE_WORKER:
+        # The assumption is that all RE workers have GPUs.
+        return pytest.mark.dont_collect(test_func)
+    else:
+        return test_func
