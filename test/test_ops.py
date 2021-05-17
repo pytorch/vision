@@ -1,4 +1,3 @@
-from torch._C import PyTorchFileReader
 from common_utils import needs_cuda, doesnt_need_cuda
 import math
 import unittest
