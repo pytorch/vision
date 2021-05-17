@@ -17,6 +17,11 @@ import pathlib
 import torch
 from torch.utils.model_zoo import tqdm
 
+from ._utils import (
+    _download_file_from_remote_location,
+    _is_remote_location_available,
+)
+
 
 USER_AGENT = "pytorch/vision"
 
@@ -117,26 +122,30 @@ def download_url(
         print('Using downloaded and verified file: ' + fpath)
         return
 
-    # expand redirect chain if needed
-    url = _get_redirect_url(url, max_hops=max_redirect_hops)
+    if _is_remote_location_available():
+        _download_file_from_remote_location(fpath)
+    else:
+        # expand redirect chain if needed
+        url = _get_redirect_url(url, max_hops=max_redirect_hops)
 
-    # check if file is located on Google Drive
-    file_id = _get_google_drive_file_id(url)
-    if file_id is not None:
-        return download_file_from_google_drive(file_id, root, filename, md5)
+        # check if file is located on Google Drive
+        file_id = _get_google_drive_file_id(url)
+        if file_id is not None:
+            return download_file_from_google_drive(file_id, root, filename, md5)
 
-    # download the file
-    try:
-        print('Downloading ' + url + ' to ' + fpath)
-        _urlretrieve(url, fpath)
-    except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
-        if url[:5] == 'https':
-            url = url.replace('https:', 'http:')
-            print('Failed download. Trying https -> http instead.'
-                  ' Downloading ' + url + ' to ' + fpath)
+        # download the file
+        try:
+            print('Downloading ' + url + ' to ' + fpath)
             _urlretrieve(url, fpath)
-        else:
-            raise e
+        except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
+            if url[:5] == 'https':
+                url = url.replace('https:', 'http:')
+                print('Failed download. Trying https -> http instead.'
+                      ' Downloading ' + url + ' to ' + fpath)
+                _urlretrieve(url, fpath)
+            else:
+                raise e
+
     # check integrity of downloaded file
     if not check_integrity(fpath, md5):
         raise RuntimeError("File not found or corrupted.")
