@@ -226,10 +226,10 @@ def draw_segmentation_masks(
 
     """
     Draws segmentation masks on given RGB image.
-    The values of the input image should be uint8 between 0 and 255, or float values between 0 and 1.
+    The values of the input image should be uint8 between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (3, H, W) and dtype uint8 or float.
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
         colors (list or None): List containing the colors of the masks. The colors can
@@ -238,14 +238,13 @@ def draw_segmentation_masks(
             with one element. By default, random colors are generated for each mask.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor with the same dtype as the input image, with segmentation masks
-        drawn on top.
+        img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
     """
 
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype not in (torch.uint8, torch.float):
-        raise ValueError(f"The image dtype must be uint8 or float, got {image.dtype}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
@@ -273,15 +272,13 @@ def draw_segmentation_masks(
     if isinstance(colors[0], tuple) and len(colors[0]) != 3:
         raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
 
-    out_dtype = image.dtype
+    out_dtype = torch.uint8
 
     colors_ = []
     for color in colors:
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
         color = torch.tensor(color, dtype=out_dtype)
-        if out_dtype == torch.float:
-            color /= 255
         colors_.append(color)
 
     img_to_draw = image.detach().clone()

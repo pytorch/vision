@@ -74,9 +74,8 @@ from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.transforms.functional import convert_image_dtype
 
 
-dog1_float = convert_image_dtype(dog1_int, dtype=torch.float)
-dog2_float = convert_image_dtype(dog2_int, dtype=torch.float)
-batch = torch.stack([dog1_float, dog2_float])
+batch_int = torch.stack([dog1_int, dog2_int])
+batch = convert_image_dtype(batch_int, dtype=torch.float)
 
 model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
@@ -91,7 +90,7 @@ print(outputs)
 threshold = .8
 dogs_with_boxes = [
     draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > threshold], width=4)
-    for dog_int, output in zip((dog1_int, dog2_int), outputs)
+    for dog_int, output in zip(batch_int, outputs)
 ]
 show(dogs_with_boxes)
 
@@ -187,7 +186,7 @@ from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=0.3)
-    for img, mask in zip(batch, boolean_dog_masks)
+    for img, mask in zip(batch_int, boolean_dog_masks)
 ]
 show(dogs_with_masks)
 
@@ -208,7 +207,7 @@ dog1_all_classes_masks = dog1_masks.argmax(class_dim) == torch.arange(num_classe
 print(f"dog1_masks shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}")
 print(f"dog1_all_classes_masks = {dog1_all_classes_masks.shape}, dtype = {dog1_all_classes_masks.dtype}")
 
-dog_with_all_masks = draw_segmentation_masks(dog1_float, masks=dog1_all_classes_masks, alpha=.4)
+dog_with_all_masks = draw_segmentation_masks(dog1_int, masks=dog1_all_classes_masks, alpha=.4)
 show(dog_with_all_masks)
 
 #####################################
@@ -233,7 +232,7 @@ all_classes_masks = all_classes_masks.swapaxes(0, 1)
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=.4)
-    for img, mask in zip(batch, all_classes_masks)
+    for img, mask in zip(batch_int, all_classes_masks)
 ]
 show(dogs_with_masks)
 
@@ -320,7 +319,7 @@ print(f"shape = {dog1_bool_masks.shape}, dtype = {dog1_bool_masks.dtype}")
 # There's an extra dimension (1) to the masks. We need to remove it
 dog1_bool_masks = dog1_bool_masks.squeeze(1)
 
-show(draw_segmentation_masks(dog1_float, dog1_bool_masks, alpha=0.1))
+show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.1))
 
 #####################################
 # The model seems to have properly detected the dog, but it also confused trees
@@ -344,7 +343,7 @@ boolean_masks = [
 
 dogs_with_masks = [
     draw_segmentation_masks(img, mask.squeeze(1))
-    for img, mask in zip(batch, boolean_masks)
+    for img, mask in zip(batch_int, boolean_masks)
 ]
 show(dogs_with_masks)
 

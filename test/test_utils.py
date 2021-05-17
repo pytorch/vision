@@ -161,16 +161,16 @@ class Tester(unittest.TestCase):
         self.assertRaises(ValueError, utils.draw_bounding_boxes, img_wrong2, boxes)
 
 
-@pytest.mark.parametrize('dtype', (torch.float, torch.uint8))
 @pytest.mark.parametrize('colors', [
     None,
     ['red', 'blue'],
     ['#FF00FF', (1, 34, 122)],
 ])
 @pytest.mark.parametrize('alpha', (0, .5, .7, 1))
-def test_draw_segmentation_masks(dtype, colors, alpha):
+def test_draw_segmentation_masks(colors, alpha):
     """This test makes sure that masks draw their corresponding color where they should"""
     num_masks, h, w = 2, 100, 100
+    dtype = torch.uint8
     img = torch.randint(0, 256, size=(3, h, w), dtype=dtype)
     masks = torch.randint(0, 2, (num_masks, h, w), dtype=torch.bool)
 
@@ -197,8 +197,6 @@ def test_draw_segmentation_masks(dtype, colors, alpha):
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
         color = torch.tensor(color, dtype=dtype)
-        if dtype == torch.float:
-            color /= 255
 
         if alpha == 0:
             assert (out[:, mask] == color[:, None]).all()
@@ -207,29 +205,7 @@ def test_draw_segmentation_masks(dtype, colors, alpha):
 
         interpolated_color = (img[:, mask] * alpha + color[:, None] * (1 - alpha))
         max_diff = (out[:, mask] - interpolated_color).abs().max()
-        if dtype == torch.uint8:
-            assert max_diff <= 1
-        else:
-            assert max_diff <= 1e-5
-
-
-def test_draw_segmentation_masks_int_vs_float():
-    """Make sure float and uint8 dtypes produce similar images"""
-    h, w = 100, 100
-    masks = torch.randint(0, 2, size=(2, h, w), dtype=torch.bool)
-    img_int = torch.randint(0, 256, size=(3, h, w), dtype=torch.uint8)
-    img_float = F.convert_image_dtype(img_int, torch.float)
-
-    out_int = utils.draw_segmentation_masks(image=img_int, masks=masks, colors=['red', 'blue'])
-    out_float = utils.draw_segmentation_masks(image=img_float, masks=masks, colors=['red', 'blue'])
-
-    assert out_int.dtype == img_int.dtype
-    assert out_float.dtype == img_float.dtype
-
-    out_float_int = F.convert_image_dtype(out_float, torch.uint8).int()
-    out_int = out_int.int()
-
-    assert (out_int - out_float_int).abs().max() <= 1
+        assert max_diff <= 1
 
 
 def test_draw_segmentation_masks_errors():
