@@ -189,19 +189,19 @@ class Tester(TransformsTester):
         )
 
         # Test transforms.functional.crop including outside the image area
-        fn_kwargs = {"top": -2, "left": 3, "height": 4, "width": 5} #  top
+        fn_kwargs = {"top": -2, "left": 3, "height": 4, "width": 5}  # top
         self._test_functional_op('crop', fn_kwargs=fn_kwargs)
 
-        fn_kwargs = {"top": 1, "left": -3, "height": 4, "width": 5} #  left
+        fn_kwargs = {"top": 1, "left": -3, "height": 4, "width": 5}  # left
         self._test_functional_op('crop', fn_kwargs=fn_kwargs)
 
-        fn_kwargs = {"top": 7, "left": 3, "height": 4, "width": 5} #  bottom
+        fn_kwargs = {"top": 7, "left": 3, "height": 4, "width": 5}  # bottom
         self._test_functional_op('crop', fn_kwargs=fn_kwargs)
 
-        fn_kwargs = {"top": 3, "left": 8, "height": 4, "width": 5} #  right
+        fn_kwargs = {"top": 3, "left": 8, "height": 4, "width": 5}  # right
         self._test_functional_op('crop', fn_kwargs=fn_kwargs)
 
-        fn_kwargs = {"top": -3, "left": -3, "height": 15, "width": 15} #  all
+        fn_kwargs = {"top": -3, "left": -3, "height": 15, "width": 15}  # all
         self._test_functional_op('crop', fn_kwargs=fn_kwargs)
 
         sizes = [5, [5, ], [6, 6]]
