@@ -220,7 +220,7 @@ def draw_bounding_boxes(
 def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
-    alpha: float = 0.2,
+    alpha: float = 0.8,
     colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
 ) -> torch.Tensor:
 
@@ -232,6 +232,7 @@ def draw_segmentation_masks(
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
+            0 means full transparency, 1 means no transparency.
         colors (list or None): List containing the colors of the masks. The colors can
             be represented as PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
             When ``masks`` has a single entry of shape (H, W), you can pass a single color instead of a list
@@ -286,7 +287,7 @@ def draw_segmentation_masks(
     for mask, color in zip(masks, colors_):
         img_to_draw[:, mask] = color[:, None]
 
-    out = image * alpha + img_to_draw * (1 - alpha)
+    out = image * (1 - alpha) + img_to_draw * alpha
     return out.to(out_dtype)
 
 

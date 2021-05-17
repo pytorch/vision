@@ -198,12 +198,12 @@ def test_draw_segmentation_masks(colors, alpha):
             color = ImageColor.getrgb(color)
         color = torch.tensor(color, dtype=dtype)
 
-        if alpha == 0:
+        if alpha == 1:
             assert (out[:, mask] == color[:, None]).all()
-        elif alpha == 1:
+        elif alpha == 0:
             assert (out[:, mask] == img[:, mask]).all()
 
-        interpolated_color = (img[:, mask] * alpha + color[:, None] * (1 - alpha))
+        interpolated_color = (img[:, mask] * (1 - alpha) + color[:, None] * alpha)
         max_diff = (out[:, mask] - interpolated_color).abs().max()
         assert max_diff <= 1
 
