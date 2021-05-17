@@ -11,8 +11,8 @@ __all__ = [
 
 
 model_urls = {
-    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
-    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
+    'vgg11': 'https://download.pytorch.org/models/vgg11-8a719046.pth',
+    'vgg13': 'https://download.pytorch.org/models/vgg13-19584684.pth',
     'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
     'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
     'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
