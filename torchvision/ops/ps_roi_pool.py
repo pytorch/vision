@@ -33,7 +33,7 @@ def ps_roi_pool(
             the box coordinates. Default: 1.0
 
     Returns:
-        Tensor[K, C/(output_size[0]*output_size[1]), output_size[0], output_size[1]]: The pooled RoIs.
+        Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]: The pooled RoIs.
     """
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
