@@ -275,11 +275,11 @@ class TestCase(unittest.TestCase):
             return None
 
         sm = torch.jit.script(nn_module)
-        return sm
 
         with freeze_rng_state():
             eager_out = nn_module(*args)
 
+        return sm
         with freeze_rng_state():
             script_out = sm(*args)
             if unwrapper:
