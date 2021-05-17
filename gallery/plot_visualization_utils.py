@@ -98,7 +98,7 @@ show(dogs_with_boxes)
 # Visualizing segmentation masks
 # ------------------------------
 # The :func:`~torchvision.utils.draw_segmentation_masks` function can be used to
-# draw segmentation amasks on images. Semantic segmentation and instance
+# draw segmentation masks on images. Semantic segmentation and instance
 # segmentation models have different outputs, so we will treat each
 # independently.
 #
