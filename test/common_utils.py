@@ -445,7 +445,7 @@ def needs_cuda(test_func):
         return pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG)(test_func)
 
 
-def doesnt_need_cuda(test_func):
+def cpu_only(test_func):
     # TODO: make this properly handle CircleCI
     import pytest  # noqa
 

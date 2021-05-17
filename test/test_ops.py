@@ -1,4 +1,4 @@
-from common_utils import needs_cuda, doesnt_need_cuda
+from common_utils import needs_cuda, cpu_only
 import math
 import unittest
 import pytest
@@ -479,7 +479,7 @@ class TestNMS:
         scores = torch.rand(N)
         return boxes, scores
 
-    @doesnt_need_cuda
+    @cpu_only
     @pytest.mark.parametrize("iou", (.2, .5, .8))
     def test_nms_ref(self, iou):
         err_msg = 'NMS incompatible between CPU and reference implementation for IoU={}'
@@ -488,7 +488,7 @@ class TestNMS:
         keep = ops.nms(boxes, scores, iou)
         assert torch.allclose(keep, keep_ref), err_msg.format(iou)
 
-    @doesnt_need_cuda
+    @cpu_only
     def test_nms_input_errors(self):
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(4), torch.rand(3), 0.5)
@@ -499,7 +499,7 @@ class TestNMS:
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(3, 4), torch.rand(4), 0.5)
 
-    @doesnt_need_cuda
+    @cpu_only
     @pytest.mark.parametrize("iou", (.2, .5, .8))
     @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
     def test_qnms(self, iou, scale, zero_point):
@@ -557,7 +557,7 @@ class TestNMS:
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
         assert torch.all(torch.eq(keep32, keep16))
 
-    @doesnt_need_cuda
+    @cpu_only
     def test_batched_nms_implementations(self):
         """Make sure that both implementations of batched_nms yield identical results"""
 
