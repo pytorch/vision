@@ -341,7 +341,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
 
 def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-           max_size: Optional[int] = None) -> Tensor:
+           max_size: Optional[int] = None, antialias: Optional[bool] = None) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -375,6 +375,12 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
+            ``InterpolationMode.BILINEAR`` only mode.
+
+            .. warning::
+                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -391,10 +397,14 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
+        if antialias is not None and not antialias:
+            warnings.warn(
+                "Anti-alias option is always applied for PIL Image input. Argument antialias is ignored."
+            )
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
-    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size)
+    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
 
 
 def scale(*args, **kwargs):

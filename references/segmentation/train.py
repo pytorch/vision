@@ -157,24 +157,28 @@ def main(args):
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
+        checkpoint = {
+            'model': model_without_ddp.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'lr_scheduler': lr_scheduler.state_dict(),
+            'epoch': epoch,
+            'args': args
+        }
         utils.save_on_master(
-            {
-                'model': model_without_ddp.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'lr_scheduler': lr_scheduler.state_dict(),
-                'epoch': epoch,
-                'args': args
-            },
+            checkpoint,
             os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+        utils.save_on_master(
+            checkpoint,
+            os.path.join(args.output_dir, 'checkpoint.pth'))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
 
 
-def parse_args():
+def get_args_parser(add_help=True):
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Segmentation Training')
+    parser = argparse.ArgumentParser(description='PyTorch Segmentation Training', add_help=add_help)
 
     parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset path')
     parser.add_argument('--dataset', default='coco', help='dataset name')
@@ -215,10 +219,9 @@ def parse_args():
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
 
-    args = parser.parse_args()
-    return args
+    return parser
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = get_args_parser().parse_args()
     main(args)
