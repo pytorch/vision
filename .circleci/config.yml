@@ -917,6 +917,15 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+
+          keys:
+            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+
+      - run:
           name: Build docs
           command: |
             set -ex
@@ -928,6 +937,12 @@ jobs:
             pip install -r requirements.txt
             make html
             popd
+      - save_cache:
+
+          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+
+          paths:
+            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:
