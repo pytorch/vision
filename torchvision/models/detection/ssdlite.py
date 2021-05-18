@@ -160,7 +160,11 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
                                   pretrained_backbone: bool = False, trainable_backbone_layers: Optional[int] = None,
                                   norm_layer: Optional[Callable[..., nn.Module]] = None,
                                   **kwargs: Any):
-    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone.
+    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_ and
+    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
+    <https://arxiv.org/abs/1801.04381>`_.
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
