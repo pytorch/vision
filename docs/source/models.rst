@@ -329,6 +329,8 @@ The images have to be loaded in to a range of ``[0, 1]`` and then normalized usi
 ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
 They have been trained on images resized such that their minimum size is 520.
 
+For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
+
 The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
 present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
 ``references/segmentation/coco_utils.py``. The classes that the pre-trained model outputs are the following,
@@ -374,6 +376,7 @@ LR-ASPP
 
 .. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
 
+.. _object_det_inst_seg_pers_keypoint_det:
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
@@ -392,7 +395,8 @@ in torchvision.
 
 The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
 The models internally resize the images but the behaviour varies depending
-on the model. Check the constructor of the models for more information.
+on the model. Check the constructor of the models for more information. The
+output format of such models is illustrated in :ref:`instance_seg_output`.
 
 
 For object detection and instance segmentation, the pre-trained
