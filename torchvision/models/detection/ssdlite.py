@@ -23,6 +23,7 @@ model_urls = {
 }
 
 
+# Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper
 def _prediction_block(in_channels: int, out_channels: int, kernel_size: int,
                       norm_layer: Callable[..., nn.Module]) -> nn.Sequential:
     return nn.Sequential(
@@ -101,6 +102,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
+            # As described in section 6.3 of MobileNetV3 paper
             nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),  # from start until C4 expansion layer
             nn.Sequential(backbone[c4_pos].block[1:], *backbone[c4_pos + 1:]),  # from C4 depthwise until end
         )
@@ -170,8 +172,6 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         >>> predictions = model(x)
 
     Args:
-        norm_layer:
-        **kwargs:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
@@ -189,7 +189,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
     if pretrained:
         pretrained_backbone = False
 
-    # Enable reduced tail if no pretrained backbone is selected
+    # Enable reduced tail if no pretrained backbone is selected. See Table 6 of MobileNetV3 paper.
     reduce_tail = not pretrained_backbone
 
     if norm_layer is None:
