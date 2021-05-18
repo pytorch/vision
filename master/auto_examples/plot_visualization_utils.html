@@ -35,8 +35,7 @@
   <link rel="stylesheet" href="../_static/gallery-rendered-html.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Tensor transforms and JIT" href="plot_scripted_tensor_transforms.html" />
-    <link rel="prev" title="Example gallery" href="index.html" />
+    <link rel="prev" title="Illustration of transforms" href="plot_transforms.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -198,7 +197,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+c88e9b2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+45c3dcb ) &#x25BC</a>
     </div>
     
 
@@ -343,7 +342,8 @@ visualizing images, bounding boxes, and segmentation masks.</p>
         <span class="n">imgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">imgs</span><span class="p">]</span>
     <span class="n">fix</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">imgs</span><span class="p">),</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">imgs</span><span class="p">):</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">to_pil_image</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">to_pil_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
         <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.asarray.html#numpy.asarray" title="numpy.asarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">asarray</span></a><span class="p">(</span><span class="n">img</span><span class="p">))</span>
         <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xticklabels</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticklabels</span><span class="o">=</span><span class="p">[],</span> <span class="n">xticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
 </pre></div>
@@ -369,9 +369,8 @@ image of dtype <code class="docutils literal notranslate"><span class="pre">uint
 <section id="visualizing-bounding-boxes">
 <h2>Visualizing bounding boxes<a class="headerlink" href="#visualizing-bounding-boxes" title="Permalink to this headline">¶</a></h2>
 <p>We can use <a class="reference internal" href="../utils.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a> to draw boxes on an
-image. We can set the colors, labels, width as well as font and font size !
-The boxes are in <code class="docutils literal notranslate"><span class="pre">(xmin,</span> <span class="pre">ymin,</span> <span class="pre">xmax,</span> <span class="pre">ymax)</span></code> format
-from torchvision.utils import draw_bounding_boxes</p>
+image. We can set the colors, labels, width as well as font and font size.
+The boxes are in <code class="docutils literal notranslate"><span class="pre">(xmin,</span> <span class="pre">ymin,</span> <span class="pre">xmax,</span> <span class="pre">ymax)</span></code> format.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_bounding_boxes</span>
 
 
@@ -386,25 +385,25 @@ from torchvision.utils import draw_bounding_boxes</p>
 models.  Here is demo with a Faster R-CNN model loaded from
 <a class="reference internal" href="../models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a>
 model. You can also try using a RetinaNet with
-<a class="reference internal" href="../models.html#torchvision.models.detection.retinanet_resnet50_fpn" title="torchvision.models.detection.retinanet_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">retinanet_resnet50_fpn()</span></code></a>.</p>
+<a class="reference internal" href="../models.html#torchvision.models.detection.retinanet_resnet50_fpn" title="torchvision.models.detection.retinanet_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">retinanet_resnet50_fpn()</span></code></a>. For more details
+on the output of such models, you may refer to <a class="reference internal" href="#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models.detection</span> <span class="kn">import</span> <span class="n">fasterrcnn_resnet50_fpn</span>
 <span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">convert_image_dtype</span>
 
 
-<span class="n">dog1_float</span> <span class="o">=</span> <span class="n">convert_image_dtype</span><span class="p">(</span><span class="n">dog1_int</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-<span class="n">dog2_float</span> <span class="o">=</span> <span class="n">convert_image_dtype</span><span class="p">(</span><span class="n">dog2_int</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-<span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">dog1_float</span><span class="p">,</span> <span class="n">dog2_float</span><span class="p">])</span>
+<span class="n">batch_int</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">dog1_int</span><span class="p">,</span> <span class="n">dog2_int</span><span class="p">])</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">convert_image_dtype</span><span class="p">(</span><span class="n">batch_int</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">fasterrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-<a href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="collections.OrderedDict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="collections.OrderedDict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth&quot; to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-/root/project/env/lib/python3.7/site-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  /opt/conda/conda-bld/pytorch_1621148719287/work/c10/core/TensorImpl.h:1156.)
+/root/project/env/lib/python3.7/site-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  /opt/conda/conda-bld/pytorch_1621321543975/work/c10/core/TensorImpl.h:1156.)
   return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
 [{&#39;boxes&#39;: tensor([[215.9767, 171.1661, 402.0078, 378.7391],
         [344.6341, 172.6735, 357.6114, 220.1435],
@@ -415,10 +414,10 @@ model. You can also try using a RetinaNet with
 </div>
 <p>Let’s plot the boxes detected by our model. We will only plot the boxes with a
 score greater than a given threshold.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">threshold</span></a> <span class="o">=</span> <span class="mf">.8</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">score_threshold</span></a> <span class="o">=</span> <span class="mf">.8</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_boxes</span></a> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">draw_bounding_boxes</span><span class="p">(</span><span class="n">dog_int</span><span class="p">,</span> <span class="n">boxes</span><span class="o">=</span><span class="n">output</span><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">][</span><span class="n">output</span><span class="p">[</span><span class="s1">&#39;scores&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">threshold</span></a><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">dog_int</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">dog1_int</span><span class="p">,</span> <span class="n">dog2_int</span><span class="p">),</span> <a href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="collections.OrderedDict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">)</span>
+    <span class="n">draw_bounding_boxes</span><span class="p">(</span><span class="n">dog_int</span><span class="p">,</span> <span class="n">boxes</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">[</span><span class="s1">&#39;boxes&#39;</span><span class="p">][</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">[</span><span class="s1">&#39;scores&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">score_threshold</span></a><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dog_int</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch_int</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">)</span>
 <span class="p">]</span>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_boxes</span></a><span class="p">)</span>
 </pre></div>
@@ -428,41 +427,333 @@ score greater than a given threshold.</p>
 <section id="visualizing-segmentation-masks">
 <h2>Visualizing segmentation masks<a class="headerlink" href="#visualizing-segmentation-masks" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> function can be used to
-draw segmentation amasks on images. We can set the colors as well as
-transparency of masks.</p>
-<p>Here is demo with torchvision’s FCN Resnet-50, loaded with
-<a class="reference internal" href="../models.html#torchvision.models.segmentation.fcn_resnet50" title="torchvision.models.segmentation.fcn_resnet50"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcn_resnet50()</span></code></a>.
-You can also try using
-DeepLabv3 (<a class="reference internal" href="../models.html#torchvision.models.segmentation.deeplabv3_resnet50" title="torchvision.models.segmentation.deeplabv3_resnet50"><code class="xref py py-func docutils literal notranslate"><span class="pre">deeplabv3_resnet50()</span></code></a>)
-or lraspp mobilenet models
+draw segmentation masks on images. Semantic segmentation and instance
+segmentation models have different outputs, so we will treat each
+independently.</p>
+<section id="semantic-segmentation-models">
+<span id="semantic-seg-output"></span><h3>Semantic segmentation models<a class="headerlink" href="#semantic-segmentation-models" title="Permalink to this headline">¶</a></h3>
+<p>We will see how to use it with torchvision’s FCN Resnet-50, loaded with
+<a class="reference internal" href="../models.html#torchvision.models.segmentation.fcn_resnet50" title="torchvision.models.segmentation.fcn_resnet50"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcn_resnet50()</span></code></a>.  You can also try using
+DeepLabv3 (<a class="reference internal" href="../models.html#torchvision.models.segmentation.deeplabv3_resnet50" title="torchvision.models.segmentation.deeplabv3_resnet50"><code class="xref py py-func docutils literal notranslate"><span class="pre">deeplabv3_resnet50()</span></code></a>) or
+lraspp mobilenet models
 (<a class="reference internal" href="../models.html#torchvision.models.segmentation.lraspp_mobilenet_v3_large" title="torchvision.models.segmentation.lraspp_mobilenet_v3_large"><code class="xref py py-func docutils literal notranslate"><span class="pre">lraspp_mobilenet_v3_large()</span></code></a>).</p>
-<p>Like <a class="reference internal" href="../utils.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a>,
-<a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> requires a single RGB image
-of dtype <cite>uint8</cite>.</p>
+<p>Let’s start by looking at the ouput of the model. Remember that in general,
+images must be normalized before they’re passed to a semantic segmentation
+model.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models.segmentation</span> <span class="kn">import</span> <span class="n">fcn_resnet50</span>
-<span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_segmentation_masks</span>
 
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">fcn_resnet50</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-<span class="c1"># The model expects the batch to be normalized</span>
-<span class="n">batch</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="p">(</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">),</span> <span class="n">std</span><span class="o">=</span><span class="p">(</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">))</span>
-<a href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="collections.OrderedDict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<span class="n">normalized_batch</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="p">(</span><span class="mf">0.485</span><span class="p">,</span> <span class="mf">0.456</span><span class="p">,</span> <span class="mf">0.406</span><span class="p">),</span> <span class="n">std</span><span class="o">=</span><span class="p">(</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">))</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">normalized_batch</span><span class="p">)[</span><span class="s1">&#39;out&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span><span class="o">.</span><span class="n">shape</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span><span class="o">.</span><span class="n">min</span></a><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span><span class="o">.</span><span class="n">max</span></a><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth&quot; to /root/.cache/torch/hub/checkpoints/fcn_resnet50_coco-1167a1af.pth
+torch.Size([2, 21, 500, 500]) -7.089669704437256 14.858256340026855
+</pre></div>
+</div>
+<p>As we can see above, the output of the segmentation model is a tensor of shape
+<code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_classes,</span> <span class="pre">H,</span> <span class="pre">W)</span></code>. Each value is a non-normalized score, and
+we can normalize them into <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> by using a softmax. After the softmax,
+we can interpret each value as a probability indicating how likely a given
+pixel is to belong to a given class.</p>
+<p>Let’s plot the masks that have been detected for the dog class and for the
+boat class:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_classes</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;__background__&#39;</span><span class="p">,</span> <span class="s1">&#39;aeroplane&#39;</span><span class="p">,</span> <span class="s1">&#39;bicycle&#39;</span><span class="p">,</span> <span class="s1">&#39;bird&#39;</span><span class="p">,</span> <span class="s1">&#39;boat&#39;</span><span class="p">,</span> <span class="s1">&#39;bottle&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;car&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;chair&#39;</span><span class="p">,</span> <span class="s1">&#39;cow&#39;</span><span class="p">,</span> <span class="s1">&#39;diningtable&#39;</span><span class="p">,</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;horse&#39;</span><span class="p">,</span> <span class="s1">&#39;motorbike&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;person&#39;</span><span class="p">,</span> <span class="s1">&#39;pottedplant&#39;</span><span class="p">,</span> <span class="s1">&#39;sheep&#39;</span><span class="p">,</span> <span class="s1">&#39;sofa&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;tvmonitor&#39;</span>
+<span class="p">]</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_class_to_idx</span></a> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_classes</span></a><span class="p">)}</span>
+
+<span class="n">normalized_masks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog_and_boat_masks</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">normalized_masks</span><span class="p">[</span><span class="n">img_idx</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_class_to_idx</span></a><span class="p">[</span><span class="bp">cls</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">img_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;boat&#39;</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog_and_boat_masks</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_004.png" />
+<p>As expected, the model is confident about the dog class, but not so much for
+the boat class.</p>
+<p>The <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> function can be used to
+plots those masks on top of the original image. This function expects the
+masks to be boolean masks, but our masks above contain probabilities in <code class="docutils literal notranslate"><span class="pre">[0,</span>
+<span class="pre">1]</span></code>. To get boolean masks, we can do the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">class_dim</span></a> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">boolean_dog_masks</span> <span class="o">=</span> <span class="p">(</span><span class="n">normalized_masks</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">class_dim</span></a><span class="p">)</span> <span class="o">==</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_class_to_idx</span></a><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shape = </span><span class="si">{</span><span class="n">boolean_dog_masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype = </span><span class="si">{</span><span class="n">boolean_dog_masks</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">boolean_dog_masks</span><span class="p">])</span>
+</pre></div>
+</div>
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_005.png" />
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([2, 500, 500]), dtype = torch.bool
+</pre></div>
+</div>
+<p>The line above where we define <code class="docutils literal notranslate"><span class="pre">boolean_dog_masks</span></code> is a bit cryptic, but you
+can read it as the following query: “For which pixels is ‘dog’ the most likely
+class?”</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While we’re using the <code class="docutils literal notranslate"><span class="pre">normalized_masks</span></code> here, we would have
+gotten the same result by using the non-normalized scores of the model
+directly (as the softmax operation preserves the order).</p>
+</div>
+<p>Now that we have boolean masks, we can use them with
+<a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> to plot them on top of the
+original images:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_segmentation_masks</span>
 
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">draw_segmentation_masks</span><span class="p">(</span><span class="n">dog_int</span><span class="p">,</span> <span class="n">masks</span><span class="o">=</span><span class="n">masks</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">dog_int</span><span class="p">,</span> <span class="n">masks</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">dog1_int</span><span class="p">,</span> <span class="n">dog2_int</span><span class="p">),</span> <a href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="collections.OrderedDict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">[</span><span class="s1">&#39;out&#39;</span><span class="p">])</span>
+    <span class="n">draw_segmentation_masks</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">masks</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">img</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch_int</span><span class="p">,</span> <span class="n">boolean_dog_masks</span><span class="p">)</span>
 <span class="p">]</span>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_004.png" />
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth&quot; to /root/.cache/torch/hub/checkpoints/fcn_resnet50_coco-1167a1af.pth
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_006.png" />
+<p>We can plot more than one mask per image! Remember that the model returned as
+many masks as there are classes. Let’s ask the same query as above, but this
+time for <em>all</em> classes, not just the dog class: “For each pixel and each class
+C, is class C the most most likely class?”</p>
+<p>This one is a bit more involved, so we’ll first show how to do it with a
+single image, and then we’ll generalize to the batch</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_classes</span></a> <span class="o">=</span> <span class="n">normalized_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">dog1_masks</span> <span class="o">=</span> <span class="n">normalized_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">class_dim</span></a> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">dog1_all_classes_masks</span> <span class="o">=</span> <span class="n">dog1_masks</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">class_dim</span></a><span class="p">)</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_classes</span></a><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dog1_masks shape = </span><span class="si">{</span><span class="n">dog1_masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype = </span><span class="si">{</span><span class="n">dog1_masks</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dog1_all_classes_masks = </span><span class="si">{</span><span class="n">dog1_all_classes_masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype = </span><span class="si">{</span><span class="n">dog1_all_classes_masks</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">dog_with_all_masks</span> <span class="o">=</span> <span class="n">draw_segmentation_masks</span><span class="p">(</span><span class="n">dog1_int</span><span class="p">,</span> <span class="n">masks</span><span class="o">=</span><span class="n">dog1_all_classes_masks</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.6</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><span class="n">dog_with_all_masks</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.757 seconds)</p>
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_007.png" />
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>dog1_masks shape = torch.Size([21, 500, 500]), dtype = torch.float32
+dog1_all_classes_masks = torch.Size([21, 500, 500]), dtype = torch.bool
+</pre></div>
+</div>
+<p>We can see in the image above that only 2 masks were drawn: the mask for the
+background and the mask for the dog. This is because the model thinks that
+only these 2 classes are the most likely ones across all the pixels. If the
+model had detected another class as the most likely among other pixels, we
+would have seen its mask above.</p>
+<p>Removing the background mask is as simple as passing
+<code class="docutils literal notranslate"><span class="pre">masks=dog1_all_classes_masks[1:]</span></code>, because the background class is the
+class with index 0.</p>
+<p>Let’s now do the same but for an entire batch of images. The code is similar
+but involves a bit more juggling with the dimensions.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">class_dim</span></a> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">all_classes_masks</span> <span class="o">=</span> <span class="n">normalized_masks</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">class_dim</span></a><span class="p">)</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_classes</span></a><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shape = </span><span class="si">{</span><span class="n">all_classes_masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype = </span><span class="si">{</span><span class="n">all_classes_masks</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># The first dimension is the classes now, so we need to swap it</span>
+<span class="n">all_classes_masks</span> <span class="o">=</span> <span class="n">all_classes_masks</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">draw_segmentation_masks</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">masks</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.6</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">img</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch_int</span><span class="p">,</span> <span class="n">all_classes_masks</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_008.png" />
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([21, 2, 500, 500]), dtype = torch.bool
+</pre></div>
+</div>
+</section>
+<section id="instance-segmentation-models">
+<span id="instance-seg-output"></span><h3>Instance segmentation models<a class="headerlink" href="#instance-segmentation-models" title="Permalink to this headline">¶</a></h3>
+<p>Instance segmentation models have a significantly different output from the
+semantic segmentation models. We will see here how to plot the masks for such
+models. Let’s start by analyzing the output of a Mask-RCNN model. Note that
+these models don’t require the images to be normalized, so we don’t need to
+use the normalized batch.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We will here describe the output of a Mask-RCNN model. The models in
+<a class="reference internal" href="../models.html#object-det-inst-seg-pers-keypoint-det"><span class="std std-ref">Object Detection, Instance Segmentation and Person Keypoint Detection</span></a> all have a similar output
+format, but some of them may have extra info like keypoints for
+<a class="reference internal" href="../models.html#torchvision.models.detection.keypointrcnn_resnet50_fpn" title="torchvision.models.detection.keypointrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">keypointrcnn_resnet50_fpn()</span></code></a>, and some
+of them may not have masks, like
+<a class="reference internal" href="../models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a>.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models.detection</span> <span class="kn">import</span> <span class="n">maskrcnn_resnet50_fpn</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">maskrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth&quot; to /root/.cache/torch/hub/checkpoints/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth
+[{&#39;boxes&#39;: tensor([[219.7444, 168.1722, 400.7379, 384.0263],
+        [343.9716, 171.2287, 358.3447, 222.6263],
+        [301.0303, 192.6917, 313.8879, 232.3154]], grad_fn=&lt;StackBackward&gt;), &#39;labels&#39;: tensor([18,  1,  1]), &#39;scores&#39;: tensor([0.9987, 0.7187, 0.6525], grad_fn=&lt;IndexBackward&gt;), &#39;masks&#39;: tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          ...,
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.]]],
+
+
+        [[[0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          ...,
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.]]],
+
+
+        [[[0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          ...,
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.]]]], grad_fn=&lt;UnsqueezeBackward0&gt;)}, {&#39;boxes&#39;: tensor([[ 44.6767, 137.9018, 446.5324, 487.3429],
+        [  0.0000, 288.0053, 489.9293, 490.2352]], grad_fn=&lt;StackBackward&gt;), &#39;labels&#39;: tensor([18, 15]), &#39;scores&#39;: tensor([0.9978, 0.0697], grad_fn=&lt;IndexBackward&gt;), &#39;masks&#39;: tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          ...,
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.]]],
+
+
+        [[[0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          ...,
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.],
+          [0., 0., 0.,  ..., 0., 0., 0.]]]], grad_fn=&lt;UnsqueezeBackward0&gt;)}]
+</pre></div>
+</div>
+<p>Let’s break this down. For each image in the batch, the model outputs some
+detections (or instances). The number of detections varies for each input
+image. Each instance is described by its bounding box, its label, its score
+and its mask.</p>
+<p>The way the output is organized is as follows: the output is a list of length
+<code class="docutils literal notranslate"><span class="pre">batch_size</span></code>. Each entry in the list corresponds to an input image, and it
+is a dict with keys ‘boxes’, ‘labels’, ‘scores’, and ‘masks’. Each value
+associated to those keys has <code class="docutils literal notranslate"><span class="pre">num_instances</span></code> elements in it.  In our case
+above there are 3 instances detected in the first image, and 2 instances in
+the second one.</p>
+<p>The boxes can be plotted with <a class="reference internal" href="../utils.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a>
+as above, but here we’re more interested in the masks. These masks are quite
+different from the masks that we saw above for the semantic segmentation
+models.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_output</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">dog1_masks</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_output</span></a><span class="p">[</span><span class="s1">&#39;masks&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shape = </span><span class="si">{</span><span class="n">dog1_masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype = </span><span class="si">{</span><span class="n">dog1_masks</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;min = </span><span class="si">{</span><span class="n">dog1_masks</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, max = </span><span class="si">{</span><span class="n">dog1_masks</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([3, 1, 500, 500]), dtype = torch.float32, min = 0.0, max = 0.9999862909317017
+</pre></div>
+</div>
+<p>Here the masks corresponds to probabilities indicating, for each pixel, how
+likely it is to belong to the predicted label of that instance. Those
+predicted labels correspond to the ‘labels’ element in the same output dict.
+Let’s see which labels were predicted for the instances of the first image.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_classes</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;__background__&#39;</span><span class="p">,</span> <span class="s1">&#39;person&#39;</span><span class="p">,</span> <span class="s1">&#39;bicycle&#39;</span><span class="p">,</span> <span class="s1">&#39;car&#39;</span><span class="p">,</span> <span class="s1">&#39;motorcycle&#39;</span><span class="p">,</span> <span class="s1">&#39;airplane&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;truck&#39;</span><span class="p">,</span> <span class="s1">&#39;boat&#39;</span><span class="p">,</span> <span class="s1">&#39;traffic light&#39;</span><span class="p">,</span> <span class="s1">&#39;fire hydrant&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;stop sign&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;parking meter&#39;</span><span class="p">,</span> <span class="s1">&#39;bench&#39;</span><span class="p">,</span> <span class="s1">&#39;bird&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;horse&#39;</span><span class="p">,</span> <span class="s1">&#39;sheep&#39;</span><span class="p">,</span> <span class="s1">&#39;cow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;elephant&#39;</span><span class="p">,</span> <span class="s1">&#39;bear&#39;</span><span class="p">,</span> <span class="s1">&#39;zebra&#39;</span><span class="p">,</span> <span class="s1">&#39;giraffe&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;backpack&#39;</span><span class="p">,</span> <span class="s1">&#39;umbrella&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;handbag&#39;</span><span class="p">,</span> <span class="s1">&#39;tie&#39;</span><span class="p">,</span> <span class="s1">&#39;suitcase&#39;</span><span class="p">,</span> <span class="s1">&#39;frisbee&#39;</span><span class="p">,</span> <span class="s1">&#39;skis&#39;</span><span class="p">,</span> <span class="s1">&#39;snowboard&#39;</span><span class="p">,</span> <span class="s1">&#39;sports ball&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;kite&#39;</span><span class="p">,</span> <span class="s1">&#39;baseball bat&#39;</span><span class="p">,</span> <span class="s1">&#39;baseball glove&#39;</span><span class="p">,</span> <span class="s1">&#39;skateboard&#39;</span><span class="p">,</span> <span class="s1">&#39;surfboard&#39;</span><span class="p">,</span> <span class="s1">&#39;tennis racket&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bottle&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;wine glass&#39;</span><span class="p">,</span> <span class="s1">&#39;cup&#39;</span><span class="p">,</span> <span class="s1">&#39;fork&#39;</span><span class="p">,</span> <span class="s1">&#39;knife&#39;</span><span class="p">,</span> <span class="s1">&#39;spoon&#39;</span><span class="p">,</span> <span class="s1">&#39;bowl&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;banana&#39;</span><span class="p">,</span> <span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="s1">&#39;sandwich&#39;</span><span class="p">,</span> <span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="s1">&#39;broccoli&#39;</span><span class="p">,</span> <span class="s1">&#39;carrot&#39;</span><span class="p">,</span> <span class="s1">&#39;hot dog&#39;</span><span class="p">,</span> <span class="s1">&#39;pizza&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;donut&#39;</span><span class="p">,</span> <span class="s1">&#39;cake&#39;</span><span class="p">,</span> <span class="s1">&#39;chair&#39;</span><span class="p">,</span> <span class="s1">&#39;couch&#39;</span><span class="p">,</span> <span class="s1">&#39;potted plant&#39;</span><span class="p">,</span> <span class="s1">&#39;bed&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;dining table&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;toilet&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;tv&#39;</span><span class="p">,</span> <span class="s1">&#39;laptop&#39;</span><span class="p">,</span> <span class="s1">&#39;mouse&#39;</span><span class="p">,</span> <span class="s1">&#39;remote&#39;</span><span class="p">,</span> <span class="s1">&#39;keyboard&#39;</span><span class="p">,</span> <span class="s1">&#39;cell phone&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;microwave&#39;</span><span class="p">,</span> <span class="s1">&#39;oven&#39;</span><span class="p">,</span> <span class="s1">&#39;toaster&#39;</span><span class="p">,</span> <span class="s1">&#39;sink&#39;</span><span class="p">,</span> <span class="s1">&#39;refrigerator&#39;</span><span class="p">,</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span> <span class="s1">&#39;book&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;clock&#39;</span><span class="p">,</span> <span class="s1">&#39;vase&#39;</span><span class="p">,</span> <span class="s1">&#39;scissors&#39;</span><span class="p">,</span> <span class="s1">&#39;teddy bear&#39;</span><span class="p">,</span> <span class="s1">&#39;hair drier&#39;</span><span class="p">,</span> <span class="s1">&#39;toothbrush&#39;</span>
+<span class="p">]</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_class_to_idx</span></a> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_classes</span></a><span class="p">)}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;For the first dog, the following instances were detected:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_classes</span></a><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_output</span></a><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">]])</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>For the first dog, the following instances were detected:
+[&#39;dog&#39;, &#39;person&#39;, &#39;person&#39;]
+</pre></div>
+</div>
+<p>Interestingly, the model detects two persons in the image. Let’s go ahead and
+plot those masks. Since <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a>
+expects boolean masks, we need to convert those probabilities into boolean
+values. Remember that the semantic of those masks is “How likely is this pixel
+to belong to the predicted class?”. As a result, a natural way of converting
+those masks into boolean values is to threshold them with the 0.5 probability
+(one could also choose a different threshold).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">proba_threshold</span></a> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">dog1_bool_masks</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_output</span></a><span class="p">[</span><span class="s1">&#39;masks&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">proba_threshold</span></a>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shape = </span><span class="si">{</span><span class="n">dog1_bool_masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype = </span><span class="si">{</span><span class="n">dog1_bool_masks</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># There&#39;s an extra dimension (1) to the masks. We need to remove it</span>
+<span class="n">dog1_bool_masks</span> <span class="o">=</span> <span class="n">dog1_bool_masks</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">(</span><span class="n">draw_segmentation_masks</span><span class="p">(</span><span class="n">dog1_int</span><span class="p">,</span> <span class="n">dog1_bool_masks</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">))</span>
+</pre></div>
+</div>
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_009.png" />
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([3, 1, 500, 500]), dtype = torch.bool
+</pre></div>
+</div>
+<p>The model seems to have properly detected the dog, but it also confused trees
+with people. Looking more closely at the scores will help us plotting more
+relevant masks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_output</span></a><span class="p">[</span><span class="s1">&#39;scores&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([0.9987, 0.7187, 0.6525], grad_fn=&lt;IndexBackward&gt;)
+</pre></div>
+</div>
+<p>Clearly the model is less confident about the dog detection than it is about
+the people detections. That’s good news. When plotting the masks, we can ask
+for only those that have a good score. Let’s use a score threshold of .75
+here, and also plot the masks of the second dog.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">score_threshold</span></a> <span class="o">=</span> <span class="mf">.75</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">boolean_masks</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">out</span><span class="p">[</span><span class="s1">&#39;masks&#39;</span><span class="p">][</span><span class="n">out</span><span class="p">[</span><span class="s1">&#39;scores&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">score_threshold</span></a><span class="p">]</span> <span class="o">&gt;</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">proba_threshold</span></a>
+    <span class="k">for</span> <span class="n">out</span> <span class="ow">in</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a>
+<span class="p">]</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">draw_segmentation_masks</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">mask</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">img</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch_int</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">boolean_masks</span></a><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_010.png" />
+<p>The two ‘people’ masks in the first image where not selected because they have
+a lower score than the score threshold. Similarly in the second image, the
+instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  11.568 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-visualization-utils-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/1031091ece7f376de0a2c941f5c11f30/plot_visualization_utils.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_visualization_utils.py</span></code></a></p>
@@ -474,6 +765,7 @@ of dtype <cite>uint8</cite>.</p>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </section>
 </section>
+</section>
 
 
              </article>
@@ -483,10 +775,8 @@ of dtype <cite>uint8</cite>.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="plot_scripted_tensor_transforms.html" class="btn btn-neutral float-right" title="Tensor transforms and JIT" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
-      
-        <a href="index.html" class="btn btn-neutral" title="Example gallery" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="plot_transforms.html" class="btn btn-neutral" title="Illustration of transforms" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -521,7 +811,11 @@ of dtype <cite>uint8</cite>.</p>
 <li><a class="reference internal" href="#">Visualization utilities</a><ul>
 <li><a class="reference internal" href="#visualizing-a-grid-of-images">Visualizing a grid of images</a></li>
 <li><a class="reference internal" href="#visualizing-bounding-boxes">Visualizing bounding boxes</a></li>
-<li><a class="reference internal" href="#visualizing-segmentation-masks">Visualizing segmentation masks</a></li>
+<li><a class="reference internal" href="#visualizing-segmentation-masks">Visualizing segmentation masks</a><ul>
+<li><a class="reference internal" href="#semantic-segmentation-models">Semantic segmentation models</a></li>
+<li><a class="reference internal" href="#instance-segmentation-models">Instance segmentation models</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+c88e9b2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+45c3dcb ) &#x25BC</a>
     </div>
     
 
@@ -347,7 +347,14 @@ images separately rather than the (min, max) over all images. Default: <code cla
 <dd class="field-odd"><p>grid (Tensor)</p>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">make_grid</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id1">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="function">
 <dt id="torchvision.utils.save_image">
@@ -398,31 +405,48 @@ also search in other directories, such as the <cite>fonts/</cite> directory on W
 <dd class="field-odd"><p>img (Tensor[C, H, W])</p>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">draw_bounding_boxes</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id2">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="function">
 <dt id="torchvision.utils.draw_segmentation_masks">
-<code class="sig-prename descclassname">torchvision.utils.</code><code class="sig-name descname">draw_segmentation_masks</code><span class="sig-paren">(</span><em class="sig-param">image: torch.Tensor</em>, <em class="sig-param">masks: torch.Tensor</em>, <em class="sig-param">alpha: float = 0.2</em>, <em class="sig-param">colors: Optional[List[Union[str</em>, <em class="sig-param">Tuple[int</em>, <em class="sig-param">int</em>, <em class="sig-param">int]]]] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#draw_segmentation_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.draw_segmentation_masks" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">torchvision.utils.</code><code class="sig-name descname">draw_segmentation_masks</code><span class="sig-paren">(</span><em class="sig-param">image: torch.Tensor</em>, <em class="sig-param">masks: torch.Tensor</em>, <em class="sig-param">alpha: float = 0.8</em>, <em class="sig-param">colors: Optional[List[Union[str</em>, <em class="sig-param">Tuple[int</em>, <em class="sig-param">int</em>, <em class="sig-param">int]]]] = None</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="reference internal" href="_modules/torchvision/utils.html#draw_segmentation_masks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.utils.draw_segmentation_masks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws segmentation masks on given RGB image.
 The values of the input image should be uint8 between 0 and 255.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>image</strong> (<em>Tensor</em>) – Tensor of shape (3 x H x W) and dtype uint8.</p></li>
-<li><p><strong>masks</strong> (<em>Tensor</em>) – Tensor of shape (num_masks, H, W). Each containing probability of predicted class.</p></li>
-<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Float number between 0 and 1 denoting factor of transparency of masks.</p></li>
-<li><p><strong>colors</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em>, </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – List containing the colors of masks. The colors can
-be represented as <cite>str</cite> or <cite>Tuple[int, int, int]</cite>.</p></li>
+<li><p><strong>image</strong> (<em>Tensor</em>) – Tensor of shape (3, H, W) and dtype uint8.</p></li>
+<li><p><strong>masks</strong> (<em>Tensor</em>) – Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – Float number between 0 and 1 denoting the transparency of the masks.
+0 means full transparency, 1 means no transparency.</p></li>
+<li><p><strong>colors</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.9)"><em>None</em></a>) – List containing the colors of the masks. The colors can
+be represented as PIL strings e.g. “red” or “#FF00FF”, or as RGB tuples e.g. <code class="docutils literal notranslate"><span class="pre">(240,</span> <span class="pre">10,</span> <span class="pre">157)</span></code>.
+When <code class="docutils literal notranslate"><span class="pre">masks</span></code> has a single entry of shape (H, W), you can pass a single color instead of a list
+with one element. By default, random colors are generated for each mask.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Image Tensor of dtype uint8 with segmentation masks plotted.</p>
+<dd class="field-even"><p>Image Tensor, with segmentation masks drawn on top.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>img (Tensor[C, H, W])</p>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">draw_segmentation_masks</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id3">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </section>
 

@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+c88e9b2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.10.0a0+45c3dcb ) &#x25BC</a>
     </div>
     
 
@@ -1286,6 +1286,7 @@ architectures for semantic segmentation:</p>
 The images have to be loaded in to a range of <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> and then normalized using
 <code class="docutils literal notranslate"><span class="pre">mean</span> <span class="pre">=</span> <span class="pre">[0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406]</span></code> and <code class="docutils literal notranslate"><span class="pre">std</span> <span class="pre">=</span> <span class="pre">[0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225]</span></code>.
 They have been trained on images resized such that their minimum size is 520.</p>
+<p>For details on how to plot the masks of such models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#semantic-seg-output"><span class="std std-ref">Semantic segmentation models</span></a>.</p>
 <p>The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
 present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
 <code class="docutils literal notranslate"><span class="pre">references/segmentation/coco_utils.py</span></code>. The classes that the pre-trained model outputs are the following,
@@ -1354,7 +1355,14 @@ contains the same classes as Pascal VOC</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">fcn_resnet50</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id39">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id39" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="function">
 <dt id="torchvision.models.segmentation.fcn_resnet101">
@@ -1391,7 +1399,14 @@ contains the same classes as Pascal VOC</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">deeplabv3_resnet50</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id40">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id40" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="function">
 <dt id="torchvision.models.segmentation.deeplabv3_resnet101">
@@ -1444,12 +1459,19 @@ contains the same classes as Pascal VOC</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">lraspp_mobilenet_v3_large</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id41">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id41" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </section>
 </section>
 <section id="object-detection-instance-segmentation-and-person-keypoint-detection">
-<h2>Object Detection, Instance Segmentation and Person Keypoint Detection<a class="headerlink" href="#object-detection-instance-segmentation-and-person-keypoint-detection" title="Permalink to this headline">¶</a></h2>
+<span id="object-det-inst-seg-pers-keypoint-det"></span><h2>Object Detection, Instance Segmentation and Person Keypoint Detection<a class="headerlink" href="#object-detection-instance-segmentation-and-person-keypoint-detection" title="Permalink to this headline">¶</a></h2>
 <p>The models subpackage contains definitions for the following model
 architectures for detection:</p>
 <ul class="simple">
@@ -1463,7 +1485,8 @@ keypoint detection are initialized with the classification models
 in torchvision.</p>
 <p>The models expect a list of <code class="docutils literal notranslate"><span class="pre">Tensor[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>, in the range <code class="docutils literal notranslate"><span class="pre">0-1</span></code>.
 The models internally resize the images but the behaviour varies depending
-on the model. Check the constructor of the models for more information.</p>
+on the model. Check the constructor of the models for more information. The
+output format of such models is illustrated in <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <p>For object detection and instance segmentation, the pre-trained
 models return the predictions of the following classes:</p>
 <blockquote>
@@ -1719,15 +1742,16 @@ containing:</p>
 losses for both the RPN and the R-CNN.</p>
 <p>During inference, the model requires only the input tensors, and returns the post-processed
 predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
-follows:</p>
+follows, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of detections:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</p></li>
-<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</p></li>
-<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</p></li>
+<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each detection</p></li>
+<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores of each detection</p></li>
 </ul>
 </div></blockquote>
+<p>For more details on the output, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <p>Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">fasterrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1763,13 +1787,22 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id42">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id42" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="function">
 <dt id="torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn">
 <code class="sig-prename descclassname">torchvision.models.detection.</code><code class="sig-name descname">fasterrcnn_mobilenet_v3_large_fpn</code><span class="sig-paren">(</span><em class="sig-param">pretrained=False</em>, <em class="sig-param">progress=True</em>, <em class="sig-param">num_classes=91</em>, <em class="sig-param">pretrained_backbone=True</em>, <em class="sig-param">trainable_backbone_layers=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_mobilenet_v3_large_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
-It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See <cite>fasterrcnn_resnet50_fpn</cite> for more details.</p>
+It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
+<a class="reference internal" href="#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a> for more
+details.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -1795,7 +1828,9 @@ Valid values are between 0 and 6, with 6 meaning all backbone layers are trainab
 <dt id="torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn">
 <code class="sig-prename descclassname">torchvision.models.detection.</code><code class="sig-name descname">fasterrcnn_mobilenet_v3_large_320_fpn</code><span class="sig-paren">(</span><em class="sig-param">pretrained=False</em>, <em class="sig-param">progress=True</em>, <em class="sig-param">num_classes=91</em>, <em class="sig-param">pretrained_backbone=True</em>, <em class="sig-param">trainable_backbone_layers=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_mobilenet_v3_large_320_fpn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
-It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See <cite>fasterrcnn_resnet50_fpn</cite> for more details.</p>
+It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
+<a class="reference internal" href="#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a> for more
+details.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">fasterrcnn_mobilenet_v3_large_320_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -1840,15 +1875,16 @@ containing:</p>
 losses.</p>
 <p>During inference, the model requires only the input tensors, and returns the post-processed
 predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
-follows:</p>
+follows, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of detections:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</p></li>
-<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</p></li>
-<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</p></li>
+<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each detection</p></li>
+<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores of each detection</p></li>
 </ul>
 </div></blockquote>
+<p>For more details on the output, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">retinanet_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -1868,7 +1904,14 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">retinanet_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id43">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id43" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </section>
 <section id="id37">
@@ -1876,7 +1919,34 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 <dl class="function">
 <dt id="torchvision.models.detection.ssd300_vgg16">
 <code class="sig-prename descclassname">torchvision.models.detection.</code><code class="sig-name descname">ssd300_vgg16</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">num_classes: int = 91</em>, <em class="sig-param">pretrained_backbone: bool = True</em>, <em class="sig-param">trainable_backbone_layers: Optional[int] = None</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/ssd.html#ssd300_vgg16"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.ssd300_vgg16" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructs an SSD model with input size 300x300 and a VGG16 backbone. See <cite>SSD</cite> for more details.</p>
+<dd><p>Constructs an SSD model with input size 300x300 and a VGG16 backbone.</p>
+<p>Reference: <a class="reference external" href="https://arxiv.org/abs/1512.02325">“SSD: Single Shot MultiBox Detector”</a>.</p>
+<p>The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
+image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+to a fixed size before passing it to the backbone.</p>
+<p>The behavior of the model changes depending if it is in training or evaluation mode.</p>
+<p>During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the ground-truth boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</p></li>
+<li><p>labels (Int64Tensor[N]): the class label for each ground-truth box</p></li>
+</ul>
+</div></blockquote>
+<p>The model returns a Dict[Tensor] during training, containing the classification and regression
+losses.</p>
+<p>During inference, the model requires only the input tensors, and returns the post-processed
+predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
+follows, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of detections:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
+<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</p></li>
+<li><p>labels (Int64Tensor[N]): the predicted labels for each detection</p></li>
+<li><p>scores (Tensor[N]): the scores for each detection</p></li>
+</ul>
+</div></blockquote>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">ssd300_vgg16</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -1904,7 +1974,8 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 <dl class="function">
 <dt id="torchvision.models.detection.ssdlite320_mobilenet_v3_large">
 <code class="sig-prename descclassname">torchvision.models.detection.</code><code class="sig-name descname">ssdlite320_mobilenet_v3_large</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False, progress: bool = True, num_classes: int = 91, pretrained_backbone: bool = False, trainable_backbone_layers: Optional[int] = None, norm_layer: Optional[Callable[[...], torch.nn.modules.module.Module]] = None, **kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/ssdlite.html#ssdlite320_mobilenet_v3_large"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone. See <cite>SSD</cite> for more details.</p>
+<dd><p>Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone.</p>
+<p>See <a class="reference internal" href="#torchvision.models.detection.ssd300_vgg16" title="torchvision.models.detection.ssd300_vgg16"><code class="xref py py-func docutils literal notranslate"><span class="pre">ssd300_vgg16()</span></code></a> for more details.</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">ssdlite320_mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -1953,18 +2024,19 @@ containing:</p>
 losses for both the RPN and the R-CNN, and the mask loss.</p>
 <p>During inference, the model requires only the input tensors, and returns the post-processed
 predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
-follows:</p>
+follows, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of detected instances:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</p></li>
-<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</p></li>
-<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</p></li>
+<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each instance</p></li>
+<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each instance</p></li>
 <li><p>masks (<code class="docutils literal notranslate"><span class="pre">UInt8Tensor[N,</span> <span class="pre">1,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>): the predicted masks for each instance, in <code class="docutils literal notranslate"><span class="pre">0-1</span></code> range. In order to
 obtain the final segmentation masks, the soft masks can be thresholded, generally
 with a value of 0.5 (<code class="docutils literal notranslate"><span class="pre">mask</span> <span class="pre">&gt;=</span> <span class="pre">0.5</span></code>)</p></li>
 </ul>
 </div></blockquote>
+<p>For more details on the output and on how to plot the masks, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <p>Mask R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">maskrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1988,7 +2060,14 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">maskrcnn_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id44">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id44" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </section>
 <section id="keypoint-r-cnn">
@@ -2015,16 +2094,17 @@ format <code class="docutils literal notranslate"><span class="pre">[x,</span> <
 losses for both the RPN and the R-CNN, and the keypoint loss.</p>
 <p>During inference, the model requires only the input tensors, and returns the post-processed
 predictions as a <code class="docutils literal notranslate"><span class="pre">List[Dict[Tensor]]</span></code>, one for each input image. The fields of the <code class="docutils literal notranslate"><span class="pre">Dict</span></code> are as
-follows:</p>
+follows, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of detected instances:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>boxes (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">4]</span></code>): the predicted boxes in <code class="docutils literal notranslate"><span class="pre">[x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2]</span></code> format, with
 <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span> <span class="pre">&lt;=</span> <span class="pre">W</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span> <span class="pre">&lt;=</span> <span class="pre">H</span></code>.</p></li>
-<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each image</p></li>
-<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each prediction</p></li>
+<li><p>labels (<code class="docutils literal notranslate"><span class="pre">Int64Tensor[N]</span></code>): the predicted labels for each instance</p></li>
+<li><p>scores (<code class="docutils literal notranslate"><span class="pre">Tensor[N]</span></code>): the scores or each instance</p></li>
 <li><p>keypoints (<code class="docutils literal notranslate"><span class="pre">FloatTensor[N,</span> <span class="pre">K,</span> <span class="pre">3]</span></code>): the locations of the predicted keypoints, in <code class="docutils literal notranslate"><span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">v]</span></code> format.</p></li>
 </ul>
 </div></blockquote>
+<p>For more details on the output, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <p>Keypoint R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">keypointrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -2049,7 +2129,14 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">keypointrcnn_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><figure class="align-default" id="id45">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id45" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </section>
 </section>
