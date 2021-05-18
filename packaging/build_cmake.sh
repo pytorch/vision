@@ -21,7 +21,7 @@ setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
 
 if [[ "$OSTYPE" == "msys" ]]; then
-    conda install -yq conda-build cmake pillow future
+    conda install -yq conda-build cmake pillow>=5.3.0 future
     pip install dataclasses
 fi
 

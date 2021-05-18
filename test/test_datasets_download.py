@@ -392,6 +392,19 @@ def widerface():
     )
 
 
+def kitti():
+    return itertools.chain(
+        *[
+            collect_download_configs(
+                lambda train=train: datasets.Kitti(ROOT, train=train, download=True),
+                name=f"Kitti, {'train' if train else 'test'}",
+                file="kitti",
+            )
+            for train in (True, False)
+        ]
+    )
+
+
 def make_parametrize_kwargs(download_configs):
     argvalues = []
     ids = []
@@ -427,6 +440,7 @@ def make_parametrize_kwargs(download_configs):
             usps(),
             celeba(),
             widerface(),
+            kitti(),
         )
     )
 )

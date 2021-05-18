@@ -17,6 +17,7 @@ from .video import (
     write_video,
 )
 from .image import (
+    ImageReadMode,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -186,6 +187,7 @@ __all__ = [
     "_read_video_meta_data",
     "VideoMetaData",
     "Timebase",
+    "ImageReadMode",
     "decode_image",
     "decode_jpeg",
     "decode_png",

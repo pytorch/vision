@@ -1,22 +1,32 @@
+import itertools
 import os
 import unittest
 import colorsys
 import math
 
 import numpy as np
+import pytest
 
 import torch
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
+import torchvision.transforms as T
 from torchvision.transforms import InterpolationMode
 
-from common_utils import TransformsTester
+from common_utils import TransformsTester, cpu_and_gpu
 
 from typing import Dict, List, Sequence, Tuple
 
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
+
+
+@pytest.fixture(scope='module')
+def tester():
+    # instanciation of the Tester class used for equality assertions and other utilities
+    # TODO: remove this eventually when we don't need the class anymore
+    return Tester()
 
 
 class Tester(TransformsTester):
@@ -313,85 +323,6 @@ class Tester(TransformsTester):
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
                     self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
-
-    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max",
-                        dts=(None, torch.float32, torch.float64)):
-        script_fn = torch.jit.script(fn)
-        torch.manual_seed(15)
-        tensor, pil_img = self._create_data(26, 34, device=self.device)
-        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
-
-        for dt in dts:
-
-            if dt is not None:
-                tensor = F.convert_image_dtype(tensor, dt)
-                batch_tensors = F.convert_image_dtype(batch_tensors, dt)
-
-            for config in configs:
-                adjusted_tensor = fn_t(tensor, **config)
-                adjusted_pil = fn_pil(pil_img, **config)
-                scripted_result = script_fn(tensor, **config)
-                msg = "{}, {}".format(dt, config)
-                self.assertEqual(adjusted_tensor.dtype, scripted_result.dtype, msg=msg)
-                self.assertEqual(adjusted_tensor.size()[1:], adjusted_pil.size[::-1], msg=msg)
-
-                rbg_tensor = adjusted_tensor
-
-                if adjusted_tensor.dtype != torch.uint8:
-                    rbg_tensor = F.convert_image_dtype(adjusted_tensor, torch.uint8)
-
-                # Check that max difference does not exceed 2 in [0, 255] range
-                # Exact matching is not possible due to incompatibility convert_image_dtype and PIL results
-                self.approxEqualTensorToPIL(rbg_tensor.float(), adjusted_pil, tol=tol, msg=msg, agg_method=agg_method)
-
-                atol = 1e-6
-                if adjusted_tensor.dtype == torch.uint8 and "cuda" in torch.device(self.device).type:
-                    atol = 1.0
-                self.assertTrue(adjusted_tensor.allclose(scripted_result, atol=atol), msg=msg)
-
-                self._test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=atol, **config)
-
-    def test_adjust_brightness(self):
-        self._test_adjust_fn(
-            F.adjust_brightness,
-            F_pil.adjust_brightness,
-            F_t.adjust_brightness,
-            [{"brightness_factor": f} for f in [0.1, 0.5, 1.0, 1.34, 2.5]]
-        )
-
-    def test_adjust_contrast(self):
-        self._test_adjust_fn(
-            F.adjust_contrast,
-            F_pil.adjust_contrast,
-            F_t.adjust_contrast,
-            [{"contrast_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]]
-        )
-
-    def test_adjust_saturation(self):
-        self._test_adjust_fn(
-            F.adjust_saturation,
-            F_pil.adjust_saturation,
-            F_t.adjust_saturation,
-            [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.5, 2.0]]
-        )
-
-    def test_adjust_hue(self):
-        self._test_adjust_fn(
-            F.adjust_hue,
-            F_pil.adjust_hue,
-            F_t.adjust_hue,
-            [{"hue_factor": f} for f in [-0.45, -0.25, 0.0, 0.25, 0.45]],
-            tol=16.1,
-            agg_method="max"
-        )
-
-    def test_adjust_gamma(self):
-        self._test_adjust_fn(
-            F.adjust_gamma,
-            F_pil.adjust_gamma,
-            F_t.adjust_gamma,
-            [{"gamma": g1, "gain": g2} for g1, g2 in zip([0.8, 1.0, 1.2], [0.7, 1.0, 1.3])]
-        )
 
     def test_resize(self):
         script_fn = torch.jit.script(F.resize)
@@ -759,88 +690,6 @@ class Tester(TransformsTester):
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
 
-    def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
-        dt = tensor.dtype
-        for f in [None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )]:
-            for r in [NEAREST, ]:
-                for spoints, epoints in test_configs:
-                    f_pil = int(f[0]) if f is not None and len(f) == 1 else f
-                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r,
-                                                fill=f_pil)
-                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-
-                    for fn in [F.perspective, scripted_transform]:
-                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r, fill=f).cpu()
-
-                        if out_tensor.dtype != torch.uint8:
-                            out_tensor = out_tensor.to(torch.uint8)
-
-                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                        # Tolerance : less than 5% of different pixels
-                        self.assertLess(
-                            ratio_diff_pixels,
-                            0.05,
-                            msg="{}: {}\n{} vs \n{}".format(
-                                (f, r, dt, spoints, epoints),
-                                ratio_diff_pixels,
-                                out_tensor[0, :7, :7],
-                                out_pil_tensor[0, :7, :7]
-                            )
-                        )
-
-    def test_perspective(self):
-
-        from torchvision.transforms import RandomPerspective
-
-        data = [self._create_data(26, 34, device=self.device), self._create_data(26, 26, device=self.device)]
-        scripted_transform = torch.jit.script(F.perspective)
-
-        for tensor, pil_img in data:
-
-            test_configs = [
-                [[[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]],
-                [[[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]],
-                [[[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]],
-            ]
-            n = 10
-            test_configs += [
-                RandomPerspective.get_params(pil_img.size[0], pil_img.size[1], i / n) for i in range(n)
-            ]
-
-            for dt in [None, torch.float32, torch.float64, torch.float16]:
-
-                if dt == torch.float16 and torch.device(self.device).type == "cpu":
-                    # skip float16 on CPU case
-                    continue
-
-                if dt is not None:
-                    tensor = tensor.to(dtype=dt)
-
-                self._test_perspective(tensor, pil_img, scripted_transform, test_configs)
-
-                batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
-                if dt is not None:
-                    batch_tensors = batch_tensors.to(dtype=dt)
-
-                # Ignore the equivalence between scripted and regular function on float16 cuda. The pixels at
-                # the border may be entirely different due to small rounding errors.
-                scripted_fn_atol = -1 if (dt == torch.float16 and self.device == "cuda") else 1e-8
-
-                for spoints, epoints in test_configs:
-                    self._test_fn_on_batch(
-                        batch_tensors, F.perspective, scripted_fn_atol=scripted_fn_atol,
-                        startpoints=spoints, endpoints=epoints, interpolation=NEAREST
-                    )
-
-        # assert changed type warning
-        spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
-        epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
-            res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
-            res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
-            self.assertTrue(res1.equal(res2))
-
     def test_gaussian_blur(self):
         small_image_tensor = torch.from_numpy(
             np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
@@ -905,77 +754,6 @@ class Tester(TransformsTester):
                                 msg="{}, {}".format(ksize, sigma)
                             )
 
-    def test_invert(self):
-        self._test_adjust_fn(
-            F.invert,
-            F_pil.invert,
-            F_t.invert,
-            [{}],
-            tol=1.0,
-            agg_method="max"
-        )
-
-    def test_posterize(self):
-        self._test_adjust_fn(
-            F.posterize,
-            F_pil.posterize,
-            F_t.posterize,
-            [{"bits": bits} for bits in range(0, 8)],
-            tol=1.0,
-            agg_method="max",
-            dts=(None,)
-        )
-
-    def test_solarize(self):
-        self._test_adjust_fn(
-            F.solarize,
-            F_pil.solarize,
-            F_t.solarize,
-            [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255]],
-            tol=1.0,
-            agg_method="max",
-            dts=(None,)
-        )
-        self._test_adjust_fn(
-            F.solarize,
-            lambda img, threshold: F_pil.solarize(img, 255 * threshold),
-            F_t.solarize,
-            [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0]],
-            tol=1.0,
-            agg_method="max",
-            dts=(torch.float32, torch.float64)
-        )
-
-    def test_adjust_sharpness(self):
-        self._test_adjust_fn(
-            F.adjust_sharpness,
-            F_pil.adjust_sharpness,
-            F_t.adjust_sharpness,
-            [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]]
-        )
-
-    def test_autocontrast(self):
-        self._test_adjust_fn(
-            F.autocontrast,
-            F_pil.autocontrast,
-            F_t.autocontrast,
-            [{}],
-            tol=1.0,
-            agg_method="max"
-        )
-
-    def test_equalize(self):
-        torch.set_deterministic(False)
-        self._test_adjust_fn(
-            F.equalize,
-            F_pil.equalize,
-            F_t.equalize,
-            [{}],
-            tol=1.0,
-            agg_method="max",
-            dts=(None,)
-        )
-
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
@@ -994,6 +772,370 @@ class CUDATester(Tester):
         scaled_cpu = F_t._scale_channel(img_chan)
         scaled_cuda = F_t._scale_channel(img_chan.to('cuda'))
         self.assertTrue(scaled_cpu.equal(scaled_cuda.to('cpu')))
+
+
+def _get_data_dims_and_points_for_perspective():
+    # Ideally we would parametrize independently over data dims and points, but
+    # we want to tests on some points that also depend on the data dims.
+    # Pytest doesn't support covariant parametrization, so we do it somewhat manually here.
+
+    data_dims = [(26, 34), (26, 26)]
+    points = [
+        [[[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]],
+        [[[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]],
+        [[[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]],
+    ]
+
+    dims_and_points = list(itertools.product(data_dims, points))
+
+    # up to here, we could just have used 2 @parametrized.
+    # Down below is the covarariant part as the points depend on the data dims.
+
+    n = 10
+    for dim in data_dims:
+        points += [
+            (dim, T.RandomPerspective.get_params(dim[1], dim[0], i / n))
+            for i in range(n)
+        ]
+    return dims_and_points
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dims_and_points', _get_data_dims_and_points_for_perspective())
+@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+@pytest.mark.parametrize('fill', (None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )))
+@pytest.mark.parametrize('fn', [F.perspective, torch.jit.script(F.perspective)])
+def test_perspective_pil_vs_tensor(device, dims_and_points, dt, fill, fn, tester):
+
+    if dt == torch.float16 and device == "cpu":
+        # skip float16 on CPU case
+        return
+
+    data_dims, (spoints, epoints) = dims_and_points
+
+    tensor, pil_img = tester._create_data(*data_dims, device=device)
+    if dt is not None:
+        tensor = tensor.to(dtype=dt)
+
+    interpolation = NEAREST
+    fill_pil = int(fill[0]) if fill is not None and len(fill) == 1 else fill
+    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=interpolation,
+                                fill=fill_pil)
+    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+    out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=interpolation, fill=fill).cpu()
+
+    if out_tensor.dtype != torch.uint8:
+        out_tensor = out_tensor.to(torch.uint8)
+
+    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+    # Tolerance : less than 5% of different pixels
+    assert ratio_diff_pixels < 0.05
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dims_and_points', _get_data_dims_and_points_for_perspective())
+@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+def test_perspective_batch(device, dims_and_points, dt, tester):
+
+    if dt == torch.float16 and device == "cpu":
+        # skip float16 on CPU case
+        return
+
+    data_dims, (spoints, epoints) = dims_and_points
+
+    batch_tensors = tester._create_data_batch(*data_dims, num_samples=4, device=device)
+    if dt is not None:
+        batch_tensors = batch_tensors.to(dtype=dt)
+
+    # Ignore the equivalence between scripted and regular function on float16 cuda. The pixels at
+    # the border may be entirely different due to small rounding errors.
+    scripted_fn_atol = -1 if (dt == torch.float16 and device == "cuda") else 1e-8
+    tester._test_fn_on_batch(
+        batch_tensors, F.perspective, scripted_fn_atol=scripted_fn_atol,
+        startpoints=spoints, endpoints=epoints, interpolation=NEAREST
+    )
+
+
+def test_perspective_interpolation_warning(tester):
+    # assert changed type warning
+    spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
+    epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
+    tensor = torch.randint(0, 256, (3, 26, 26))
+    with tester.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+        res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
+        res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
+        tester.assertTrue(res1.equal(res2))
+
+
+@pytest.mark.parametrize('device', ["cpu", ])
+@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+@pytest.mark.parametrize('size', [[96, 72], [96, 420], [420, 72]])
+@pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
+def test_resize_antialias(device, dt, size, interpolation, tester):
+
+    if dt == torch.float16 and device == "cpu":
+        # skip float16 on CPU case
+        return
+
+    script_fn = torch.jit.script(F.resize)
+    tensor, pil_img = tester._create_data(320, 290, device=device)
+
+    if dt is not None:
+        # This is a trivial cast to float of uint8 data to test all cases
+        tensor = tensor.to(dt)
+
+    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, antialias=True)
+    resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation)
+
+    tester.assertEqual(
+        resized_tensor.size()[1:], resized_pil_img.size[::-1],
+        msg=f"{size}, {interpolation}, {dt}"
+    )
+
+    resized_tensor_f = resized_tensor
+    # we need to cast to uint8 to compare with PIL image
+    if resized_tensor_f.dtype == torch.uint8:
+        resized_tensor_f = resized_tensor_f.to(torch.float)
+
+    tester.approxEqualTensorToPIL(
+        resized_tensor_f, resized_pil_img, tol=0.5, msg=f"{size}, {interpolation}, {dt}"
+    )
+
+    accepted_tol = 1.0 + 1e-5
+    if interpolation == BICUBIC:
+        # this overall mean value to make the tests pass
+        # High value is mostly required for test cases with
+        # downsampling and upsampling where we can not exactly
+        # match PIL implementation.
+        accepted_tol = 15.0
+
+    tester.approxEqualTensorToPIL(
+        resized_tensor_f, resized_pil_img, tol=accepted_tol, agg_method="max",
+        msg=f"{size}, {interpolation}, {dt}"
+    )
+
+    if isinstance(size, int):
+        script_size = [size, ]
+    else:
+        script_size = size
+
+    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, antialias=True)
+    tester.assertTrue(resized_tensor.equal(resize_result), msg=f"{size}, {interpolation}, {dt}")
+
+
+def check_functional_vs_PIL_vs_scripted(fn, fn_pil, fn_t, config, device, dtype, tol=2.0 + 1e-10, agg_method="max"):
+
+    tester = Tester()
+
+    script_fn = torch.jit.script(fn)
+    torch.manual_seed(15)
+    tensor, pil_img = tester._create_data(26, 34, device=device)
+    batch_tensors = tester._create_data_batch(16, 18, num_samples=4, device=device)
+
+    if dtype is not None:
+        tensor = F.convert_image_dtype(tensor, dtype)
+        batch_tensors = F.convert_image_dtype(batch_tensors, dtype)
+
+    out_fn_t = fn_t(tensor, **config)
+    out_pil = fn_pil(pil_img, **config)
+    out_scripted = script_fn(tensor, **config)
+    assert out_fn_t.dtype == out_scripted.dtype
+    assert out_fn_t.size()[1:] == out_pil.size[::-1]
+
+    rbg_tensor = out_fn_t
+
+    if out_fn_t.dtype != torch.uint8:
+        rbg_tensor = F.convert_image_dtype(out_fn_t, torch.uint8)
+
+    # Check that max difference does not exceed 2 in [0, 255] range
+    # Exact matching is not possible due to incompatibility convert_image_dtype and PIL results
+    tester.approxEqualTensorToPIL(rbg_tensor.float(), out_pil, tol=tol, agg_method=agg_method)
+
+    atol = 1e-6
+    if out_fn_t.dtype == torch.uint8 and "cuda" in torch.device(device).type:
+        atol = 1.0
+    assert out_fn_t.allclose(out_scripted, atol=atol)
+
+    # FIXME: fn will be scripted again in _test_fn_on_batch. We could avoid that.
+    tester._test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=atol, **config)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"brightness_factor": f} for f in (0.1, 0.5, 1.0, 1.34, 2.5)])
+def test_adjust_brightness(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.adjust_brightness,
+        F_pil.adjust_brightness,
+        F_t.adjust_brightness,
+        config,
+        device,
+        dtype,
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+def test_invert(device, dtype):
+    check_functional_vs_PIL_vs_scripted(
+        F.invert,
+        F_pil.invert,
+        F_t.invert,
+        {},
+        device,
+        dtype,
+        tol=1.0,
+        agg_method="max"
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('config', [{"bits": bits} for bits in range(0, 8)])
+def test_posterize(device, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.posterize,
+        F_pil.posterize,
+        F_t.posterize,
+        config,
+        device,
+        dtype=None,
+        tol=1.0,
+        agg_method="max",
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('config', [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255]])
+def test_solarize1(device, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.solarize,
+        F_pil.solarize,
+        F_t.solarize,
+        config,
+        device,
+        dtype=None,
+        tol=1.0,
+        agg_method="max",
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0]])
+def test_solarize2(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.solarize,
+        lambda img, threshold: F_pil.solarize(img, 255 * threshold),
+        F_t.solarize,
+        config,
+        device,
+        dtype,
+        tol=1.0,
+        agg_method="max",
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]])
+def test_adjust_sharpness(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.adjust_sharpness,
+        F_pil.adjust_sharpness,
+        F_t.adjust_sharpness,
+        config,
+        device,
+        dtype,
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+def test_autocontrast(device, dtype):
+    check_functional_vs_PIL_vs_scripted(
+        F.autocontrast,
+        F_pil.autocontrast,
+        F_t.autocontrast,
+        {},
+        device,
+        dtype,
+        tol=1.0,
+        agg_method="max"
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_equalize(device):
+    torch.set_deterministic(False)
+    check_functional_vs_PIL_vs_scripted(
+        F.equalize,
+        F_pil.equalize,
+        F_t.equalize,
+        {},
+        device,
+        dtype=None,
+        tol=1.0,
+        agg_method="max",
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"contrast_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]])
+def test_adjust_contrast(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.adjust_contrast,
+        F_pil.adjust_contrast,
+        F_t.adjust_contrast,
+        config,
+        device,
+        dtype
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.5, 2.0]])
+def test_adjust_saturation(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.adjust_saturation,
+        F_pil.adjust_saturation,
+        F_t.adjust_saturation,
+        config,
+        device,
+        dtype
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"hue_factor": f} for f in [-0.45, -0.25, 0.0, 0.25, 0.45]])
+def test_adjust_hue(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.adjust_hue,
+        F_pil.adjust_hue,
+        F_t.adjust_hue,
+        config,
+        device,
+        dtype,
+        tol=16.1,
+        agg_method="max"
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
+@pytest.mark.parametrize('config', [{"gamma": g1, "gain": g2} for g1, g2 in zip([0.8, 1.0, 1.2], [0.7, 1.0, 1.3])])
+def test_adjust_gamma(device, dtype, config):
+    check_functional_vs_PIL_vs_scripted(
+        F.adjust_gamma,
+        F_pil.adjust_gamma,
+        F_t.adjust_gamma,
+        config,
+        device,
+        dtype,
+    )
 
 
 if __name__ == '__main__':
