@@ -1,4 +1,5 @@
 import torch
+import warnings
 
 from collections import OrderedDict
 from functools import partial
@@ -94,8 +95,7 @@ class SSDLiteRegressionHead(SSDScoringHead):
 
 
 class SSDLiteFeatureExtractorMobileNet(nn.Module):
-    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], rescaling: bool,
-                 **kwargs: Any):
+    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], **kwargs: Any):
         super().__init__()
         # non-public config parameters
         min_depth = kwargs.pop('_min_depth', 16)
@@ -117,13 +117,8 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         _normal_init(extra)
 
         self.extra = extra
-        self.rescaling = rescaling
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        # Rescale from [0, 1] to [-1, -1]
-        if self.rescaling:
-            x = 2.0 * x - 1.0
-
         # Get feature maps from backbone and extra. Can't be refactored due to JIT limitations.
         output = []
         for block in self.features:
@@ -138,7 +133,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
 
 def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, trainable_layers: int,
-                         norm_layer: Callable[..., nn.Module], rescaling: bool, **kwargs: Any):
+                         norm_layer: Callable[..., nn.Module], **kwargs: Any):
     backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, progress=progress,
                                                  norm_layer=norm_layer, **kwargs).features
     if not pretrained:
@@ -158,7 +153,7 @@ def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, t
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer, rescaling, **kwargs)
+    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer, **kwargs)
 
 
 def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
@@ -166,7 +161,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
                                   norm_layer: Optional[Callable[..., nn.Module]] = None,
                                   **kwargs: Any):
     """
-    Constructs an SSDlite model with a MobileNetV3 Large backbone. See `SSD` for more details.
+    Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone. See `SSD` for more details.
 
     Example:
 
@@ -186,20 +181,23 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
     """
+    if "size" in kwargs:
+        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6)
 
     if pretrained:
         pretrained_backbone = False
 
-    # Enable [-1, 1] rescaling and reduced tail if no pretrained backbone is selected
-    rescaling = reduce_tail = not pretrained_backbone
+    # Enable reduced tail if no pretrained backbone is selected
+    reduce_tail = not pretrained_backbone
 
     if norm_layer is None:
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
     backbone = _mobilenet_extractor("mobilenet_v3_large", progress, pretrained_backbone, trainable_backbone_layers,
-                                    norm_layer, rescaling, _reduced_tail=reduce_tail, _width_mult=1.0)
+                                    norm_layer, _reduced_tail=reduce_tail, _width_mult=1.0)
 
     size = (320, 320)
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
@@ -212,8 +210,10 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         "nms_thresh": 0.55,
         "detections_per_img": 300,
         "topk_candidates": 300,
-        "image_mean": [0., 0., 0.],
-        "image_std": [1., 1., 1.],
+        # Rescale the input in a way compatible to the backbone:
+        # The following mean/std rescale the data from [0, 1] to [-1, -1]
+        "image_mean": [0.5, 0.5, 0.5],
+        "image_std": [0.5, 0.5, 0.5],
     }
     kwargs = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, size, num_classes,
