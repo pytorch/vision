@@ -12,7 +12,7 @@ __all__ = ['Inception3', 'inception_v3', 'InceptionOutputs', '_InceptionOutputs'
 
 model_urls = {
     # Inception v3 ported from TensorFlow
-    'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
+    'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth',
 }
 
 InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
