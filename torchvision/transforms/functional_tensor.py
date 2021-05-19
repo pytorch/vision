@@ -122,7 +122,14 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    return img[..., top:top + height, left:left + width]
+    w, h = _get_image_size(img)
+    right = left + width
+    bottom = top + height
+
+    if left < 0 or top < 0 or right > w or bottom > h:
+        padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
+        return pad(img[..., max(top, 0):bottom, max(left, 0):right], padding_ltrb, fill=0)
+    return img[..., top:bottom, left:right]
 
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
