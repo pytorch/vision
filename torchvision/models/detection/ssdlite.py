@@ -23,6 +23,7 @@ model_urls = {
 }
 
 
+# Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper
 def _prediction_block(in_channels: int, out_channels: int, kernel_size: int,
                       norm_layer: Callable[..., nn.Module]) -> nn.Sequential:
     return nn.Sequential(
@@ -95,14 +96,13 @@ class SSDLiteRegressionHead(SSDScoringHead):
 
 
 class SSDLiteFeatureExtractorMobileNet(nn.Module):
-    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], **kwargs: Any):
+    def __init__(self, backbone: nn.Module, c4_pos: int, norm_layer: Callable[..., nn.Module], width_mult: float = 1.0,
+                 min_depth: int = 16, **kwargs: Any):
         super().__init__()
-        # non-public config parameters
-        min_depth = kwargs.pop('_min_depth', 16)
-        width_mult = kwargs.pop('_width_mult', 1.0)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
+            # As described in section 6.3 of MobileNetV3 paper
             nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),  # from start until C4 expansion layer
             nn.Sequential(backbone[c4_pos].block[1:], *backbone[c4_pos + 1:]),  # from C4 depthwise until end
         )
@@ -160,8 +160,13 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
                                   pretrained_backbone: bool = False, trainable_backbone_layers: Optional[int] = None,
                                   norm_layer: Optional[Callable[..., nn.Module]] = None,
                                   **kwargs: Any):
-    """
-    Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone. See `SSD` for more details.
+    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_ and
+    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
+    <https://arxiv.org/abs/1801.04381>`_.
+
+    See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
     Example:
 
@@ -171,8 +176,6 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         >>> predictions = model(x)
 
     Args:
-        norm_layer:
-        **kwargs:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
@@ -190,14 +193,14 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
     if pretrained:
         pretrained_backbone = False
 
-    # Enable reduced tail if no pretrained backbone is selected
+    # Enable reduced tail if no pretrained backbone is selected. See Table 6 of MobileNetV3 paper.
     reduce_tail = not pretrained_backbone
 
     if norm_layer is None:
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
     backbone = _mobilenet_extractor("mobilenet_v3_large", progress, pretrained_backbone, trainable_backbone_layers,
-                                    norm_layer, _reduced_tail=reduce_tail, _width_mult=1.0)
+                                    norm_layer, reduced_tail=reduce_tail, **kwargs)
 
     size = (320, 320)
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)

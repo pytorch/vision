@@ -129,6 +129,24 @@ The docs are also automatically built when you submit a PR. The job that
 builds the docs is named `build_docs`. You can access the rendered docs by
 clicking on that job and then going to the "Artifacts" tab.
 
+You can clean the built docs and re-start the build from scratch by doing ``make
+clean``.
+
+#### Building the example gallery - or not
+
+When you run ``make html`` for the first time, all the examples in the gallery
+will be built. Subsequent builds should be faster, and will only build the
+examples that have been modified.
+
+You can run ``make html-noplot`` to not build the examples at all. This is
+useful after a ``make clean`` to do some quick checks that are not related to
+the examples.
+
+You can also choose to only build a subset of the examples by using the
+``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
+example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
+with "transforms" in their name.
+
 ### New model
 
 More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
