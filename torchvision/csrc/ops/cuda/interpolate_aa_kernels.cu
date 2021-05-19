@@ -155,6 +155,9 @@ __global__ void upsample_gen2d_out_frame(
     const int interp_width = (int)ceilf(support_w) * 2 + 1;
 
     // Setup local buffers
+    // TODO: maybe we can specify dynamic shared memory size before calling the
+    // cuda code, however we should then ensure that device has enough shared
+    // memory
     scalar_t wx[256];
     scalar_t wy[256];
     scalar_t buffer1[256];
@@ -268,8 +271,12 @@ static void upsample_gen2d_out_cuda_template(
         // We are using static buffer memory of 256 * sizeof(float) per thread
         // to store weights. Size of weights array is
         // interp_size = scale * 2 + 1 for bilinear mode
-        TORCH_CHECK(rheight < 127, "Max supported scale factor is 127");
-        TORCH_CHECK(rwidth < 127, "Max supported scale factor is 127");
+        TORCH_CHECK(
+            rheight < (255 / interp_size),
+            "Max supported scale factor is 127 (bilinear), 63 (bicubic)");
+        TORCH_CHECK(
+            rwidth < (255 / interp_size),
+            "Max supported scale factor is 127 (bilinear), 63 (bicubic)");
 
         upsample_gen2d_out_frame<scalar_t, accscalar_t, interp_size>
             <<<cuda::ATenCeilDiv(num_kernels, num_threads),
