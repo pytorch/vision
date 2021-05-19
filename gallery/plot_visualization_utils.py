@@ -68,7 +68,8 @@ show(result)
 # models.  Here is demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 # model. You can also try using a RetinaNet with
-# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`.
+# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`. For more details
+# on the output of such models, you may refer to :ref:`instance_seg_output`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.transforms.functional import convert_image_dtype
@@ -87,9 +88,9 @@ print(outputs)
 # Let's plot the boxes detected by our model. We will only plot the boxes with a
 # score greater than a given threshold.
 
-threshold = .8
+score_threshold = .8
 dogs_with_boxes = [
-    draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > threshold], width=4)
+    draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > score_threshold], width=4)
     for dog_int, output in zip(batch_int, outputs)
 ]
 show(dogs_with_boxes)
@@ -101,6 +102,8 @@ show(dogs_with_boxes)
 # draw segmentation masks on images. Semantic segmentation and instance
 # segmentation models have different outputs, so we will treat each
 # independently.
+#
+# .. _semantic_seg_output:
 #
 # Semantic segmentation models
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -237,6 +240,8 @@ show(dogs_with_masks)
 
 
 #####################################
+# .. _instance_seg_output:
+#
 # Instance segmentation models
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
@@ -245,6 +250,15 @@ show(dogs_with_masks)
 # models. Let's start by analyzing the output of a Mask-RCNN model. Note that
 # these models don't require the images to be normalized, so we don't need to
 # use the normalized batch.
+#
+# .. note::
+#
+#     We will here describe the output of a Mask-RCNN model. The models in
+#     :ref:`object_det_inst_seg_pers_keypoint_det` all have a similar output
+#     format, but some of them may have extra info like keypoints for
+#     :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`, and some
+#     of them may not have masks, like
+#     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`.
 
 from torchvision.models.detection import maskrcnn_resnet50_fpn
 model = maskrcnn_resnet50_fpn(pretrained=True, progress=False)
@@ -255,7 +269,7 @@ print(output)
 
 #####################################
 # Let's break this down. For each image in the batch, the model outputs some
-# detections (or instances). The number of detection varies for each input
+# detections (or instances). The number of detections varies for each input
 # image. Each instance is described by its bounding box, its label, its score
 # and its mask.
 #
