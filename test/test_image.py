@@ -3,10 +3,11 @@ import io
 import os
 import unittest
 
+import pytest
 import numpy as np
 import torch
 from PIL import Image
-from common_utils import get_tmp_dir
+from common_utils import get_tmp_dir, needs_cuda
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
@@ -276,6 +277,52 @@ class ImageTester(unittest.TestCase):
                 saved_content = f.read()
             self.assertEqual(content, saved_content)
             os.unlink(fpath)
+
+
+@needs_cuda
+@pytest.mark.parametrize('img_path', [
+    # We need to change the "id" for that parameter.
+    # If we don't, the test id (i.e. its name) will contain the whole path to the image which is machine-specific,
+    # and this creates issues when the test is running in a different machine than where it was collected
+    # (typically, in fb internal infra)
+    pytest.param(jpeg_path, id=jpeg_path.split('/')[-1])
+    for jpeg_path in get_images(IMAGE_ROOT, ".jpg")
+])
+@pytest.mark.parametrize('mode', [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
+@pytest.mark.parametrize('scripted', (False, True))
+def test_decode_jpeg_cuda(mode, img_path, scripted):
+    if 'cmyk' in img_path:
+        pytest.xfail("Decoding a CMYK jpeg isn't supported")
+    tester = ImageTester()
+    data = read_file(img_path)
+    img = decode_image(data, mode=mode)
+    f = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
+    img_nvjpeg = f(data, mode=mode, device='cuda')
+
+    # Some difference expected between jpeg implementations
+    tester.assertTrue((img.float() - img_nvjpeg.cpu().float()).abs().mean() < 2)
+
+
+@needs_cuda
+@pytest.mark.parametrize('cuda_device', ('cuda', 'cuda:0', torch.device('cuda')))
+def test_decode_jpeg_cuda_device_param(cuda_device):
+    """Make sure we can pass a string or a torch.device as device param"""
+    torch.randint(0, 10, (10,), device=cuda_device)
+    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    decode_jpeg(data, device=cuda_device)
+
+
+@needs_cuda
+def test_decode_jpeg_cuda_errors():
+    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
+        decode_jpeg(data.reshape(-1, 1), device='cuda')
+    with pytest.raises(RuntimeError, match="input tensor must be on CPU"):
+        decode_jpeg(data.to('cuda'), device='cuda')
+    with pytest.raises(RuntimeError, match="Expected a torch.uint8 tensor"):
+        decode_jpeg(data.to(torch.float), device='cuda')
+    with pytest.raises(RuntimeError, match="Expected a cuda device"):
+        torch.ops.image.decode_jpeg_cuda(data, ImageReadMode.UNCHANGED.value, 'cpu')
 
 
 if __name__ == '__main__':

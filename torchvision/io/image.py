@@ -44,7 +44,7 @@ try:
     if ext_specs is not None:
         torch.ops.load_library(ext_specs.origin)
         _HAS_IMAGE_OPT = True
-except (ImportError, OSError):
+except (ImportError, OSError) as e:
     pass
 
 
@@ -148,7 +148,8 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED,
+                device: str = 'cpu') -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     Optionally converts the image to the desired format.
@@ -156,16 +157,25 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
 
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
-            the raw bytes of the JPEG image.
+            the raw bytes of the JPEG image. This tensor must be on CPU,
+            regardless of the ``device`` parameter.
         mode (ImageReadMode): the read mode used for optionally
             converting the image. Default: `ImageReadMode.UNCHANGED`.
             See `ImageReadMode` class for more information on various
             available modes.
+        device (str or torch.device): The device on which the decoded image will
+            be stored. If a cuda device is specified, the image will be decoded
+            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
+            supported for CUDA version >= 10.1
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_jpeg(input, mode.value)
+    device = torch.device(device)
+    if device.type == 'cuda':
+        output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
+    else:
+        output = torch.ops.image.decode_jpeg(input, mode.value)
     return output
 
 
