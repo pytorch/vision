@@ -37,8 +37,8 @@ def _resize_image_and_masks(image: Tensor, self_min_size: float, self_max_size: 
     if fixed_size is not None:
         size = [fixed_size[1], fixed_size[0]]
     else:
-        min_size = torch.min(im_shape).to(dtype=torch.float32)
-        max_size = torch.max(im_shape).to(dtype=torch.float32)
+        min_size = torch.min(im_shape).to(dtype=torch.float64)
+        max_size = torch.max(im_shape).to(dtype=torch.float64)
         scale = torch.min(self_min_size / min_size, self_max_size / max_size)
 
         if torchvision._is_tracing():
