@@ -44,6 +44,10 @@ class VisionDataset(data.Dataset):
         self.transforms = transforms
 
     def __getitem__(self, index: int) -> Any:
+        """
+        Args:
+            index (int): Index
+        """
         raise NotImplementedError
 
     def __len__(self) -> int:
