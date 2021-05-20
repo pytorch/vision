@@ -13,6 +13,7 @@ class VisionDataset(data.Dataset):
         root (string): Root directory of dataset.
         transforms (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version.
+        transform (callable, optional): Deprecated.
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
