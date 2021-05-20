@@ -11,6 +11,11 @@ VISION_API at::Tensor _interpolate_linear_aa(
     at::IntArrayRef output_size,
     bool align_corners = false);
 
+VISION_API at::Tensor _interpolate_bicubic_aa(
+    const at::Tensor& input,
+    at::IntArrayRef output_size,
+    bool align_corners = false);
+
 namespace detail {
 
 // TODO: Implement backward function

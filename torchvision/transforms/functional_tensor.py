@@ -122,7 +122,14 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    return img[..., top:top + height, left:left + width]
+    w, h = _get_image_size(img)
+    right = left + width
+    bottom = top + height
+
+    if left < 0 or top < 0 or right > w or bottom > h:
+        padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
+        return pad(img[..., max(top, 0):bottom, max(left, 0):right], padding_ltrb, fill=0)
+    return img[..., top:bottom, left:right]
 
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
@@ -503,8 +510,8 @@ def resize(
     if antialias is None:
         antialias = False
 
-    if antialias and interpolation not in ["bilinear", ]:
-        raise ValueError("Antialias option is supported for bilinear interpolation mode only")
+    if antialias and interpolation not in ["bilinear", "bicubic"]:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
     w, h = _get_image_size(img)
 
@@ -537,8 +544,10 @@ def resize(
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
     if antialias:
-        # Apply antialias for donwsampling on both dims
-        img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+        if interpolation == "bilinear":
+            img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+        elif interpolation == "bicubic":
+            img = torch.ops.torchvision._interpolate_bicubic_aa(img, [new_h, new_w], align_corners=False)
     else:
         img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
