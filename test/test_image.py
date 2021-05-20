@@ -280,8 +280,15 @@ class ImageTester(unittest.TestCase):
 
 
 @needs_cuda
+@pytest.mark.parametrize('img_path', [
+    # We need to change the "id" for that parameter.
+    # If we don't, the test id (i.e. its name) will contain the whole path to the image which is machine-specific,
+    # and this creates issues when the test is running in a different machine than where it was collected
+    # (typically, in fb internal infra)
+    pytest.param(jpeg_path, id=jpeg_path.split('/')[-1])
+    for jpeg_path in get_images(IMAGE_ROOT, ".jpg")
+])
 @pytest.mark.parametrize('mode', [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
-@pytest.mark.parametrize('img_path', get_images(IMAGE_ROOT, ".jpg"))
 @pytest.mark.parametrize('scripted', (False, True))
 def test_decode_jpeg_cuda(mode, img_path, scripted):
     if 'cmyk' in img_path:

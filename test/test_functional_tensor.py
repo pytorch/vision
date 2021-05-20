@@ -14,7 +14,7 @@ import torchvision.transforms.functional as F
 import torchvision.transforms as T
 from torchvision.transforms import InterpolationMode
 
-from common_utils import TransformsTester, cpu_and_gpu
+from common_utils import TransformsTester, cpu_and_gpu, needs_cuda
 
 from typing import Dict, List, Sequence, Tuple
 
@@ -868,11 +868,13 @@ def test_perspective_interpolation_warning(tester):
         tester.assertTrue(res1.equal(res2))
 
 
-@pytest.mark.parametrize('device', ["cpu", ])
+@pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize('size', [[96, 72], [96, 420], [420, 72]])
 @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
 def test_resize_antialias(device, dt, size, interpolation, tester):
+
+    torch.manual_seed(12)
 
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
@@ -922,6 +924,19 @@ def test_resize_antialias(device, dt, size, interpolation, tester):
 
     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation, antialias=True)
     tester.assertTrue(resized_tensor.equal(resize_result), msg=f"{size}, {interpolation}, {dt}")
+
+
+@needs_cuda
+@pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
+def test_assert_resize_antialias(interpolation, tester):
+
+    # Checks implementation on very large scales
+    # and catch TORCH_CHECK inside interpolate_aa_kernels.cu
+    torch.manual_seed(12)
+    tensor, pil_img = tester._create_data(1000, 1000, device="cuda")
+
+    with pytest.raises(RuntimeError, match=r"Max supported scale factor is"):
+        F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
 
 
 def check_functional_vs_PIL_vs_scripted(fn, fn_pil, fn_t, config, device, dtype, tol=2.0 + 1e-10, agg_method="max"):
