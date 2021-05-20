@@ -5,6 +5,8 @@ import os
 import sys
 import unittest
 
+import torch.testing
+
 
 def sum_of_model_parameters(model):
     s = 0
@@ -31,9 +33,7 @@ class TestHub(unittest.TestCase):
             'resnet18',
             pretrained=True,
             progress=False)
-        self.assertAlmostEqual(sum_of_model_parameters(hub_model).item(),
-                               SUM_OF_PRETRAINED_RESNET18_PARAMS,
-                               places=2)
+        torch.testing.assert_close(sum_of_model_parameters(hub_model).item(), SUM_OF_PRETRAINED_RESNET18_PARAMS)
 
     def test_set_dir(self):
         temp_dir = tempfile.gettempdir()
@@ -43,9 +43,7 @@ class TestHub(unittest.TestCase):
             'resnet18',
             pretrained=True,
             progress=False)
-        self.assertAlmostEqual(sum_of_model_parameters(hub_model).item(),
-                               SUM_OF_PRETRAINED_RESNET18_PARAMS,
-                               places=2)
+        torch.testing.assert_close(sum_of_model_parameters(hub_model).item(), SUM_OF_PRETRAINED_RESNET18_PARAMS)
         self.assertTrue(os.path.exists(temp_dir + '/pytorch_vision_master'))
         shutil.rmtree(temp_dir + '/pytorch_vision_master')
 

@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 from common_utils import get_tmp_dir, needs_cuda
+from _assert_utils import assert_equal
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
@@ -64,8 +65,7 @@ class ImageTester(unittest.TestCase):
 
                 # Permit a small variation on pixel values to account for implementation
                 # differences between Pillow and LibJPEG.
-                abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
-                self.assertTrue(abs_mean_diff < 2)
+                torch.testing.assert_close(img_ljpeg, img_pil, rtol=0.0, atol=2.0)
 
         with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
@@ -107,7 +107,7 @@ class ImageTester(unittest.TestCase):
             for src_img in [img, img.contiguous()]:
                 # PIL sets jpeg quality to 75 by default
                 jpeg_bytes = encode_jpeg(src_img, quality=75)
-                self.assertTrue(jpeg_bytes.equal(pil_bytes))
+                assert_equal(jpeg_bytes, pil_bytes)
 
         with self.assertRaisesRegex(
                 RuntimeError, "Input tensor dtype should be uint8"):
@@ -191,7 +191,7 @@ class ImageTester(unittest.TestCase):
             rec_img = torch.from_numpy(np.array(rec_img))
             rec_img = rec_img.permute(2, 0, 1)
 
-            self.assertTrue(img_pil.equal(rec_img))
+            assert_equal(img_pil, rec_img)
 
         with self.assertRaisesRegex(
                 RuntimeError, "Input tensor dtype should be uint8"):
@@ -224,7 +224,7 @@ class ImageTester(unittest.TestCase):
                 saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
                 saved_image = saved_image.permute(2, 0, 1)
 
-                self.assertTrue(img_pil.equal(saved_image))
+                assert_equal(img_pil, saved_image)
 
     def test_read_file(self):
         with get_tmp_dir() as d:
@@ -235,7 +235,7 @@ class ImageTester(unittest.TestCase):
 
             data = read_file(fpath)
             expected = torch.tensor(list(content), dtype=torch.uint8)
-            self.assertTrue(data.equal(expected))
+            assert_equal(data, expected)
             os.unlink(fpath)
 
         with self.assertRaisesRegex(
@@ -251,7 +251,7 @@ class ImageTester(unittest.TestCase):
 
             data = read_file(fpath)
             expected = torch.tensor(list(content), dtype=torch.uint8)
-            self.assertTrue(data.equal(expected))
+            assert_equal(data, expected)
             os.unlink(fpath)
 
     def test_write_file(self):
@@ -290,10 +290,10 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
     data = read_file(img_path)
     img = decode_image(data, mode=mode)
     f = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
-    img_nvjpeg = f(data, mode=mode, device='cuda')
+    img_nvjpeg = f(data, mode=mode, device='cuda').cpu()
 
     # Some difference expected between jpeg implementations
-    tester.assertTrue((img.float() - img_nvjpeg.cpu().float()).abs().mean() < 2)
+    torch.testing.assert_close(img, img_nvjpeg, rtol=0.0, atol=2.0, check_stride=False)
 
 
 @needs_cuda
