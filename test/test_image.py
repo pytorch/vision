@@ -293,7 +293,7 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
     img_nvjpeg = f(data, mode=mode, device='cuda').cpu()
 
     # Some difference expected between jpeg implementations
-    torch.testing.assert_close(img, img_nvjpeg, rtol=0.0, atol=2.0, check_stride=False)
+    torch.testing.assert_close(img, img_nvjpeg, rtol=0.0, atol=2.0)
 
 
 @needs_cuda
