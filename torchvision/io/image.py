@@ -44,7 +44,7 @@ try:
     if ext_specs is not None:
         torch.ops.load_library(ext_specs.origin)
         _HAS_IMAGE_OPT = True
-except (ImportError, OSError) as e:
+except (ImportError, OSError):
     pass
 
 
