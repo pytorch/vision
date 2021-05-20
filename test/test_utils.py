@@ -198,11 +198,11 @@ def test_draw_segmentation_masks(colors, alpha):
         color = torch.tensor(color, dtype=dtype)
 
         if alpha == 1:
-            assert_equal(out[:, mask], color[:, None])
+            assert (out[:, mask] == color[:, None]).all()
         elif alpha == 0:
-            assert_equal(out[:, mask], img[:, mask])
+            assert (out[:, mask] == img[:, mask]).all()
 
-        interpolated_color = (img[:, mask] * (1 - alpha) + color[:, None] * alpha)
+        interpolated_color = (img[:, mask] * (1 - alpha) + color[:, None] * alpha).to(dtype)
         torch.testing.assert_close(out[:, mask], interpolated_color, rtol=0.0, atol=1.0)
 
 
