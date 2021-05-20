@@ -65,7 +65,8 @@ class ImageTester(unittest.TestCase):
 
                 # Permit a small variation on pixel values to account for implementation
                 # differences between Pillow and LibJPEG.
-                torch.testing.assert_close(img_ljpeg, img_pil, rtol=0.0, atol=2.0)
+                abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
+                self.assertTrue(abs_mean_diff < 2)
 
         with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
@@ -293,13 +294,14 @@ class ImageTester(unittest.TestCase):
 def test_decode_jpeg_cuda(mode, img_path, scripted):
     if 'cmyk' in img_path:
         pytest.xfail("Decoding a CMYK jpeg isn't supported")
+    tester = ImageTester()
     data = read_file(img_path)
     img = decode_image(data, mode=mode)
     f = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
-    img_nvjpeg = f(data, mode=mode, device='cuda').cpu()
+    img_nvjpeg = f(data, mode=mode, device='cuda')
 
     # Some difference expected between jpeg implementations
-    torch.testing.assert_close(img, img_nvjpeg, rtol=0.0, atol=2.0)
+    tester.assertTrue((img.float() - img_nvjpeg.cpu().float()).abs().mean() < 2)
 
 
 @needs_cuda
