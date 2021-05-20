@@ -5,6 +5,17 @@ from typing import Any, Callable, List, Optional, Tuple
 
 
 class VisionDataset(data.Dataset):
+    """
+    Base Class For making datasets which are compatible with torchvision.
+    It is necessary to override the ``__getitem__`` and ``__len__`` method.
+
+    Args:
+        root (string): Root directory of dataset.
+        transforms (callable, optional): A function/transform that takes in a PIL image
+            and returns a transformed version.
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+    """
     _repr_indent = 4
 
     def __init__(

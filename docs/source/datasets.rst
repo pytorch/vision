@@ -258,3 +258,7 @@ Base classes for custom datasets
 .. autoclass:: ImageFolder
   :members: __getitem__
   :special-members:
+
+.. autoclass:: VisionDataset
+  :members: __getitem__
+  :special-members:
