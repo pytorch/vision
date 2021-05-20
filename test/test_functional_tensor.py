@@ -410,6 +410,7 @@ class Tester(TransformsTester):
         assert_equal(
             expected_out_tensor,
             out_tensor,
+            check_stride=False,
             msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10]),
         )
 
@@ -454,6 +455,7 @@ class Tester(TransformsTester):
                         true_tensor,
                         out_tensor,
                         msg="{}\n{} vs \n{}".format(a, out_tensor[0, :5, :5], true_tensor[0, :5, :5]),
+                        check_stride=False,
                     )
 
                 if out_tensor.dtype != torch.uint8:
@@ -603,7 +605,7 @@ class Tester(TransformsTester):
         with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
             res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
             res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
-            assert_equal(res1, res2)
+            assert res1 == res2
 
     def _test_rotate_all_options(self, tensor, pil_img, scripted_rotate, centers):
         img_size = pil_img.size
@@ -747,7 +749,8 @@ class Tester(TransformsTester):
                         for fn in [F.gaussian_blur, scripted_transform]:
                             out = fn(tensor, kernel_size=ksize, sigma=sigma)
                             torch.testing.assert_close(
-                                out, true_out, rtol=0.0, atol=1.0, msg="{}, {}".format(ksize, sigma)
+                                out, true_out, rtol=0.0, atol=1.0, check_stride=False,
+                                msg="{}, {}".format(ksize, sigma)
                             )
 
 
