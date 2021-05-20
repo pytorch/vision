@@ -24,8 +24,9 @@ def _fake_cast_onnx(v):
 
 
 def _resize_image_and_masks(image: Tensor, self_min_size: float, self_max_size: float,
-                            target: Optional[Dict[str, Tensor]],
-                            fixed_size: Optional[Tuple[int, int]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+                            target: Optional[Dict[str, Tensor]] = None,
+                            fixed_size: Optional[Tuple[int, int]] = None,
+                            ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
     if torchvision._is_tracing():
         im_shape = _get_shape_onnx(image)
     else:
@@ -146,8 +147,10 @@ class GeneralizedRCNNTransform(nn.Module):
         index = int(torch.empty(1).uniform_(0., float(len(k))).item())
         return k[index]
 
-    def resize(self, image, target):
-        # type: (Tensor, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
+    def resize(self,
+               image: Tensor,
+               target: Optional[Dict[str, Tensor]] = None,
+               ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         h, w = image.shape[-2:]
         if self.training:
             size = float(self.torch_choice(self.min_size))
