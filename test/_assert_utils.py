@@ -1,4 +1,5 @@
 """This is a temporary module and should be removed as soon as torch.testing.assert_equal is supported."""
+# TODO: remove this as soon torch.testing.assert_equal is supported
 
 import functools
 
