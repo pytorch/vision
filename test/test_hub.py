@@ -33,7 +33,7 @@ class TestHub(unittest.TestCase):
             progress=False)
         self.assertAlmostEqual(sum_of_model_parameters(hub_model).item(),
                                SUM_OF_PRETRAINED_RESNET18_PARAMS,
-                               places = 2)
+                               places=2)
 
     def test_set_dir(self):
         temp_dir = tempfile.gettempdir()

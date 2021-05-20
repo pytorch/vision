@@ -301,8 +301,6 @@ class ModelTester(TestCase):
             model2.eval()
             out2 = model2(x)
 
-            max_diff = (out1 - out2).abs().max()
-
             self.assertTrue(num_params == num_grad)
             torch.testing.assert_close(out1, out2, rtol=0.0, atol=1e-5)
 

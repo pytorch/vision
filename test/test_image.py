@@ -286,7 +286,6 @@ class ImageTester(unittest.TestCase):
 def test_decode_jpeg_cuda(mode, img_path, scripted):
     if 'cmyk' in img_path:
         pytest.xfail("Decoding a CMYK jpeg isn't supported")
-    tester = ImageTester()
     data = read_file(img_path)
     img = decode_image(data, mode=mode)
     f = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
