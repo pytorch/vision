@@ -946,7 +946,7 @@ class BoxAreaTester(unittest.TestCase):
     def test_box_area(self):
         def area_check(box, expected, tolerance=1e-4):
             out = ops.box_area(box)
-            torch.testing.assert_close(out, expected, rtol=0.0, atol=tolerance)
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
         for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
@@ -974,7 +974,7 @@ class BoxIouTester(unittest.TestCase):
     def test_iou(self):
         def iou_check(box, expected, tolerance=1e-4):
             out = ops.box_iou(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, atol=tolerance)
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
         for dtype in [torch.int16, torch.int32, torch.int64]:
@@ -995,7 +995,7 @@ class GenBoxIouTester(unittest.TestCase):
     def test_gen_iou(self):
         def gen_iou_check(box, expected, tolerance=1e-4):
             out = ops.generalized_box_iou(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, atol=tolerance)
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
         for dtype in [torch.int16, torch.int32, torch.int64]:
