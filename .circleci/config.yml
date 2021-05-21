@@ -133,7 +133,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda101"
+      default: "pytorch/manylinux-cuda102"
     conda_docker_image:
       description: "Conda only: what docker image to use"
       type: string
@@ -660,10 +660,10 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.small
     environment:
-      image_name: "pytorch/manylinux-cuda101"
+      image_name: "pytorch/manylinux-cuda102"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -743,7 +743,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.1"
+      CUDA_VERSION: "10.2"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -839,7 +839,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
@@ -1468,7 +1468,7 @@ workflows:
           name: unittest_linux_cpu_py3.9
           python_version: '3.9'
       - unittest_linux_gpu:
-          cu_version: cu101
+          cu_version: cu102
           filters:
             branches:
               only:
@@ -1477,7 +1477,7 @@ workflows:
           name: unittest_linux_gpu_py3.6
           python_version: '3.6'
       - unittest_linux_gpu:
-          cu_version: cu101
+          cu_version: cu102
           filters:
             branches:
               only:
@@ -1486,11 +1486,11 @@ workflows:
           name: unittest_linux_gpu_py3.7
           python_version: '3.7'
       - unittest_linux_gpu:
-          cu_version: cu101
+          cu_version: cu102
           name: unittest_linux_gpu_py3.8
           python_version: '3.8'
       - unittest_linux_gpu:
-          cu_version: cu101
+          cu_version: cu102
           filters:
             branches:
               only:
@@ -1515,7 +1515,7 @@ workflows:
           name: unittest_windows_cpu_py3.9
           python_version: '3.9'
       - unittest_windows_gpu:
-          cu_version: cu101
+          cu_version: cu102
           filters:
             branches:
               only:
@@ -1524,7 +1524,7 @@ workflows:
           name: unittest_windows_gpu_py3.6
           python_version: '3.6'
       - unittest_windows_gpu:
-          cu_version: cu101
+          cu_version: cu102
           filters:
             branches:
               only:
@@ -1533,11 +1533,11 @@ workflows:
           name: unittest_windows_gpu_py3.7
           python_version: '3.7'
       - unittest_windows_gpu:
-          cu_version: cu101
+          cu_version: cu102
           name: unittest_windows_gpu_py3.8
           python_version: '3.8'
       - unittest_windows_gpu:
-          cu_version: cu101
+          cu_version: cu102
           filters:
             branches:
               only:
@@ -1569,16 +1569,16 @@ workflows:
           name: cmake_linux_cpu
           python_version: '3.8'
       - cmake_linux_gpu:
-          cu_version: cu101
+          cu_version: cu102
           name: cmake_linux_gpu
           python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda101
+          wheel_docker_image: pytorch/manylinux-cuda102
       - cmake_windows_cpu:
           cu_version: cpu
           name: cmake_windows_cpu
           python_version: '3.8'
       - cmake_windows_gpu:
-          cu_version: cu101
+          cu_version: cu102
           name: cmake_windows_gpu
           python_version: '3.8'
       - cmake_macos_cpu:
