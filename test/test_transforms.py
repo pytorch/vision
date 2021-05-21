@@ -421,8 +421,12 @@ class Tester(unittest.TestCase):
         eps = 1e-5
         h_padded = result[:, :padding, :]
         w_padded = result[:, :, :padding]
-        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps)
-        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps)
+        torch.testing.assert_close(
+            h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
+        )
+        torch.testing.assert_close(
+            w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
+        )
         self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
                           transforms.ToPILImage()(img))
 
