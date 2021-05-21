@@ -1,5 +1,3 @@
-:github_url: https://github.com/pytorch/vision
-
 torchvision
 ===========
 This library is part of the `PyTorch
