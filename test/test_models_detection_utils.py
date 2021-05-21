@@ -4,6 +4,7 @@ from torchvision.models.detection import _utils
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 import unittest
 from torchvision.models.detection import backbone_utils
+from _assert_utils import assert_equal
 
 
 class Tester(unittest.TestCase):
@@ -55,8 +56,8 @@ class Tester(unittest.TestCase):
         targets = [{'boxes': torch.rand(3, 4)}, {'boxes': torch.rand(2, 4)}]
         targets_copy = copy.deepcopy(targets)
         out = transform(image, targets)  # noqa: F841
-        self.assertTrue(torch.equal(targets[0]['boxes'], targets_copy[0]['boxes']))
-        self.assertTrue(torch.equal(targets[1]['boxes'], targets_copy[1]['boxes']))
+        assert_equal(targets[0]['boxes'], targets_copy[0]['boxes'])
+        assert_equal(targets[1]['boxes'], targets_copy[1]['boxes'])
 
     def test_not_float_normalize(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
