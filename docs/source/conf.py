@@ -74,8 +74,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Torchvision'
-copyright = '2017-present, PyTorch Contributors'
-author = 'PyTorch Contributors'
+copyright = '2017-present, Torch Contributors'
+author = 'Torch Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -171,7 +171,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'pytorch.tex', 'torchvision Documentation',
-     'PyTorch Contributors', 'manual'),
+     'Torch Contributors', 'manual'),
 ]
 
 
