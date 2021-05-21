@@ -1,4 +1,4 @@
-def _download_file_from_remote_location(fpath: str) -> None:
+def _download_file_from_remote_location(fpath: str, url: str) -> None:
     pass
 
 
