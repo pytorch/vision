@@ -21,10 +21,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-from pathlib import Path
-import os
-
-import torch
 import torchvision
 import pytorch_sphinx_theme
 
@@ -49,6 +45,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx_gallery.gen_gallery',
+    "sphinx_copybutton"
 ]
 
 sphinx_gallery_conf = {
