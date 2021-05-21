@@ -62,25 +62,25 @@ class Tester(unittest.TestCase):
     def test_video_clips(self):
         with get_list_of_videos(num_videos=3) as video_list:
             video_clips = VideoClips(video_list, 5, 5, num_workers=2)
-            self.assertEqual(video_clips.num_clips(), 1 + 2 + 3)
+            assert video_clips.num_clips() == 1 + 2 + 3
             for i, (v_idx, c_idx) in enumerate([(0, 0), (1, 0), (1, 1), (2, 0), (2, 1), (2, 2)]):
                 video_idx, clip_idx = video_clips.get_clip_location(i)
-                assert_equal(video_idx, v_idx)
-                assert_equal(clip_idx, c_idx)
+                assert video_idx == v_idx
+                assert clip_idx == c_idx
 
             video_clips = VideoClips(video_list, 6, 6)
-            self.assertEqual(video_clips.num_clips(), 0 + 1 + 2)
+            assert video_clips.num_clips() == 0 + 1 + 2
             for i, (v_idx, c_idx) in enumerate([(1, 0), (2, 0), (2, 1)]):
                 video_idx, clip_idx = video_clips.get_clip_location(i)
-                assert_equal(video_idx, v_idx)
-                assert_equal(clip_idx, c_idx)
+                assert video_idx == v_idx
+                assert clip_idx == c_idx
 
             video_clips = VideoClips(video_list, 6, 1)
-            self.assertEqual(video_clips.num_clips(), 0 + (10 - 6 + 1) + (15 - 6 + 1))
+            assert video_clips.num_clips() == 0 + (10 - 6 + 1) + (15 - 6 + 1)
             for i, v_idx, c_idx in [(0, 1, 0), (4, 1, 4), (5, 2, 0), (6, 2, 1)]:
                 video_idx, clip_idx = video_clips.get_clip_location(i)
-                assert_equal(video_idx, v_idx)
-                assert_equal(clip_idx, c_idx)
+                assert video_idx == v_idx
+                assert clip_idx == c_idx
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     def test_video_clips_custom_fps(self):
@@ -90,8 +90,8 @@ class Tester(unittest.TestCase):
                 video_clips = VideoClips(video_list, num_frames, num_frames, fps, num_workers=2)
                 for i in range(video_clips.num_clips()):
                     video, audio, info, video_idx = video_clips.get_clip(i)
-                    assert_equal(video.shape[0], num_frames)
-                    assert_equal(info["video_fps"], fps)
+                    assert video.shape[0] == num_frames
+                    assert info["video_fps"] == fps
                     # TODO add tests checking that the content is right
 
     def test_compute_clips_for_video(self):
@@ -104,7 +104,7 @@ class Tester(unittest.TestCase):
         clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
                                                          orig_fps, new_fps)
         resampled_idxs = VideoClips._resample_video_idx(int(duration * new_fps), orig_fps, new_fps)
-        self.assertEqual(len(clips), 1)
+        assert len(clips) == 1
         assert_equal(clips, idxs)
         assert_equal(idxs[0], resampled_idxs)
 
@@ -116,7 +116,7 @@ class Tester(unittest.TestCase):
         clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
                                                          orig_fps, new_fps)
         resampled_idxs = VideoClips._resample_video_idx(int(duration * new_fps), orig_fps, new_fps)
-        self.assertEqual(len(clips), 3)
+        assert len(clips) == 3
         assert_equal(clips, idxs)
         assert_equal(idxs.flatten(), resampled_idxs)
 
@@ -127,8 +127,8 @@ class Tester(unittest.TestCase):
         with self.assertWarns(UserWarning):
             clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
                                                              orig_fps, new_fps)
-        self.assertEqual(len(clips), 0)
-        self.assertEqual(len(idxs), 0)
+        assert len(clips) == 0
+        assert len(idxs) == 0
 
 
 if __name__ == '__main__':
