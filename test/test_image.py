@@ -1,17 +1,19 @@
 import glob
 import io
 import os
+from pathlib import Path
 import unittest
 
 import pytest
 import numpy as np
 import torch
+import torchvision.transforms.functional as F
 from PIL import Image
 from common_utils import get_tmp_dir, needs_cuda
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
-    encode_png, write_png, write_file, ImageReadMode)
+    encode_png, write_png, write_file, ImageReadMode, read_image)
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
@@ -92,22 +94,7 @@ class ImageTester(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 decode_jpeg(data)
 
-    def test_encode_jpeg(self):
-        for img_path in get_images(ENCODE_JPEG, ".jpg"):
-            dirname = os.path.dirname(img_path)
-            filename, _ = os.path.splitext(os.path.basename(img_path))
-            write_folder = os.path.join(dirname, 'jpeg_write')
-            expected_file = os.path.join(
-                write_folder, '{0}_pil.jpg'.format(filename))
-            img = decode_jpeg(read_file(img_path))
-
-            with open(expected_file, 'rb') as f:
-                pil_bytes = f.read()
-                pil_bytes = torch.as_tensor(list(pil_bytes), dtype=torch.uint8)
-            for src_img in [img, img.contiguous()]:
-                # PIL sets jpeg quality to 75 by default
-                jpeg_bytes = encode_jpeg(src_img, quality=75)
-                self.assertTrue(jpeg_bytes.equal(pil_bytes))
+    def test_encode_jpeg_errors(self):
 
         with self.assertRaisesRegex(
                 RuntimeError, "Input tensor dtype should be uint8"):
@@ -135,20 +122,34 @@ class ImageTester(unittest.TestCase):
                 RuntimeError, "Input data should be a 3-dimensional tensor"):
             encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
+    def test_encode_jpeg(self):
+        for img_path in get_images(ENCODE_JPEG, ".jpg"):
+            img = read_image(img_path)
+
+            pil_img = F.to_pil_image(img)
+            buf = io.BytesIO()
+            pil_img.save(buf, format='JPEG', quality=75)
+            # pytorch can't read from raw bytes so we go through numpy
+            pil_bytes = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+            encoded_jpeg_pil = torch.as_tensor(pil_bytes)
+
+            for src_img in [img, img.contiguous()]:
+                encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
+                # TODO: use assert_equal when available
+                assert (encoded_jpeg_torch == encoded_jpeg_pil).all()
+
     def test_write_jpeg(self):
         with get_tmp_dir() as d:
+            d = Path(d)
             for img_path in get_images(ENCODE_JPEG, ".jpg"):
-                data = read_file(img_path)
-                img = decode_jpeg(data)
+                img = read_image(img_path)
+                pil_img = F.to_pil_image(img)
 
-                basedir = os.path.dirname(img_path)
-                filename, _ = os.path.splitext(os.path.basename(img_path))
-                torch_jpeg = os.path.join(
-                    d, '{0}_torch.jpg'.format(filename))
-                pil_jpeg = os.path.join(
-                    basedir, 'jpeg_write', '{0}_pil.jpg'.format(filename))
+                torch_jpeg = str(d / 'torch.jpg')
+                pil_jpeg = str(d / 'pil.jpg')
 
                 write_jpeg(img, torch_jpeg, quality=75)
+                pil_img.save(pil_jpeg, quality=75)
 
                 with open(torch_jpeg, 'rb') as f:
                     torch_bytes = f.read()
