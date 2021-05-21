@@ -44,6 +44,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'sphinx.ext.duration',
     'sphinx_gallery.gen_gallery',
     "sphinx_copybutton"
 ]
@@ -73,8 +74,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Torchvision'
-copyright = '2017-present, Torch Contributors'
-author = 'Torch Contributors'
+copyright = '2017-present, PyTorch Contributors'
+author = 'PyTorch Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -170,7 +171,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'pytorch.tex', 'torchvision Documentation',
-     'Torch Contributors', 'manual'),
+     'PyTorch Contributors', 'manual'),
 ]
 
 
