@@ -274,7 +274,7 @@ def heatmaps_to_keypoints(maps, rois):
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
-        end_scores[i, :] = roi_map[torch.arange(num_keypoints), y_int, x_int]
+        end_scores[i, :] = roi_map[torch.arange(num_keypoints, device=roi_map.device), y_int, x_int]
 
     return xy_preds.permute(0, 2, 1), end_scores
 
