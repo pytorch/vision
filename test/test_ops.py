@@ -80,7 +80,6 @@ class RoIOpTester(OpTester):
 
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
-        # self.assertTrue(torch.allclose(gt_y.to(y.dtype), y, ))
 
     def _test_backward(self, device, contiguous):
         pool_size = 2
@@ -865,10 +864,9 @@ class BoxTester(unittest.TestCase):
         exp_xyxy = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                 [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
+        assert exp_xyxy.size() == torch.Size([4, 4])
         assert_equal(ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xyxy"), exp_xyxy)
-
         assert_equal(ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="xywh"), exp_xyxy)
-
         assert_equal(ops.box_convert(box_tensor, in_fmt="cxcywh", out_fmt="cxcywh"), exp_xyxy)
 
     def test_bbox_xyxy_xywh(self):
@@ -879,6 +877,7 @@ class BoxTester(unittest.TestCase):
         exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                 [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
+        assert exp_xywh.size() == torch.Size([4, 4])
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         assert_equal(box_xywh, exp_xywh)
 
@@ -894,6 +893,7 @@ class BoxTester(unittest.TestCase):
         exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
                                   [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
 
+        assert exp_cxcywh.size() == torch.Size([4, 4])
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
         assert_equal(box_cxcywh, exp_cxcywh)
 
@@ -909,6 +909,7 @@ class BoxTester(unittest.TestCase):
         exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
                                   [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
 
+        assert exp_cxcywh.size() == torch.Size([4, 4])
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="cxcywh")
         assert_equal(box_cxcywh, exp_cxcywh)
 
