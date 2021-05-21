@@ -30,7 +30,7 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.0.1", "rocm4.1"],
+            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.1", "rocm4.2"],
                                 "win": ["cpu", "cu102", "cu111"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
