@@ -497,7 +497,7 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     video_timebase = default_timebase
     audio_pts_range = (0, -1)
     audio_timebase = default_timebase
-    time_base = None
+    time_base = default_timebase
 
     if has_video:
         video_timebase = Fraction(
@@ -511,16 +511,17 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
         )
         time_base = time_base if time_base else audio_timebase
 
-    start_pts, end_pts, pts_unit = _convert_to_sec(
+    # video_timebase is the default time_base
+    start_pts_sec, end_pts_sec, pts_unit = _convert_to_sec(
         start_pts, end_pts, pts_unit, time_base)
 
     def get_pts(time_base):
-        start_offset = start_pts
-        end_offset = end_pts
+        start_offset = start_pts_sec
+        end_offset = end_pts_sec
         if pts_unit == "sec":
-            start_offset = int(math.floor(start_pts * (1 / time_base)))
+            start_offset = int(math.floor(start_pts_sec * (1 / time_base)))
             if end_offset != float("inf"):
-                end_offset = int(math.ceil(end_pts * (1 / time_base)))
+                end_offset = int(math.ceil(end_pts_sec * (1 / time_base)))
         if end_offset == float("inf"):
             end_offset = -1
         return start_offset, end_offset
