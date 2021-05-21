@@ -11,7 +11,6 @@ import torchvision.io as io
 from numpy.random import randint
 from torchvision.io import _HAS_VIDEO_OPT
 from common_utils import PY39_SKIP
-from _assert_utils import assert_equal
 
 
 try:
@@ -360,7 +359,8 @@ class TestVideoReader(unittest.TestCase):
         )
         self.assertAlmostEqual(mean_delta, 0, delta=1.0)
 
-        assert_equal(vtimebase, ref_result.vtimebase)
+        is_same = torch.all(torch.eq(vtimebase, ref_result.vtimebase)).item()
+        self.assertEqual(is_same, True)
 
         if (
             config.check_aframes
@@ -369,7 +369,8 @@ class TestVideoReader(unittest.TestCase):
         ):
             """Audio stream is available and audio frame is required to return
             from decoder"""
-            assert_equal(aframes, ref_result.aframes)
+            is_same = torch.all(torch.eq(aframes, ref_result.aframes)).item()
+            self.assertEqual(is_same, True)
 
         if (
             config.check_aframe_pts
@@ -377,9 +378,11 @@ class TestVideoReader(unittest.TestCase):
             and ref_result.aframe_pts.numel() > 0
         ):
             """Audio stream is available"""
-            assert_equal(aframe_pts, ref_result.aframe_pts)
+            is_same = torch.all(torch.eq(aframe_pts, ref_result.aframe_pts)).item()
+            self.assertEqual(is_same, True)
 
-            assert_equal(atimebase, ref_result.atimebase)
+            is_same = torch.all(torch.eq(atimebase, ref_result.atimebase)).item()
+            self.assertEqual(is_same, True)
 
     @unittest.skip(
         "This stress test will iteratively decode the same set of videos."
