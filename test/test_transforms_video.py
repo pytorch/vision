@@ -4,6 +4,7 @@ import unittest
 import random
 import numpy as np
 import warnings
+from _assert_utils import assert_equal
 
 try:
     from scipy import stats
@@ -120,7 +121,7 @@ class TestVideoTransforms(unittest.TestCase):
         # Checking the optional in-place behaviour
         tensor = torch.rand((3, 128, 16, 16))
         tensor_inplace = transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)(tensor)
-        self.assertTrue(torch.equal(tensor, tensor_inplace))
+        assert_equal(tensor, tensor_inplace)
 
         transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
