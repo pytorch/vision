@@ -133,7 +133,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda101"
+      default: "pytorch/manylinux-cuda102"
     conda_docker_image:
       description: "Conda only: what docker image to use"
       type: string
@@ -660,10 +660,10 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.small
     environment:
-      image_name: "pytorch/manylinux-cuda101"
+      image_name: "pytorch/manylinux-cuda102"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -743,7 +743,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.1"
+      CUDA_VERSION: "10.2"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -839,7 +839,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
