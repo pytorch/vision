@@ -1,6 +1,5 @@
 import torch
 from common_utils import TestCase
-from _assert_utils import assert_equal
 from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
 
@@ -63,8 +62,8 @@ class Tester(TestCase):
         self.assertEqual(len(anchors), 2)
         self.assertEqual(tuple(anchors[0].shape), (9, 4))
         self.assertEqual(tuple(anchors[1].shape), (9, 4))
-        assert_equal(anchors[0], anchors_output)
-        assert_equal(anchors[1], anchors_output)
+        self.assertEqual(anchors[0], anchors_output)
+        self.assertEqual(anchors[1], anchors_output)
 
     def test_defaultbox_generator(self):
         images = torch.zeros(2, 3, 15, 15)
@@ -86,5 +85,5 @@ class Tester(TestCase):
         self.assertEqual(len(dboxes), 2)
         self.assertEqual(tuple(dboxes[0].shape), (4, 4))
         self.assertEqual(tuple(dboxes[1].shape), (4, 4))
-        torch.testing.assert_close(dboxes[0], dboxes_output, rtol=1e-5, atol=1e-8)
-        torch.testing.assert_close(dboxes[1], dboxes_output, rtol=1e-5, atol=1e-8)
+        self.assertTrue(dboxes[0].allclose(dboxes_output))
+        self.assertTrue(dboxes[1].allclose(dboxes_output))
