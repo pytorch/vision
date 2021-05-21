@@ -234,7 +234,7 @@ def unittest_workflows(indentation=6):
                 if device_type == 'gpu':
                     if python_version != "3.8":
                         job['filters'] = gen_filter_branch_tree('master', 'nightly')
-                    job['cu_version'] = 'cu101'
+                    job['cu_version'] = 'cu102'
                 else:
                     job['cu_version'] = 'cpu'
 
@@ -255,7 +255,7 @@ def cmake_workflows(indentation=6):
                 'python_version': python_version
             }
 
-            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            job['cu_version'] = 'cu102' if device == 'gpu' else 'cpu'
             if device == 'gpu' and os_type == 'linux':
                 job['wheel_docker_image'] = 'pytorch/manylinux-cuda101'
             jobs.append({f'cmake_{os_type}_{device}': job})
