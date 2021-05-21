@@ -21,10 +21,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-from pathlib import Path
-import os
-
-import torch
 import torchvision
 import pytorch_sphinx_theme
 
@@ -48,7 +44,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'sphinx.ext.duration',
     'sphinx_gallery.gen_gallery',
+    "sphinx_copybutton"
 ]
 
 sphinx_gallery_conf = {
@@ -137,6 +135,11 @@ html_logo = '_static/img/pytorch-logo-dark.svg'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# TODO: remove this once https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed
+html_css_files = [
+    'css/custom_torchvision.css',
+]
+
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
@@ -197,7 +200,10 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
+    'torch': ('https://pytorch.org/docs/stable/', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'PIL': ('https://pillow.readthedocs.io/en/stable/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
 }
 
 # -- A patch that prevents Sphinx from cross-referencing ivar tags -------

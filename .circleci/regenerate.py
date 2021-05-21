@@ -30,7 +30,7 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.0.1", "rocm4.1"],
+            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.1", "rocm4.2"],
                                 "win": ["cpu", "cu102", "cu111"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
@@ -234,7 +234,7 @@ def unittest_workflows(indentation=6):
                 if device_type == 'gpu':
                     if python_version != "3.8":
                         job['filters'] = gen_filter_branch_tree('master', 'nightly')
-                    job['cu_version'] = 'cu101'
+                    job['cu_version'] = 'cu102'
                 else:
                     job['cu_version'] = 'cpu'
 
@@ -255,9 +255,9 @@ def cmake_workflows(indentation=6):
                 'python_version': python_version
             }
 
-            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            job['cu_version'] = 'cu102' if device == 'gpu' else 'cpu'
             if device == 'gpu' and os_type == 'linux':
-                job['wheel_docker_image'] = 'pytorch/manylinux-cuda101'
+                job['wheel_docker_image'] = 'pytorch/manylinux-cuda102'
             jobs.append({f'cmake_{os_type}_{device}': job})
     return indent(indentation, jobs)
 
