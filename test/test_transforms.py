@@ -629,14 +629,12 @@ class Tester(unittest.TestCase):
             ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
             output = trans(ndarray)
             expected_output = ndarray.transpose((2, 0, 1)) / 255.0
-            torch.testing.assert_close(output, torch.as_tensor(expected_output),
-                                       check_stride=False, check_dtype=False)
+            torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
 
             ndarray = np.random.rand(height, width, channels).astype(np.float32)
             output = trans(ndarray)
             expected_output = ndarray.transpose((2, 0, 1))
-            torch.testing.assert_close(output, torch.as_tensor(expected_output),
-                                       check_stride=False, check_dtype=False)
+            torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
 
         # separate test for mode '1' PIL images
         input_data = torch.ByteTensor(1, height, width).bernoulli_()
