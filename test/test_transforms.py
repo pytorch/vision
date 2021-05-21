@@ -912,6 +912,8 @@ class Tester(unittest.TestCase):
             for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
                 img = transform(img_data)
                 self.assertEqual(img.mode, mode)
+                # note: we explicitly convert img's dtype because pytorch doesn't support uint16
+                # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
                 torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
 
     def test_2_channel_ndarray_to_pil_image(self):
