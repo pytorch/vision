@@ -296,14 +296,14 @@ performs random perspective transform on an image.
 
  .. code-block:: none
 
-    /root/project/torchvision/transforms/functional.py:597: UserWarning: torch.lstsq is deprecated in favor of torch.linalg.lstsq and will be removed in a future PyTorch release.
+    /root/project/torchvision/transforms/functional.py:594: UserWarning: torch.lstsq is deprecated in favor of torch.linalg.lstsq and will be removed in a future PyTorch release.
     torch.linalg.lstsq has reversed arguments and does not return the QR decomposition in the returned tuple (although it returns other information about the problem).
     To get the qr decomposition consider using torch.linalg.qr.
     The returned solution in torch.lstsq stored the residuals of the solution in the last m - n columns of the returned value whenever m > n. In torch.linalg.lstsq, the residuals in the field 'residuals' of the returned named tuple.
     The unpacking of the solution, as in
     X, _ = torch.lstsq(B, A).solution[:A.size(1)]
     should be replaced with
-    X = torch.linalg.lstsq(A, B).solution (Triggered internally at  /opt/conda/conda-bld/pytorch_1621148719287/work/aten/src/ATen/LegacyTHFunctionsCPU.cpp:389.)
+    X = torch.linalg.lstsq(A, B).solution (Triggered internally at  /opt/conda/conda-bld/pytorch_1621580742012/work/aten/src/ATen/LegacyTHFunctionsCPU.cpp:389.)
       res = torch.lstsq(b_matrix, a_matrix)[0]
 
 
@@ -703,7 +703,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.576 seconds)
+   **Total running time of the script:** ( 0 minutes  7.517 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:
