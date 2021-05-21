@@ -1,9 +1,6 @@
 torchvision
 ===========
 
-.. image:: https://codecov.io/gh/pytorch/vision/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/pytorch/vision
-
 .. image:: https://pepy.tech/badge/torchvision
     :target: https://pepy.tech/project/torchvision
 
