@@ -46,7 +46,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.duration',
     'sphinx_gallery.gen_gallery',
-    "sphinx_copybutton"
+    'sphinx_copybutton',
 ]
 
 sphinx_gallery_conf = {
@@ -60,6 +60,7 @@ napoleon_use_ivar = True
 napoleon_numpy_docstring = False
 napoleon_google_docstring = True
 
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -71,8 +72,10 @@ source_suffix = {
     '.rst': 'restructuredtext',
     '.txt': 'markdown',
     '.md': 'markdown',
-    '.ipynb': 'nbsphinx',
 }
+
+needs_sphinx = '2.4.4'
+autodoc_typehints = 'signature'
 
 # The master toctree document.
 master_doc = 'index'
@@ -132,6 +135,15 @@ html_theme_options = {
     'navigation_with_keys': True,
     'analytics_id': 'UA-117752657-2',
 }
+
+
+# html_context = {
+#     "display_github": True,  # Integrate GitHub
+#     "github_user": "pytorch",  # Username
+#     "github_repo": "vision",  # Repo name
+#     "github_version": "master",  # Version
+#     "conf_py_path": "/docs/source/",  # Path in the checkout to the docs root
+# }
 
 html_logo = '_static/img/pytorch-logo-dark.svg'
 
