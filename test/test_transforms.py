@@ -1222,7 +1222,7 @@ class Tester(unittest.TestCase):
         mean = torch.rand(n_channels)
         std = torch.rand(n_channels)
         img = torch.rand(n_channels, img_size, img_size)
-        target = F.normalize(img, mean, std).numpy()
+        target = F.normalize(img, mean, std)
 
         mean_unsqueezed = mean.view(-1, 1, 1)
         std_unsqueezed = std.view(-1, 1, 1)
@@ -1230,8 +1230,8 @@ class Tester(unittest.TestCase):
         result2 = F.normalize(img,
                               mean_unsqueezed.repeat(1, img_size, img_size),
                               std_unsqueezed.repeat(1, img_size, img_size))
-        torch.testing.assert_close(target, result1.numpy())
-        torch.testing.assert_close(target, result2.numpy())
+        torch.testing.assert_close(target, result1)
+        torch.testing.assert_close(target, result2)
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
