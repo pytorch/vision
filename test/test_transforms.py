@@ -821,8 +821,8 @@ class Tester(unittest.TestCase):
         # separate test for mode '1' PIL images
         input_data = torch.ByteTensor(1, height, width).bernoulli_()
         img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
-        output = trans(img)
-        torch.testing.assert_close(input_data, output, check_stride=False, check_dtype=False)
+        output = trans(img).view(torch.uint8).bool().to(torch.uint8)
+        torch.testing.assert_close(input_data, output, check_stride=False)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_pil_to_tensor(self):
