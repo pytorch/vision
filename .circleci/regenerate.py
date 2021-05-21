@@ -234,7 +234,7 @@ def unittest_workflows(indentation=6):
                 if device_type == 'gpu':
                     if python_version != "3.8":
                         job['filters'] = gen_filter_branch_tree('master', 'nightly')
-                    job['cu_version'] = 'cu101'
+                    job['cu_version'] = 'cu102'
                 else:
                     job['cu_version'] = 'cpu'
 
