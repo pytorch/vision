@@ -41,7 +41,7 @@ class Tester(unittest.TestCase):
             [0, 1, 2],
             [3, 4, 5],
         ])
-        assert_equal(r, expected)
+        assert_equal(r, expected, check_stride=False)
 
         r = unfold(a, 3, 2, 1)
         expected = torch.tensor([
@@ -49,14 +49,14 @@ class Tester(unittest.TestCase):
             [2, 3, 4],
             [4, 5, 6]
         ])
-        assert_equal(r, expected)
+        assert_equal(r, expected, check_stride=False)
 
         r = unfold(a, 3, 2, 2)
         expected = torch.tensor([
             [0, 2, 4],
             [2, 4, 6],
         ])
-        assert_equal(r, expected)
+        assert_equal(r, expected, check_stride=False)
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     def test_video_clips(self):
