@@ -476,9 +476,9 @@ Runtime characteristics
 The implementations of the models for object detection, instance segmentation
 and keypoint detection are efficient.
 
-In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
-report the results. During training, we use a batch size of 2 per GPU, and
-during testing a batch size of 1 is used.
+In the following table, we use 8 GPUs to report the results. During training,
+we use a batch size of 2 per GPU for all models except SSD which uses 4
+and SSDlite which uses 24. During testing a batch size  of 1 is used.
 
 For test time, we report the time for the model evaluation and postprocessing
 (including mask pasting in image), but not the time for computing the
@@ -491,8 +491,8 @@ Faster R-CNN ResNet-50 FPN              0.2288               0.0590             
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
-SSD300 VGG16                            0.1047               0.0744              1.5
-SSDlite320 MobileNetV3-Large            0.0887               0.0906              1.5
+SSD300 VGG16                            0.2093               0.0744              1.5
+SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
 Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
 ======================================  ===================  ==================  ===========
