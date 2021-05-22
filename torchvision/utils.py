@@ -211,7 +211,8 @@ def draw_bounding_boxes(
             draw.rectangle(bbox, width=width, outline=color)
 
         if labels is not None:
-            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+            margin = width + 1
+            draw.text((bbox[0] + margin, bbox[1] + margin), labels[i], fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
