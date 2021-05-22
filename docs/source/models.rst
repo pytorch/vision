@@ -387,7 +387,7 @@ architectures for detection:
 - `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
 - `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
 - `RetinaNet <https://arxiv.org/abs/1708.02002>`_
-- `SSD <https://arxiv.org/abs/1512.02325>`__
+- `SSD <https://arxiv.org/abs/1512.02325>`_
 - `SSDlite <https://arxiv.org/abs/1801.04381>`_
 
 The pre-trained models for detection, instance segmentation and
