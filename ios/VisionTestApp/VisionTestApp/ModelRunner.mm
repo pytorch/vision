@@ -33,7 +33,7 @@ static int iter = 20;
   auto img_tensor = torch::ones({3, 224, 224}, at::ScalarType::Float);
   inputs.push_back(c10::List<at::Tensor>(img_tensor));
   torch::autograd::AutoGradMode guard(false);
-  at::AutoDispatchBelowADInplaceOrView nonVarTypeModeGuard(true);
+  at::InferenceMode nonVarTypeModeGuard(true);
   
   UI_LOG(@"Running warmup runs...", nil);
   for (int i = 0; i < warmup; ++i) {
