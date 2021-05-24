@@ -142,7 +142,6 @@ class TestCase(unittest.TestCase):
         else:
             expected = torch.load(expected_file)
             rtol = atol = prec or self.precision
-
             torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
