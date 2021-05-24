@@ -142,7 +142,16 @@ class TestCase(unittest.TestCase):
         else:
             expected = torch.load(expected_file)
             rtol = atol = prec or self.precision
-            torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False, check_device=False)
+            if isinstance(expected, torch.Tensor):
+                torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_device=False)
+            else:
+                # for detection models the output is a list of dicts
+                for output_det, expected_det in zip(output, expected):
+                    for key in expected_det.keys():
+                        output_tensor = output_det[key]
+                        expected_tensor = expected_det[key]
+                        torch.testing.assert_close(output_tensor, expected_tensor, rtol=rtol, atol=atol,
+                                                   check_device=False)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
