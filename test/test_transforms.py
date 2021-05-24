@@ -459,7 +459,7 @@ class Tester(unittest.TestCase):
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
         edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0]), check_dtype=False, check_stride=False)
+        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
         self.assertEqual(transforms.ToTensor()(edge_padded_img).size(), (3, 35, 35))
 
         # Pad 3 to left/right, 2 to top/bottom
@@ -467,7 +467,7 @@ class Tester(unittest.TestCase):
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
         reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0]), check_dtype=False, check_stride=False)
+        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8), check_stride=False)
         self.assertEqual(transforms.ToTensor()(reflect_padded_img).size(), (3, 33, 35))
 
         # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
@@ -475,7 +475,7 @@ class Tester(unittest.TestCase):
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
         symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0]), check_dtype=False, check_stride=False)
+        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
         self.assertEqual(transforms.ToTensor()(symmetric_padded_img).size(), (3, 32, 34))
 
         # Check negative padding explicitly for symmetric case, since it is not
@@ -484,8 +484,8 @@ class Tester(unittest.TestCase):
         symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
         symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
         symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
-        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0]), check_dtype=False, check_stride=False)
-        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0]), check_dtype=False, check_stride=False)
+        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8), check_stride=False)
         self.assertEqual(transforms.ToTensor()(symmetric_padded_img_neg).size(), (3, 28, 31))
 
     def test_pad_raises_with_invalid_pad_sequence_len(self):
@@ -1466,7 +1466,7 @@ class Tester(unittest.TestCase):
         torch.testing.assert_close(cov / num_samples, np.identity(1), rtol=2e-3, atol=1e-8, check_dtype=False,
                                    msg="cov not close to 1")
         torch.testing.assert_close(mean / num_samples, 0, rtol=1e-3, atol=1e-8, check_dtype=False,
-                                   msg="mean not close to 1")
+                                   msg="mean not close to 0")
 
         # Checking if LinearTransformation can be printed as string
         whitening.__repr__()
