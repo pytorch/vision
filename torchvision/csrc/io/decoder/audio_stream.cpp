@@ -13,7 +13,7 @@ bool operator==(const AudioFormat& x, const AVFrame& y) {
 
 bool operator==(const AudioFormat& x, const AVCodecContext& y) {
   return static_cast<int>(x.samples) == y.sample_rate &&
-      static_cast<int> (x.channels) == y.channels && x.format == y.sample_fmt;
+      static_cast<int>(x.channels) == y.channels && x.format == y.sample_fmt;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVFrame& y) {

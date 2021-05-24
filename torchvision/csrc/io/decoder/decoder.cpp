@@ -395,7 +395,7 @@ bool Decoder::init(
 }
 
 bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
-  for (int i = 0; i < static_cast<int> (inputCtx_->nb_streams); i++) {
+  for (int i = 0; i < static_cast<int>(inputCtx_->nb_streams); i++) {
     // - find the corespondent format at params_.formats set
     MediaFormat format;
     const auto media = inputCtx_->streams[i]->codecpar->codec_type;
