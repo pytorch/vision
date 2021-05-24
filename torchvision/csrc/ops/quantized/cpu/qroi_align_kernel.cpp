@@ -23,7 +23,6 @@ void qroi_align_forward_kernel_impl(
     bool aligned,
     const at::Tensor& t_rois,
     T* output) {
-  
   // Don't delete these otherwise the .data_ptr() data might be undefined
   auto t_input_cont = t_input.contiguous();
   auto t_rois_cont = t_rois.contiguous();
