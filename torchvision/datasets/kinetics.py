@@ -220,10 +220,10 @@ class Kinetics(VisionDataset):
                     .replace(")", "")
                 )
                 os.makedirs(path.join(self.split_folder, label), exist_ok=True)
-                existing_file = path.join(self.split_folder, f)
-                if path.isfile(existing_file):
+                downloaded_file = path.join(self.split_folder, f)
+                if path.isfile(downloaded_file):
                     os.replace(
-                        existing_file, path.join(self.split_folder, label, f),
+                        downloaded_file, path.join(self.split_folder, label, f),
                     )
 
     @property
