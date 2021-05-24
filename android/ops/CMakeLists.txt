@@ -35,7 +35,7 @@ target_compile_options(${TARGET} PRIVATE
 
 set(BUILD_SUBDIR ${ANDROID_ABI})
 
-find_library(PYTORCH_LIBRARY pytorch_jni
+find_library(PYTORCH_LIBRARY pytorch_jni_lite
   PATHS ${PYTORCH_LINK_DIRS}
   NO_CMAKE_FIND_ROOT_PATH)
 
