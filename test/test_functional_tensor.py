@@ -605,7 +605,8 @@ class Tester(TransformsTester):
         with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
             res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
             res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
-            assert res1 == res2
+            # we convert the PIL images to numpy as assert_equal doesn't work on PIL images.
+            assert_equal(np.asarray(res1), np.asarray(res2))
 
     def _test_rotate_all_options(self, tensor, pil_img, scripted_rotate, centers):
         img_size = pil_img.size
