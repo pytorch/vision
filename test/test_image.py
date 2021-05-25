@@ -105,7 +105,6 @@ class ImageTester(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 decode_jpeg(data)
 
-
     def test_decode_png(self):
         conversion = [(None, ImageReadMode.UNCHANGED), ("L", ImageReadMode.GRAY), ("LA", ImageReadMode.GRAY_ALPHA),
                       ("RGB", ImageReadMode.RGB), ("RGBA", ImageReadMode.RGB_ALPHA)]
@@ -279,7 +278,7 @@ def test_encode_jpeg_errors():
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=-1)
 
     with pytest.raises(ValueError, match="Image quality should be a positive number "
-                        "between 1 and 100"):
+                                         "between 1 and 100"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=101)
 
     with pytest.raises(RuntimeError, match="The number of channels should be 1 or 3, got: 5"):
