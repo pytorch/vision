@@ -805,22 +805,22 @@ def test_perspective_interpolation_warning(tester):
 @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC, NEAREST])
 def test_resize(device, dt, size, max_size, interpolation, tester):
 
+    if dt == torch.float16 and device == "cpu":
+        # skip float16 on CPU case
+        return
+
+    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
+        return  # unsupported
+
     torch.manual_seed(12)
     script_fn = torch.jit.script(F.resize)
     tensor, pil_img = tester._create_data(26, 36, device=device)
     batch_tensors = tester._create_data_batch(16, 18, num_samples=4, device=device)
 
-    if dt == torch.float16 and device == "cpu":
-        # skip float16 on CPU case
-        return
-
     if dt is not None:
         # This is a trivial cast to float of uint8 data to test all cases
         tensor = tensor.to(dt)
         batch_tensors = batch_tensors.to(dt)
-
-    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
-        return  # unsupported, see assertRaises below
 
     resized_tensor = F.resize(tensor, size=size, interpolation=interpolation, max_size=max_size)
     resized_pil_img = F.resize(pil_img, size=size, interpolation=interpolation, max_size=max_size)
@@ -837,10 +837,7 @@ def test_resize(device, dt, size, max_size, interpolation, tester):
             resized_tensor_f = resized_tensor_f.to(torch.float)
 
         # Pay attention to high tolerance for MAE
-        tester.approxEqualTensorToPIL(
-            resized_tensor_f, resized_pil_img, tol=8.0,
-            msg="{}, {}, {}".format(size, max_size, interpolation)
-        )
+        tester.approxEqualTensorToPIL(resized_tensor_f, resized_pil_img, tol=8.0)
 
     if isinstance(size, int):
         script_size = [size, ]
@@ -850,7 +847,7 @@ def test_resize(device, dt, size, max_size, interpolation, tester):
     resize_result = script_fn(
         tensor, size=script_size, interpolation=interpolation, max_size=max_size
     )
-    assert_equal(resized_tensor, resize_result, msg="{}, {}".format(size, interpolation))
+    assert_equal(resized_tensor, resize_result)
 
     tester._test_fn_on_batch(
         batch_tensors, F.resize, size=script_size, interpolation=interpolation, max_size=max_size
@@ -863,16 +860,17 @@ def test_resize_asserts(device, tester):
     tensor, pil_img = tester._create_data(26, 36, device=device)
 
     # assert changed type warning
-    with tester.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
         res1 = F.resize(tensor, size=32, interpolation=2)
-        res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
-        assert_equal(res1, res2)
+
+    res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
+    assert_equal(res1, res2)
 
     for img in (tensor, pil_img):
         exp_msg = "max_size should only be passed if size specifies the length of the smaller edge"
-        with tester.assertRaisesRegex(ValueError, exp_msg):
+        with pytest.raises(ValueError, match=exp_msg):
             F.resize(img, size=(32, 34), max_size=35)
-        with tester.assertRaisesRegex(ValueError, "max_size = 32 must be strictly greater"):
+        with pytest.raises(ValueError, match="max_size = 32 must be strictly greater"):
             F.resize(img, size=32, max_size=32)
 
 
@@ -882,12 +880,11 @@ def test_resize_asserts(device, tester):
 @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
 def test_resize_antialias(device, dt, size, interpolation, tester):
 
-    torch.manual_seed(12)
-
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
         return
 
+    torch.manual_seed(12)
     script_fn = torch.jit.script(F.resize)
     tensor, pil_img = tester._create_data(320, 290, device=device)
 
