@@ -225,3 +225,7 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="It seems that you passed a tuple of colors instead of"):
         bad_colors = ('red', 'blue')  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
