@@ -20,10 +20,15 @@ from _utils_internal import get_relative_path
 import numpy as np
 from PIL import Image
 
+from _assert_utils import assert_equal
+
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
 IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
+IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
+IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
+CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
 
 
 @contextlib.contextmanager
@@ -136,7 +141,8 @@ class TestCase(unittest.TestCase):
                 raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
         else:
             expected = torch.load(expected_file)
-            self.assertEqual(output, expected, prec=prec)
+            rtol = atol = prec or self.precision
+            torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
@@ -342,7 +348,7 @@ class TransformsTester(unittest.TestCase):
         pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
         if msg is None:
             msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
+        assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
 
     def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
                                allowed_percentage_diff=None):
@@ -406,12 +412,10 @@ def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
 
 
 def cpu_and_gpu():
+    # TODO: make this properly handle CircleCI
     import pytest  # noqa
-    # ignore CPU tests in RE as they're already covered by another contbuild
-    IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
-    IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
-    CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
 
+    # ignore CPU tests in RE as they're already covered by another contbuild
     devices = [] if IN_RE_WORKER else ['cpu']
 
     if torch.cuda.is_available():
@@ -427,3 +431,29 @@ def cpu_and_gpu():
     devices.append(pytest.param('cuda', marks=cuda_marks))
 
     return devices
+
+
+def needs_cuda(test_func):
+    # TODO: make this properly handle CircleCI
+    import pytest  # noqa
+
+    if IN_FBCODE and not IN_RE_WORKER:
+        # We don't want to skip in fbcode, so we just don't collect
+        # TODO: slightly more robust way would be to detect if we're in a sandcastle instance
+        # so that the test will still be collected (and skipped) in the devvms.
+        return pytest.mark.dont_collect(test_func)
+    elif torch.cuda.is_available():
+        return test_func
+    else:
+        return pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG)(test_func)
+
+
+def cpu_only(test_func):
+    # TODO: make this properly handle CircleCI
+    import pytest  # noqa
+
+    if IN_RE_WORKER:
+        # The assumption is that all RE workers have GPUs.
+        return pytest.mark.dont_collect(test_func)
+    else:
+        return test_func

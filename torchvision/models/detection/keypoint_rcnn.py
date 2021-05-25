@@ -297,13 +297,15 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
-    follows:
+    follows, where ``N`` is the number of detected instances:
 
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
-        - labels (``Int64Tensor[N]``): the predicted labels for each image
-        - scores (``Tensor[N]``): the scores or each prediction
+        - labels (``Int64Tensor[N]``): the predicted labels for each instance
+        - scores (``Tensor[N]``): the scores or each instance
         - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
+
+    For more details on the output, you may refer to :ref:`instance_seg_output`.
 
     Keypoint R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 

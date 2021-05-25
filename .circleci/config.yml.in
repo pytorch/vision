@@ -133,7 +133,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda101"
+      default: "pytorch/manylinux-cuda102"
     conda_docker_image:
       description: "Conda only: what docker image to use"
       type: string
@@ -159,6 +159,14 @@ torchvision_ios_params: &torchvision_ios_params
     BUILD_ENVIRONMENT: << parameters.build_environment >>
     IOS_ARCH: << parameters.ios_arch >>
     IOS_PLATFORM: << parameters.ios_platform >>
+
+torchvision_android_params: &torchvision_android_params
+  parameters:
+    build_environment:
+      type: string
+      default: ""
+  environment:
+    BUILD_ENVIRONMENT: << parameters.build_environment >>
 
 smoke_test_common: &smoke_test_common
   <<: *binary_common
@@ -337,7 +345,7 @@ jobs:
   binary_macos_wheel:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -394,10 +402,46 @@ jobs:
           cat "$script"
           source "$script"
 
+  binary_android_build:
+    <<: *torchvision_android_params
+    docker:
+      - image: circleci/android:api-29-ndk
+    resource_class: xlarge
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run:
+        name: Build
+        no_output_timeout: "1h"
+        command: |
+          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_build.sh"
+          cat "$script"
+          source "$script"
+    - store_artifacts:
+        path: ~/workspace/artifacts
+
+  binary_android_upload:
+    <<: *torchvision_android_params
+    docker:
+      - image: circleci/android:api-29-ndk
+    resource_class: xlarge
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run:
+        name: Upload
+        no_output_timeout: "1h"
+        command: |
+          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_upload.sh"
+          cat "$script"
+          source "$script"
+
   binary_macos_conda:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -536,7 +580,7 @@ jobs:
             fi
             conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install Pillow
+            conda install Pillow>=5.3.0
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
@@ -616,10 +660,10 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
-    resource_class: gpu.small
+      image: ubuntu-1604-cuda-10.2:202012-01
+    resource_class: gpu.nvidia.medium
     environment:
-      image_name: "pytorch/manylinux-cuda101"
+      image_name: "pytorch/manylinux-cuda102"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -699,7 +743,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.1"
+      CUDA_VERSION: "10.2"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -739,7 +783,7 @@ jobs:
   unittest_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     resource_class: large
     steps:
       - checkout
@@ -795,7 +839,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
@@ -815,7 +859,7 @@ jobs:
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -873,6 +917,15 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
           name: Build docs
           command: |
             set -ex
@@ -884,6 +937,12 @@ jobs:
             pip install -r requirements.txt
             make html
             popd
+      - save_cache:
+          {% raw %}
+          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:
@@ -934,6 +993,7 @@ workflows:
       - torchhub_test
       - torch_onnx_test
       {{ ios_workflows() }}
+      {{ android_workflows() }}
 
   unittest:
     jobs:
@@ -954,6 +1014,7 @@ workflows:
       - torchhub_test
       - torch_onnx_test
       {{ ios_workflows(nightly=True) }}
+      {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
     triggers:
