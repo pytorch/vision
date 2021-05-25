@@ -510,7 +510,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
 
     # find the index of the layer from which we wont freeze
     assert 0 <= trainable_layers <= num_stages
-    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+    freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
         for parameter in b.parameters():
