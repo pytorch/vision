@@ -6,7 +6,6 @@ channels:
 dependencies:
   - pytest
   - pytest-cov
-  - codecov
   - pip
   - libpng
   # NOTE: Pinned to fix issues with size_t on Windows
