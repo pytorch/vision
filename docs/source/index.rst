@@ -60,8 +60,7 @@ architectures, and common image transformations for computer vision.
    PyTorch on XLA Devices <http://pytorch.org/xla/>
 
 
-Indices and tables
-------------------
+Indices
+-------
 
 * :ref:`genindex`
-* :ref:`search`
