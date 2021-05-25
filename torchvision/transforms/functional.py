@@ -593,7 +593,7 @@ def _get_perspective_coeffs(
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
     res = torch.linalg.lstsq(a_matrix, b_matrix).solution
 
-    output: List[float] = res.squeeze(1).tolist()
+    output: List[float] = res.tolist()
     return output
 
 
