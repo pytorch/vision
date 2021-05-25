@@ -382,6 +382,7 @@ def test_encode_jpeg(img_path):
 
 
 @cpu_only
+@_collect_if(cond=not IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
