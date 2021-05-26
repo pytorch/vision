@@ -81,7 +81,18 @@ _model_params = {
         'input_shape': (1, 3, 299, 299)
     },
     'retinanet_resnet50_fpn': {
+        'num_classes': 20,
         'score_thresh': 0.01,
+        'min_size': 224,
+        'max_size': 224,
+        'input_shape': (3, 224, 224),
+    },
+    'keypointrcnn_resnet50_fpn': {
+        'num_classes': 2,
+        'num_keypoints': 5,
+        'min_size': 224,
+        'max_size': 224,
+        'input_shape': (3, 224, 224),
     },
     'fasterrcnn_mobilenet_v3_large_fpn': {
         'box_score_thresh': 0.02076,
