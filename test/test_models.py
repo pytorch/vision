@@ -89,7 +89,6 @@ _model_params = {
     },
     'keypointrcnn_resnet50_fpn': {
         'num_classes': 2,
-        'num_keypoints': 5,
         'min_size': 224,
         'max_size': 224,
         'input_shape': (3, 224, 224),
