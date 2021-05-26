@@ -68,8 +68,9 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 # 6 in 0-255 range
 TOLERANCE = 6
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_write_read_video():
     with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -77,8 +78,9 @@ def test_write_read_video():
         assert_equal(data, lv)
         assert info["video_fps"] == 5
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
 def test_probe_video_from_file():
@@ -87,8 +89,9 @@ def test_probe_video_from_file():
         assert pytest.approx(video_info.video_duration, 0.1) == 2
         assert pytest.approx(video_info.video_fps, 0.1) == 5
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
 def test_probe_video_from_memory():
@@ -99,8 +102,9 @@ def test_probe_video_from_memory():
         assert pytest.approx(video_info.video_duration, 0.1) == 2
         assert pytest.approx(video_info.video_fps, 0.1) == 5
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_timestamps():
     with temp_video(10, 300, 300, 5) as (f_name, data):
@@ -117,8 +121,9 @@ def test_read_timestamps():
         assert pts == expected_pts
         container.close()
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_partial_video():
     with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -137,8 +142,9 @@ def test_read_partial_video():
             assert len(lv) == 4
             assert_equal(data[4:8], lv)
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_partial_video_bframes():
     # do not use lossless encoding, to test the presence of B-frames
@@ -161,8 +167,9 @@ def test_read_partial_video_bframes():
             assert len(lv) == 3
             assert_equal(data[5:8], lv, rtol=0.0, atol=TOLERANCE)
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_packed_b_frames_divx_file():
     name = "hmdb51_Turnk_r_Pippi_Michel_cartwheel_f_cm_np2_le_med_6.avi"
@@ -172,8 +179,9 @@ def test_read_packed_b_frames_divx_file():
     assert pts == sorted(pts)
     assert fps == 30
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_timestamps_from_packet():
     with temp_video(10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
@@ -192,8 +200,9 @@ def test_read_timestamps_from_packet():
         assert pts == expected_pts
         container.close()
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_video_pts_unit_sec():
     with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -203,8 +212,9 @@ def test_read_video_pts_unit_sec():
         assert info["video_fps"] == 5
         assert info == {"video_fps": 5}
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_timestamps_pts_unit_sec():
     with temp_video(10, 300, 300, 5) as (f_name, data):
@@ -219,8 +229,9 @@ def test_read_timestamps_pts_unit_sec():
         assert pts == expected_pts
         container.close()
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_partial_video_pts_unit_sec():
     with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -236,8 +247,8 @@ def test_read_partial_video_pts_unit_sec():
         container = av.open(f_name)
         stream = container.streams[0]
         lv, _, _ = io.read_video(f_name,
-                                    int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
-                                    pts_unit='sec')
+                                 int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
+                                 pts_unit='sec')
         if get_video_backend() == "pyav":
             # for "video_reader" backend, we don't decode the closest early frame
             # when the given start pts is not matching any frame pts
@@ -245,8 +256,9 @@ def test_read_partial_video_pts_unit_sec():
             assert_equal(data[4:8], lv)
         container.close()
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_video_corrupted_file():
     with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
@@ -258,8 +270,9 @@ def test_read_video_corrupted_file():
         assert audio.numel() == 0
         assert info == {}
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 def test_read_video_timestamps_corrupted_file():
     with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
@@ -268,8 +281,9 @@ def test_read_video_timestamps_corrupted_file():
         assert video_pts == []
         assert video_fps is None
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 @pytest.mark.skip(reason="Temporarily disabled due to new pyav")
 def test_read_video_partially_corrupted_file():
@@ -295,8 +309,9 @@ def test_read_video_partially_corrupted_file():
         with pytest.raises(AssertionError):
             assert_equal(video, data)
 
+
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                 reason="video_reader backend not available")
+                    reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 @pytest.mark.skipif(sys.platform == 'win32', reason='temporarily disabled on Windows')
 def test_write_video_with_audio():
