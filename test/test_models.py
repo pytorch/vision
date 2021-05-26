@@ -77,20 +77,6 @@ autocast_flaky_numerics = (
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    'default_classification': {
-        'num_classes': 50,
-        'input_shape': (1, 3, 224, 224),
-    },
-    'default_segmentation': {
-        'num_classes': 10,
-        'pretrained_backbone': False,
-        'input_shape': (1, 3, 32, 32),
-    },
-    'default_detection': {
-        'num_classes': 50,
-        'pretrained_backbone': False,
-        'input_shape': (3, 300, 300),
-    },
     'inception_v3': {
         'input_shape': (1, 3, 299, 299)
     },
@@ -111,7 +97,11 @@ _model_params = {
 class ModelTester(TestCase):
     def _test_classification_model(self, name, dev):
         set_rng_seed(0)
-        kwargs = {**_model_params['default_classification'], **_model_params.get(name, {})}
+        defaults = {
+            'num_classes': 50,
+            'input_shape': (1, 3, 224, 224),
+        }
+        kwargs = {**defaults, **_model_params.get(name, {})}
         input_shape = kwargs.pop('input_shape')
 
         model = models.__dict__[name](**kwargs)
@@ -133,7 +123,12 @@ class ModelTester(TestCase):
 
     def _test_segmentation_model(self, name, dev):
         set_rng_seed(0)
-        kwargs = {**_model_params['default_segmentation'], **_model_params.get(name, {})}
+        defaults = {
+            'num_classes': 10,
+            'pretrained_backbone': False,
+            'input_shape': (1, 3, 32, 32),
+        }
+        kwargs = {**defaults, **_model_params.get(name, {})}
         input_shape = kwargs.pop('input_shape')
 
         model = models.segmentation.__dict__[name](**kwargs)
@@ -181,7 +176,12 @@ class ModelTester(TestCase):
 
     def _test_detection_model(self, name, dev):
         set_rng_seed(0)
-        kwargs = {**_model_params['default_detection'], **_model_params.get(name, {})}
+        defaults = {
+            'num_classes': 50,
+            'pretrained_backbone': False,
+            'input_shape': (3, 300, 300),
+        }
+        kwargs = {**defaults, **_model_params.get(name, {})}
         input_shape = kwargs.pop('input_shape')
 
         model = models.detection.__dict__[name](**kwargs)
