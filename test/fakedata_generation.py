@@ -7,15 +7,17 @@ from common_utils import get_tmp_dir
 
 
 @contextlib.contextmanager
-def dataset_root_from_test_case(cls, config=None):
+def dataset_root_from_test_case(test_case_cls, config=None):
+    test_case_cls.setUpClass()
+
     if config is None:
-        cls._populate_private_class_attributes()
-        config = cls._DEFAULT_CONFIG
+        config = test_case_cls._KWARG_DEFAULTS
+        if test_case_cls.DEFAULT_CONFIG:
+            config.update(test_case_cls.DEFAULT_CONFIG)
 
     with get_tmp_dir() as root:
-        test_case = cls()
+        test_case = test_case_cls()
         test_case.inject_fake_data(root, config)
-
         yield root
 
 
