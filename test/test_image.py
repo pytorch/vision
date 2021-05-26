@@ -205,8 +205,8 @@ def test_read_file():
 
         data = read_file(fpath)
         expected = torch.tensor(list(content), dtype=torch.uint8)
-        assert_equal(data, expected)
         os.unlink(fpath)
+        assert_equal(data, expected)
 
     with pytest.raises(RuntimeError, match="No such file or directory: 'tst'"):
         read_file('tst')
@@ -221,8 +221,8 @@ def test_read_file_non_ascii():
 
         data = read_file(fpath)
         expected = torch.tensor(list(content), dtype=torch.uint8)
-        assert_equal(data, expected)
         os.unlink(fpath)
+        assert_equal(data, expected)
 
 
 def test_write_file():
@@ -234,8 +234,8 @@ def test_write_file():
 
         with open(fpath, 'rb') as f:
             saved_content = f.read()
-        assert content == saved_content
         os.unlink(fpath)
+        assert content == saved_content
 
 
 def test_write_file_non_ascii():
@@ -247,8 +247,8 @@ def test_write_file_non_ascii():
 
         with open(fpath, 'rb') as f:
             saved_content = f.read()
-        assert content == saved_content
         os.unlink(fpath)
+        assert content == saved_content
 
 
 @needs_cuda
