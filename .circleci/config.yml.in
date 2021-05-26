@@ -39,11 +39,7 @@ commands:
       - run:
           name: adding UPLOAD_CHANNEL to BASH_ENV
           command: |
-            our_upload_channel=nightly
-            # On tags upload to test instead
-            if [[ -n "${CIRCLE_TAG}" ]]; then
-              our_upload_channel=test
-            fi
+            our_upload_channel=test
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
   install_cuda_compatible_cmath:
     description: "Install CUDA compatible cmath"
