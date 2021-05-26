@@ -1238,6 +1238,45 @@ class TestVideoReader(unittest.TestCase):
             )
             # FUTURE: check value of video / audio frames
 
+    def test_audio_video_sync(self):
+        """Test if audio/video are synchronised with pyav output."""
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            container = av.open(full_path)
+            if not container.streams.audio:
+                # Skip if no audio stream
+                continue
+            start_pts_val, cutoff = 0, 1
+            if container.streams.video:
+                video = container.streams.video[0]
+                arr = []
+                for index, frame in enumerate(container.decode(video)):
+                    if index == cutoff:
+                        start_pts_val = frame.pts
+                    if index >= cutoff:
+                        arr.append(frame.to_rgb().to_ndarray())
+                visual, _, info = io.read_video(full_path, start_pts=start_pts_val, pts_unit='pts')
+                self.assertAlmostEqual(
+                    config.video_fps, info['video_fps'], delta=0.0001
+                )
+                arr = torch.Tensor(arr)
+                if arr.shape == visual.shape:
+                    self.assertGreaterEqual(
+                        torch.mean(torch.isclose(visual.float(), arr, atol=1e-5).float()), 0.99)
+
+            container = av.open(full_path)
+            if container.streams.audio:
+                audio = container.streams.audio[0]
+                arr = []
+                for index, frame in enumerate(container.decode(audio)):
+                    if index >= cutoff:
+                        arr.append(frame.to_ndarray())
+                _, audio, _ = io.read_video(full_path, start_pts=start_pts_val, pts_unit='pts')
+                arr = torch.as_tensor(np.concatenate(arr, axis=1))
+                if arr.shape == audio.shape:
+                    self.assertGreaterEqual(
+                        torch.mean(torch.isclose(audio.float(), arr).float()), 0.99)
+
 
 if __name__ == "__main__":
     unittest.main()

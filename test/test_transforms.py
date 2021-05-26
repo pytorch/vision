@@ -834,7 +834,7 @@ class Tester(unittest.TestCase):
         output = trans(accimage.Image(GRACE_HOPPER))
 
         self.assertEqual(expected_output.size(), output.size())
-        torch.testing.assert_close(output, expected_output)
+        torch.testing.assert_close(output, expected_output, check_stride=False)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_resize(self):
