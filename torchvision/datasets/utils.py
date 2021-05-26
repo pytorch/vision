@@ -123,7 +123,7 @@ def download_url(
         return
 
     if _is_remote_location_available():
-        _download_file_from_remote_location(fpath)
+        _download_file_from_remote_location(fpath, url)
     else:
         # expand redirect chain if needed
         url = _get_redirect_url(url, max_hops=max_redirect_hops)

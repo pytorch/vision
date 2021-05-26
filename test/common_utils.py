@@ -20,6 +20,8 @@ from _utils_internal import get_relative_path
 import numpy as np
 from PIL import Image
 
+from _assert_utils import assert_equal
+
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
@@ -139,7 +141,8 @@ class TestCase(unittest.TestCase):
                 raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
         else:
             expected = torch.load(expected_file)
-            self.assertEqual(output, expected, prec=prec)
+            rtol = atol = prec or self.precision
+            torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
@@ -345,7 +348,7 @@ class TransformsTester(unittest.TestCase):
         pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
         if msg is None:
             msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
+        assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
 
     def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
                                allowed_percentage_diff=None):

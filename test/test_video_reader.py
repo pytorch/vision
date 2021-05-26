@@ -11,6 +11,7 @@ import torchvision.io as io
 from numpy.random import randint
 from torchvision.io import _HAS_VIDEO_OPT
 from common_utils import PY39_SKIP
+from _assert_utils import assert_equal
 
 
 try:
@@ -359,8 +360,7 @@ class TestVideoReader(unittest.TestCase):
         )
         self.assertAlmostEqual(mean_delta, 0, delta=1.0)
 
-        is_same = torch.all(torch.eq(vtimebase, ref_result.vtimebase)).item()
-        self.assertEqual(is_same, True)
+        assert_equal(vtimebase, ref_result.vtimebase)
 
         if (
             config.check_aframes
@@ -369,8 +369,7 @@ class TestVideoReader(unittest.TestCase):
         ):
             """Audio stream is available and audio frame is required to return
             from decoder"""
-            is_same = torch.all(torch.eq(aframes, ref_result.aframes)).item()
-            self.assertEqual(is_same, True)
+            assert_equal(aframes, ref_result.aframes)
 
         if (
             config.check_aframe_pts
@@ -378,11 +377,9 @@ class TestVideoReader(unittest.TestCase):
             and ref_result.aframe_pts.numel() > 0
         ):
             """Audio stream is available"""
-            is_same = torch.all(torch.eq(aframe_pts, ref_result.aframe_pts)).item()
-            self.assertEqual(is_same, True)
+            assert_equal(aframe_pts, ref_result.aframe_pts)
 
-            is_same = torch.all(torch.eq(atimebase, ref_result.atimebase)).item()
-            self.assertEqual(is_same, True)
+            assert_equal(atimebase, ref_result.atimebase)
 
     @unittest.skip(
         "This stress test will iteratively decode the same set of videos."
@@ -1240,6 +1237,45 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             # FUTURE: check value of video / audio frames
+
+    def test_audio_video_sync(self):
+        """Test if audio/video are synchronised with pyav output."""
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            container = av.open(full_path)
+            if not container.streams.audio:
+                # Skip if no audio stream
+                continue
+            start_pts_val, cutoff = 0, 1
+            if container.streams.video:
+                video = container.streams.video[0]
+                arr = []
+                for index, frame in enumerate(container.decode(video)):
+                    if index == cutoff:
+                        start_pts_val = frame.pts
+                    if index >= cutoff:
+                        arr.append(frame.to_rgb().to_ndarray())
+                visual, _, info = io.read_video(full_path, start_pts=start_pts_val, pts_unit='pts')
+                self.assertAlmostEqual(
+                    config.video_fps, info['video_fps'], delta=0.0001
+                )
+                arr = torch.Tensor(arr)
+                if arr.shape == visual.shape:
+                    self.assertGreaterEqual(
+                        torch.mean(torch.isclose(visual.float(), arr, atol=1e-5).float()), 0.99)
+
+            container = av.open(full_path)
+            if container.streams.audio:
+                audio = container.streams.audio[0]
+                arr = []
+                for index, frame in enumerate(container.decode(audio)):
+                    if index >= cutoff:
+                        arr.append(frame.to_ndarray())
+                _, audio, _ = io.read_video(full_path, start_pts=start_pts_val, pts_unit='pts')
+                arr = torch.as_tensor(np.concatenate(arr, axis=1))
+                if arr.shape == audio.shape:
+                    self.assertGreaterEqual(
+                        torch.mean(torch.isclose(audio.float(), arr).float()), 0.99)
 
 
 if __name__ == "__main__":
