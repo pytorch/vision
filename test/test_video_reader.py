@@ -1,7 +1,6 @@
 import collections
 import math
 import os
-import time
 import unittest
 from fractions import Fraction
 
@@ -9,6 +8,7 @@ import numpy as np
 import torch
 import torchvision.io as io
 from numpy.random import randint
+from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
 from common_utils import PY39_SKIP
 from _assert_utils import assert_equal
@@ -21,9 +21,6 @@ try:
     io.video._check_av_available()
 except ImportError:
     av = None
-
-
-from urllib.error import URLError
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
@@ -1276,6 +1273,15 @@ class TestVideoReader(unittest.TestCase):
                 if arr.shape == audio.shape:
                     self.assertGreaterEqual(
                         torch.mean(torch.isclose(audio.float(), arr).float()), 0.99)
+
+    def test_invalid_file(self):
+        set_video_backend('video_reader')
+        with self.assertRaises(RuntimeError):
+            io.read_video('foo.mp4')
+
+        set_video_backend('pyav')
+        with self.assertRaises(RuntimeError):
+            io.read_video('foo.mp4')
 
 
 if __name__ == "__main__":
