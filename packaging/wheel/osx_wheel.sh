@@ -12,8 +12,6 @@ wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh &
 . ~/minconda_wheel_env_tmp/bin/activate
 
 
-export TORCHVISION_BUILD_VERSION="0.4.0.dev$(date "+%Y%m%d")"
-export TORCHVISION_BUILD_NUMBER="1"
 export OUT_DIR=~/torchvision_wheels
 
 export MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++
