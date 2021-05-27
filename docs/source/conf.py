@@ -27,7 +27,7 @@ import pytorch_sphinx_theme
 
 # -- General configuration ------------------------------------------------
 
-# Minimal version of sphinx is set from docs/requirements.txt
+# Required version of sphinx is set from docs/requirements.txt
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
