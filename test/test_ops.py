@@ -725,13 +725,13 @@ class DeformConvTester(OpTester, unittest.TestCase):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
                                      padding=padding, dilation=dilation, mask=mask_)
 
-        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=False)
+        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         def func_no_mask(x_, offset_, weight_, bias_):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
                                      padding=padding, dilation=dilation, mask=None)
 
-        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=False)
+        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         @torch.jit.script
         def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
@@ -740,7 +740,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
                                      padding=pad_, dilation=dilation_, mask=mask_)
 
         gradcheck(lambda z, off, msk, wei, bi: script_func(z, off, msk, wei, bi, stride, padding, dilation),
-                  (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=False)
+                  (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         @torch.jit.script
         def script_func_no_mask(x_, offset_, weight_, bias_, stride_, pad_, dilation_):
@@ -749,7 +749,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
                                      padding=pad_, dilation=dilation_, mask=None)
 
         gradcheck(lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
-                  (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=False)
+                  (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_compare_cpu_cuda_grads(self):
