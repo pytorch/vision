@@ -91,6 +91,7 @@ _model_params = {
         'num_classes': 2,
         'min_size': 224,
         'max_size': 224,
+        'box_score_thresh': 0.15,
         'input_shape': (3, 224, 224),
     },
     'fasterrcnn_resnet50_fpn': {
@@ -100,7 +101,7 @@ _model_params = {
         'input_shape': (3, 224, 224),
     },
     'maskrcnn_resnet50_fpn': {
-        'num_classes': 20,
+        'num_classes': 10,
         'min_size': 224,
         'max_size': 224,
         'input_shape': (3, 224, 224),
