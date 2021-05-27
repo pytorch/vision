@@ -161,6 +161,8 @@ def test_encode_png(img_path):
 
     assert_equal(img_pil, rec_img)
 
+
+def test_encode_png_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_png(torch.empty((3, 100, 100), dtype=torch.float32))
 
