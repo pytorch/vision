@@ -139,9 +139,11 @@ def test_decode_png(img_path, pil_mode, mode):
     tol = 0 if pil_mode is None else 1
     assert img_lpng.allclose(img_pil, atol=tol)
 
-    with pytest.raises(RuntimeError):
+
+def test_decode_png_errors():
+    with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
         decode_png(torch.empty((), dtype=torch.uint8))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Content is not png"):
         decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
 
 
