@@ -27,9 +27,7 @@ import pytorch_sphinx_theme
 
 # -- General configuration ------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-needs_sphinx = '2.4.4'
+# Minimal version of sphinx is set from docs/requirements.txt
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -68,11 +66,7 @@ templates_path = ['_templates']
 #
 source_suffix = {
     '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
 }
-
-autodoc_typehints = 'signature'
 
 # The master toctree document.
 master_doc = 'index'
@@ -133,15 +127,6 @@ html_theme_options = {
     'analytics_id': 'UA-117752657-2',
 }
 
-
-# html_context = {
-#     "display_github": True,  # Integrate GitHub
-#     "github_user": "pytorch",  # Username
-#     "github_repo": "vision",  # Repo name
-#     "github_version": "master",  # Version
-#     "conf_py_path": "/docs/source/",  # Path in the checkout to the docs root
-# }
-
 html_logo = '_static/img/pytorch-logo-dark.svg'
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -161,24 +146,6 @@ htmlhelp_basename = 'PyTorchdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
