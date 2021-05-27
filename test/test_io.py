@@ -100,13 +100,12 @@ class TestVideo:
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
             # so we use it as a baseline
-            container = av.open(f_name)
-            stream = container.streams[0]
-            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
-            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
-            expected_pts = [i * pts_step for i in range(num_frames)]
+            with av.open(f_name) as container:
+                stream = container.streams[0]
+                pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+                num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+                expected_pts = [i * pts_step for i in range(num_frames)]
 
-            container.close()
             assert pts == expected_pts
 
     @pytest.mark.parametrize('start', range(5))
@@ -163,15 +162,14 @@ class TestVideo:
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
             # so we use it as a baseline
-            container = av.open(f_name)
-            stream = container.streams[0]
-            # make sure we went through the optimized codepath
-            assert b'Lavc' in stream.codec_context.extradata
-            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
-            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
-            expected_pts = [i * pts_step for i in range(num_frames)]
+            with av.open(f_name) as container:
+                stream = container.streams[0]
+                # make sure we went through the optimized codepath
+                assert b'Lavc' in stream.codec_context.extradata
+                pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+                num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+                expected_pts = [i * pts_step for i in range(num_frames)]
 
-            container.close()
             assert pts == expected_pts
 
     def test_read_video_pts_unit_sec(self):
@@ -186,13 +184,12 @@ class TestVideo:
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
 
-            container = av.open(f_name)
-            stream = container.streams[0]
-            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
-            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
-            expected_pts = [i * pts_step * stream.time_base for i in range(num_frames)]
+            with av.open(f_name) as container:
+                stream = container.streams[0]
+                pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+                num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+                expected_pts = [i * pts_step * stream.time_base for i in range(num_frames)]
 
-            container.close()
             assert pts == expected_pts
 
     @pytest.mark.parametrize('start', range(5))
@@ -206,12 +203,11 @@ class TestVideo:
             assert len(lv) == offset
             assert_equal(s_data, lv)
 
-            container = av.open(f_name)
-            stream = container.streams[0]
-            lv, _, _ = io.read_video(f_name,
-                                     int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
-                                     pts_unit='sec')
-            container.close()
+            with av.open(f_name) as container:
+                stream = container.streams[0]
+                lv, _, _ = io.read_video(f_name,
+                                         int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
+                                         pts_unit='sec')
             if get_video_backend() == "pyav":
                 # for "video_reader" backend, we don't decode the closest early frame
                 # when the given start pts is not matching any frame pts
