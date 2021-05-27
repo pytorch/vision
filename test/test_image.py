@@ -57,13 +57,12 @@ def normalize_dimensions(img_pil):
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg")
 ])
-@pytest.mark.parametrize('conversion', [
+@pytest.mark.parametrize('pil_mode, mode', [
     (None, ImageReadMode.UNCHANGED),
     ("L", ImageReadMode.GRAY),
     ("RGB", ImageReadMode.RGB),
 ])
-def test_decode_jpeg(img_path, conversion):
-    pil_mode, mode = conversion
+def test_decode_jpeg(img_path, pil_mode, mode):
 
     with Image.open(img_path) as img:
         is_cmyk = img.mode == "CMYK"
@@ -118,15 +117,14 @@ def test_damaged_images(img_path):
     pytest.param(png_path, id=_get_safe_image_name(png_path))
     for png_path in get_images(FAKEDATA_DIR, ".png")
 ])
-@pytest.mark.parametrize('conversion', [
+@pytest.mark.parametrize('pil_mode, mode', [
     (None, ImageReadMode.UNCHANGED),
     ("L", ImageReadMode.GRAY),
     ("LA", ImageReadMode.GRAY_ALPHA),
     ("RGB", ImageReadMode.RGB),
     ("RGBA", ImageReadMode.RGB_ALPHA),
 ])
-def test_decode_png(img_path, conversion):
-    pil_mode, mode = conversion
+def test_decode_png(img_path, pil_mode, mode):
 
     with Image.open(img_path) as img:
         if pil_mode is not None:
@@ -137,7 +135,7 @@ def test_decode_png(img_path, conversion):
     data = read_file(img_path)
     img_lpng = decode_image(data, mode=mode)
 
-    tol = 0 if conversion is None else 1
+    tol = 0 if pil_mode is None else 1
     assert img_lpng.allclose(img_pil, atol=tol)
 
     with pytest.raises(RuntimeError):
