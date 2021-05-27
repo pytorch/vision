@@ -85,31 +85,32 @@ def test_decode_jpeg(img_path, pil_mode, mode):
     abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
     assert abs_mean_diff < 2
 
+
+def test_decode_jpeg_errors():
     with pytest.raises(RuntimeError, match="Expected a non empty 1-dimensional tensor"):
         decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
 
     with pytest.raises(RuntimeError, match="Expected a torch.uint8 tensor"):
         decode_jpeg(torch.empty((100,), dtype=torch.float16))
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Not a JPEG file"):
         decode_jpeg(torch.empty((100), dtype=torch.uint8))
+
+
+def test_decode_bad_huffman_images():
+    # sanity check: make sure we can decode the bad Huffman encoding
+    bad_huff = read_file(os.path.join(DAMAGED_JPEG, 'bad_huffman.jpg'))
+    decode_jpeg(bad_huff)
 
 
 @pytest.mark.parametrize('img_path', [
     pytest.param(truncated_image, id=_get_safe_image_name(truncated_image))
     for truncated_image in glob.glob(os.path.join(DAMAGED_JPEG, 'corrupt*.jpg'))
 ])
-def test_damaged_images(img_path):
-    # Test image with bad Huffman encoding (should not raise)
-    bad_huff = read_file(os.path.join(DAMAGED_JPEG, 'bad_huffman.jpg'))
-    try:
-        _ = decode_jpeg(bad_huff)
-    except RuntimeError:
-        assert False
-
+def test_damaged_corrupt_images(img_path):
     # Truncated images should raise an exception
     data = read_file(img_path)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Image is incomplete or truncated"):
         decode_jpeg(data)
 
 
