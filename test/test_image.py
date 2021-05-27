@@ -110,7 +110,11 @@ def test_decode_bad_huffman_images():
 def test_damaged_corrupt_images(img_path):
     # Truncated images should raise an exception
     data = read_file(img_path)
-    with pytest.raises(RuntimeError, match="Image is incomplete or truncated"):
+    if 'corrupt34' in img_path:
+        match_message = "Image is incomplete or truncated"
+    else:
+        match_message = "Unsupported marker type"
+    with pytest.raises(RuntimeError, match=match_message):
         decode_jpeg(data)
 
 
