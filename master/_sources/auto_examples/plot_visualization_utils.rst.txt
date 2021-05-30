@@ -166,8 +166,6 @@ on the output of such models, you may refer to :ref:`instance_seg_output`.
  .. code-block:: none
 
     Downloading: "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth" to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-    /root/project/env/lib/python3.7/site-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  /opt/conda/conda-bld/pytorch_1622271983546/work/c10/core/TensorImpl.h:1260.)
-      return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
     [{'boxes': tensor([[215.9767, 171.1661, 402.0078, 378.7391],
             [344.6341, 172.6735, 357.6114, 220.1435],
             [153.1306, 185.5568, 172.9223, 254.7014]], grad_fn=<StackBackward>), 'labels': tensor([18,  1,  1]), 'scores': tensor([0.9989, 0.0701, 0.0611], grad_fn=<IndexBackward>)}, {'boxes': tensor([[ 23.5963, 132.4332, 449.9359, 493.0222],
@@ -781,7 +779,7 @@ instance with class 15 (which corresponds to 'bench') was not selected.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  11.236 seconds)
+   **Total running time of the script:** ( 0 minutes  15.038 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:
