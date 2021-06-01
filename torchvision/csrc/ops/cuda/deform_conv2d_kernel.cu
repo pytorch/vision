@@ -85,7 +85,7 @@ inline unsigned int GET_THREADS() {
 #ifdef __HIP_PLATFORM_HCC__
   return 256;
 #endif
-    return 512;
+  return 512;
 }
 
 inline unsigned int GET_BLOCKS(
