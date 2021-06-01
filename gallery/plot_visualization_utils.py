@@ -10,7 +10,6 @@ visualizing images, bounding boxes, and segmentation masks.
 
 import torch
 import numpy as np
-import scipy.misc
 import matplotlib.pyplot as plt
 
 import torchvision.transforms.functional as F
@@ -68,7 +67,9 @@ show(result)
 # models.  Here is demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 # model. You can also try using a RetinaNet with
-# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`. For more details
+# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`, an SSDlite with
+# :func:`~torchvision.models.detection.ssdlite320_mobilenet_v3_large` or an SSD with
+# :func:`~torchvision.models.detection.ssd300_vgg16`. For more details
 # on the output of such models, you may refer to :ref:`instance_seg_output`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
