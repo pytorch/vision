@@ -86,8 +86,8 @@ def make_dataset(
             continue
         for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
             for fname in sorted(fnames):
-                path = os.path.join(root, fname)
-                if is_valid_file(path):
+                if is_valid_file(fname):
+                    path = os.path.join(root, fname)
                     item = path, class_index
                     instances.append(item)
 
