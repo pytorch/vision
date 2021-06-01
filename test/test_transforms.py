@@ -1604,7 +1604,7 @@ class Tester(unittest.TestCase):
             # Accept 3 wrong pixels
             self.assertLess(n_diff_pixels, 3,
                             "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +
-                            "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0])))
+                            "n diff pixels={}\n".format(n_diff_pixels))
 
         # Test rotation
         a = 45
@@ -1623,9 +1623,9 @@ class Tester(unittest.TestCase):
         _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
 
         # Test rotation, scale, translation, shear
-        for a in range(-90, 90, 25):
+        for a in range(-90, 90, 36):
             for t1 in range(-10, 10, 5):
-                for s in [0.75, 0.98, 1.0, 1.2, 1.4]:
+                for s in [0.77, 1.0, 1.27]:
                     for sh in range(-15, 15, 5):
                         _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 
