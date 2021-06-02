@@ -14,8 +14,15 @@ import torchvision.transforms.functional as F
 import torchvision.transforms as T
 from torchvision.transforms import InterpolationMode
 
-from common_utils import (cpu_and_gpu, needs_cuda, _create_data, _create_data_batch, _assert_equal_tensor_to_pil,
-                          _assert_approx_equal_tensor_to_pil, _test_fn_on_batch)
+from common_utils import (
+    cpu_and_gpu,
+    needs_cuda,
+    _create_data,
+    _create_data_batch,
+    _assert_equal_tensor_to_pil,
+    _assert_approx_equal_tensor_to_pil,
+    _test_fn_on_batch,
+)
 from _assert_utils import assert_equal
 
 from typing import Dict, List, Sequence, Tuple

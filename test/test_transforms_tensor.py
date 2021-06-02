@@ -9,8 +9,15 @@ import numpy as np
 import unittest
 from typing import Sequence
 
-from common_utils import (get_tmp_dir, int_dtypes, float_dtypes, _create_data, _create_data_batch,
-                          _assert_equal_tensor_to_pil, _assert_approx_equal_tensor_to_pil)
+from common_utils import (
+    get_tmp_dir,
+    int_dtypes,
+    float_dtypes,
+    _create_data,
+    _create_data_batch,
+    _assert_equal_tensor_to_pil,
+    _assert_approx_equal_tensor_to_pil,
+)
 from _assert_utils import assert_equal
 
 
