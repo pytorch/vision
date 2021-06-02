@@ -53,6 +53,7 @@ class AlexNet(nn.Module):
 def alexnet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> AlexNet:
     r"""AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
+    The required minimum input size of the model is 63x63.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
