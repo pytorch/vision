@@ -311,7 +311,7 @@ class TestCase(unittest.TestCase):
             results = m(*args)
         with freeze_rng_state():
             results_from_imported = m_import(*args)
-        self.assertEqual(results, results_from_imported, prec=3e-5)
+        self.assertEqual(results, results_from_imported, prec=3e-4)
 
 
 @contextlib.contextmanager
@@ -323,54 +323,6 @@ def freeze_rng_state():
     if torch.cuda.is_available():
         torch.cuda.set_rng_state(cuda_rng_state)
     torch.set_rng_state(rng_state)
-
-
-class TransformsTester(unittest.TestCase):
-
-    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
-        return tensor, pil_img
-
-    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
-        batch_tensor = torch.randint(
-            0, 256,
-            (num_samples, channels, height, width),
-            dtype=torch.uint8,
-            device=device
-        )
-        return batch_tensor
-
-    def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
-        if msg is None:
-            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-        assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
-
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
-                               allowed_percentage_diff=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
-
-        if allowed_percentage_diff is not None:
-            # Assert that less than a given %age of pixels are different
-            self.assertTrue(
-                (tensor != pil_tensor).to(torch.float).mean() <= allowed_percentage_diff
-            )
-        # error value can be mean absolute error, max abs error
-        # Convert to float to avoid underflow when computing absolute difference
-        tensor = tensor.to(torch.float)
-        pil_tensor = pil_tensor.to(torch.float)
-        err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-        self.assertTrue(
-            err < tol,
-            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
-        )
 
 
 def cycle_over(objs):
@@ -457,3 +409,65 @@ def cpu_only(test_func):
         return pytest.mark.dont_collect(test_func)
     else:
         return test_func
+
+
+def _create_data(height=3, width=3, channels=3, device="cpu"):
+    # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
+    tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
+    pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+    return tensor, pil_img
+
+
+def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu"):
+    # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
+    batch_tensor = torch.randint(
+        0, 256,
+        (num_samples, channels, height, width),
+        dtype=torch.uint8,
+        device=device
+    )
+    return batch_tensor
+
+
+def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
+    np_pil_image = np.array(pil_image)
+    if np_pil_image.ndim == 2:
+        np_pil_image = np_pil_image[:, :, None]
+    pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
+    if msg is None:
+        msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+    assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
+
+
+def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
+                                       allowed_percentage_diff=None):
+    # TODO: we could just merge this into _assert_equal_tensor_to_pil
+    np_pil_image = np.array(pil_image)
+    if np_pil_image.ndim == 2:
+        np_pil_image = np_pil_image[:, :, None]
+    pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+
+    if allowed_percentage_diff is not None:
+        # Assert that less than a given %age of pixels are different
+        assert (tensor != pil_tensor).to(torch.float).mean() <= allowed_percentage_diff
+
+    # error value can be mean absolute error, max abs error
+    # Convert to float to avoid underflow when computing absolute difference
+    tensor = tensor.to(torch.float)
+    pil_tensor = pil_tensor.to(torch.float)
+    err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
+    assert err < tol
+
+
+def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
+    transformed_batch = fn(batch_tensors, **fn_kwargs)
+    for i in range(len(batch_tensors)):
+        img_tensor = batch_tensors[i, ...]
+        transformed_img = fn(img_tensor, **fn_kwargs)
+        assert_equal(transformed_img, transformed_batch[i, ...])
+
+    if scripted_fn_atol >= 0:
+        scripted_fn = torch.jit.script(fn)
+        # scriptable function test
+        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+        torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)

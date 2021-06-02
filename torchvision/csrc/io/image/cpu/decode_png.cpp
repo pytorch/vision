@@ -74,7 +74,7 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
   int channels = png_get_channels(png_ptr, info_ptr);
 
   if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-      png_set_expand_gray_1_2_4_to_8(png_ptr);
+    png_set_expand_gray_1_2_4_to_8(png_ptr);
 
   if (mode != IMAGE_READ_MODE_UNCHANGED) {
     // TODO: consider supporting PNG_INFO_tRNS
