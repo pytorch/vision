@@ -18,9 +18,7 @@ from collections import OrderedDict
 from _utils_internal import get_relative_path
 
 import numpy as np
-from PIL import Image
 
-from _assert_utils import assert_equal
 
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
@@ -323,54 +321,6 @@ def freeze_rng_state():
     if torch.cuda.is_available():
         torch.cuda.set_rng_state(cuda_rng_state)
     torch.set_rng_state(rng_state)
-
-
-class TransformsTester(unittest.TestCase):
-
-    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
-        return tensor, pil_img
-
-    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
-        batch_tensor = torch.randint(
-            0, 256,
-            (num_samples, channels, height, width),
-            dtype=torch.uint8,
-            device=device
-        )
-        return batch_tensor
-
-    def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
-        if msg is None:
-            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-        assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
-
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
-                               allowed_percentage_diff=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
-
-        if allowed_percentage_diff is not None:
-            # Assert that less than a given %age of pixels are different
-            self.assertTrue(
-                (tensor != pil_tensor).to(torch.float).mean() <= allowed_percentage_diff
-            )
-        # error value can be mean absolute error, max abs error
-        # Convert to float to avoid underflow when computing absolute difference
-        tensor = tensor.to(torch.float)
-        pil_tensor = pil_tensor.to(torch.float)
-        err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-        self.assertTrue(
-            err < tol,
-            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
-        )
 
 
 def cycle_over(objs):
