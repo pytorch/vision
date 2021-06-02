@@ -1,5 +1,7 @@
+import os
 import sys
 from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed, IN_CIRCLE_CI
+from _utils_internal import get_relative_path
 from collections import OrderedDict
 from itertools import product
 import functools
@@ -11,6 +13,9 @@ import unittest
 import warnings
 
 import pytest
+
+
+ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
 
 
 def get_available_classification_models():
@@ -31,6 +36,50 @@ def get_available_detection_models():
 def get_available_video_models():
     # TODO add a registration mechanism to torchvision.models
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+
+
+def _get_expected_file(name=None):
+    # Determine expected file based on environment
+    expected_file_base = get_relative_path(os.path.realpath(__file__), "expect")
+
+    # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
+    # We hardcode it here to avoid having to re-generate the reference files
+    expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
+    expected_file += "_expect.pkl"
+
+    if not ACCEPT and not os.path.exists(expected_file):
+        raise RuntimeError(
+            f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
+            "to accept the current output, re-run the failing test after setting the EXPECTTEST_ACCEPT "
+            "env variable. For example: EXPECTTEST_ACCEPT=1 pytest test/test_models.py -k alexnet"
+        )
+
+    return expected_file
+
+def _assert_expected(output, name, prec):
+    """Test that a python value matches the recorded contents of a file
+    based on a "check" name. The value must be
+    pickable with `torch.save`. This file
+    is placed in the 'expect' directory in the same directory
+    as the test script. You can automatically update the recorded test
+    output using an EXPECTTEST_ACCEPT=1 env variable.
+    """
+    expected_file = _get_expected_file(name)
+
+    if ACCEPT:
+        filename = {os.path.basename(expected_file)}
+        print("Accepting updated output for {}:\n\n{}".format(filename, output))
+        torch.save(output, expected_file)
+        MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
+        binary_size = os.path.getsize(expected_file)
+        if binary_size > MAX_PICKLE_SIZE:
+            raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
+    else:
+        expected = torch.load(expected_file)
+        rtol = atol = prec
+        torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
+
+
 
 
 # If 'unwrapper' is provided it will be called with the script model outputs
@@ -132,7 +181,7 @@ class ModelTester(TestCase):
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.assertExpected(out.cpu(), name, prec=0.1)
+        _assert_expected(out.cpu(), name, prec=0.1)
         self.assertEqual(out.shape[-1], 50)
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
@@ -141,7 +190,7 @@ class ModelTester(TestCase):
                 out = model(x)
                 # See autocast_flaky_numerics comment at top of file.
                 if name not in autocast_flaky_numerics:
-                    self.assertExpected(out.cpu(), name, prec=0.1)
+                    _assert_expected(out.cpu(), name, prec=0.1)
                 self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name, dev):
@@ -166,12 +215,12 @@ class ModelTester(TestCase):
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
-                self.assertExpected(out.cpu(), name, prec=prec)
+                _assert_expected(out.cpu(), name, prec=prec)
             except AssertionError:
                 # Unfortunately some segmentation models are flaky with autocast
                 # so instead of validating the probability scores, check that the class
                 # predictions match.
-                expected_file = self._get_expected_file(name)
+                expected_file = _get_expected_file(name)
                 expected = torch.load(expected_file)
                 torch.testing.assert_close(out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec)
                 return False  # Partial validation performed
@@ -248,13 +297,13 @@ class ModelTester(TestCase):
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
                 # where we need to create a new expected result.
-                self.assertExpected(output, name, prec=prec)
+                _assert_expected(output, name, prec=prec)
             except AssertionError:
                 # Unfortunately detection models are flaky due to the unstable sort
                 # in NMS. If matching across all outputs fails, use the same approach
                 # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
                 # scores.
-                expected_file = self._get_expected_file(name)
+                expected_file = _get_expected_file(name)
                 expected = torch.load(expected_file)
                 torch.testing.assert_close(output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec,
                                            check_device=False, check_dtype=False)
