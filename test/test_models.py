@@ -1,6 +1,7 @@
 import os
+import io
 import sys
-from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed, IN_CIRCLE_CI
+from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed, assert_equal
 from _utils_internal import get_relative_path
 from collections import OrderedDict
 from itertools import product
@@ -80,6 +81,50 @@ def _assert_expected(output, name, prec):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
+def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
+    """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
+
+    def assert_export_import_module(m, args):
+        """Check that the results of a model are the same after saving and loading"""
+        def get_export_import_copy(m):
+            """Save and load a TorchScript model"""
+            buffer = io.BytesIO()
+            torch.jit.save(m, buffer)
+            buffer.seek(0)
+            imported = torch.jit.load(buffer)
+            return imported
+
+        m_import = get_export_import_copy(m)
+        with freeze_rng_state():
+            results = m(*args)
+        with freeze_rng_state():
+            results_from_imported = m_import(*args)
+        assert_equal(results, results_from_imported, atol=3e-4, rtol=3e-4)
+
+    TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
+    if not TEST_WITH_SLOW or skip:
+        # TorchScript is not enabled, skip these tests
+        msg = "The check_jit_scriptable test for {} was skipped. " \
+              "This test checks if the module's results in TorchScript " \
+              "match eager and that it can be exported. To run these " \
+              "tests make sure you set the environment variable " \
+              "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
+              "manually skipped.".format(nn_module.__class__.__name__)
+        warnings.warn(msg, RuntimeWarning)
+        return None
+
+    sm = torch.jit.script(nn_module)
+
+    with freeze_rng_state():
+        eager_out = nn_module(*args)
+
+    with freeze_rng_state():
+        script_out = sm(*args)
+        if unwrapper:
+            script_out = unwrapper(script_out)
+
+    assert_equal(eager_out, script_out, atol=1e-4, rtol=1e-4)
+    assert_export_import_module(sm, args)
 
 
 # If 'unwrapper' is provided it will be called with the script model outputs
@@ -183,7 +228,7 @@ class ModelTester(TestCase):
         out = model(x)
         _assert_expected(out.cpu(), name, prec=0.1)
         self.assertEqual(out.shape[-1], 50)
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
@@ -229,7 +274,7 @@ class ModelTester(TestCase):
 
         full_validation = check_out(out)
 
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
@@ -317,7 +362,7 @@ class ModelTester(TestCase):
             return True  # Full validation performed
 
         full_validation = check_out(out)
-        self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
+        _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
@@ -367,7 +412,7 @@ class ModelTester(TestCase):
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
         self.assertEqual(out.shape[-1], 50)
 
         if dev == torch.device("cuda"):
@@ -447,7 +492,7 @@ class ModelTester(TestCase):
         model.AuxLogits = None
         model = model.eval()
         x = torch.rand(1, 3, 299, 299)
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
@@ -476,7 +521,7 @@ class ModelTester(TestCase):
         model.aux2 = None
         model = model.eval()
         x = torch.rand(1, 3, 224, 224)
-        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
     def test_fasterrcnn_switch_devices(self):

@@ -5,9 +5,7 @@ import contextlib
 import unittest
 import argparse
 import sys
-import io
 import torch
-import warnings
 import __main__
 import random
 import inspect
@@ -46,9 +44,6 @@ def set_rng_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
-
-
-TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
 
 
 class MapNestedTensorObjectImpl(object):
@@ -209,59 +204,6 @@ class TestCase(unittest.TestCase):
             super(TestCase, self).assertLessEqual(abs(x - y), prec, message)
         else:
             super(TestCase, self).assertEqual(x, y, message)
-
-    def check_jit_scriptable(self, nn_module, args, unwrapper=None, skip=False):
-        """
-        Check that a nn.Module's results in TorchScript match eager and that it
-        can be exported
-        """
-        if not TEST_WITH_SLOW or skip:
-            # TorchScript is not enabled, skip these tests
-            msg = "The check_jit_scriptable test for {} was skipped. " \
-                  "This test checks if the module's results in TorchScript " \
-                  "match eager and that it can be exported. To run these " \
-                  "tests make sure you set the environment variable " \
-                  "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
-                  "manually skipped.".format(nn_module.__class__.__name__)
-            warnings.warn(msg, RuntimeWarning)
-            return None
-
-        sm = torch.jit.script(nn_module)
-
-        with freeze_rng_state():
-            eager_out = nn_module(*args)
-
-        with freeze_rng_state():
-            script_out = sm(*args)
-            if unwrapper:
-                script_out = unwrapper(script_out)
-
-        self.assertEqual(eager_out, script_out, prec=1e-4)
-        self.assertExportImportModule(sm, args)
-
-        return sm
-
-    def getExportImportCopy(self, m):
-        """
-        Save and load a TorchScript model
-        """
-        buffer = io.BytesIO()
-        torch.jit.save(m, buffer)
-        buffer.seek(0)
-        imported = torch.jit.load(buffer)
-        return imported
-
-    def assertExportImportModule(self, m, args):
-        """
-        Check that the results of a model are the same after saving and loading
-        """
-        m_import = self.getExportImportCopy(m)
-        with freeze_rng_state():
-            results = m(*args)
-        with freeze_rng_state():
-            results_from_imported = m_import(*args)
-        self.assertEqual(results, results_from_imported, prec=3e-4)
-
 
 @contextlib.contextmanager
 def freeze_rng_state():
