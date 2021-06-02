@@ -199,7 +199,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+bd3a4ab ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+be9440f ) &#x25BC</a>
     </div>
     
 
@@ -573,7 +573,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.alexnet">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">alexnet</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.alexnet.AlexNet<a class="reference internal" href="_modules/torchvision/models/alexnet.html#alexnet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.alexnet" title="Permalink to this definition">¶</a></dt>
 <dd><p>AlexNet model architecture from the
-<a class="reference external" href="https://arxiv.org/abs/1404.5997">“One weird trick…”</a> paper.</p>
+<a class="reference external" href="https://arxiv.org/abs/1404.5997">“One weird trick…”</a> paper.
+The required minimum input size of the model is 63x63.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -591,7 +592,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg11">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg11</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg11"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg11" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 11-layer model (configuration “A”) from
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -606,7 +608,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg11_bn">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg11_bn</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg11_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg11_bn" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 11-layer model (configuration “A”) with batch normalization
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -621,7 +624,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg13">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg13</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg13"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg13" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 13-layer model (configuration “B”)
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -636,7 +640,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg13_bn">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg13_bn</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg13_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg13_bn" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 13-layer model (configuration “B”) with batch normalization
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -651,7 +656,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg16">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg16</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg16"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg16" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 16-layer model (configuration “D”)
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -666,7 +672,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg16_bn">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg16_bn</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg16_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg16_bn" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 16-layer model (configuration “D”) with batch normalization
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -681,7 +688,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg19">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg19</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg19"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg19" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 19-layer model (configuration “E”)
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -696,7 +704,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.vgg19_bn">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">vgg19_bn</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.vgg.VGG<a class="reference internal" href="_modules/torchvision/models/vgg.html#vgg19_bn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.vgg19_bn" title="Permalink to this definition">¶</a></dt>
 <dd><p>VGG 19-layer model (configuration ‘E’) with batch normalization
-<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1409.1556.pdf">“Very Deep Convolutional Networks For Large-Scale Image Recognition”</a>.
+The required minimum input size of the model is 32x32.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -792,7 +801,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <dt id="torchvision.models.squeezenet1_0">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">squeezenet1_0</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.squeezenet.SqueezeNet<a class="reference internal" href="_modules/torchvision/models/squeezenet.html#squeezenet1_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.squeezenet1_0" title="Permalink to this definition">¶</a></dt>
 <dd><p>SqueezeNet model architecture from the <a class="reference external" href="https://arxiv.org/abs/1602.07360">“SqueezeNet: AlexNet-level
-accuracy with 50x fewer parameters and &lt;0.5MB model size”</a> paper.</p>
+accuracy with 50x fewer parameters and &lt;0.5MB model size”</a> paper.
+The required minimum input size of the model is 21x21.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -808,7 +818,8 @@ accuracy with 50x fewer parameters and &lt;0.5MB model size”</a> paper.</p>
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">squeezenet1_1</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.squeezenet.SqueezeNet<a class="reference internal" href="_modules/torchvision/models/squeezenet.html#squeezenet1_1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.squeezenet1_1" title="Permalink to this definition">¶</a></dt>
 <dd><p>SqueezeNet 1.1 model from the <a class="reference external" href="https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1">official SqueezeNet repo</a>.
 SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
-than SqueezeNet 1.0, without sacrificing accuracy.</p>
+than SqueezeNet 1.0, without sacrificing accuracy.
+The required minimum input size of the model is 17x17.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -826,7 +837,8 @@ than SqueezeNet 1.0, without sacrificing accuracy.</p>
 <dt id="torchvision.models.densenet121">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">densenet121</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet121"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet121" title="Permalink to this definition">¶</a></dt>
 <dd><p>Densenet-121 model from
-<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.
+The required minimum input size of the model is 29x29.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -842,7 +854,8 @@ than SqueezeNet 1.0, without sacrificing accuracy.</p>
 <dt id="torchvision.models.densenet169">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">densenet169</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet169"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet169" title="Permalink to this definition">¶</a></dt>
 <dd><p>Densenet-169 model from
-<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.
+The required minimum input size of the model is 29x29.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -859,7 +872,8 @@ than SqueezeNet 1.0, without sacrificing accuracy.</p>
 <dt id="torchvision.models.densenet161">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">densenet161</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet161"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet161" title="Permalink to this definition">¶</a></dt>
 <dd><p>Densenet-161 model from
-<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.
+The required minimum input size of the model is 29x29.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -876,7 +890,8 @@ than SqueezeNet 1.0, without sacrificing accuracy.</p>
 <dt id="torchvision.models.densenet201">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">densenet201</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.densenet.DenseNet<a class="reference internal" href="_modules/torchvision/models/densenet.html#densenet201"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.densenet201" title="Permalink to this definition">¶</a></dt>
 <dd><p>Densenet-201 model from
-<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.</p>
+<a class="reference external" href="https://arxiv.org/pdf/1608.06993.pdf">“Densely Connected Convolutional Networks”</a>.
+The required minimum input size of the model is 29x29.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -896,7 +911,8 @@ than SqueezeNet 1.0, without sacrificing accuracy.</p>
 <dt id="torchvision.models.inception_v3">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">inception_v3</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.inception.Inception3<a class="reference internal" href="_modules/torchvision/models/inception.html#inception_v3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.inception_v3" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inception v3 model architecture from
-<a class="reference external" href="http://arxiv.org/abs/1512.00567">“Rethinking the Inception Architecture for Computer Vision”</a>.</p>
+<a class="reference external" href="http://arxiv.org/abs/1512.00567">“Rethinking the Inception Architecture for Computer Vision”</a>.
+The required minimum input size of the model is 75x75.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><strong>Important</strong>: In contrast to the other models the inception_v3 expects tensors with a size of
@@ -927,7 +943,8 @@ was trained on ImageNet. Default: <em>False</em></p></li>
 <dt id="torchvision.models.googlenet">
 <code class="sig-prename descclassname">torchvision.models.</code><code class="sig-name descname">googlenet</code><span class="sig-paren">(</span><em class="sig-param">pretrained: bool = False</em>, <em class="sig-param">progress: bool = True</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span> &#x2192; torchvision.models.googlenet.GoogLeNet<a class="reference internal" href="_modules/torchvision/models/googlenet.html#googlenet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.models.googlenet" title="Permalink to this definition">¶</a></dt>
 <dd><p>GoogLeNet (Inception v1) model architecture from
-<a class="reference external" href="http://arxiv.org/abs/1409.4842">“Going Deeper with Convolutions”</a>.</p>
+<a class="reference external" href="http://arxiv.org/abs/1409.4842">“Going Deeper with Convolutions”</a>.
+The required minimum input size of the model is 15x15.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
