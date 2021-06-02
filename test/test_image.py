@@ -1,6 +1,5 @@
 import glob
 import io
-import itertools
 import os
 import sys
 from pathlib import Path
