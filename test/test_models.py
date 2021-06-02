@@ -57,6 +57,7 @@ def _get_expected_file(name=None):
 
     return expected_file
 
+
 def _assert_expected(output, name, prec):
     """Test that a python value matches the recorded contents of a file
     based on a "check" name. The value must be

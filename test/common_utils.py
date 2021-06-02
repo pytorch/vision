@@ -205,6 +205,7 @@ class TestCase(unittest.TestCase):
         else:
             super(TestCase, self).assertEqual(x, y, message)
 
+
 @contextlib.contextmanager
 def freeze_rng_state():
     rng_state = torch.get_rng_state()
