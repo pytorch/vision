@@ -73,6 +73,9 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
 
   int channels = png_get_channels(png_ptr, info_ptr);
 
+  if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+      png_set_expand_gray_1_2_4_to_8(png_ptr);
+
   if (mode != IMAGE_READ_MODE_UNCHANGED) {
     // TODO: consider supporting PNG_INFO_tRNS
     bool is_palette = (color_type & PNG_COLOR_MASK_PALETTE) != 0;
@@ -155,10 +158,9 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
   auto tensor =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.accessor<uint8_t, 3>().data();
-  auto bytes = png_get_rowbytes(png_ptr, info_ptr);
   for (png_uint_32 i = 0; i < height; ++i) {
     png_read_row(png_ptr, ptr, nullptr);
-    ptr += bytes;
+    ptr += width * channels;
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});

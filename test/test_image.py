@@ -1,5 +1,6 @@
 import glob
 import io
+import itertools
 import os
 import sys
 import unittest
@@ -157,6 +158,45 @@ class ImageTester(unittest.TestCase):
         with self.assertRaisesRegex(
                 RuntimeError, "The number of channels should be 1 or 3, got: 5"):
             encode_png(torch.empty((5, 100, 100), dtype=torch.uint8))
+
+    def test_read_1_bit_png(self):
+        try:
+            from cv2 import imread
+        except ImportError:
+            return
+
+        shapes = [
+            (27, 27),
+            (60, 60),
+            (105, 105),
+        ]
+        with get_tmp_dir() as root:
+            for shape in shapes:
+                image_path = os.path.join(root, 'test_{shape}.png')
+                img = Image.new('1', shape)
+                img.save(image_path)
+                img1 = read_image(image_path)
+                img2 = imread(image_path)
+                self.assertTrue(img1.allclose(torch.from_numpy(img2[:, :, 0])))
+
+    def test_read_1_bit_png_consistency(self):
+        shapes = [
+            (27, 27),
+            (60, 60),
+            (105, 105),
+        ]
+        modes = [
+            ImageReadMode.UNCHANGED,
+            ImageReadMode.GRAY,
+        ]
+        with get_tmp_dir() as root:
+            for shape, mode in itertools.product(shapes, modes):
+                image_path = os.path.join(root, 'test_{shape}.png')
+                img = Image.new('1', shape)
+                img.save(image_path)
+                img1 = read_image(image_path, mode)
+                img2 = read_image(image_path, mode)
+                assert_equal(img1, img2)
 
     def test_write_png(self):
         with get_tmp_dir() as d:
