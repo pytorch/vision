@@ -16,6 +16,12 @@ from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
     encode_png, write_png, write_file, ImageReadMode, read_image)
 
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
+
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
@@ -258,23 +264,19 @@ def test_write_file_non_ascii():
         assert content == saved_content
 
 
+@pytest.mark.skipif(cv2 is None, reason='opencv unavailable')
 @pytest.mark.parametrize('shape', [
     (27, 27),
     (60, 60),
     (105, 105),
 ])
 def test_read_1_bit_png(shape):
-    try:
-        from cv2 import imread
-    except ImportError:
-        return
-
     with get_tmp_dir() as root:
         image_path = os.path.join(root, 'test_{shape}.png')
         img = Image.new('1', shape)
         img.save(image_path)
         img1 = read_image(image_path)
-        img2 = imread(image_path)
+        img2 = cv2.imread(image_path)
         assert img1.allclose(torch.from_numpy(img2[:, :, 0])), "Tensor mismatch!"
 
 
