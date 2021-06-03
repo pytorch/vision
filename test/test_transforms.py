@@ -10,6 +10,7 @@ import unittest
 import math
 import random
 import numpy as np
+import pytest
 from PIL import Image
 try:
     import accimage
@@ -1231,195 +1232,6 @@ class Tester(unittest.TestCase):
         torch.testing.assert_close(target, result1)
         torch.testing.assert_close(target, result2)
 
-    def test_adjust_brightness(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_brightness(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_brightness(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [0, 2, 6, 27, 67, 113, 18, 4, 117, 45, 127, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_brightness(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjust_contrast(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_contrast(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_contrast(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [43, 45, 49, 70, 110, 156, 61, 47, 160, 88, 170, 43]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_contrast(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    @unittest.skipIf(Image.__version__ >= '7', "Temporarily disabled")
-    def test_adjust_saturation(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_saturation(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_saturation(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_saturation(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjust_hue(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        with self.assertRaises(ValueError):
-            F.adjust_hue(x_pil, -0.7)
-            F.adjust_hue(x_pil, 1)
-
-        # test 0: almost same as x_data but not exact.
-        # probably because hsv <-> rgb floating point ops
-        y_pil = F.adjust_hue(x_pil, 0)
-        y_np = np.array(y_pil)
-        y_ans = [0, 5, 13, 54, 139, 226, 35, 8, 234, 91, 255, 1]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 1
-        y_pil = F.adjust_hue(x_pil, 0.25)
-        y_np = np.array(y_pil)
-        y_ans = [13, 0, 12, 224, 54, 226, 234, 8, 99, 1, 222, 255]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_hue(x_pil, -0.25)
-        y_np = np.array(y_pil)
-        y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjust_sharpness(self):
-        x_shape = [4, 4, 3]
-        x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
-                  0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
-                  111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_sharpness(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_sharpness(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
-                 30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
-                 107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_sharpness(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
-                 0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
-                 119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 3
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_th = torch.tensor(x_np.transpose(2, 0, 1))
-        y_pil = F.adjust_sharpness(x_pil, 2)
-        y_np = np.array(y_pil).transpose(2, 0, 1)
-        y_th = F.adjust_sharpness(x_th, 2)
-        torch.testing.assert_close(y_np, y_th.numpy())
-
-    def test_adjust_gamma(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_gamma(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_gamma(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_gamma(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjusts_L_mode(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_rgb = Image.fromarray(x_np, mode='RGB')
-
-        x_l = x_rgb.convert('L')
-        self.assertEqual(F.adjust_brightness(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_saturation(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_contrast(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_hue(x_l, 0.4).mode, 'L')
-        self.assertEqual(F.adjust_sharpness(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_gamma(x_l, 0.5).mode, 'L')
-
     def test_color_jitter(self):
         color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
 
@@ -2017,6 +1829,202 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomErasing can be printed as string
         t.__repr__()
+
+
+def test_adjust_brightness():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_brightness(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_brightness(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [0, 2, 6, 27, 67, 113, 18, 4, 117, 45, 127, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_brightness(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjust_contrast():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_contrast(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_contrast(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [43, 45, 49, 70, 110, 156, 61, 47, 160, 88, 170, 43]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_contrast(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+@pytest.mark.skipif(Image.__version__ >= '7', reason="Temporarily disabled")
+def test_adjust_saturation():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_saturation(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_saturation(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_saturation(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjust_hue():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    with pytest.raises(ValueError):
+        F.adjust_hue(x_pil, -0.7)
+        F.adjust_hue(x_pil, 1)
+
+    # test 0: almost same as x_data but not exact.
+    # probably because hsv <-> rgb floating point ops
+    y_pil = F.adjust_hue(x_pil, 0)
+    y_np = np.array(y_pil)
+    y_ans = [0, 5, 13, 54, 139, 226, 35, 8, 234, 91, 255, 1]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 1
+    y_pil = F.adjust_hue(x_pil, 0.25)
+    y_np = np.array(y_pil)
+    y_ans = [13, 0, 12, 224, 54, 226, 234, 8, 99, 1, 222, 255]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_hue(x_pil, -0.25)
+    y_np = np.array(y_pil)
+    y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjust_sharpness():
+    x_shape = [4, 4, 3]
+    x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+              0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
+              111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_sharpness(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_sharpness(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
+             30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
+             107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_sharpness(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+             0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
+             119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 3
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_th = torch.tensor(x_np.transpose(2, 0, 1))
+    y_pil = F.adjust_sharpness(x_pil, 2)
+    y_np = np.array(y_pil).transpose(2, 0, 1)
+    y_th = F.adjust_sharpness(x_th, 2)
+    torch.testing.assert_close(y_np, y_th.numpy())
+
+
+def test_adjust_gamma():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_gamma(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_gamma(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_gamma(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjusts_L_mode():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_rgb = Image.fromarray(x_np, mode='RGB')
+
+    x_l = x_rgb.convert('L')
+    assert F.adjust_brightness(x_l, 2).mode == 'L'
+    assert F.adjust_saturation(x_l, 2).mode == 'L'
+    assert F.adjust_contrast(x_l, 2).mode == 'L'
+    assert F.adjust_hue(x_l, 0.4).mode == 'L'
+    assert F.adjust_sharpness(x_l, 2).mode == 'L'
+    assert F.adjust_gamma(x_l, 0.5).mode == 'L'
 
 
 if __name__ == '__main__':
