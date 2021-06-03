@@ -507,20 +507,6 @@ class Tester(unittest.TestCase):
         padded_img = transform(img)
         self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
 
-    def test_lambda(self):
-        trans = transforms.Lambda(lambda x: x.add(10))
-        x = torch.randn(10)
-        y = trans(x)
-        assert_equal(y, torch.add(x, 10))
-
-        trans = transforms.Lambda(lambda x: x.add_(10))
-        x = torch.randn(10)
-        y = trans(x)
-        assert_equal(y, x)
-
-        # Checking if Lambda can be printed as string
-        trans.__repr__()
-
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_apply(self):
         random_state = random.getstate()
@@ -1283,61 +1269,6 @@ class Tester(unittest.TestCase):
         # Checking if LinearTransformation can be printed as string
         whitening.__repr__()
 
-    def test_rotate(self):
-        x = np.zeros((100, 100, 3), dtype=np.uint8)
-        x[40, 40] = [255, 255, 255]
-
-        with self.assertRaisesRegex(TypeError, r"img should be PIL Image"):
-            F.rotate(x, 10)
-
-        img = F.to_pil_image(x)
-
-        result = F.rotate(img, 45)
-        self.assertEqual(result.size, (100, 100))
-        r, c, ch = np.where(result)
-        self.assertTrue(all(x in r for x in [49, 50]))
-        self.assertTrue(all(x in c for x in [36]))
-        self.assertTrue(all(x in ch for x in [0, 1, 2]))
-
-        result = F.rotate(img, 45, expand=True)
-        self.assertEqual(result.size, (142, 142))
-        r, c, ch = np.where(result)
-        self.assertTrue(all(x in r for x in [70, 71]))
-        self.assertTrue(all(x in c for x in [57]))
-        self.assertTrue(all(x in ch for x in [0, 1, 2]))
-
-        result = F.rotate(img, 45, center=(40, 40))
-        self.assertEqual(result.size, (100, 100))
-        r, c, ch = np.where(result)
-        self.assertTrue(all(x in r for x in [40]))
-        self.assertTrue(all(x in c for x in [40]))
-        self.assertTrue(all(x in ch for x in [0, 1, 2]))
-
-        result_a = F.rotate(img, 90)
-        result_b = F.rotate(img, -270)
-
-        assert_equal(np.array(result_a), np.array(result_b))
-
-    def test_rotate_fill(self):
-        img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
-
-        modes = ("L", "RGB", "F")
-        nums_bands = [len(mode) for mode in modes]
-        fill = 127
-
-        for mode, num_bands in zip(modes, nums_bands):
-            img_conv = img.convert(mode)
-            img_rot = F.rotate(img_conv, 45.0, fill=fill)
-            pixel = img_rot.getpixel((0, 0))
-
-            if not isinstance(pixel, tuple):
-                pixel = (pixel,)
-            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
-
-            for wrong_num_bands in set(nums_bands) - {num_bands}:
-                with self.assertRaises(ValueError):
-                    F.rotate(img_conv, 45.0, fill=tuple([fill] * wrong_num_bands))
-
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
         cnt = [20, 20]
@@ -1683,48 +1614,6 @@ class Tester(unittest.TestCase):
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
 
-    def test_gaussian_blur_asserts(self):
-        np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
-        img = F.to_pil_image(np_img, "RGB")
-
-        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
-            F.gaussian_blur(img, [3])
-
-        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
-            F.gaussian_blur(img, [3, 3, 3])
-        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur([3, 3, 3])
-
-        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
-            F.gaussian_blur(img, [4, 4])
-        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur([4, 4])
-
-        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
-            F.gaussian_blur(img, [-3, -3])
-        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur([-3, -3])
-
-        with self.assertRaisesRegex(ValueError, r"If sigma is a sequence, its length should be 2"):
-            F.gaussian_blur(img, 3, [1, 1, 1])
-        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
-            transforms.GaussianBlur(3, [1, 1, 1])
-
-        with self.assertRaisesRegex(ValueError, r"sigma should have positive values"):
-            F.gaussian_blur(img, 3, -1.0)
-        with self.assertRaisesRegex(ValueError, r"If sigma is a single number, it must be positive"):
-            transforms.GaussianBlur(3, -1.0)
-
-        with self.assertRaisesRegex(TypeError, r"kernel_size should be int or a sequence of integers"):
-            F.gaussian_blur(img, "kernel_size_string")
-        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur("kernel_size_string")
-
-        with self.assertRaisesRegex(TypeError, r"sigma should be either float or sequence of floats"):
-            F.gaussian_blur(img, 3, "sigma_string")
-        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
-            transforms.GaussianBlur(3, "sigma_string")
-
     def _test_randomness(self, fn, trans, configs):
         random_state = random.getstate()
         random.seed(42)
@@ -2025,6 +1914,119 @@ def test_adjusts_L_mode():
     assert F.adjust_hue(x_l, 0.4).mode == 'L'
     assert F.adjust_sharpness(x_l, 2).mode == 'L'
     assert F.adjust_gamma(x_l, 0.5).mode == 'L'
+
+
+def test_rotate():
+    x = np.zeros((100, 100, 3), dtype=np.uint8)
+    x[40, 40] = [255, 255, 255]
+
+    with pytest.raises(TypeError, match=r"img should be PIL Image"):
+        F.rotate(x, 10)
+
+    img = F.to_pil_image(x)
+
+    result = F.rotate(img, 45)
+    assert result.size == (100, 100)
+    r, c, ch = np.where(result)
+    assert all(x in r for x in [49, 50])
+    assert all(x in c for x in [36])
+    assert all(x in ch for x in [0, 1, 2])
+
+    result = F.rotate(img, 45, expand=True)
+    assert result.size == (142, 142)
+    r, c, ch = np.where(result)
+    assert all(x in r for x in [70, 71])
+    assert all(x in c for x in [57])
+    assert all(x in ch for x in [0, 1, 2])
+
+    result = F.rotate(img, 45, center=(40, 40))
+    assert result.size == (100, 100)
+    r, c, ch = np.where(result)
+    assert all(x in r for x in [40])
+    assert all(x in c for x in [40])
+    assert all(x in ch for x in [0, 1, 2])
+
+    result_a = F.rotate(img, 90)
+    result_b = F.rotate(img, -270)
+
+    assert_equal(np.array(result_a), np.array(result_b))
+
+
+@pytest.mark.parametrize('mode', ["L", "RGB", "F"])
+def test_rotate_fill(mode):
+    img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
+
+    num_bands = len(mode)
+    wrong_num_bands = num_bands + 1
+    fill = 127
+
+    img_conv = img.convert(mode)
+    img_rot = F.rotate(img_conv, 45.0, fill=fill)
+    pixel = img_rot.getpixel((0, 0))
+
+    if not isinstance(pixel, tuple):
+        pixel = (pixel,)
+    assert pixel == tuple([fill] * num_bands)
+
+    with pytest.raises(ValueError):
+        F.rotate(img_conv, 45.0, fill=tuple([fill] * wrong_num_bands))
+
+
+def test_gaussian_blur_asserts():
+    np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+    img = F.to_pil_image(np_img, "RGB")
+
+    with pytest.raises(ValueError, match=r"If kernel_size is a sequence its length should be 2"):
+        F.gaussian_blur(img, [3])
+    with pytest.raises(ValueError, match=r"If kernel_size is a sequence its length should be 2"):
+        F.gaussian_blur(img, [3, 3, 3])
+    with pytest.raises(ValueError, match=r"Kernel size should be a tuple/list of two integers"):
+        transforms.GaussianBlur([3, 3, 3])
+
+    with pytest.raises(ValueError, match=r"kernel_size should have odd and positive integers"):
+        F.gaussian_blur(img, [4, 4])
+    with pytest.raises(ValueError, match=r"Kernel size value should be an odd and positive number"):
+        transforms.GaussianBlur([4, 4])
+
+    with pytest.raises(ValueError, match=r"kernel_size should have odd and positive integers"):
+        F.gaussian_blur(img, [-3, -3])
+    with pytest.raises(ValueError, match=r"Kernel size value should be an odd and positive number"):
+        transforms.GaussianBlur([-3, -3])
+
+    with pytest.raises(ValueError, match=r"If sigma is a sequence, its length should be 2"):
+        F.gaussian_blur(img, 3, [1, 1, 1])
+    with pytest.raises(ValueError, match=r"sigma should be a single number or a list/tuple with length 2"):
+        transforms.GaussianBlur(3, [1, 1, 1])
+
+    with pytest.raises(ValueError, match=r"sigma should have positive values"):
+        F.gaussian_blur(img, 3, -1.0)
+    with pytest.raises(ValueError, match=r"If sigma is a single number, it must be positive"):
+        transforms.GaussianBlur(3, -1.0)
+
+    with pytest.raises(TypeError, match=r"kernel_size should be int or a sequence of integers"):
+        F.gaussian_blur(img, "kernel_size_string")
+    with pytest.raises(ValueError, match=r"Kernel size should be a tuple/list of two integers"):
+        transforms.GaussianBlur("kernel_size_string")
+
+    with pytest.raises(TypeError, match=r"sigma should be either float or sequence of floats"):
+        F.gaussian_blur(img, 3, "sigma_string")
+    with pytest.raises(ValueError, match=r"sigma should be a single number or a list/tuple with length 2"):
+        transforms.GaussianBlur(3, "sigma_string")
+
+
+def test_lambda():
+    trans = transforms.Lambda(lambda x: x.add(10))
+    x = torch.randn(10)
+    y = trans(x)
+    assert_equal(y, torch.add(x, 10))
+
+    trans = transforms.Lambda(lambda x: x.add_(10))
+    x = torch.randn(10)
+    y = trans(x)
+    assert_equal(y, x)
+
+    # Checking if Lambda can be printed as string
+    trans.__repr__()
 
 
 if __name__ == '__main__':
