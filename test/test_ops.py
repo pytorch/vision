@@ -97,6 +97,7 @@ class RoIOpTester(ABC):
     def expected_fn(*args, **kwargs):
         pass
 
+
 class TestRoiPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
