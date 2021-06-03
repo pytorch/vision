@@ -120,10 +120,10 @@ class Tester(unittest.TestCase):
                     input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
 
             output_center = output_pil[
-                                      :,
-                                      crop_center_tl[0]:crop_center_tl[0] + center_size[0],
-                                      crop_center_tl[1]:crop_center_tl[1] + center_size[1]
-                                      ]
+                            :,
+                            crop_center_tl[0]:crop_center_tl[0] + center_size[0],
+                            crop_center_tl[1]:crop_center_tl[1] + center_size[1]
+                            ]
 
             img_center = img[
                          :,
