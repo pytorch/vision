@@ -394,6 +394,7 @@ class TestPSRoIAlign(RoIOpTester):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
+@cpu_only
 class TestMultiScaleRoIAlign:
     def test_msroialign_repr(self):
         fmap_names = ['0']
@@ -552,7 +553,7 @@ class TestNMS:
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
 
 
-class TestDeformConv():
+class TestDeformConv:
     dtype = torch.float64
 
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
