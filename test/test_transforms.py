@@ -1549,32 +1549,43 @@ def test_randomness(fn, trans, config, p):
     assert p_value > 0.0001
 
 
-def test_1_channel_tensor_to_pil_image():
+@pytest.mark.parametrize('data_type, mode', [
+    ('float', 'L'),
+    ('byte', 'L'),
+    ('short', 'I;16'),
+    ('int', 'I'),
+])
+def test_1_channel_tensor_to_pil_image(data_type, mode):
     to_tensor = transforms.ToTensor()
 
-    img_data_float = torch.Tensor(1, 4, 4).uniform_()
-    img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
-    img_data_short = torch.ShortTensor(1, 4, 4).random_()
-    img_data_int = torch.IntTensor(1, 4, 4).random_()
+    if data_type == 'float':
+        img_data = torch.Tensor(1, 4, 4).uniform_()
+        expected_output = img_data.mul(255).int().float().div(255).numpy()
+    elif data_type == 'byte':
+        img_data = torch.ByteTensor(1, 4, 4).random_(0, 255)
+        expected_output = img_data.float().div(255.0).numpy()
+    elif data_type == 'short':
+        img_data = torch.ShortTensor(1, 4, 4).random_()
+        expected_output = img_data.numpy()
+    elif data_type == 'int':
+        img_data = torch.IntTensor(1, 4, 4).random_()
+        expected_output = img_data.numpy()
+    else:
+        assert False
 
-    inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
-    expected_outputs = [img_data_float.mul(255).int().float().div(255).numpy(),
-                        img_data_byte.float().div(255.0).numpy(),
-                        img_data_short.numpy(),
-                        img_data_int.numpy()]
-    expected_modes = ['L', 'L', 'I;16', 'I']
+    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+        img = transform(img_data)
+        assert img.mode == mode
+        torch.testing.assert_close(expected_output, to_tensor(img).numpy(), check_stride=False)
 
-    for img_data, expected_output, mode in zip(inputs, expected_outputs, expected_modes):
-        for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-            img = transform(img_data)
-            assert img.mode == mode
-            torch.testing.assert_close(expected_output, to_tensor(img).numpy(), check_stride=False)
 
+def test_1_channel_tensor_to_pil_image_error():
+    img_data = torch.Tensor(1, 4, 4).uniform_()
     # 'F' mode for torch.FloatTensor
-    img_F_mode = transforms.ToPILImage(mode='F')(img_data_float)
+    img_F_mode = transforms.ToPILImage(mode='F')(img_data)
     assert img_F_mode.mode == 'F'
     torch.testing.assert_close(
-        np.array(Image.fromarray(img_data_float.squeeze(0).numpy(), mode='F')), np.array(img_F_mode)
+        np.array(Image.fromarray(img_data.squeeze(0).numpy(), mode='F')), np.array(img_F_mode)
     )
 
 
