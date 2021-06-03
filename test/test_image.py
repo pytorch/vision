@@ -16,12 +16,6 @@ from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
     encode_png, write_png, write_file, ImageReadMode, read_image)
 
-try:
-    import cv2
-except ImportError:
-    cv2 = None
-
-
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
@@ -264,7 +258,6 @@ def test_write_file_non_ascii():
         assert content == saved_content
 
 
-@pytest.mark.skipif(cv2 is None, reason='opencv unavailable')
 @pytest.mark.parametrize('shape', [
     (27, 27),
     (60, 60),
@@ -272,12 +265,13 @@ def test_write_file_non_ascii():
 ])
 def test_read_1_bit_png(shape):
     with get_tmp_dir() as root:
-        image_path = os.path.join(root, 'test_{shape}.png')
-        img = Image.new('1', shape)
+        image_path = os.path.join(root, f'test_{shape}.png')
+        pixels = np.random.rand(*shape) > 0.5
+        img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path)
-        img2 = cv2.imread(image_path)
-        assert img1.allclose(torch.from_numpy(img2[:, :, 0])), "Tensor mismatch!"
+        img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
+        assert_equal(img1, img2, check_stride=False)
 
 
 @pytest.mark.parametrize('shape', [
@@ -291,8 +285,9 @@ def test_read_1_bit_png(shape):
 ])
 def test_read_1_bit_png_consistency(shape, mode):
     with get_tmp_dir() as root:
-        image_path = os.path.join(root, 'test_{shape}.png')
-        img = Image.new('1', shape)
+        image_path = os.path.join(root, f'test_{shape}.png')
+        pixels = np.random.rand(*shape) > 0.5
+        img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path, mode)
         img2 = read_image(image_path, mode)
