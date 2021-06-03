@@ -1,7 +1,6 @@
 from common_utils import needs_cuda, cpu_only, cpu_and_gpu
 from _assert_utils import assert_equal
 import math
-import unittest
 import pytest
 
 import numpy as np
@@ -395,7 +394,7 @@ class TestPSRoIAlign(RoIOpTester):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
-class MultiScaleRoIAlignTester(unittest.TestCase):
+class TestMultiScaleRoIAlign:
     def test_msroialign_repr(self):
         fmap_names = ['0']
         output_size = (7, 7)
@@ -406,7 +405,7 @@ class MultiScaleRoIAlignTester(unittest.TestCase):
         # Check integrity of object __repr__ attribute
         expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
                            f"sampling_ratio={sampling_ratio})")
-        self.assertEqual(t.__repr__(), expected_string)
+        assert t.__repr__() == expected_string
 
 
 class TestNMS:
@@ -772,7 +771,8 @@ class TestDeformConv():
             self.test_forward(torch.device("cuda"), contiguous=False, batch_size=batch_sz, dtype=dtype)
 
 
-class FrozenBNTester(unittest.TestCase):
+@cpu_only
+class TestFrozenBNT:
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
         eps = 1e-5
@@ -780,7 +780,7 @@ class FrozenBNTester(unittest.TestCase):
 
         # Check integrity of object __repr__ attribute
         expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
-        self.assertEqual(t.__repr__(), expected_string)
+        assert t.__repr__() == expected_string
 
     def test_frozenbatchnorm2d_eps(self):
         sample_size = (4, 32, 28, 28)
@@ -809,11 +809,12 @@ class FrozenBNTester(unittest.TestCase):
     def test_frozenbatchnorm2d_n_arg(self):
         """Ensure a warning is thrown when passing `n` kwarg
         (remove this when support of `n` is dropped)"""
-        self.assertWarns(DeprecationWarning, ops.misc.FrozenBatchNorm2d, 32, eps=1e-5, n=32)
+        with pytest.warns(DeprecationWarning):
+            ops.misc.FrozenBatchNorm2d(32, eps=1e-5, n=32)
 
 
-class BoxConversionTester(unittest.TestCase):
-    @staticmethod
+@cpu_only
+class TestBoxConversion:
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
         box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
@@ -822,22 +823,23 @@ class BoxConversionTester(unittest.TestCase):
         box_tuple = tuple(box_list)
         return box_tensor, box_list, box_tuple
 
-    def test_check_roi_boxes_shape(self):
+    @pytest.mark.parametrize('box_sequence', _get_box_sequences())
+    def test_check_roi_boxes_shape(self, box_sequence):
         # Ensure common sequences of tensors are supported
-        for box_sequence in self._get_box_sequences():
-            self.assertIsNone(ops._utils.check_roi_boxes_shape(box_sequence))
+        ops._utils.check_roi_boxes_shape(box_sequence)
 
-    def test_convert_boxes_to_roi_format(self):
+    @pytest.mark.parametrize('box_sequence', _get_box_sequences())
+    def test_convert_boxes_to_roi_format(self, box_sequence):
         # Ensure common sequences of tensors yield the same result
         ref_tensor = None
-        for box_sequence in self._get_box_sequences():
-            if ref_tensor is None:
-                ref_tensor = box_sequence
-            else:
-                self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
+        if ref_tensor is None:
+            ref_tensor = box_sequence
+        else:
+            assert_equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence))
 
 
-class BoxTester(unittest.TestCase):
+@cpu_only
+class TestBox:
     def test_bbox_same(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                   [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -898,15 +900,14 @@ class BoxTester(unittest.TestCase):
         box_xywh = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xywh")
         assert_equal(box_xywh, box_tensor)
 
-    def test_bbox_invalid(self):
+    @pytest.mark.parametrize('inv_infmt', ["xwyh", "cxwyh"])
+    @pytest.mark.parametrize('inv_outfmt', ["xwcx", "xhwcy"])
+    def test_bbox_invalid(self, inv_infmt, inv_outfmt):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                   [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
-        invalid_infmts = ["xwyh", "cxwyh"]
-        invalid_outfmts = ["xwcx", "xhwcy"]
-        for inv_infmt in invalid_infmts:
-            for inv_outfmt in invalid_outfmts:
-                self.assertRaises(ValueError, ops.box_convert, box_tensor, inv_infmt, inv_outfmt)
+        with pytest.raises(ValueError):
+            ops.box_convert(box_tensor, inv_infmt, inv_outfmt)
 
     def test_bbox_convert_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
@@ -924,7 +925,8 @@ class BoxTester(unittest.TestCase):
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
 
 
-class BoxAreaTester(unittest.TestCase):
+@cpu_only
+class BoxAreaTester:
     def test_box_area(self):
         def area_check(box, expected, tolerance=1e-4):
             out = ops.box_area(box)
@@ -952,7 +954,8 @@ class BoxAreaTester(unittest.TestCase):
         area_check(box_tensor, expected)
 
 
-class BoxIouTester(unittest.TestCase):
+@cpu_only
+class TestBoxIou:
     def test_iou(self):
         def iou_check(box, expected, tolerance=1e-4):
             out = ops.box_iou(box, box)
@@ -973,7 +976,8 @@ class BoxIouTester(unittest.TestCase):
             iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
 
-class GenBoxIouTester(unittest.TestCase):
+@cpu_only
+class TestGenBoxIou:
     def test_gen_iou(self):
         def gen_iou_check(box, expected, tolerance=1e-4):
             out = ops.generalized_box_iou(box, box)
@@ -995,4 +999,4 @@ class GenBoxIouTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])
