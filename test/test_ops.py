@@ -1,4 +1,4 @@
-from common_utils import needs_cuda, cpu_only
+from common_utils import needs_cuda, cpu_only, cpu_and_gpu
 from _assert_utils import assert_equal
 import math
 import unittest
@@ -583,7 +583,9 @@ class TestNMS:
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
 
 
-class DeformConvTester(OpTester, unittest.TestCase):
+class TestDeformConv():
+    dtype = torch.float64
+
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
         pad_h, pad_w = _pair(padding)
@@ -671,12 +673,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
         return x, weight, offset, mask, bias, stride, pad, dilation
 
-    def _test_forward(self, device, contiguous, dtype=None):
-        dtype = self.dtype if dtype is None else dtype
-        for batch_sz in [0, 33]:
-            self._test_forward_with_batchsize(device, contiguous, batch_sz, dtype)
-
-    def _test_forward_with_batchsize(self, device, contiguous, batch_sz, dtype):
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    @pytest.mark.parametrize('batch_sz', (0, 33))
+    def test_forward(self, device, contiguous, batch_sz, dtype=None):
+        dtype = dtype or self.dtype
         x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
         in_channels = 6
         out_channels = 2
@@ -704,20 +705,27 @@ class DeformConvTester(OpTester, unittest.TestCase):
             res.to(expected), expected, rtol=tol, atol=tol, msg='\nres:\n{}\nexpected:\n{}'.format(res, expected)
         )
 
-        # test for wrong sizes
-        with self.assertRaises(RuntimeError):
+    def test_wrong_sizes(self):
+        in_channels = 6
+        out_channels = 2
+        kernel_size = (3, 2)
+        groups = 2
+        x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args('cpu', contiguous=True,
+                                                                            batch_sz=10, dtype=self.dtype)
+        layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
+                                 dilation=dilation, groups=groups)
+        with pytest.raises(RuntimeError, match="the shape of the offset"):
             wrong_offset = torch.rand_like(offset[:, :2])
-            res = layer(x, wrong_offset)
+            layer(x, wrong_offset)
 
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError, match=r'mask.shape\[1\] is not valid'):
             wrong_mask = torch.rand_like(mask[:, :2])
-            res = layer(x, offset, wrong_mask)
+            layer(x, offset, wrong_mask)
 
-    def _test_backward(self, device, contiguous):
-        for batch_sz in [0, 33]:
-            self._test_backward_with_batchsize(device, contiguous, batch_sz)
-
-    def _test_backward_with_batchsize(self, device, contiguous, batch_sz):
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    @pytest.mark.parametrize('batch_sz', (0, 33))
+    def test_backward(self, device, contiguous, batch_sz):
         x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(device, contiguous,
                                                                                     batch_sz, self.dtype)
 
@@ -751,44 +759,46 @@ class DeformConvTester(OpTester, unittest.TestCase):
         gradcheck(lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_compare_cpu_cuda_grads(self):
+    @needs_cuda
+    @pytest.mark.parametrize('contiguous', (True, False))
+    def test_compare_cpu_cuda_grads(self, contiguous):
         # Test from https://github.com/pytorch/vision/issues/2598
         # Run on CUDA only
-        for contiguous in [False, True]:
-            # compare grads computed on CUDA with grads computed on CPU
-            true_cpu_grads = None
 
-            init_weight = torch.randn(9, 9, 3, 3, requires_grad=True)
-            img = torch.randn(8, 9, 1000, 110)
-            offset = torch.rand(8, 2 * 3 * 3, 1000, 110)
-            mask = torch.rand(8, 3 * 3, 1000, 110)
+        # compare grads computed on CUDA with grads computed on CPU
+        true_cpu_grads = None
 
-            if not contiguous:
-                img = img.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
-                offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
-                mask = mask.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
-                weight = init_weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
+        init_weight = torch.randn(9, 9, 3, 3, requires_grad=True)
+        img = torch.randn(8, 9, 1000, 110)
+        offset = torch.rand(8, 2 * 3 * 3, 1000, 110)
+        mask = torch.rand(8, 3 * 3, 1000, 110)
+
+        if not contiguous:
+            img = img.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
+            offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+            mask = mask.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+            weight = init_weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
+        else:
+            weight = init_weight
+
+        for d in ["cpu", "cuda"]:
+
+            out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
+            out.mean().backward()
+            if true_cpu_grads is None:
+                true_cpu_grads = init_weight.grad
+                self.assertTrue(true_cpu_grads is not None)
             else:
-                weight = init_weight
+                self.assertTrue(init_weight.grad is not None)
+                res_grads = init_weight.grad.to("cpu")
+                torch.testing.assert_close(true_cpu_grads, res_grads)
 
-            for d in ["cpu", "cuda"]:
-
-                out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
-                out.mean().backward()
-                if true_cpu_grads is None:
-                    true_cpu_grads = init_weight.grad
-                    self.assertTrue(true_cpu_grads is not None)
-                else:
-                    self.assertTrue(init_weight.grad is not None)
-                    res_grads = init_weight.grad.to("cpu")
-                    torch.testing.assert_close(true_cpu_grads, res_grads)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_autocast(self):
-        for dtype in (torch.float, torch.half):
-            with torch.cuda.amp.autocast():
-                self._test_forward(torch.device("cuda"), False, dtype=dtype)
+    @needs_cuda
+    @pytest.mark.parametrize('batch_sz', (0, 33))
+    @pytest.mark.parametrize('dtype', (torch.float, torch.half))
+    def test_autocast(self, batch_sz, dtype):
+        with torch.cuda.amp.autocast():
+            self.test_forward(torch.device("cuda"), contiguous=False, batch_size=batch_sz, dtype=dtype)
 
 
 class FrozenBNTester(unittest.TestCase):
