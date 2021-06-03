@@ -110,7 +110,6 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
                 if a is not None:
                     assert_equal(a, b, atol=tol, rtol=tol)
 
-
     TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
     if not TEST_WITH_SLOW or skip:
         # TorchScript is not enabled, skip these tests
