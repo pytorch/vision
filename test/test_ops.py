@@ -270,6 +270,15 @@ class TestRoIAlign(RoIOpTester):
         super().test_forward(device=device, contiguous=contiguous, x_dtype=x_dtype, rois_dtype=rois_dtype,
                              aligned=aligned)
 
+    @needs_cuda
+    @pytest.mark.parametrize('aligned', (True, False))
+    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
+    def test_autocast(self, aligned, x_dtype, rois_dtype):
+        with torch.cuda.amp.autocast():
+            self.test_forward(torch.device("cuda"), contiguous=False, aligned=aligned, x_dtype=x_dtype,
+                              rois_dtype=rois_dtype)
+
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
         rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
         rois[:, 0] = torch.randint(0, num_imgs, size=(num_rois,))  # set batch index
