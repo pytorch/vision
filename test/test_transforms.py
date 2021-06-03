@@ -1830,6 +1830,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomErasing can be printed as string
         t.__repr__()
 
+
 def test_adjust_brightness():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -1854,6 +1855,7 @@ def test_adjust_brightness():
     y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
+
 
 def test_adjust_contrast():
     x_shape = [2, 2, 3]
@@ -1880,6 +1882,7 @@ def test_adjust_contrast():
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
 
+
 @pytest.mark.skipif(Image.__version__ >= '7', reason="Temporarily disabled")
 def test_adjust_saturation():
     x_shape = [2, 2, 3]
@@ -1905,6 +1908,7 @@ def test_adjust_saturation():
     y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
+
 
 def test_adjust_hue():
     x_shape = [2, 2, 3]
@@ -1937,6 +1941,7 @@ def test_adjust_hue():
     y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
+
 
 def test_adjust_sharpness():
     x_shape = [4, 4, 3]
@@ -1980,6 +1985,7 @@ def test_adjust_sharpness():
     y_th = F.adjust_sharpness(x_th, 2)
     torch.testing.assert_close(y_np, y_th.numpy())
 
+
 def test_adjust_gamma():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -2005,6 +2011,7 @@ def test_adjust_gamma():
     y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
     torch.testing.assert_close(y_np, y_ans)
 
+
 def test_adjusts_L_mode():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -2018,6 +2025,7 @@ def test_adjusts_L_mode():
     assert F.adjust_hue(x_l, 0.4).mode == 'L'
     assert F.adjust_sharpness(x_l, 2).mode == 'L'
     assert F.adjust_gamma(x_l, 0.5).mode == 'L'
+
 
 if __name__ == '__main__':
     unittest.main()
