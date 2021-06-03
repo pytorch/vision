@@ -1,19 +1,17 @@
 import itertools
-import math
 import os
-import random
-import unittest
-
-import numpy as np
-import pytest
 import torch
-from PIL import Image
-from torch._utils_internal import get_file_path_2
-
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
-
+from torch._utils_internal import get_file_path_2
+from numpy.testing import assert_array_almost_equal
+import unittest
+import math
+import random
+import numpy as np
+import pytest
+from PIL import Image
 try:
     import accimage
 except ImportError:
@@ -26,6 +24,7 @@ except ImportError:
 
 from common_utils import cycle_over, int_dtypes, float_dtypes
 from _assert_utils import assert_equal
+
 
 GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
@@ -306,7 +305,7 @@ class Tester(unittest.TestCase):
             # single integer
             22, 27, 28, 36,
             # single integer in tuple/list
-            [22, ], (27,),
+            [22, ], (27, ),
         ]
         test_output_sizes_2 = [
             # two integers
