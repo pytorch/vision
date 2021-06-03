@@ -1621,76 +1621,6 @@ class Tester(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
             transforms.GaussianBlur(3, "sigma_string")
 
-    def _test_randomness(self, fn, trans, configs):
-        random_state = random.getstate()
-        random.seed(42)
-        img = transforms.ToPILImage()(torch.rand(3, 16, 18))
-
-        for p in [0.5, 0.7]:
-            for config in configs:
-                inv_img = fn(img, **config)
-
-                num_samples = 250
-                counts = 0
-                for _ in range(num_samples):
-                    tranformation = trans(p=p, **config)
-                    tranformation.__repr__()
-                    out = tranformation(img)
-                    if out == inv_img:
-                        counts += 1
-
-                p_value = stats.binom_test(counts, num_samples, p=p)
-                random.setstate(random_state)
-                self.assertGreater(p_value, 0.0001)
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_invert(self):
-        self._test_randomness(
-            F.invert,
-            transforms.RandomInvert,
-            [{}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_posterize(self):
-        self._test_randomness(
-            F.posterize,
-            transforms.RandomPosterize,
-            [{"bits": 4}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_solarize(self):
-        self._test_randomness(
-            F.solarize,
-            transforms.RandomSolarize,
-            [{"threshold": 192}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_adjust_sharpness(self):
-        self._test_randomness(
-            F.adjust_sharpness,
-            transforms.RandomAdjustSharpness,
-            [{"sharpness_factor": 2.0}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_autocontrast(self):
-        self._test_randomness(
-            F.autocontrast,
-            transforms.RandomAutocontrast,
-            [{}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_equalize(self):
-        self._test_randomness(
-            F.equalize,
-            transforms.RandomEqualize,
-            [{}]
-        )
-
     def test_autoaugment(self):
         for policy in transforms.AutoAugmentPolicy:
             for fill in [None, 85, (128, 128, 128)]:
@@ -1832,6 +1762,83 @@ class TestPad:
         img = Image.new("F", (10, 10))
         padded_img = transform(img)
         assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size], check_stride=False)
+
+
+def _test_randomness(fn, trans, configs):
+    random_state = random.getstate()
+    random.seed(42)
+    img = transforms.ToPILImage()(torch.rand(3, 16, 18))
+
+    for p in [0.5, 0.7]:
+        for config in configs:
+            inv_img = fn(img, **config)
+
+            num_samples = 250
+            counts = 0
+            for _ in range(num_samples):
+                tranformation = trans(p=p, **config)
+                tranformation.__repr__()
+                out = tranformation(img)
+                if out == inv_img:
+                    counts += 1
+
+            p_value = stats.binom_test(counts, num_samples, p=p)
+            random.setstate(random_state)
+            assert p_value > 0.0001
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_invert():
+    _test_randomness(
+        F.invert,
+        transforms.RandomInvert,
+        [{}]
+    )
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_posterize():
+    _test_randomness(
+        F.posterize,
+        transforms.RandomPosterize,
+        [{"bits": 4}]
+    )
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_solarize():
+    _test_randomness(
+        F.solarize,
+        transforms.RandomSolarize,
+        [{"threshold": 192}]
+    )
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_adjust_sharpness():
+    _test_randomness(
+        F.adjust_sharpness,
+        transforms.RandomAdjustSharpness,
+        [{"sharpness_factor": 2.0}]
+    )
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_autocontrast():
+    _test_randomness(
+        F.autocontrast,
+        transforms.RandomAutocontrast,
+        [{}]
+    )
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_equalize():
+    _test_randomness(
+        F.equalize,
+        transforms.RandomEqualize,
+        [{}]
+    )
 
 
 def test_adjust_brightness():
