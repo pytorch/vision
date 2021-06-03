@@ -10,6 +10,7 @@ import unittest
 import math
 import random
 import numpy as np
+import pytest
 from PIL import Image
 try:
     import accimage
@@ -401,110 +402,6 @@ class Tester(unittest.TestCase):
         img = torch.ones(3, 32, 32)
         with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
             t(img)
-
-    def test_pad(self):
-        height = random.randint(10, 32) * 2
-        width = random.randint(10, 32) * 2
-        img = torch.ones(3, height, width)
-        padding = random.randint(1, 20)
-        fill = random.randint(1, 50)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Pad(padding, fill=fill),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), height + 2 * padding)
-        self.assertEqual(result.size(2), width + 2 * padding)
-        # check that all elements in the padded region correspond
-        # to the pad value
-        fill_v = fill / 255
-        eps = 1e-5
-        h_padded = result[:, :padding, :]
-        w_padded = result[:, :, :padding]
-        torch.testing.assert_close(
-            h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
-        )
-        torch.testing.assert_close(
-            w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
-        )
-        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
-                          transforms.ToPILImage()(img))
-
-    def test_pad_with_tuple_of_pad_values(self):
-        height = random.randint(10, 32) * 2
-        width = random.randint(10, 32) * 2
-        img = transforms.ToPILImage()(torch.ones(3, height, width))
-
-        padding = tuple([random.randint(1, 20) for _ in range(2)])
-        output = transforms.Pad(padding)(img)
-        self.assertEqual(output.size, (width + padding[0] * 2, height + padding[1] * 2))
-
-        padding = tuple([random.randint(1, 20) for _ in range(4)])
-        output = transforms.Pad(padding)(img)
-        self.assertEqual(output.size[0], width + padding[0] + padding[2])
-        self.assertEqual(output.size[1], height + padding[1] + padding[3])
-
-        # Checking if Padding can be printed as string
-        transforms.Pad(padding).__repr__()
-
-    def test_pad_with_non_constant_padding_modes(self):
-        """Unit tests for edge, reflect, symmetric padding"""
-        img = torch.zeros(3, 27, 27).byte()
-        img[:, :, 0] = 1  # Constant value added to leftmost edge
-        img = transforms.ToPILImage()(img)
-        img = F.pad(img, 1, (200, 200, 200))
-
-        # pad 3 to all sidess
-        edge_padded_img = F.pad(img, 3, padding_mode='edge')
-        # First 6 elements of leftmost edge in the middle of the image, values are in order:
-        # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
-        edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(edge_padded_img).size(), (3, 35, 35))
-
-        # Pad 3 to left/right, 2 to top/bottom
-        reflect_padded_img = F.pad(img, (3, 2), padding_mode='reflect')
-        # First 6 elements of leftmost edge in the middle of the image, values are in order:
-        # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
-        reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(reflect_padded_img).size(), (3, 33, 35))
-
-        # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
-        symmetric_padded_img = F.pad(img, (3, 2, 2, 1), padding_mode='symmetric')
-        # First 6 elements of leftmost edge in the middle of the image, values are in order:
-        # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
-        symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(symmetric_padded_img).size(), (3, 32, 34))
-
-        # Check negative padding explicitly for symmetric case, since it is not
-        # implemented for tensor case to compare to
-        # Crop 1 to left, pad 2 to top, pad 3 to right, crop 3 to bottom
-        symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
-        symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
-        symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
-        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8), check_stride=False)
-        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(symmetric_padded_img_neg).size(), (3, 28, 31))
-
-    def test_pad_raises_with_invalid_pad_sequence_len(self):
-        with self.assertRaises(ValueError):
-            transforms.Pad(())
-
-        with self.assertRaises(ValueError):
-            transforms.Pad((1, 2, 3))
-
-        with self.assertRaises(ValueError):
-            transforms.Pad((1, 2, 3, 4, 5))
-
-    def test_pad_with_mode_F_images(self):
-        pad = 2
-        transform = transforms.Pad(pad)
-
-        img = Image.new("F", (10, 10))
-        padded_img = transform(img)
-        self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
 
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
@@ -1231,195 +1128,6 @@ class Tester(unittest.TestCase):
         torch.testing.assert_close(target, result1)
         torch.testing.assert_close(target, result2)
 
-    def test_adjust_brightness(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_brightness(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_brightness(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [0, 2, 6, 27, 67, 113, 18, 4, 117, 45, 127, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_brightness(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjust_contrast(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_contrast(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_contrast(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [43, 45, 49, 70, 110, 156, 61, 47, 160, 88, 170, 43]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_contrast(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    @unittest.skipIf(Image.__version__ >= '7', "Temporarily disabled")
-    def test_adjust_saturation(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_saturation(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_saturation(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_saturation(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjust_hue(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        with self.assertRaises(ValueError):
-            F.adjust_hue(x_pil, -0.7)
-            F.adjust_hue(x_pil, 1)
-
-        # test 0: almost same as x_data but not exact.
-        # probably because hsv <-> rgb floating point ops
-        y_pil = F.adjust_hue(x_pil, 0)
-        y_np = np.array(y_pil)
-        y_ans = [0, 5, 13, 54, 139, 226, 35, 8, 234, 91, 255, 1]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 1
-        y_pil = F.adjust_hue(x_pil, 0.25)
-        y_np = np.array(y_pil)
-        y_ans = [13, 0, 12, 224, 54, 226, 234, 8, 99, 1, 222, 255]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_hue(x_pil, -0.25)
-        y_np = np.array(y_pil)
-        y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjust_sharpness(self):
-        x_shape = [4, 4, 3]
-        x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
-                  0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
-                  111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_sharpness(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_sharpness(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
-                 30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
-                 107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_sharpness(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
-                 0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
-                 119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 3
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_th = torch.tensor(x_np.transpose(2, 0, 1))
-        y_pil = F.adjust_sharpness(x_pil, 2)
-        y_np = np.array(y_pil).transpose(2, 0, 1)
-        y_th = F.adjust_sharpness(x_th, 2)
-        torch.testing.assert_close(y_np, y_th.numpy())
-
-    def test_adjust_gamma(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-
-        # test 0
-        y_pil = F.adjust_gamma(x_pil, 1)
-        y_np = np.array(y_pil)
-        torch.testing.assert_close(y_np, x_np)
-
-        # test 1
-        y_pil = F.adjust_gamma(x_pil, 0.5)
-        y_np = np.array(y_pil)
-        y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-        # test 2
-        y_pil = F.adjust_gamma(x_pil, 2)
-        y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
-        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
-        torch.testing.assert_close(y_np, y_ans)
-
-    def test_adjusts_L_mode(self):
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_rgb = Image.fromarray(x_np, mode='RGB')
-
-        x_l = x_rgb.convert('L')
-        self.assertEqual(F.adjust_brightness(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_saturation(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_contrast(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_hue(x_l, 0.4).mode, 'L')
-        self.assertEqual(F.adjust_sharpness(x_l, 2).mode, 'L')
-        self.assertEqual(F.adjust_gamma(x_l, 0.5).mode, 'L')
-
     def test_color_jitter(self):
         color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
 
@@ -1913,76 +1621,6 @@ class Tester(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
             transforms.GaussianBlur(3, "sigma_string")
 
-    def _test_randomness(self, fn, trans, configs):
-        random_state = random.getstate()
-        random.seed(42)
-        img = transforms.ToPILImage()(torch.rand(3, 16, 18))
-
-        for p in [0.5, 0.7]:
-            for config in configs:
-                inv_img = fn(img, **config)
-
-                num_samples = 250
-                counts = 0
-                for _ in range(num_samples):
-                    tranformation = trans(p=p, **config)
-                    tranformation.__repr__()
-                    out = tranformation(img)
-                    if out == inv_img:
-                        counts += 1
-
-                p_value = stats.binom_test(counts, num_samples, p=p)
-                random.setstate(random_state)
-                self.assertGreater(p_value, 0.0001)
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_invert(self):
-        self._test_randomness(
-            F.invert,
-            transforms.RandomInvert,
-            [{}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_posterize(self):
-        self._test_randomness(
-            F.posterize,
-            transforms.RandomPosterize,
-            [{"bits": 4}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_solarize(self):
-        self._test_randomness(
-            F.solarize,
-            transforms.RandomSolarize,
-            [{"threshold": 192}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_adjust_sharpness(self):
-        self._test_randomness(
-            F.adjust_sharpness,
-            transforms.RandomAdjustSharpness,
-            [{"sharpness_factor": 2.0}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_autocontrast(self):
-        self._test_randomness(
-            F.autocontrast,
-            transforms.RandomAutocontrast,
-            [{}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_equalize(self):
-        self._test_randomness(
-            F.equalize,
-            transforms.RandomEqualize,
-            [{}]
-        )
-
     def test_autoaugment(self):
         for policy in transforms.AutoAugmentPolicy:
             for fill in [None, 85, (128, 128, 128)]:
@@ -2017,6 +1655,339 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomErasing can be printed as string
         t.__repr__()
+
+
+class TestPad:
+
+    def test_pad(self):
+        height = random.randint(10, 32) * 2
+        width = random.randint(10, 32) * 2
+        img = torch.ones(3, height, width)
+        padding = random.randint(1, 20)
+        fill = random.randint(1, 50)
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Pad(padding, fill=fill),
+            transforms.ToTensor(),
+        ])(img)
+        assert result.size(1) == height + 2 * padding
+        assert result.size(2) == width + 2 * padding
+        # check that all elements in the padded region correspond
+        # to the pad value
+        fill_v = fill / 255
+        eps = 1e-5
+        h_padded = result[:, :padding, :]
+        w_padded = result[:, :, :padding]
+        torch.testing.assert_close(
+            h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
+        )
+        torch.testing.assert_close(
+            w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
+        )
+        pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)),
+                      transforms.ToPILImage()(img))
+
+    def test_pad_with_tuple_of_pad_values(self):
+        height = random.randint(10, 32) * 2
+        width = random.randint(10, 32) * 2
+        img = transforms.ToPILImage()(torch.ones(3, height, width))
+
+        padding = tuple([random.randint(1, 20) for _ in range(2)])
+        output = transforms.Pad(padding)(img)
+        assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
+
+        padding = tuple([random.randint(1, 20) for _ in range(4)])
+        output = transforms.Pad(padding)(img)
+        assert output.size[0] == width + padding[0] + padding[2]
+        assert output.size[1] == height + padding[1] + padding[3]
+
+        # Checking if Padding can be printed as string
+        transforms.Pad(padding).__repr__()
+
+    def test_pad_with_non_constant_padding_modes(self):
+        """Unit tests for edge, reflect, symmetric padding"""
+        img = torch.zeros(3, 27, 27).byte()
+        img[:, :, 0] = 1  # Constant value added to leftmost edge
+        img = transforms.ToPILImage()(img)
+        img = F.pad(img, 1, (200, 200, 200))
+
+        # pad 3 to all sidess
+        edge_padded_img = F.pad(img, 3, padding_mode='edge')
+        # First 6 elements of leftmost edge in the middle of the image, values are in order:
+        # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
+        edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
+        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(edge_padded_img).size() == (3, 35, 35)
+
+        # Pad 3 to left/right, 2 to top/bottom
+        reflect_padded_img = F.pad(img, (3, 2), padding_mode='reflect')
+        # First 6 elements of leftmost edge in the middle of the image, values are in order:
+        # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
+        reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
+        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(reflect_padded_img).size() == (3, 33, 35)
+
+        # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
+        symmetric_padded_img = F.pad(img, (3, 2, 2, 1), padding_mode='symmetric')
+        # First 6 elements of leftmost edge in the middle of the image, values are in order:
+        # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
+        symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
+        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(symmetric_padded_img).size() == (3, 32, 34)
+
+        # Check negative padding explicitly for symmetric case, since it is not
+        # implemented for tensor case to compare to
+        # Crop 1 to left, pad 2 to top, pad 3 to right, crop 3 to bottom
+        symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
+        symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
+        symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
+        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
+
+    def test_pad_raises_with_invalid_pad_sequence_len(self):
+        with pytest.raises(ValueError):
+            transforms.Pad(())
+
+        with pytest.raises(ValueError):
+            transforms.Pad((1, 2, 3))
+
+        with pytest.raises(ValueError):
+            transforms.Pad((1, 2, 3, 4, 5))
+
+    def test_pad_with_mode_F_images(self):
+        pad = 2
+        transform = transforms.Pad(pad)
+
+        img = Image.new("F", (10, 10))
+        padded_img = transform(img)
+        assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size], check_stride=False)
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+@pytest.mark.parametrize('fn, trans, config', [
+                        (F.invert, transforms.RandomInvert, {}),
+                        (F.posterize, transforms.RandomPosterize, {"bits": 4}),
+                        (F.solarize, transforms.RandomSolarize, {"threshold": 192}),
+                        (F.adjust_sharpness, transforms.RandomAdjustSharpness, {"sharpness_factor": 2.0}),
+                        (F.autocontrast, transforms.RandomAutocontrast, {}),
+                        (F.equalize, transforms.RandomEqualize, {})])
+@pytest.mark.parametrize('p', (.5, .7))
+def test_randomness(fn, trans, config, p):
+    random_state = random.getstate()
+    random.seed(42)
+    img = transforms.ToPILImage()(torch.rand(3, 16, 18))
+
+    inv_img = fn(img, **config)
+
+    num_samples = 250
+    counts = 0
+    for _ in range(num_samples):
+        tranformation = trans(p=p, **config)
+        tranformation.__repr__()
+        out = tranformation(img)
+        if out == inv_img:
+            counts += 1
+
+    p_value = stats.binom_test(counts, num_samples, p=p)
+    random.setstate(random_state)
+    assert p_value > 0.0001
+
+
+def test_adjust_brightness():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_brightness(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_brightness(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [0, 2, 6, 27, 67, 113, 18, 4, 117, 45, 127, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_brightness(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjust_contrast():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_contrast(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_contrast(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [43, 45, 49, 70, 110, 156, 61, 47, 160, 88, 170, 43]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_contrast(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+@pytest.mark.skipif(Image.__version__ >= '7', reason="Temporarily disabled")
+def test_adjust_saturation():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_saturation(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_saturation(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_saturation(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjust_hue():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    with pytest.raises(ValueError):
+        F.adjust_hue(x_pil, -0.7)
+        F.adjust_hue(x_pil, 1)
+
+    # test 0: almost same as x_data but not exact.
+    # probably because hsv <-> rgb floating point ops
+    y_pil = F.adjust_hue(x_pil, 0)
+    y_np = np.array(y_pil)
+    y_ans = [0, 5, 13, 54, 139, 226, 35, 8, 234, 91, 255, 1]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 1
+    y_pil = F.adjust_hue(x_pil, 0.25)
+    y_np = np.array(y_pil)
+    y_ans = [13, 0, 12, 224, 54, 226, 234, 8, 99, 1, 222, 255]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_hue(x_pil, -0.25)
+    y_np = np.array(y_pil)
+    y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjust_sharpness():
+    x_shape = [4, 4, 3]
+    x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+              0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
+              111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_sharpness(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_sharpness(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
+             30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
+             107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_sharpness(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+             0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
+             119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 3
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_th = torch.tensor(x_np.transpose(2, 0, 1))
+    y_pil = F.adjust_sharpness(x_pil, 2)
+    y_np = np.array(y_pil).transpose(2, 0, 1)
+    y_th = F.adjust_sharpness(x_th, 2)
+    torch.testing.assert_close(y_np, y_th.numpy())
+
+
+def test_adjust_gamma():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+
+    # test 0
+    y_pil = F.adjust_gamma(x_pil, 1)
+    y_np = np.array(y_pil)
+    torch.testing.assert_close(y_np, x_np)
+
+    # test 1
+    y_pil = F.adjust_gamma(x_pil, 0.5)
+    y_np = np.array(y_pil)
+    y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+    # test 2
+    y_pil = F.adjust_gamma(x_pil, 2)
+    y_np = np.array(y_pil)
+    y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
+    y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+    torch.testing.assert_close(y_np, y_ans)
+
+
+def test_adjusts_L_mode():
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_rgb = Image.fromarray(x_np, mode='RGB')
+
+    x_l = x_rgb.convert('L')
+    assert F.adjust_brightness(x_l, 2).mode == 'L'
+    assert F.adjust_saturation(x_l, 2).mode == 'L'
+    assert F.adjust_contrast(x_l, 2).mode == 'L'
+    assert F.adjust_hue(x_l, 0.4).mode == 'L'
+    assert F.adjust_sharpness(x_l, 2).mode == 'L'
+    assert F.adjust_gamma(x_l, 0.5).mode == 'L'
 
 
 if __name__ == '__main__':
