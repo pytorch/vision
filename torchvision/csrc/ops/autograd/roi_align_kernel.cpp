@@ -26,7 +26,7 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     ctx->saved_data["aligned"] = aligned;
     ctx->saved_data["input_shape"] = input.sizes();
     ctx->save_for_backward({rois});
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result = roi_align(
         input,
         rois,
@@ -85,7 +85,7 @@ class ROIAlignBackwardFunction
       int64_t width,
       int64_t sampling_ratio,
       bool aligned) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result = detail::_roi_align_backward(
         grad,
         rois,

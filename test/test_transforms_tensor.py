@@ -9,13 +9,22 @@ import numpy as np
 import unittest
 from typing import Sequence
 
-from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
+from common_utils import (
+    get_tmp_dir,
+    int_dtypes,
+    float_dtypes,
+    _create_data,
+    _create_data_batch,
+    _assert_equal_tensor_to_pil,
+    _assert_approx_equal_tensor_to_pil,
+)
+from _assert_utils import assert_equal
 
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
-class Tester(TransformsTester):
+class Tester(unittest.TestCase):
 
     def setUp(self):
         self.device = "cpu"
@@ -25,20 +34,20 @@ class Tester(TransformsTester):
             fn_kwargs = {}
 
         f = getattr(F, func)
-        tensor, pil_img = self._create_data(height=10, width=10, device=self.device)
+        tensor, pil_img = _create_data(height=10, width=10, device=self.device)
         transformed_tensor = f(tensor, **fn_kwargs)
         transformed_pil_img = f(pil_img, **fn_kwargs)
         if test_exact_match:
-            self.compareTensorToPIL(transformed_tensor, transformed_pil_img, **match_kwargs)
+            _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
         else:
-            self.approxEqualTensorToPIL(transformed_tensor, transformed_pil_img, **match_kwargs)
+            _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
     def _test_transform_vs_scripted(self, transform, s_transform, tensor, msg=None):
         torch.manual_seed(12)
         out1 = transform(tensor)
         torch.manual_seed(12)
         out2 = s_transform(tensor)
-        self.assertTrue(out1.equal(out2), msg=msg)
+        assert_equal(out1, out2, msg=msg)
 
     def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors, msg=None):
         torch.manual_seed(12)
@@ -48,11 +57,11 @@ class Tester(TransformsTester):
             img_tensor = batch_tensors[i, ...]
             torch.manual_seed(12)
             transformed_img = transform(img_tensor)
-            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]), msg=msg)
+            assert_equal(transformed_img, transformed_batch[i, ...], msg=msg)
 
         torch.manual_seed(12)
         s_transformed_batch = s_transform(batch_tensors)
-        self.assertTrue(transformed_batch.equal(s_transformed_batch), msg=msg)
+        assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
     def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         if meth_kwargs is None:
@@ -62,22 +71,22 @@ class Tester(TransformsTester):
         f = getattr(T, method)(**meth_kwargs)
         scripted_fn = torch.jit.script(f)
 
-        tensor, pil_img = self._create_data(26, 34, device=self.device)
+        tensor, pil_img = _create_data(26, 34, device=self.device)
         # set seed to reproduce the same transformation for tensor and PIL image
         torch.manual_seed(12)
         transformed_tensor = f(tensor)
         torch.manual_seed(12)
         transformed_pil_img = f(pil_img)
         if test_exact_match:
-            self.compareTensorToPIL(transformed_tensor, transformed_pil_img, **match_kwargs)
+            _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
         else:
-            self.approxEqualTensorToPIL(transformed_tensor.float(), transformed_pil_img, **match_kwargs)
+            _assert_approx_equal_tensor_to_pil(transformed_tensor.float(), transformed_pil_img, **match_kwargs)
 
         torch.manual_seed(12)
         transformed_tensor_script = scripted_fn(tensor)
-        self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
+        assert_equal(transformed_tensor, transformed_tensor_script)
 
-        batch_tensors = self._create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
+        batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
         self._test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
@@ -258,20 +267,23 @@ class Tester(TransformsTester):
         fn = getattr(F, func)
         scripted_fn = torch.jit.script(fn)
 
-        tensor, pil_img = self._create_data(height=20, width=20, device=self.device)
+        tensor, pil_img = _create_data(height=20, width=20, device=self.device)
         transformed_t_list = fn(tensor, **fn_kwargs)
         transformed_p_list = fn(pil_img, **fn_kwargs)
         self.assertEqual(len(transformed_t_list), len(transformed_p_list))
         self.assertEqual(len(transformed_t_list), out_length)
         for transformed_tensor, transformed_pil_img in zip(transformed_t_list, transformed_p_list):
-            self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+            _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img)
 
         transformed_t_list_script = scripted_fn(tensor.detach().clone(), **fn_kwargs)
         self.assertEqual(len(transformed_t_list), len(transformed_t_list_script))
         self.assertEqual(len(transformed_t_list_script), out_length)
         for transformed_tensor, transformed_tensor_script in zip(transformed_t_list, transformed_t_list_script):
-            self.assertTrue(transformed_tensor.equal(transformed_tensor_script),
-                            msg="{} vs {}".format(transformed_tensor, transformed_tensor_script))
+            assert_equal(
+                transformed_tensor,
+                transformed_tensor_script,
+                msg="{} vs {}".format(transformed_tensor, transformed_tensor_script),
+            )
 
         # test for class interface
         fn = getattr(T, method)(**meth_kwargs)
@@ -280,7 +292,7 @@ class Tester(TransformsTester):
         self.assertEqual(len(output), len(transformed_t_list_script))
 
         # test on batch of tensors
-        batch_tensors = self._create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
+        batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
         torch.manual_seed(12)
         transformed_batch_list = fn(batch_tensors)
 
@@ -289,8 +301,11 @@ class Tester(TransformsTester):
             torch.manual_seed(12)
             transformed_img_list = fn(img_tensor)
             for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
-                self.assertTrue(transformed_img.equal(transformed_batch[i, ...]),
-                                msg="{} vs {}".format(transformed_img, transformed_batch[i, ...]))
+                assert_equal(
+                    transformed_img,
+                    transformed_batch[i, ...],
+                    msg="{} vs {}".format(transformed_img, transformed_batch[i, ...]),
+                )
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
@@ -343,7 +358,7 @@ class Tester(TransformsTester):
         self.assertEqual(y.shape[1], 38)
         self.assertEqual(y.shape[2], int(38 * 46 / 32))
 
-        tensor, _ = self._create_data(height=34, width=36, device=self.device)
+        tensor, _ = _create_data(height=34, width=36, device=self.device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for dt in [None, torch.float32, torch.float64]:
@@ -391,21 +406,32 @@ class Tester(TransformsTester):
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
-        for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
+        def _test(**kwargs):
+            transform = T.RandomAffine(**kwargs)
+            s_transform = torch.jit.script(transform)
+
+            self._test_transform_vs_scripted(transform, s_transform, tensor)
+            self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+            return s_transform
+
+        for interpolation in [NEAREST, BILINEAR]:
+            for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
+                _test(degrees=0.0, interpolation=interpolation, shear=shear)
+
             for scale in [(0.7, 1.2), [0.7, 1.2]]:
-                for translate in [(0.1, 0.2), [0.2, 0.1]]:
-                    for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
-                        for interpolation in [NEAREST, BILINEAR]:
-                            for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                                transform = T.RandomAffine(
-                                    degrees=degrees, translate=translate,
-                                    scale=scale, shear=shear, interpolation=interpolation, fill=fill
-                                )
-                                s_transform = torch.jit.script(transform)
+                _test(degrees=0.0, interpolation=interpolation, scale=scale)
 
-                                self._test_transform_vs_scripted(transform, s_transform, tensor)
-                                self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+            for translate in [(0.1, 0.2), [0.2, 0.1]]:
+                _test(degrees=0.0, interpolation=interpolation, translate=translate)
 
+            for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
+                _test(degrees=degrees, interpolation=interpolation)
+
+            for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                _test(degrees=0.0, interpolation=interpolation, fill=fill)
+
+        s_transform = _test(degrees=0.0)
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
 
@@ -469,7 +495,7 @@ class Tester(TransformsTester):
 
     def test_normalize(self):
         fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor, _ = _create_data(26, 34, device=self.device)
 
         with self.assertRaisesRegex(TypeError, r"Input tensor should be a float tensor"):
             fn(tensor)
@@ -488,7 +514,7 @@ class Tester(TransformsTester):
     def test_linear_transformation(self):
         c, h, w = 3, 24, 32
 
-        tensor, _ = self._create_data(h, w, channels=c, device=self.device)
+        tensor, _ = _create_data(h, w, channels=c, device=self.device)
 
         matrix = torch.rand(c * h * w, c * h * w, device=self.device)
         mean_vector = torch.rand(c * h * w, device=self.device)
@@ -505,13 +531,13 @@ class Tester(TransformsTester):
         transformed_batch = fn(batch_tensors)
         torch.manual_seed(12)
         s_transformed_batch = scripted_fn(batch_tensors)
-        self.assertTrue(transformed_batch.equal(s_transformed_batch))
+        assert_equal(transformed_batch, s_transformed_batch)
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
 
     def test_compose(self):
-        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor, _ = _create_data(26, 34, device=self.device)
         tensor = tensor.to(dtype=torch.float32) / 255.0
 
         transforms = T.Compose([
@@ -525,7 +551,7 @@ class Tester(TransformsTester):
         transformed_tensor = transforms(tensor)
         torch.manual_seed(12)
         transformed_tensor_script = scripted_fn(tensor)
-        self.assertTrue(transformed_tensor.equal(transformed_tensor_script), msg="{}".format(transforms))
+        assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
 
         t = T.Compose([
             lambda x: x,
@@ -534,7 +560,7 @@ class Tester(TransformsTester):
             torch.jit.script(t)
 
     def test_random_apply(self):
-        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor, _ = _create_data(26, 34, device=self.device)
         tensor = tensor.to(dtype=torch.float32) / 255.0
 
         transforms = T.RandomApply([
@@ -551,7 +577,7 @@ class Tester(TransformsTester):
         transformed_tensor = transforms(tensor)
         torch.manual_seed(12)
         transformed_tensor_script = scripted_fn(tensor)
-        self.assertTrue(transformed_tensor.equal(transformed_tensor_script), msg="{}".format(transforms))
+        assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
 
         if torch.device(self.device).type == "cpu":
             # Can't check this twice, otherwise
@@ -602,7 +628,7 @@ class Tester(TransformsTester):
         with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
             random_erasing(img)
 
-        tensor, _ = self._create_data(24, 32, channels=3, device=self.device)
+        tensor, _ = _create_data(24, 32, channels=3, device=self.device)
         batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
 
         test_configs = [
@@ -622,7 +648,7 @@ class Tester(TransformsTester):
             scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
 
     def test_convert_image_dtype(self):
-        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor, _ = _create_data(26, 34, device=self.device)
         batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
 
         for in_dtype in int_dtypes() + float_dtypes():
@@ -656,7 +682,7 @@ class Tester(TransformsTester):
             for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
                 transform = T.AutoAugment(policy=policy, fill=fill)
                 s_transform = torch.jit.script(transform)
-                for _ in range(100):
+                for _ in range(25):
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
                     self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
