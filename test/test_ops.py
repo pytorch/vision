@@ -266,8 +266,9 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize('aligned', (True, False))
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('contiguous', (True, False))
-    def test_forward(self, device, contiguous, aligned):
-        super().test_forward(device=device, contiguous=contiguous, aligned=aligned)
+    def test_forward(self, device, contiguous, aligned, x_dtype=None, rois_dtype=None):
+        super().test_forward(device=device, contiguous=contiguous, x_dtype=x_dtype, rois_dtype=rois_dtype,
+                             aligned=aligned)
 
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
         rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
@@ -758,9 +759,9 @@ class TestDeformConv:
             out.mean().backward()
             if true_cpu_grads is None:
                 true_cpu_grads = init_weight.grad
-                self.assertTrue(true_cpu_grads is not None)
+                assert true_cpu_grads is not None
             else:
-                self.assertTrue(init_weight.grad is not None)
+                assert init_weight.grad is not None
                 res_grads = init_weight.grad.to("cpu")
                 torch.testing.assert_close(true_cpu_grads, res_grads)
 
@@ -769,7 +770,7 @@ class TestDeformConv:
     @pytest.mark.parametrize('dtype', (torch.float, torch.half))
     def test_autocast(self, batch_sz, dtype):
         with torch.cuda.amp.autocast():
-            self.test_forward(torch.device("cuda"), contiguous=False, batch_size=batch_sz, dtype=dtype)
+            self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
 
 
 @cpu_only
