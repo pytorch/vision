@@ -1613,7 +1613,7 @@ def test_2_channel_ndarray_to_pil_image():
 
     transforms.ToPILImage().__repr__()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         # should raise if we try a mode for 4 or 1 or 3 channel images
         transforms.ToPILImage(mode='RGBA')(img_data)
         transforms.ToPILImage(mode='P')(img_data)
@@ -1637,7 +1637,7 @@ def test_2_channel_tensor_to_pil_image():
     for mode in [None, 'LA']:
         verify_img_data(img_data, expected_output, mode=mode)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         # should raise if we try a mode for 4 or 1 or 3 channel images
         transforms.ToPILImage(mode='RGBA')(img_data)
         transforms.ToPILImage(mode='P')(img_data)
@@ -1698,13 +1698,14 @@ def test_3_channel_tensor_to_pil_image():
     for mode in [None, 'RGB', 'HSV', 'YCbCr']:
         verify_img_data(img_data, expected_output, mode=mode)
 
-    with pytest.raises(ValueError):
+    error_message_3d = r"Only modes \['RGB', 'YCbCr', 'HSV'\] are supported for 3D inputs"
+    with pytest.raises(ValueError, match=error_message_3d):
         # should raise if we try a mode for 4 or 1 or 2 channel images
         transforms.ToPILImage(mode='RGBA')(img_data)
         transforms.ToPILImage(mode='P')(img_data)
         transforms.ToPILImage(mode='LA')(img_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
         transforms.ToPILImage()(torch.Tensor(1, 3, 4, 4).uniform_())
 
 
@@ -1727,7 +1728,8 @@ def test_3_channel_ndarray_to_pil_image():
     # Checking if ToPILImage can be printed as string
     transforms.ToPILImage().__repr__()
 
-    with pytest.raises(ValueError):
+    error_message_3d = r"Only modes \['RGB', 'YCbCr', 'HSV'\] are supported for 3D inputs"
+    with pytest.raises(ValueError, match=error_message_3d):
         # should raise if we try a mode for 4 or 1 or 2 channel images
         transforms.ToPILImage(mode='RGBA')(img_data)
         transforms.ToPILImage(mode='P')(img_data)
@@ -1752,7 +1754,8 @@ def test_4_channel_tensor_to_pil_image():
     for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
         verify_img_data(img_data, expected_output, mode)
 
-    with pytest.raises(ValueError):
+    error_message_4d = r"Only modes \['RGBA', 'CMYK', 'RGBX'\] are supported for 4D inputs"
+    with pytest.raises(ValueError, match=error_message_4d):
         # should raise if we try a mode for 3 or 1 or 2 channel images
         transforms.ToPILImage(mode='RGB')(img_data)
         transforms.ToPILImage(mode='P')(img_data)
@@ -1775,7 +1778,8 @@ def test_4_channel_ndarray_to_pil_image():
     for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
         verify_img_data(img_data, mode)
 
-    with pytest.raises(ValueError):
+    error_message_4d = r"Only modes \['RGBA', 'CMYK', 'RGBX'\] are supported for 4D inputs"
+    with pytest.raises(ValueError, match=error_message_4d):
         # should raise if we try a mode for 3 or 1 or 2 channel images
         transforms.ToPILImage(mode='RGB')(img_data)
         transforms.ToPILImage(mode='P')(img_data)
