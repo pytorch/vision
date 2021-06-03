@@ -1578,39 +1578,38 @@ def test_1_channel_tensor_to_pil_image():
     )
 
 
-def test_1_channel_ndarray_to_pil_image():
-    img_data_float = torch.Tensor(4, 4, 1).uniform_().numpy()
-    img_data_byte = torch.ByteTensor(4, 4, 1).random_(0, 255).numpy()
-    img_data_short = torch.ShortTensor(4, 4, 1).random_().numpy()
-    img_data_int = torch.IntTensor(4, 4, 1).random_().numpy()
-
-    inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
-    expected_modes = ['F', 'L', 'I;16', 'I']
-    for img_data, mode in zip(inputs, expected_modes):
-        for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-            img = transform(img_data)
-            assert img.mode == mode
-            # note: we explicitly convert img's dtype because pytorch doesn't support uint16
-            # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
-            torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
+@pytest.mark.parametrize('img_data, mode', [
+    (torch.Tensor(4, 4, 1).uniform_().numpy(), 'F'),
+    (torch.ByteTensor(4, 4, 1).random_(0, 255).numpy(), 'L'),
+    (torch.ShortTensor(4, 4, 1).random_().numpy(), 'I;16'),
+    (torch.IntTensor(4, 4, 1).random_().numpy(), 'I'),
+])
+def test_1_channel_ndarray_to_pil_image(img_data, mode):
+    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+        img = transform(img_data)
+        assert img.mode == mode
+        # note: we explicitly convert img's dtype because pytorch doesn't support uint16
+        # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
+        torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
 
 
-def test_2_channel_ndarray_to_pil_image():
-    def verify_img_data(img_data, mode):
-        if mode is None:
-            img = transforms.ToPILImage()(img_data)
-            assert img.mode == 'LA'  # default should assume LA
-        else:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
-        split = img.split()
-        for i in range(2):
-            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
-
+@pytest.mark.parametrize('mode', [None, 'LA'])
+def test_2_channel_ndarray_to_pil_image(mode):
     img_data = torch.ByteTensor(4, 4, 2).random_(0, 255).numpy()
-    for mode in [None, 'LA']:
-        verify_img_data(img_data, mode)
 
+    if mode is None:
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'LA'  # default should assume LA
+    else:
+        img = transforms.ToPILImage(mode=mode)(img_data)
+        assert img.mode == mode
+    split = img.split()
+    for i in range(2):
+        torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
+
+
+def test_2_channel_ndarray_to_pil_image_error():
+    img_data = torch.ByteTensor(4, 4, 2).random_(0, 255).numpy()
     transforms.ToPILImage().__repr__()
 
     with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
@@ -1620,22 +1619,24 @@ def test_2_channel_ndarray_to_pil_image():
         transforms.ToPILImage(mode='RGB')(img_data)
 
 
-def test_2_channel_tensor_to_pil_image():
-    def verify_img_data(img_data, expected_output, mode):
-        if mode is None:
-            img = transforms.ToPILImage()(img_data)
-            assert img.mode == 'LA'  # default should assume LA
-        else:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
-        split = img.split()
-        for i in range(2):
-            assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
-
+@pytest.mark.parametrize('mode', [None, 'LA'])
+def test_2_channel_tensor_to_pil_image(mode):
     img_data = torch.Tensor(2, 4, 4).uniform_()
     expected_output = img_data.mul(255).int().float().div(255)
-    for mode in [None, 'LA']:
-        verify_img_data(img_data, expected_output, mode=mode)
+    if mode is None:
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'LA'  # default should assume LA
+    else:
+        img = transforms.ToPILImage(mode=mode)(img_data)
+        assert img.mode == mode
+
+    split = img.split()
+    for i in range(2):
+        assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+
+
+def test_2_channel_tensor_to_pil_image_error():
+    img_data = torch.Tensor(2, 4, 4).uniform_()
 
     with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         # should raise if we try a mode for 4 or 1 or 3 channel images
@@ -1644,60 +1645,66 @@ def test_2_channel_tensor_to_pil_image():
         transforms.ToPILImage(mode='RGB')(img_data)
 
 
-def test_2d_tensor_to_pil_image():
+@pytest.mark.parametrize('data_type, mode', [
+    ('float', 'L'),
+    ('byte', 'L'),
+    ('short', 'I;16'),
+    ('int', 'I'),
+])
+def test_2d_tensor_to_pil_image(data_type, mode):
     to_tensor = transforms.ToTensor()
+    if data_type == 'float':
+        img_data = torch.Tensor(4, 4).uniform_()
+        expected_output = img_data.mul(255).int().float().div(255).numpy()
+    elif data_type == 'byte':
+        img_data = torch.ByteTensor(4, 4).random_(0, 255)
+        expected_output = img_data.float().div(255.0).numpy()
+    elif data_type == 'short':
+        img_data = torch.ShortTensor(4, 4).random_()
+        expected_output = img_data.numpy()
+    elif data_type == 'int':
+        img_data = torch.IntTensor(4, 4).random_()
+        expected_output = img_data.numpy()
+    else:
+        assert False
 
-    img_data_float = torch.Tensor(4, 4).uniform_()
-    img_data_byte = torch.ByteTensor(4, 4).random_(0, 255)
-    img_data_short = torch.ShortTensor(4, 4).random_()
-    img_data_int = torch.IntTensor(4, 4).random_()
-
-    inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
-    expected_outputs = [img_data_float.mul(255).int().float().div(255).numpy(),
-                        img_data_byte.float().div(255.0).numpy(),
-                        img_data_short.numpy(),
-                        img_data_int.numpy()]
-    expected_modes = ['L', 'L', 'I;16', 'I']
-
-    for img_data, expected_output, mode in zip(inputs, expected_outputs, expected_modes):
-        for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-            img = transform(img_data)
-            assert img.mode == mode
-            np.testing.assert_allclose(expected_output, to_tensor(img).numpy()[0])
-
-
-def test_2d_ndarray_to_pil_image():
-    img_data_float = torch.Tensor(4, 4).uniform_().numpy()
-    img_data_byte = torch.ByteTensor(4, 4).random_(0, 255).numpy()
-    img_data_short = torch.ShortTensor(4, 4).random_().numpy()
-    img_data_int = torch.IntTensor(4, 4).random_().numpy()
-
-    inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
-    expected_modes = ['F', 'L', 'I;16', 'I']
-    for img_data, mode in zip(inputs, expected_modes):
-        for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-            img = transform(img_data)
-            assert img.mode == mode
-            np.testing.assert_allclose(img_data, img)
+    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+        img = transform(img_data)
+        assert img.mode == mode
+        np.testing.assert_allclose(expected_output, to_tensor(img).numpy()[0])
 
 
-def test_3_channel_tensor_to_pil_image():
-    def verify_img_data(img_data, expected_output, mode):
-        if mode is None:
-            img = transforms.ToPILImage()(img_data)
-            assert img.mode == 'RGB'  # default should assume RGB
-        else:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
-        split = img.split()
-        for i in range(3):
-            assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+@pytest.mark.parametrize('img_data, mode', [
+    (torch.Tensor(4, 4).uniform_().numpy(), 'F'),
+    (torch.ByteTensor(4, 4).random_(0, 255).numpy(), 'L'),
+    (torch.ShortTensor(4, 4).random_().numpy(), 'I;16'),
+    (torch.IntTensor(4, 4).random_().numpy(), 'I'),
+])
+def test_2d_ndarray_to_pil_image(img_data, mode):
+    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+        img = transform(img_data)
+        assert img.mode == mode
+        np.testing.assert_allclose(img_data, img)
 
+
+@pytest.mark.parametrize('mode', [None, 'RGB', 'HSV', 'YCbCr'])
+def test_3_channel_tensor_to_pil_image(mode):
     img_data = torch.Tensor(3, 4, 4).uniform_()
     expected_output = img_data.mul(255).int().float().div(255)
-    for mode in [None, 'RGB', 'HSV', 'YCbCr']:
-        verify_img_data(img_data, expected_output, mode=mode)
 
+    if mode is None:
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'RGB'  # default should assume RGB
+    else:
+        img = transforms.ToPILImage(mode=mode)(img_data)
+        assert img.mode == mode
+    split = img.split()
+    for i in range(3):
+        assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+
+
+def test_3_channel_tensor_to_pil_image_error():
+    img_data = torch.Tensor(3, 4, 4).uniform_()
     error_message_3d = r"Only modes \['RGB', 'YCbCr', 'HSV'\] are supported for 3D inputs"
     with pytest.raises(ValueError, match=error_message_3d):
         # should raise if we try a mode for 4 or 1 or 2 channel images
@@ -1709,21 +1716,23 @@ def test_3_channel_tensor_to_pil_image():
         transforms.ToPILImage()(torch.Tensor(1, 3, 4, 4).uniform_())
 
 
-def test_3_channel_ndarray_to_pil_image():
-    def verify_img_data(img_data, mode):
-        if mode is None:
-            img = transforms.ToPILImage()(img_data)
-            assert img.mode == 'RGB'  # default should assume RGB
-        else:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
-        split = img.split()
-        for i in range(3):
-            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
-
+@pytest.mark.parametrize('mode', [None, 'RGB', 'HSV', 'YCbCr'])
+def test_3_channel_ndarray_to_pil_image(mode):
     img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
-    for mode in [None, 'RGB', 'HSV', 'YCbCr']:
-        verify_img_data(img_data, mode)
+
+    if mode is None:
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'RGB'  # default should assume RGB
+    else:
+        img = transforms.ToPILImage(mode=mode)(img_data)
+        assert img.mode == mode
+    split = img.split()
+    for i in range(3):
+        torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
+
+
+def test_3_channel_ndarray_to_pil_image_error():
+    img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
 
     # Checking if ToPILImage can be printed as string
     transforms.ToPILImage().__repr__()
@@ -1736,23 +1745,25 @@ def test_3_channel_ndarray_to_pil_image():
         transforms.ToPILImage(mode='LA')(img_data)
 
 
-def test_4_channel_tensor_to_pil_image():
-    def verify_img_data(img_data, expected_output, mode):
-        if mode is None:
-            img = transforms.ToPILImage()(img_data)
-            assert img.mode == 'RGBA'  # default should assume RGBA
-        else:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
-
-        split = img.split()
-        for i in range(4):
-            assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
-
+@pytest.mark.parametrize('mode', [None, 'RGBA', 'CMYK', 'RGBX'])
+def test_4_channel_tensor_to_pil_image(mode):
     img_data = torch.Tensor(4, 4, 4).uniform_()
     expected_output = img_data.mul(255).int().float().div(255)
-    for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
-        verify_img_data(img_data, expected_output, mode)
+
+    if mode is None:
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'RGBA'  # default should assume RGBA
+    else:
+        img = transforms.ToPILImage(mode=mode)(img_data)
+        assert img.mode == mode
+
+    split = img.split()
+    for i in range(4):
+        assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+
+
+def test_4_channel_tensor_to_pil_image_error():
+    img_data = torch.Tensor(4, 4, 4).uniform_()
 
     error_message_4d = r"Only modes \['RGBA', 'CMYK', 'RGBX'\] are supported for 4D inputs"
     with pytest.raises(ValueError, match=error_message_4d):
@@ -1762,21 +1773,23 @@ def test_4_channel_tensor_to_pil_image():
         transforms.ToPILImage(mode='LA')(img_data)
 
 
-def test_4_channel_ndarray_to_pil_image():
-    def verify_img_data(img_data, mode):
-        if mode is None:
-            img = transforms.ToPILImage()(img_data)
-            assert img.mode == 'RGBA'  # default should assume RGBA
-        else:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
-        split = img.split()
-        for i in range(4):
-            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
-
+@pytest.mark.parametrize('mode', [None, 'RGBA', 'CMYK', 'RGBX'])
+def test_4_channel_ndarray_to_pil_image(mode):
     img_data = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
-    for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
-        verify_img_data(img_data, mode)
+
+    if mode is None:
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'RGBA'  # default should assume RGBA
+    else:
+        img = transforms.ToPILImage(mode=mode)(img_data)
+        assert img.mode == mode
+    split = img.split()
+    for i in range(4):
+        torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
+
+
+def test_4_channel_ndarray_to_pil_image_error():
+    img_data = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
 
     error_message_4d = r"Only modes \['RGBA', 'CMYK', 'RGBX'\] are supported for 4D inputs"
     with pytest.raises(ValueError, match=error_message_4d):
