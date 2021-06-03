@@ -100,7 +100,16 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
             results = m(*args)
         with freeze_rng_state():
             results_from_imported = m_import(*args)
-        assert_equal(results, results_from_imported, atol=3e-4, rtol=3e-4)
+        tol = 3e-4
+        try:
+            assert_equal(results, results_from_imported, atol=tol, rtol=tol)
+        except pytest.UsageError:
+            # custom check for the models that return named tuples:
+            # we compare field by field while ignoring None as assert_equal can't handle None
+            for a, b in zip(results, results_from_imported):
+                if a is not None:
+                    assert_equal(a, b, atol=tol, rtol=tol)
+
 
     TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
     if not TEST_WITH_SLOW or skip:
