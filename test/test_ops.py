@@ -1,6 +1,7 @@
 from common_utils import needs_cuda, cpu_only, cpu_and_gpu
 from _assert_utils import assert_equal
 import math
+from abc import ABC, abstractmethod
 import pytest
 
 import numpy as np
@@ -14,7 +15,7 @@ from torchvision import ops
 from typing import Tuple
 
 
-class RoIOpTester:
+class RoIOpTester(ABC):
     dtype = torch.float64
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -64,9 +65,12 @@ class RoIOpTester:
         gradcheck(func, (x,))
         gradcheck(script_func, (x,))
 
-    @cpu_only
-    def test_boxes_shape(self):
-        self._test_boxes_shape()
+    @needs_cuda
+    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
+    def test_autocast(self, x_dtype, rois_dtype):
+        with torch.cuda.amp.autocast():
+            self.test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
     def _helper_boxes_shape(self, func):
         # test boxes as Tensor[N, 5]
@@ -81,22 +85,17 @@ class RoIOpTester:
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
 
+    @abstractmethod
     def fn(*args, **kwargs):
         pass
 
+    @abstractmethod
     def get_script_fn(*args, **kwargs):
         pass
 
+    @abstractmethod
     def expected_fn(*args, **kwargs):
         pass
-
-    @needs_cuda
-    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
-    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
-    def test_autocast(self, x_dtype, rois_dtype):
-        with torch.cuda.amp.autocast():
-            self.test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
-
 
 class TestRoiPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -133,7 +132,8 @@ class TestRoiPool(RoIOpTester):
                         y[roi_idx, :, i, j] = bin_x.reshape(n_channels, -1).max(dim=1)[0]
         return y
 
-    def _test_boxes_shape(self):
+    @cpu_only
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
 
@@ -177,7 +177,8 @@ class TestPSRoIPool(RoIOpTester):
                             y[roi_idx, c_out, i, j] = t / area
         return y
 
-    def _test_boxes_shape(self):
+    @cpu_only
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_pool)
 
 
@@ -260,7 +261,8 @@ class TestRoIAlign(RoIOpTester):
                         out_data[r, channel, i, j] = val
         return out_data
 
-    def _test_boxes_shape(self):
+    @cpu_only
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
     @pytest.mark.parametrize('aligned', (True, False))
@@ -400,7 +402,8 @@ class TestPSRoIAlign(RoIOpTester):
                         out_data[r, c_out, i, j] = val
         return out_data
 
-    def _test_boxes_shape(self):
+    @cpu_only
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
@@ -416,7 +419,7 @@ class TestMultiScaleRoIAlign:
         # Check integrity of object __repr__ attribute
         expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
                            f"sampling_ratio={sampling_ratio})")
-        assert t.__repr__() == expected_string
+        assert repr(t) == expected_string
 
 
 class TestNMS:
@@ -791,7 +794,7 @@ class TestFrozenBNT:
 
         # Check integrity of object __repr__ attribute
         expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
-        assert t.__repr__() == expected_string
+        assert repr(t) == expected_string
 
     def test_frozenbatchnorm2d_eps(self):
         sample_size = (4, 32, 28, 28)
@@ -937,7 +940,7 @@ class TestBox:
 
 
 @cpu_only
-class BoxAreaTester:
+class TestBoxArea:
     def test_box_area(self):
         def area_check(box, expected, tolerance=1e-4):
             out = ops.box_area(box)
