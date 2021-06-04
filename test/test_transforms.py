@@ -1575,6 +1575,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomErasing can be printed as string
         t.__repr__()
 
+
 @pytest.mark.parametrize('channels', [1, 3, 4])
 def test_pil_to_tensor(channels):
     height, width = 4, 4
@@ -1606,7 +1607,8 @@ def test_pil_to_tensor(channels):
     img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
     output = trans(img).view(torch.uint8).bool().to(torch.uint8)
     torch.testing.assert_close(input_data, output, check_stride=False)
-        
+
+
 @pytest.mark.parametrize('channels', [1, 3, 4])
 def test_to_tensor(channels):
     height, width = 4, 4
@@ -1614,11 +1616,11 @@ def test_to_tensor(channels):
 
     with pytest.raises(TypeError):
         trans(np.random.rand(1, height, width).tolist())
-            
+
     with pytest.raises(ValueError):
         trans(np.random.rand(height))
         trans(np.random.rand(1, 1, height, width))
-            
+
     input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
     img = transforms.ToPILImage()(input_data)
     output = trans(img)
@@ -1639,7 +1641,8 @@ def test_to_tensor(channels):
     img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
     output = trans(img)
     torch.testing.assert_close(input_data, output, check_dtype=False, check_stride=False)
-    
+
+
 @pytest.mark.parametrize('dtype', [torch.float16, torch.float, torch.double])
 def test_to_tensor_with_other_default_dtypes(dtype):
     current_def_dtype = torch.get_default_dtype()
@@ -1653,6 +1656,7 @@ def test_to_tensor_with_other_default_dtypes(dtype):
     assert res.dtype == dtype, f"{res.dtype} vs {dtype}"
 
     torch.set_default_dtype(current_def_dtype)
+
 
 class TestPad:
 
