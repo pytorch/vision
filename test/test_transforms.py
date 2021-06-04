@@ -1575,8 +1575,8 @@ class Tester(unittest.TestCase):
         # Checking if RandomErasing can be printed as string
         t.__repr__()
 
-def test_pil_to_tensor():
-    test_channels = [1, 3, 4]
+@pytest.mark.parametrize('channels', [1, 3, 4])
+def test_pil_to_tensor(channels):
     height, width = 4, 4
     trans = transforms.PILToTensor()
 
@@ -1584,23 +1584,22 @@ def test_pil_to_tensor():
         trans(np.random.rand(1, height, width).tolist())
         trans(np.random.rand(1, height, width))
 
-    for channels in test_channels:
-        input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
-        img = transforms.ToPILImage()(input_data)
-        output = trans(img)
-        torch.testing.assert_close(input_data, output, check_stride=False)
+    input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
+    img = transforms.ToPILImage()(input_data)
+    output = trans(img)
+    torch.testing.assert_close(input_data, output, check_stride=False)
 
-        input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-        img = transforms.ToPILImage()(input_data)
-        output = trans(img)
-        expected_output = input_data.transpose((2, 0, 1))
-        torch.testing.assert_close(output.numpy(), expected_output)
+    input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+    img = transforms.ToPILImage()(input_data)
+    output = trans(img)
+    expected_output = input_data.transpose((2, 0, 1))
+    torch.testing.assert_close(output.numpy(), expected_output)
 
-        input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
-        img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
-        output = trans(img)  # HWC -> CHW
-        expected_output = (input_data * 255).byte()
-        torch.testing.assert_close(output, expected_output, check_stride=False)
+    input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+    img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
+    output = trans(img)  # HWC -> CHW
+    expected_output = (input_data * 255).byte()
+    torch.testing.assert_close(output, expected_output, check_stride=False)
 
     # separate test for mode '1' PIL images
     input_data = torch.ByteTensor(1, height, width).bernoulli_()
@@ -1608,8 +1607,8 @@ def test_pil_to_tensor():
     output = trans(img).view(torch.uint8).bool().to(torch.uint8)
     torch.testing.assert_close(input_data, output, check_stride=False)
         
-def test_to_tensor():
-    test_channels = [1, 3, 4]
+@pytest.mark.parametrize('channels', [1, 3, 4])
+def test_to_tensor(channels):
     height, width = 4, 4
     trans = transforms.ToTensor()
 
@@ -1620,21 +1619,20 @@ def test_to_tensor():
         trans(np.random.rand(height))
         trans(np.random.rand(1, 1, height, width))
             
-    for channels in test_channels:
-        input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
-        img = transforms.ToPILImage()(input_data)
-        output = trans(img)
-        torch.testing.assert_close(output, input_data, check_stride=False)
+    input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
+    img = transforms.ToPILImage()(input_data)
+    output = trans(img)
+    torch.testing.assert_close(output, input_data, check_stride=False)
 
-        ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-        output = trans(ndarray)
-        expected_output = ndarray.transpose((2, 0, 1)) / 255.0
-        torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+    ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+    output = trans(ndarray)
+    expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+    torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
 
-        ndarray = np.random.rand(height, width, channels).astype(np.float32)
-        output = trans(ndarray)
-        expected_output = ndarray.transpose((2, 0, 1))
-        torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+    ndarray = np.random.rand(height, width, channels).astype(np.float32)
+    output = trans(ndarray)
+    expected_output = ndarray.transpose((2, 0, 1))
+    torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
 
     # separate test for mode '1' PIL images
     input_data = torch.ByteTensor(1, height, width).bernoulli_()
@@ -1642,17 +1640,17 @@ def test_to_tensor():
     output = trans(img)
     torch.testing.assert_close(input_data, output, check_dtype=False, check_stride=False)
     
-def test_to_tensor_with_other_default_dtypes():
+@pytest.mark.parametrize('dtype', [torch.float16, torch.float, torch.double])
+def test_to_tensor_with_other_default_dtypes(dtype):
     current_def_dtype = torch.get_default_dtype()
 
     t = transforms.ToTensor()
     np_arr = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
     img = Image.fromarray(np_arr)
 
-    for dtype in [torch.float16, torch.float, torch.double]:
-        torch.set_default_dtype(dtype)
-        res = t(img)
-        assert res.dtype == dtype, f"{res.dtype} vs {dtype}"
+    torch.set_default_dtype(dtype)
+    res = t(img)
+    assert res.dtype == dtype, f"{res.dtype} vs {dtype}"
 
     torch.set_default_dtype(current_def_dtype)
 
