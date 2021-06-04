@@ -75,6 +75,7 @@ android {
     }
     packagingOptions {
         doNotStrip '**.so'
+        pickFirst '**.so'
     }
 
     // Filtering for CI
@@ -101,8 +102,8 @@ dependencies {
     implementation 'com.facebook.soloader:nativeloader:0.8.0'
     localImplementation project(':ops')
 
-    implementation 'org.pytorch:pytorch_android:1.8.0-SNAPSHOT'
-    implementation 'org.pytorch:pytorch_android_torchvision:1.8.0-SNAPSHOT'
+    implementation "org.pytorch:pytorch_android:$pytorchAndroidVersion"
+    implementation "org.pytorch:pytorch_android_torchvision:$pytorchAndroidVersion"
 
     aarImplementation(name: 'pytorch_android-release', ext: 'aar')
     aarImplementation(name: 'pytorch_android_torchvision-release', ext: 'aar')

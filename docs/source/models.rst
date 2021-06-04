@@ -329,6 +329,8 @@ The images have to be loaded in to a range of ``[0, 1]`` and then normalized usi
 ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
 They have been trained on images resized such that their minimum size is 520.
 
+For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
+
 The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
 present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
 ``references/segmentation/coco_utils.py``. The classes that the pre-trained model outputs are the following,
@@ -374,6 +376,7 @@ LR-ASPP
 
 .. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
 
+.. _object_det_inst_seg_pers_keypoint_det:
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
@@ -385,6 +388,7 @@ architectures for detection:
 - `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
 - `RetinaNet <https://arxiv.org/abs/1708.02002>`_
 - `SSD <https://arxiv.org/abs/1512.02325>`_
+- `SSDlite <https://arxiv.org/abs/1801.04381>`_
 
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
@@ -392,7 +396,8 @@ in torchvision.
 
 The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
 The models internally resize the images but the behaviour varies depending
-on the model. Check the constructor of the models for more information.
+on the model. Check the constructor of the models for more information. The
+output format of such models is illustrated in :ref:`instance_seg_output`.
 
 
 For object detection and instance segmentation, the pre-trained
@@ -426,7 +431,8 @@ Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
-SSD VGG16                               25.1     -         -
+SSD300 VGG16                            25.1     -         -
+SSDlite320 MobileNetV3-Large            21.3     -         -
 Mask R-CNN ResNet-50 FPN                37.9     34.6      -
 ======================================  =======  ========  ===========
 
@@ -470,9 +476,9 @@ Runtime characteristics
 The implementations of the models for object detection, instance segmentation
 and keypoint detection are efficient.
 
-In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
-report the results. During training, we use a batch size of 2 per GPU, and
-during testing a batch size of 1 is used.
+In the following table, we use 8 GPUs to report the results. During training,
+we use a batch size of 2 per GPU for all models except SSD which uses 4
+and SSDlite which uses 24. During testing a batch size  of 1 is used.
 
 For test time, we report the time for the model evaluation and postprocessing
 (including mask pasting in image), but not the time for computing the
@@ -485,7 +491,8 @@ Faster R-CNN ResNet-50 FPN              0.2288               0.0590             
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
-SSD VGG16                               0.2093               0.0744              1.5
+SSD300 VGG16                            0.2093               0.0744              1.5
+SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
 Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
 ======================================  ===================  ==================  ===========
@@ -500,15 +507,21 @@ Faster R-CNN
 
 
 RetinaNet
-------------
+---------
 
 .. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
 
 
 SSD
-------------
+---
 
 .. autofunction:: torchvision.models.detection.ssd300_vgg16
+
+
+SSDlite
+-------
+
+.. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
 
 
 Mask R-CNN

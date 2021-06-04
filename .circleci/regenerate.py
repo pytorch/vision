@@ -30,8 +30,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu101", "cu102", "cu111", "rocm4.0.1", "rocm4.1"],
-                                "win": ["cpu", "cu101", "cu102", "cu111"],
+            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.1", "rocm4.2"],
+                                "win": ["cpu", "cu102", "cu111"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -39,7 +39,7 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                     # ROCm conda packages not yet supported
                     if cu_version.startswith('rocm') and btype == "conda":
                         continue
-                    for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
+                    for unicode in [False]:
                         fb = filter_branch
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
                             (python_version != python_versions[-1] or
@@ -211,7 +211,7 @@ def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, pyt
     if filter_branch:
         d["filters"] = gen_filter_branch_tree(filter_branch)
 
-    return {"smoke_test_{os_type}_{pydistro}".format(os_type=os_type, pydistro=pydistro): d}
+    return {f"smoke_test_{os_type}_{pydistro}": d}
 
 
 def indent(indentation, data_list):
@@ -234,7 +234,7 @@ def unittest_workflows(indentation=6):
                 if device_type == 'gpu':
                     if python_version != "3.8":
                         job['filters'] = gen_filter_branch_tree('master', 'nightly')
-                    job['cu_version'] = 'cu101'
+                    job['cu_version'] = 'cu102'
                 else:
                     job['cu_version'] = 'cpu'
 
@@ -255,9 +255,9 @@ def cmake_workflows(indentation=6):
                 'python_version': python_version
             }
 
-            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            job['cu_version'] = 'cu102' if device == 'gpu' else 'cpu'
             if device == 'gpu' and os_type == 'linux':
-                job['wheel_docker_image'] = 'pytorch/manylinux-cuda101'
+                job['wheel_docker_image'] = 'pytorch/manylinux-cuda102'
             jobs.append({f'cmake_{os_type}_{device}': job})
     return indent(indentation, jobs)
 
@@ -291,6 +291,32 @@ def ios_workflows(indentation=6, nightly=False):
     return indent(indentation, jobs)
 
 
+def android_workflows(indentation=6, nightly=False):
+    jobs = []
+    build_job_names = []
+    name_prefix = "nightly_" if nightly else ""
+    env_prefix = "nightly-" if nightly else ""
+
+    name = f'{name_prefix}binary_libtorchvision_ops_android'
+    build_job_names.append(name)
+    build_job = {
+        'build_environment': f'{env_prefix}binary-libtorchvision_ops-android',
+        'name': name,
+    }
+
+    if nightly:
+        upload_job = {
+            'build_environment': f'{env_prefix}binary-libtorchvision_ops-android-upload',
+            'context': 'org-member',
+            'filters': gen_filter_branch_tree('nightly'),
+            'name': f'{name_prefix}binary_libtorchvision_ops_android_upload'
+        }
+        jobs.append({'binary_android_upload': upload_job})
+    else:
+        jobs.append({'binary_android_build': build_job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -306,4 +332,5 @@ if __name__ == "__main__":
             unittest_workflows=unittest_workflows,
             cmake_workflows=cmake_workflows,
             ios_workflows=ios_workflows,
+            android_workflows=android_workflows,
         ))
