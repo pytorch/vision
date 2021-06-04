@@ -403,124 +403,6 @@ class Tester(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
             t(img)
 
-    def test_pad(self):
-        height = random.randint(10, 32) * 2
-        width = random.randint(10, 32) * 2
-        img = torch.ones(3, height, width)
-        padding = random.randint(1, 20)
-        fill = random.randint(1, 50)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Pad(padding, fill=fill),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), height + 2 * padding)
-        self.assertEqual(result.size(2), width + 2 * padding)
-        # check that all elements in the padded region correspond
-        # to the pad value
-        fill_v = fill / 255
-        eps = 1e-5
-        h_padded = result[:, :padding, :]
-        w_padded = result[:, :, :padding]
-        torch.testing.assert_close(
-            h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
-        )
-        torch.testing.assert_close(
-            w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
-        )
-        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
-                          transforms.ToPILImage()(img))
-
-    def test_pad_with_tuple_of_pad_values(self):
-        height = random.randint(10, 32) * 2
-        width = random.randint(10, 32) * 2
-        img = transforms.ToPILImage()(torch.ones(3, height, width))
-
-        padding = tuple([random.randint(1, 20) for _ in range(2)])
-        output = transforms.Pad(padding)(img)
-        self.assertEqual(output.size, (width + padding[0] * 2, height + padding[1] * 2))
-
-        padding = tuple([random.randint(1, 20) for _ in range(4)])
-        output = transforms.Pad(padding)(img)
-        self.assertEqual(output.size[0], width + padding[0] + padding[2])
-        self.assertEqual(output.size[1], height + padding[1] + padding[3])
-
-        # Checking if Padding can be printed as string
-        transforms.Pad(padding).__repr__()
-
-    def test_pad_with_non_constant_padding_modes(self):
-        """Unit tests for edge, reflect, symmetric padding"""
-        img = torch.zeros(3, 27, 27).byte()
-        img[:, :, 0] = 1  # Constant value added to leftmost edge
-        img = transforms.ToPILImage()(img)
-        img = F.pad(img, 1, (200, 200, 200))
-
-        # pad 3 to all sidess
-        edge_padded_img = F.pad(img, 3, padding_mode='edge')
-        # First 6 elements of leftmost edge in the middle of the image, values are in order:
-        # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
-        edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(edge_padded_img).size(), (3, 35, 35))
-
-        # Pad 3 to left/right, 2 to top/bottom
-        reflect_padded_img = F.pad(img, (3, 2), padding_mode='reflect')
-        # First 6 elements of leftmost edge in the middle of the image, values are in order:
-        # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
-        reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(reflect_padded_img).size(), (3, 33, 35))
-
-        # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
-        symmetric_padded_img = F.pad(img, (3, 2, 2, 1), padding_mode='symmetric')
-        # First 6 elements of leftmost edge in the middle of the image, values are in order:
-        # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
-        symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(symmetric_padded_img).size(), (3, 32, 34))
-
-        # Check negative padding explicitly for symmetric case, since it is not
-        # implemented for tensor case to compare to
-        # Crop 1 to left, pad 2 to top, pad 3 to right, crop 3 to bottom
-        symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
-        symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
-        symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
-        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8), check_stride=False)
-        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8), check_stride=False)
-        self.assertEqual(transforms.ToTensor()(symmetric_padded_img_neg).size(), (3, 28, 31))
-
-    def test_pad_raises_with_invalid_pad_sequence_len(self):
-        with self.assertRaises(ValueError):
-            transforms.Pad(())
-
-        with self.assertRaises(ValueError):
-            transforms.Pad((1, 2, 3))
-
-        with self.assertRaises(ValueError):
-            transforms.Pad((1, 2, 3, 4, 5))
-
-    def test_pad_with_mode_F_images(self):
-        pad = 2
-        transform = transforms.Pad(pad)
-
-        img = Image.new("F", (10, 10))
-        padded_img = transform(img)
-        self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
-
-    def test_lambda(self):
-        trans = transforms.Lambda(lambda x: x.add(10))
-        x = torch.randn(10)
-        y = trans(x)
-        assert_equal(y, torch.add(x, 10))
-
-        trans = transforms.Lambda(lambda x: x.add_(10))
-        x = torch.randn(10)
-        y = trans(x)
-        assert_equal(y, x)
-
-        # Checking if Lambda can be printed as string
-        trans.__repr__()
-
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_apply(self):
         random_state = random.getstate()
@@ -1283,61 +1165,6 @@ class Tester(unittest.TestCase):
         # Checking if LinearTransformation can be printed as string
         whitening.__repr__()
 
-    def test_rotate(self):
-        x = np.zeros((100, 100, 3), dtype=np.uint8)
-        x[40, 40] = [255, 255, 255]
-
-        with self.assertRaisesRegex(TypeError, r"img should be PIL Image"):
-            F.rotate(x, 10)
-
-        img = F.to_pil_image(x)
-
-        result = F.rotate(img, 45)
-        self.assertEqual(result.size, (100, 100))
-        r, c, ch = np.where(result)
-        self.assertTrue(all(x in r for x in [49, 50]))
-        self.assertTrue(all(x in c for x in [36]))
-        self.assertTrue(all(x in ch for x in [0, 1, 2]))
-
-        result = F.rotate(img, 45, expand=True)
-        self.assertEqual(result.size, (142, 142))
-        r, c, ch = np.where(result)
-        self.assertTrue(all(x in r for x in [70, 71]))
-        self.assertTrue(all(x in c for x in [57]))
-        self.assertTrue(all(x in ch for x in [0, 1, 2]))
-
-        result = F.rotate(img, 45, center=(40, 40))
-        self.assertEqual(result.size, (100, 100))
-        r, c, ch = np.where(result)
-        self.assertTrue(all(x in r for x in [40]))
-        self.assertTrue(all(x in c for x in [40]))
-        self.assertTrue(all(x in ch for x in [0, 1, 2]))
-
-        result_a = F.rotate(img, 90)
-        result_b = F.rotate(img, -270)
-
-        assert_equal(np.array(result_a), np.array(result_b))
-
-    def test_rotate_fill(self):
-        img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
-
-        modes = ("L", "RGB", "F")
-        nums_bands = [len(mode) for mode in modes]
-        fill = 127
-
-        for mode, num_bands in zip(modes, nums_bands):
-            img_conv = img.convert(mode)
-            img_rot = F.rotate(img_conv, 45.0, fill=fill)
-            pixel = img_rot.getpixel((0, 0))
-
-            if not isinstance(pixel, tuple):
-                pixel = (pixel,)
-            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
-
-            for wrong_num_bands in set(nums_bands) - {num_bands}:
-                with self.assertRaises(ValueError):
-                    F.rotate(img_conv, 45.0, fill=tuple([fill] * wrong_num_bands))
-
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
         cnt = [20, 20]
@@ -1540,261 +1367,6 @@ class Tester(unittest.TestCase):
             t = transforms.RandomAffine(10, interpolation=2)
             self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
-    def test_to_grayscale(self):
-        """Unit tests for grayscale transform"""
-
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        # Test Set: Grayscale an image with desired number of output channels
-        # Case 1: RGB -> 1 channel grayscale
-        trans1 = transforms.Grayscale(num_output_channels=1)
-        gray_pil_1 = trans1(x_pil)
-        gray_np_1 = np.array(gray_pil_1)
-        self.assertEqual(gray_pil_1.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_1.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_1)
-
-        # Case 2: RGB -> 3 channel grayscale
-        trans2 = transforms.Grayscale(num_output_channels=3)
-        gray_pil_2 = trans2(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        self.assertEqual(gray_pil_2.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_2.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
-        assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-        assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
-
-        # Case 3: 1 channel grayscale -> 1 channel grayscale
-        trans3 = transforms.Grayscale(num_output_channels=1)
-        gray_pil_3 = trans3(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        self.assertEqual(gray_pil_3.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_3.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_3)
-
-        # Case 4: 1 channel grayscale -> 3 channel grayscale
-        trans4 = transforms.Grayscale(num_output_channels=3)
-        gray_pil_4 = trans4(x_pil_2)
-        gray_np_4 = np.array(gray_pil_4)
-        self.assertEqual(gray_pil_4.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_4.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
-        assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
-        assert_equal(gray_np, gray_np_4[:, :, 0], check_stride=False)
-
-        # Checking if Grayscale can be printed as string
-        trans4.__repr__()
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_grayscale(self):
-        """Unit tests for random grayscale transform"""
-
-        # Test Set 1: RGB -> 3 channel grayscale
-        random_state = random.getstate()
-        random.seed(42)
-        x_shape = [2, 2, 3]
-        x_np = np.random.randint(0, 256, x_shape, np.uint8)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        num_samples = 250
-        num_gray = 0
-        for _ in range(num_samples):
-            gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
-            gray_np_2 = np.array(gray_pil_2)
-            if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
-                    np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
-                    np.array_equal(gray_np, gray_np_2[:, :, 0]):
-                num_gray = num_gray + 1
-
-        p_value = stats.binom_test(num_gray, num_samples, p=0.5)
-        random.setstate(random_state)
-        self.assertGreater(p_value, 0.0001)
-
-        # Test Set 2: grayscale -> 1 channel grayscale
-        random_state = random.getstate()
-        random.seed(42)
-        x_shape = [2, 2, 3]
-        x_np = np.random.randint(0, 256, x_shape, np.uint8)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        num_samples = 250
-        num_gray = 0
-        for _ in range(num_samples):
-            gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
-            gray_np_3 = np.array(gray_pil_3)
-            if np.array_equal(gray_np, gray_np_3):
-                num_gray = num_gray + 1
-
-        p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
-        random.setstate(random_state)
-        self.assertGreater(p_value, 0.0001)
-
-        # Test set 3: Explicit tests
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        # Case 3a: RGB -> 3 channel grayscale (grayscaled)
-        trans2 = transforms.RandomGrayscale(p=1.0)
-        gray_pil_2 = trans2(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        self.assertEqual(gray_pil_2.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_2.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
-        assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-        assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
-
-        # Case 3b: RGB -> 3 channel grayscale (unchanged)
-        trans2 = transforms.RandomGrayscale(p=0.0)
-        gray_pil_2 = trans2(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        self.assertEqual(gray_pil_2.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_2.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(x_np, gray_np_2)
-
-        # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
-        trans3 = transforms.RandomGrayscale(p=1.0)
-        gray_pil_3 = trans3(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        self.assertEqual(gray_pil_3.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_3.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_3)
-
-        # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
-        trans3 = transforms.RandomGrayscale(p=0.0)
-        gray_pil_3 = trans3(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        self.assertEqual(gray_pil_3.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_3.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_3)
-
-        # Checking if RandomGrayscale can be printed as string
-        trans3.__repr__()
-
-    def test_gaussian_blur_asserts(self):
-        np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
-        img = F.to_pil_image(np_img, "RGB")
-
-        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
-            F.gaussian_blur(img, [3])
-
-        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
-            F.gaussian_blur(img, [3, 3, 3])
-        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur([3, 3, 3])
-
-        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
-            F.gaussian_blur(img, [4, 4])
-        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur([4, 4])
-
-        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
-            F.gaussian_blur(img, [-3, -3])
-        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
-            transforms.GaussianBlur([-3, -3])
-
-        with self.assertRaisesRegex(ValueError, r"If sigma is a sequence, its length should be 2"):
-            F.gaussian_blur(img, 3, [1, 1, 1])
-        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
-            transforms.GaussianBlur(3, [1, 1, 1])
-
-        with self.assertRaisesRegex(ValueError, r"sigma should have positive values"):
-            F.gaussian_blur(img, 3, -1.0)
-        with self.assertRaisesRegex(ValueError, r"If sigma is a single number, it must be positive"):
-            transforms.GaussianBlur(3, -1.0)
-
-        with self.assertRaisesRegex(TypeError, r"kernel_size should be int or a sequence of integers"):
-            F.gaussian_blur(img, "kernel_size_string")
-        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
-            transforms.GaussianBlur("kernel_size_string")
-
-        with self.assertRaisesRegex(TypeError, r"sigma should be either float or sequence of floats"):
-            F.gaussian_blur(img, 3, "sigma_string")
-        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
-            transforms.GaussianBlur(3, "sigma_string")
-
-    def _test_randomness(self, fn, trans, configs):
-        random_state = random.getstate()
-        random.seed(42)
-        img = transforms.ToPILImage()(torch.rand(3, 16, 18))
-
-        for p in [0.5, 0.7]:
-            for config in configs:
-                inv_img = fn(img, **config)
-
-                num_samples = 250
-                counts = 0
-                for _ in range(num_samples):
-                    tranformation = trans(p=p, **config)
-                    tranformation.__repr__()
-                    out = tranformation(img)
-                    if out == inv_img:
-                        counts += 1
-
-                p_value = stats.binom_test(counts, num_samples, p=p)
-                random.setstate(random_state)
-                self.assertGreater(p_value, 0.0001)
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_invert(self):
-        self._test_randomness(
-            F.invert,
-            transforms.RandomInvert,
-            [{}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_posterize(self):
-        self._test_randomness(
-            F.posterize,
-            transforms.RandomPosterize,
-            [{"bits": 4}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_solarize(self):
-        self._test_randomness(
-            F.solarize,
-            transforms.RandomSolarize,
-            [{"threshold": 192}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_adjust_sharpness(self):
-        self._test_randomness(
-            F.adjust_sharpness,
-            transforms.RandomAdjustSharpness,
-            [{"sharpness_factor": 2.0}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_autocontrast(self):
-        self._test_randomness(
-            F.autocontrast,
-            transforms.RandomAutocontrast,
-            [{}]
-        )
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_equalize(self):
-        self._test_randomness(
-            F.equalize,
-            transforms.RandomEqualize,
-            [{}]
-        )
-
     def test_autoaugment(self):
         for policy in transforms.AutoAugmentPolicy:
             for fill in [None, 85, (128, 128, 128)]:
@@ -1829,6 +1401,143 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomErasing can be printed as string
         t.__repr__()
+
+
+class TestPad:
+
+    def test_pad(self):
+        height = random.randint(10, 32) * 2
+        width = random.randint(10, 32) * 2
+        img = torch.ones(3, height, width)
+        padding = random.randint(1, 20)
+        fill = random.randint(1, 50)
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Pad(padding, fill=fill),
+            transforms.ToTensor(),
+        ])(img)
+        assert result.size(1) == height + 2 * padding
+        assert result.size(2) == width + 2 * padding
+        # check that all elements in the padded region correspond
+        # to the pad value
+        fill_v = fill / 255
+        eps = 1e-5
+        h_padded = result[:, :padding, :]
+        w_padded = result[:, :, :padding]
+        torch.testing.assert_close(
+            h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
+        )
+        torch.testing.assert_close(
+            w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
+        )
+        pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)),
+                      transforms.ToPILImage()(img))
+
+    def test_pad_with_tuple_of_pad_values(self):
+        height = random.randint(10, 32) * 2
+        width = random.randint(10, 32) * 2
+        img = transforms.ToPILImage()(torch.ones(3, height, width))
+
+        padding = tuple([random.randint(1, 20) for _ in range(2)])
+        output = transforms.Pad(padding)(img)
+        assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
+
+        padding = tuple([random.randint(1, 20) for _ in range(4)])
+        output = transforms.Pad(padding)(img)
+        assert output.size[0] == width + padding[0] + padding[2]
+        assert output.size[1] == height + padding[1] + padding[3]
+
+        # Checking if Padding can be printed as string
+        transforms.Pad(padding).__repr__()
+
+    def test_pad_with_non_constant_padding_modes(self):
+        """Unit tests for edge, reflect, symmetric padding"""
+        img = torch.zeros(3, 27, 27).byte()
+        img[:, :, 0] = 1  # Constant value added to leftmost edge
+        img = transforms.ToPILImage()(img)
+        img = F.pad(img, 1, (200, 200, 200))
+
+        # pad 3 to all sidess
+        edge_padded_img = F.pad(img, 3, padding_mode='edge')
+        # First 6 elements of leftmost edge in the middle of the image, values are in order:
+        # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
+        edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
+        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(edge_padded_img).size() == (3, 35, 35)
+
+        # Pad 3 to left/right, 2 to top/bottom
+        reflect_padded_img = F.pad(img, (3, 2), padding_mode='reflect')
+        # First 6 elements of leftmost edge in the middle of the image, values are in order:
+        # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
+        reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
+        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(reflect_padded_img).size() == (3, 33, 35)
+
+        # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
+        symmetric_padded_img = F.pad(img, (3, 2, 2, 1), padding_mode='symmetric')
+        # First 6 elements of leftmost edge in the middle of the image, values are in order:
+        # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
+        symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
+        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(symmetric_padded_img).size() == (3, 32, 34)
+
+        # Check negative padding explicitly for symmetric case, since it is not
+        # implemented for tensor case to compare to
+        # Crop 1 to left, pad 2 to top, pad 3 to right, crop 3 to bottom
+        symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
+        symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
+        symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
+        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8), check_stride=False)
+        assert transforms.ToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
+
+    def test_pad_raises_with_invalid_pad_sequence_len(self):
+        with pytest.raises(ValueError):
+            transforms.Pad(())
+
+        with pytest.raises(ValueError):
+            transforms.Pad((1, 2, 3))
+
+        with pytest.raises(ValueError):
+            transforms.Pad((1, 2, 3, 4, 5))
+
+    def test_pad_with_mode_F_images(self):
+        pad = 2
+        transform = transforms.Pad(pad)
+
+        img = Image.new("F", (10, 10))
+        padded_img = transform(img)
+        assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size], check_stride=False)
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+@pytest.mark.parametrize('fn, trans, config', [
+                        (F.invert, transforms.RandomInvert, {}),
+                        (F.posterize, transforms.RandomPosterize, {"bits": 4}),
+                        (F.solarize, transforms.RandomSolarize, {"threshold": 192}),
+                        (F.adjust_sharpness, transforms.RandomAdjustSharpness, {"sharpness_factor": 2.0}),
+                        (F.autocontrast, transforms.RandomAutocontrast, {}),
+                        (F.equalize, transforms.RandomEqualize, {})])
+@pytest.mark.parametrize('p', (.5, .7))
+def test_randomness(fn, trans, config, p):
+    random_state = random.getstate()
+    random.seed(42)
+    img = transforms.ToPILImage()(torch.rand(3, 16, 18))
+
+    inv_img = fn(img, **config)
+
+    num_samples = 250
+    counts = 0
+    for _ in range(num_samples):
+        tranformation = trans(p=p, **config)
+        tranformation.__repr__()
+        out = tranformation(img)
+        if out == inv_img:
+            counts += 1
+
+    p_value = stats.binom_test(counts, num_samples, p=p)
+    random.setstate(random_state)
+    assert p_value > 0.0001
 
 
 def test_adjust_brightness():
@@ -2025,6 +1734,264 @@ def test_adjusts_L_mode():
     assert F.adjust_hue(x_l, 0.4).mode == 'L'
     assert F.adjust_sharpness(x_l, 2).mode == 'L'
     assert F.adjust_gamma(x_l, 0.5).mode == 'L'
+
+
+def test_rotate():
+    x = np.zeros((100, 100, 3), dtype=np.uint8)
+    x[40, 40] = [255, 255, 255]
+
+    with pytest.raises(TypeError, match=r"img should be PIL Image"):
+        F.rotate(x, 10)
+
+    img = F.to_pil_image(x)
+
+    result = F.rotate(img, 45)
+    assert result.size == (100, 100)
+    r, c, ch = np.where(result)
+    assert all(x in r for x in [49, 50])
+    assert all(x in c for x in [36])
+    assert all(x in ch for x in [0, 1, 2])
+
+    result = F.rotate(img, 45, expand=True)
+    assert result.size == (142, 142)
+    r, c, ch = np.where(result)
+    assert all(x in r for x in [70, 71])
+    assert all(x in c for x in [57])
+    assert all(x in ch for x in [0, 1, 2])
+
+    result = F.rotate(img, 45, center=(40, 40))
+    assert result.size == (100, 100)
+    r, c, ch = np.where(result)
+    assert all(x in r for x in [40])
+    assert all(x in c for x in [40])
+    assert all(x in ch for x in [0, 1, 2])
+
+    result_a = F.rotate(img, 90)
+    result_b = F.rotate(img, -270)
+
+    assert_equal(np.array(result_a), np.array(result_b))
+
+
+@pytest.mark.parametrize('mode', ["L", "RGB", "F"])
+def test_rotate_fill(mode):
+    img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
+
+    num_bands = len(mode)
+    wrong_num_bands = num_bands + 1
+    fill = 127
+
+    img_conv = img.convert(mode)
+    img_rot = F.rotate(img_conv, 45.0, fill=fill)
+    pixel = img_rot.getpixel((0, 0))
+
+    if not isinstance(pixel, tuple):
+        pixel = (pixel,)
+    assert pixel == tuple([fill] * num_bands)
+
+    with pytest.raises(ValueError):
+        F.rotate(img_conv, 45.0, fill=tuple([fill] * wrong_num_bands))
+
+
+def test_gaussian_blur_asserts():
+    np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+    img = F.to_pil_image(np_img, "RGB")
+
+    with pytest.raises(ValueError, match=r"If kernel_size is a sequence its length should be 2"):
+        F.gaussian_blur(img, [3])
+    with pytest.raises(ValueError, match=r"If kernel_size is a sequence its length should be 2"):
+        F.gaussian_blur(img, [3, 3, 3])
+    with pytest.raises(ValueError, match=r"Kernel size should be a tuple/list of two integers"):
+        transforms.GaussianBlur([3, 3, 3])
+
+    with pytest.raises(ValueError, match=r"kernel_size should have odd and positive integers"):
+        F.gaussian_blur(img, [4, 4])
+    with pytest.raises(ValueError, match=r"Kernel size value should be an odd and positive number"):
+        transforms.GaussianBlur([4, 4])
+
+    with pytest.raises(ValueError, match=r"kernel_size should have odd and positive integers"):
+        F.gaussian_blur(img, [-3, -3])
+    with pytest.raises(ValueError, match=r"Kernel size value should be an odd and positive number"):
+        transforms.GaussianBlur([-3, -3])
+
+    with pytest.raises(ValueError, match=r"If sigma is a sequence, its length should be 2"):
+        F.gaussian_blur(img, 3, [1, 1, 1])
+    with pytest.raises(ValueError, match=r"sigma should be a single number or a list/tuple with length 2"):
+        transforms.GaussianBlur(3, [1, 1, 1])
+
+    with pytest.raises(ValueError, match=r"sigma should have positive values"):
+        F.gaussian_blur(img, 3, -1.0)
+    with pytest.raises(ValueError, match=r"If sigma is a single number, it must be positive"):
+        transforms.GaussianBlur(3, -1.0)
+
+    with pytest.raises(TypeError, match=r"kernel_size should be int or a sequence of integers"):
+        F.gaussian_blur(img, "kernel_size_string")
+    with pytest.raises(ValueError, match=r"Kernel size should be a tuple/list of two integers"):
+        transforms.GaussianBlur("kernel_size_string")
+
+    with pytest.raises(TypeError, match=r"sigma should be either float or sequence of floats"):
+        F.gaussian_blur(img, 3, "sigma_string")
+    with pytest.raises(ValueError, match=r"sigma should be a single number or a list/tuple with length 2"):
+        transforms.GaussianBlur(3, "sigma_string")
+
+
+def test_lambda():
+    trans = transforms.Lambda(lambda x: x.add(10))
+    x = torch.randn(10)
+    y = trans(x)
+    assert_equal(y, torch.add(x, 10))
+
+    trans = transforms.Lambda(lambda x: x.add_(10))
+    x = torch.randn(10)
+    y = trans(x)
+    assert_equal(y, x)
+
+    # Checking if Lambda can be printed as string
+    trans.__repr__()
+
+
+def test_to_grayscale():
+    """Unit tests for grayscale transform"""
+
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    # Test Set: Grayscale an image with desired number of output channels
+    # Case 1: RGB -> 1 channel grayscale
+    trans1 = transforms.Grayscale(num_output_channels=1)
+    gray_pil_1 = trans1(x_pil)
+    gray_np_1 = np.array(gray_pil_1)
+    assert gray_pil_1.mode == 'L', 'mode should be L'
+    assert gray_np_1.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_1)
+
+    # Case 2: RGB -> 3 channel grayscale
+    trans2 = transforms.Grayscale(num_output_channels=3)
+    gray_pil_2 = trans2(x_pil)
+    gray_np_2 = np.array(gray_pil_2)
+    assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
+    assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
+    assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
+
+    # Case 3: 1 channel grayscale -> 1 channel grayscale
+    trans3 = transforms.Grayscale(num_output_channels=1)
+    gray_pil_3 = trans3(x_pil_2)
+    gray_np_3 = np.array(gray_pil_3)
+    assert gray_pil_3.mode == 'L', 'mode should be L'
+    assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_3)
+
+    # Case 4: 1 channel grayscale -> 3 channel grayscale
+    trans4 = transforms.Grayscale(num_output_channels=3)
+    gray_pil_4 = trans4(x_pil_2)
+    gray_np_4 = np.array(gray_pil_4)
+    assert gray_pil_4.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_4.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
+    assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
+    assert_equal(gray_np, gray_np_4[:, :, 0], check_stride=False)
+
+    # Checking if Grayscale can be printed as string
+    trans4.__repr__()
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_grayscale():
+    """Unit tests for random grayscale transform"""
+
+    # Test Set 1: RGB -> 3 channel grayscale
+    random_state = random.getstate()
+    random.seed(42)
+    x_shape = [2, 2, 3]
+    x_np = np.random.randint(0, 256, x_shape, np.uint8)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    num_samples = 250
+    num_gray = 0
+    for _ in range(num_samples):
+        gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
+        gray_np_2 = np.array(gray_pil_2)
+        if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
+                np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
+                np.array_equal(gray_np, gray_np_2[:, :, 0]):
+            num_gray = num_gray + 1
+
+    p_value = stats.binom_test(num_gray, num_samples, p=0.5)
+    random.setstate(random_state)
+    assert p_value > 0.0001
+
+    # Test Set 2: grayscale -> 1 channel grayscale
+    random_state = random.getstate()
+    random.seed(42)
+    x_shape = [2, 2, 3]
+    x_np = np.random.randint(0, 256, x_shape, np.uint8)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    num_samples = 250
+    num_gray = 0
+    for _ in range(num_samples):
+        gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
+        gray_np_3 = np.array(gray_pil_3)
+        if np.array_equal(gray_np, gray_np_3):
+            num_gray = num_gray + 1
+
+    p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
+    random.setstate(random_state)
+    assert p_value > 0.0001
+
+    # Test set 3: Explicit tests
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    # Case 3a: RGB -> 3 channel grayscale (grayscaled)
+    trans2 = transforms.RandomGrayscale(p=1.0)
+    gray_pil_2 = trans2(x_pil)
+    gray_np_2 = np.array(gray_pil_2)
+    assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
+    assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
+    assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
+
+    # Case 3b: RGB -> 3 channel grayscale (unchanged)
+    trans2 = transforms.RandomGrayscale(p=0.0)
+    gray_pil_2 = trans2(x_pil)
+    gray_np_2 = np.array(gray_pil_2)
+    assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(x_np, gray_np_2)
+
+    # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
+    trans3 = transforms.RandomGrayscale(p=1.0)
+    gray_pil_3 = trans3(x_pil_2)
+    gray_np_3 = np.array(gray_pil_3)
+    assert gray_pil_3.mode == 'L', 'mode should be L'
+    assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_3)
+
+    # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
+    trans3 = transforms.RandomGrayscale(p=0.0)
+    gray_pil_3 = trans3(x_pil_2)
+    gray_np_3 = np.array(gray_pil_3)
+    assert gray_pil_3.mode == 'L', 'mode should be L'
+    assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_3)
+
+    # Checking if RandomGrayscale can be printed as string
+    trans3.__repr__()
 
 
 if __name__ == '__main__':
