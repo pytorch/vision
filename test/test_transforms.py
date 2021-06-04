@@ -403,7 +403,6 @@ class Tester(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
             t(img)
 
-
     def test_to_tensor(self):
         test_channels = [1, 3, 4]
         height, width = 4, 4
