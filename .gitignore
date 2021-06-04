@@ -36,3 +36,5 @@ gen.yml
 
 ## Xcode User settings
 xcuserdata/
+
+.DS_Store
