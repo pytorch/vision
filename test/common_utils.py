@@ -5,9 +5,7 @@ import contextlib
 import unittest
 import argparse
 import sys
-import io
 import torch
-import warnings
 import __main__
 import random
 import inspect
@@ -15,7 +13,6 @@ import inspect
 from numbers import Number
 from torch._six import string_classes
 from collections import OrderedDict
-from _utils_internal import get_relative_path
 
 import numpy as np
 from PIL import Image
@@ -47,10 +44,6 @@ def set_rng_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
-
-
-ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
-TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
 
 
 class MapNestedTensorObjectImpl(object):
@@ -94,55 +87,6 @@ def is_iterable(obj):
 # inputs and set maximum binary size
 class TestCase(unittest.TestCase):
     precision = 1e-5
-
-    def _get_expected_file(self, name=None):
-        # NB: we take __file__ from the module that defined the test
-        # class, so we place the expect directory where the test script
-        # lives, NOT where test/common_utils.py lives.
-        module_id = self.__class__.__module__
-
-        # Determine expected file based on environment
-        expected_file_base = get_relative_path(
-            os.path.realpath(sys.modules[module_id].__file__),
-            "expect")
-
-        # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
-        # We hardcode it here to avoid having to re-generate the reference files
-        expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
-        expected_file += "_expect.pkl"
-
-        if not ACCEPT and not os.path.exists(expected_file):
-            raise RuntimeError(
-                f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
-                "to accept the current output, re-run the failing test after setting the EXPECTTEST_ACCEPT "
-                "env variable. For example: EXPECTTEST_ACCEPT=1 pytest test/test_models.py -k alexnet"
-            )
-
-        return expected_file
-
-    def assertExpected(self, output, name, prec=None):
-        r"""
-        Test that a python value matches the recorded contents of a file
-        based on a "check" name. The value must be
-        pickable with `torch.save`. This file
-        is placed in the 'expect' directory in the same directory
-        as the test script. You can automatically update the recorded test
-        output using an EXPECTTEST_ACCEPT=1 env variable.
-        """
-        expected_file = self._get_expected_file(name)
-
-        if ACCEPT:
-            filename = {os.path.basename(expected_file)}
-            print("Accepting updated output for {}:\n\n{}".format(filename, output))
-            torch.save(output, expected_file)
-            MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
-            binary_size = os.path.getsize(expected_file)
-            if binary_size > MAX_PICKLE_SIZE:
-                raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
-        else:
-            expected = torch.load(expected_file)
-            rtol = atol = prec or self.precision
-            torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
@@ -260,58 +204,6 @@ class TestCase(unittest.TestCase):
             super(TestCase, self).assertLessEqual(abs(x - y), prec, message)
         else:
             super(TestCase, self).assertEqual(x, y, message)
-
-    def check_jit_scriptable(self, nn_module, args, unwrapper=None, skip=False):
-        """
-        Check that a nn.Module's results in TorchScript match eager and that it
-        can be exported
-        """
-        if not TEST_WITH_SLOW or skip:
-            # TorchScript is not enabled, skip these tests
-            msg = "The check_jit_scriptable test for {} was skipped. " \
-                  "This test checks if the module's results in TorchScript " \
-                  "match eager and that it can be exported. To run these " \
-                  "tests make sure you set the environment variable " \
-                  "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
-                  "manually skipped.".format(nn_module.__class__.__name__)
-            warnings.warn(msg, RuntimeWarning)
-            return None
-
-        sm = torch.jit.script(nn_module)
-
-        with freeze_rng_state():
-            eager_out = nn_module(*args)
-
-        with freeze_rng_state():
-            script_out = sm(*args)
-            if unwrapper:
-                script_out = unwrapper(script_out)
-
-        self.assertEqual(eager_out, script_out, prec=1e-4)
-        self.assertExportImportModule(sm, args)
-
-        return sm
-
-    def getExportImportCopy(self, m):
-        """
-        Save and load a TorchScript model
-        """
-        buffer = io.BytesIO()
-        torch.jit.save(m, buffer)
-        buffer.seek(0)
-        imported = torch.jit.load(buffer)
-        return imported
-
-    def assertExportImportModule(self, m, args):
-        """
-        Check that the results of a model are the same after saving and loading
-        """
-        m_import = self.getExportImportCopy(m)
-        with freeze_rng_state():
-            results = m(*args)
-        with freeze_rng_state():
-            results_from_imported = m_import(*args)
-        self.assertEqual(results, results_from_imported, prec=3e-4)
 
 
 @contextlib.contextmanager
