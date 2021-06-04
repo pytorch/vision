@@ -5,7 +5,7 @@
 #
 # Do not install PyTorch and torchvision here, otherwise they also get cached.
 
-set -e
+set -ex
 
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 root_dir="$(git rev-parse --show-toplevel)"
@@ -42,4 +42,4 @@ if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
 fi
 
 conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
-conda env update --file "${this_dir}/environment.yml" --prune
+conda env update --file "${this_dir}/environment.yml" --prune -v
