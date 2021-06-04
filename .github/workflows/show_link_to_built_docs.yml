@@ -1,7 +1,8 @@
-name: See built docs here!
+name: Show CI job with links to built docs
 
 on:
-  status
+  pull_request:
+    branches: [ master ]
 
 jobs:
   circleci_artifacts_redirector_job:
@@ -14,3 +15,4 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           artifact-path: 0/docs/index.html
           circleci-jobs: build_docs
+          job-title: See the built docs here!
