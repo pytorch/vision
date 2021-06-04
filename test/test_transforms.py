@@ -1367,149 +1367,6 @@ class Tester(unittest.TestCase):
             t = transforms.RandomAffine(10, interpolation=2)
             self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
-    def test_to_grayscale(self):
-        """Unit tests for grayscale transform"""
-
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        # Test Set: Grayscale an image with desired number of output channels
-        # Case 1: RGB -> 1 channel grayscale
-        trans1 = transforms.Grayscale(num_output_channels=1)
-        gray_pil_1 = trans1(x_pil)
-        gray_np_1 = np.array(gray_pil_1)
-        self.assertEqual(gray_pil_1.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_1.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_1)
-
-        # Case 2: RGB -> 3 channel grayscale
-        trans2 = transforms.Grayscale(num_output_channels=3)
-        gray_pil_2 = trans2(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        self.assertEqual(gray_pil_2.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_2.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
-        assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-        assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
-
-        # Case 3: 1 channel grayscale -> 1 channel grayscale
-        trans3 = transforms.Grayscale(num_output_channels=1)
-        gray_pil_3 = trans3(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        self.assertEqual(gray_pil_3.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_3.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_3)
-
-        # Case 4: 1 channel grayscale -> 3 channel grayscale
-        trans4 = transforms.Grayscale(num_output_channels=3)
-        gray_pil_4 = trans4(x_pil_2)
-        gray_np_4 = np.array(gray_pil_4)
-        self.assertEqual(gray_pil_4.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_4.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
-        assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
-        assert_equal(gray_np, gray_np_4[:, :, 0], check_stride=False)
-
-        # Checking if Grayscale can be printed as string
-        trans4.__repr__()
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_grayscale(self):
-        """Unit tests for random grayscale transform"""
-
-        # Test Set 1: RGB -> 3 channel grayscale
-        random_state = random.getstate()
-        random.seed(42)
-        x_shape = [2, 2, 3]
-        x_np = np.random.randint(0, 256, x_shape, np.uint8)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        num_samples = 250
-        num_gray = 0
-        for _ in range(num_samples):
-            gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
-            gray_np_2 = np.array(gray_pil_2)
-            if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
-                    np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
-                    np.array_equal(gray_np, gray_np_2[:, :, 0]):
-                num_gray = num_gray + 1
-
-        p_value = stats.binom_test(num_gray, num_samples, p=0.5)
-        random.setstate(random_state)
-        self.assertGreater(p_value, 0.0001)
-
-        # Test Set 2: grayscale -> 1 channel grayscale
-        random_state = random.getstate()
-        random.seed(42)
-        x_shape = [2, 2, 3]
-        x_np = np.random.randint(0, 256, x_shape, np.uint8)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        num_samples = 250
-        num_gray = 0
-        for _ in range(num_samples):
-            gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
-            gray_np_3 = np.array(gray_pil_3)
-            if np.array_equal(gray_np, gray_np_3):
-                num_gray = num_gray + 1
-
-        p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
-        random.setstate(random_state)
-        self.assertGreater(p_value, 0.0001)
-
-        # Test set 3: Explicit tests
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-        gray_np = np.array(x_pil_2)
-
-        # Case 3a: RGB -> 3 channel grayscale (grayscaled)
-        trans2 = transforms.RandomGrayscale(p=1.0)
-        gray_pil_2 = trans2(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        self.assertEqual(gray_pil_2.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_2.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
-        assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-        assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
-
-        # Case 3b: RGB -> 3 channel grayscale (unchanged)
-        trans2 = transforms.RandomGrayscale(p=0.0)
-        gray_pil_2 = trans2(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        self.assertEqual(gray_pil_2.mode, 'RGB', 'mode should be RGB')
-        self.assertEqual(gray_np_2.shape, tuple(x_shape), 'should be 3 channel')
-        assert_equal(x_np, gray_np_2)
-
-        # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
-        trans3 = transforms.RandomGrayscale(p=1.0)
-        gray_pil_3 = trans3(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        self.assertEqual(gray_pil_3.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_3.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_3)
-
-        # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
-        trans3 = transforms.RandomGrayscale(p=0.0)
-        gray_pil_3 = trans3(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        self.assertEqual(gray_pil_3.mode, 'L', 'mode should be L')
-        self.assertEqual(gray_np_3.shape, tuple(x_shape[0:2]), 'should be 1 channel')
-        assert_equal(gray_np, gray_np_3)
-
-        # Checking if RandomGrayscale can be printed as string
-        trans3.__repr__()
-
     def test_autoaugment(self):
         for policy in transforms.AutoAugmentPolicy:
             for fill in [None, 85, (128, 128, 128)]:
@@ -1990,6 +1847,151 @@ def test_lambda():
 
     # Checking if Lambda can be printed as string
     trans.__repr__()
+
+
+def test_to_grayscale():
+    """Unit tests for grayscale transform"""
+
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    # Test Set: Grayscale an image with desired number of output channels
+    # Case 1: RGB -> 1 channel grayscale
+    trans1 = transforms.Grayscale(num_output_channels=1)
+    gray_pil_1 = trans1(x_pil)
+    gray_np_1 = np.array(gray_pil_1)
+    assert gray_pil_1.mode == 'L', 'mode should be L'
+    assert gray_np_1.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_1)
+
+    # Case 2: RGB -> 3 channel grayscale
+    trans2 = transforms.Grayscale(num_output_channels=3)
+    gray_pil_2 = trans2(x_pil)
+    gray_np_2 = np.array(gray_pil_2)
+    assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
+    assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
+    assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
+
+    # Case 3: 1 channel grayscale -> 1 channel grayscale
+    trans3 = transforms.Grayscale(num_output_channels=1)
+    gray_pil_3 = trans3(x_pil_2)
+    gray_np_3 = np.array(gray_pil_3)
+    assert gray_pil_3.mode == 'L', 'mode should be L'
+    assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_3)
+
+    # Case 4: 1 channel grayscale -> 3 channel grayscale
+    trans4 = transforms.Grayscale(num_output_channels=3)
+    gray_pil_4 = trans4(x_pil_2)
+    gray_np_4 = np.array(gray_pil_4)
+    assert gray_pil_4.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_4.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
+    assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
+    assert_equal(gray_np, gray_np_4[:, :, 0], check_stride=False)
+
+    # Checking if Grayscale can be printed as string
+    trans4.__repr__()
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_grayscale():
+    """Unit tests for random grayscale transform"""
+
+    # Test Set 1: RGB -> 3 channel grayscale
+    random_state = random.getstate()
+    random.seed(42)
+    x_shape = [2, 2, 3]
+    x_np = np.random.randint(0, 256, x_shape, np.uint8)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    num_samples = 250
+    num_gray = 0
+    for _ in range(num_samples):
+        gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
+        gray_np_2 = np.array(gray_pil_2)
+        if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
+                np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
+                np.array_equal(gray_np, gray_np_2[:, :, 0]):
+            num_gray = num_gray + 1
+
+    p_value = stats.binom_test(num_gray, num_samples, p=0.5)
+    random.setstate(random_state)
+    assert p_value > 0.0001
+
+    # Test Set 2: grayscale -> 1 channel grayscale
+    random_state = random.getstate()
+    random.seed(42)
+    x_shape = [2, 2, 3]
+    x_np = np.random.randint(0, 256, x_shape, np.uint8)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    num_samples = 250
+    num_gray = 0
+    for _ in range(num_samples):
+        gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
+        gray_np_3 = np.array(gray_pil_3)
+        if np.array_equal(gray_np, gray_np_3):
+            num_gray = num_gray + 1
+
+    p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
+    random.setstate(random_state)
+    assert p_value > 0.0001
+
+    # Test set 3: Explicit tests
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+    gray_np = np.array(x_pil_2)
+
+    # Case 3a: RGB -> 3 channel grayscale (grayscaled)
+    trans2 = transforms.RandomGrayscale(p=1.0)
+    gray_pil_2 = trans2(x_pil)
+    gray_np_2 = np.array(gray_pil_2)
+    assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
+    assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
+    assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
+
+    # Case 3b: RGB -> 3 channel grayscale (unchanged)
+    trans2 = transforms.RandomGrayscale(p=0.0)
+    gray_pil_2 = trans2(x_pil)
+    gray_np_2 = np.array(gray_pil_2)
+    assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+    assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+    assert_equal(x_np, gray_np_2)
+
+    # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
+    trans3 = transforms.RandomGrayscale(p=1.0)
+    gray_pil_3 = trans3(x_pil_2)
+    gray_np_3 = np.array(gray_pil_3)
+    assert gray_pil_3.mode == 'L', 'mode should be L'
+    assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_3)
+
+    # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
+    trans3 = transforms.RandomGrayscale(p=0.0)
+    gray_pil_3 = trans3(x_pil_2)
+    gray_np_3 = np.array(gray_pil_3)
+    assert gray_pil_3.mode == 'L', 'mode should be L'
+    assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+    assert_equal(gray_np, gray_np_3)
+
+    # Checking if RandomGrayscale can be printed as string
+    trans3.__repr__()
 
 
 if __name__ == '__main__':
