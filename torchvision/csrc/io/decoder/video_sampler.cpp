@@ -12,7 +12,7 @@ namespace {
 // parameters and the provided array. This sets up "planes" to point to a
 // "buffer"
 // NOTE: this is most likely culprit behind #3534
-// 
+//
 // Args:
 // fmt: desired output video format
 // buffer: source constant image buffer (in different format) that will contain
@@ -23,7 +23,6 @@ int preparePlanes(
     const uint8_t* buffer,
     uint8_t** planes,
     int* lineSize) {
-
   int result;
 
   // NOTE: 1 at the end of av_fill_arrays is the value used for alignment
@@ -41,14 +40,14 @@ int preparePlanes(
   return result;
 }
 
-// Scale (and crop) the image slice in srcSlice and put the resulting scaled slice 
-// to `planes` buffer, which is mapped to be `out` via preparePlanes as `sws_scale` cannot
-// access buffers directly.
+// Scale (and crop) the image slice in srcSlice and put the resulting scaled
+// slice to `planes` buffer, which is mapped to be `out` via preparePlanes as
+// `sws_scale` cannot access buffers directly.
 //
 // Args:
-// context: SWSContext allocated on line 119 (if crop, optional) or 163 (if scale)
-// srcSlice: frame data in YUV420P
-// srcStride: the array containing the strides for each plane of the source
+// context: SWSContext allocated on line 119 (if crop, optional) or 163 (if
+// scale) srcSlice: frame data in YUV420P srcStride: the array containing the
+// strides for each plane of the source
 //            image (from AVFrame->linesize[0])
 // out: destination buffer
 // planes: indirect destination buffer (mapped to "out" via preparePlanes)
