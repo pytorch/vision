@@ -26,3 +26,21 @@ static auto registry = torch::RegisterOperators()
 
 } // namespace image
 } // namespace vision
+
+#ifdef JPEG_FOUND
+  #include <jpeglib.h>
+#endif
+
+namespace vision {
+int64_t jpeg_version() {
+#ifdef JPEG_FOUND
+  return JPEG_LIB_VERSION;
+#else
+  return -1;
+#endif
+}
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("_jpeg_version", &jpeg_version);
+}
+} // namespace vision
