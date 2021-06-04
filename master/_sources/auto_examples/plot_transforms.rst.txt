@@ -303,7 +303,7 @@ performs random perspective transform on an image.
     The unpacking of the solution, as in
     X, _ = torch.lstsq(B, A).solution[:A.size(1)]
     should be replaced with
-    X = torch.linalg.lstsq(A, B).solution (Triggered internally at  /opt/conda/conda-bld/pytorch_1622358317196/work/aten/src/ATen/LegacyTHFunctionsCPU.cpp:389.)
+    X = torch.linalg.lstsq(A, B).solution (Triggered internally at  /opt/conda/conda-bld/pytorch_1622704287565/work/aten/src/ATen/LegacyTHFunctionsCPU.cpp:389.)
       res = torch.lstsq(b_matrix, a_matrix)[0]
 
 
@@ -703,7 +703,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.339 seconds)
+   **Total running time of the script:** ( 0 minutes  7.879 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:
