@@ -17,10 +17,10 @@ class VisionDataset(data.Dataset):
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-            
-        .. note::
-        
-            :attr:`transforms` and the combination of :attr:`transform` and :attr:`target_transform` are mutually exclusive.
+
+    .. note::
+
+        :attr:`transforms` and the combination of :attr:`transform` and :attr:`target_transform` are mutually exclusive.
     """
     _repr_indent = 4
 
@@ -53,7 +53,7 @@ class VisionDataset(data.Dataset):
         """
         Args:
             index (int): Index
-            
+
         Returns:
             (Any): Sample and meta data, optionally transformed by the respective transforms.
         """
