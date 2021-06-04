@@ -30,7 +30,7 @@ def make_grid(
             The final grid size is ``(B / nrow, nrow)``. Default: ``8``.
         padding (int, optional): amount of padding. Default: ``2``.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
-            by the min and max values specified by :attr:`value_range`. Default: ``False``.
+            by the min and max values specified by ``value_range``. Default: ``False``.
         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
