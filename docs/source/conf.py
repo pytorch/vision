@@ -27,9 +27,7 @@ import pytorch_sphinx_theme
 
 # -- General configuration ------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
+# Required version of sphinx is set from docs/requirements.txt
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -40,13 +38,12 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
-    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.duration',
     'sphinx_gallery.gen_gallery',
-    "sphinx_copybutton"
+    'sphinx_copybutton',
 ]
 
 sphinx_gallery_conf = {
@@ -60,14 +57,16 @@ napoleon_use_ivar = True
 napoleon_numpy_docstring = False
 napoleon_google_docstring = True
 
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = {
+    '.rst': 'restructuredtext',
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -147,7 +146,6 @@ htmlhelp_basename = 'PyTorchdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
-
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
@@ -165,6 +163,7 @@ latex_elements = {
     #
     # 'figure_align': 'htbp',
 }
+
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
