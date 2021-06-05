@@ -47,11 +47,79 @@ def get_dataset(name, image_set, transform, data_path):
     return ds, num_classes
 
 
-def get_transform(train):
-    return presets.DetectionPresetTrain() if train else presets.DetectionPresetEval()
+def get_transform(train, data_augmentation):
+    return presets.DetectionPresetTrain(data_augmentation) if train else presets.DetectionPresetEval()
+
+
+def get_args_parser(add_help=True):
+    import argparse
+    parser = argparse.ArgumentParser(description='PyTorch Detection Training', add_help=add_help)
+
+    parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
+    parser.add_argument('--dataset', default='coco', help='dataset')
+    parser.add_argument('--model', default='maskrcnn_resnet50_fpn', help='model')
+    parser.add_argument('--device', default='cuda', help='device')
+    parser.add_argument('-b', '--batch-size', default=2, type=int,
+                        help='images per gpu, the total batch size is $NGPU x batch_size')
+    parser.add_argument('--epochs', default=26, type=int, metavar='N',
+                        help='number of total epochs to run')
+    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+                        help='number of data loading workers (default: 4)')
+    parser.add_argument('--lr', default=0.02, type=float,
+                        help='initial learning rate, 0.02 is the default value for training '
+                             'on 8 gpus and 2 images_per_gpu')
+    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                        help='momentum')
+    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
+                        metavar='W', help='weight decay (default: 1e-4)',
+                        dest='weight_decay')
+    parser.add_argument('--lr-scheduler', default="multisteplr", help='the lr scheduler (default: multisteplr)')
+    parser.add_argument('--lr-step-size', default=8, type=int,
+                        help='decrease lr every step-size epochs (multisteplr scheduler only)')
+    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int,
+                        help='decrease lr every step-size epochs (multisteplr scheduler only)')
+    parser.add_argument('--lr-gamma', default=0.1, type=float,
+                        help='decrease lr by a factor of lr-gamma (multisteplr scheduler only)')
+    parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
+    parser.add_argument('--output-dir', default='.', help='path where to save')
+    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    parser.add_argument('--rpn-score-thresh', default=None, type=float, help='rpn score threshold for faster-rcnn')
+    parser.add_argument('--trainable-backbone-layers', default=None, type=int,
+                        help='number of trainable layers of backbone')
+    parser.add_argument('--data-augmentation', default="hflip", help='data augmentation policy (default: hflip)')
+    parser.add_argument(
+        "--sync-bn",
+        dest="sync_bn",
+        help="Use sync batch norm",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--test-only",
+        dest="test_only",
+        help="Only test the model",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--pretrained",
+        dest="pretrained",
+        help="Use pre-trained models from the modelzoo",
+        action="store_true",
+    )
+
+    # distributed training parameters
+    parser.add_argument('--world-size', default=1, type=int,
+                        help='number of distributed processes')
+    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+
+    return parser
 
 
 def main(args):
+    if args.output_dir:
+        utils.mkdir(args.output_dir)
+
     utils.init_distributed_mode(args)
     print(args)
 
@@ -60,8 +128,9 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args.data_augmentation),
+                                       args.data_path)
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args.data_augmentation), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
@@ -97,6 +166,8 @@ def main(args):
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
                                                               **kwargs)
     model.to(device)
+    if args.distributed and args.sync_bn:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model_without_ddp = model
     if args.distributed:
@@ -107,8 +178,14 @@ def main(args):
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    args.lr_scheduler = args.lr_scheduler.lower()
+    if args.lr_scheduler == 'multisteplr':
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    elif args.lr_scheduler == 'cosineannealinglr':
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    else:
+        raise RuntimeError("Invalid lr scheduler '{}'. Only MultiStepLR and CosineAnnealingLR "
+                           "are supported.".format(args.lr_scheduler))
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -129,13 +206,19 @@ def main(args):
         train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
         lr_scheduler.step()
         if args.output_dir:
-            utils.save_on_master({
+            checkpoint = {
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args,
-                'epoch': epoch},
+                'epoch': epoch
+            }
+            utils.save_on_master(
+                checkpoint,
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+            utils.save_on_master(
+                checkpoint,
+                os.path.join(args.output_dir, 'checkpoint.pth'))
 
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)
@@ -146,60 +229,5 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(
-        description=__doc__)
-
-    parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
-    parser.add_argument('--dataset', default='coco', help='dataset')
-    parser.add_argument('--model', default='maskrcnn_resnet50_fpn', help='model')
-    parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('-b', '--batch-size', default=2, type=int,
-                        help='images per gpu, the total batch size is $NGPU x batch_size')
-    parser.add_argument('--epochs', default=26, type=int, metavar='N',
-                        help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                        help='number of data loading workers (default: 4)')
-    parser.add_argument('--lr', default=0.02, type=float,
-                        help='initial learning rate, 0.02 is the default value for training '
-                        'on 8 gpus and 2 images_per_gpu')
-    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
-                        help='momentum')
-    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
-                        metavar='W', help='weight decay (default: 1e-4)',
-                        dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
-    parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
-    parser.add_argument('--output-dir', default='.', help='path where to save')
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
-    parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
-    parser.add_argument('--rpn-score-thresh', default=None, type=float, help='rpn score threshold for faster-rcnn')
-    parser.add_argument('--trainable-backbone-layers', default=None, type=int,
-                        help='number of trainable layers of backbone')
-    parser.add_argument(
-        "--test-only",
-        dest="test_only",
-        help="Only test the model",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
-    )
-
-    # distributed training parameters
-    parser.add_argument('--world-size', default=1, type=int,
-                        help='number of distributed processes')
-    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
-
-    args = parser.parse_args()
-
-    if args.output_dir:
-        utils.mkdir(args.output_dir)
-
+    args = get_args_parser().parse_args()
     main(args)

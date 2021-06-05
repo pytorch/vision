@@ -26,7 +26,6 @@ try:
     if os.name == 'nt':
         # Load the video_reader extension using LoadLibraryExW
         import ctypes
-        import sys
 
         kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
         with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
@@ -472,6 +471,14 @@ def _probe_video_from_memory(video_data):
     return info
 
 
+def _convert_to_sec(start_pts, end_pts, pts_unit, time_base):
+    if pts_unit == 'pts':
+        start_pts = float(start_pts * time_base)
+        end_pts = float(end_pts * time_base)
+        pts_unit = 'sec'
+    return start_pts, end_pts, pts_unit
+
+
 def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     if end_pts is None:
         end_pts = float("inf")
@@ -486,32 +493,43 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
 
     has_video = info.has_video
     has_audio = info.has_audio
-
-    def get_pts(time_base):
-        start_offset = start_pts
-        end_offset = end_pts
-        if pts_unit == "sec":
-            start_offset = int(math.floor(start_pts * (1 / time_base)))
-            if end_offset != float("inf"):
-                end_offset = int(math.ceil(end_pts * (1 / time_base)))
-        if end_offset == float("inf"):
-            end_offset = -1
-        return start_offset, end_offset
-
     video_pts_range = (0, -1)
     video_timebase = default_timebase
+    audio_pts_range = (0, -1)
+    audio_timebase = default_timebase
+    time_base = default_timebase
+
     if has_video:
         video_timebase = Fraction(
             info.video_timebase.numerator, info.video_timebase.denominator
         )
-        video_pts_range = get_pts(video_timebase)
+        time_base = video_timebase
 
-    audio_pts_range = (0, -1)
-    audio_timebase = default_timebase
     if has_audio:
         audio_timebase = Fraction(
             info.audio_timebase.numerator, info.audio_timebase.denominator
         )
+        time_base = time_base if time_base else audio_timebase
+
+    # video_timebase is the default time_base
+    start_pts_sec, end_pts_sec, pts_unit = _convert_to_sec(
+        start_pts, end_pts, pts_unit, time_base)
+
+    def get_pts(time_base):
+        start_offset = start_pts_sec
+        end_offset = end_pts_sec
+        if pts_unit == "sec":
+            start_offset = int(math.floor(start_pts_sec * (1 / time_base)))
+            if end_offset != float("inf"):
+                end_offset = int(math.ceil(end_pts_sec * (1 / time_base)))
+        if end_offset == float("inf"):
+            end_offset = -1
+        return start_offset, end_offset
+
+    if has_video:
+        video_pts_range = get_pts(video_timebase)
+
+    if has_audio:
         audio_pts_range = get_pts(audio_timebase)
 
     vframes, aframes, info = _read_video_from_file(

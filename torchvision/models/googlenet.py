@@ -26,6 +26,7 @@ _GoogLeNetOutputs = GoogLeNetOutputs
 def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "GoogLeNet":
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    The required minimum input size of the model is 15x15.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

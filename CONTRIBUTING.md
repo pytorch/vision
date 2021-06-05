@@ -44,11 +44,11 @@ conda install pytorch -c pytorch-nightly -c conda-forge
 ```bash
 git clone https://github.com/pytorch/vision.git
 cd vision
-python setup.py install
+python setup.py develop
 # or, for OSX
-# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
+# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
 # for C++ debugging, please use DEBUG=1
-# DEBUG=1 python setup.py install
+# DEBUG=1 python setup.py develop
 pip install flake8 typing mypy pytest scipy
 ```
 You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
@@ -123,15 +123,29 @@ cd docs
 make html
 ```
 
-#### Local deployment
+Then open `docs/build/html/index.html` in your favorite browser.
 
-Please, use python 3.X for the command below:
-```bash
-cd docs/build/html
-python -m http.server <port>
-# e.g. python -m http.server 1234
-```
-Then open the browser at `0.0.0.0:<port>` (e.g. `0.0.0.0:1234`)
+The docs are also automatically built when you submit a PR. The job that
+builds the docs is named `build_docs`. You can access the rendered docs by
+clicking on that job and then going to the "Artifacts" tab.
+
+You can clean the built docs and re-start the build from scratch by doing ``make
+clean``.
+
+#### Building the example gallery - or not
+
+When you run ``make html`` for the first time, all the examples in the gallery
+will be built. Subsequent builds should be faster, and will only build the
+examples that have been modified.
+
+You can run ``make html-noplot`` to not build the examples at all. This is
+useful after a ``make clean`` to do some quick checks that are not related to
+the examples.
+
+You can also choose to only build a subset of the examples by using the
+``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
+example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
+with "transforms" in their name.
 
 ### New model
 
