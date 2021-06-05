@@ -1,4 +1,4 @@
- import itertools
+import itertools
 import os
 import torch
 import torchvision.transforms as transforms
@@ -1245,72 +1245,83 @@ def test_randomresized_params():
         assert isinstance(w, int)
 
 
-def test_resize():
+@pytest.mark.parametrize('height, width', [
+    # height, width
+    # square image
+    (28, 28),
+    (27, 27),
+    # rectangular image: h < w
+    (28, 34),
+    (29, 35),
+    # rectangular image: h > w
+    (34, 28),
+    (35, 29),
+])
+@pytest.mark.parametrize('osize', [
+    # single integer
+    22, 27, 28, 36,
+    # single integer in tuple/list
+    [22, ], (27, ),
+])
+@pytest.mark.parametrize('max_size', (None, 37, 1000))
+def test_resize(height, width, osize, max_size):
+    img = Image.new("RGB", size=(width, height), color=127)
 
-    input_sizes = [
-        # height, width
-        # square image
-        (28, 28),
-        (27, 27),
-        # rectangular image: h < w
-        (28, 34),
-        (29, 35),
-        # rectangular image: h > w
-        (34, 28),
-        (35, 29),
-    ]
-    test_output_sizes_1 = [
-        # single integer
-        22, 27, 28, 36,
-        # single integer in tuple/list
-        [22, ], (27, ),
-    ]
-    test_output_sizes_2 = [
-        # two integers
-        [22, 22], [22, 28], [22, 36],
-        [27, 22], [36, 22], [28, 28],
-        [28, 37], [37, 27], [37, 37]
-    ]
+    t = transforms.Resize(osize, max_size=max_size)
+    result = t(img)
 
-    for height, width in input_sizes:
-        img = Image.new("RGB", size=(width, height), color=127)
+    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
+    osize = osize[0] if isinstance(osize, (list, tuple)) else osize
+    # If size is an int, smaller edge of the image will be matched to this number.
+    # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+    if height < width:
+        exp_w, exp_h = (int(osize * width / height), osize)  # (w, h)
+        if max_size is not None and max_size < exp_w:
+            exp_w, exp_h = max_size, int(max_size * exp_h / exp_w)
+        assert result.size == (exp_w, exp_h), msg
+    elif width < height:
+        exp_w, exp_h = (osize, int(osize * height / width))  # (w, h)
+        if max_size is not None and max_size < exp_h:
+            exp_w, exp_h = int(max_size * exp_w / exp_h), max_size
+        assert result.size == (exp_w, exp_h), msg
+    else:
+        exp_w, exp_h = (osize, osize)  # (w, h)
+        if max_size is not None and max_size < osize:
+            exp_w, exp_h = max_size, max_size
+        assert result.size == (exp_w, exp_h), msg
 
-        for osize in test_output_sizes_1:
-            for max_size in (None, 37, 1000):
 
-                t = transforms.Resize(osize, max_size=max_size)
-                result = t(img)
+@pytest.mark.parametrize('height, width', [
+    # height, width
+    # square image
+    (28, 28),
+    (27, 27),
+    # rectangular image: h < w
+    (28, 34),
+    (29, 35),
+    # rectangular image: h > w
+    (34, 28),
+    (35, 29),
+])
+@pytest.mark.parametrize('osize', [
+    # two integers sequence output
+    [22, 22], [22, 28], [22, 36],
+    [27, 22], [36, 22], [28, 28],
+    [28, 37], [37, 27], [37, 37]
+])
+def test_resize_sequence_output(height, width, osize):
+    img = Image.new("RGB", size=(width, height), color=127)
+    oheight, owidth = osize
 
-                msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
-                osize = osize[0] if isinstance(osize, (list, tuple)) else osize
-                # If size is an int, smaller edge of the image will be matched to this number.
-                # i.e, if height > width, then image will be rescaled to (size * height / width, size).
-                if height < width:
-                    exp_w, exp_h = (int(osize * width / height), osize)  # (w, h)
-                    if max_size is not None and max_size < exp_w:
-                        exp_w, exp_h = max_size, int(max_size * exp_h / exp_w)
-                    assert result.size == (exp_w, exp_h), msg
-                elif width < height:
-                    exp_w, exp_h = (osize, int(osize * height / width))  # (w, h)
-                    if max_size is not None and max_size < exp_h:
-                        exp_w, exp_h = int(max_size * exp_w / exp_h), max_size
-                    assert result.size == (exp_w, exp_h), msg
-                else:
-                    exp_w, exp_h = (osize, osize)  # (w, h)
-                    if max_size is not None and max_size < osize:
-                        exp_w, exp_h = max_size, max_size
-                    assert result.size == (exp_w, exp_h), msg
+    t = transforms.Resize(osize)
+    result = t(img)
 
-    for height, width in input_sizes:
-        img = Image.new("RGB", size=(width, height), color=127)
+    assert (owidth, oheight) == result.size
 
-        for osize in test_output_sizes_2:
-            oheight, owidth = osize
 
-            t = transforms.Resize(osize)
-            result = t(img)
-
-            assert (owidth, oheight) == result.size
+def test_resize_antialias_error():
+    osize = [37, 37]
+    img = Image.new("RGB", size=(35, 29), color=127)
 
     with pytest.warns(UserWarning, match=r"Anti-alias option is always applied for PIL Image input"):
         t = transforms.Resize(osize, antialias=False)
