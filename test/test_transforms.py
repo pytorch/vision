@@ -1973,10 +1973,8 @@ def test_randomperspective_fill(mode):
     img = torch.ones(3, height, width)
     to_pil_image = transforms.ToPILImage()
     img = to_pil_image(img)
-
-    num_bands = len(mode)
-    wrong_num_bands = num_bands + 1
     fill = 127
+    num_bands = len(mode)
 
     img_conv = img.convert(mode)
     perspective = transforms.RandomPerspective(p=1, fill=fill)
@@ -1995,6 +1993,7 @@ def test_randomperspective_fill(mode):
         pixel = (pixel,)
     assert pixel == tuple([fill] * num_bands)
 
+    wrong_num_bands = num_bands + 1
     with pytest.raises(ValueError):
         F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
