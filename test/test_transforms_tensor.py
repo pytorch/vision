@@ -92,11 +92,11 @@ def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_
     _test_functional_op(func, device, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
     _test_class_op(method, device, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
+
 class Tester(unittest.TestCase):
 
     def setUp(self):
         self.device = "cpu"
-
 
     def test_random_horizontal_flip(self):
         _test_op(F.hflip, T.RandomHorizontalFlip, device=self.device)
@@ -131,8 +131,9 @@ class Tester(unittest.TestCase):
     def test_random_autocontrast(self):
         # We check the max abs difference because on some (very rare) pixels, the actual value may be different
         # between PIL and tensors due to floating approximations.
-        _test_op(F.autocontrast, T.RandomAutocontrast, device=self.device, test_exact_match=False,
-                 agg_method='max', tol=(1 + 1e-5), allowed_percentage_diff=.05
+        _test_op(
+            F.autocontrast, T.RandomAutocontrast, device=self.device, test_exact_match=False,
+            agg_method='max', tol=(1 + 1e-5), allowed_percentage_diff=.05
         )
 
     def test_random_equalize(self):
