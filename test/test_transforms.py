@@ -1908,12 +1908,12 @@ def test_random_rotation():
 
     with pytest.raises(ValueError):
         transforms.RandomRotation(-0.7)
-        transforms.RandomRotation([-0.7])
-        transforms.RandomRotation([-0.7, 0, 0.7])
 
-    # assert fill being either a Sequence or a Number
-    with pytest.raises(TypeError):
-        transforms.RandomRotation(0, fill={})
+    with pytest.raises(ValueError):
+        transforms.RandomRotation([-0.7])
+
+    with pytest.raises(ValueError):
+        transforms.RandomRotation([-0.7, 0, 0.7])
 
     t = transforms.RandomRotation(0, fill=None)
     assert t.fill == 0
@@ -1938,6 +1938,12 @@ def test_random_rotation():
     with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
         t = transforms.RandomRotation((-10, 10), interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
+
+def test_random_rotation_error():
+    # assert fill being either a Sequence or a Number
+    with pytest.raises(TypeError):
+        transforms.RandomRotation(0, fill={})
 
 
 def test_randomperspective():
