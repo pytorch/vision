@@ -30,26 +30,22 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 	
 
-    def test_random_affine():
-
-        with pytest.raises(ValueError):
-            transforms.RandomAffine(-0.7)
-            transforms.RandomAffine([-0.7])
-            transforms.RandomAffine([-0.7, 0, 0.7])
-
-            transforms.RandomAffine([-90, 90], translate=2.0)
-            transforms.RandomAffine([-90, 90], translate=[-1.0, 1.0])
-            transforms.RandomAffine([-90, 90], translate=[-1.0, 0.0, 1.0])
-
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.0])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[-1.0, 1.0])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, -0.5])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 3.0, -0.5])
-
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
+def test_random_affine():
+    with pytest.raises(ValueError):
+        transforms.RandomAffine(-0.7)
+        transforms.RandomAffine([-0.7])
+        transforms.RandomAffine([-0.7, 0, 0.7])
+        transforms.RandomAffine([-90, 90], translate=2.0)
+        transforms.RandomAffine([-90, 90], translate=[-1.0, 1.0])
+        transforms.RandomAffine([-90, 90], translate=[-1.0, 0.0, 1.0])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.0])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[-1.0, 1.0])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, -0.5])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 3.0, -0.5])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
 
         # assert fill being either a Sequence or a Number
         with pytest.raises(TypeError):
@@ -156,11 +152,11 @@ GRACE_HOPPER = get_file_path_2(
 @pytest.mark.parametrize(i,range(-5,5))
 @pytest.mark.parametrize(j,range(-5,5))
 	
- def test_affine('a','t1','s','s',i,j):
+def test_affine('a','t1','s','s',i,j):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
         cnt = [20, 20]
 		
-                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
+        input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
 
         with pytest.raises(TypeError, msg="Argument translate should be a sequence"):
             F.affine(input_img, 10, translate=0, scale=1, shear=1)
@@ -252,7 +248,7 @@ GRACE_HOPPER = get_file_path_2(
 
         # Test rotation, scale, translation, shear
 
-                        _test_transformation(a=a, t=(t1, t1), s=s1, sh=(sh, sh))
+        _test_transformation(a=a, t=(t1, t1), s=s1, sh=(sh, sh))
 
 class Tester(unittest.TestCase):
 
