@@ -1004,19 +1004,20 @@ def test_adjust_gamma(device, dtype, config):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('func, args', [(F_t._get_image_size, ()), (F_t.vflip, ()),
-                                        (F_t.hflip, ()), (F_t.crop, (1, 2, 4, 5)),
-                                        (F_t.adjust_brightness, (0., )), (F_t.adjust_contrast, (1., )),
-                                        (F_t.adjust_hue, (-0.5, )), (F_t.adjust_saturation, (2., )),
-                                        (F_t.center_crop, ([10, 11], )), (F_t.five_crop, ([10, 11], )),
-                                        (F_t.ten_crop, ([10, 11], )), (F_t.pad, ([2, ], 2, "constant")),
-                                        (F_t.resize, ([10, 11], )), (F_t.perspective, ([0.2, ])),
-                                        (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
-                                        (F_t.invert, ()), (F_t.posterize, (0, )),
-                                        (F_t.solarize, (0.3, )), (F_t.adjust_sharpness, (0.3, )),
-                                        (F_t.autocontrast, ()), (F_t.equalize, ())
-                                        ]
-                         )
+@pytest.mark.parametrize('func, args', [
+    (F_t._get_image_size, ()), (F_t.vflip, ()),
+    (F_t.hflip, ()), (F_t.crop, (1, 2, 4, 5)),
+    (F_t.adjust_brightness, (0., )), (F_t.adjust_contrast, (1., )),
+    (F_t.adjust_hue, (-0.5, )), (F_t.adjust_saturation, (2., )),
+    (F_t.center_crop, ([10, 11], )), (F_t.five_crop, ([10, 11], )),
+    (F_t.ten_crop, ([10, 11], )), (F_t.pad, ([2, ], 2, "constant")),
+    (F_t.resize, ([10, 11], )), (F_t.perspective, ([0.2, ])),
+    (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
+    (F_t.invert, ()), (F_t.posterize, (0, )),
+    (F_t.solarize, (0.3, )), (F_t.adjust_sharpness, (0.3, )),
+    (F_t.autocontrast, ()), (F_t.equalize, ())
+])
+
 def test_assert_image_tensor(device, func, args):
     shape = (100,)
     tensor = torch.rand(*shape, dtype=torch.float, device=device)
@@ -1059,12 +1060,13 @@ def test_hflip(device):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('top,left,height,width', [(1, 2, 4, 5),   # crop inside top-left corner
-                                                   (2, 12, 3, 4),  # crop inside top-right corner
-                                                   (8, 3, 5, 6),   # crop inside bottom-left corner
-                                                   (8, 11, 4, 3),  # crop inside bottom-right corner
-                                                   ]
-                         )
+@pytest.mark.parametrize('top, left, height, width', [
+    (1, 2, 4, 5),   # crop inside top-left corner
+    (2, 12, 3, 4),  # crop inside top-right corner
+    (8, 3, 5, 6),   # crop inside bottom-left corner
+    (8, 11, 4, 3),  # crop inside bottom-right corner
+])
+
 def test_crop(device, top, left, height, width):
     script_crop = torch.jit.script(F.crop)
 
@@ -1108,11 +1110,9 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     true_cv2_results = torch.load(p)
 
     if image_size == 'small':
-
         tensor = torch.from_numpy(
             np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
         ).permute(2, 0, 1).to(device)
-
     else:
         tensor = torch.from_numpy(
             np.arange(26 * 28, dtype="uint8").reshape((1, 26, 28))
