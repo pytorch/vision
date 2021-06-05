@@ -24,19 +24,6 @@ from _assert_utils import assert_equal
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
-def _test_functional_op(func, fn_kwargs=None, test_exact_match=True, device='cpu', **match_kwargs):
-    fn_kwargs = fn_kwargs or {}
-
-    f = getattr(F, func)
-    tensor, pil_img = _create_data(height=10, width=10, device=device)
-    transformed_tensor = f(tensor, **fn_kwargs)
-    transformed_pil_img = f(pil_img, **fn_kwargs)
-    if test_exact_match:
-        _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
-    else:
-        _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
-
-
 def _test_transform_vs_scripted(transform, s_transform, tensor, msg=None):
     torch.manual_seed(12)
     out1 = transform(tensor)
@@ -60,7 +47,20 @@ def _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors, 
     assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
 
-def _test_class_op( method, meth_kwargs=None, test_exact_match=True, device='cpu', **match_kwargs):
+def _test_functional_op(func, device, fn_kwargs=None, test_exact_match=True, **match_kwargs):
+    fn_kwargs = fn_kwargs or {}
+
+    f = getattr(F, func)
+    tensor, pil_img = _create_data(height=10, width=10, device=device)
+    transformed_tensor = f(tensor, **fn_kwargs)
+    transformed_pil_img = f(pil_img, **fn_kwargs)
+    if test_exact_match:
+        _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
+    else:
+        _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
+
+
+def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     meth_kwargs = meth_kwargs or {}
 
     # test for class interface
@@ -87,51 +87,57 @@ def _test_class_op( method, meth_kwargs=None, test_exact_match=True, device='cpu
 
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
+
+
+def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+    _test_functional_op(func, device, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+    _test_class_op(method, device, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+
 class Tester(unittest.TestCase):
 
     def setUp(self):
         self.device = "cpu"
 
 
-    def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-        _test_functional_op(func, fn_kwargs, test_exact_match=test_exact_match, device=self.device, **match_kwargs)
-        _test_class_op(method, meth_kwargs, test_exact_match=test_exact_match, device=self.device, **match_kwargs)
-
     def test_random_horizontal_flip(self):
-        self._test_op('hflip', 'RandomHorizontalFlip')
+        _test_op('hflip', 'RandomHorizontalFlip', device=self.device)
 
     def test_random_vertical_flip(self):
-        self._test_op('vflip', 'RandomVerticalFlip')
+        _test_op('vflip', 'RandomVerticalFlip', device=self.device)
 
     def test_random_invert(self):
-        self._test_op('invert', 'RandomInvert')
+        _test_op('invert', 'RandomInvert', device=self.device)
 
     def test_random_posterize(self):
         fn_kwargs = meth_kwargs = {"bits": 4}
-        self._test_op(
-            'posterize', 'RandomPosterize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        _test_op(
+            'posterize', 'RandomPosterize', device=self.device, fn_kwargs=fn_kwargs,
+            meth_kwargs=meth_kwargs
         )
 
     def test_random_solarize(self):
         fn_kwargs = meth_kwargs = {"threshold": 192.0}
-        self._test_op(
-            'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        _test_op(
+            'solarize', 'RandomSolarize', device=self.device, fn_kwargs=fn_kwargs,
+            meth_kwargs=meth_kwargs
         )
 
     def test_random_adjust_sharpness(self):
         fn_kwargs = meth_kwargs = {"sharpness_factor": 2.0}
-        self._test_op(
-            'adjust_sharpness', 'RandomAdjustSharpness', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        _test_op(
+            'adjust_sharpness', 'RandomAdjustSharpness', device=self.device, fn_kwargs=fn_kwargs,
+            meth_kwargs=meth_kwargs
         )
 
     def test_random_autocontrast(self):
         # We check the max abs difference because on some (very rare) pixels, the actual value may be different
         # between PIL and tensors due to floating approximations.
-        self._test_op('autocontrast', 'RandomAutocontrast', test_exact_match=False, agg_method='max',
-                      tol=(1 + 1e-5), allowed_percentage_diff=.05)
+        _test_op('autocontrast', 'RandomAutocontrast', device=self.device, test_exact_match=False,
+                 agg_method='max', tol=(1 + 1e-5), allowed_percentage_diff=.05
+        )
 
     def test_random_equalize(self):
-        self._test_op('equalize', 'RandomEqualize')
+        _test_op('equalize', 'RandomEqualize', device=self.device)
 
     def test_color_jitter(self):
 
@@ -182,26 +188,26 @@ class Tester(unittest.TestCase):
                 )
                 # Test functional.pad and transforms.Pad with padding as [int, ]
                 fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
-                self._test_op(
-                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                _test_op(
+                    "pad", "Pad", device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
                 )
                 # Test functional.pad and transforms.Pad with padding as list
                 fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
-                self._test_op(
-                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                _test_op(
+                    "pad", "Pad", device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
                 )
                 # Test functional.pad and transforms.Pad with padding as tuple
                 fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
-                self._test_op(
-                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                _test_op(
+                    "pad", "Pad", device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
                 )
 
     def test_crop(self):
         fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
         # Test transforms.RandomCrop with size and padding as tuple
         meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
-        self._test_op(
-            'crop', 'RandomCrop', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        _test_op(
+            'crop', 'RandomCrop', device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
         # Test transforms.functional.crop including outside the image area
@@ -233,18 +239,20 @@ class Tester(unittest.TestCase):
             for padding_config in padding_configs:
                 config = dict(padding_config)
                 config["size"] = size
-                _test_class_op("RandomCrop", config, device=self.device)
+                _test_class_op("RandomCrop", self.device, config)
 
     def test_center_crop(self):
         fn_kwargs = {"output_size": (4, 5)}
         meth_kwargs = {"size": (4, 5), }
-        self._test_op(
-            "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        _test_op(
+            "center_crop", "CenterCrop", device=self.device, fn_kwargs=fn_kwargs,
+            meth_kwargs=meth_kwargs
         )
         fn_kwargs = {"output_size": (5,)}
         meth_kwargs = {"size": (5, )}
-        self._test_op(
-            "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        _test_op(
+            "center_crop", "CenterCrop", device=self.device, fn_kwargs=fn_kwargs,
+            meth_kwargs=meth_kwargs
         )
         tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=self.device)
         # Test torchscript of transforms.CenterCrop with size as int
