@@ -148,12 +148,18 @@ GRACE_HOPPER = get_file_path_2(
         assert expected_output.size()==output.size()
         torch.testing.assert_close(output, expected_output)
 		
- def test_affine():
+@pytest.mark.parametrize('a', range(-90,90,36))
+@pytest.mark.parametrize('t1',range(-10, 10, 5))
+@pytest.mark.parametrize('s',[0.77, 1.0, 1.27])
+@pytest.mark.parametrize('s',range(-15, 15, 5))	
+@pytest.mark.parametrize(pt,[(16, 16), (20, 16), (20, 20)])
+@pytest.mark.parametrize(i,range(-5,5))
+@pytest.mark.parametrize(j,range(-5,5))
+	
+ def test_affine('a','t1','s','s',i,j):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
         cnt = [20, 20]
-        for pt in [(16, 16), (20, 16), (20, 20)]:
-            for i in range(-5, 5):
-                for j in range(-5, 5):
+		
                     input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
 
         with pytest.raises(TypeError, msg="Argument translate should be a sequence"):
@@ -245,10 +251,7 @@ GRACE_HOPPER = get_file_path_2(
         _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
 
         # Test rotation, scale, translation, shear
-        for a in range(-90, 90, 36):
-            for t1 in range(-10, 10, 5):
-                for s in [0.77, 1.0, 1.27]:
-                    for sh in range(-15, 15, 5):
+
                         _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 
 class Tester(unittest.TestCase):
