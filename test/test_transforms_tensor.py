@@ -60,6 +60,7 @@ def _test_functional_op(f, device, fn_kwargs=None, test_exact_match=True, **matc
 
 
 def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+    #TODO: change the name: it's not a method, it's a class.
     meth_kwargs = meth_kwargs or {}
 
     # test for class interface
@@ -85,7 +86,7 @@ def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **ma
     _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
     with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
+        scripted_fn.save(os.path.join(tmp_dir, "t_{method.__name__}.pt"
 
 
 def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
