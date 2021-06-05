@@ -258,6 +258,42 @@ def test_write_file_non_ascii():
         assert content == saved_content
 
 
+@pytest.mark.parametrize('shape', [
+    (27, 27),
+    (60, 60),
+    (105, 105),
+])
+def test_read_1_bit_png(shape):
+    with get_tmp_dir() as root:
+        image_path = os.path.join(root, f'test_{shape}.png')
+        pixels = np.random.rand(*shape) > 0.5
+        img = Image.fromarray(pixels)
+        img.save(image_path)
+        img1 = read_image(image_path)
+        img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
+        assert_equal(img1, img2, check_stride=False)
+
+
+@pytest.mark.parametrize('shape', [
+    (27, 27),
+    (60, 60),
+    (105, 105),
+])
+@pytest.mark.parametrize('mode', [
+    ImageReadMode.UNCHANGED,
+    ImageReadMode.GRAY,
+])
+def test_read_1_bit_png_consistency(shape, mode):
+    with get_tmp_dir() as root:
+        image_path = os.path.join(root, f'test_{shape}.png')
+        pixels = np.random.rand(*shape) > 0.5
+        img = Image.fromarray(pixels)
+        img.save(image_path)
+        img1 = read_image(image_path, mode)
+        img2 = read_image(image_path, mode)
+        assert_equal(img1, img2)
+
+
 @needs_cuda
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
