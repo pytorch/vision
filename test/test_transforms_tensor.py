@@ -60,7 +60,7 @@ def _test_functional_op(f, device, fn_kwargs=None, test_exact_match=True, **matc
 
 
 def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-    #TODO: change the name: it's not a method, it's a class.
+    # TODO: change the name: it's not a method, it's a class.
     meth_kwargs = meth_kwargs or {}
 
     # test for class interface
