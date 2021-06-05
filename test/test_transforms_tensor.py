@@ -59,43 +59,43 @@ def _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors, 
     s_transformed_batch = s_transform(batch_tensors)
     assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
+
+def _test_class_op( method, meth_kwargs=None, test_exact_match=True, device='cpu', **match_kwargs):
+    meth_kwargs = meth_kwargs or {}
+
+    # test for class interface
+    f = getattr(T, method)(**meth_kwargs)
+    scripted_fn = torch.jit.script(f)
+
+    tensor, pil_img = _create_data(26, 34, device=device)
+    # set seed to reproduce the same transformation for tensor and PIL image
+    torch.manual_seed(12)
+    transformed_tensor = f(tensor)
+    torch.manual_seed(12)
+    transformed_pil_img = f(pil_img)
+    if test_exact_match:
+        _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
+    else:
+        _assert_approx_equal_tensor_to_pil(transformed_tensor.float(), transformed_pil_img, **match_kwargs)
+
+    torch.manual_seed(12)
+    transformed_tensor_script = scripted_fn(tensor)
+    assert_equal(transformed_tensor, transformed_tensor_script)
+
+    batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=device)
+    _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
+
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
 class Tester(unittest.TestCase):
 
     def setUp(self):
         self.device = "cpu"
 
-    def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-        if meth_kwargs is None:
-            meth_kwargs = {}
-
-        # test for class interface
-        f = getattr(T, method)(**meth_kwargs)
-        scripted_fn = torch.jit.script(f)
-
-        tensor, pil_img = _create_data(26, 34, device=self.device)
-        # set seed to reproduce the same transformation for tensor and PIL image
-        torch.manual_seed(12)
-        transformed_tensor = f(tensor)
-        torch.manual_seed(12)
-        transformed_pil_img = f(pil_img)
-        if test_exact_match:
-            _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
-        else:
-            _assert_approx_equal_tensor_to_pil(transformed_tensor.float(), transformed_pil_img, **match_kwargs)
-
-        torch.manual_seed(12)
-        transformed_tensor_script = scripted_fn(tensor)
-        assert_equal(transformed_tensor, transformed_tensor_script)
-
-        batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
-        _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
-            scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
 
     def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         _test_functional_op(func, fn_kwargs, test_exact_match=test_exact_match, device=self.device, **match_kwargs)
-        self._test_class_op(method, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+        _test_class_op(method, meth_kwargs, test_exact_match=test_exact_match, device=self.device, **match_kwargs)
 
     def test_random_horizontal_flip(self):
         self._test_op('hflip', 'RandomHorizontalFlip')
@@ -138,32 +138,37 @@ class Tester(unittest.TestCase):
         tol = 1.0 + 1e-10
         for f in [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]]:
             meth_kwargs = {"brightness": f}
-            self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+            _test_class_op(
+                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+                tol=tol, agg_method="max"
             )
 
         for f in [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]]:
             meth_kwargs = {"contrast": f}
-            self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+            _test_class_op(
+                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+                tol=tol, agg_method="max"
             )
 
         for f in [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]]:
             meth_kwargs = {"saturation": f}
-            self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+            _test_class_op(
+                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+                tol=tol, agg_method="max"
             )
 
         for f in [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]]:
             meth_kwargs = {"hue": f}
-            self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=16.1, agg_method="max"
+            _test_class_op(
+                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+                tol=16.1, agg_method="max"
             )
 
         # All 4 parameters together
         meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
-        self._test_class_op(
-            "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=12.1, agg_method="max"
+        _test_class_op(
+            "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+            tol=12.1, agg_method="max"
         )
 
     def test_pad(self):
@@ -228,7 +233,7 @@ class Tester(unittest.TestCase):
             for padding_config in padding_configs:
                 config = dict(padding_config)
                 config["size"] = size
-                self._test_class_op("RandomCrop", config)
+                _test_class_op("RandomCrop", config, device=self.device)
 
     def test_center_crop(self):
         fn_kwargs = {"output_size": (4, 5)}
@@ -481,18 +486,21 @@ class Tester(unittest.TestCase):
 
         meth_kwargs = {"num_output_channels": 1}
         tol = 1.0 + 1e-10
-        self._test_class_op(
-            "Grayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+        _test_class_op(
+            "Grayscale", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+            tol=tol, agg_method="max"
         )
 
         meth_kwargs = {"num_output_channels": 3}
-        self._test_class_op(
-            "Grayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+        _test_class_op(
+            "Grayscale", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+            tol=tol, agg_method="max"
         )
 
         meth_kwargs = {}
-        self._test_class_op(
-            "RandomGrayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+        _test_class_op(
+            "RandomGrayscale", meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
+            tol=tol, agg_method="max"
         )
 
     def test_normalize(self):
@@ -592,34 +600,34 @@ class Tester(unittest.TestCase):
 
     def test_gaussian_blur(self):
         tol = 1.0 + 1e-10
-        self._test_class_op(
+        _test_class_op(
             "GaussianBlur", meth_kwargs={"kernel_size": 3, "sigma": 0.75},
-            test_exact_match=False, agg_method="max", tol=tol
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
-        self._test_class_op(
+        _test_class_op(
             "GaussianBlur", meth_kwargs={"kernel_size": 23, "sigma": [0.1, 2.0]},
-            test_exact_match=False, agg_method="max", tol=tol
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
-        self._test_class_op(
+        _test_class_op(
             "GaussianBlur", meth_kwargs={"kernel_size": 23, "sigma": (0.1, 2.0)},
-            test_exact_match=False, agg_method="max", tol=tol
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
-        self._test_class_op(
+        _test_class_op(
             "GaussianBlur", meth_kwargs={"kernel_size": [3, 3], "sigma": (1.0, 1.0)},
-            test_exact_match=False, agg_method="max", tol=tol
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
-        self._test_class_op(
+        _test_class_op(
             "GaussianBlur", meth_kwargs={"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
-            test_exact_match=False, agg_method="max", tol=tol
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
-        self._test_class_op(
+        _test_class_op(
             "GaussianBlur", meth_kwargs={"kernel_size": [23], "sigma": 0.75},
-            test_exact_match=False, agg_method="max", tol=tol
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
     def test_random_erasing(self):
