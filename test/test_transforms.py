@@ -994,19 +994,20 @@ def test_1_channel_float_tensor_to_pil_image():
     )
 
 
+@pytest.mark.parametrize('pass_mode', [False, True])
 @pytest.mark.parametrize('img_data, expected_mode', [
     (torch.Tensor(4, 4, 1).uniform_().numpy(), 'F'),
     (torch.ByteTensor(4, 4, 1).random_(0, 255).numpy(), 'L'),
     (torch.ShortTensor(4, 4, 1).random_().numpy(), 'I;16'),
     (torch.IntTensor(4, 4, 1).random_().numpy(), 'I'),
 ])
-def test_1_channel_ndarray_to_pil_image(img_data, expected_mode):
-    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=expected_mode)]:
-        img = transform(img_data)
-        assert img.mode == expected_mode
-        # note: we explicitly convert img's dtype because pytorch doesn't support uint16
-        # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
-        torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
+def test_1_channel_ndarray_to_pil_image(pass_mode, img_data, expected_mode):
+    transform = transforms.ToPILImage(mode=expected_mode) if pass_mode else transforms.ToPILImage()
+    img = transform(img_data)
+    assert img.mode == expected_mode
+    # note: we explicitly convert img's dtype because pytorch doesn't support uint16
+    # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
+    torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
 
 
 @pytest.mark.parametrize('expected_mode', [None, 'LA'])
