@@ -24,9 +24,8 @@ from _assert_utils import assert_equal
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
-def _test_functional_op(func, fn_kwargs, test_exact_match=True, device='cpu', **match_kwargs):
-    if fn_kwargs is None:
-        fn_kwargs = {}
+def _test_functional_op(func, fn_kwargs=None, test_exact_match=True, device='cpu', **match_kwargs):
+    fn_kwargs = fn_kwargs or {}
 
     f = getattr(F, func)
     tensor, pil_img = _create_data(height=10, width=10, device=device)
@@ -36,6 +35,20 @@ def _test_functional_op(func, fn_kwargs, test_exact_match=True, device='cpu', **
         _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
     else:
         _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
+
+def _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors, msg=None):
+    torch.manual_seed(12)
+    transformed_batch = transform(batch_tensors)
+
+    for i in range(len(batch_tensors)):
+        img_tensor = batch_tensors[i, ...]
+        torch.manual_seed(12)
+        transformed_img = transform(img_tensor)
+        assert_equal(transformed_img, transformed_batch[i, ...], msg=msg)
+
+    torch.manual_seed(12)
+    s_transformed_batch = s_transform(batch_tensors)
+    assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
 class Tester(unittest.TestCase):
 
@@ -48,20 +61,6 @@ class Tester(unittest.TestCase):
         torch.manual_seed(12)
         out2 = s_transform(tensor)
         assert_equal(out1, out2, msg=msg)
-
-    def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors, msg=None):
-        torch.manual_seed(12)
-        transformed_batch = transform(batch_tensors)
-
-        for i in range(len(batch_tensors)):
-            img_tensor = batch_tensors[i, ...]
-            torch.manual_seed(12)
-            transformed_img = transform(img_tensor)
-            assert_equal(transformed_img, transformed_batch[i, ...], msg=msg)
-
-        torch.manual_seed(12)
-        s_transformed_batch = s_transform(batch_tensors)
-        assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
     def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         if meth_kwargs is None:
@@ -87,7 +86,7 @@ class Tester(unittest.TestCase):
         assert_equal(transformed_tensor, transformed_tensor_script)
 
         batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
-        self._test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
+        _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
@@ -380,7 +379,7 @@ class Tester(unittest.TestCase):
                         transform = T.Resize(size=script_size, interpolation=interpolation, max_size=max_size)
                         s_transform = torch.jit.script(transform)
                         self._test_transform_vs_scripted(transform, s_transform, tensor)
-                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
@@ -398,7 +397,7 @@ class Tester(unittest.TestCase):
                         )
                         s_transform = torch.jit.script(transform)
                         self._test_transform_vs_scripted(transform, s_transform, tensor)
-                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
@@ -412,7 +411,7 @@ class Tester(unittest.TestCase):
             s_transform = torch.jit.script(transform)
 
             self._test_transform_vs_scripted(transform, s_transform, tensor)
-            self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+            _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
             return s_transform
 
@@ -451,7 +450,7 @@ class Tester(unittest.TestCase):
                             s_transform = torch.jit.script(transform)
 
                             self._test_transform_vs_scripted(transform, s_transform, tensor)
-                            self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                            _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
@@ -471,7 +470,7 @@ class Tester(unittest.TestCase):
                     s_transform = torch.jit.script(transform)
 
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
-                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
@@ -507,7 +506,7 @@ class Tester(unittest.TestCase):
         scripted_fn = torch.jit.script(fn)
 
         self._test_transform_vs_scripted(fn, scripted_fn, tensor)
-        self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+        _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
@@ -643,7 +642,7 @@ class Tester(unittest.TestCase):
             fn = T.RandomErasing(**config)
             scripted_fn = torch.jit.script(fn)
             self._test_transform_vs_scripted(fn, scripted_fn, tensor)
-            self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+            _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
@@ -665,11 +664,11 @@ class Tester(unittest.TestCase):
                     with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
                         self._test_transform_vs_scripted(fn, scripted_fn, in_tensor)
                     with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
-                        self._test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+                        _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
                     continue
 
                 self._test_transform_vs_scripted(fn, scripted_fn, in_tensor)
-                self._test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+                _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
@@ -685,7 +684,7 @@ class Tester(unittest.TestCase):
                 s_transform = torch.jit.script(transform)
                 for _ in range(25):
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
-                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         if s_transform is not None:
             with get_tmp_dir() as tmp_dir:
