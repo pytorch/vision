@@ -2023,7 +2023,8 @@ def test_normalize_3d_tensor():
     mean_unsqueezed = mean.view(-1, 1, 1)
     std_unsqueezed = std.view(-1, 1, 1)
     result1 = F.normalize(img, mean_unsqueezed, std_unsqueezed)
-    result2 = F.normalize(img, mean_unsqueezed.repeat(1, img_size, img_size), std_unsqueezed.repeat(1, img_size, img_size))
+    result2 = F.normalize(img, mean_unsqueezed.repeat(1, img_size, img_size),
+                          std_unsqueezed.repeat(1, img_size, img_size))
     torch.testing.assert_close(target, result1)
     torch.testing.assert_close(target, result2)
 
