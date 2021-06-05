@@ -391,9 +391,9 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
                 except av.AVError:
                     warnings.warn(f"Failed decoding frames for file {filename}")
                 video_fps = float(video_stream.average_rate)
-    except av.AVError:
-        # TODO add a warning
-        pass
+    except av.AVError as e:
+        msg = f"Failed to open container for {filename}; Caught error: {e}"
+        warnings.warn(msg, RuntimeWarning)
 
     pts.sort()
 
