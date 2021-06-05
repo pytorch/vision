@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.datasets.cifar &mdash; Torchvision master documentation</title>
+  <title>torchvision.datasets.vision &mdash; Torchvision master documentation</title>
   
 
   
@@ -286,7 +286,7 @@
         
           <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
         
-      <li>torchvision.datasets.cifar</li>
+      <li>torchvision.datasets.vision</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -314,176 +314,118 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torchvision.datasets.cifar</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">os.path</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
-
-<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">download_and_extract_archive</span>
+  <h1>Source code for torchvision.datasets.vision</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.utils.data</span> <span class="k">as</span> <span class="nn">data</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 
-<div class="viewcode-block" id="CIFAR10"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.CIFAR10">[docs]</a><span class="k">class</span> <span class="nc">CIFAR10</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;`CIFAR10 &lt;https://www.cs.toronto.edu/~kriz/cifar.html&gt;`_ Dataset.</span>
+<div class="viewcode-block" id="VisionDataset"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.VisionDataset">[docs]</a><span class="k">class</span> <span class="nc">VisionDataset</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base Class For making datasets which are compatible with torchvision.</span>
+<span class="sd">    It is necessary to override the ``__getitem__`` and ``__len__`` method.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory of dataset where directory</span>
-<span class="sd">            ``cifar-10-batches-py`` exists or will be saved to if download is set to True.</span>
-<span class="sd">        train (bool, optional): If True, creates dataset from training set, otherwise</span>
-<span class="sd">            creates from test set.</span>
-<span class="sd">        transform (callable, optional): A function/transform that takes in an PIL image</span>
+<span class="sd">        root (string): Root directory of dataset.</span>
+<span class="sd">        transforms (callable, optional): A function/transforms that takes in</span>
+<span class="sd">            an image and a label and returns the transformed versions of both.</span>
+<span class="sd">        transform (callable, optional): A function/transform that  takes in an PIL image</span>
 <span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
 <span class="sd">            target and transforms it.</span>
-<span class="sd">        download (bool, optional): If true, downloads the dataset from the internet and</span>
-<span class="sd">            puts it in root directory. If dataset is already downloaded, it is not</span>
-<span class="sd">            downloaded again.</span>
 
+<span class="sd">    .. note::</span>
+
+<span class="sd">        :attr:`transforms` and the combination of :attr:`transform` and :attr:`target_transform` are mutually exclusive.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">base_folder</span> <span class="o">=</span> <span class="s1">&#39;cifar-10-batches-py&#39;</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz&quot;</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;cifar-10-python.tar.gz&quot;</span>
-    <span class="n">tgz_md5</span> <span class="o">=</span> <span class="s1">&#39;c58f30108f718f92721af3b95e74349a&#39;</span>
-    <span class="n">train_list</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">[</span><span class="s1">&#39;data_batch_1&#39;</span><span class="p">,</span> <span class="s1">&#39;c99cafc152244af753f735de768cd75f&#39;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s1">&#39;data_batch_2&#39;</span><span class="p">,</span> <span class="s1">&#39;d4bba439e000b95fd0a9bffe97cbabec&#39;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s1">&#39;data_batch_3&#39;</span><span class="p">,</span> <span class="s1">&#39;54ebc095f3ab1f0389bbae665268c751&#39;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s1">&#39;data_batch_4&#39;</span><span class="p">,</span> <span class="s1">&#39;634d18415352ddfa80567beed471001a&#39;</span><span class="p">],</span>
-        <span class="p">[</span><span class="s1">&#39;data_batch_5&#39;</span><span class="p">,</span> <span class="s1">&#39;482c414d41f54cd18b22e5b47cb7c3cb&#39;</span><span class="p">],</span>
-    <span class="p">]</span>
-
-    <span class="n">test_list</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">[</span><span class="s1">&#39;test_batch&#39;</span><span class="p">,</span> <span class="s1">&#39;40351d587109b95175f43aff81a1287e&#39;</span><span class="p">],</span>
-    <span class="p">]</span>
-    <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;batches.meta&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;label_names&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;md5&#39;</span><span class="p">:</span> <span class="s1">&#39;5ff9c542aee3614f3951f8cda6e48888&#39;</span><span class="p">,</span>
-    <span class="p">}</span>
+    <span class="n">_repr_indent</span> <span class="o">=</span> <span class="mi">4</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-            <span class="n">train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">_six</span><span class="o">.</span><span class="n">string_classes</span><span class="p">):</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">CIFAR10</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span>
-                                      <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
+        <span class="n">has_transforms</span> <span class="o">=</span> <span class="n">transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">has_separate_transform</span> <span class="o">=</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">has_transforms</span> <span class="ow">and</span> <span class="n">has_separate_transform</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only transforms or transform/target_transform can &quot;</span>
+                             <span class="s2">&quot;be passed as argument&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="o">=</span> <span class="n">train</span>  <span class="c1"># training set or test set</span>
+        <span class="c1"># for backwards-compatibility</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="o">=</span> <span class="n">target_transform</span>
 
-        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">has_separate_transform</span><span class="p">:</span>
+            <span class="n">transforms</span> <span class="o">=</span> <span class="n">StandardTransform</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Dataset not found or corrupted.&#39;</span> <span class="o">+</span>
-                               <span class="s1">&#39; You can use download=True to download it&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
-            <span class="n">downloaded_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_list</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">downloaded_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_list</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># now load the picked numpy arrays</span>
-        <span class="k">for</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">checksum</span> <span class="ow">in</span> <span class="n">downloaded_list</span><span class="p">:</span>
-            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">entry</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
-                <span class="k">if</span> <span class="s1">&#39;labels&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;fine_labels&#39;</span><span class="p">])</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># convert to HWC</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_load_meta</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">_load_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;md5&#39;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Dataset metadata file not found or corrupted.&#39;</span> <span class="o">+</span>
-                               <span class="s1">&#39; You can use download=True to download it&#39;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">classes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">_class</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_class</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">)}</span>
-
-<div class="viewcode-block" id="CIFAR10.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.CIFAR10.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="VisionDataset.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.VisionDataset.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            index (int): Index</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: (image, target) where target is index of the target class.</span>
+<span class="sd">            (Any): Sample and meta data, optionally transformed by the respective transforms.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">img</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-
-        <span class="c1"># doing this so that it is consistent with all other datasets</span>
-        <span class="c1"># to return a PIL Image</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">target</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_check_integrity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
-        <span class="k">for</span> <span class="n">fentry</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_list</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_list</span><span class="p">):</span>
-            <span class="n">filename</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="n">fentry</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fentry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">md5</span><span class="p">):</span>
-                <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="s2">&quot;Dataset &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Number of datapoints: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__len__</span><span class="p">())]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">body</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Root location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">))</span>
+        <span class="n">body</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_repr</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;transforms&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">body</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">)]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">head</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_repr_indent</span> <span class="o">+</span> <span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">body</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Files already downloaded and verified&#39;</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">md5</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tgz_md5</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_format_transform_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">head</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">([</span><span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">+</span>
+                <span class="p">[</span><span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">head</span><span class="p">),</span> <span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
 
     <span class="k">def</span> <span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;Split: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Train&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="ow">is</span> <span class="kc">True</span> <span class="k">else</span> <span class="s2">&quot;Test&quot;</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="CIFAR100"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.CIFAR100">[docs]</a><span class="k">class</span> <span class="nc">CIFAR100</span><span class="p">(</span><span class="n">CIFAR10</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;`CIFAR100 &lt;https://www.cs.toronto.edu/~kriz/cifar.html&gt;`_ Dataset.</span>
+<span class="k">class</span> <span class="nc">StandardTransform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="o">=</span> <span class="n">target_transform</span>
 
-<span class="sd">    This is a subclass of the `CIFAR10` Dataset.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">base_folder</span> <span class="o">=</span> <span class="s1">&#39;cifar-100-python&#39;</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz&quot;</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;cifar-100-python.tar.gz&quot;</span>
-    <span class="n">tgz_md5</span> <span class="o">=</span> <span class="s1">&#39;eb9058c3a382ffc7106e4002c42a8d85&#39;</span>
-    <span class="n">train_list</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;16019d7e3df5f24257cddd939b257f8d&#39;</span><span class="p">],</span>
-    <span class="p">]</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">input</span><span class="p">,</span> <span class="n">target</span>
 
-    <span class="n">test_list</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;f0ef6b0ae62326f3e7ffdfab6717acfc&#39;</span><span class="p">],</span>
-    <span class="p">]</span>
-    <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;meta&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;fine_label_names&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;md5&#39;</span><span class="p">:</span> <span class="s1">&#39;7973b15100ade9c7d40fb424638fde48&#39;</span><span class="p">,</span>
-    <span class="p">}</span></div>
+    <span class="k">def</span> <span class="nf">_format_transform_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">head</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">([</span><span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">+</span>
+                <span class="p">[</span><span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">head</span><span class="p">),</span> <span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">body</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_transform_repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+                                                <span class="s2">&quot;Transform: &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">body</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_transform_repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">,</span>
+                                                <span class="s2">&quot;Target transform: &quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
 </pre></div>
 
              </article>
