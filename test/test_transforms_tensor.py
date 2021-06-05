@@ -24,23 +24,23 @@ from _assert_utils import assert_equal
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
+def _test_functional_op(func, fn_kwargs, test_exact_match=True, device='cpu', **match_kwargs):
+    if fn_kwargs is None:
+        fn_kwargs = {}
+
+    f = getattr(F, func)
+    tensor, pil_img = _create_data(height=10, width=10, device=device)
+    transformed_tensor = f(tensor, **fn_kwargs)
+    transformed_pil_img = f(pil_img, **fn_kwargs)
+    if test_exact_match:
+        _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
+    else:
+        _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
+
 class Tester(unittest.TestCase):
 
     def setUp(self):
         self.device = "cpu"
-
-    def _test_functional_op(self, func, fn_kwargs, test_exact_match=True, **match_kwargs):
-        if fn_kwargs is None:
-            fn_kwargs = {}
-
-        f = getattr(F, func)
-        tensor, pil_img = _create_data(height=10, width=10, device=self.device)
-        transformed_tensor = f(tensor, **fn_kwargs)
-        transformed_pil_img = f(pil_img, **fn_kwargs)
-        if test_exact_match:
-            _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
-        else:
-            _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
     def _test_transform_vs_scripted(self, transform, s_transform, tensor, msg=None):
         torch.manual_seed(12)
@@ -93,7 +93,7 @@ class Tester(unittest.TestCase):
             scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
 
     def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-        self._test_functional_op(func, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+        _test_functional_op(func, fn_kwargs, test_exact_match=test_exact_match, device=self.device, **match_kwargs)
         self._test_class_op(method, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
     def test_random_horizontal_flip(self):
@@ -170,8 +170,9 @@ class Tester(unittest.TestCase):
             fill = 127 if m == "constant" else 0
             for mul in [1, -1]:
                 # Test functional.pad (PIL and Tensor) with padding as single int
-                self._test_functional_op(
-                    "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}
+                _test_functional_op(
+                    "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m},
+                    device=self.device
                 )
                 # Test functional.pad and transforms.Pad with padding as [int, ]
                 fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
@@ -199,19 +200,19 @@ class Tester(unittest.TestCase):
 
         # Test transforms.functional.crop including outside the image area
         fn_kwargs = {"top": -2, "left": 3, "height": 4, "width": 5}  # top
-        self._test_functional_op('crop', fn_kwargs=fn_kwargs)
+        _test_functional_op('crop', fn_kwargs=fn_kwargs, device=self.device)
 
         fn_kwargs = {"top": 1, "left": -3, "height": 4, "width": 5}  # left
-        self._test_functional_op('crop', fn_kwargs=fn_kwargs)
+        _test_functional_op('crop', fn_kwargs=fn_kwargs, device=self.device)
 
         fn_kwargs = {"top": 7, "left": 3, "height": 4, "width": 5}  # bottom
-        self._test_functional_op('crop', fn_kwargs=fn_kwargs)
+        _test_functional_op('crop', fn_kwargs=fn_kwargs, device=self.device)
 
         fn_kwargs = {"top": 3, "left": 8, "height": 4, "width": 5}  # right
-        self._test_functional_op('crop', fn_kwargs=fn_kwargs)
+        _test_functional_op('crop', fn_kwargs=fn_kwargs, device=self.device)
 
         fn_kwargs = {"top": -3, "left": -3, "height": 15, "width": 15}  # all
-        self._test_functional_op('crop', fn_kwargs=fn_kwargs)
+        _test_functional_op('crop', fn_kwargs=fn_kwargs, device=self.device)
 
         sizes = [5, [5, ], [6, 6]]
         padding_configs = [
