@@ -1017,7 +1017,6 @@ def test_adjust_gamma(device, dtype, config):
     (F_t.solarize, (0.3, )), (F_t.adjust_sharpness, (0.3, )),
     (F_t.autocontrast, ()), (F_t.equalize, ())
 ])
-
 def test_assert_image_tensor(device, func, args):
     shape = (100,)
     tensor = torch.rand(*shape, dtype=torch.float, device=device)
@@ -1066,7 +1065,6 @@ def test_hflip(device):
     (8, 3, 5, 6),   # crop inside bottom-left corner
     (8, 11, 4, 3),  # crop inside bottom-right corner
 ])
-
 def test_crop(device, top, left, height, width):
     script_crop = torch.jit.script(F.crop)
 
