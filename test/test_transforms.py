@@ -30,7 +30,7 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 	
 
-    def test_random_affine(self):
+    def test_random_affine():
 
         with self.assertRaises(ValueError):
             transforms.RandomAffine(-0.7)
@@ -98,13 +98,13 @@ GRACE_HOPPER = get_file_path_2(
         torch.testing.assert_close(output, expected_output)
 
 @pytest.mark.skipif(accimage is None, 'accimage not available')
-    def test_accimage_to_tensor(self):
+    def test_accimage_to_tensor():
         trans = transforms.ToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
 @pytest.mark.skipif(accimage is None, 'accimage not available')
-    def test_accimage_resize(self):
+    def test_accimage_resize():
         trans = transforms.Compose([
             transforms.Resize(256, interpolation=Image.LINEAR),
             transforms.ToTensor(),
@@ -117,13 +117,13 @@ GRACE_HOPPER = get_file_path_2(
         output = trans(accimage.Image(GRACE_HOPPER))
 
         assert expected_output.size()==output.size())
-        self.assertLess(np.abs((expected_output - output).mean()), 1e-3)
-        self.assertLess((expected_output - output).var(), 1e-5)
+        assertLess(np.abs((expected_output - output).mean()), 1e-3)
+        assertLess((expected_output - output).var(), 1e-5)
         # note the high absolute tolerance
         assert(np.allclose(output.numpy(), expected_output.numpy(), atol=5e-2))
 
 @pytest.mark.skipif(accimage is None, 'accimage not available')
-    def test_accimage_pil_to_tensor(self):
+    def test_accimage_pil_to_tensor():
         trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
@@ -133,7 +133,7 @@ GRACE_HOPPER = get_file_path_2(
         torch.testing.assert_close(output, expected_output, check_stride=False)
 
 @pytest.mark.skipif(accimage is None, 'accimage not available')
-    def test_accimage_crop(self):
+    def test_accimage_crop():
         trans = transforms.Compose([
             transforms.CenterCrop(256),
             transforms.ToTensor(),
@@ -148,7 +148,7 @@ GRACE_HOPPER = get_file_path_2(
         assert expected_output.size()==output.size()
         torch.testing.assert_close(output, expected_output)
 		
- def test_affine(self):
+ def test_affine():
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
         cnt = [20, 20]
         for pt in [(16, 16), (20, 16), (20, 20)]:
@@ -203,7 +203,7 @@ GRACE_HOPPER = get_file_path_2(
 
             result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
                                                                      translate=t, scale=s, shear=sh))
-            self.assertLess(np.sum(np.abs(true_matrix - result_matrix)), 1e-10)
+            assertLess(np.sum(np.abs(true_matrix - result_matrix)), 1e-10)
             # 2) Perform inverse mapping:
             true_result = np.zeros((40, 40, 3), dtype=np.uint8)
             inv_true_matrix = np.linalg.inv(true_matrix)
@@ -224,7 +224,7 @@ GRACE_HOPPER = get_file_path_2(
             np_result = np.array(result)
             n_diff_pixels = np.sum(np_result != true_result) / 3
             # Accept 3 wrong pixels
-            self.assertLess(n_diff_pixels, 3,
+            assertLess(n_diff_pixels, 3,
                             "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +
                             "n diff pixels={}\n".format(n_diff_pixels))
 
