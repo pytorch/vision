@@ -32,7 +32,7 @@ GRACE_HOPPER = get_file_path_2(
 
     def test_random_affine():
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             transforms.RandomAffine(-0.7)
             transforms.RandomAffine([-0.7])
             transforms.RandomAffine([-0.7, 0, 0.7])
@@ -52,11 +52,11 @@ GRACE_HOPPER = get_file_path_2(
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
 
         # assert fill being either a Sequence or a Number
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             transforms.RandomAffine(0, fill={})
 
         t = transforms.RandomAffine(0, fill=None)
-        self.assert(t.fill == 0)
+        assert(t.fill == 0)
 
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         img = F.to_pil_image(x)
@@ -78,7 +78,7 @@ GRACE_HOPPER = get_file_path_2(
         t.__repr__()
 
         t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
-        self.assertIn("bilinear", t.__repr__())
+        assertIn("bilinear", t.__repr__())
 
         # assert deprecation warning and non-BC
         with pytest.warns(UserWarning, r"Argument resample is deprecated and will be removed"):
