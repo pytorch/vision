@@ -1958,7 +1958,8 @@ def test_randomperspective():
                 torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
 
 
-def test_randomperspective_fill():
+@pytest.mark.parametrize('mode', ["L", "RGB", "F"])
+def test_randomperspective_fill(mode):
 
     # assert fill being either a Sequence or a Number
     with pytest.raises(TypeError):
@@ -1973,33 +1974,29 @@ def test_randomperspective_fill():
     to_pil_image = transforms.ToPILImage()
     img = to_pil_image(img)
 
-    modes = ("L", "RGB", "F")
-    nums_bands = [len(mode) for mode in modes]
+    num_bands = len(mode)
+    wrong_num_bands = num_bands + 1
     fill = 127
 
-    for mode, num_bands in zip(modes, nums_bands):
-        img_conv = img.convert(mode)
-        perspective = transforms.RandomPerspective(p=1, fill=fill)
-        tr_img = perspective(img_conv)
-        pixel = tr_img.getpixel((0, 0))
+    img_conv = img.convert(mode)
+    perspective = transforms.RandomPerspective(p=1, fill=fill)
+    tr_img = perspective(img_conv)
+    pixel = tr_img.getpixel((0, 0))
 
-        if not isinstance(pixel, tuple):
-            pixel = (pixel,)
-        assert pixel == tuple([fill] * num_bands)
+    if not isinstance(pixel, tuple):
+        pixel = (pixel,)
+    assert pixel == tuple([fill] * num_bands)
 
-    for mode, num_bands in zip(modes, nums_bands):
-        img_conv = img.convert(mode)
-        startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
-        tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
-        pixel = tr_img.getpixel((0, 0))
+    startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
+    tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
+    pixel = tr_img.getpixel((0, 0))
 
-        if not isinstance(pixel, tuple):
-            pixel = (pixel,)
-        assert pixel == tuple([fill] * num_bands)
+    if not isinstance(pixel, tuple):
+        pixel = (pixel,)
+    assert pixel == tuple([fill] * num_bands)
 
-        for wrong_num_bands in set(nums_bands) - {num_bands}:
-            with pytest.raises(ValueError):
-                F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
+    with pytest.raises(ValueError):
+        F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
 
 if __name__ == '__main__':
