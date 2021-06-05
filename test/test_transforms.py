@@ -202,53 +202,110 @@ class Tester(unittest.TestCase):
                 self.assertEqual(len(results), 10)
                 self.assertEqual(results, expected_output)
 
-    def test_to_tensor(self):
-        test_channels = [1, 3, 4]
-        height, width = 4, 4
-        trans = transforms.ToTensor()
+    def test_randomperspective(self):
+        for _ in range(10):
+            height = random.randint(24, 32) * 2
+            width = random.randint(24, 32) * 2
+            img = torch.ones(3, height, width)
+            to_pil_image = transforms.ToPILImage()
+            img = to_pil_image(img)
+            perp = transforms.RandomPerspective()
+            startpoints, endpoints = perp.get_params(width, height, 0.5)
+            tr_img = F.perspective(img, startpoints, endpoints)
+            tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
+            tr_img = F.to_tensor(tr_img)
+            self.assertEqual(img.size[0], width)
+            self.assertEqual(img.size[1], height)
+            self.assertGreater(torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3,
+                               torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
 
+    def test_randomperspective_fill(self):
+
+        # assert fill being either a Sequence or a Number
         with self.assertRaises(TypeError):
-            trans(np.random.rand(1, height, width).tolist())
+            transforms.RandomPerspective(fill={})
 
-        with self.assertRaises(ValueError):
-            trans(np.random.rand(height))
-            trans(np.random.rand(1, 1, height, width))
+        t = transforms.RandomPerspective(fill=None)
+        self.assertTrue(t.fill == 0)
 
-        for channels in test_channels:
-            input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
-            img = transforms.ToPILImage()(input_data)
-            output = trans(img)
-            torch.testing.assert_close(output, input_data, check_stride=False)
+        height = 100
+        width = 100
+        img = torch.ones(3, height, width)
+        to_pil_image = transforms.ToPILImage()
+        img = to_pil_image(img)
 
-            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-            output = trans(ndarray)
-            expected_output = ndarray.transpose((2, 0, 1)) / 255.0
-            torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+        modes = ("L", "RGB", "F")
+        nums_bands = [len(mode) for mode in modes]
+        fill = 127
 
-            ndarray = np.random.rand(height, width, channels).astype(np.float32)
-            output = trans(ndarray)
-            expected_output = ndarray.transpose((2, 0, 1))
-            torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            perspective = transforms.RandomPerspective(p=1, fill=fill)
+            tr_img = perspective(img_conv)
+            pixel = tr_img.getpixel((0, 0))
 
-        # separate test for mode '1' PIL images
-        input_data = torch.ByteTensor(1, height, width).bernoulli_()
-        img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
-        output = trans(img)
-        torch.testing.assert_close(input_data, output, check_dtype=False, check_stride=False)
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
 
-    def test_to_tensor_with_other_default_dtypes(self):
-        current_def_dtype = torch.get_default_dtype()
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
+            tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
+            pixel = tr_img.getpixel((0, 0))
 
-        t = transforms.ToTensor()
-        np_arr = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
-        img = Image.fromarray(np_arr)
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
 
-        for dtype in [torch.float16, torch.float, torch.double]:
-            torch.set_default_dtype(dtype)
-            res = t(img)
-            self.assertTrue(res.dtype == dtype, msg=f"{res.dtype} vs {dtype}")
+            for wrong_num_bands in set(nums_bands) - {num_bands}:
+                with self.assertRaises(ValueError):
+                    F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
-        torch.set_default_dtype(current_def_dtype)
+    def test_random_crop(self):
+        height = random.randint(10, 32) * 2
+        width = random.randint(10, 32) * 2
+        oheight = random.randint(5, (height - 2) / 2) * 2
+        owidth = random.randint(5, (width - 2) / 2) * 2
+        img = torch.ones(3, height, width)
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomCrop((oheight, owidth)),
+            transforms.ToTensor(),
+        ])(img)
+        self.assertEqual(result.size(1), oheight)
+        self.assertEqual(result.size(2), owidth)
+
+        padding = random.randint(1, 20)
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomCrop((oheight, owidth), padding=padding),
+            transforms.ToTensor(),
+        ])(img)
+        self.assertEqual(result.size(1), oheight)
+        self.assertEqual(result.size(2), owidth)
+
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomCrop((height, width)),
+            transforms.ToTensor()
+        ])(img)
+        self.assertEqual(result.size(1), height)
+        self.assertEqual(result.size(2), width)
+        torch.testing.assert_close(result, img)
+
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomCrop((height + 1, width + 1), pad_if_needed=True),
+            transforms.ToTensor(),
+        ])(img)
+        self.assertEqual(result.size(1), height + 1)
+        self.assertEqual(result.size(2), width + 1)
+
+        t = transforms.RandomCrop(48)
+        img = torch.ones(3, 32, 32)
+        with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
+            t(img)
 
     def test_max_value(self):
         for dtype in int_dtypes():
@@ -386,39 +443,6 @@ class Tester(unittest.TestCase):
         output = trans(accimage.Image(GRACE_HOPPER))
 
         torch.testing.assert_close(output, expected_output)
-
-    def test_pil_to_tensor(self):
-        test_channels = [1, 3, 4]
-        height, width = 4, 4
-        trans = transforms.PILToTensor()
-
-        with self.assertRaises(TypeError):
-            trans(np.random.rand(1, height, width).tolist())
-            trans(np.random.rand(1, height, width))
-
-        for channels in test_channels:
-            input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
-            img = transforms.ToPILImage()(input_data)
-            output = trans(img)
-            torch.testing.assert_close(input_data, output, check_stride=False)
-
-            input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-            img = transforms.ToPILImage()(input_data)
-            output = trans(img)
-            expected_output = input_data.transpose((2, 0, 1))
-            torch.testing.assert_close(output.numpy(), expected_output)
-
-            input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
-            img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
-            output = trans(img)  # HWC -> CHW
-            expected_output = (input_data * 255).byte()
-            torch.testing.assert_close(output, expected_output, check_stride=False)
-
-        # separate test for mode '1' PIL images
-        input_data = torch.ByteTensor(1, height, width).bernoulli_()
-        img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
-        output = trans(img).view(torch.uint8).bool().to(torch.uint8)
-        torch.testing.assert_close(input_data, output, check_stride=False)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_pil_to_tensor(self):
@@ -1052,6 +1076,102 @@ class Tester(unittest.TestCase):
                 for _ in range(100):
                     img = transform(img)
                 transform.__repr__()
+
+
+@pytest.mark.parametrize('channels', [1, 3, 4])
+def test_to_tensor(channels):
+    height, width = 4, 4
+    trans = transforms.ToTensor()
+
+    input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
+    img = transforms.ToPILImage()(input_data)
+    output = trans(img)
+    torch.testing.assert_close(output, input_data, check_stride=False)
+
+    ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+    output = trans(ndarray)
+    expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+    torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+
+    ndarray = np.random.rand(height, width, channels).astype(np.float32)
+    output = trans(ndarray)
+    expected_output = ndarray.transpose((2, 0, 1))
+    torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+
+    # separate test for mode '1' PIL images
+    input_data = torch.ByteTensor(1, height, width).bernoulli_()
+    img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
+    output = trans(img)
+    torch.testing.assert_close(input_data, output, check_dtype=False, check_stride=False)
+
+
+def test_to_tensor_errors():
+    height, width = 4, 4
+    trans = transforms.ToTensor()
+
+    with pytest.raises(TypeError):
+        trans(np.random.rand(1, height, width).tolist())
+
+    with pytest.raises(ValueError):
+        trans(np.random.rand(height))
+
+    with pytest.raises(ValueError):
+        trans(np.random.rand(1, 1, height, width))
+
+
+@pytest.mark.parametrize('dtype', [torch.float16, torch.float, torch.double])
+def test_to_tensor_with_other_default_dtypes(dtype):
+    current_def_dtype = torch.get_default_dtype()
+
+    t = transforms.ToTensor()
+    np_arr = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
+    img = Image.fromarray(np_arr)
+
+    torch.set_default_dtype(dtype)
+    res = t(img)
+    assert res.dtype == dtype, f"{res.dtype} vs {dtype}"
+
+    torch.set_default_dtype(current_def_dtype)
+
+
+@pytest.mark.parametrize('channels', [1, 3, 4])
+def test_pil_to_tensor(channels):
+    height, width = 4, 4
+    trans = transforms.PILToTensor()
+
+    input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
+    img = transforms.ToPILImage()(input_data)
+    output = trans(img)
+    torch.testing.assert_close(input_data, output, check_stride=False)
+
+    input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+    img = transforms.ToPILImage()(input_data)
+    output = trans(img)
+    expected_output = input_data.transpose((2, 0, 1))
+    torch.testing.assert_close(output.numpy(), expected_output)
+
+    input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+    img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
+    output = trans(img)  # HWC -> CHW
+    expected_output = (input_data * 255).byte()
+    torch.testing.assert_close(output, expected_output, check_stride=False)
+
+    # separate test for mode '1' PIL images
+    input_data = torch.ByteTensor(1, height, width).bernoulli_()
+    img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
+    output = trans(img).view(torch.uint8).bool().to(torch.uint8)
+    torch.testing.assert_close(input_data, output, check_stride=False)
+
+
+def test_pil_to_tensor_errors():
+    height, width = 4, 4
+    trans = transforms.PILToTensor()
+
+    with pytest.raises(TypeError):
+        trans(np.random.rand(1, height, width).tolist())
+
+    with pytest.raises(TypeError):
+        trans(np.random.rand(1, height, width))
 
 
 def test_randomresized_params():
