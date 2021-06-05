@@ -1029,10 +1029,12 @@ def test_2_channel_ndarray_to_pil_image_error():
     img_data = torch.ByteTensor(4, 4, 2).random_(0, 255).numpy()
     transforms.ToPILImage().__repr__()
 
+    # should raise if we try a mode for 4 or 1 or 3 channel images
     with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
-        # should raise if we try a mode for 4 or 1 or 3 channel images
         transforms.ToPILImage(mode='RGBA')(img_data)
+    with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         transforms.ToPILImage(mode='P')(img_data)
+    with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         transforms.ToPILImage(mode='RGB')(img_data)
 
 
@@ -1055,10 +1057,12 @@ def test_2_channel_tensor_to_pil_image(expected_mode):
 def test_2_channel_tensor_to_pil_image_error():
     img_data = torch.Tensor(2, 4, 4).uniform_()
 
+    # should raise if we try a mode for 4 or 1 or 3 channel images
     with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
-        # should raise if we try a mode for 4 or 1 or 3 channel images
         transforms.ToPILImage(mode='RGBA')(img_data)
+    with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         transforms.ToPILImage(mode='P')(img_data)
+    with pytest.raises(ValueError, match=r"Only modes \['LA'\] are supported for 2D inputs"):
         transforms.ToPILImage(mode='RGB')(img_data)
 
 
