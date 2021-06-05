@@ -1549,37 +1549,36 @@ def test_randomness(fn, trans, config, p):
     assert p_value > 0.0001
 
 
-@pytest.mark.parametrize('data_type, mode', [
-    ('float', 'L'),
-    ('byte', 'L'),
-    ('short', 'I;16'),
-    ('int', 'I'),
-])
-def test_1_channel_tensor_to_pil_image(data_type, mode):
+def _get_1_channel_tensor_various_types():
+    img_data_float = torch.Tensor(1, 4, 4).uniform_()
+    expected_output = img_data_float.mul(255).int().float().div(255).numpy()
+    yield img_data_float, expected_output, 'L'
+
+    img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
+    expected_output = img_data_byte.float().div(255.0).numpy()
+    yield img_data_byte, expected_output, 'L'
+
+    img_data_short = torch.ShortTensor(1, 4, 4).random_()
+    expected_output = img_data_short.numpy()
+    yield img_data_short, expected_output, 'I;16'
+
+    img_data_int = torch.IntTensor(1, 4, 4).random_()
+    expected_output = img_data_int.numpy()
+    yield img_data_int, expected_output, 'I'
+
+
+@pytest.mark.parametrize('pass_mode', [False, True])
+@pytest.mark.parametrize('img_data, expected_output, expected_mode', _get_1_channel_tensor_various_types())
+def test_1_channel_tensor_to_pil_image(pass_mode, img_data, expected_output, expected_mode):
+    transform = transforms.ToPILImage(mode=expected_mode) if pass_mode else transforms.ToPILImage()
     to_tensor = transforms.ToTensor()
 
-    if data_type == 'float':
-        img_data = torch.Tensor(1, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255).numpy()
-    elif data_type == 'byte':
-        img_data = torch.ByteTensor(1, 4, 4).random_(0, 255)
-        expected_output = img_data.float().div(255.0).numpy()
-    elif data_type == 'short':
-        img_data = torch.ShortTensor(1, 4, 4).random_()
-        expected_output = img_data.numpy()
-    elif data_type == 'int':
-        img_data = torch.IntTensor(1, 4, 4).random_()
-        expected_output = img_data.numpy()
-    else:
-        assert False
-
-    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-        img = transform(img_data)
-        assert img.mode == mode
-        torch.testing.assert_close(expected_output, to_tensor(img).numpy(), check_stride=False)
+    img = transform(img_data)
+    assert img.mode == expected_mode
+    torch.testing.assert_close(expected_output, to_tensor(img).numpy(), check_stride=False)
 
 
-def test_1_channel_tensor_to_pil_image_error():
+def test_1_channel_float_tensor_to_pil_image():
     img_data = torch.Tensor(1, 4, 4).uniform_()
     # 'F' mode for torch.FloatTensor
     img_F_mode = transforms.ToPILImage(mode='F')(img_data)
@@ -1643,7 +1642,7 @@ def test_2_channel_tensor_to_pil_image(mode):
 
     split = img.split()
     for i in range(2):
-        assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+        torch.testing.assert_close(expected_output[i].numpy(), F.to_tensor(split[i]).squeeze(0).numpy())
 
 
 def test_2_channel_tensor_to_pil_image_error():
@@ -1656,46 +1655,48 @@ def test_2_channel_tensor_to_pil_image_error():
         transforms.ToPILImage(mode='RGB')(img_data)
 
 
-@pytest.mark.parametrize('data_type, mode', [
-    ('float', 'L'),
-    ('byte', 'L'),
-    ('short', 'I;16'),
-    ('int', 'I'),
-])
-def test_2d_tensor_to_pil_image(data_type, mode):
+def _get_2d_tensor_various_types():
+    img_data_float = torch.Tensor(4, 4).uniform_()
+    expected_output = img_data_float.mul(255).int().float().div(255).numpy()
+    yield img_data_float, expected_output, 'L'
+
+    img_data_byte = torch.ByteTensor(4, 4).random_(0, 255)
+    expected_output = img_data_byte.float().div(255.0).numpy()
+    yield img_data_byte, expected_output, 'L'
+
+    img_data_short = torch.ShortTensor(4, 4).random_()
+    expected_output = img_data_short.numpy()
+    yield img_data_short, expected_output, 'I;16'
+
+    img_data_int = torch.IntTensor(4, 4).random_()
+    expected_output = img_data_int.numpy()
+    yield img_data_int, expected_output, 'I'
+
+
+
+@pytest.mark.parametrize('pass_mode', [False, True])
+@pytest.mark.parametrize('img_data, expected_output, expected_mode', _get_2d_tensor_various_types())
+def test_2d_tensor_to_pil_image(pass_mode, img_data, expected_output, expected_mode):
+    transform = transforms.ToPILImage(mode=expected_mode) if pass_mode else transforms.ToPILImage()
     to_tensor = transforms.ToTensor()
-    if data_type == 'float':
-        img_data = torch.Tensor(4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255).numpy()
-    elif data_type == 'byte':
-        img_data = torch.ByteTensor(4, 4).random_(0, 255)
-        expected_output = img_data.float().div(255.0).numpy()
-    elif data_type == 'short':
-        img_data = torch.ShortTensor(4, 4).random_()
-        expected_output = img_data.numpy()
-    elif data_type == 'int':
-        img_data = torch.IntTensor(4, 4).random_()
-        expected_output = img_data.numpy()
-    else:
-        assert False
 
-    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-        img = transform(img_data)
-        assert img.mode == mode
-        np.testing.assert_allclose(expected_output, to_tensor(img).numpy()[0])
+    img = transform(img_data)
+    assert img.mode == expected_mode
+    torch.testing.assert_close(expected_output, to_tensor(img).numpy()[0])
 
 
-@pytest.mark.parametrize('img_data, mode', [
+@pytest.mark.parametrize('pass_mode', [False, True])
+@pytest.mark.parametrize('img_data, expected_mode', [
     (torch.Tensor(4, 4).uniform_().numpy(), 'F'),
     (torch.ByteTensor(4, 4).random_(0, 255).numpy(), 'L'),
     (torch.ShortTensor(4, 4).random_().numpy(), 'I;16'),
     (torch.IntTensor(4, 4).random_().numpy(), 'I'),
 ])
-def test_2d_ndarray_to_pil_image(img_data, mode):
-    for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
-        img = transform(img_data)
-        assert img.mode == mode
-        np.testing.assert_allclose(img_data, img)
+def test_2d_ndarray_to_pil_image(pass_mode, img_data, expected_mode):
+    transform = transforms.ToPILImage(mode=expected_mode) if pass_mode else transforms.ToPILImage()
+    img = transform(img_data)
+    assert img.mode == expected_mode
+    np.testing.assert_allclose(img_data, img)
 
 
 @pytest.mark.parametrize('mode', [None, 'RGB', 'HSV', 'YCbCr'])
@@ -1711,7 +1712,7 @@ def test_3_channel_tensor_to_pil_image(mode):
         assert img.mode == mode
     split = img.split()
     for i in range(3):
-        assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+        torch.testing.assert_close(expected_output[i].numpy(), F.to_tensor(split[i]).squeeze(0).numpy())
 
 
 def test_3_channel_tensor_to_pil_image_error():
@@ -1770,7 +1771,7 @@ def test_4_channel_tensor_to_pil_image(mode):
 
     split = img.split()
     for i in range(4):
-        assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
+        torch.testing.assert_close(expected_output[i].numpy(), F.to_tensor(split[i]).squeeze(0).numpy())
 
 
 def test_4_channel_tensor_to_pil_image_error():
