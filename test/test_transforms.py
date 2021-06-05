@@ -151,7 +151,7 @@ GRACE_HOPPER = get_file_path_2(
 @pytest.mark.parametrize('a', range(-90,90,36))
 @pytest.mark.parametrize('t1',range(-10, 10, 5))
 @pytest.mark.parametrize('s',[0.77, 1.0, 1.27])
-@pytest.mark.parametrize('s',range(-15, 15, 5))	
+@pytest.mark.parametrize('s1',range(-15, 15, 5))	
 @pytest.mark.parametrize(pt,[(16, 16), (20, 16), (20, 20)])
 @pytest.mark.parametrize(i,range(-5,5))
 @pytest.mark.parametrize(j,range(-5,5))
@@ -252,7 +252,7 @@ GRACE_HOPPER = get_file_path_2(
 
         # Test rotation, scale, translation, shear
 
-                        _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
+                        _test_transformation(a=a, t=(t1, t1), s=s1, sh=(sh, sh))
 
 class Tester(unittest.TestCase):
 
