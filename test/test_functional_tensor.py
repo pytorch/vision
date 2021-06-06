@@ -297,12 +297,14 @@ class CUDATester(Tester):
 
 class TestAffine:
 
+    ALL_DTYPES = [None, torch.float32, torch.float64, torch.float16]
+    scripted_affine = torch.jit.script(F.affine)
+
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('height, width', [(26, 26), (32, 26)])
-    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize('dt', ALL_DTYPES)
     def test_identity_map(self, device, height, width, dt):
         # Tests on square and rectangular images
-        scripted_affine = torch.jit.script(F.affine)
         tensor, pil_img = _create_data(height, width, device=device)
 
         if dt == torch.float16 and device == "cpu":
@@ -316,14 +318,14 @@ class TestAffine:
         out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
         assert_equal(tensor, out_tensor, msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
-        out_tensor = scripted_affine(
+        out_tensor = self.scripted_affine(
             tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
         assert_equal(tensor, out_tensor, msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('height, width', [(26, 26)])
-    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize('dt', ALL_DTYPES)
     @pytest.mark.parametrize('angle, config', [
         (90, {'k': 1, 'dims': (-1, -2)}),
         (45, None),
@@ -333,8 +335,8 @@ class TestAffine:
         (-90, {'k': -1, 'dims': (-1, -2)}),
         (180, {'k': 2, 'dims': (-1, -2)}),
     ])
-    @pytest.mark.parametrize('scripted_affine', [True, False])
-    def test_square_rotations(self, device, height, width, dt, angle, config, scripted_affine):
+    @pytest.mark.parametrize('fn', [F.affine, scripted_affine])
+    def test_square_rotations(self, device, height, width, dt, angle, config, fn):
         # 2) Test rotation
         tensor, pil_img = _create_data(height, width, device=device)
 
@@ -345,29 +347,18 @@ class TestAffine:
         if dt is not None:
             tensor = tensor.to(dtype=dt)
 
-        if config is not None:
-            true_tensor = torch.rot90(tensor, **config)
-        else:
-            true_tensor = None
-
         out_pil_img = F.affine(
             pil_img, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1))).to(device)
 
-        if scripted_affine:
-            fn = torch.jit.script(F.affine)
-        else:
-            fn = F.affine
-
         out_tensor = fn(
             tensor, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
-        if true_tensor is not None:
+        if config is not None:
             assert_equal(
-                true_tensor,
+                torch.rot90(tensor, **config),
                 out_tensor,
-                msg="{}\n{} vs \n{}".format(angle, out_tensor[0, :5, :5], true_tensor[0, :5, :5]),
                 check_stride=False,
             )
 
@@ -383,10 +374,10 @@ class TestAffine:
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('height, width', [(32, 26)])
-    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize('dt', ALL_DTYPES)
     @pytest.mark.parametrize('angle', [90, 45, 15, -30, -60, -120])
-    @pytest.mark.parametrize('scripted_affine', [True, False])
-    def test_rect_rotations(self, device, height, width, dt, angle, scripted_affine):
+    @pytest.mark.parametrize('fn', [F.affine, scripted_affine])
+    def test_rect_rotations(self, device, height, width, dt, angle, fn):
         # Tests on rectangular images
         tensor, pil_img = _create_data(height, width, device=device)
 
@@ -401,11 +392,6 @@ class TestAffine:
             pil_img, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-
-        if scripted_affine:
-            fn = torch.jit.script(F.affine)
-        else:
-            fn = F.affine
 
         out_tensor = fn(
             tensor, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
@@ -423,10 +409,10 @@ class TestAffine:
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('height, width', [(26, 26), (32, 26)])
-    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize('dt', ALL_DTYPES)
     @pytest.mark.parametrize('t', [[10, 12], (-12, -13)])
-    @pytest.mark.parametrize('scripted_affine', [True, False])
-    def test_translations(self, device, height, width, dt, t, scripted_affine):
+    @pytest.mark.parametrize('fn', [F.affine, scripted_affine])
+    def test_translations(self, device, height, width, dt, t, fn):
         # 3) Test translation
         tensor, pil_img = _create_data(height, width, device=device)
 
@@ -439,11 +425,6 @@ class TestAffine:
 
         out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
-        if scripted_affine:
-            fn = torch.jit.script(F.affine)
-        else:
-            fn = F.affine
-
         out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
         if out_tensor.dtype != torch.uint8:
@@ -453,7 +434,7 @@ class TestAffine:
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('height, width', [(26, 26), (32, 26)])
-    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize('dt', ALL_DTYPES)
     @pytest.mark.parametrize('a, t, s, sh, f', [
         (45.5, [5, 6], 1.0, [0.0, 0.0], None),
         (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0]),
@@ -466,9 +447,8 @@ class TestAffine:
         (-45, [-10, -10], 1.2, [4.0, 5.0], None),
         (-90, [0, 0], 1.0, [0.0, 0.0], None),
     ])
-    @pytest.mark.parametrize('i', [NEAREST, ])
-    @pytest.mark.parametrize('scripted_affine', [True, False])
-    def test_all_ops(self, device, height, width, dt, a, t, s, sh, f, i, scripted_affine):
+    @pytest.mark.parametrize('fn', [F.affine, scripted_affine])
+    def test_all_ops(self, device, height, width, dt, a, t, s, sh, f, fn):
         # 4) Test rotation + translation + scale + shear
         tensor, pil_img = _create_data(height, width, device=device)
 
@@ -480,15 +460,10 @@ class TestAffine:
             tensor = tensor.to(dtype=dt)
 
         f_pil = int(f[0]) if f is not None and len(f) == 1 else f
-        out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=i, fill=f_pil)
+        out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=NEAREST, fill=f_pil)
         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
-        if scripted_affine:
-            fn = torch.jit.script(F.affine)
-        else:
-            fn = F.affine
-
-        out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, interpolation=i, fill=f).cpu()
+        out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, interpolation=NEAREST, fill=f).cpu()
 
         if out_tensor.dtype != torch.uint8:
             out_tensor = out_tensor.to(torch.uint8)
@@ -502,7 +477,7 @@ class TestAffine:
         )
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
-    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize('dt', ALL_DTYPES)
     def test_batches(self, device, dt):
         if dt == torch.float16 and device == "cpu":
             # skip float16 on CPU case
