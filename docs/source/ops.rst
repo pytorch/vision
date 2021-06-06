@@ -13,6 +13,7 @@ torchvision.ops
 .. autofunction:: batched_nms
 .. autofunction:: remove_small_boxes
 .. autofunction:: clip_boxes_to_image
+.. autofunction:: box_rescale
 .. autofunction:: box_convert
 .. autofunction:: box_area
 .. autofunction:: box_iou
