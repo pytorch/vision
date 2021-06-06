@@ -1,7 +1,8 @@
 import os
 import io
 import sys
-from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed
+from common_utils import cpu_and_gpu, needs_cuda, cpu_only
 from _utils_internal import get_relative_path
 from collections import OrderedDict
 from itertools import product
@@ -228,40 +229,45 @@ def _make_sliced_model(model, stop_layer):
     return new_model
 
 
-def test_memory_efficient_densenet():
+@cpu_only
+@pytest.mark.parametrize('model_name', ['densenet121', 'densenet169', 'densenet201', 'densenet161'])
+def test_memory_efficient_densenet(model_name):
     input_shape = (1, 3, 300, 300)
     x = torch.rand(input_shape)
 
-    for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
-        model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
-        params = model1.state_dict()
-        num_params = sum([x.numel() for x in model1.parameters()])
-        model1.eval()
-        out1 = model1(x)
-        out1.sum().backward()
-        num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
+    model1 = models.__dict__[model_name](num_classes=50, memory_efficient=True)
+    params = model1.state_dict()
+    num_params = sum([x.numel() for x in model1.parameters()])
+    model1.eval()
+    out1 = model1(x)
+    out1.sum().backward()
+    num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
 
-        model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
-        model2.load_state_dict(params)
-        model2.eval()
-        out2 = model2(x)
+    model2 = models.__dict__[model_name](num_classes=50, memory_efficient=False)
+    model2.load_state_dict(params)
+    model2.eval()
+    out2 = model2(x)
 
-        assert num_params == num_grad
-        torch.testing.assert_close(out1, out2, rtol=0.0, atol=1e-5)
+    assert num_params == num_grad
+    torch.testing.assert_close(out1, out2, rtol=0.0, atol=1e-5)
 
 
-def test_resnet_dilation():
+@cpu_only
+@pytest.mark.parametrize('dilate_layer_2', (True, False))
+@pytest.mark.parametrize('dilate_layer_3', (True, False))
+@pytest.mark.parametrize('dilate_layer_4', (True, False))
+def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
     # TODO improve tests to also check that each layer has the right dimensionality
-    for i in product([False, True], [False, True], [False, True]):
-        model = models.__dict__["resnet50"](replace_stride_with_dilation=i)
-        model = _make_sliced_model(model, stop_layer="layer4")
-        model.eval()
-        x = torch.rand(1, 3, 224, 224)
-        out = model(x)
-        f = 2 ** sum(i)
-        assert out.shape == (1, 2048, 7 * f, 7 * f)
+    model = models.__dict__["resnet50"](replace_stride_with_dilation=(dilate_layer_2, dilate_layer_3, dilate_layer_4))
+    model = _make_sliced_model(model, stop_layer="layer4")
+    model.eval()
+    x = torch.rand(1, 3, 224, 224)
+    out = model(x)
+    f = 2 ** sum((dilate_layer_2, dilate_layer_3, dilate_layer_4))
+    assert out.shape == (1, 2048, 7 * f, 7 * f)
 
 
+@cpu_only
 def test_mobilenet_v2_residual_setting():
     model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
     model.eval()
@@ -270,19 +276,21 @@ def test_mobilenet_v2_residual_setting():
     assert out.shape[-1] == 1000
 
 
-def test_mobilenet_norm_layer():
-    for name in ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"]:
-        model = models.__dict__[name]()
-        assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
+@cpu_only
+@pytest.mark.parametrize('model_name', ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"])
+def test_mobilenet_norm_layer(model_name):
+    model = models.__dict__[model_name]()
+    assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
 
-        def get_gn(num_channels):
-            return nn.GroupNorm(32, num_channels)
+    def get_gn(num_channels):
+        return nn.GroupNorm(32, num_channels)
 
-        model = models.__dict__[name](norm_layer=get_gn)
-        assert not(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
-        assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
+    model = models.__dict__[model_name](norm_layer=get_gn)
+    assert not(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+    assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
 
 
+@cpu_only
 def test_inception_v3_eval():
     # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
@@ -298,6 +306,7 @@ def test_inception_v3_eval():
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
 
+@cpu_only
 def test_fasterrcnn_double():
     model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
     model.double()
@@ -313,6 +322,7 @@ def test_fasterrcnn_double():
     assert "labels" in out[0]
 
 
+@cpu_only
 def test_googlenet_eval():
     # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
@@ -361,6 +371,7 @@ def test_fasterrcnn_switch_devices():
     checkOut(out_cpu)
 
 
+@cpu_only
 def test_generalizedrcnn_transform_repr():
 
     min_size, max_size = 224, 299
@@ -557,6 +568,7 @@ def test_detection_model(model_name, dev):
         pytest.skip(msg)
 
 
+@cpu_only
 @pytest.mark.parametrize('model_name', get_available_detection_models())
 def test_detection_model_validation(model_name):
     set_rng_seed(0)
@@ -565,21 +577,25 @@ def test_detection_model_validation(model_name):
     x = [torch.rand(input_shape)]
 
     # validate that targets are present in training
-    pytest.raises(ValueError, model, x)
+    with pytest.raises(ValueError):
+        model(x)
 
     # validate type
     targets = [{'boxes': 0.}]
-    pytest.raises(ValueError, model, x, targets=targets)
+    with pytest.raises(ValueError):
+        model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
         targets = [{'boxes': boxes}]
-        pytest.raises(ValueError, model, x, targets=targets)
+        with pytest.raises(ValueError):
+            model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
     targets = [{'boxes': boxes}]
-    pytest.raises(ValueError, model, x, targets=targets)
+    with pytest.raises(ValueError):
+        model(x, targets=targets)
 
 
 @pytest.mark.parametrize('model_name', get_available_video_models())
