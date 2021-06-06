@@ -1,11 +1,9 @@
 import os
 import io
 import sys
-from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed
-from common_utils import cpu_and_gpu, needs_cuda, cpu_only
+from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda, cpu_only
 from _utils_internal import get_relative_path
 from collections import OrderedDict
-from itertools import product
 import functools
 import operator
 import torch
