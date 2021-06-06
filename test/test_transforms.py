@@ -330,60 +330,6 @@ class Tester(unittest.TestCase):
                     self.assertEqual(actual_min, desired_min)
                     self.assertEqual(actual_max, desired_max)
 
-    @unittest.skipIf(accimage is None, 'accimage not available')
-    def test_accimage_to_tensor(self):
-        trans = transforms.ToTensor()
-
-        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
-        output = trans(accimage.Image(GRACE_HOPPER))
-
-        torch.testing.assert_close(output, expected_output)
-
-    @unittest.skipIf(accimage is None, 'accimage not available')
-    def test_accimage_pil_to_tensor(self):
-        trans = transforms.PILToTensor()
-
-        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
-        output = trans(accimage.Image(GRACE_HOPPER))
-
-        self.assertEqual(expected_output.size(), output.size())
-        torch.testing.assert_close(output, expected_output, check_stride=False)
-
-    @unittest.skipIf(accimage is None, 'accimage not available')
-    def test_accimage_resize(self):
-        trans = transforms.Compose([
-            transforms.Resize(256, interpolation=Image.LINEAR),
-            transforms.ToTensor(),
-        ])
-
-        # Checking if Compose, Resize and ToTensor can be printed as string
-        trans.__repr__()
-
-        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
-        output = trans(accimage.Image(GRACE_HOPPER))
-
-        self.assertEqual(expected_output.size(), output.size())
-        self.assertLess(np.abs((expected_output - output).mean()), 1e-3)
-        self.assertLess((expected_output - output).var(), 1e-5)
-        # note the high absolute tolerance
-        self.assertTrue(np.allclose(output.numpy(), expected_output.numpy(), atol=5e-2))
-
-    @unittest.skipIf(accimage is None, 'accimage not available')
-    def test_accimage_crop(self):
-        trans = transforms.Compose([
-            transforms.CenterCrop(256),
-            transforms.ToTensor(),
-        ])
-
-        # Checking if Compose, CenterCrop and ToTensor can be printed as string
-        trans.__repr__()
-
-        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
-        output = trans(accimage.Image(GRACE_HOPPER))
-
-        self.assertEqual(expected_output.size(), output.size())
-        torch.testing.assert_close(output, expected_output)
-
     def test_color_jitter(self):
         color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
 
@@ -674,36 +620,58 @@ def test_pil_to_tensor(channels):
     height, width = 4, 4
     trans = transforms.PILToTensor()
 
-    input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
-    img = transforms.ToPILImage()(input_data)
-    output = trans(img)
-    torch.testing.assert_close(input_data, output, check_stride=False)
+@pytest.mark.skipif(accimage is None, reason="accimage not available")
+class TestAccImage:
 
-    input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-    img = transforms.ToPILImage()(input_data)
-    output = trans(img)
-    expected_output = input_data.transpose((2, 0, 1))
-    torch.testing.assert_close(output.numpy(), expected_output)
+    def test_accimage_to_tensor(self):
+        trans = transforms.ToTensor()
 
-    input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
-    img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
-    output = trans(img)  # HWC -> CHW
-    expected_output = (input_data * 255).byte()
-    torch.testing.assert_close(output, expected_output, check_stride=False)
+        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
+        output = trans(accimage.Image(GRACE_HOPPER))
 
-    # separate test for mode '1' PIL images
-    input_data = torch.ByteTensor(1, height, width).bernoulli_()
-    img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
-    output = trans(img).view(torch.uint8).bool().to(torch.uint8)
-    torch.testing.assert_close(input_data, output, check_stride=False)
+        torch.testing.assert_close(output, expected_output)
 
+    def test_accimage_pil_to_tensor(self):
+        trans = transforms.PILToTensor()
 
-def test_pil_to_tensor_errors():
-    height, width = 4, 4
-    trans = transforms.PILToTensor()
+        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
+        output = trans(accimage.Image(GRACE_HOPPER))
 
-    with pytest.raises(TypeError):
-        trans(np.random.rand(1, height, width).tolist())
+        assert expected_output.size() == output.size()
+        torch.testing.assert_close(output, expected_output, check_stride=False)
+
+    def test_accimage_resize(self):
+        trans = transforms.Compose([
+            transforms.Resize(256, interpolation=Image.LINEAR),
+            transforms.ToTensor(),
+        ])
+
+        # Checking if Compose, Resize and ToTensor can be printed as string
+        trans.__repr__()
+
+        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
+        output = trans(accimage.Image(GRACE_HOPPER))
+
+        assert expected_output.size() == output.size()
+        assert np.abs((expected_output - output).mean()) < 1e-3
+        assert (expected_output - output).var() < 1e-5
+        # note the high absolute tolerance
+        self.assertTrue(np.allclose(output.numpy(), expected_output.numpy(), atol=5e-2))
+
+    def test_accimage_crop(self):
+        trans = transforms.Compose([
+            transforms.CenterCrop(256),
+            transforms.ToTensor(),
+        ])
+
+        # Checking if Compose, CenterCrop and ToTensor can be printed as string
+        trans.__repr__()
+
+        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
+        output = trans(accimage.Image(GRACE_HOPPER))
+
+        assert expected_output.size() == output.size()
+        torch.testing.assert_close(output, expected_output)
 
     with pytest.raises(TypeError):
         trans(np.random.rand(1, height, width))
