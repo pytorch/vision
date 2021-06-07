@@ -225,7 +225,6 @@ class TestRotate:
     @pytest.mark.parametrize('fn', [F.rotate, scripted_rotate])
     def test_rotate(self, device, height, width, dt, a, e, f, fn):
         tensor, pil_img = _create_data(height, width, device=device)
-        img_size = pil_img.size
         centers = [
             None,
             (int(width * 0.3), int(width * 0.4)),
@@ -239,8 +238,6 @@ class TestRotate:
         if dt is not None:
             tensor = tensor.to(dtype=dt)
 
-        tensor = tensor.to(device)
-
         for c in centers:
             f_pil = int(f[0]) if f is not None and len(f) == 1 else f
             out_pil_img = F.rotate(pil_img, angle=a, interpolation=NEAREST, expand=e, center=c, fill=f_pil)
@@ -252,14 +249,14 @@ class TestRotate:
                 out_tensor = out_tensor.to(torch.uint8)
 
             assert out_tensor.shape == out_pil_tensor.shape, (
-                f"{(img_size, NEAREST, dt, a, e, c)}: "
+                f"{((width, height), NEAREST, dt, a, e, c)}: "
                 f"{out_tensor.shape} vs {out_pil_tensor.shape}")
 
             num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
             ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
             # Tolerance : less than 3% of different pixels
             assert ratio_diff_pixels < 0.03, (
-                f"{(img_size, NEAREST, dt, a, e, c, f)}: "
+                f"{((width, height), NEAREST, dt, a, e, c, f)}: "
                 f"{ratio_diff_pixels}\n{out_tensor[0, :7, :7]} vs \n"
                 f"{out_pil_tensor[0, :7, :7]}")
 
