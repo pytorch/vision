@@ -5,6 +5,7 @@ from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
 
 import numpy as np
+import pytest
 
 import unittest
 from typing import Sequence
@@ -16,7 +17,7 @@ from common_utils import (
     _create_data,
     _create_data_batch,
     _assert_equal_tensor_to_pil,
-    _assert_approx_equal_tensor_to_pil,
+    _assert_approx_equal_tensor_to_pil, cpu_only,
 )
 from _assert_utils import assert_equal
 
@@ -94,51 +95,27 @@ def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_
     _test_class_op(method, device, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
 
+@pytest.mark.parametrize(
+    'func,method,device,fn_kwargs,match_kwargs',[
+        (F.hflip,T.RandomHorizontalFlip,cpu_only(),None, {}),
+        (F.vflip,T.RandomVerticalFlip,cpu_only(),None,{}),
+        (F.invert,T.RandomInvert,cpu_only(),None,{}),
+        (F.posterize,T.RandomPosterize,cpu_only(),{"bits":4},{}),
+        (F.solarize,T.RandomSolarize,cpu_only(),{"threshold":192.0},{}),
+        (F.adjust_sharpness,T.RandomAdjustSharpness,cpu_only(),{"sharpness_factor":2.0},{}),
+        (F.autocontrast,T.RandomAutocontrast,cpu_only(),None,{'test_exact_match':False,
+            'agg_method':'max', 'tol':(1 + 1e-5), 'allowed_percentage_diff':.05}),
+        (F.equalize,T.RandomEqualize,cpu_only(),None,{})
+    ]
+)
+def test_random(func,method,device,fn_kwargs,match_kwargs):
+    _test_op(func,method,device,fn_kwargs,fn_kwargs,**match_kwargs)
+
+
 class Tester(unittest.TestCase):
 
     def setUp(self):
         self.device = "cpu"
-
-    def test_random_horizontal_flip(self):
-        _test_op(F.hflip, T.RandomHorizontalFlip, device=self.device)
-
-    def test_random_vertical_flip(self):
-        _test_op(F.vflip, T.RandomVerticalFlip, device=self.device)
-
-    def test_random_invert(self):
-        _test_op(F.invert, T.RandomInvert, device=self.device)
-
-    def test_random_posterize(self):
-        fn_kwargs = meth_kwargs = {"bits": 4}
-        _test_op(
-            F.posterize, T.RandomPosterize, device=self.device, fn_kwargs=fn_kwargs,
-            meth_kwargs=meth_kwargs
-        )
-
-    def test_random_solarize(self):
-        fn_kwargs = meth_kwargs = {"threshold": 192.0}
-        _test_op(
-            F.solarize, T.RandomSolarize, device=self.device, fn_kwargs=fn_kwargs,
-            meth_kwargs=meth_kwargs
-        )
-
-    def test_random_adjust_sharpness(self):
-        fn_kwargs = meth_kwargs = {"sharpness_factor": 2.0}
-        _test_op(
-            F.adjust_sharpness, T.RandomAdjustSharpness, device=self.device, fn_kwargs=fn_kwargs,
-            meth_kwargs=meth_kwargs
-        )
-
-    def test_random_autocontrast(self):
-        # We check the max abs difference because on some (very rare) pixels, the actual value may be different
-        # between PIL and tensors due to floating approximations.
-        _test_op(
-            F.autocontrast, T.RandomAutocontrast, device=self.device, test_exact_match=False,
-            agg_method='max', tol=(1 + 1e-5), allowed_percentage_diff=.05
-        )
-
-    def test_random_equalize(self):
-        _test_op(F.equalize, T.RandomEqualize, device=self.device)
 
     def test_color_jitter(self):
 
@@ -639,75 +616,85 @@ class Tester(unittest.TestCase):
             test_exact_match=False, device=self.device, agg_method="max", tol=tol
         )
 
-    def test_random_erasing(self):
-        img = torch.rand(3, 60, 60)
 
-        # Test Set 0: invalid value
-        random_erasing = T.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
-        with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
-            random_erasing(img)
+@pytest.mark.xfail()
+@pytest.mark.parametrize(
+    'in_dtype,out_dtype',[
+        int_dtypes()+float_dtypes(),int_dtypes()+float_dtypes()
+    ]
+)
+def test_convert_image_dtype(in_dtype,out_dtype):
+    tensor, _ = _create_data(26, 34, device=cpu_only())
+    batch_tensors = torch.rand(4, 3, 44, 56, device=cpu_only())
 
-        tensor, _ = _create_data(24, 32, channels=3, device=self.device)
-        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+    in_tensor = tensor.to(in_dtype)
+    in_batch_tensors = batch_tensors.to(in_dtype)
 
-        test_configs = [
-            {"value": 0.2},
-            {"value": "random"},
-            {"value": (0.2, 0.2, 0.2)},
-            {"value": "random", "ratio": (0.1, 0.2)},
-        ]
+    fn = T.ConvertImageDtype(dtype=out_dtype)
+    scripted_fn = torch.jit.script(fn)
 
-        for config in test_configs:
-            fn = T.RandomErasing(**config)
-            scripted_fn = torch.jit.script(fn)
-            _test_transform_vs_scripted(fn, scripted_fn, tensor)
-            _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+    if (in_dtype == torch.float32 and out_dtype in (torch.int32, torch.int64)) or \
+            (in_dtype == torch.float64 and out_dtype == torch.int64):
+        with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
+            _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+        with pytest.raises(RuntimeError,match= r"cannot be performed safely"):
+            _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
+    _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+    _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
+
+
+@pytest.mark.parametrize(
+    'policy,fill',[
+        (T.AutoAugmentPolicy(),[None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+    ]
+)
+def test_autoaugment(policy,fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=cpu_only())
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=cpu_only())
+
+    s_transform = None
+    transform = T.AutoAugment(policy=policy, fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+    if s_transform is not None:
         with get_tmp_dir() as tmp_dir:
-            scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
+            s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
-    def test_convert_image_dtype(self):
-        tensor, _ = _create_data(26, 34, device=self.device)
-        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
 
-        for in_dtype in int_dtypes() + float_dtypes():
-            in_tensor = tensor.to(in_dtype)
-            in_batch_tensors = batch_tensors.to(in_dtype)
-            for out_dtype in int_dtypes() + float_dtypes():
+@pytest.mark.parametrize(
+    'config',[
+        ({"value": 0.2},),
+        ({"value": "random"},),
+        ({"value": (0.2, 0.2, 0.2)},),
+        {"value": "random", "ratio": (0.1, 0.2)},
+    ]
+)
+def test_random_erasing(config):
+    tensor, _ = _create_data(24, 32, channels=3, device=cpu_only())
+    batch_tensors = torch.rand(4, 3, 44, 56, device=cpu_only())
 
-                fn = T.ConvertImageDtype(dtype=out_dtype)
-                scripted_fn = torch.jit.script(fn)
+    fn = T.RandomErasing(**config)
+    scripted_fn = torch.jit.script(fn)
+    _test_transform_vs_scripted(fn, scripted_fn, tensor)
+    _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
-                if (in_dtype == torch.float32 and out_dtype in (torch.int32, torch.int64)) or \
-                        (in_dtype == torch.float64 and out_dtype == torch.int64):
-                    with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
-                        _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
-                    with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
-                        _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
-                    continue
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
 
-                _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
-                _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
-        with get_tmp_dir() as tmp_dir:
-            scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
-
-    def test_autoaugment(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        s_transform = None
-        for policy in T.AutoAugmentPolicy:
-            for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                transform = T.AutoAugment(policy=policy, fill=fill)
-                s_transform = torch.jit.script(transform)
-                for _ in range(25):
-                    _test_transform_vs_scripted(transform, s_transform, tensor)
-                    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-        if s_transform is not None:
-            with get_tmp_dir() as tmp_dir:
-                s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
+def test_random_erasing_with_invalid_data():
+    img = torch.rand(3, 60, 60)
+    # Test Set 0: invalid value
+    random_erasing = T.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+    with pytest.raises(ValueError,match="If value is a sequence, it should have either a single value or 3"):
+        random_erasing(img)
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
