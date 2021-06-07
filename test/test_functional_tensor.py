@@ -267,7 +267,7 @@ class TestRotate:
             # skip float16 on CPU case
             return
 
-        batch_tensors = _create_data_batch(26, 32, num_samples=4, device=device)
+        batch_tensors = _create_data_batch(26, 36, num_samples=4, device=device)
         if dt is not None:
             batch_tensors = batch_tensors.to(dtype=dt)
 
