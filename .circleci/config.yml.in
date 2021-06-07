@@ -692,7 +692,7 @@ jobs:
       #     command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: export CIRCLECI env var
-          command: echo "CIRCLECI=1" >> ./env.list
+          command: echo "CIRCLECI='true'" >> ./env.list
       - run:
           name: Run tests
           command: docker run --env-file ./env.list -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
