@@ -1,5 +1,6 @@
 import gc
 import math
+import os
 import re
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -258,6 +259,9 @@ def read_video(
 
     from torchvision import get_video_backend
 
+    if not os.path.exists(filename):
+        raise RuntimeError(f'File not found: {filename}')
+
     if get_video_backend() != "pyav":
         return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
 
@@ -278,11 +282,19 @@ def read_video(
 
     try:
         with av.open(filename, metadata_errors="ignore") as container:
+            time_base = _video_opt.default_timebase
+            if container.streams.video:
+                time_base = container.streams.video[0].time_base
+            elif container.streams.audio:
+                time_base = container.streams.audio[0].time_base
+            # video_timebase is the default time_base
+            start_pts_sec, end_pts_sec, pts_unit = _video_opt._convert_to_sec(
+                start_pts, end_pts, pts_unit, time_base)
             if container.streams.video:
                 video_frames = _read_from_stream(
                     container,
-                    start_pts,
-                    end_pts,
+                    start_pts_sec,
+                    end_pts_sec,
                     pts_unit,
                     container.streams.video[0],
                     {"video": 0},
@@ -295,8 +307,8 @@ def read_video(
             if container.streams.audio:
                 audio_frames = _read_from_stream(
                     container,
-                    start_pts,
-                    end_pts,
+                    start_pts_sec,
+                    end_pts_sec,
                     pts_unit,
                     container.streams.audio[0],
                     {"audio": 0},
@@ -379,9 +391,9 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
                 except av.AVError:
                     warnings.warn(f"Failed decoding frames for file {filename}")
                 video_fps = float(video_stream.average_rate)
-    except av.AVError:
-        # TODO add a warning
-        pass
+    except av.AVError as e:
+        msg = f"Failed to open container for {filename}; Caught error: {e}"
+        warnings.warn(msg, RuntimeWarning)
 
     pts.sort()
 

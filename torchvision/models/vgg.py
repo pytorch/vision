@@ -105,6 +105,7 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool
 def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 11-layer model (configuration "A") from
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -116,6 +117,7 @@ def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG
 def vgg11_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 11-layer model (configuration "A") with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -127,6 +129,7 @@ def vgg11_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
 def vgg13(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 13-layer model (configuration "B")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -138,6 +141,7 @@ def vgg13(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG
 def vgg13_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 13-layer model (configuration "B") with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -149,6 +153,7 @@ def vgg13_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
 def vgg16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 16-layer model (configuration "D")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -160,6 +165,7 @@ def vgg16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG
 def vgg16_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 16-layer model (configuration "D") with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -171,6 +177,7 @@ def vgg16_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
 def vgg19(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 19-layer model (configuration "E")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -182,6 +189,7 @@ def vgg19(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG
 def vgg19_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 19-layer model (configuration 'E') with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
+    The required minimum input size of the model is 32x32.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
