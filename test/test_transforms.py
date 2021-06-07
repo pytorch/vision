@@ -1839,7 +1839,7 @@ def test_ten_crop(should_vflip, single_dim):
 
 
 @pytest.mark.parametrize('single_dim', [True, False])
-def test_five_crop():
+def test_five_crop(single_dim):
     to_pil_image = transforms.ToPILImage()
     h = random.randint(5, 25)
     w = random.randint(5, 25)
