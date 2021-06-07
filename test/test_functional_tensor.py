@@ -1038,14 +1038,14 @@ def test_hsv2rgb(device):
         rgb = []
         for h1, s1, v1 in zip(h, s, v):
             rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
-            colorsys_img = torch.tensor(rgb, dtype=torch.float32, device=device)
-            torch.testing.assert_close(ft_img, colorsys_img, rtol=0.0, atol=1e-5)
+        colorsys_img = torch.tensor(rgb, dtype=torch.float32, device=device)
+        torch.testing.assert_close(ft_img, colorsys_img, rtol=0.0, atol=1e-5)
 
-            s_rgb_img = scripted_fn(hsv_img)
-            torch.testing.assert_close(rgb_img, s_rgb_img)
+        s_rgb_img = scripted_fn(hsv_img)
+        torch.testing.assert_close(rgb_img, s_rgb_img)
 
-        batch_tensors = _create_data_batch(120, 100, num_samples=4, device=device).float()
-        _test_fn_on_batch(batch_tensors, F_t._hsv2rgb)
+    batch_tensors = _create_data_batch(120, 100, num_samples=4, device=device).float()
+    _test_fn_on_batch(batch_tensors, F_t._hsv2rgb)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -1079,8 +1079,8 @@ def test_rgb2hsv(device):
         s_hsv_img = scripted_fn(rgb_img)
         torch.testing.assert_close(hsv_img, s_hsv_img, rtol=1e-5, atol=1e-7)
 
-        batch_tensors = _create_data_batch(120, 100, num_samples=4, device=device).float()
-        _test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
+    batch_tensors = _create_data_batch(120, 100, num_samples=4, device=device).float()
+    _test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
