@@ -1,0 +1,19 @@
+name: pr-labels
+
+on:
+  pull_request:
+    types:
+      - opened
+      - labeled
+      - unlabeled
+
+jobs:
+  is-labeled:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Echo labels
+        run: github.event.pull_request.labels
