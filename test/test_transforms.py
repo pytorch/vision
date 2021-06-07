@@ -1790,7 +1790,7 @@ def test_linear_transformation():
     whitening.__repr__()
 
 
-@pytest.mark.parametrize('dtype', 'int_dtypes')
+@pytest.mark.parametrize('dtype', int_dtypes())
 def test_max_value(dtype, int_dtypes):
 
     assert F_t._max_value(dtype) == torch.iinfo(dtype).max
