@@ -691,8 +691,11 @@ jobs:
       #     name: Install torchvision
       #     command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
+          name: export CIRCLECI env var
+          command: echo "export CIRCLECI=1" >> ${BASH_ENV}
+      - run:
           name: Run tests
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
+          command: docker run --env-file ${BASH_ENV} -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
       # - run:
       #     name: Post Process
       #     command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
