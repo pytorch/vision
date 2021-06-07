@@ -1925,22 +1925,22 @@ def test_normalize_3d_tensor():
 
 class TestAffine:
 
-    input_img = np.zeros((40, 40, 3), dtype=np.uint8)
-    cnt = [20, 20]
+    @pytest.fixture(scope='class')
+    def input_img(self):
+        input_img = np.zeros((40, 40, 3), dtype=np.uint8)
+        for pt in [(16, 16), (20, 16), (20, 20)]:
+            for i in range(-5, 5):
+                for j in range(-5, 5):
+                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
+        return input_img
 
-    @pytest.mark.parametrize("pt", [(16, 16), (20, 16), (20, 20)])
-    @pytest.mark.parametrize("i", range(-5, 5))
-    @pytest.mark.parametrize("j", range(-5, 5))
-    def test_make_img_affine(self, pt, i, j):
-        self.input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
-
-    def test_affine_translate_seq(self):
+    def test_affine_translate_seq(self, input_img):
         with pytest.raises(TypeError, match=r"Argument translate should be a sequence"):
-            F.affine(self.input_img, 10, translate=0, scale=1, shear=1)
+            F.affine(input_img, 10, translate=0, scale=1, shear=1)
 
-    @pytest.fixture
-    def PIL_Image(self):
-        return F.to_pil_image(self.input_img)
+    @pytest.fixture(scope='class')
+    def pil_image(self, input_img):
+        return F.to_pil_image(input_img)
 
     def _to_3x3_inv(self, inv_result_matrix):
         result_matrix = np.zeros((3, 3))
@@ -1948,12 +1948,13 @@ class TestAffine:
         result_matrix[2, 2] = 1
         return np.linalg.inv(result_matrix)
 
-    def _test_transformation(self, a, t, s, sh, PIL_Image):
+    def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img):
 
-        a_rad = math.radians(a)
-        s_rad = [math.radians(sh_) for sh_ in sh]
-        cx, cy = self.cnt
-        tx, ty = t
+        a_rad = math.radians(angle)
+        s_rad = [math.radians(sh_) for sh_ in shear]
+        cnt = [20, 20]
+        cx, cy = cnt
+        tx, ty = translate
         sx, sy = s_rad
         rot = a_rad
 
@@ -1967,8 +1968,8 @@ class TestAffine:
         Cinv = np.linalg.inv(C)
 
         RS = np.array(
-            [[s * math.cos(rot), -s * math.sin(rot), 0],
-             [s * math.sin(rot), s * math.cos(rot), 0],
+            [[scale * math.cos(rot), -scale * math.sin(rot), 0],
+             [scale * math.sin(rot), scale * math.cos(rot), 0],
              [0, 0, 1]])
 
         SHx = np.array([[1, -math.tan(sx), 0],
@@ -1983,8 +1984,8 @@ class TestAffine:
 
         true_matrix = np.matmul(T, np.matmul(C, np.matmul(RSS, Cinv)))
 
-        result_matrix = self._to_3x3_inv(F._get_inverse_affine_matrix(center=self.cnt, angle=a,
-                                                                      translate=t, scale=s, shear=sh))
+        result_matrix = self._to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=angle,
+                                                                      translate=translate, scale=scale, shear=shear))
         assert np.sum(np.abs(true_matrix - result_matrix)) < 1e-10
         # 2) Perform inverse mapping:
         true_result = np.zeros((40, 40, 3), dtype=np.uint8)
@@ -1997,41 +1998,47 @@ class TestAffine:
                 input_pt = np.array([x + 0.5, y + 0.5, 1.0])
                 res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
                 _x, _y = res[:2]
-                if 0 <= _x < self.input_img.shape[1] and 0 <= _y < self.input_img.shape[0]:
-                    true_result[y, x, :] = self.input_img[_y, _x, :]
+                if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
+                    true_result[y, x, :] = input_img[_y, _x, :]
 
-        result = F.affine(PIL_Image, angle=a, translate=t, scale=s, shear=sh)
-        assert result.size == PIL_Image.size
+        result = F.affine(pil_image, angle=angle, translate=translate, scale=scale, shear=shear)
+        assert result.size == pil_image.size
         # Compute number of different pixels:
         np_result = np.array(result)
         n_diff_pixels = np.sum(np_result != true_result) / 3
         # Accept 3 wrong pixels
-        error_msg = 'a={}, t={}, s={}, sh={}\n'.format(a, t, s, sh) + 'n diff pixels={}\n'.format(n_diff_pixels)
+        error_msg = ("angle={}, translate={}, scale={}, shear={}\n".format(angle, translate, scale, shear) +
+                     "n diff pixels={}\n".format(n_diff_pixels))
         assert n_diff_pixels < 3, error_msg
 
-    def test_transformation_discrete(self, PIL_Image):
+    def test_transformation_discrete(self, pil_image, input_img):
         # Test rotation
-        a = 45
-        self._test_transformation(a=a, t=(0, 0), s=1.0, sh=(0.0, 0.0), PIL_Image=PIL_Image)
+        angle = 45
+        self._test_transformation(angle=angle, translate=(0, 0), scale=1.0,
+                                  shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img)
 
         # Test translation
-        t = [10, 15]
-        self._test_transformation(a=0.0, t=t, s=1.0, sh=(0.0, 0.0), PIL_Image=PIL_Image)
+        translate = [10, 15]
+        self._test_transformation(angle=0.0, translate=translate, scale=1.0,
+                                  shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img)
 
         # Test scale
-        s = 1.2
-        self._test_transformation(a=0.0, t=(0.0, 0.0), s=s, sh=(0.0, 0.0), PIL_Image=PIL_Image)
+        scale = 1.2
+        self._test_transformation(angle=0.0, translate=(0.0, 0.0), scale=scale,
+                                  shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img)
 
         # Test shear
-        sh = [45.0, 25.0]
-        self._test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh, PIL_Image=PIL_Image)
+        shear = [45.0, 25.0]
+        self._test_transformation(angle=0.0, translate=(0.0, 0.0), scale=1.0,
+                                  shear=shear, pil_image=pil_image, input_img=input_img)
 
-    @pytest.mark.parametrize("a", range(-90, 90, 36))
-    @pytest.mark.parametrize("t1", range(-10, 10, 5))
-    @pytest.mark.parametrize("s", [0.77, 1.0, 1.27])
-    @pytest.mark.parametrize("sh", range(-15, 15, 5))
-    def test_transformation_range(self, a, t1, s, sh, PIL_Image):
-        self._test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh), PIL_Image=PIL_Image)
+    @pytest.mark.parametrize("angle", range(-90, 90, 36))
+    @pytest.mark.parametrize("translate", range(-10, 10, 5))
+    @pytest.mark.parametrize("scale", [0.77, 1.0, 1.27])
+    @pytest.mark.parametrize("shear", range(-15, 15, 5))
+    def test_transformation_range(self, angle, translate, scale, shear, pil_image, input_img):
+        self._test_transformation(angle=angle, translate=(translate, translate), scale=scale,
+                                  shear=(shear, shear), pil_image=pil_image, input_img=input_img)
 
 
 def test_random_affine():
