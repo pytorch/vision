@@ -1790,14 +1790,14 @@ def test_linear_transformation():
     whitening.__repr__()
 
 
+@pytest.mark.parametrize(dtype, int_dtypes)
 def test_max_value():
-    for dtype in int_dtypes():
-        assert F_t._max_value(dtype) == torch.iinfo(dtype).max
 
-        # remove float testing as it can lead to errors such as
-        # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
-        # for dtype in float_dtypes():
-        #     self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
+    assert F_t._max_value(dtype) == torch.iinfo(dtype).max
+    # remove float testing as it can lead to errors such as
+    # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
+    # for dtype in float_dtypes():
+    # self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
 
 
 @pytest.mark.parametrize('should_vflip', [True, False])
@@ -1838,36 +1838,36 @@ def test_ten_crop(should_vflip, single_dim):
     assert results == expected_output
 
 
+@pytest.mark.parametrize('single_dim', [True, False])
 def test_five_crop():
     to_pil_image = transforms.ToPILImage()
     h = random.randint(5, 25)
     w = random.randint(5, 25)
-    for single_dim in [True, False]:
-        crop_h = random.randint(1, h)
-        crop_w = random.randint(1, w)
-        if single_dim:
-            crop_h = min(crop_h, crop_w)
-            crop_w = crop_h
-            transform = transforms.FiveCrop(crop_h)
-        else:
-            transform = transforms.FiveCrop((crop_h, crop_w))
+    crop_h = random.randint(1, h)
+    crop_w = random.randint(1, w)
+    if single_dim:
+        crop_h = min(crop_h, crop_w)
+        crop_w = crop_h
+        transform = transforms.FiveCrop(crop_h)
+    else:
+        transform = transforms.FiveCrop((crop_h, crop_w))
 
-        img = torch.FloatTensor(3, h, w).uniform_()
+    img = torch.FloatTensor(3, h, w).uniform_()
 
-        results = transform(to_pil_image(img))
+    results = transform(to_pil_image(img))
 
-        assert len(results) == 5
-        for crop in results:
-            assert crop.size == (crop_w, crop_h)
+    assert len(results) == 5
+    for crop in results:
+        assert crop.size == (crop_w, crop_h)
 
-        to_pil_image = transforms.ToPILImage()
-        tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
-        tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
-        bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
-        br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
-        center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
-        expected_output = (tl, tr, bl, br, center)
-        assert results == expected_output
+    to_pil_image = transforms.ToPILImage()
+    tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
+    tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
+    bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
+    br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
+    center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
+    expected_output = (tl, tr, bl, br, center)
+    assert results == expected_output
 
 
 @pytest.mark.parametrize('policy', transforms.AutoAugmentPolicy)
