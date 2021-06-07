@@ -43,4 +43,4 @@ conda activate "${env_dir}"
 
 # conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
 # conda env update --file "${this_dir}/environment.yml" --prune
-conda install pytest
+conda install -y pytest
