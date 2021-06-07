@@ -160,17 +160,16 @@ def box_rescale(boxes: Tensor, in_shape: Tuple[int, int], out_shape: Tuple[int, 
 
     Args:
         boxes: (Tensor[N, 4]): boxes to rescale, in ``(x1, y1, x2, y2)`` format.
-        in_shape: (Tuple[int, int]): actual shape of the image.
+        in_shape: (Tuple[int, int]): current shape of the image.
         out_shape: (Tuple[int, int]): desired shape of the image.
 
     Returns:
-        Tensor[N, 4]: reshaped boxes
+        Tensor[N, 4]: rescaled boxes
     """
-
-    scaled_boxes = boxes.new(boxes.shape)
-    scaled_boxes[:, 0::2] = boxes[:, 0::2] * (out_shape[1] / in_shape[1])
-    scaled_boxes[:, 1::2] = boxes[:, 1::2] * (out_shape[0] / in_shape[0])
-    return scaled_boxes
+    rescaled = boxes.new(boxes.shape)
+    rescaled[:, 0::2] = boxes[:, 0::2] * (out_shape[1] / in_shape[1])
+    rescaled[:, 1::2] = boxes[:, 1::2] * (out_shape[0] / in_shape[0])
+    return rescaled
 
 
 def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
