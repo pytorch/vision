@@ -981,49 +981,6 @@ jobs:
 
 
 workflows:
-  build:
-{%- if True %}
-    jobs:
-      - circleci_consistency
-      {{ build_workflows(windows_latest_only=True) }}
-      - python_lint
-      - python_type_check
-      - docstring_parameters_sync
-      - clang_format
-      - torchhub_test
-      - torch_onnx_test
-      {{ ios_workflows() }}
-      {{ android_workflows() }}
-
   unittest:
     jobs:
       {{ unittest_workflows() }}
-
-  cmake:
-    jobs:
-      {{ cmake_workflows() }}
-
-  nightly:
-{%- endif %}
-    jobs:
-      - circleci_consistency
-      - python_lint
-      - python_type_check
-      - docstring_parameters_sync
-      - clang_format
-      - torchhub_test
-      - torch_onnx_test
-      {{ ios_workflows(nightly=True) }}
-      {{ android_workflows(nightly=True) }}
-      {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
-  docker_build:
-    triggers:
-      - schedule:
-          cron: "0 10 * * 0"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - smoke_test_docker_image_build:
-          context: org-member
