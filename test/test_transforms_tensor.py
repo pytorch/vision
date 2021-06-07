@@ -96,20 +96,21 @@ def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_
 
 
 @pytest.mark.parametrize(
-    'func,method,device,fn_kwargs,match_kwargs',[
-        (F.hflip,T.RandomHorizontalFlip,cpu_only(),None, {}),
-        (F.vflip,T.RandomVerticalFlip,cpu_only(),None,{}),
-        (F.invert,T.RandomInvert,cpu_only(),None,{}),
-        (F.posterize,T.RandomPosterize,cpu_only(),{"bits":4},{}),
-        (F.solarize,T.RandomSolarize,cpu_only(),{"threshold":192.0},{}),
-        (F.adjust_sharpness,T.RandomAdjustSharpness,cpu_only(),{"sharpness_factor":2.0},{}),
-        (F.autocontrast,T.RandomAutocontrast,cpu_only(),None,{'test_exact_match':False,
-            'agg_method':'max', 'tol':(1 + 1e-5), 'allowed_percentage_diff':.05}),
-        (F.equalize,T.RandomEqualize,cpu_only(),None,{})
+    'func,method,device,fn_kwargs,match_kwargs', [
+        (F.hflip, T.RandomHorizontalFlip, cpu_only(), None, {}),
+        (F.vflip, T.RandomVerticalFlip, cpu_only(), None, {}),
+        (F.invert, T.RandomInvert, cpu_only(), None, {}),
+        (F.posterize, T.RandomPosterize, cpu_only(), {"bits": 4}, {}),
+        (F.solarize, T.RandomSolarize, cpu_only(), {"threshold": 192.0}, {}),
+        (F.adjust_sharpness, T.RandomAdjustSharpness, cpu_only(), {"sharpness_factor": 2.0}, {}),
+        (F.autocontrast, T.RandomAutocontrast, cpu_only(), None, {'test_exact_match': False,
+                                                                  'agg_method': 'max', 'tol': (1 + 1e-5),
+                                                                  'allowed_percentage_diff': .05}),
+        (F.equalize, T.RandomEqualize, cpu_only(), None, {})
     ]
 )
-def test_random(func,method,device,fn_kwargs,match_kwargs):
-    _test_op(func,method,device,fn_kwargs,fn_kwargs,**match_kwargs)
+def test_random(func, method, device, fn_kwargs, match_kwargs):
+    _test_op(func, method, device, fn_kwargs, fn_kwargs, **match_kwargs)
 
 
 class Tester(unittest.TestCase):
@@ -619,11 +620,11 @@ class Tester(unittest.TestCase):
 
 @pytest.mark.xfail()
 @pytest.mark.parametrize(
-    'in_dtype,out_dtype',[
-        int_dtypes()+float_dtypes(),int_dtypes()+float_dtypes()
+    'in_dtype,out_dtype', [
+        int_dtypes() + float_dtypes(), int_dtypes() + float_dtypes()
     ]
 )
-def test_convert_image_dtype(in_dtype,out_dtype):
+def test_convert_image_dtype(in_dtype, out_dtype):
     tensor, _ = _create_data(26, 34, device=cpu_only())
     batch_tensors = torch.rand(4, 3, 44, 56, device=cpu_only())
 
@@ -637,7 +638,7 @@ def test_convert_image_dtype(in_dtype,out_dtype):
             (in_dtype == torch.float64 and out_dtype == torch.int64):
         with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
             _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
-        with pytest.raises(RuntimeError,match= r"cannot be performed safely"):
+        with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
             _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
     _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
@@ -648,11 +649,11 @@ def test_convert_image_dtype(in_dtype,out_dtype):
 
 
 @pytest.mark.parametrize(
-    'policy,fill',[
-        (T.AutoAugmentPolicy(),[None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+    'policy,fill', [
+        (T.AutoAugmentPolicy(), [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
     ]
 )
-def test_autoaugment(policy,fill):
+def test_autoaugment(policy, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=cpu_only())
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=cpu_only())
 
@@ -669,7 +670,7 @@ def test_autoaugment(policy,fill):
 
 
 @pytest.mark.parametrize(
-    'config',[
+    'config', [
         ({"value": 0.2},),
         ({"value": "random"},),
         ({"value": (0.2, 0.2, 0.2)},),
@@ -693,7 +694,7 @@ def test_random_erasing_with_invalid_data():
     img = torch.rand(3, 60, 60)
     # Test Set 0: invalid value
     random_erasing = T.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
-    with pytest.raises(ValueError,match="If value is a sequence, it should have either a single value or 3"):
+    with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value or 3"):
         random_erasing(img)
 
 
