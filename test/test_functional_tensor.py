@@ -263,7 +263,6 @@ class TestRotate:
                 f"{ratio_diff_pixels}\n{out_tensor[0, :7, :7]} vs \n"
                 f"{out_pil_tensor[0, :7, :7]}")
 
-
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('dt', ALL_DTYPES)
     def test_rotate_batch(self, device, dt):
@@ -280,8 +279,7 @@ class TestRotate:
             batch_tensors, F.rotate, angle=32, interpolation=NEAREST, expand=True, center=center
         )
 
-
-    def test_rotate_deprecation(self):
+    def test_rotate_deprecation_resample(self):
         tensor, _ = _create_data(26, 26)
         # assert deprecation warning and non-BC
         with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
@@ -289,6 +287,8 @@ class TestRotate:
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
 
+    def test_rotate_interpolation_type(self):
+        tensor, _ = _create_data(26, 26)
         # assert changed type warning
         with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.rotate(tensor, 45, interpolation=2)
