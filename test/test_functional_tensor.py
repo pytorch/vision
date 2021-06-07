@@ -31,7 +31,7 @@ NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINE
 
 
 @needs_cuda
-def test_scale_channel(self):
+def test_scale_channel():
     """Make sure that _scale_channel gives the same results on CPU and GPU as
     histc or bincount are used depending on the device.
     """
