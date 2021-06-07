@@ -30,42 +30,6 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
-def _get_1_channel_tensor_various_types():
-    img_data_float = torch.Tensor(1, 4, 4).uniform_()
-    expected_output = img_data_float.mul(255).int().float().div(255).numpy()
-    yield img_data_float, expected_output, 'L'
-
-    img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
-    expected_output = img_data_byte.float().div(255.0).numpy()
-    yield img_data_byte, expected_output, 'L'
-
-    img_data_short = torch.ShortTensor(1, 4, 4).random_()
-    expected_output = img_data_short.numpy()
-    yield img_data_short, expected_output, 'I;16'
-
-    img_data_int = torch.IntTensor(1, 4, 4).random_()
-    expected_output = img_data_int.numpy()
-    yield img_data_int, expected_output, 'I'
-
-
-def _get_2d_tensor_various_types():
-    img_data_float = torch.Tensor(4, 4).uniform_()
-    expected_output = img_data_float.mul(255).int().float().div(255).numpy()
-    yield img_data_float, expected_output, 'L'
-
-    img_data_byte = torch.ByteTensor(4, 4).random_(0, 255)
-    expected_output = img_data_byte.float().div(255.0).numpy()
-    yield img_data_byte, expected_output, 'L'
-
-    img_data_short = torch.ShortTensor(4, 4).random_()
-    expected_output = img_data_short.numpy()
-    yield img_data_short, expected_output, 'I;16'
-
-    img_data_int = torch.IntTensor(4, 4).random_()
-    expected_output = img_data_int.numpy()
-    yield img_data_int, expected_output, 'I'
-
-
 class Tester(unittest.TestCase):
 
     def test_center_crop(self):
@@ -851,6 +815,40 @@ class TestToTensor:
 
 
 class TestToPILImage:
+
+    def _get_1_channel_tensor_various_types():
+        img_data_float = torch.Tensor(1, 4, 4).uniform_()
+        expected_output = img_data_float.mul(255).int().float().div(255).numpy()
+        yield img_data_float, expected_output, 'L'
+
+        img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
+        expected_output = img_data_byte.float().div(255.0).numpy()
+        yield img_data_byte, expected_output, 'L'
+
+        img_data_short = torch.ShortTensor(1, 4, 4).random_()
+        expected_output = img_data_short.numpy()
+        yield img_data_short, expected_output, 'I;16'
+
+        img_data_int = torch.IntTensor(1, 4, 4).random_()
+        expected_output = img_data_int.numpy()
+        yield img_data_int, expected_output, 'I'
+
+    def _get_2d_tensor_various_types():
+        img_data_float = torch.Tensor(4, 4).uniform_()
+        expected_output = img_data_float.mul(255).int().float().div(255).numpy()
+        yield img_data_float, expected_output, 'L'
+
+        img_data_byte = torch.ByteTensor(4, 4).random_(0, 255)
+        expected_output = img_data_byte.float().div(255.0).numpy()
+        yield img_data_byte, expected_output, 'L'
+
+        img_data_short = torch.ShortTensor(4, 4).random_()
+        expected_output = img_data_short.numpy()
+        yield img_data_short, expected_output, 'I;16'
+
+        img_data_int = torch.IntTensor(4, 4).random_()
+        expected_output = img_data_int.numpy()
+        yield img_data_int, expected_output, 'I'
 
     @pytest.mark.parametrize('with_mode', [False, True])
     @pytest.mark.parametrize('img_data, expected_output, expected_mode', _get_1_channel_tensor_various_types())
