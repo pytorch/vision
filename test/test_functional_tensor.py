@@ -249,14 +249,14 @@ class TestRotate:
                 out_tensor = out_tensor.to(torch.uint8)
 
             assert out_tensor.shape == out_pil_tensor.shape, (
-                f"{((width, height), NEAREST, dt, a, e, c)}: "
+                f"{(height, width, NEAREST, dt, a, e, c)}: "
                 f"{out_tensor.shape} vs {out_pil_tensor.shape}")
 
             num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
             ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
             # Tolerance : less than 3% of different pixels
             assert ratio_diff_pixels < 0.03, (
-                f"{((width, height), NEAREST, dt, a, e, c, f)}: "
+                f"{(height, width, NEAREST, dt, a, e, c, f)}: "
                 f"{ratio_diff_pixels}\n{out_tensor[0, :7, :7]} vs \n"
                 f"{out_pil_tensor[0, :7, :7]}")
 
@@ -471,7 +471,7 @@ class TestAffine:
         # Tolerance : less than 5% (cpu), 6% (cuda) of different pixels
         tol = 0.06 if device == "cuda" else 0.05
         assert ratio_diff_pixels < tol, "{}: {}\n{} vs \n{}".format(
-            (i, a, t, s, sh, f), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+            (NEAREST, a, t, s, sh, f), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
         )
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
