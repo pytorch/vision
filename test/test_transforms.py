@@ -1919,8 +1919,7 @@ def test_center_crop():
     assert sum2 > sum1
 
 
-@pytest.mark.parametrize('index', range(2))
-def test_center_crop_2(index):
+def test_center_crop_2():
     """ Tests when center crop size is larger than image size, along any dimension"""
     even_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
     odd_image_size = (even_image_size[0] + 1, even_image_size[1] + 1)
@@ -1957,10 +1956,11 @@ def test_center_crop_2(index):
         # Check if content in center of both image and cropped output is same.
         center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
         crop_center_tl, input_center_tl = [0, 0], [0, 0]
-        if crop_size[index] > input_image_size[index]:
-            crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
-        else:
-            input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
+        for index in range(2):
+            if crop_size[index] > input_image_size[index]:
+                crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
+            else:
+                input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
 
         output_center = output_pil[
             :,
