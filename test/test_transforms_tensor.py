@@ -599,11 +599,7 @@ def test_x_crop(func, method, out_length, fn_kwargs, device):
     assert len(transformed_t_list) == len(transformed_t_list_script)
     assert len(transformed_t_list_script) == out_length
     for transformed_tensor, transformed_tensor_script in zip(transformed_t_list, transformed_t_list_script):
-        assert_equal(
-            transformed_tensor,
-            transformed_tensor_script,
-            msg="{} vs {}".format(transformed_tensor, transformed_tensor_script),
-        )
+        assert_equal(transformed_tensor, transformed_tensor_script)
 
     # test for class interface
     fn = getattr(T, method)(**meth_kwargs)
@@ -621,11 +617,7 @@ def test_x_crop(func, method, out_length, fn_kwargs, device):
         torch.manual_seed(12)
         transformed_img_list = fn(img_tensor)
         for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
-            assert_equal(
-                transformed_img,
-                transformed_batch[i, ...],
-                msg="{} vs {}".format(transformed_img, transformed_batch[i, ...]),
-            )
+            assert_equal(transformed_img, transformed_batch[i, ...])
 
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
