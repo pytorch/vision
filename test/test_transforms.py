@@ -151,7 +151,10 @@ class Tester(unittest.TestCase):
                     self.assertEqual(actual_min, desired_min)
                     self.assertEqual(actual_max, desired_max)
 
-    @unittest.skipIf(accimage is None, 'accimage not available')
+
+@pytest.mark.skipif(accimage is None, reason="accimage not available")
+class TestAccImage:
+
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
 
@@ -160,17 +163,15 @@ class Tester(unittest.TestCase):
 
         torch.testing.assert_close(output, expected_output)
 
-    @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_pil_to_tensor(self):
         trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
 
-        self.assertEqual(expected_output.size(), output.size())
+        assert expected_output.size() == output.size()
         torch.testing.assert_close(output, expected_output, check_stride=False)
 
-    @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_resize(self):
         trans = transforms.Compose([
             transforms.Resize(256, interpolation=Image.LINEAR),
@@ -183,13 +184,12 @@ class Tester(unittest.TestCase):
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
 
-        self.assertEqual(expected_output.size(), output.size())
-        self.assertLess(np.abs((expected_output - output).mean()), 1e-3)
-        self.assertLess((expected_output - output).var(), 1e-5)
+        assert expected_output.size() == output.size()
+        assert np.abs((expected_output - output).mean()) < 1e-3
+        assert (expected_output - output).var() < 1e-5
         # note the high absolute tolerance
-        self.assertTrue(np.allclose(output.numpy(), expected_output.numpy(), atol=5e-2))
+        torch.testing.assert_close(output.numpy(), expected_output.numpy(), rtol=1e-5, atol=5e-2)
 
-    @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_crop(self):
         trans = transforms.Compose([
             transforms.CenterCrop(256),
@@ -202,175 +202,8 @@ class Tester(unittest.TestCase):
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
 
-        self.assertEqual(expected_output.size(), output.size())
+        assert expected_output.size() == output.size()
         torch.testing.assert_close(output, expected_output)
-
-    def test_affine(self):
-        input_img = np.zeros((40, 40, 3), dtype=np.uint8)
-        cnt = [20, 20]
-        for pt in [(16, 16), (20, 16), (20, 20)]:
-            for i in range(-5, 5):
-                for j in range(-5, 5):
-                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
-
-        with self.assertRaises(TypeError, msg="Argument translate should be a sequence"):
-            F.affine(input_img, 10, translate=0, scale=1, shear=1)
-
-        pil_img = F.to_pil_image(input_img)
-
-        def _to_3x3_inv(inv_result_matrix):
-            result_matrix = np.zeros((3, 3))
-            result_matrix[:2, :] = np.array(inv_result_matrix).reshape((2, 3))
-            result_matrix[2, 2] = 1
-            return np.linalg.inv(result_matrix)
-
-        def _test_transformation(a, t, s, sh):
-            a_rad = math.radians(a)
-            s_rad = [math.radians(sh_) for sh_ in sh]
-            cx, cy = cnt
-            tx, ty = t
-            sx, sy = s_rad
-            rot = a_rad
-
-            # 1) Check transformation matrix:
-            C = np.array([[1, 0, cx],
-                          [0, 1, cy],
-                          [0, 0, 1]])
-            T = np.array([[1, 0, tx],
-                          [0, 1, ty],
-                          [0, 0, 1]])
-            Cinv = np.linalg.inv(C)
-
-            RS = np.array(
-                [[s * math.cos(rot), -s * math.sin(rot), 0],
-                 [s * math.sin(rot), s * math.cos(rot), 0],
-                 [0, 0, 1]])
-
-            SHx = np.array([[1, -math.tan(sx), 0],
-                            [0, 1, 0],
-                            [0, 0, 1]])
-
-            SHy = np.array([[1, 0, 0],
-                            [-math.tan(sy), 1, 0],
-                            [0, 0, 1]])
-
-            RSS = np.matmul(RS, np.matmul(SHy, SHx))
-
-            true_matrix = np.matmul(T, np.matmul(C, np.matmul(RSS, Cinv)))
-
-            result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
-                                                                     translate=t, scale=s, shear=sh))
-            self.assertLess(np.sum(np.abs(true_matrix - result_matrix)), 1e-10)
-            # 2) Perform inverse mapping:
-            true_result = np.zeros((40, 40, 3), dtype=np.uint8)
-            inv_true_matrix = np.linalg.inv(true_matrix)
-            for y in range(true_result.shape[0]):
-                for x in range(true_result.shape[1]):
-                    # Same as for PIL:
-                    # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
-                    # src/libImaging/Geometry.c#L1060
-                    input_pt = np.array([x + 0.5, y + 0.5, 1.0])
-                    res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
-                    _x, _y = res[:2]
-                    if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
-                        true_result[y, x, :] = input_img[_y, _x, :]
-
-            result = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh)
-            self.assertEqual(result.size, pil_img.size)
-            # Compute number of different pixels:
-            np_result = np.array(result)
-            n_diff_pixels = np.sum(np_result != true_result) / 3
-            # Accept 3 wrong pixels
-            self.assertLess(n_diff_pixels, 3,
-                            "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +
-                            "n diff pixels={}\n".format(n_diff_pixels))
-
-        # Test rotation
-        a = 45
-        _test_transformation(a=a, t=(0, 0), s=1.0, sh=(0.0, 0.0))
-
-        # Test translation
-        t = [10, 15]
-        _test_transformation(a=0.0, t=t, s=1.0, sh=(0.0, 0.0))
-
-        # Test scale
-        s = 1.2
-        _test_transformation(a=0.0, t=(0.0, 0.0), s=s, sh=(0.0, 0.0))
-
-        # Test shear
-        sh = [45.0, 25.0]
-        _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
-
-        # Test rotation, scale, translation, shear
-        for a in range(-90, 90, 36):
-            for t1 in range(-10, 10, 5):
-                for s in [0.77, 1.0, 1.27]:
-                    for sh in range(-15, 15, 5):
-                        _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
-
-    def test_random_affine(self):
-
-        with self.assertRaises(ValueError):
-            transforms.RandomAffine(-0.7)
-            transforms.RandomAffine([-0.7])
-            transforms.RandomAffine([-0.7, 0, 0.7])
-
-            transforms.RandomAffine([-90, 90], translate=2.0)
-            transforms.RandomAffine([-90, 90], translate=[-1.0, 1.0])
-            transforms.RandomAffine([-90, 90], translate=[-1.0, 0.0, 1.0])
-
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.0])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[-1.0, 1.0])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, -0.5])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 3.0, -0.5])
-
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
-            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
-
-        # assert fill being either a Sequence or a Number
-        with self.assertRaises(TypeError):
-            transforms.RandomAffine(0, fill={})
-
-        t = transforms.RandomAffine(0, fill=None)
-        self.assertTrue(t.fill == 0)
-
-        x = np.zeros((100, 100, 3), dtype=np.uint8)
-        img = F.to_pil_image(x)
-
-        t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10, 20, 40])
-        for _ in range(100):
-            angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear,
-                                                             img_size=img.size)
-            self.assertTrue(-10 < angle < 10)
-            self.assertTrue(-img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5,
-                            "{} vs {}".format(translations[0], img.size[0] * 0.5))
-            self.assertTrue(-img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5,
-                            "{} vs {}".format(translations[1], img.size[1] * 0.5))
-            self.assertTrue(0.7 < scale < 1.3)
-            self.assertTrue(-10 < shear[0] < 10)
-            self.assertTrue(-20 < shear[1] < 40)
-
-        # Checking if RandomAffine can be printed as string
-        t.__repr__()
-
-        t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
-        self.assertIn("bilinear", t.__repr__())
-
-        # assert deprecation warning and non-BC
-        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
-            t = transforms.RandomAffine(10, resample=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
-
-        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
-            t = transforms.RandomAffine(10, fillcolor=10)
-            self.assertEqual(t.fill, 10)
-
-        # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
-            t = transforms.RandomAffine(10, interpolation=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
 
 @pytest.mark.parametrize('channels', [1, 3, 4])
@@ -2089,6 +1922,201 @@ def test_normalize_3d_tensor():
                           std_unsqueezed.repeat(1, img_size, img_size))
     torch.testing.assert_close(target, result1)
     torch.testing.assert_close(target, result2)
+
+
+class TestAffine:
+
+    @pytest.fixture(scope='class')
+    def input_img(self):
+        input_img = np.zeros((40, 40, 3), dtype=np.uint8)
+        for pt in [(16, 16), (20, 16), (20, 20)]:
+            for i in range(-5, 5):
+                for j in range(-5, 5):
+                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
+        return input_img
+
+    def test_affine_translate_seq(self, input_img):
+        with pytest.raises(TypeError, match=r"Argument translate should be a sequence"):
+            F.affine(input_img, 10, translate=0, scale=1, shear=1)
+
+    @pytest.fixture(scope='class')
+    def pil_image(self, input_img):
+        return F.to_pil_image(input_img)
+
+    def _to_3x3_inv(self, inv_result_matrix):
+        result_matrix = np.zeros((3, 3))
+        result_matrix[:2, :] = np.array(inv_result_matrix).reshape((2, 3))
+        result_matrix[2, 2] = 1
+        return np.linalg.inv(result_matrix)
+
+    def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img):
+
+        a_rad = math.radians(angle)
+        s_rad = [math.radians(sh_) for sh_ in shear]
+        cnt = [20, 20]
+        cx, cy = cnt
+        tx, ty = translate
+        sx, sy = s_rad
+        rot = a_rad
+
+        # 1) Check transformation matrix:
+        C = np.array([[1, 0, cx],
+                      [0, 1, cy],
+                      [0, 0, 1]])
+        T = np.array([[1, 0, tx],
+                      [0, 1, ty],
+                      [0, 0, 1]])
+        Cinv = np.linalg.inv(C)
+
+        RS = np.array(
+            [[scale * math.cos(rot), -scale * math.sin(rot), 0],
+             [scale * math.sin(rot), scale * math.cos(rot), 0],
+             [0, 0, 1]])
+
+        SHx = np.array([[1, -math.tan(sx), 0],
+                        [0, 1, 0],
+                        [0, 0, 1]])
+
+        SHy = np.array([[1, 0, 0],
+                        [-math.tan(sy), 1, 0],
+                        [0, 0, 1]])
+
+        RSS = np.matmul(RS, np.matmul(SHy, SHx))
+
+        true_matrix = np.matmul(T, np.matmul(C, np.matmul(RSS, Cinv)))
+
+        result_matrix = self._to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=angle,
+                                                                      translate=translate, scale=scale, shear=shear))
+        assert np.sum(np.abs(true_matrix - result_matrix)) < 1e-10
+        # 2) Perform inverse mapping:
+        true_result = np.zeros((40, 40, 3), dtype=np.uint8)
+        inv_true_matrix = np.linalg.inv(true_matrix)
+        for y in range(true_result.shape[0]):
+            for x in range(true_result.shape[1]):
+                # Same as for PIL:
+                # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
+                # src/libImaging/Geometry.c#L1060
+                input_pt = np.array([x + 0.5, y + 0.5, 1.0])
+                res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                _x, _y = res[:2]
+                if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
+                    true_result[y, x, :] = input_img[_y, _x, :]
+
+        result = F.affine(pil_image, angle=angle, translate=translate, scale=scale, shear=shear)
+        assert result.size == pil_image.size
+        # Compute number of different pixels:
+        np_result = np.array(result)
+        n_diff_pixels = np.sum(np_result != true_result) / 3
+        # Accept 3 wrong pixels
+        error_msg = ("angle={}, translate={}, scale={}, shear={}\n".format(angle, translate, scale, shear) +
+                     "n diff pixels={}\n".format(n_diff_pixels))
+        assert n_diff_pixels < 3, error_msg
+
+    def test_transformation_discrete(self, pil_image, input_img):
+        # Test rotation
+        angle = 45
+        self._test_transformation(angle=angle, translate=(0, 0), scale=1.0,
+                                  shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img)
+
+        # Test translation
+        translate = [10, 15]
+        self._test_transformation(angle=0.0, translate=translate, scale=1.0,
+                                  shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img)
+
+        # Test scale
+        scale = 1.2
+        self._test_transformation(angle=0.0, translate=(0.0, 0.0), scale=scale,
+                                  shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img)
+
+        # Test shear
+        shear = [45.0, 25.0]
+        self._test_transformation(angle=0.0, translate=(0.0, 0.0), scale=1.0,
+                                  shear=shear, pil_image=pil_image, input_img=input_img)
+
+    @pytest.mark.parametrize("angle", range(-90, 90, 36))
+    @pytest.mark.parametrize("translate", range(-10, 10, 5))
+    @pytest.mark.parametrize("scale", [0.77, 1.0, 1.27])
+    @pytest.mark.parametrize("shear", range(-15, 15, 5))
+    def test_transformation_range(self, angle, translate, scale, shear, pil_image, input_img):
+        self._test_transformation(angle=angle, translate=(translate, translate), scale=scale,
+                                  shear=(shear, shear), pil_image=pil_image, input_img=input_img)
+
+
+def test_random_affine():
+
+    with pytest.raises(ValueError):
+        transforms.RandomAffine(-0.7)
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-0.7])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-0.7, 0, 0.7])
+    with pytest.raises(TypeError):
+        transforms.RandomAffine([-90, 90], translate=2.0)
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[-1.0, 1.0])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[-1.0, 0.0, 1.0])
+
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.0])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[-1.0, 1.0])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, -0.5])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 3.0, -0.5])
+
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
+    with pytest.raises(ValueError):
+        transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
+
+    # assert fill being either a Sequence or a Number
+    with pytest.raises(TypeError):
+        transforms.RandomAffine(0, fill={})
+
+    t = transforms.RandomAffine(0, fill=None)
+    assert t.fill == 0
+
+    x = np.zeros((100, 100, 3), dtype=np.uint8)
+    img = F.to_pil_image(x)
+
+    t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10, 20, 40])
+    for _ in range(100):
+        angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear,
+                                                         img_size=img.size)
+        assert -10 < angle < 10
+        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5, ("{} vs {}"
+                                                                            .format(translations[0], img.size[0] * 0.5))
+        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, ("{} vs {}"
+                                                                            .format(translations[1], img.size[1] * 0.5))
+        assert 0.7 < scale < 1.3
+        assert -10 < shear[0] < 10
+        assert -20 < shear[1] < 40
+
+    # Checking if RandomAffine can be printed as string
+    t.__repr__()
+
+    t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
+    assert "bilinear" in t.__repr__()
+
+    # assert deprecation warning and non-BC
+    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        t = transforms.RandomAffine(10, resample=2)
+        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
+    with pytest.warns(UserWarning, match=r"Argument fillcolor is deprecated and will be removed"):
+        t = transforms.RandomAffine(10, fillcolor=10)
+        assert t.fill == 10
+
+    # assert changed type warning
+    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        t = transforms.RandomAffine(10, interpolation=2)
+        assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
 if __name__ == '__main__':
