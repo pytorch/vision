@@ -579,56 +579,50 @@ class Tester(unittest.TestCase):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('brightness', [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
-def test_color_jitter_brightness(brightness, device):
-    tol = 1.0 + 1e-10
-    meth_kwargs = {"brightness": brightness}
-    _test_class_op(
-        T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=tol, agg_method="max"
-    )
+class TestColorJitter:
 
+    @pytest.mark.parametrize('brightness', [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
+    def test_color_jitter_brightness(self, brightness, device):
+        tol = 1.0 + 1e-10
+        meth_kwargs = {"brightness": brightness}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
 
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('contrast', [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]])
-def test_color_jitter_contrast(contrast, device):
-    tol = 1.0 + 1e-10
-    meth_kwargs = {"contrast": contrast}
-    _test_class_op(
-        T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=tol, agg_method="max"
-    )
+    @pytest.mark.parametrize('contrast', [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]])
+    def test_color_jitter_contrast(self, contrast, device):
+        tol = 1.0 + 1e-10
+        meth_kwargs = {"contrast": contrast}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
 
+    @pytest.mark.parametrize('saturation', [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]])
+    def test_color_jitter_saturation(self, saturation, device):
+        tol = 1.0 + 1e-10
+        meth_kwargs = {"saturation": saturation}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
 
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('saturation', [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]])
-def test_color_jitter_saturation(saturation, device):
-    tol = 1.0 + 1e-10
-    meth_kwargs = {"saturation": saturation}
-    _test_class_op(
-        T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=tol, agg_method="max"
-    )
+    @pytest.mark.parametrize('hue', [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]])
+    def test_color_jitter_hue(self, hue, device):
+        meth_kwargs = {"hue": hue}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=16.1, agg_method="max"
+        )
 
-
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('hue', [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]])
-def test_color_jitter_hue(hue, device):
-    meth_kwargs = {"hue": hue}
-    _test_class_op(
-        T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=16.1, agg_method="max"
-    )
-
-
-@pytest.mark.parametrize('device', cpu_and_gpu())
-def test_color_jitter_all(device):
-    # All 4 parameters together
-    meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
-    _test_class_op(
-        T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=12.1, agg_method="max"
-    )
+    def test_color_jitter_all(self, device):
+        # All 4 parameters together
+        meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=12.1, agg_method="max"
+        )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
