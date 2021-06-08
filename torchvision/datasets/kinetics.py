@@ -64,7 +64,7 @@ class Kinetics(VisionDataset):
     Returns:
         tuple: A 3-tuple with the following entries:
 
-            - video (Tensor[T, H, W, C]): the `T` video frames in torch.uint8 tensor
+            - video (Tensor[T, C, H, W]): the `T` video frames in torch.uint8 tensor
             - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
               and `L` is the number of points in torch.float tensor
             - label (int): class of the video clip
@@ -103,7 +103,7 @@ class Kinetics(VisionDataset):
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
         _audio_channels: int = 0,
-        _use_legacy_structure: bool = False,
+        _legacy: bool = False,
     ) -> None:
 
         # TODO: support test
@@ -112,7 +112,8 @@ class Kinetics(VisionDataset):
         self.num_download_workers = num_download_workers
 
         self.root = root
-        if _use_legacy_structure:
+        self._legacy = _legacy
+        if _legacy:
             print("Using legacy structure")
             self.split_folder = root
             self.split = "unknown"
@@ -235,6 +236,9 @@ class Kinetics(VisionDataset):
 
     def __getitem__(self, idx):
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
+        if not self._legacy:
+            # [T,H,W,C] --> [T,C,H,W]
+            video = video.permute(0, 3, 1, 2)
         label = self.samples[video_idx][1]
 
         if self.transform is not None:
@@ -312,6 +316,6 @@ class Kinetics400(Kinetics):
         super(Kinetics400, self).__init__(
             root=root,
             frames_per_clip=frames_per_clip,
-            _use_legacy_structure=True,
+            _legacy=True,
             **kwargs,
         )
