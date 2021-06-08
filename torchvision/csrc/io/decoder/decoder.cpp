@@ -196,6 +196,8 @@ int64_t Decoder::seekCallback(int64_t offset, int whence) {
 void Decoder::initOnce() {
   static std::once_flag flagInit;
   std::call_once(flagInit, []() {
+    av_register_all();
+    avcodec_register_all();
     avformat_network_init();
     // register ffmpeg lock manager
     av_lockmgr_register(&ffmpeg_lock);
@@ -395,10 +397,10 @@ bool Decoder::init(
 }
 
 bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
-  for (int i = 0; i < static_cast<int>(inputCtx_->nb_streams); i++) {
+  for (int i = 0; i < inputCtx_->nb_streams; i++) {
     // - find the corespondent format at params_.formats set
     MediaFormat format;
-    const auto media = inputCtx_->streams[i]->codecpar->codec_type;
+    const auto media = inputCtx_->streams[i]->codec->codec_type;
     if (!mapFfmpegType(media, &format.type)) {
       VLOG(1) << "Stream media: " << media << " at index " << i
               << " gets ignored, unknown type";
