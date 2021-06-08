@@ -55,7 +55,7 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
 
     if not filter_branch:
         # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job(None)
+        w += build_doc_job('nightly')
         w += upload_doc_job('nightly')
     return indent(indentation, w)
 
@@ -87,7 +87,8 @@ def build_doc_job(filter_branch):
     }
 
     if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch)
+        job["filters"] = gen_filter_branch_tree(filter_branch,
+                                                tags_list=RC_PATTERN)
     return [{"build_docs": job}]
 
 
