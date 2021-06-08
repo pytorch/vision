@@ -53,8 +53,3 @@ if __name__ == "__main__":
     commit_hash = sys.argv[1]
     data = main(commit_hash)
     print(json.dumps(data))
-
-
-
-
-
