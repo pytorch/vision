@@ -7,9 +7,11 @@ from torchvision.transforms import InterpolationMode
 import numpy as np
 
 import unittest
+import pytest
 from typing import Sequence
 
 from common_utils import (
+    cpu_and_gpu,
     get_tmp_dir,
     int_dtypes,
     float_dtypes,
@@ -418,100 +420,6 @@ class Tester(unittest.TestCase):
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
-    def test_random_affine(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        def _test(**kwargs):
-            transform = T.RandomAffine(**kwargs)
-            s_transform = torch.jit.script(transform)
-
-            _test_transform_vs_scripted(transform, s_transform, tensor)
-            _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-            return s_transform
-
-        for interpolation in [NEAREST, BILINEAR]:
-            for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
-                _test(degrees=0.0, interpolation=interpolation, shear=shear)
-
-            for scale in [(0.7, 1.2), [0.7, 1.2]]:
-                _test(degrees=0.0, interpolation=interpolation, scale=scale)
-
-            for translate in [(0.1, 0.2), [0.2, 0.1]]:
-                _test(degrees=0.0, interpolation=interpolation, translate=translate)
-
-            for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
-                _test(degrees=degrees, interpolation=interpolation)
-
-            for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                _test(degrees=0.0, interpolation=interpolation, fill=fill)
-
-        s_transform = _test(degrees=0.0)
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
-
-    def test_random_rotate(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        for center in [(0, 0), [10, 10], None, (56, 44)]:
-            for expand in [True, False]:
-                for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
-                    for interpolation in [NEAREST, BILINEAR]:
-                        for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                            transform = T.RandomRotation(
-                                degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill
-                            )
-                            s_transform = torch.jit.script(transform)
-
-                            _test_transform_vs_scripted(transform, s_transform, tensor)
-                            _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
-
-    def test_random_perspective(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        for distortion_scale in np.linspace(0.1, 1.0, num=20):
-            for interpolation in [NEAREST, BILINEAR]:
-                for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                    transform = T.RandomPerspective(
-                        distortion_scale=distortion_scale,
-                        interpolation=interpolation,
-                        fill=fill
-                    )
-                    s_transform = torch.jit.script(transform)
-
-                    _test_transform_vs_scripted(transform, s_transform, tensor)
-                    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
-
-    def test_to_grayscale(self):
-
-        meth_kwargs = {"num_output_channels": 1}
-        tol = 1.0 + 1e-10
-        _test_class_op(
-            T.Grayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=tol, agg_method="max"
-        )
-
-        meth_kwargs = {"num_output_channels": 3}
-        _test_class_op(
-            T.Grayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=tol, agg_method="max"
-        )
-
-        meth_kwargs = {}
-        _test_class_op(
-            T.RandomGrayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=tol, agg_method="max"
-        )
-
     def test_normalize(self):
         fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         tensor, _ = _create_data(26, 34, device=self.device)
@@ -716,6 +624,123 @@ class CUDATester(Tester):
     def setUp(self):
         torch.set_deterministic(False)
         self.device = "cuda"
+
+
+def _test(device, **kwargs):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+    transform = T.RandomAffine(**kwargs)
+    s_transform = torch.jit.script(transform)
+
+    _test_transform_vs_scripted(transform, s_transform, tensor)
+    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+    return s_transform
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_random_affine(device):
+    s_transform = _test(device, degrees=0.0)
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('shear', [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]])
+def test_random_affine_shear(device, interpolation, shear):
+    _test(device, degrees=0.0, interpolation=interpolation, shear=shear)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
+def test_random_affine_scale(device, interpolation, scale):
+    _test(device, degrees=0.0, interpolation=interpolation, scale=scale)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('translate', [(0.1, 0.2), [0.2, 0.1]])
+def test_random_affine_translate(device, interpolation, translate):
+    _test(device, degrees=0.0, interpolation=interpolation, translate=translate)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('degrees', [45, 35.0, (-45, 45), [-90.0, 90.0]])
+def test_random_affine_degrees(device, interpolation, degrees):
+    _test(device, degrees=degrees, interpolation=interpolation)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_random_affine_fill(device, interpolation, fill):
+    _test(device, degrees=0.0, interpolation=interpolation, fill=fill)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('center', [(0, 0), [10, 10], None, (56, 44)])
+@pytest.mark.parametrize('expand', [True, False])
+@pytest.mark.parametrize('degrees', [45, 35.0, (-45, 45), [-90.0, 90.0]])
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_random_rotate(device, center, expand, degrees, interpolation, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.RandomRotation(
+        degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill
+    )
+    s_transform = torch.jit.script(transform)
+
+    _test_transform_vs_scripted(transform, s_transform, tensor)
+    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('distortion_scale', np.linspace(0.1, 1.0, num=20))
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_random_perspective(device, distortion_scale, interpolation, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.RandomPerspective(
+        distortion_scale=distortion_scale,
+        interpolation=interpolation,
+        fill=fill
+    )
+    s_transform = torch.jit.script(transform)
+
+    _test_transform_vs_scripted(transform, s_transform, tensor)
+    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('tol', [1.0 + 1e-10])
+@pytest.mark.parametrize('num_output_channels', [0, 1, 3])
+def test_to_grayscale(device, num_output_channels, tol):
+
+    if num_output_channels == 0:
+        meth_kwargs = {}
+        _test_class_op(
+            T.RandomGrayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
+    else:
+        meth_kwargs = {"num_output_channels": num_output_channels}
+        _test_class_op(
+            T.Grayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
 
 
 if __name__ == '__main__':
