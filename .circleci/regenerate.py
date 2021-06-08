@@ -45,8 +45,10 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                             (python_version != python_versions[-1] or
                              (cu_version not in [cu_versions[0], cu_versions[-1]])):
                             fb = "master"
-                        if not fb and (os_type == 'linux' and cu_version == 'cpu' and
-                            btype == 'wheel' and python_version =='3.7'):
+                        if not fb and (os_type == 'linux' and
+                                       cu_version == 'cpu' and
+                                       btype == 'wheel' and
+                                       python_version == '3.7'):
                             # this is for build_docs, the versions must match
                             fb = "master,nightly"
                         w += workflow_pair(
