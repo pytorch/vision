@@ -653,7 +653,7 @@ def test_convert_image_dtype(in_dtype, out_dtype):
 @cpu_only
 @pytest.mark.parametrize(
     'policy,fill', [
-        (T.AutoAugmentPolicy(), [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+        (T.AutoAugmentPolicy, [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
     ]
 )
 def test_autoaugment(policy, fill):
