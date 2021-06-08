@@ -28,6 +28,7 @@ IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
+
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
     tmp_dir = tempfile.mkdtemp(**kwargs)
@@ -258,11 +259,17 @@ def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
 def cpu_and_gpu():
     import pytest  # noqa
 
-    in_circleci_with_gpu = IN_CIRCLE_CI and torch.cuda.is_available()
     # ignore CPU tests in RE as they're already covered by another contbuild
     # also ignore CPU tests in CircleCI machines that have a GPU: these tests
     # are run on CPU-only machines already.
-    devices = [] if (IN_RE_WORKER or in_circleci_with_gpu) else ['cpu']
+    if IN_RE_WORKER:
+        devices = []
+    else:
+        if IN_CIRCLE_CI and torch.cuda.is_available():
+            mark = pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)
+        else:
+            mark = ()
+        devices = [pytest.param('cpu', marks=mark)]
 
     if torch.cuda.is_available():
         cuda_marks = ()
@@ -300,7 +307,7 @@ def cpu_only(test_func):
         # The assumption is that all RE workers have GPUs.
         return pytest.mark.dont_collect(test_func)
     elif IN_CIRCLE_CI and torch.cuda.is_available():
-        return pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)
+        return pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)(test_func)
     else:
         return test_func
 
