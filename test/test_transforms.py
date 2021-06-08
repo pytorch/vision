@@ -1878,7 +1878,7 @@ def test_autoaugment(policy, fill):
     transform = transforms.AutoAugment(policy=policy, fill=fill)
     for _ in range(100):
         img = transform(img)
-        transform.__repr__()
+    transform.__repr__()
 
 
 def test_center_crop():
@@ -1919,66 +1919,67 @@ def test_center_crop():
     assert sum2 > sum1
 
 
-def test_center_crop_2():
+delta = 1
+@pytest.mark.parametrize('odd_image_size', (True, False))
+@pytest.mark.parametrize('delta', (1, 3, 5))
+@pytest.mark.parametrize('delta_width', (-2, -1, 0, 1, 2))
+@pytest.mark.parametrize('delta_height', (-2, -1, 0, 1, 2))
+def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     """ Tests when center crop size is larger than image size, along any dimension"""
-    even_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
-    odd_image_size = (even_image_size[0] + 1, even_image_size[1] + 1)
 
     # Since height is independent of width, we can ignore images with odd height and even width and vice-versa.
-    input_image_sizes = [even_image_size, odd_image_size]
+    input_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
+    if odd_image_size:
+        input_image_size = (input_image_size[0] + 1, input_image_size[1] + 1)
+    
+    delta_height *= delta
+    delta_width *= delta
 
-    # Get different crop sizes
-    delta = random.choice((1, 3, 5))
-    crop_size_delta = [-2 * delta, -delta, 0, delta, 2 * delta]
-    crop_size_params = itertools.product(input_image_sizes, crop_size_delta, crop_size_delta)
-
-    for (input_image_size, delta_height, delta_width) in crop_size_params:
-        img = torch.ones(3, *input_image_size)
-        crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
+    img = torch.ones(3, *input_image_size)
+    crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
 
     # Test both transforms, one with PIL input and one with tensor
-        output_pil = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop(crop_size),
-            transforms.ToTensor()],
-        )(img)
-        assert output_pil.size()[1:3] == crop_size
+    output_pil = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.CenterCrop(crop_size),
+        transforms.ToTensor()],
+    )(img)
+    assert output_pil.size()[1:3] == crop_size
 
-        output_tensor = transforms.CenterCrop(crop_size)(img)
-        assert output_tensor.size()[1:3] == crop_size
+    output_tensor = transforms.CenterCrop(crop_size)(img)
+    assert output_tensor.size()[1:3] == crop_size
 
-        # Ensure output for PIL and Tensor are equal
-        assert_equal(
-            output_tensor, output_pil, check_stride=False,
-            msg="image_size: {} crop_size: {}".format(input_image_size, crop_size)
-        )
+    # Ensure output for PIL and Tensor are equal
+    assert_equal(
+        output_tensor, output_pil, check_stride=False,
+        msg="image_size: {} crop_size: {}".format(input_image_size, crop_size)
+    )
 
-        # Check if content in center of both image and cropped output is same.
-        center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
-        crop_center_tl, input_center_tl = [0, 0], [0, 0]
-        for index in range(2):
-            if crop_size[index] > input_image_size[index]:
-                crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
-            else:
-                input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
+    # Check if content in center of both image and cropped output is same.
+    center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
+    crop_center_tl, input_center_tl = [0, 0], [0, 0]
+    for index in range(2):
+        if crop_size[index] > input_image_size[index]:
+            crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
+        else:
+            input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
 
-        output_center = output_pil[
-            :,
-            crop_center_tl[0]:crop_center_tl[0] + center_size[0],
-            crop_center_tl[1]:crop_center_tl[1] + center_size[1]
-        ]
+    output_center = output_pil[
+        :,
+        crop_center_tl[0]:crop_center_tl[0] + center_size[0],
+        crop_center_tl[1]:crop_center_tl[1] + center_size[1]
+    ]
 
-        img_center = img[
-            :,
-            input_center_tl[0]:input_center_tl[0] + center_size[0],
-            input_center_tl[1]:input_center_tl[1] + center_size[1]
-        ]
+    img_center = img[
+        :,
+        input_center_tl[0]:input_center_tl[0] + center_size[0],
+        input_center_tl[1]:input_center_tl[1] + center_size[1]
+    ]
 
-        assert_equal(output_center, img_center, check_stride=False)
+    assert_equal(output_center, img_center, check_stride=False)
 
 
-@pytest.mark.parametrize('i', range(10))
-def test_color_jitter(i):
+def test_color_jitter():
     color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
 
     x_shape = [2, 2, 3]
@@ -1987,11 +1988,12 @@ def test_color_jitter(i):
     x_pil = Image.fromarray(x_np, mode='RGB')
     x_pil_2 = x_pil.convert('L')
 
-    y_pil = color_jitter(x_pil)
-    assert y_pil.mode == x_pil.mode
+    for _ in range(10):
+        y_pil = color_jitter(x_pil)
+        assert y_pil.mode == x_pil.mode
 
-    y_pil_2 = color_jitter(x_pil_2)
-    assert y_pil_2.mode == x_pil_2.mode
+        y_pil_2 = color_jitter(x_pil_2)
+        assert y_pil_2.mode == x_pil_2.mode
 
     # Checking if ColorJitter can be printed as string
     color_jitter.__repr__()
