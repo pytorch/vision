@@ -595,7 +595,7 @@ class TestAccImage:
         assert np.abs((expected_output - output).mean()) < 1e-3
         assert (expected_output - output).var() < 1e-5
         # note the high absolute tolerance
-        self.assertTrue(np.allclose(output.numpy(), expected_output.numpy(), atol=5e-2))
+        torch.testing.assert_close(output.numpy(), expected_output.numpy(), rtol=1e-5, atol=5e-2)
 
     def test_accimage_crop(self):
         trans = transforms.Compose([
