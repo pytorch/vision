@@ -1778,7 +1778,7 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     input_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
     if odd_image_size:
         input_image_size = (input_image_size[0] + 1, input_image_size[1] + 1)
-    
+
     delta_height *= delta
     delta_width *= delta
 
