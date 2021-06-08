@@ -7,13 +7,13 @@ namespace ffmpeg {
 
 namespace {
 bool operator==(const AudioFormat& x, const AVFrame& y) {
-  return static_cast<int>(x.samples) == y.sample_rate &&
-      static_cast<int>(x.channels) == y.channels && x.format == y.format;
+  return x.samples == y.sample_rate && x.channels == y.channels &&
+      x.format == y.format;
 }
 
 bool operator==(const AudioFormat& x, const AVCodecContext& y) {
-  return static_cast<int>(x.samples) == y.sample_rate &&
-      static_cast<int>(x.channels) == y.channels && x.format == y.sample_fmt;
+  return x.samples == y.sample_rate && x.channels == y.channels &&
+      x.format == y.sample_fmt;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVFrame& y) {
