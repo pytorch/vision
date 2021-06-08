@@ -1688,37 +1688,45 @@ def test_random_crop():
     width = random.randint(10, 32) * 2
     oheight = random.randint(5, (height - 2) / 2) * 2
     owidth = random.randint(5, (width - 2) / 2) * 2
-
     img = torch.ones(3, height, width)
-    oh1 = (height - oheight) // 2
-    ow1 = (width - owidth) // 2
-    imgnarrow = img[:, oh1:oh1 + oheight, ow1:ow1 + owidth]
-    imgnarrow.fill_(0)
     result = transforms.Compose([
         transforms.ToPILImage(),
-        transforms.CenterCrop((oheight, owidth)),
+        transforms.RandomCrop((oheight, owidth)),
         transforms.ToTensor(),
     ])(img)
-    assert result.sum() == 0
-    oheight += 1
-    owidth += 1
+    assert result.size(1) == oheight
+    assert result.size(2) == owidth
+
+    padding = random.randint(1, 20)
     result = transforms.Compose([
         transforms.ToPILImage(),
-        transforms.CenterCrop((oheight, owidth)),
+        transforms.RandomCrop((oheight, owidth), padding=padding),
         transforms.ToTensor(),
     ])(img)
-    sum1 = result.sum()
-    assert sum1 > 1
-    oheight += 1
-    owidth += 1
+    assert result.size(1) == oheight
+    assert result.size(2) == owidth
+
     result = transforms.Compose([
         transforms.ToPILImage(),
-        transforms.CenterCrop((oheight, owidth)),
+        transforms.RandomCrop((height, width)),
+        transforms.ToTensor()
+    ])(img)
+    assert result.size(1) == height
+    assert result.size(2) == width
+    torch.testing.assert_close(result, img)
+
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomCrop((height + 1, width + 1), pad_if_needed=True),
         transforms.ToTensor(),
     ])(img)
-    sum2 = result.sum()
-    assert sum2 > 0
-    assert sum2 > sum1
+    assert result.size(1) == height + 1
+    assert result.size(2) == width + 1
+
+    t = transforms.RandomCrop(48)
+    img = torch.ones(3, 32, 32)
+    with pytest.raises(ValueError, match=r"Required crop size .+ is larger then input image size .+"):
+        t(img)
 
 
 @pytest.mark.parametrize('odd_image_size', (True, False))
