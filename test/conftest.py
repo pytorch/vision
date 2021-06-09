@@ -44,7 +44,7 @@ def pytest_collection_modifyitems(items):
                 # Similar to what happens in RE workers: we don't need the CircleCI GPU machines
                 # to run the CPU-only tests. Here we're not in fbcode, so we can safely skip the test.
                 item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
-            
+
         out_items.append(item)
 
     return out_items
