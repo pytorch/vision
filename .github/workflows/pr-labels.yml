@@ -21,16 +21,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Process PR associated with current commit
+      - name: Process PR
         id: data
         run: |
           DATA=$(python .github/process_pr.py ${{ github.sha }})
           jq . <<< $DATA
+          echo "::set-output name=has_associated_pr::$(jq .has_associated_pr <<< $DATA)"
           echo "::set-output name=is_properly_labeled::$(jq .is_properly_labeled <<< $DATA)"
           echo "::set-output name=responsible_users::$(jq .responsible_users <<< $DATA)"
 
       - name: Ping responsible users
-        if: ${{ !steps.data.outputs.is_properly_labeled }}
+        if: ${{ !(steps.data.outputs.has_associated_pr && steps.data.outputs.is_properly_labeled) }}
         uses: mshick/add-pr-comment@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

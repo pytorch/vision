@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Any, Dict, Set, Tuple
+from typing import Any, Dict, Iterable, Optional, Set, Tuple
 
 import requests
 
@@ -35,16 +35,16 @@ REQUIRED_LABELS = {
 
 def main(commit_hash: str) -> Dict[str, Any]:
     pr_number = get_pr_number(commit_hash)
+    if pr_number is None:
+        return _to_json(has_associated_pr=False)
+
     merger, labels = get_pr_merger_and_labels(pr_number)
     is_properly_labeled = bool(REQUIRED_LABELS.intersection(labels))
     if not is_properly_labeled:
-        users = {merger, *get_pr_reviewers(pr_number)}
-    else:
-        users = ()
-    return dict(
-        is_properly_labeled=is_properly_labeled,
-        responsible_users=", ".join(sorted([f"@{user}" for user in users])),
-    )
+        return _to_json(has_associated_pr=True, is_properly_labeled=False)
+
+    users = {merger, *get_pr_reviewers(pr_number)}
+    return _to_json(has_associated_pr=True, is_properly_labeled=True, users=users)
 
 
 def _query_torchvision(cmd: str, *, accept) -> Any:
@@ -52,9 +52,24 @@ def _query_torchvision(cmd: str, *, accept) -> Any:
     return response.json()
 
 
-def get_pr_number(commit_hash: str) -> int:
+def _to_json(
+    *,
+    has_associated_pr: bool = False,
+    is_properly_labeled: bool = False,
+    users: Iterable[str] = (),
+) -> Dict[str, Any]:
+    return dict(
+        has_associated_pr=has_associated_pr,
+        is_properly_labeled=is_properly_labeled,
+        responsible_users=", ".join(sorted([f"@{user}" for user in users])),
+    )
+
+
+def get_pr_number(commit_hash: str) -> Optional[int]:
     # See https://docs.github.com/en/rest/reference/repos#list-pull-requests-associated-with-a-commit
     data = _query_torchvision(f"commits/{commit_hash}/pulls", accept="application/vnd.github.groot-preview+json")
+    if not data:
+        return None
     return data[0]["number"]
 
 
