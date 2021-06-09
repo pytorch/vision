@@ -435,6 +435,7 @@ class Tester(unittest.TestCase):
                 s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
+@pytest.mark.parametrize('device', cpu_and_gpu())
 class TestColorJitter:
 
     @pytest.mark.parametrize('brightness', [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
@@ -671,6 +672,11 @@ def test_resize(dt, size, max_size, interpolation, device):
     if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
         pass  # Not supported
     else:
+        if isinstance(size, int):
+            script_size = [size, ]
+        else:
+            script_size = size
+
         transform = T.Resize(size=script_size, interpolation=interpolation, max_size=max_size)
         s_transform = torch.jit.script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
