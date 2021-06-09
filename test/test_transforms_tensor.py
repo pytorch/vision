@@ -676,11 +676,6 @@ def test_resize_scripted(dt, size, max_size, interpolation, device):
     if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
         pytest.xfail()
     else:
-        if isinstance(size, int):
-            script_size = [size, ]
-        else:
-            script_size = size
-
         transform = T.Resize(size=script_size, interpolation=interpolation, max_size=max_size)
         s_transform = torch.jit.script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
