@@ -646,23 +646,27 @@ def test_x_crop_save(method):
         scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
 
 
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64])
-@pytest.mark.parametrize('size', [32, 34, [32, ], [32, 32], (32, 32), [34, 35]])
-@pytest.mark.parametrize('max_size', [None, 35, 1000])
-@pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC, NEAREST])
-def test_resize(dt, size, max_size, interpolation, device):
 
+@cpu_only
+@pytest.mark.parametrize('size', [32, 34, 35, 36, 38])
+def test_resize_int(size):
     # TODO: Minimal check for bug-fix, improve this later
     x = torch.rand(3, 32, 46)
-    t = T.Resize(size=38)
+    t = T.Resize(size=size)
     y = t(x)
     # If size is an int, smaller edge of the image will be matched to this number.
     # i.e, if height > width, then image will be rescaled to (size * height / width, size).
     assert isinstance(y, torch.Tensor)
-    assert y.shape[1] == 38
-    assert y.shape[2] == int(38 * 46 / 32)
+    assert y.shape[1] == size
+    assert y.shape[2] == int(size * 46 / 32)
 
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64])
+@pytest.mark.parametrize('size', [[32, ], [32, 32], (32, 32), [34, 35]])
+@pytest.mark.parametrize('max_size', [None, 35, 1000])
+@pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC, NEAREST])
+def test_resize_scripted(dt, size, max_size, interpolation, device):
     tensor, _ = _create_data(height=34, width=36, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
