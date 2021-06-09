@@ -18,7 +18,8 @@ from common_utils import (
     _create_data_batch,
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
-    cpu_and_gpu
+    cpu_and_gpu,
+    cpu_only
 )
 from _assert_utils import assert_equal
 
@@ -619,6 +620,12 @@ def test_x_crop(func, method, out_length, fn_kwargs, device):
         for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
             assert_equal(transformed_img, transformed_batch[i, ...])
 
+
+@cpu_only
+@pytest.mark.parametrize('method', ["FiveCrop", "TenCrop"])
+def test_x_crop_save(method):
+    fn = getattr(T, method)(size=[5, ])
+    scripted_fn = torch.jit.script(fn)
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
 
@@ -659,8 +666,13 @@ def test_resize(dt, size, max_size, interpolation, device):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
+
+@cpu_only
+def test_resize_save():
+    transform = T.Resize(size=[32, ])
+    s_transform = torch.jit.script(transform)
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -671,14 +683,16 @@ def test_resize(dt, size, max_size, interpolation, device):
 def test_resized_crop(scale, ratio, size, interpolation, device):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
-
-    transform = T.RandomResizedCrop(
-        size=size, scale=scale, ratio=ratio, interpolation=interpolation
-    )
+    transform = T.RandomResizedCrop(size=size, scale=scale, ratio=ratio, interpolation=interpolation)
     s_transform = torch.jit.script(transform)
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+
+@cpu_only
+def test_resized_crop_save():
+    transform = T.RandomResizedCrop(size=[32, ])
+    s_transform = torch.jit.script(transform)
     with get_tmp_dir() as tmp_dir:
         s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
