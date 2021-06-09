@@ -11,7 +11,6 @@ import pytest
 from typing import Sequence
 
 from common_utils import (
-    cpu_and_gpu,
     get_tmp_dir,
     int_dtypes,
     float_dtypes,
@@ -19,7 +18,7 @@ from common_utils import (
     _create_data_batch,
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
-    cpu_and_gpu
+    cpu_and_gpu,
 )
 from _assert_utils import assert_equal
 
