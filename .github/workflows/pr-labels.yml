@@ -36,4 +36,4 @@ jobs:
           message: |
             Hey ${{ steps.data.outputs.responsible_users }}!
 
-            You reviewed or merged this PR, but no labels were added.
+            You approved or merged this PR, but no labels were added.

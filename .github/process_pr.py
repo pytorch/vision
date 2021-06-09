@@ -6,7 +6,30 @@ import requests
 
 # If the PR has any of these labels, we mark it as properly labeled.
 REQUIRED_LABELS = {
-    "TODO",
+    "new feature",
+    "bug",
+    "code quality",
+    "enhancement",
+    "bc-breaking",
+    "dependency issue",
+    "deprecation",
+    "module: c++ frontend",
+    "module: ci",
+    "module: datasets",
+    "module: documentation",
+    "module: io",
+    "module: models.quantization",
+    "module: models",
+    "module: onnx",
+    "module: ops",
+    "module: reference scripts",
+    "module: rocm",
+    "module: tests",
+    "module: transforms",
+    "module: utils",
+    "module: video",
+    "Perf",
+    "Revert(ed)",
 }
 
 
