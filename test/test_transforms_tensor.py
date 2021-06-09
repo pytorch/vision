@@ -142,133 +142,6 @@ class Tester(unittest.TestCase):
     def test_random_equalize(self):
         _test_op(F.equalize, T.RandomEqualize, device=self.device)
 
-    def test_normalize(self):
-        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        tensor, _ = _create_data(26, 34, device=self.device)
-
-        with self.assertRaisesRegex(TypeError, r"Input tensor should be a float tensor"):
-            fn(tensor)
-
-        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
-        tensor = tensor.to(dtype=torch.float32) / 255.0
-        # test for class interface
-        scripted_fn = torch.jit.script(fn)
-
-        _test_transform_vs_scripted(fn, scripted_fn, tensor)
-        _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
-            scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
-
-    def test_linear_transformation(self):
-        c, h, w = 3, 24, 32
-
-        tensor, _ = _create_data(h, w, channels=c, device=self.device)
-
-        matrix = torch.rand(c * h * w, c * h * w, device=self.device)
-        mean_vector = torch.rand(c * h * w, device=self.device)
-
-        fn = T.LinearTransformation(matrix, mean_vector)
-        scripted_fn = torch.jit.script(fn)
-
-        _test_transform_vs_scripted(fn, scripted_fn, tensor)
-
-        batch_tensors = torch.rand(4, c, h, w, device=self.device)
-        # We skip some tests from _test_transform_vs_scripted_on_batch as
-        # results for scripted and non-scripted transformations are not exactly the same
-        torch.manual_seed(12)
-        transformed_batch = fn(batch_tensors)
-        torch.manual_seed(12)
-        s_transformed_batch = scripted_fn(batch_tensors)
-        assert_equal(transformed_batch, s_transformed_batch)
-
-        with get_tmp_dir() as tmp_dir:
-            scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
-
-    def test_compose(self):
-        tensor, _ = _create_data(26, 34, device=self.device)
-        tensor = tensor.to(dtype=torch.float32) / 255.0
-
-        transforms = T.Compose([
-            T.CenterCrop(10),
-            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
-        s_transforms = torch.nn.Sequential(*transforms.transforms)
-
-        scripted_fn = torch.jit.script(s_transforms)
-        torch.manual_seed(12)
-        transformed_tensor = transforms(tensor)
-        torch.manual_seed(12)
-        transformed_tensor_script = scripted_fn(tensor)
-        assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
-
-        t = T.Compose([
-            lambda x: x,
-        ])
-        with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
-            torch.jit.script(t)
-
-    def test_random_apply(self):
-        tensor, _ = _create_data(26, 34, device=self.device)
-        tensor = tensor.to(dtype=torch.float32) / 255.0
-
-        transforms = T.RandomApply([
-            T.RandomHorizontalFlip(),
-            T.ColorJitter(),
-        ], p=0.4)
-        s_transforms = T.RandomApply(torch.nn.ModuleList([
-            T.RandomHorizontalFlip(),
-            T.ColorJitter(),
-        ]), p=0.4)
-
-        scripted_fn = torch.jit.script(s_transforms)
-        torch.manual_seed(12)
-        transformed_tensor = transforms(tensor)
-        torch.manual_seed(12)
-        transformed_tensor_script = scripted_fn(tensor)
-        assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
-
-        if torch.device(self.device).type == "cpu":
-            # Can't check this twice, otherwise
-            # "Can't redefine method: forward on class: __torch__.torchvision.transforms.transforms.RandomApply"
-            transforms = T.RandomApply([
-                T.ColorJitter(),
-            ], p=0.3)
-            with self.assertRaisesRegex(RuntimeError, r"Module 'RandomApply' has no attribute 'transforms'"):
-                torch.jit.script(transforms)
-
-    def test_gaussian_blur(self):
-        tol = 1.0 + 1e-10
-        _test_class_op(
-            T.GaussianBlur, meth_kwargs={"kernel_size": 3, "sigma": 0.75},
-            test_exact_match=False, device=self.device, agg_method="max", tol=tol
-        )
-
-        _test_class_op(
-            T.GaussianBlur, meth_kwargs={"kernel_size": 23, "sigma": [0.1, 2.0]},
-            test_exact_match=False, device=self.device, agg_method="max", tol=tol
-        )
-
-        _test_class_op(
-            T.GaussianBlur, meth_kwargs={"kernel_size": 23, "sigma": (0.1, 2.0)},
-            test_exact_match=False, device=self.device, agg_method="max", tol=tol
-        )
-
-        _test_class_op(
-            T.GaussianBlur, meth_kwargs={"kernel_size": [3, 3], "sigma": (1.0, 1.0)},
-            test_exact_match=False, device=self.device, agg_method="max", tol=tol
-        )
-
-        _test_class_op(
-            T.GaussianBlur, meth_kwargs={"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
-            test_exact_match=False, device=self.device, agg_method="max", tol=tol
-        )
-
-        _test_class_op(
-            T.GaussianBlur, meth_kwargs={"kernel_size": [23], "sigma": 0.75},
-            test_exact_match=False, device=self.device, agg_method="max", tol=tol
-        )
-
     def test_random_erasing(self):
         img = torch.rand(3, 60, 60)
 
@@ -727,6 +600,126 @@ def test_to_grayscale(device, Klass, meth_kwargs):
     _test_class_op(
         Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
         tol=tol, agg_method="max"
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_normalize(device):
+    fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    tensor, _ = _create_data(26, 34, device=device)
+
+    with pytest.raises(TypeError, match="Input tensor should be a float tensor"):
+        fn(tensor)
+
+    batch_tensors = torch.rand(4, 3, 44, 56, device=device)
+    tensor = tensor.to(dtype=torch.float32) / 255.0
+    # test for class interface
+    scripted_fn = torch.jit.script(fn)
+
+    _test_transform_vs_scripted(fn, scripted_fn, tensor)
+    _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_linear_transformation(device):
+    c, h, w = 3, 24, 32
+
+    tensor, _ = _create_data(h, w, channels=c, device=device)
+
+    matrix = torch.rand(c * h * w, c * h * w, device=device)
+    mean_vector = torch.rand(c * h * w, device=device)
+
+    fn = T.LinearTransformation(matrix, mean_vector)
+    scripted_fn = torch.jit.script(fn)
+
+    _test_transform_vs_scripted(fn, scripted_fn, tensor)
+
+    batch_tensors = torch.rand(4, c, h, w, device=device)
+    # We skip some tests from _test_transform_vs_scripted_on_batch as
+    # results for scripted and non-scripted transformations are not exactly the same
+    torch.manual_seed(12)
+    transformed_batch = fn(batch_tensors)
+    torch.manual_seed(12)
+    s_transformed_batch = scripted_fn(batch_tensors)
+    assert_equal(transformed_batch, s_transformed_batch)
+
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_compose(device):
+    tensor, _ = _create_data(26, 34, device=device)
+    tensor = tensor.to(dtype=torch.float32) / 255.0
+
+    transforms = T.Compose([
+        T.CenterCrop(10),
+        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
+    s_transforms = torch.nn.Sequential(*transforms.transforms)
+
+    scripted_fn = torch.jit.script(s_transforms)
+    torch.manual_seed(12)
+    transformed_tensor = transforms(tensor)
+    torch.manual_seed(12)
+    transformed_tensor_script = scripted_fn(tensor)
+    assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+
+    t = T.Compose([
+        lambda x: x,
+    ])
+    with pytest.raises(RuntimeError, match="Could not get name of python class object"):
+        torch.jit.script(t)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_random_apply(device):
+    tensor, _ = _create_data(26, 34, device=device)
+    tensor = tensor.to(dtype=torch.float32) / 255.0
+
+    transforms = T.RandomApply([
+        T.RandomHorizontalFlip(),
+        T.ColorJitter(),
+    ], p=0.4)
+    s_transforms = T.RandomApply(torch.nn.ModuleList([
+        T.RandomHorizontalFlip(),
+        T.ColorJitter(),
+    ]), p=0.4)
+
+    scripted_fn = torch.jit.script(s_transforms)
+    torch.manual_seed(12)
+    transformed_tensor = transforms(tensor)
+    torch.manual_seed(12)
+    transformed_tensor_script = scripted_fn(tensor)
+    assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+
+    if device == "cpu":
+        # Can't check this twice, otherwise
+        # "Can't redefine method: forward on class: __torch__.torchvision.transforms.transforms.RandomApply"
+        transforms = T.RandomApply([
+            T.ColorJitter(),
+        ], p=0.3)
+        with pytest.raises(RuntimeError, match="Module 'RandomApply' has no attribute 'transforms'"):
+            torch.jit.script(transforms)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('meth_kwargs', [
+    {"kernel_size": 3, "sigma": 0.75},
+    {"kernel_size": 23, "sigma": [0.1, 2.0]},
+    {"kernel_size": 23, "sigma": (0.1, 2.0)},
+    {"kernel_size": [3, 3], "sigma": (1.0, 1.0)},
+    {"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
+    {"kernel_size": [23], "sigma": 0.75}
+])
+def test_gaussian_blur(device, meth_kwargs):
+    tol = 1.0 + 1e-10
+    _test_class_op(
+        T.GaussianBlur, meth_kwargs=meth_kwargs,
+        test_exact_match=False, device=device, agg_method="max", tol=tol
     )
 
 
