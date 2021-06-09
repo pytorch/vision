@@ -31,7 +31,7 @@ jobs:
           echo "::set-output name=responsible_users::$(jq .responsible_users <<< $DATA)"
 
       - name: Ping responsible users
-        if: ${{ !(steps.data.outputs.has_associated_pr && steps.data.outputs.is_properly_labeled) }}
+        if: ${{ steps.data.outputs.responsible_users != '' }}
         uses: mshick/add-pr-comment@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
