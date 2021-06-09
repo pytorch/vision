@@ -22,7 +22,7 @@ jobs:
       - name: Process PR associated with current commit
         id: data
         run: |
-          DATA=$(python .github/foo.py ${{ github.sha }})
+          DATA=$(python .github/process_pr.py ${{ github.sha }})
           jq . <<< $DATA
           echo "::set-output name=is_properly_labeled::$(jq .is_properly_labeled <<< $DATA)"
           echo "::set-output name=responsible_users::$(jq .responsible_users <<< $DATA)"
