@@ -40,11 +40,11 @@ def main(commit_hash: str) -> Dict[str, Any]:
 
     merger, labels = get_pr_merger_and_labels(pr_number)
     is_properly_labeled = bool(REQUIRED_LABELS.intersection(labels))
-    if not is_properly_labeled:
-        return _to_json(has_associated_pr=True, is_properly_labeled=False)
+    if is_properly_labeled:
+        return _to_json(has_associated_pr=True, is_properly_labeled=True)
 
     users = {merger, *get_pr_reviewers(pr_number)}
-    return _to_json(has_associated_pr=True, is_properly_labeled=True, users=users)
+    return _to_json(has_associated_pr=True, is_properly_labeled=False, users=users)
 
 
 def _query_torchvision(cmd: str, *, accept) -> Any:
