@@ -7,6 +7,7 @@ from torchvision.transforms import InterpolationMode
 import numpy as np
 
 import unittest
+import pytest
 from typing import Sequence
 
 from common_utils import (
@@ -17,6 +18,7 @@ from common_utils import (
     _create_data_batch,
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
+    cpu_and_gpu,
 )
 from _assert_utils import assert_equal
 
@@ -139,140 +141,6 @@ class Tester(unittest.TestCase):
 
     def test_random_equalize(self):
         _test_op(F.equalize, T.RandomEqualize, device=self.device)
-
-    def test_color_jitter(self):
-
-        tol = 1.0 + 1e-10
-        for f in [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]]:
-            meth_kwargs = {"brightness": f}
-            _test_class_op(
-                T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-                tol=tol, agg_method="max"
-            )
-
-        for f in [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]]:
-            meth_kwargs = {"contrast": f}
-            _test_class_op(
-                T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-                tol=tol, agg_method="max"
-            )
-
-        for f in [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]]:
-            meth_kwargs = {"saturation": f}
-            _test_class_op(
-                T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-                tol=tol, agg_method="max"
-            )
-
-        for f in [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]]:
-            meth_kwargs = {"hue": f}
-            _test_class_op(
-                T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-                tol=16.1, agg_method="max"
-            )
-
-        # All 4 parameters together
-        meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
-        _test_class_op(
-            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=12.1, agg_method="max"
-        )
-
-    def test_pad(self):
-        for m in ["constant", "edge", "reflect", "symmetric"]:
-            fill = 127 if m == "constant" else 0
-            for mul in [1, -1]:
-                # Test functional.pad (PIL and Tensor) with padding as single int
-                _test_functional_op(
-                    F.pad, fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m},
-                    device=self.device
-                )
-                # Test functional.pad and transforms.Pad with padding as [int, ]
-                fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
-                _test_op(
-                    F.pad, T.Pad, device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-                )
-                # Test functional.pad and transforms.Pad with padding as list
-                fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
-                _test_op(
-                    F.pad, T.Pad, device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-                )
-                # Test functional.pad and transforms.Pad with padding as tuple
-                fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
-                _test_op(
-                    F.pad, T.Pad, device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-                )
-
-    def test_crop(self):
-        fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
-        # Test transforms.RandomCrop with size and padding as tuple
-        meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
-        _test_op(
-            F.crop, T.RandomCrop, device=self.device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
-
-        # Test transforms.functional.crop including outside the image area
-        fn_kwargs = {"top": -2, "left": 3, "height": 4, "width": 5}  # top
-        _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=self.device)
-
-        fn_kwargs = {"top": 1, "left": -3, "height": 4, "width": 5}  # left
-        _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=self.device)
-
-        fn_kwargs = {"top": 7, "left": 3, "height": 4, "width": 5}  # bottom
-        _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=self.device)
-
-        fn_kwargs = {"top": 3, "left": 8, "height": 4, "width": 5}  # right
-        _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=self.device)
-
-        fn_kwargs = {"top": -3, "left": -3, "height": 15, "width": 15}  # all
-        _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=self.device)
-
-        sizes = [5, [5, ], [6, 6]]
-        padding_configs = [
-            {"padding_mode": "constant", "fill": 0},
-            {"padding_mode": "constant", "fill": 10},
-            {"padding_mode": "constant", "fill": 20},
-            {"padding_mode": "edge"},
-            {"padding_mode": "reflect"},
-        ]
-
-        for size in sizes:
-            for padding_config in padding_configs:
-                config = dict(padding_config)
-                config["size"] = size
-                _test_class_op(T.RandomCrop, self.device, config)
-
-    def test_center_crop(self):
-        fn_kwargs = {"output_size": (4, 5)}
-        meth_kwargs = {"size": (4, 5), }
-        _test_op(
-            F.center_crop, T.CenterCrop, device=self.device, fn_kwargs=fn_kwargs,
-            meth_kwargs=meth_kwargs
-        )
-        fn_kwargs = {"output_size": (5,)}
-        meth_kwargs = {"size": (5, )}
-        _test_op(
-            F.center_crop, T.CenterCrop, device=self.device, fn_kwargs=fn_kwargs,
-            meth_kwargs=meth_kwargs
-        )
-        tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=self.device)
-        # Test torchscript of transforms.CenterCrop with size as int
-        f = T.CenterCrop(size=5)
-        scripted_fn = torch.jit.script(f)
-        scripted_fn(tensor)
-
-        # Test torchscript of transforms.CenterCrop with size as [int, ]
-        f = T.CenterCrop(size=[5, ])
-        scripted_fn = torch.jit.script(f)
-        scripted_fn(tensor)
-
-        # Test torchscript of transforms.CenterCrop with size as tuple
-        f = T.CenterCrop(size=(6, 6))
-        scripted_fn = torch.jit.script(f)
-        scripted_fn(tensor)
-
-        with get_tmp_dir() as tmp_dir:
-            scripted_fn.save(os.path.join(tmp_dir, "t_center_crop.pt"))
 
     def _test_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
         if fn_kwargs is None:
@@ -417,100 +285,6 @@ class Tester(unittest.TestCase):
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
-
-    def test_random_affine(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        def _test(**kwargs):
-            transform = T.RandomAffine(**kwargs)
-            s_transform = torch.jit.script(transform)
-
-            _test_transform_vs_scripted(transform, s_transform, tensor)
-            _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-            return s_transform
-
-        for interpolation in [NEAREST, BILINEAR]:
-            for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
-                _test(degrees=0.0, interpolation=interpolation, shear=shear)
-
-            for scale in [(0.7, 1.2), [0.7, 1.2]]:
-                _test(degrees=0.0, interpolation=interpolation, scale=scale)
-
-            for translate in [(0.1, 0.2), [0.2, 0.1]]:
-                _test(degrees=0.0, interpolation=interpolation, translate=translate)
-
-            for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
-                _test(degrees=degrees, interpolation=interpolation)
-
-            for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                _test(degrees=0.0, interpolation=interpolation, fill=fill)
-
-        s_transform = _test(degrees=0.0)
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
-
-    def test_random_rotate(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        for center in [(0, 0), [10, 10], None, (56, 44)]:
-            for expand in [True, False]:
-                for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
-                    for interpolation in [NEAREST, BILINEAR]:
-                        for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                            transform = T.RandomRotation(
-                                degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill
-                            )
-                            s_transform = torch.jit.script(transform)
-
-                            _test_transform_vs_scripted(transform, s_transform, tensor)
-                            _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
-
-    def test_random_perspective(self):
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
-        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
-
-        for distortion_scale in np.linspace(0.1, 1.0, num=20):
-            for interpolation in [NEAREST, BILINEAR]:
-                for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
-                    transform = T.RandomPerspective(
-                        distortion_scale=distortion_scale,
-                        interpolation=interpolation,
-                        fill=fill
-                    )
-                    s_transform = torch.jit.script(transform)
-
-                    _test_transform_vs_scripted(transform, s_transform, tensor)
-                    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
-
-    def test_to_grayscale(self):
-
-        meth_kwargs = {"num_output_channels": 1}
-        tol = 1.0 + 1e-10
-        _test_class_op(
-            T.Grayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=tol, agg_method="max"
-        )
-
-        meth_kwargs = {"num_output_channels": 3}
-        _test_class_op(
-            T.Grayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=tol, agg_method="max"
-        )
-
-        meth_kwargs = {}
-        _test_class_op(
-            T.RandomGrayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=self.device,
-            tol=tol, agg_method="max"
-        )
 
     def test_normalize(self):
         fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -710,12 +484,282 @@ class Tester(unittest.TestCase):
                 s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
+@pytest.mark.parametrize('device', cpu_and_gpu())
+class TestColorJitter:
+
+    @pytest.mark.parametrize('brightness', [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
+    def test_color_jitter_brightness(self, brightness, device):
+        tol = 1.0 + 1e-10
+        meth_kwargs = {"brightness": brightness}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
+
+    @pytest.mark.parametrize('contrast', [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]])
+    def test_color_jitter_contrast(self, contrast, device):
+        tol = 1.0 + 1e-10
+        meth_kwargs = {"contrast": contrast}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
+
+    @pytest.mark.parametrize('saturation', [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]])
+    def test_color_jitter_saturation(self, saturation, device):
+        tol = 1.0 + 1e-10
+        meth_kwargs = {"saturation": saturation}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=tol, agg_method="max"
+        )
+
+    @pytest.mark.parametrize('hue', [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]])
+    def test_color_jitter_hue(self, hue, device):
+        meth_kwargs = {"hue": hue}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=16.1, agg_method="max"
+        )
+
+    def test_color_jitter_all(self, device):
+        # All 4 parameters together
+        meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
+        _test_class_op(
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+            tol=12.1, agg_method="max"
+        )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('m', ["constant", "edge", "reflect", "symmetric"])
+@pytest.mark.parametrize('mul', [1, -1])
+def test_pad(m, mul, device):
+    fill = 127 if m == "constant" else 0
+
+    # Test functional.pad (PIL and Tensor) with padding as single int
+    _test_functional_op(
+        F.pad, fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m},
+        device=device
+    )
+    # Test functional.pad and transforms.Pad with padding as [int, ]
+    fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
+    _test_op(
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+    )
+    # Test functional.pad and transforms.Pad with padding as list
+    fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
+    _test_op(
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+    )
+    # Test functional.pad and transforms.Pad with padding as tuple
+    fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
+    _test_op(
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+    )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_crop(device):
+    fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
+    # Test transforms.RandomCrop with size and padding as tuple
+    meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
+    _test_op(
+        F.crop, T.RandomCrop, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+    )
+
+    # Test transforms.functional.crop including outside the image area
+    fn_kwargs = {"top": -2, "left": 3, "height": 4, "width": 5}  # top
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
+
+    fn_kwargs = {"top": 1, "left": -3, "height": 4, "width": 5}  # left
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
+
+    fn_kwargs = {"top": 7, "left": 3, "height": 4, "width": 5}  # bottom
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
+
+    fn_kwargs = {"top": 3, "left": 8, "height": 4, "width": 5}  # right
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
+
+    fn_kwargs = {"top": -3, "left": -3, "height": 15, "width": 15}  # all
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('padding_config', [
+    {"padding_mode": "constant", "fill": 0},
+    {"padding_mode": "constant", "fill": 10},
+    {"padding_mode": "constant", "fill": 20},
+    {"padding_mode": "edge"},
+    {"padding_mode": "reflect"}
+])
+@pytest.mark.parametrize('size', [5, [5, ], [6, 6]])
+def test_crop_pad(size, padding_config, device):
+    config = dict(padding_config)
+    config["size"] = size
+    _test_class_op(T.RandomCrop, device, config)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_center_crop(device):
+    fn_kwargs = {"output_size": (4, 5)}
+    meth_kwargs = {"size": (4, 5), }
+    _test_op(
+        F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
+        meth_kwargs=meth_kwargs
+    )
+    fn_kwargs = {"output_size": (5,)}
+    meth_kwargs = {"size": (5, )}
+    _test_op(
+        F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
+        meth_kwargs=meth_kwargs
+    )
+    tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=device)
+    # Test torchscript of transforms.CenterCrop with size as int
+    f = T.CenterCrop(size=5)
+    scripted_fn = torch.jit.script(f)
+    scripted_fn(tensor)
+
+    # Test torchscript of transforms.CenterCrop with size as [int, ]
+    f = T.CenterCrop(size=[5, ])
+    scripted_fn = torch.jit.script(f)
+    scripted_fn(tensor)
+
+    # Test torchscript of transforms.CenterCrop with size as tuple
+    f = T.CenterCrop(size=(6, 6))
+    scripted_fn = torch.jit.script(f)
+    scripted_fn(tensor)
+
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_center_crop.pt"))
+
+
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
 
     def setUp(self):
         torch.set_deterministic(False)
         self.device = "cuda"
+
+
+def _test_random_affine_helper(device, **kwargs):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+    transform = T.RandomAffine(**kwargs)
+    s_transform = torch.jit.script(transform)
+
+    _test_transform_vs_scripted(transform, s_transform, tensor)
+    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_random_affine(device):
+    transform = T.RandomAffine(degrees=45.0)
+    s_transform = torch.jit.script(transform)
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('shear', [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]])
+def test_random_affine_shear(device, interpolation, shear):
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, shear=shear)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
+def test_random_affine_scale(device, interpolation, scale):
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, scale=scale)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('translate', [(0.1, 0.2), [0.2, 0.1]])
+def test_random_affine_translate(device, interpolation, translate):
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, translate=translate)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('degrees', [45, 35.0, (-45, 45), [-90.0, 90.0]])
+def test_random_affine_degrees(device, interpolation, degrees):
+    _test_random_affine_helper(device, degrees=degrees, interpolation=interpolation)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_random_affine_fill(device, interpolation, fill):
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, fill=fill)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('center', [(0, 0), [10, 10], None, (56, 44)])
+@pytest.mark.parametrize('expand', [True, False])
+@pytest.mark.parametrize('degrees', [45, 35.0, (-45, 45), [-90.0, 90.0]])
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_random_rotate(device, center, expand, degrees, interpolation, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.RandomRotation(
+        degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill
+    )
+    s_transform = torch.jit.script(transform)
+
+    _test_transform_vs_scripted(transform, s_transform, tensor)
+    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+def test_random_rotate_save():
+    transform = T.RandomRotation(degrees=45.0)
+    s_transform = torch.jit.script(transform)
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('distortion_scale', np.linspace(0.1, 1.0, num=20))
+@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
+@pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_random_perspective(device, distortion_scale, interpolation, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.RandomPerspective(
+        distortion_scale=distortion_scale,
+        interpolation=interpolation,
+        fill=fill
+    )
+    s_transform = torch.jit.script(transform)
+
+    _test_transform_vs_scripted(transform, s_transform, tensor)
+    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+def test_random_perspective_save():
+    transform = T.RandomPerspective()
+    s_transform = torch.jit.script(transform)
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('Klass, meth_kwargs', [
+    (T.Grayscale, {"num_output_channels": 1}),
+    (T.Grayscale, {"num_output_channels": 3}),
+    (T.RandomGrayscale, {})
+])
+def test_to_grayscale(device, Klass, meth_kwargs):
+
+    tol = 1.0 + 1e-10
+    _test_class_op(
+        Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+        tol=tol, agg_method="max"
+    )
 
 
 if __name__ == '__main__':
