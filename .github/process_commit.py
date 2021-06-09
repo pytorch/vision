@@ -5,7 +5,7 @@ this script is a no-op.
 """
 
 import sys
-from typing import Any, Collection, Optional, Set, Tuple
+from typing import Any, Optional, Set, Tuple
 
 import requests
 
@@ -38,15 +38,15 @@ REQUIRED_LABELS = {
 }
 
 
-def find_responsible_users(commit_hash: str) -> Collection:
+def find_responsible_users(commit_hash: str) -> Set[str]:
     pr_number = get_pr_number(commit_hash)
     if not pr_number:
-        return ""
+        return set()
 
     merger, labels = get_pr_merger_and_labels(pr_number)
     is_properly_labeled = bool(REQUIRED_LABELS.intersection(labels))
     if is_properly_labeled:
-        return ""
+        return set()
 
     return {merger, *get_pr_reviewers(pr_number)}
 
