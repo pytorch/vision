@@ -26,6 +26,7 @@ IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
+CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
 
 @contextlib.contextmanager
@@ -218,8 +219,9 @@ def freeze_rng_state():
 
 
 def cycle_over(objs):
-    for idx, obj in enumerate(objs):
-        yield obj, objs[:idx] + objs[idx + 1:]
+    for idx, obj1 in enumerate(objs):
+        for obj2 in objs[:idx] + objs[idx + 1:]:
+            yield obj1, obj2
 
 
 def int_dtypes():
@@ -256,11 +258,19 @@ def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
 
 
 def cpu_and_gpu():
-    # TODO: make this properly handle CircleCI
     import pytest  # noqa
 
     # ignore CPU tests in RE as they're already covered by another contbuild
-    devices = [] if IN_RE_WORKER else ['cpu']
+    # also ignore CPU tests in CircleCI machines that have a GPU: these tests
+    # are run on CPU-only machines already.
+    if IN_RE_WORKER:
+        devices = []
+    else:
+        if IN_CIRCLE_CI and torch.cuda.is_available():
+            mark = pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)
+        else:
+            mark = ()
+        devices = [pytest.param('cpu', marks=mark)]
 
     if torch.cuda.is_available():
         cuda_marks = ()
@@ -278,7 +288,6 @@ def cpu_and_gpu():
 
 
 def needs_cuda(test_func):
-    # TODO: make this properly handle CircleCI
     import pytest  # noqa
 
     if IN_FBCODE and not IN_RE_WORKER:
@@ -293,12 +302,13 @@ def needs_cuda(test_func):
 
 
 def cpu_only(test_func):
-    # TODO: make this properly handle CircleCI
     import pytest  # noqa
 
     if IN_RE_WORKER:
         # The assumption is that all RE workers have GPUs.
         return pytest.mark.dont_collect(test_func)
+    elif IN_CIRCLE_CI and torch.cuda.is_available():
+        return pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)(test_func)
     else:
         return test_func
 
