@@ -586,22 +586,15 @@ def test_center_crop(device):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('func, method, out_length', [
+@pytest.mark.parametrize('fn, method, out_length', [
     # test_five_crop
-    ("five_crop", "FiveCrop", 5),
+    (F.five_crop, T.FiveCrop, 5),
     # test_ten_crop
-    ("ten_crop", "TenCrop", 10)
+    (F.ten_crop, T.TenCrop, 10)
 ])
-@pytest.mark.parametrize('fn_kwargs', [
-    {"size": (5,)},
-    {"size": [5, ]},
-    {"size": (4, 5)},
-    {"size": [4, 5]}
-])
-def test_x_crop(func, method, out_length, fn_kwargs, device):
-    meth_kwargs = fn_kwargs
-
-    fn = getattr(F, func)
+@pytest.mark.parametrize('size', [(5, ), [5, ], (4, 5), [4, 5]])
+def test_x_crop(fn, method, out_length, size, device):
+    meth_kwargs = fn_kwargs = {'size': size}
     scripted_fn = torch.jit.script(fn)
 
     tensor, pil_img = _create_data(height=20, width=20, device=device)
@@ -619,7 +612,7 @@ def test_x_crop(func, method, out_length, fn_kwargs, device):
         assert_equal(transformed_tensor, transformed_tensor_script)
 
     # test for class interface
-    fn = getattr(T, method)(**meth_kwargs)
+    fn = method(**meth_kwargs)
     scripted_fn = torch.jit.script(fn)
     output = scripted_fn(tensor)
     assert len(output) == len(transformed_t_list_script)
@@ -646,69 +639,66 @@ def test_x_crop_save(method):
         scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
 
 
-@cpu_only
-@pytest.mark.parametrize('size', [32, 34, 35, 36, 38])
-def test_resize_int(size):
-    # TODO: Minimal check for bug-fix, improve this later
-    x = torch.rand(3, 32, 46)
-    t = T.Resize(size=size)
-    y = t(x)
-    # If size is an int, smaller edge of the image will be matched to this number.
-    # i.e, if height > width, then image will be rescaled to (size * height / width, size).
-    assert isinstance(y, torch.Tensor)
-    assert y.shape[1] == size
-    assert y.shape[2] == int(size * 46 / 32)
+class TestResize:
+    @cpu_only
+    @pytest.mark.parametrize('size', [32, 34, 35, 36, 38])
+    def test_resize_int(self, size):
+        # TODO: Minimal check for bug-fix, improve this later
+        x = torch.rand(3, 32, 46)
+        t = T.Resize(size=size)
+        y = t(x)
+        # If size is an int, smaller edge of the image will be matched to this number.
+        # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+        assert isinstance(y, torch.Tensor)
+        assert y.shape[1] == size
+        assert y.shape[2] == int(size * 46 / 32)
 
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64])
+    @pytest.mark.parametrize('size', [[32, ], [32, 32], (32, 32), [34, 35]])
+    @pytest.mark.parametrize('max_size', [None, 35, 1000])
+    @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC, NEAREST])
+    def test_resize_scripted(self, dt, size, max_size, interpolation, device):
+        tensor, _ = _create_data(height=34, width=36, device=device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('dt', [None, torch.float32, torch.float64])
-@pytest.mark.parametrize('size', [[32, ], [32, 32], (32, 32), [34, 35]])
-@pytest.mark.parametrize('max_size', [None, 35, 1000])
-@pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC, NEAREST])
-def test_resize_scripted(dt, size, max_size, interpolation, device):
-    tensor, _ = _create_data(height=34, width=36, device=device)
-    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+        if dt is not None:
+            # This is a trivial cast to float of uint8 data to test all cases
+            tensor = tensor.to(dt)
+        if max_size is not None and len(size) != 1:
+            pytest.xfail("with max_size, size must be a sequence with 2 elements")
 
-    if dt is not None:
-        # This is a trivial cast to float of uint8 data to test all cases
-        tensor = tensor.to(dt)
-    if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
-        pytest.xfail()
-    else:
-        transform = T.Resize(size=script_size, interpolation=interpolation, max_size=max_size)
+        transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size)
         s_transform = torch.jit.script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+    @cpu_only
+    def test_resize_save(self):
+        transform = T.Resize(size=[32, ])
+        s_transform = torch.jit.script(transform)
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
 
-@cpu_only
-def test_resize_save():
-    transform = T.Resize(size=[32, ])
-    s_transform = torch.jit.script(transform)
-    with get_tmp_dir() as tmp_dir:
-        s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
+    @pytest.mark.parametrize('ratio', [(0.75, 1.333), [0.75, 1.333]])
+    @pytest.mark.parametrize('size', [(32, ), [44, ], [32, ], [32, 32], (32, 32), [44, 55]])
+    @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR, BICUBIC])
+    def test_resized_crop(self, scale, ratio, size, interpolation, device):
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+        transform = T.RandomResizedCrop(size=size, scale=scale, ratio=ratio, interpolation=interpolation)
+        s_transform = torch.jit.script(transform)
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
-@pytest.mark.parametrize('ratio', [(0.75, 1.333), [0.75, 1.333]])
-@pytest.mark.parametrize('size', [(32, ), [44, ], [32, ], [32, 32], (32, 32), [44, 55]])
-@pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR, BICUBIC])
-def test_resized_crop(scale, ratio, size, interpolation, device):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
-    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
-    transform = T.RandomResizedCrop(size=size, scale=scale, ratio=ratio, interpolation=interpolation)
-    s_transform = torch.jit.script(transform)
-    _test_transform_vs_scripted(transform, s_transform, tensor)
-    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-
-@cpu_only
-def test_resized_crop_save():
-    transform = T.RandomResizedCrop(size=[32, ])
-    s_transform = torch.jit.script(transform)
-    with get_tmp_dir() as tmp_dir:
-        s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
+    @cpu_only
+    def test_resized_crop_save(self):
+        transform = T.RandomResizedCrop(size=[32, ])
+        s_transform = torch.jit.script(transform)
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
