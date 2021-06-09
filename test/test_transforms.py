@@ -48,7 +48,6 @@ class TestConvertImageDtype:
         assert abs(actual_min - desired_min) < 1e-7
         assert abs(actual_max - desired_max) < 1e-7
 
-
     @pytest.mark.parametrize('input_dtype', float_dtypes())
     @pytest.mark.parametrize('output_dtype', int_dtypes())
     def test_float_to_int(self, input_dtype, output_dtype):
@@ -73,7 +72,6 @@ class TestConvertImageDtype:
             assert actual_min == desired_min
             assert actual_max == desired_max
 
-
     @pytest.mark.parametrize('input_dtype', int_dtypes())
     @pytest.mark.parametrize('output_dtype', float_dtypes())
     def test_int_to_float(self, input_dtype, output_dtype):
@@ -93,7 +91,6 @@ class TestConvertImageDtype:
         assert actual_min >= desired_min
         assert abs(actual_max - desired_max) < 1e-7
         assert actual_max <= desired_max
-
 
     @pytest.mark.parametrize('input_dtype, output_dtype', cycle_over(int_dtypes()))
     def test_dtype_int_to_int(self, input_dtype, output_dtype):
@@ -126,7 +123,6 @@ class TestConvertImageDtype:
 
         assert actual_min == desired_min
         assert actual_max == (desired_max + error_term)
-
 
     @pytest.mark.parametrize('input_dtype, output_dtype', cycle_over(int_dtypes()))
     def test_int_to_int_consistency(self, input_dtype, output_dtype):
