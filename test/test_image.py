@@ -362,9 +362,9 @@ def test_encode_jpeg_errors():
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
 ])
-def test_encode_jpeg_windows(img_path):
+def test_encode_jpeg_reference(img_path):
     # This test is *wrong*.
-    # It compares a torchvision-encoded jpeg with a PIL-encoded jpeg, but it
+    # It compares a torchvision-encoded jpeg with a PIL-encoded jpeg (the reference), but it
     # starts encoding the torchvision version from an image that comes from
     # decode_jpeg, which can yield different results from pil.decode (see
     # test_decode... which uses a high tolerance).
@@ -393,8 +393,8 @@ def test_encode_jpeg_windows(img_path):
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
 ])
-def test_write_jpeg_windows(img_path):
-    # FIXME: Remove this eventually, see test_encode_jpeg_windows
+def test_write_jpeg_reference(img_path):
+    # FIXME: Remove this eventually, see test_encode_jpeg_reference
     with get_tmp_dir() as d:
         data = read_file(img_path)
         img = decode_jpeg(data)
