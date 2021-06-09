@@ -30,10 +30,10 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
-@pytest.mark.parametrize('input_dtype, output_dtypes', cycle_over(float_dtypes()))
-def test_convert_image_dtype_float_to_float(input_dtype, output_dtypes):
-    input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
-    for output_dtype in output_dtypes:
+class TestConvertImageDtype:
+    @pytest.mark.parametrize('input_dtype, output_dtype', cycle_over(float_dtypes()))
+    def test_float_to_float(self, input_dtype, output_dtype):
+        input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
         transform_script = torch.jit.script(F.convert_image_dtype)
 
@@ -49,57 +49,56 @@ def test_convert_image_dtype_float_to_float(input_dtype, output_dtypes):
         assert abs(actual_max - desired_max) < 1e-7
 
 
-@pytest.mark.parametrize('input_dtype', float_dtypes())
-@pytest.mark.parametrize('output_dtype', int_dtypes())
-def test_convert_image_dtype_float_to_int(input_dtype, output_dtype):
-    input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
-    transform = transforms.ConvertImageDtype(output_dtype)
-    transform_script = torch.jit.script(F.convert_image_dtype)
+    @pytest.mark.parametrize('input_dtype', float_dtypes())
+    @pytest.mark.parametrize('output_dtype', int_dtypes())
+    def test_float_to_int(self, input_dtype, output_dtype):
+        input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
+        transform = transforms.ConvertImageDtype(output_dtype)
+        transform_script = torch.jit.script(F.convert_image_dtype)
 
-    if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
-            input_dtype == torch.float64 and output_dtype == torch.int64
-    ):
-        with pytest.raises(RuntimeError):
-            transform(input_image)
-    else:
+        if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
+                input_dtype == torch.float64 and output_dtype == torch.int64
+        ):
+            with pytest.raises(RuntimeError):
+                transform(input_image)
+        else:
+            output_image = transform(input_image)
+            output_image_script = transform_script(input_image, output_dtype)
+
+            torch.testing.assert_close(output_image_script, output_image, rtol=0.0, atol=1e-6)
+
+            actual_min, actual_max = output_image.tolist()
+            desired_min, desired_max = 0, torch.iinfo(output_dtype).max
+
+            assert actual_min == desired_min
+            assert actual_max == desired_max
+
+
+    @pytest.mark.parametrize('input_dtype', int_dtypes())
+    @pytest.mark.parametrize('output_dtype', float_dtypes())
+    def test_int_to_float(self, input_dtype, output_dtype):
+        input_image = torch.tensor((0, torch.iinfo(input_dtype).max), dtype=input_dtype)
+        transform = transforms.ConvertImageDtype(output_dtype)
+        transform_script = torch.jit.script(F.convert_image_dtype)
+
         output_image = transform(input_image)
         output_image_script = transform_script(input_image, output_dtype)
 
         torch.testing.assert_close(output_image_script, output_image, rtol=0.0, atol=1e-6)
 
         actual_min, actual_max = output_image.tolist()
-        desired_min, desired_max = 0, torch.iinfo(output_dtype).max
+        desired_min, desired_max = 0.0, 1.0
 
-        assert actual_min == desired_min
-        assert actual_max == desired_max
-
-
-@pytest.mark.parametrize('input_dtype', int_dtypes())
-@pytest.mark.parametrize('output_dtype', float_dtypes())
-def test_convert_image_dtype_int_to_float(input_dtype, output_dtype):
-    input_image = torch.tensor((0, torch.iinfo(input_dtype).max), dtype=input_dtype)
-    transform = transforms.ConvertImageDtype(output_dtype)
-    transform_script = torch.jit.script(F.convert_image_dtype)
-
-    output_image = transform(input_image)
-    output_image_script = transform_script(input_image, output_dtype)
-
-    torch.testing.assert_close(output_image_script, output_image, rtol=0.0, atol=1e-6)
-
-    actual_min, actual_max = output_image.tolist()
-    desired_min, desired_max = 0.0, 1.0
-
-    assert abs(actual_min - desired_min) < 1e-7
-    assert actual_min >= desired_min
-    assert abs(actual_max - desired_max) < 1e-7
-    assert actual_max <= desired_max
+        assert abs(actual_min - desired_min) < 1e-7
+        assert actual_min >= desired_min
+        assert abs(actual_max - desired_max) < 1e-7
+        assert actual_max <= desired_max
 
 
-@pytest.mark.parametrize('input_dtype, output_dtypes', cycle_over(int_dtypes()))
-def test_convert_image_dtype_int_to_int(input_dtype, output_dtypes):
-    input_max = torch.iinfo(input_dtype).max
-    input_image = torch.tensor((0, input_max), dtype=input_dtype)
-    for output_dtype in output_dtypes:
+    @pytest.mark.parametrize('input_dtype, output_dtype', cycle_over(int_dtypes()))
+    def test_dtype_int_to_int(self, input_dtype, output_dtype):
+        input_max = torch.iinfo(input_dtype).max
+        input_image = torch.tensor((0, input_max), dtype=input_dtype)
         output_max = torch.iinfo(output_dtype).max
 
         transform = transforms.ConvertImageDtype(output_dtype)
@@ -129,12 +128,11 @@ def test_convert_image_dtype_int_to_int(input_dtype, output_dtypes):
         assert actual_max == (desired_max + error_term)
 
 
-@pytest.mark.parametrize('input_dtype, output_dtypes', cycle_over(int_dtypes()))
-def test_convert_image_dtype_int_to_int_consistency(input_dtype, output_dtypes):
-    input_max = torch.iinfo(input_dtype).max
-    input_image = torch.tensor((0, input_max), dtype=input_dtype)
-    
-    for output_dtype in output_dtypes:
+    @pytest.mark.parametrize('input_dtype, output_dtype', cycle_over(int_dtypes()))
+    def test_int_to_int_consistency(self, input_dtype, output_dtype):
+        input_max = torch.iinfo(input_dtype).max
+        input_image = torch.tensor((0, input_max), dtype=input_dtype)
+
         output_max = torch.iinfo(output_dtype).max
         if output_max <= input_max:
             return
