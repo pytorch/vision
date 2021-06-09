@@ -205,9 +205,9 @@ jobs:
             sudo apt-get update -y
             sudo apt install -y libturbojpeg-dev
             pip install --user --progress-bar off mypy
-            mypy --install-types
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off --editable .
+            mypy --install-types
             mypy --config-file mypy.ini
 
   docstring_parameters_sync:
