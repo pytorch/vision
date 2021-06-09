@@ -1,12 +1,9 @@
-import itertools
 import os
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from torch._utils_internal import get_file_path_2
-from numpy.testing import assert_array_almost_equal
-import unittest
 import math
 import random
 import numpy as np
@@ -2112,4 +2109,4 @@ def test_random_affine():
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])
