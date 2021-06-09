@@ -19,6 +19,7 @@ from common_utils import (
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
     cpu_and_gpu,
+    cpu_only
 )
 from _assert_utils import assert_equal
 
@@ -286,6 +287,133 @@ class Tester(unittest.TestCase):
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
+    def test_normalize(self):
+        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        tensor, _ = _create_data(26, 34, device=self.device)
+
+        with self.assertRaisesRegex(TypeError, r"Input tensor should be a float tensor"):
+            fn(tensor)
+
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+        # test for class interface
+        scripted_fn = torch.jit.script(fn)
+
+        _test_transform_vs_scripted(fn, scripted_fn, tensor)
+        _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+
+    def test_linear_transformation(self):
+        c, h, w = 3, 24, 32
+
+        tensor, _ = _create_data(h, w, channels=c, device=self.device)
+
+        matrix = torch.rand(c * h * w, c * h * w, device=self.device)
+        mean_vector = torch.rand(c * h * w, device=self.device)
+
+        fn = T.LinearTransformation(matrix, mean_vector)
+        scripted_fn = torch.jit.script(fn)
+
+        _test_transform_vs_scripted(fn, scripted_fn, tensor)
+
+        batch_tensors = torch.rand(4, c, h, w, device=self.device)
+        # We skip some tests from _test_transform_vs_scripted_on_batch as
+        # results for scripted and non-scripted transformations are not exactly the same
+        torch.manual_seed(12)
+        transformed_batch = fn(batch_tensors)
+        torch.manual_seed(12)
+        s_transformed_batch = scripted_fn(batch_tensors)
+        assert_equal(transformed_batch, s_transformed_batch)
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+
+    def test_compose(self):
+        tensor, _ = _create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+
+        transforms = T.Compose([
+            T.CenterCrop(10),
+            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        s_transforms = torch.nn.Sequential(*transforms.transforms)
+
+        scripted_fn = torch.jit.script(s_transforms)
+        torch.manual_seed(12)
+        transformed_tensor = transforms(tensor)
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+
+        t = T.Compose([
+            lambda x: x,
+        ])
+        with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
+            torch.jit.script(t)
+
+    def test_random_apply(self):
+        tensor, _ = _create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+
+        transforms = T.RandomApply([
+            T.RandomHorizontalFlip(),
+            T.ColorJitter(),
+        ], p=0.4)
+        s_transforms = T.RandomApply(torch.nn.ModuleList([
+            T.RandomHorizontalFlip(),
+            T.ColorJitter(),
+        ]), p=0.4)
+
+        scripted_fn = torch.jit.script(s_transforms)
+        torch.manual_seed(12)
+        transformed_tensor = transforms(tensor)
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+
+        if torch.device(self.device).type == "cpu":
+            # Can't check this twice, otherwise
+            # "Can't redefine method: forward on class: __torch__.torchvision.transforms.transforms.RandomApply"
+            transforms = T.RandomApply([
+                T.ColorJitter(),
+            ], p=0.3)
+            with self.assertRaisesRegex(RuntimeError, r"Module 'RandomApply' has no attribute 'transforms'"):
+                torch.jit.script(transforms)
+
+    def test_gaussian_blur(self):
+        tol = 1.0 + 1e-10
+        _test_class_op(
+            T.GaussianBlur, meth_kwargs={"kernel_size": 3, "sigma": 0.75},
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
+        )
+
+        _test_class_op(
+            T.GaussianBlur, meth_kwargs={"kernel_size": 23, "sigma": [0.1, 2.0]},
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
+        )
+
+        _test_class_op(
+            T.GaussianBlur, meth_kwargs={"kernel_size": 23, "sigma": (0.1, 2.0)},
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
+        )
+
+        _test_class_op(
+            T.GaussianBlur, meth_kwargs={"kernel_size": [3, 3], "sigma": (1.0, 1.0)},
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
+        )
+
+        _test_class_op(
+            T.GaussianBlur, meth_kwargs={"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
+        )
+
+        _test_class_op(
+            T.GaussianBlur, meth_kwargs={"kernel_size": [23], "sigma": 0.75},
+            test_exact_match=False, device=self.device, agg_method="max", tol=tol
+        )
+
     def test_random_erasing(self):
         img = torch.rand(3, 60, 60)
 
@@ -505,6 +633,122 @@ def test_center_crop(device):
 
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_center_crop.pt"))
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('fn, method, out_length', [
+    # test_five_crop
+    (F.five_crop, T.FiveCrop, 5),
+    # test_ten_crop
+    (F.ten_crop, T.TenCrop, 10)
+])
+@pytest.mark.parametrize('size', [(5, ), [5, ], (4, 5), [4, 5]])
+def test_x_crop(fn, method, out_length, size, device):
+    meth_kwargs = fn_kwargs = {'size': size}
+    scripted_fn = torch.jit.script(fn)
+
+    tensor, pil_img = _create_data(height=20, width=20, device=device)
+    transformed_t_list = fn(tensor, **fn_kwargs)
+    transformed_p_list = fn(pil_img, **fn_kwargs)
+    assert len(transformed_t_list) == len(transformed_p_list)
+    assert len(transformed_t_list) == out_length
+    for transformed_tensor, transformed_pil_img in zip(transformed_t_list, transformed_p_list):
+        _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img)
+
+    transformed_t_list_script = scripted_fn(tensor.detach().clone(), **fn_kwargs)
+    assert len(transformed_t_list) == len(transformed_t_list_script)
+    assert len(transformed_t_list_script) == out_length
+    for transformed_tensor, transformed_tensor_script in zip(transformed_t_list, transformed_t_list_script):
+        assert_equal(transformed_tensor, transformed_tensor_script)
+
+    # test for class interface
+    fn = method(**meth_kwargs)
+    scripted_fn = torch.jit.script(fn)
+    output = scripted_fn(tensor)
+    assert len(output) == len(transformed_t_list_script)
+
+    # test on batch of tensors
+    batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=device)
+    torch.manual_seed(12)
+    transformed_batch_list = fn(batch_tensors)
+
+    for i in range(len(batch_tensors)):
+        img_tensor = batch_tensors[i, ...]
+        torch.manual_seed(12)
+        transformed_img_list = fn(img_tensor)
+        for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
+            assert_equal(transformed_img, transformed_batch[i, ...])
+
+
+@cpu_only
+@pytest.mark.parametrize('method', ["FiveCrop", "TenCrop"])
+def test_x_crop_save(method):
+    fn = getattr(T, method)(size=[5, ])
+    scripted_fn = torch.jit.script(fn)
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
+
+
+class TestResize:
+    @cpu_only
+    @pytest.mark.parametrize('size', [32, 34, 35, 36, 38])
+    def test_resize_int(self, size):
+        # TODO: Minimal check for bug-fix, improve this later
+        x = torch.rand(3, 32, 46)
+        t = T.Resize(size=size)
+        y = t(x)
+        # If size is an int, smaller edge of the image will be matched to this number.
+        # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+        assert isinstance(y, torch.Tensor)
+        assert y.shape[1] == size
+        assert y.shape[2] == int(size * 46 / 32)
+
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('dt', [None, torch.float32, torch.float64])
+    @pytest.mark.parametrize('size', [[32, ], [32, 32], (32, 32), [34, 35]])
+    @pytest.mark.parametrize('max_size', [None, 35, 1000])
+    @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC, NEAREST])
+    def test_resize_scripted(self, dt, size, max_size, interpolation, device):
+        tensor, _ = _create_data(height=34, width=36, device=device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+        if dt is not None:
+            # This is a trivial cast to float of uint8 data to test all cases
+            tensor = tensor.to(dt)
+        if max_size is not None and len(size) != 1:
+            pytest.xfail("with max_size, size must be a sequence with 2 elements")
+
+        transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size)
+        s_transform = torch.jit.script(transform)
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+    @cpu_only
+    def test_resize_save(self):
+        transform = T.Resize(size=[32, ])
+        s_transform = torch.jit.script(transform)
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
+
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
+    @pytest.mark.parametrize('ratio', [(0.75, 1.333), [0.75, 1.333]])
+    @pytest.mark.parametrize('size', [(32, ), [44, ], [32, ], [32, 32], (32, 32), [44, 55]])
+    @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR, BICUBIC])
+    def test_resized_crop(self, scale, ratio, size, interpolation, device):
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+        transform = T.RandomResizedCrop(size=size, scale=scale, ratio=ratio, interpolation=interpolation)
+        s_transform = torch.jit.script(transform)
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+    @cpu_only
+    def test_resized_crop_save(self):
+        transform = T.RandomResizedCrop(size=[32, ])
+        s_transform = torch.jit.script(transform)
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
