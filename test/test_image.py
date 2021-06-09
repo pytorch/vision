@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from PIL import Image
 import torchvision.transforms.functional as F
-from common_utils import get_tmp_dir, needs_cuda, cpu_only
+from common_utils import get_tmp_dir, needs_cuda
 from _assert_utils import assert_equal
 
 from torchvision.io.image import (
@@ -335,7 +335,6 @@ def test_decode_jpeg_cuda_errors():
         torch.ops.image.decode_jpeg_cuda(data, ImageReadMode.UNCHANGED.value, 'cpu')
 
 
-@cpu_only
 def test_encode_jpeg_errors():
 
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
@@ -370,7 +369,6 @@ def _collect_if(cond):
     return _inner
 
 
-@cpu_only
 @_collect_if(cond=IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
@@ -403,7 +401,6 @@ def test_encode_jpeg_windows(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
-@cpu_only
 @_collect_if(cond=IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
@@ -433,7 +430,6 @@ def test_write_jpeg_windows(img_path):
         assert_equal(torch_bytes, pil_bytes)
 
 
-@cpu_only
 @_collect_if(cond=not IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
@@ -455,7 +451,6 @@ def test_encode_jpeg(img_path):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
-@cpu_only
 @_collect_if(cond=not IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))

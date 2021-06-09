@@ -258,60 +258,12 @@ def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
 
 def cpu_and_gpu():
     import pytest  # noqa
-
-    # ignore CPU tests in RE as they're already covered by another contbuild
-    # also ignore CPU tests in CircleCI machines that have a GPU: these tests
-    # are run on CPU-only machines already.
-    if IN_RE_WORKER:
-        devices = []
-    else:
-        if IN_CIRCLE_CI and torch.cuda.is_available():
-            mark = pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)
-        else:
-            mark = ()
-        devices = [pytest.param('cpu', marks=mark)]
-
-    cuda_marks = [pytest.mark.needs_cuda]
-    if not torch.cuda.is_available():
-        if IN_FBCODE:
-            # Dont collect cuda tests on fbcode if the machine doesnt have a GPU
-            # This avoids skipping the tests. More robust would be to detect if
-            # we're in sancastle instead of fbcode?
-            cuda_marks.append(pytest.mark.dont_collect())
-        else:
-            cuda_marks.append(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
-
-    devices.append(pytest.param('cuda', marks=cuda_marks))
-
-    return devices
+    return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
 
 
 def needs_cuda(test_func):
     import pytest  # noqa
-
-    test_func = pytest.mark.needs_cuda(test_func)
-
-    if IN_FBCODE and not IN_RE_WORKER:
-        # We don't want to skip in fbcode, so we just don't collect
-        # TODO: slightly more robust way would be to detect if we're in a sandcastle instance
-        # so that the test will still be collected (and skipped) in the devvms.
-        return pytest.mark.dont_collect(test_func)
-    elif torch.cuda.is_available():
-        return test_func
-    else:
-        return pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG)(test_func)
-
-
-def cpu_only(test_func):
-    import pytest  # noqa
-
-    if IN_RE_WORKER:
-        # The assumption is that all RE workers have GPUs.
-        return pytest.mark.dont_collect(test_func)
-    elif IN_CIRCLE_CI and torch.cuda.is_available():
-        return pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG)(test_func)
-    else:
-        return test_func
+    return pytest.mark.needs_cuda(test_func)
 
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):
