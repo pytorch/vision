@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+      # TODO: remove
+      - pr-labels-test
 
 jobs:
   is-properly-labeled:
