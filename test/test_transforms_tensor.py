@@ -623,7 +623,7 @@ class Tester(unittest.TestCase):
 @pytest.mark.xfail()
 @pytest.mark.parametrize(
     'in_dtype,out_dtype', [
-        int_dtypes() + float_dtypes(), int_dtypes() + float_dtypes()
+        (int_dtypes() + float_dtypes(), int_dtypes() + float_dtypes())
     ]
 )
 def test_convert_image_dtype(in_dtype, out_dtype):
