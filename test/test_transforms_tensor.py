@@ -542,11 +542,8 @@ def test_convert_image_dtype(in_dtype, out_dtype):
 
 
 @cpu_only
-@pytest.mark.parametrize(
-    'policy,fill', [
-        ([policy for policy in T.AutoAugmentPolicy], [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
-    ]
-)
+@pytest.mark.parametrize('policy', [policy for policy in T.AutoAugmentPolicy])
+@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
 def test_autoaugment(policy, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device="cpu")
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device="cpu")
@@ -592,7 +589,7 @@ def test_random_erasing_with_invalid_data():
     with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value or 3"):
         random_erasing(img)
 
-        
+
 @pytest.mark.parametrize('device', cpu_and_gpu())
 def test_normalize(device):
     fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
