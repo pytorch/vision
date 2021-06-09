@@ -358,18 +358,6 @@ def test_encode_jpeg_errors():
         encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
 
-def _collect_if(cond):
-    # TODO: remove this once test_encode_jpeg_windows and test_write_jpeg_windows
-    # are removed
-    def _inner(test_func):
-        if cond:
-            return test_func
-        else:
-            return pytest.mark.dont_collect(test_func)
-    return _inner
-
-
-@_collect_if(cond=IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
@@ -401,7 +389,6 @@ def test_encode_jpeg_windows(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
-@_collect_if(cond=IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
@@ -430,7 +417,9 @@ def test_write_jpeg_windows(img_path):
         assert_equal(torch_bytes, pil_bytes)
 
 
-@_collect_if(cond=not IS_WINDOWS)
+@pytest.mark.skipif(IS_WINDOWS, reason=(
+    'this test fails on windows because PIL uses libjpeg-turbo on windows'
+))
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
@@ -451,7 +440,9 @@ def test_encode_jpeg(img_path):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
-@_collect_if(cond=not IS_WINDOWS)
+@pytest.mark.skipif(IS_WINDOWS, reason=(
+    'this test fails on windows because PIL uses libjpeg-turbo on windows'
+))
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
