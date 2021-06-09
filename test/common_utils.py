@@ -271,15 +271,15 @@ def cpu_and_gpu():
             mark = ()
         devices = [pytest.param('cpu', marks=mark)]
 
-    if torch.cuda.is_available():
-        cuda_marks = ()
-    elif IN_FBCODE:
-        # Dont collect cuda tests on fbcode if the machine doesnt have a GPU
-        # This avoids skipping the tests. More robust would be to detect if
-        # we're in sancastle instead of fbcode?
-        cuda_marks = pytest.mark.dont_collect()
-    else:
-        cuda_marks = pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG)
+    cuda_marks = [pytest.mark.needs_cuda]
+    if not torch.cuda.is_available():
+        if IN_FBCODE:
+            # Dont collect cuda tests on fbcode if the machine doesnt have a GPU
+            # This avoids skipping the tests. More robust would be to detect if
+            # we're in sancastle instead of fbcode?
+            cuda_marks.append(pytest.mark.dont_collect())
+        else:
+            cuda_marks.append(pytest.mark.skip(reason=CUDA_NOT_AVAILABLE_MSG))
 
     devices.append(pytest.param('cuda', marks=cuda_marks))
 
@@ -288,6 +288,8 @@ def cpu_and_gpu():
 
 def needs_cuda(test_func):
     import pytest  # noqa
+
+    test_func = pytest.mark.needs_cuda(test_func)
 
     if IN_FBCODE and not IN_RE_WORKER:
         # We don't want to skip in fbcode, so we just don't collect
