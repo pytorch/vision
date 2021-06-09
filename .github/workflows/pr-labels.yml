@@ -28,7 +28,7 @@ jobs:
           jq . <<< $DATA
           echo "::set-output name=has_associated_pr::$(jq .has_associated_pr <<< $DATA)"
           echo "::set-output name=is_properly_labeled::$(jq .is_properly_labeled <<< $DATA)"
-          echo "::set-output name=responsible_users::$(jq .responsible_users <<< $DATA)"
+          echo "::set-output name=responsible_users::$(jq -r .responsible_users <<< $DATA)"
 
       - name: Ping responsible users
         if: ${{ steps.data.outputs.responsible_users != '' }}
