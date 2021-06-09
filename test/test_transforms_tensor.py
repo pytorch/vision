@@ -626,7 +626,7 @@ class CUDATester(Tester):
         self.device = "cuda"
 
 
-def _test(device, **kwargs):
+def _test_random_affine_helper(device, **kwargs):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
     transform = T.RandomAffine(**kwargs)
@@ -635,12 +635,11 @@ def _test(device, **kwargs):
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-    return s_transform
-
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 def test_random_affine(device):
-    s_transform = _test(device, degrees=0.0)
+    transform = T.RandomAffine(degrees=45.0)
+    s_transform = torch.jit.script(transform)
     with get_tmp_dir() as tmp_dir:
         s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
 
@@ -649,35 +648,35 @@ def test_random_affine(device):
 @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
 @pytest.mark.parametrize('shear', [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]])
 def test_random_affine_shear(device, interpolation, shear):
-    _test(device, degrees=0.0, interpolation=interpolation, shear=shear)
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, shear=shear)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
 @pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
 def test_random_affine_scale(device, interpolation, scale):
-    _test(device, degrees=0.0, interpolation=interpolation, scale=scale)
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, scale=scale)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
 @pytest.mark.parametrize('translate', [(0.1, 0.2), [0.2, 0.1]])
 def test_random_affine_translate(device, interpolation, translate):
-    _test(device, degrees=0.0, interpolation=interpolation, translate=translate)
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, translate=translate)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
 @pytest.mark.parametrize('degrees', [45, 35.0, (-45, 45), [-90.0, 90.0]])
 def test_random_affine_degrees(device, interpolation, degrees):
-    _test(device, degrees=degrees, interpolation=interpolation)
+    _test_random_affine_helper(device, degrees=degrees, interpolation=interpolation)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR])
 @pytest.mark.parametrize('fill', [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
 def test_random_affine_fill(device, interpolation, fill):
-    _test(device, degrees=0.0, interpolation=interpolation, fill=fill)
+    _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, fill=fill)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -698,6 +697,10 @@ def test_random_rotate(device, center, expand, degrees, interpolation, fill):
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+
+def test_random_rotate_save():
+    transform = T.RandomRotation(degrees=45.0)
+    s_transform = torch.jit.script(transform)
     with get_tmp_dir() as tmp_dir:
         s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
 
@@ -720,27 +723,23 @@ def test_random_perspective(device, distortion_scale, interpolation, fill):
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+
+def test_random_perspective_save():
+    transform = T.RandomPerspective()
+    s_transform = torch.jit.script(transform)
     with get_tmp_dir() as tmp_dir:
         s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('tol', [1.0 + 1e-10])
-@pytest.mark.parametrize('num_output_channels', [0, 1, 3])
-def test_to_grayscale(device, num_output_channels, tol):
+@pytest.mark.parametrize('Klass, meth_kwargs', [(T.Grayscale, {"num_output_channels": 1}), (T.Grayscale, {"num_output_channels": 3}), (T.RandomGrayscale, {})])
+def test_to_grayscale(device, Klass, meth_kwargs):
 
-    if num_output_channels == 0:
-        meth_kwargs = {}
-        _test_class_op(
-            T.RandomGrayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=tol, agg_method="max"
-        )
-    else:
-        meth_kwargs = {"num_output_channels": num_output_channels}
-        _test_class_op(
-            T.Grayscale, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=tol, agg_method="max"
-        )
+    tol = 1.0 + 1e-10
+    _test_class_op(
+        Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
+        tol=tol, agg_method="max"
+    )
 
 
 if __name__ == '__main__':
