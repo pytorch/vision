@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 
 import unittest
-import pytest
 from typing import Sequence
 
 from common_utils import (
@@ -384,7 +383,7 @@ class TestResize:
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
-class CUDATester(Tester):
+class CUDATester(unittest.TestCase):
 
     def setUp(self):
         torch.set_deterministic(False)
@@ -593,6 +592,7 @@ def test_random_erasing_with_invalid_data():
     with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value or 3"):
         random_erasing(img)
 
+        
 @pytest.mark.parametrize('device', cpu_and_gpu())
 def test_normalize(device):
     fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
