@@ -201,7 +201,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
     # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
-    import requests
+    import requests  # type: ignore
     url = "https://docs.google.com/uc?export=download"
 
     root = os.path.expanduser(root)
