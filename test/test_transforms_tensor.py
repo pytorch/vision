@@ -749,7 +749,11 @@ def test_random_perspective_save():
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('Klass, meth_kwargs', [(T.Grayscale, {"num_output_channels": 1}), (T.Grayscale, {"num_output_channels": 3}), (T.RandomGrayscale, {})])
+@pytest.mark.parametrize('Klass, meth_kwargs', [
+    (T.Grayscale, {"num_output_channels": 1}),
+    (T.Grayscale, {"num_output_channels": 3}),
+    (T.RandomGrayscale, {})
+])
 def test_to_grayscale(device, Klass, meth_kwargs):
 
     tol = 1.0 + 1e-10
