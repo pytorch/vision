@@ -1,0 +1,39 @@
+name: pr-labels
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  is-properly-labeled:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v2
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Process PR associated with current commit
+        id: data
+        run: |
+          DATA=$(python .github/foo.py ${{ github.sha }})
+          jq . <<< $DATA
+          echo "::set-output name=is_properly_labeled::$(jq .is_properly_labeled <<< $DATA)"
+          echo "::set-output name=responsible_users::$(jq .responsible_users <<< $DATA)"
+
+      - name: Ping responsible users
+        if: steps.data.outputs.is_properly_labeled == "false"
+        uses: mshick/add-pr-comment@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          message: |
+            Hey ${{ steps.data.outputs.responsible_users }}!
+
+            You approved or merged this PR, but no labels were added.
