@@ -674,7 +674,7 @@ def test_resize_scripted(dt, size, max_size, interpolation, device):
         # This is a trivial cast to float of uint8 data to test all cases
         tensor = tensor.to(dt)
     if max_size is not None and isinstance(size, Sequence) and len(size) != 1:
-        pass  # Not supported
+        pytest.xfail()
     else:
         if isinstance(size, int):
             script_size = [size, ]
