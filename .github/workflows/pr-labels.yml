@@ -32,6 +32,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           message: |
-            Hey ${{ steps.data.outputs.responsible_users }}!
+            Hey ${{ steps.commit.outputs.responsible_users }}!
 
             You approved or merged this PR, but no labels were added.
