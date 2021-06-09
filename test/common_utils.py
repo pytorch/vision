@@ -219,8 +219,9 @@ def freeze_rng_state():
 
 
 def cycle_over(objs):
-    for idx, obj in enumerate(objs):
-        yield obj, objs[:idx] + objs[idx + 1:]
+    for idx, obj1 in enumerate(objs):
+        for obj2 in objs[:idx] + objs[idx + 1:]:
+            yield obj1, obj2
 
 
 def int_dtypes():
