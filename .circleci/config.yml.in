@@ -207,8 +207,7 @@ jobs:
             pip install --user --progress-bar off mypy
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off --editable .
-            yes | mypy --install-types
-            mypy --config-file mypy.ini
+            yes | mypy --install-types && mypy --config-file mypy.ini
 
   docstring_parameters_sync:
     docker:
