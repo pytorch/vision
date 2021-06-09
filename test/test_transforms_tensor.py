@@ -646,7 +646,6 @@ def test_x_crop_save(method):
         scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
 
 
-
 @cpu_only
 @pytest.mark.parametrize('size', [32, 34, 35, 36, 38])
 def test_resize_int(size):
