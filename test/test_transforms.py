@@ -142,7 +142,7 @@ class TestConvertImageDtype:
         assert actual_max == desired_max
 
 
-# TODO: CI is skipping these tests, fix it 
+# TODO: CI is skipping these tests, fix it
 @pytest.mark.skipif(accimage is None, reason="accimage not available")
 class TestAccImage:
 
