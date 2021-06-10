@@ -74,12 +74,37 @@ autocast_flaky_numerics = (
 )
 
 
+# The following contains configuration parameters for all models which are used by
+# the _test_*_model methods.
+_model_params = {
+    'inception_v3': {
+        'input_shape': (1, 3, 299, 299)
+    },
+    'retinanet_resnet50_fpn': {
+        'score_thresh': 0.01,
+    },
+    'fasterrcnn_mobilenet_v3_large_fpn': {
+        'box_score_thresh': 0.02076,
+    },
+    'fasterrcnn_mobilenet_v3_large_320_fpn': {
+        'box_score_thresh': 0.02076,
+        'rpn_pre_nms_top_n_test': 1000,
+        'rpn_post_nms_top_n_test': 1000,
+    }
+}
+
+
 class ModelTester(TestCase):
-    def _test_classification_model(self, name, input_shape, dev):
+    def _test_classification_model(self, name, dev):
         set_rng_seed(0)
-        # passing num_class equal to a number other than 1000 helps in making the test
-        # more enforcing in nature
-        model = models.__dict__[name](num_classes=50)
+        defaults = {
+            'num_classes': 50,
+            'input_shape': (1, 3, 224, 224),
+        }
+        kwargs = {**defaults, **_model_params.get(name, {})}
+        input_shape = kwargs.pop('input_shape')
+
+        model = models.__dict__[name](**kwargs)
         model.eval().to(device=dev)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
@@ -98,11 +123,16 @@ class ModelTester(TestCase):
 
     def _test_segmentation_model(self, name, dev):
         set_rng_seed(0)
-        # passing num_classes equal to a number other than 21 helps in making the test's
-        # expected file size smaller
-        model = models.segmentation.__dict__[name](num_classes=10, pretrained_backbone=False)
+        defaults = {
+            'num_classes': 10,
+            'pretrained_backbone': False,
+            'input_shape': (1, 3, 32, 32),
+        }
+        kwargs = {**defaults, **_model_params.get(name, {})}
+        input_shape = kwargs.pop('input_shape')
+
+        model = models.segmentation.__dict__[name](**kwargs)
         model.eval().to(device=dev)
-        input_shape = (1, 3, 32, 32)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)["out"]
@@ -146,18 +176,16 @@ class ModelTester(TestCase):
 
     def _test_detection_model(self, name, dev):
         set_rng_seed(0)
-        kwargs = {}
-        if "retinanet" in name:
-            # Reduce the default threshold to ensure the returned boxes are not empty.
-            kwargs["score_thresh"] = 0.01
-        elif "fasterrcnn_mobilenet_v3_large" in name:
-            kwargs["box_score_thresh"] = 0.02076
-            if "fasterrcnn_mobilenet_v3_large_320_fpn" in name:
-                kwargs["rpn_pre_nms_top_n_test"] = 1000
-                kwargs["rpn_post_nms_top_n_test"] = 1000
-        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
+        defaults = {
+            'num_classes': 50,
+            'pretrained_backbone': False,
+            'input_shape': (3, 300, 300),
+        }
+        kwargs = {**defaults, **_model_params.get(name, {})}
+        input_shape = kwargs.pop('input_shape')
+
+        model = models.detection.__dict__[name](**kwargs)
         model.eval().to(device=dev)
-        input_shape = (3, 300, 300)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         model_input = [x]
@@ -435,8 +463,7 @@ _devs = [torch.device("cpu"), torch.device("cuda")] if torch.cuda.is_available()
 @pytest.mark.parametrize('model_name', get_available_classification_models())
 @pytest.mark.parametrize('dev', _devs)
 def test_classification_model(model_name, dev):
-    input_shape = (1, 3, 299, 299) if model_name == 'inception_v3' else (1, 3, 224, 224)
-    ModelTester()._test_classification_model(model_name, input_shape, dev)
+    ModelTester()._test_classification_model(model_name, dev)
 
 
 @pytest.mark.parametrize('model_name', get_available_segmentation_models())
