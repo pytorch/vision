@@ -944,6 +944,27 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
             super().test_not_found_or_corrupted()
 
 
+class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.Kinetics
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "val"), num_classes=("400", "600", "700")
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        classes = ("Abseiling", "Zumba")
+        num_videos_per_class = 2
+        tmpdir = pathlib.Path(tmpdir) / config['split']
+        digits = string.ascii_letters + string.digits + "-_"
+        for cls in classes:
+            datasets_utils.create_video_folder(
+                tmpdir,
+                cls,
+                lambda _: f"{datasets_utils.create_random_string(11, digits)}.mp4",
+                num_videos_per_class,
+            )
+        return num_videos_per_class * len(classes)
+
+
 class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics400
 

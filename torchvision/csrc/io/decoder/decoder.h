@@ -59,11 +59,11 @@ class Decoder : public MediaDecoder {
 
  private:
   // mark below function for a proper invocation
-  virtual bool enableLogLevel(int level) const;
-  virtual void logCallback(int level, const std::string& message);
-  virtual int readCallback(uint8_t* buf, int size);
-  virtual int64_t seekCallback(int64_t offset, int whence);
-  virtual int shutdownCallback();
+  bool enableLogLevel(int level) const;
+  void logCallback(int level, const std::string& message);
+  int readCallback(uint8_t* buf, int size);
+  int64_t seekCallback(int64_t offset, int whence);
+  int shutdownCallback();
 
   bool openStreams(std::vector<DecoderMetadata>* metadata);
   Stream* findByIndex(int streamIndex) const;
