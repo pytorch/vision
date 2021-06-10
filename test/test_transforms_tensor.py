@@ -518,6 +518,7 @@ def test_convert_image_dtype(device, in_dtype, out_dtype):
             _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
         with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
             _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+        return
 
     _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
