@@ -1,5 +1,6 @@
 import gc
 import math
+import os
 import re
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -257,6 +258,9 @@ def read_video(
     """
 
     from torchvision import get_video_backend
+
+    if not os.path.exists(filename):
+        raise RuntimeError(f'File not found: {filename}')
 
     if get_video_backend() != "pyav":
         return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
