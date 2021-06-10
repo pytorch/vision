@@ -15,7 +15,7 @@ def get_available_quantizable_models():
                     reason="This Pytorch Build has not been built with fbgemm and qnnpack")
 # inception_v3 was causing timeouts on circleci
 # See https://github.com/pytorch/vision/issues/1857
-@pytest.mark.parametrize('name', [name for name in get_available_quantizable_models() if name != 'inception_v3'])
+@pytest.mark.parametrize('name', get_available_quantizable_models())
 def test_classification_model(name):
 
     # First check if quantize=True provides models that can run with input data
