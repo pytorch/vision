@@ -524,9 +524,8 @@ def test_convert_image_dtype(device, in_dtype, out_dtype):
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
 
-@pytest.mark.parametrize('out_dtype', int_dtypes() + float_dtypes())
-def test_convert_image_dtype_save(out_dtype):
-    fn = T.ConvertImageDtype(dtype=out_dtype)
+def test_convert_image_dtype_save():
+    fn = T.ConvertImageDtype(dtype=torch.uint8)
     scripted_fn = torch.jit.script(fn)
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
@@ -547,14 +546,11 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize('policy', [policy for policy in T.AutoAugmentPolicy])
-@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
-def test_autoaugment_save(policy, fill):
-    transform = T.AutoAugment(policy=policy, fill=fill)
+def test_autoaugment_save():
+    transform = T.AutoAugment()
     s_transform = torch.jit.script(transform)
-    if s_transform is not None:
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
+    with get_tmp_dir() as tmp_dir:
+        s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -576,16 +572,8 @@ def test_random_erasing(device, config):
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
 
-@pytest.mark.parametrize(
-    'config', [
-        {"value": 0.2},
-        {"value": "random"},
-        {"value": (0.2, 0.2, 0.2)},
-        {"value": "random", "ratio": (0.1, 0.2)}
-    ]
-)
-def test_random_erasing_save(config):
-    fn = T.RandomErasing(**config)
+def test_random_erasing_save():
+    fn = T.RandomErasing(value=0.2)
     scripted_fn = torch.jit.script(fn)
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
