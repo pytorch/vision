@@ -7,7 +7,6 @@ from torchvision.transforms import InterpolationMode
 import numpy as np
 import pytest
 
-import unittest
 from typing import Sequence
 
 from common_utils import (
@@ -22,7 +21,6 @@ from common_utils import (
     cpu_only
 )
 from _assert_utils import assert_equal
-
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -97,19 +95,19 @@ def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_
     _test_class_op(method, device, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
 
-@cpu_only
+@pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize(
-    'func,method,device,fn_kwargs,match_kwargs', [
-        (F.hflip, T.RandomHorizontalFlip, "cpu", None, {}),
-        (F.vflip, T.RandomVerticalFlip, "cpu", None, {}),
-        (F.invert, T.RandomInvert, "cpu", None, {}),
-        (F.posterize, T.RandomPosterize, "cpu", {"bits": 4}, {}),
-        (F.solarize, T.RandomSolarize, "cpu", {"threshold": 192.0}, {}),
-        (F.adjust_sharpness, T.RandomAdjustSharpness, "cpu", {"sharpness_factor": 2.0}, {}),
-        (F.autocontrast, T.RandomAutocontrast, "cpu", None, {'test_exact_match': False,
-                                                             'agg_method': 'max', 'tol': (1 + 1e-5),
-                                                             'allowed_percentage_diff': .05}),
-        (F.equalize, T.RandomEqualize, "cpu", None, {})
+    'func,method,fn_kwargs,match_kwargs', [
+        (F.hflip, T.RandomHorizontalFlip, None, {}),
+        (F.vflip, T.RandomVerticalFlip, None, {}),
+        (F.invert, T.RandomInvert, None, {}),
+        (F.posterize, T.RandomPosterize, {"bits": 4}, {}),
+        (F.solarize, T.RandomSolarize, {"threshold": 192.0}, {}),
+        (F.adjust_sharpness, T.RandomAdjustSharpness, {"sharpness_factor": 2.0}, {}),
+        (F.autocontrast, T.RandomAutocontrast, None, {'test_exact_match': False,
+                                                      'agg_method': 'max', 'tol': (1 + 1e-5),
+                                                      'allowed_percentage_diff': .05}),
+        (F.equalize, T.RandomEqualize, None, {})
     ]
 )
 def test_random(func, method, device, fn_kwargs, match_kwargs):
@@ -241,7 +239,7 @@ def test_center_crop(device):
         meth_kwargs=meth_kwargs
     )
     fn_kwargs = {"output_size": (5,)}
-    meth_kwargs = {"size": (5, )}
+    meth_kwargs = {"size": (5,)}
     _test_op(
         F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
         meth_kwargs=meth_kwargs
@@ -273,7 +271,7 @@ def test_center_crop(device):
     # test_ten_crop
     (F.ten_crop, T.TenCrop, 10)
 ])
-@pytest.mark.parametrize('size', [(5, ), [5, ], (4, 5), [4, 5]])
+@pytest.mark.parametrize('size', [(5,), [5, ], (4, 5), [4, 5]])
 def test_x_crop(fn, method, out_length, size, device):
     meth_kwargs = fn_kwargs = {'size': size}
     scripted_fn = torch.jit.script(fn)
@@ -364,7 +362,7 @@ class TestResize:
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
     @pytest.mark.parametrize('ratio', [(0.75, 1.333), [0.75, 1.333]])
-    @pytest.mark.parametrize('size', [(32, ), [44, ], [32, ], [32, 32], (32, 32), [44, 55]])
+    @pytest.mark.parametrize('size', [(32,), [44, ], [32, ], [32, 32], (32, 32), [44, 55]])
     @pytest.mark.parametrize('interpolation', [NEAREST, BILINEAR, BICUBIC])
     def test_resized_crop(self, scale, ratio, size, interpolation, device):
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
@@ -380,14 +378,6 @@ class TestResize:
         s_transform = torch.jit.script(transform)
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
-
-
-@unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
-class CUDATester(unittest.TestCase):
-
-    def setUp(self):
-        torch.set_deterministic(False)
-        self.device = "cuda"
 
 
 def _test_random_affine_helper(device, **kwargs):
@@ -502,7 +492,6 @@ def test_random_perspective_save():
     (T.RandomGrayscale, {})
 ])
 def test_to_grayscale(device, Klass, meth_kwargs):
-
     tol = 1.0 + 1e-10
     _test_class_op(
         Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
@@ -510,16 +499,12 @@ def test_to_grayscale(device, Klass, meth_kwargs):
     )
 
 
-@cpu_only
-@pytest.mark.xfail()
-@pytest.mark.parametrize(
-    'in_dtype,out_dtype', [
-        (int_dtypes() + float_dtypes(), int_dtypes() + float_dtypes())
-    ]
-)
-def test_convert_image_dtype(in_dtype, out_dtype):
-    tensor, _ = _create_data(26, 34, device="cpu")
-    batch_tensors = torch.rand(4, 3, 44, 56, device="cpu")
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('in_dtype', int_dtypes() + float_dtypes())
+@pytest.mark.parametrize('out_dtype', int_dtypes() + float_dtypes())
+def test_convert_image_dtype(device, in_dtype, out_dtype):
+    tensor, _ = _create_data(26, 34, device=device)
+    batch_tensors = torch.rand(4, 3, 44, 56, device=device)
 
     in_tensor = tensor.to(in_dtype)
     in_batch_tensors = batch_tensors.to(in_dtype)
@@ -537,16 +522,21 @@ def test_convert_image_dtype(in_dtype, out_dtype):
     _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
+
+@pytest.mark.parametrize('out_dtype', int_dtypes() + float_dtypes())
+def test_convert_image_dtype_save(out_dtype):
+    fn = T.ConvertImageDtype(dtype=out_dtype)
+    scripted_fn = torch.jit.script(fn)
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
 
 
-@cpu_only
+@pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('policy', [policy for policy in T.AutoAugmentPolicy])
 @pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
-def test_autoaugment(policy, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device="cpu")
-    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device="cpu")
+def test_autoaugment(device, policy, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     s_transform = None
     transform = T.AutoAugment(policy=policy, fill=fill)
@@ -555,12 +545,18 @@ def test_autoaugment(policy, fill):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+
+@pytest.mark.parametrize('policy', [policy for policy in T.AutoAugmentPolicy])
+@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_autoaugment_save(policy, fill):
+    transform = T.AutoAugment(policy=policy, fill=fill)
+    s_transform = torch.jit.script(transform)
     if s_transform is not None:
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
-@cpu_only
+@pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize(
     'config', [
         {"value": 0.2},
@@ -569,15 +565,27 @@ def test_autoaugment(policy, fill):
         {"value": "random", "ratio": (0.1, 0.2)}
     ]
 )
-def test_random_erasing(config):
-    tensor, _ = _create_data(24, 32, channels=3, device="cpu")
-    batch_tensors = torch.rand(4, 3, 44, 56, device="cpu")
+def test_random_erasing(device, config):
+    tensor, _ = _create_data(24, 32, channels=3, device=device)
+    batch_tensors = torch.rand(4, 3, 44, 56, device=device)
 
     fn = T.RandomErasing(**config)
     scripted_fn = torch.jit.script(fn)
     _test_transform_vs_scripted(fn, scripted_fn, tensor)
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
+
+@pytest.mark.parametrize(
+    'config', [
+        {"value": 0.2},
+        {"value": "random"},
+        {"value": (0.2, 0.2, 0.2)},
+        {"value": "random", "ratio": (0.1, 0.2)}
+    ]
+)
+def test_random_erasing_save(config):
+    fn = T.RandomErasing(**config)
+    scripted_fn = torch.jit.script(fn)
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
 
@@ -707,7 +715,3 @@ def test_gaussian_blur(device, meth_kwargs):
         T.GaussianBlur, meth_kwargs=meth_kwargs,
         test_exact_match=False, device=device, agg_method="max", tol=tol
     )
-
-
-if __name__ == '__main__':
-    unittest.main()
