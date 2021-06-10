@@ -202,31 +202,6 @@ class Tester(unittest.TestCase):
                 self.assertEqual(len(results), 10)
                 self.assertEqual(results, expected_output)
 
-    def test_randomresized_params(self):
-        height = random.randint(24, 32) * 2
-        width = random.randint(24, 32) * 2
-        img = torch.ones(3, height, width)
-        to_pil_image = transforms.ToPILImage()
-        img = to_pil_image(img)
-        size = 100
-        epsilon = 0.05
-        min_scale = 0.25
-        for _ in range(10):
-            scale_min = max(round(random.random(), 2), min_scale)
-            scale_range = (scale_min, scale_min + round(random.random(), 2))
-            aspect_min = max(round(random.random(), 2), epsilon)
-            aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
-            randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
-            i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
-            aspect_ratio_obtained = w / h
-            self.assertTrue((min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained and
-                             aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon) or
-                            aspect_ratio_obtained == 1.0)
-            self.assertIsInstance(i, int)
-            self.assertIsInstance(j, int)
-            self.assertIsInstance(h, int)
-            self.assertIsInstance(w, int)
-
     def test_randomperspective(self):
         for _ in range(10):
             height = random.randint(24, 32) * 2
@@ -286,77 +261,6 @@ class Tester(unittest.TestCase):
             for wrong_num_bands in set(nums_bands) - {num_bands}:
                 with self.assertRaises(ValueError):
                     F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
-
-    def test_resize(self):
-
-        input_sizes = [
-            # height, width
-            # square image
-            (28, 28),
-            (27, 27),
-            # rectangular image: h < w
-            (28, 34),
-            (29, 35),
-            # rectangular image: h > w
-            (34, 28),
-            (35, 29),
-        ]
-        test_output_sizes_1 = [
-            # single integer
-            22, 27, 28, 36,
-            # single integer in tuple/list
-            [22, ], (27, ),
-        ]
-        test_output_sizes_2 = [
-            # two integers
-            [22, 22], [22, 28], [22, 36],
-            [27, 22], [36, 22], [28, 28],
-            [28, 37], [37, 27], [37, 37]
-        ]
-
-        for height, width in input_sizes:
-            img = Image.new("RGB", size=(width, height), color=127)
-
-            for osize in test_output_sizes_1:
-                for max_size in (None, 37, 1000):
-
-                    t = transforms.Resize(osize, max_size=max_size)
-                    result = t(img)
-
-                    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
-                    osize = osize[0] if isinstance(osize, (list, tuple)) else osize
-                    # If size is an int, smaller edge of the image will be matched to this number.
-                    # i.e, if height > width, then image will be rescaled to (size * height / width, size).
-                    if height < width:
-                        exp_w, exp_h = (int(osize * width / height), osize)  # (w, h)
-                        if max_size is not None and max_size < exp_w:
-                            exp_w, exp_h = max_size, int(max_size * exp_h / exp_w)
-                        self.assertEqual(result.size, (exp_w, exp_h), msg=msg)
-                    elif width < height:
-                        exp_w, exp_h = (osize, int(osize * height / width))  # (w, h)
-                        if max_size is not None and max_size < exp_h:
-                            exp_w, exp_h = int(max_size * exp_w / exp_h), max_size
-                        self.assertEqual(result.size, (exp_w, exp_h), msg=msg)
-                    else:
-                        exp_w, exp_h = (osize, osize)  # (w, h)
-                        if max_size is not None and max_size < osize:
-                            exp_w, exp_h = max_size, max_size
-                        self.assertEqual(result.size, (exp_w, exp_h), msg=msg)
-
-        for height, width in input_sizes:
-            img = Image.new("RGB", size=(width, height), color=127)
-
-            for osize in test_output_sizes_2:
-                oheight, owidth = osize
-
-                t = transforms.Resize(osize)
-                result = t(img)
-
-                self.assertEqual((owidth, oheight), result.size)
-
-        with self.assertWarnsRegex(UserWarning, r"Anti-alias option is always applied for PIL Image input"):
-            t = transforms.Resize(osize, antialias=False)
-            t(img)
 
     def test_random_crop(self):
         height = random.randint(10, 32) * 2
@@ -1313,6 +1217,115 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomErasing can be printed as string
         t.__repr__()
+
+
+def test_randomresized_params():
+    height = random.randint(24, 32) * 2
+    width = random.randint(24, 32) * 2
+    img = torch.ones(3, height, width)
+    to_pil_image = transforms.ToPILImage()
+    img = to_pil_image(img)
+    size = 100
+    epsilon = 0.05
+    min_scale = 0.25
+    for _ in range(10):
+        scale_min = max(round(random.random(), 2), min_scale)
+        scale_range = (scale_min, scale_min + round(random.random(), 2))
+        aspect_min = max(round(random.random(), 2), epsilon)
+        aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
+        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
+        i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
+        aspect_ratio_obtained = w / h
+        assert((min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained and
+                aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon) or
+               aspect_ratio_obtained == 1.0)
+        assert isinstance(i, int)
+        assert isinstance(j, int)
+        assert isinstance(h, int)
+        assert isinstance(w, int)
+
+
+@pytest.mark.parametrize('height, width', [
+    # height, width
+    # square image
+    (28, 28),
+    (27, 27),
+    # rectangular image: h < w
+    (28, 34),
+    (29, 35),
+    # rectangular image: h > w
+    (34, 28),
+    (35, 29),
+])
+@pytest.mark.parametrize('osize', [
+    # single integer
+    22, 27, 28, 36,
+    # single integer in tuple/list
+    [22, ], (27, ),
+])
+@pytest.mark.parametrize('max_size', (None, 37, 1000))
+def test_resize(height, width, osize, max_size):
+    img = Image.new("RGB", size=(width, height), color=127)
+
+    t = transforms.Resize(osize, max_size=max_size)
+    result = t(img)
+
+    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
+    osize = osize[0] if isinstance(osize, (list, tuple)) else osize
+    # If size is an int, smaller edge of the image will be matched to this number.
+    # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+    if height < width:
+        exp_w, exp_h = (int(osize * width / height), osize)  # (w, h)
+        if max_size is not None and max_size < exp_w:
+            exp_w, exp_h = max_size, int(max_size * exp_h / exp_w)
+        assert result.size == (exp_w, exp_h), msg
+    elif width < height:
+        exp_w, exp_h = (osize, int(osize * height / width))  # (w, h)
+        if max_size is not None and max_size < exp_h:
+            exp_w, exp_h = int(max_size * exp_w / exp_h), max_size
+        assert result.size == (exp_w, exp_h), msg
+    else:
+        exp_w, exp_h = (osize, osize)  # (w, h)
+        if max_size is not None and max_size < osize:
+            exp_w, exp_h = max_size, max_size
+        assert result.size == (exp_w, exp_h), msg
+
+
+@pytest.mark.parametrize('height, width', [
+    # height, width
+    # square image
+    (28, 28),
+    (27, 27),
+    # rectangular image: h < w
+    (28, 34),
+    (29, 35),
+    # rectangular image: h > w
+    (34, 28),
+    (35, 29),
+])
+@pytest.mark.parametrize('osize', [
+    # two integers sequence output
+    [22, 22], [22, 28], [22, 36],
+    [27, 22], [36, 22], [28, 28],
+    [28, 37], [37, 27], [37, 37]
+])
+def test_resize_sequence_output(height, width, osize):
+    img = Image.new("RGB", size=(width, height), color=127)
+    oheight, owidth = osize
+
+    t = transforms.Resize(osize)
+    result = t(img)
+
+    assert (owidth, oheight) == result.size
+
+
+def test_resize_antialias_error():
+    osize = [37, 37]
+    img = Image.new("RGB", size=(35, 29), color=127)
+
+    with pytest.warns(UserWarning, match=r"Anti-alias option is always applied for PIL Image input"):
+        t = transforms.Resize(osize, antialias=False)
+        t(img)
 
 
 class TestPad:
