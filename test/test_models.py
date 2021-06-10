@@ -8,9 +8,11 @@ import functools
 import operator
 import torch
 import torch.nn as nn
+import torchvision
 from torchvision import models
 import pytest
 import warnings
+import traceback
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
@@ -34,6 +36,11 @@ def get_available_detection_models():
 def get_available_video_models():
     # TODO add a registration mechanism to torchvision.models
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+
+
+def get_available_quantizable_models():
+    # TODO add a registration mechanism to torchvision.models
+    return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
 def _get_expected_file(name=None):
@@ -615,6 +622,50 @@ def test_video_model(model_name, dev):
         with torch.cuda.amp.autocast():
             out = model(x)
             assert out.shape[-1] == 50
+
+
+@pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
+                         'qnnpack' in torch.backends.quantized.supported_engines),
+                    reason="This Pytorch Build has not been built with fbgemm and qnnpack")
+@pytest.mark.parametrize('model_name', get_available_quantizable_models())
+def test_quantized_classification_model(model_name):
+    defaults = {
+        'input_shape': (1, 3, 224, 224),
+        'pretrained': False,
+        'quantize': True,
+    }
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    input_shape = kwargs.pop('input_shape')
+
+    # First check if quantize=True provides models that can run with input data
+    model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+    x = torch.rand(input_shape)
+    model(x)
+
+    kwargs['quantize'] = False
+    for eval_mode in [True, False]:
+        model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+        if eval_mode:
+            model.eval()
+            model.qconfig = torch.quantization.default_qconfig
+        else:
+            model.train()
+            model.qconfig = torch.quantization.default_qat_qconfig
+
+        model.fuse_model()
+        if eval_mode:
+            torch.quantization.prepare(model, inplace=True)
+        else:
+            torch.quantization.prepare_qat(model, inplace=True)
+            model.eval()
+
+        torch.quantization.convert(model, inplace=True)
+
+    try:
+        torch.jit.script(model)
+    except Exception as e:
+        tb = traceback.format_exc()
+        raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
 
 
 if __name__ == '__main__':
