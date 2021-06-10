@@ -459,9 +459,6 @@ def test_detection_model_validation(model_name):
 @pytest.mark.parametrize('model_name', get_available_video_models())
 @pytest.mark.parametrize('dev', _devs)
 def test_video_model(model_name, dev):
-    if IN_CIRCLE_CI and 'cuda' in dev.type and model_name == 'r2plus1d_18' and sys.platform == 'linux':
-        # FIXME: Failure should fixed and test re-actived. See https://github.com/pytorch/vision/issues/3702
-        pytest.skip('r2plus1d_18 fails on CircleCI linux GPU machines.')
     ModelTester()._test_video_model(model_name, dev)
 
 
