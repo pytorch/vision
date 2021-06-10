@@ -202,111 +202,6 @@ class Tester(unittest.TestCase):
                 self.assertEqual(len(results), 10)
                 self.assertEqual(results, expected_output)
 
-    def test_randomperspective(self):
-        for _ in range(10):
-            height = random.randint(24, 32) * 2
-            width = random.randint(24, 32) * 2
-            img = torch.ones(3, height, width)
-            to_pil_image = transforms.ToPILImage()
-            img = to_pil_image(img)
-            perp = transforms.RandomPerspective()
-            startpoints, endpoints = perp.get_params(width, height, 0.5)
-            tr_img = F.perspective(img, startpoints, endpoints)
-            tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
-            tr_img = F.to_tensor(tr_img)
-            self.assertEqual(img.size[0], width)
-            self.assertEqual(img.size[1], height)
-            self.assertGreater(torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3,
-                               torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
-
-    def test_randomperspective_fill(self):
-
-        # assert fill being either a Sequence or a Number
-        with self.assertRaises(TypeError):
-            transforms.RandomPerspective(fill={})
-
-        t = transforms.RandomPerspective(fill=None)
-        self.assertTrue(t.fill == 0)
-
-        height = 100
-        width = 100
-        img = torch.ones(3, height, width)
-        to_pil_image = transforms.ToPILImage()
-        img = to_pil_image(img)
-
-        modes = ("L", "RGB", "F")
-        nums_bands = [len(mode) for mode in modes]
-        fill = 127
-
-        for mode, num_bands in zip(modes, nums_bands):
-            img_conv = img.convert(mode)
-            perspective = transforms.RandomPerspective(p=1, fill=fill)
-            tr_img = perspective(img_conv)
-            pixel = tr_img.getpixel((0, 0))
-
-            if not isinstance(pixel, tuple):
-                pixel = (pixel,)
-            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
-
-        for mode, num_bands in zip(modes, nums_bands):
-            img_conv = img.convert(mode)
-            startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
-            tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
-            pixel = tr_img.getpixel((0, 0))
-
-            if not isinstance(pixel, tuple):
-                pixel = (pixel,)
-            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
-
-            for wrong_num_bands in set(nums_bands) - {num_bands}:
-                with self.assertRaises(ValueError):
-                    F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
-
-    def test_random_crop(self):
-        height = random.randint(10, 32) * 2
-        width = random.randint(10, 32) * 2
-        oheight = random.randint(5, (height - 2) / 2) * 2
-        owidth = random.randint(5, (width - 2) / 2) * 2
-        img = torch.ones(3, height, width)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.RandomCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), oheight)
-        self.assertEqual(result.size(2), owidth)
-
-        padding = random.randint(1, 20)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.RandomCrop((oheight, owidth), padding=padding),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), oheight)
-        self.assertEqual(result.size(2), owidth)
-
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.RandomCrop((height, width)),
-            transforms.ToTensor()
-        ])(img)
-        self.assertEqual(result.size(1), height)
-        self.assertEqual(result.size(2), width)
-        torch.testing.assert_close(result, img)
-
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.RandomCrop((height + 1, width + 1), pad_if_needed=True),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), height + 1)
-        self.assertEqual(result.size(2), width + 1)
-
-        t = transforms.RandomCrop(48)
-        img = torch.ones(3, 32, 32)
-        with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
-            t(img)
-
     def test_max_value(self):
         for dtype in int_dtypes():
             self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
@@ -888,41 +783,6 @@ class Tester(unittest.TestCase):
                     for sh in range(-15, 15, 5):
                         _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 
-    def test_random_rotation(self):
-
-        with self.assertRaises(ValueError):
-            transforms.RandomRotation(-0.7)
-            transforms.RandomRotation([-0.7])
-            transforms.RandomRotation([-0.7, 0, 0.7])
-
-        # assert fill being either a Sequence or a Number
-        with self.assertRaises(TypeError):
-            transforms.RandomRotation(0, fill={})
-
-        t = transforms.RandomRotation(0, fill=None)
-        self.assertTrue(t.fill == 0)
-
-        t = transforms.RandomRotation(10)
-        angle = t.get_params(t.degrees)
-        self.assertTrue(angle > -10 and angle < 10)
-
-        t = transforms.RandomRotation((-10, 10))
-        angle = t.get_params(t.degrees)
-        self.assertTrue(-10 < angle < 10)
-
-        # Checking if RandomRotation can be printed as string
-        t.__repr__()
-
-        # assert deprecation warning and non-BC
-        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
-            t = transforms.RandomRotation((-10, 10), resample=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
-
-        # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
-            t = transforms.RandomRotation((-10, 10), interpolation=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
-
     def test_random_affine(self):
 
         with self.assertRaises(ValueError):
@@ -996,31 +856,6 @@ class Tester(unittest.TestCase):
                 for _ in range(100):
                     img = transform(img)
                 transform.__repr__()
-
-    @unittest.skipIf(stats is None, 'scipy.stats not available')
-    def test_random_erasing(self):
-        img = torch.ones(3, 128, 128)
-
-        t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1 / 3, 3.))
-        y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
-        aspect_ratio = h / w
-        # Add some tolerance due to the rounding and int conversion used in the transform
-        tol = 0.05
-        self.assertTrue(1 / 3 - tol <= aspect_ratio <= 3 + tol)
-
-        aspect_ratios = []
-        random.seed(42)
-        trial = 1000
-        for _ in range(trial):
-            y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
-            aspect_ratios.append(h / w)
-
-        count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
-        p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
-        self.assertGreater(p_value, 0.0001)
-
-        # Checking if RandomErasing can be printed as string
-        t.__repr__()
 
 
 @pytest.mark.parametrize('channels', [1, 3, 4])
@@ -1908,6 +1743,178 @@ def test_random_order():
 
     # Checking if RandomOrder can be printed as string
     random_order_transform.__repr__()
+
+
+def test_random_crop():
+    height = random.randint(10, 32) * 2
+    width = random.randint(10, 32) * 2
+    oheight = random.randint(5, (height - 2) / 2) * 2
+    owidth = random.randint(5, (width - 2) / 2) * 2
+    img = torch.ones(3, height, width)
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomCrop((oheight, owidth)),
+        transforms.ToTensor(),
+    ])(img)
+    assert result.size(1) == oheight
+    assert result.size(2) == owidth
+
+    padding = random.randint(1, 20)
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomCrop((oheight, owidth), padding=padding),
+        transforms.ToTensor(),
+    ])(img)
+    assert result.size(1) == oheight
+    assert result.size(2) == owidth
+
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomCrop((height, width)),
+        transforms.ToTensor()
+    ])(img)
+    assert result.size(1) == height
+    assert result.size(2) == width
+    torch.testing.assert_close(result, img)
+
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomCrop((height + 1, width + 1), pad_if_needed=True),
+        transforms.ToTensor(),
+    ])(img)
+    assert result.size(1) == height + 1
+    assert result.size(2) == width + 1
+
+    t = transforms.RandomCrop(48)
+    img = torch.ones(3, 32, 32)
+    with pytest.raises(ValueError, match=r"Required crop size .+ is larger then input image size .+"):
+        t(img)
+
+
+@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+def test_random_erasing():
+    img = torch.ones(3, 128, 128)
+
+    t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1 / 3, 3.))
+    y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
+    aspect_ratio = h / w
+    # Add some tolerance due to the rounding and int conversion used in the transform
+    tol = 0.05
+    assert (1 / 3 - tol <= aspect_ratio <= 3 + tol)
+
+    aspect_ratios = []
+    random.seed(42)
+    trial = 1000
+    for _ in range(trial):
+        y, x, h, w, v = t.get_params(img, t.scale, t.ratio, [t.value, ])
+        aspect_ratios.append(h / w)
+
+    count_bigger_then_ones = len([1 for aspect_ratio in aspect_ratios if aspect_ratio > 1])
+    p_value = stats.binom_test(count_bigger_then_ones, trial, p=0.5)
+    assert p_value > 0.0001
+
+    # Checking if RandomErasing can be printed as string
+    t.__repr__()
+
+
+def test_random_rotation():
+
+    with pytest.raises(ValueError):
+        transforms.RandomRotation(-0.7)
+
+    with pytest.raises(ValueError):
+        transforms.RandomRotation([-0.7])
+
+    with pytest.raises(ValueError):
+        transforms.RandomRotation([-0.7, 0, 0.7])
+
+    t = transforms.RandomRotation(0, fill=None)
+    assert t.fill == 0
+
+    t = transforms.RandomRotation(10)
+    angle = t.get_params(t.degrees)
+    assert (angle > -10 and angle < 10)
+
+    t = transforms.RandomRotation((-10, 10))
+    angle = t.get_params(t.degrees)
+    assert (-10 < angle < 10)
+
+    # Checking if RandomRotation can be printed as string
+    t.__repr__()
+
+    # assert deprecation warning and non-BC
+    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        t = transforms.RandomRotation((-10, 10), resample=2)
+        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
+    # assert changed type warning
+    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        t = transforms.RandomRotation((-10, 10), interpolation=2)
+        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
+
+def test_random_rotation_error():
+    # assert fill being either a Sequence or a Number
+    with pytest.raises(TypeError):
+        transforms.RandomRotation(0, fill={})
+
+
+def test_randomperspective():
+    for _ in range(10):
+        height = random.randint(24, 32) * 2
+        width = random.randint(24, 32) * 2
+        img = torch.ones(3, height, width)
+        to_pil_image = transforms.ToPILImage()
+        img = to_pil_image(img)
+        perp = transforms.RandomPerspective()
+        startpoints, endpoints = perp.get_params(width, height, 0.5)
+        tr_img = F.perspective(img, startpoints, endpoints)
+        tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
+        tr_img = F.to_tensor(tr_img)
+        assert img.size[0] == width
+        assert img.size[1] == height
+        assert (torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3 >
+                torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
+
+
+@pytest.mark.parametrize('mode', ["L", "RGB", "F"])
+def test_randomperspective_fill(mode):
+
+    # assert fill being either a Sequence or a Number
+    with pytest.raises(TypeError):
+        transforms.RandomPerspective(fill={})
+
+    t = transforms.RandomPerspective(fill=None)
+    assert t.fill == 0
+
+    height = 100
+    width = 100
+    img = torch.ones(3, height, width)
+    to_pil_image = transforms.ToPILImage()
+    img = to_pil_image(img)
+    fill = 127
+    num_bands = len(mode)
+
+    img_conv = img.convert(mode)
+    perspective = transforms.RandomPerspective(p=1, fill=fill)
+    tr_img = perspective(img_conv)
+    pixel = tr_img.getpixel((0, 0))
+
+    if not isinstance(pixel, tuple):
+        pixel = (pixel,)
+    assert pixel == tuple([fill] * num_bands)
+
+    startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
+    tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
+    pixel = tr_img.getpixel((0, 0))
+
+    if not isinstance(pixel, tuple):
+        pixel = (pixel,)
+    assert pixel == tuple([fill] * num_bands)
+
+    wrong_num_bands = num_bands + 1
+    with pytest.raises(ValueError):
+        F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
 
 @pytest.mark.skipif(stats is None, reason='scipy.stats not available')
