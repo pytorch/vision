@@ -49,8 +49,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                                        cu_version == 'cpu' and
                                        btype == 'wheel' and
                                        python_version == '3.7'):
-                            # this is for build_docs, the versions must match
-                            fb = "master,nightly"
+                            # the fields must match the build_docs "requires" dependency
+                            fb = "*"
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
                             unicode, prefix, upload, filter_branch=fb)
