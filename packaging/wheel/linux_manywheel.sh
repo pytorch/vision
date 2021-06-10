@@ -14,9 +14,6 @@ else
   cu_suffix="+$CUVER"
 fi
 
-export TORCHVISION_BUILD_VERSION="0.4.0.dev$(date "+%Y%m%d")${cu_suffix}"
-export TORCHVISION_BUILD_NUMBER="1"
-export TORCHVISION_LOCAL_VERSION_LABEL="$CUVER"
 export OUT_DIR="/remote/$CUVER"
 
 pushd /opt/python
