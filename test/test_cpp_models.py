@@ -1,6 +1,6 @@
 import torch
 import os
-import unittest
+import pytest
 from torchvision import models, transforms
 import sys
 
@@ -43,11 +43,12 @@ def read_image2():
     return torch.cat([x, x], 0)
 
 
-@unittest.skipIf(
+@pytest.mark.skipif(
     sys.platform == "darwin" or True,
-    "C++ models are broken on OS X at the moment, and there's a BC breakage on master; "
+    reason="C++ models are broken on OS X at the moment, and there's a BC breakage on master; "
     "see https://github.com/pytorch/vision/issues/1191")
-class Tester(unittest.TestCase):
+class TestCppModels:
+
     pretrained = False
     image = read_image1()
 
@@ -149,4 +150,4 @@ class Tester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main(__file__)
