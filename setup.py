@@ -6,6 +6,7 @@ from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
+from distutils.version import StrictVersion
 import glob
 import shutil
 
@@ -346,6 +347,17 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        try:
+            ffmpeg_version = os.popen('ffmpeg -version | head -n1').read()
+            ffmpeg_version = ffmpeg_version.split('version')[-1].split()[0]
+            if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
+                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
+                has_ffmpeg = False
+        except (IndexError, ValueError):
+            print('Error fetching ffmpeg version, ignoring ffmpeg.')
+            has_ffmpeg = False
+
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
