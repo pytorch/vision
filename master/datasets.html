@@ -199,7 +199,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+c7e834a ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+be731c6 ) &#x25BC</a>
     </div>
     
 
@@ -949,7 +949,7 @@ target and transforms it.</p></li>
 <h2>Kinetics-400<a class="headerlink" href="#kinetics-400" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="torchvision.datasets.Kinetics400">
-<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Kinetics400</code><span class="sig-paren">(</span><em class="sig-param">root</em>, <em class="sig-param">frames_per_clip</em>, <em class="sig-param">step_between_clips=1</em>, <em class="sig-param">frame_rate=None</em>, <em class="sig-param">extensions=('avi'</em>, <em class="sig-param">)</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">_precomputed_metadata=None</em>, <em class="sig-param">num_workers=1</em>, <em class="sig-param">_video_width=0</em>, <em class="sig-param">_video_height=0</em>, <em class="sig-param">_video_min_dimension=0</em>, <em class="sig-param">_audio_samples=0</em>, <em class="sig-param">_audio_channels=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/kinetics.html#Kinetics400"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Kinetics400" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">Kinetics400</code><span class="sig-paren">(</span><em class="sig-param">root: str</em>, <em class="sig-param">frames_per_clip: int</em>, <em class="sig-param">num_classes: Any = None</em>, <em class="sig-param">split: Any = None</em>, <em class="sig-param">download: Any = None</em>, <em class="sig-param">num_download_workers: Any = None</em>, <em class="sig-param">**kwargs: Any</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/kinetics.html#Kinetics400"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Kinetics400" title="Permalink to this definition">¶</a></dt>
 <dd><p><a class="reference external" href="https://deepmind.com/research/open-source/open-source-datasets/kinetics/">Kinetics-400</a>
 dataset.</p>
 <p>Kinetics-400 is an action recognition video dataset.
@@ -970,6 +970,7 @@ frames in a video might be present.</p>
 ├── class1
 │   ├── clip1.avi
 │   ├── clip2.avi
+│   ├── clip3.mp4
 │   └── ...
 └── class2
     ├── clipx.avi
@@ -1001,7 +1002,7 @@ and <cite>L</cite> is the number of points</p></li>
 </dl>
 <dl class="method">
 <dt id="torchvision.datasets.Kinetics400.__getitem__">
-<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">idx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/kinetics.html#Kinetics400.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.Kinetics400.__getitem__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">idx</em><span class="sig-paren">)</span><a class="headerlink" href="#torchvision.datasets.Kinetics400.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</p>

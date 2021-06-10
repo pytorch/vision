@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+c7e834a ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+be731c6 ) &#x25BC</a>
     </div>
     
 
@@ -315,13 +315,256 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.datasets.kinetics</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">list_dir</span>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">download_url</span><span class="p">,</span> <span class="n">verify_str_arg</span><span class="p">,</span> <span class="n">check_integrity</span>
 <span class="kn">from</span> <span class="nn">.folder</span> <span class="kn">import</span> <span class="n">find_classes</span><span class="p">,</span> <span class="n">make_dataset</span>
 <span class="kn">from</span> <span class="nn">.video_utils</span> <span class="kn">import</span> <span class="n">VideoClips</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
-<div class="viewcode-block" id="Kinetics400"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kinetics400">[docs]</a><span class="k">class</span> <span class="nc">Kinetics400</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_dl_wrap</span><span class="p">(</span><span class="n">tarpath</span><span class="p">,</span> <span class="n">videopath</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+    <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">tarpath</span><span class="p">,</span> <span class="n">videopath</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Kinetics</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;` Generic Kinetics &lt;https://deepmind.com/research/open-source/open-source-datasets/kinetics/&gt;`_</span>
+<span class="sd">    dataset.</span>
+
+<span class="sd">    Kinetics-400/600/700 are action recognition video datasets.</span>
+<span class="sd">    This dataset consider every video as a collection of video clips of fixed size, specified</span>
+<span class="sd">    by ``frames_per_clip``, where the step in frames between each clip is given by</span>
+<span class="sd">    ``step_between_clips``.</span>
+
+<span class="sd">    To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``</span>
+<span class="sd">    and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two</span>
+<span class="sd">    elements will come from video 1, and the next three elements from video 2.</span>
+<span class="sd">    Note that we drop clips which do not have exactly ``frames_per_clip`` elements, so not all</span>
+<span class="sd">    frames in a video might be present.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory of the Kinetics Dataset.</span>
+<span class="sd">            Directory should be structured as follows:</span>
+<span class="sd">            .. code::</span>
+
+<span class="sd">                root/</span>
+<span class="sd">                ├── split</span>
+<span class="sd">                │   ├──  class1</span>
+<span class="sd">                │   │   ├──  clip1.mp4</span>
+<span class="sd">                │   │   ├──  clip2.mp4</span>
+<span class="sd">                │   │   ├──  clip3.mp4</span>
+<span class="sd">                │   │   ├──  ...</span>
+<span class="sd">                │   ├──  class2</span>
+<span class="sd">                │   │   ├──   clipx.mp4</span>
+<span class="sd">                │   │    └── ...</span>
+<span class="sd">            Note: split is appended automatically using the split argument.</span>
+<span class="sd">        frames_per_clip (int): number of frames in a clip</span>
+<span class="sd">        num_classes (int): select between Kinetics-400 (default), Kinetics-600, and Kinetics-700</span>
+<span class="sd">        split (str): split of the dataset to consider; supports ``&quot;train&quot;`` (default) ``&quot;val&quot;``</span>
+<span class="sd">        frame_rate (float): If omitted, interpolate different frame rate for each clip.</span>
+<span class="sd">        step_between_clips (int): number of frames between each clip</span>
+<span class="sd">        transform (callable, optional): A function/transform that  takes in a TxHxWxC video</span>
+<span class="sd">            and returns a transformed version.</span>
+<span class="sd">        download (bool): Download the official version of the dataset to root folder.</span>
+<span class="sd">        num_workers (int): Use multiple workers for VideoClips creation</span>
+<span class="sd">        num_download_workers (int): Use multiprocessing in order to speed up download.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A 3-tuple with the following entries:</span>
+
+<span class="sd">            - video (Tensor[T, C, H, W]): the `T` video frames in torch.uint8 tensor</span>
+<span class="sd">            - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels</span>
+<span class="sd">              and `L` is the number of points in torch.float tensor</span>
+<span class="sd">            - label (int): class of the video clip</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If ``download is True`` and the video archives are already extracted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_TAR_URLS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;400&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3.amazonaws.com/kinetics/400/</span><span class="si">{split}</span><span class="s2">/k400_</span><span class="si">{split}</span><span class="s2">_path.txt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;600&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3.amazonaws.com/kinetics/600/</span><span class="si">{split}</span><span class="s2">/k600_</span><span class="si">{split}</span><span class="s2">_path.txt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;700&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3.amazonaws.com/kinetics/700_2020/</span><span class="si">{split}</span><span class="s2">/k700_2020_</span><span class="si">{split}</span><span class="s2">_path.txt&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">_ANNOTATION_URLS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;400&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3.amazonaws.com/kinetics/400/annotations/</span><span class="si">{split}</span><span class="s2">.csv&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;600&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3.amazonaws.com/kinetics/600/annotations/</span><span class="si">{split}</span><span class="s2">.txt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;700&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3.amazonaws.com/kinetics/700_2020/annotations/</span><span class="si">{split}</span><span class="s2">.csv&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">frames_per_clip</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;400&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">frame_rate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">step_between_clips</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;avi&quot;</span><span class="p">,</span> <span class="s2">&quot;mp4&quot;</span><span class="p">),</span>
+        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">num_download_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">_precomputed_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_video_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">_video_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">_video_min_dimension</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">_audio_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">_audio_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">_legacy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="c1"># TODO: support test</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">arg</span><span class="o">=</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;400&quot;</span><span class="p">,</span> <span class="s2">&quot;600&quot;</span><span class="p">,</span> <span class="s2">&quot;700&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="n">extensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_download_workers</span> <span class="o">=</span> <span class="n">num_download_workers</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_legacy</span> <span class="o">=</span> <span class="n">_legacy</span>
+        <span class="k">if</span> <span class="n">_legacy</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using legacy structure&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span> <span class="o">=</span> <span class="n">root</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">download</span><span class="p">,</span> <span class="s2">&quot;Cannot download the videos using legacy_structure.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">arg</span><span class="o">=</span><span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">download_and_process_videos</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span> <span class="o">=</span> <span class="n">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="p">,</span> <span class="n">is_valid_file</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">video_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span> <span class="o">=</span> <span class="n">VideoClips</span><span class="p">(</span>
+            <span class="n">video_list</span><span class="p">,</span>
+            <span class="n">frames_per_clip</span><span class="p">,</span>
+            <span class="n">step_between_clips</span><span class="p">,</span>
+            <span class="n">frame_rate</span><span class="p">,</span>
+            <span class="n">_precomputed_metadata</span><span class="p">,</span>
+            <span class="n">num_workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">,</span>
+            <span class="n">_video_width</span><span class="o">=</span><span class="n">_video_width</span><span class="p">,</span>
+            <span class="n">_video_height</span><span class="o">=</span><span class="n">_video_height</span><span class="p">,</span>
+            <span class="n">_video_min_dimension</span><span class="o">=</span><span class="n">_video_min_dimension</span><span class="p">,</span>
+            <span class="n">_audio_samples</span><span class="o">=</span><span class="n">_audio_samples</span><span class="p">,</span>
+            <span class="n">_audio_channels</span><span class="o">=</span><span class="n">_audio_channels</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
+
+    <span class="k">def</span> <span class="nf">download_and_process_videos</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Downloads all the videos to the _root_ folder in the expected format.&quot;&quot;&quot;</span>
+        <span class="n">tic</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_download_videos</span><span class="p">()</span>
+        <span class="n">toc</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Elapsed time for downloading in mins &quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">toc</span> <span class="o">-</span> <span class="n">tic</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_ds_structure</span><span class="p">()</span>
+        <span class="n">toc2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Elapsed time for processing in mins &quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">toc2</span> <span class="o">-</span> <span class="n">toc</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Elapsed time overall in mins &quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">toc2</span> <span class="o">-</span> <span class="n">tic</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_download_videos</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;download tarballs containing the video to &quot;tars&quot; folder and extract them into the _split_ folder where</span>
+<span class="sd">        split is one of the official dataset splits.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: if download folder exists, break to prevent downloading entire dataset again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="si">}</span><span class="s2"> already exists. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;If you want to re-download or re-extract the images, delete the directory.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">tar_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;tars&quot;</span><span class="p">)</span>
+        <span class="n">file_list_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;files&quot;</span><span class="p">)</span>
+
+        <span class="n">split_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TAR_URLS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">)</span>
+        <span class="n">split_url_filepath</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file_list_path</span><span class="p">,</span> <span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">split_url</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">split_url_filepath</span><span class="p">):</span>
+            <span class="n">download_url</span><span class="p">(</span><span class="n">split_url</span><span class="p">,</span> <span class="n">file_list_path</span><span class="p">)</span>
+        <span class="n">list_video_urls</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">split_url_filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_download_workers</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">list_video_urls</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">tar_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">part</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">_dl_wrap</span><span class="p">,</span> <span class="n">tar_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">)</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">list_video_urls</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
+            <span class="n">poolproc</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_download_workers</span><span class="p">)</span>
+            <span class="n">poolproc</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_ds_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;move videos from</span>
+<span class="sd">        split_folder/</span>
+<span class="sd">            ├── clip1.avi</span>
+<span class="sd">            ├── clip2.avi</span>
+
+<span class="sd">        to the correct format as described below:</span>
+<span class="sd">        split_folder/</span>
+<span class="sd">            ├── class1</span>
+<span class="sd">            │   ├── clip1.avi</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">annotation_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;annotations&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotation_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">)):</span>
+            <span class="n">download_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ANNOTATION_URLS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">split</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">),</span> <span class="n">annotation_path</span><span class="p">)</span>
+        <span class="n">annotations</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotation_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">)</span>
+
+        <span class="n">file_fmtstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{ytid}</span><span class="s2">_</span><span class="si">{start:06}</span><span class="s2">_</span><span class="si">{end:06}</span><span class="s2">.mp4&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">file_fmtstr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">ytid</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;youtube_id&quot;</span><span class="p">],</span>
+                    <span class="n">start</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;time_start&quot;</span><span class="p">]),</span>
+                    <span class="n">end</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;time_end&quot;</span><span class="p">]),</span>
+                <span class="p">)</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">,</span> <span class="n">label</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">downloaded_file</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">downloaded_file</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="n">downloaded_file</span><span class="p">,</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_folder</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span>
+                    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">metadata</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">num_clips</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">video_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">get_clip</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_legacy</span><span class="p">:</span>
+            <span class="c1"># [T,H,W,C] --&gt; [T,C,H,W]</span>
+            <span class="n">video</span> <span class="o">=</span> <span class="n">video</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">video_idx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">video</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">label</span>
+
+
+<div class="viewcode-block" id="Kinetics400"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kinetics400">[docs]</a><span class="k">class</span> <span class="nc">Kinetics400</span><span class="p">(</span><span class="n">Kinetics</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    `Kinetics-400 &lt;https://deepmind.com/research/open-source/open-source-datasets/kinetics/&gt;`_</span>
 <span class="sd">    dataset.</span>
@@ -348,6 +591,7 @@
 <span class="sd">                ├── class1</span>
 <span class="sd">                │   ├── clip1.avi</span>
 <span class="sd">                │   ├── clip2.avi</span>
+<span class="sd">                │   ├── clip3.mp4</span>
 <span class="sd">                │   └── ...</span>
 <span class="sd">                └── class2</span>
 <span class="sd">                    ├── clipx.avi</span>
@@ -367,45 +611,31 @@
 <span class="sd">            - label (int): class of the video clip</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">frames_per_clip</span><span class="p">,</span> <span class="n">step_between_clips</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">frame_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">extensions</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;avi&#39;</span><span class="p">,),</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_precomputed_metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">_video_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">_video_height</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">_video_min_dimension</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">_audio_samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">_audio_channels</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Kinetics400</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">frames_per_clip</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">download</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_download_workers</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Kinetics400 is deprecated and will be removed in a future release.&quot;</span>
+            <span class="s2">&quot;It was replaced by Kinetics(..., num_classes=</span><span class="se">\&quot;</span><span class="s2">400</span><span class="se">\&quot;</span><span class="s2">).&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">download</span><span class="p">,</span> <span class="n">num_download_workers</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Usage of &#39;num_classes&#39;, &#39;split&#39;, &#39;download&#39;, or &#39;num_download_workers&#39; is not supported in &quot;</span>
+                <span class="s2">&quot;Kinetics400. Please use Kinetics instead.&quot;</span>
+            <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span> <span class="o">=</span> <span class="n">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="p">,</span> <span class="n">is_valid_file</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">video_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span> <span class="o">=</span> <span class="n">VideoClips</span><span class="p">(</span>
-            <span class="n">video_list</span><span class="p">,</span>
-            <span class="n">frames_per_clip</span><span class="p">,</span>
-            <span class="n">step_between_clips</span><span class="p">,</span>
-            <span class="n">frame_rate</span><span class="p">,</span>
-            <span class="n">_precomputed_metadata</span><span class="p">,</span>
-            <span class="n">num_workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">,</span>
-            <span class="n">_video_width</span><span class="o">=</span><span class="n">_video_width</span><span class="p">,</span>
-            <span class="n">_video_height</span><span class="o">=</span><span class="n">_video_height</span><span class="p">,</span>
-            <span class="n">_video_min_dimension</span><span class="o">=</span><span class="n">_video_min_dimension</span><span class="p">,</span>
-            <span class="n">_audio_samples</span><span class="o">=</span><span class="n">_audio_samples</span><span class="p">,</span>
-            <span class="n">_audio_channels</span><span class="o">=</span><span class="n">_audio_channels</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">metadata</span>
-
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">num_clips</span><span class="p">()</span>
-
-<div class="viewcode-block" id="Kinetics400.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kinetics400.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-        <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">video_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">get_clip</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
-        <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">video_idx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">video</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">label</span></div></div>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Kinetics400</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span>
+            <span class="n">frames_per_clip</span><span class="o">=</span><span class="n">frames_per_clip</span><span class="p">,</span>
+            <span class="n">_legacy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
 </pre></div>
 
              </article>
