@@ -13,8 +13,6 @@ def get_available_quantizable_models():
 @pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
                          'qnnpack' in torch.backends.quantized.supported_engines),
                     reason="This Pytorch Build has not been built with fbgemm and qnnpack")
-# inception_v3 was causing timeouts on circleci
-# See https://github.com/pytorch/vision/issues/1857
 @pytest.mark.parametrize('name', get_available_quantizable_models())
 def test_classification_model(name):
 
