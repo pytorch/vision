@@ -257,7 +257,7 @@ jobs:
             pip install --user --progress-bar off --editable .
             pip install --user onnx
             pip install --user onnxruntime
-            pip install pytest
+            pip install --user pytest
             python test/test_onnx.py
 
   binary_linux_wheel:
