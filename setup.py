@@ -349,7 +349,8 @@ def get_extensions():
     has_ffmpeg = ffmpeg_exe is not None
     if has_ffmpeg:
         try:
-            ffmpeg_version = os.popen('ffmpeg -version | head -n1').read()
+            ffmpeg_version = subprocess.run(
+                'ffmpeg -version | head -n1', shell=True, capture_output=True).stdout.decode('utf-8')
             ffmpeg_version = ffmpeg_version.split('version')[-1].split()[0]
             if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
                 print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
