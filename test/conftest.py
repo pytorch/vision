@@ -49,4 +49,4 @@ def pytest_collection_modifyitems(items):
 
         out_items.append(item)
 
-    return out_items
+    items[:] = out_items
