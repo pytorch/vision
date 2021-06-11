@@ -65,7 +65,7 @@ bool AudioSampler::init(const SamplerParameters& params) {
 
   int result;
   if ((result = swr_init(swrContext_)) < 0) {
-    LOG(ERROR) << "swr_init faield, err: " << Util::generateErrorDesc(result)
+    LOG(ERROR) << "swr_init failed, err: " << Util::generateErrorDesc(result)
                << ", in -> format: " << params.in.audio.format
                << ", channels: " << params.in.audio.channels
                << ", samples: " << params.in.audio.samples
@@ -116,7 +116,7 @@ int AudioSampler::sample(
              outNumSamples,
              inPlanes,
              inNumSamples)) < 0) {
-      LOG(ERROR) << "swr_convert faield, err: "
+      LOG(ERROR) << "swr_convert failed, err: "
                  << Util::generateErrorDesc(result);
       return result;
     }
@@ -132,7 +132,7 @@ int AudioSampler::sample(
                1)) >= 0) {
         out->append(result);
       } else {
-        LOG(ERROR) << "av_samples_get_buffer_size faield, err: "
+        LOG(ERROR) << "av_samples_get_buffer_size failed, err: "
                    << Util::generateErrorDesc(result);
       }
     }
@@ -140,7 +140,7 @@ int AudioSampler::sample(
     // allocate a temporary buffer
     auto* tmpBuffer = static_cast<uint8_t*>(av_malloc(outBufferBytes));
     if (!tmpBuffer) {
-      LOG(ERROR) << "av_alloc faield, for size: " << outBufferBytes;
+      LOG(ERROR) << "av_alloc failed, for size: " << outBufferBytes;
       return -1;
     }
 
@@ -158,7 +158,7 @@ int AudioSampler::sample(
              outNumSamples,
              inPlanes,
              inNumSamples)) < 0) {
-      LOG(ERROR) << "swr_convert faield, err: "
+      LOG(ERROR) << "swr_convert failed, err: "
                  << Util::generateErrorDesc(result);
       av_free(tmpBuffer);
       return result;
