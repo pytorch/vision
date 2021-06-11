@@ -21,11 +21,11 @@ Pod::Spec.new do |s|
 Additional TorchVision operations for LibTorch
                        DESC
 
-  s.homepage         = 'https://github.com/elb3k/vision'
+  s.homepage         = 'https://github.com/pytorch/vision'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = 'elbekkhoshimjonov@gmail.com'
-  s.source           = { :http => "https://github.com/elb3k/vision/releases/download/v#{s.version}/libtorchvision_ops_ios_#{s.version}.zip" }
+  s.author           = 'Torchvision Team'
+  s.source           = { :http => "https://github.com/pytorch/vision/releases/download/v#{s.version}/libtorchvision_ops_ios_#{s.version}.zip" }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '12.0'
