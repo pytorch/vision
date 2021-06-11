@@ -150,6 +150,8 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong1, boxes)
     with pytest.raises(ValueError, match="Pass individual images, not batches"):
         utils.draw_bounding_boxes(img_wrong2, boxes)
+    with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
+        utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
 
 
 @pytest.mark.parametrize('colors', [
