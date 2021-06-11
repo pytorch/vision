@@ -131,6 +131,13 @@ def test_draw_boxes_vanilla():
     assert_equal(img, img_cp)
 
 
+def test_draw_boxes_grayscale():
+    img = torch.full((1, 4, 4), fill_value=255, dtype=torch.uint8)
+    boxes = torch.tensor([[0, 0, 3, 3]], dtype=torch.int64)
+    bboxed_img = utils.draw_bounding_boxes(image=img, boxes=boxes, colors=["#1BBC9B"])
+    assert bboxed_img.size(0) == 3
+
+
 def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
     img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
