@@ -82,7 +82,7 @@ class TestVideoTransforms():
 
         msg = "height: " + str(height) + " width: " \
             + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
-        assert sum1.item() > 1 == True, msg
+        assert sum1.item() > 1, msg
 
         oheight += 1
         owidth += 1
@@ -97,7 +97,7 @@ class TestVideoTransforms():
         assert sum2.item() > 1, msg
         assert sum2.item() > sum1.item(), msg
 
-    pytest.mark.skipif(stats is None, 'scipy.stats is not available')
+    pytest.mark.skipif(stats is None, reason='scipy.stats is not available')
     @pytest.mark.parametrize('channels', [1, 3])
     def test_normalize_video(self, channels):
         def samples_from_standard_normal(tensor):
@@ -142,7 +142,7 @@ class TestVideoTransforms():
 
         trans.__repr__()
 
-    pytest.mark.skipif(stats is None, 'scipy.stats not available')
+    pytest.mark.skipif(stats is None, reason='scipy.stats not available')
     def test_random_horizontal_flip_video(self):
         random_state = random.getstate()
         random.seed(42)
