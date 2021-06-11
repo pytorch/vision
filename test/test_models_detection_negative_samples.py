@@ -7,6 +7,7 @@ from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 
 import pytest
+from _assert_utils import assert_equal
 
 
 class TestModelsDetectionNegativeSamples:
@@ -108,8 +109,8 @@ class TestModelsDetectionNegativeSamples:
         images, targets = self._make_empty_sample()
         loss_dict = model(images, targets)
 
-        assert loss_dict["loss_box_reg"] == torch.tensor(0.)
-        assert loss_dict["loss_rpn_box_reg"] == torch.tensor(0.)
+        assert_equal(loss_dict["loss_box_reg"], torch.tensor(0.))
+        assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
 
     def test_forward_negative_sample_mrcnn(self):
         model = torchvision.models.detection.maskrcnn_resnet50_fpn(
@@ -118,9 +119,9 @@ class TestModelsDetectionNegativeSamples:
         images, targets = self._make_empty_sample(add_masks=True)
         loss_dict = model(images, targets)
 
-        assert loss_dict["loss_box_reg"] == torch.tensor(0.)
-        assert loss_dict["loss_rpn_box_reg"] == torch.tensor(0.)
-        assert loss_dict["loss_mask"] == torch.tensor(0.)
+        assert_equal(loss_dict["loss_box_reg"], torch.tensor(0.))
+        assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
+        assert_equal(loss_dict["loss_mask"], torch.tensor(0.))
 
     def test_forward_negative_sample_krcnn(self):
         model = torchvision.models.detection.keypointrcnn_resnet50_fpn(
@@ -129,9 +130,9 @@ class TestModelsDetectionNegativeSamples:
         images, targets = self._make_empty_sample(add_keypoints=True)
         loss_dict = model(images, targets)
 
-        assert loss_dict["loss_box_reg"] == torch.tensor(0.)
-        assert loss_dict["loss_rpn_box_reg"] == torch.tensor(0.)
-        assert loss_dict["loss_keypoint"] == torch.tensor(0.)
+        assert_equal(loss_dict["loss_box_reg"], torch.tensor(0.))
+        assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
+        assert_equal(loss_dict["loss_keypoint"], torch.tensor(0.))
 
     def test_forward_negative_sample_retinanet(self):
         model = torchvision.models.detection.retinanet_resnet50_fpn(
@@ -140,7 +141,7 @@ class TestModelsDetectionNegativeSamples:
         images, targets = self._make_empty_sample()
         loss_dict = model(images, targets)
 
-        assert loss_dict["bbox_regression"] == torch.tensor(0.)
+        assert_equal(loss_dict["bbox_regression"], torch.tensor(0.))
 
     def test_forward_negative_sample_ssd(self):
         model = torchvision.models.detection.ssd300_vgg16(
@@ -149,7 +150,7 @@ class TestModelsDetectionNegativeSamples:
         images, targets = self._make_empty_sample()
         loss_dict = model(images, targets)
 
-        assert loss_dict["bbox_regression"] == torch.tensor(0.)
+        assert_equal(loss_dict["bbox_regression"], torch.tensor(0.))
 
 
 if __name__ == '__main__':
