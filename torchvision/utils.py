@@ -30,7 +30,7 @@ def make_grid(
             The final grid size is ``(B / nrow, nrow)``. Default: ``8``.
         padding (int, optional): amount of padding. Default: ``2``.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
-            by the min and max values specified by :attr:`range`. Default: ``False``.
+            by the min and max values specified by ``value_range``. Default: ``False``.
         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
@@ -178,6 +178,11 @@ def draw_bounding_boxes(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
+    elif image.size(0) not in {1, 3}:
+        raise ValueError("Only grayscale and RGB images are supported")
+
+    if image.size(0) == 1:
+        image = torch.tile(image, (3, 1, 1))
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
