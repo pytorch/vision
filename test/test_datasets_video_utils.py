@@ -1,7 +1,7 @@
 import contextlib
 import os
 import torch
-import unittest
+import pytest
 
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
@@ -31,7 +31,7 @@ def get_list_of_videos(num_videos=5, sizes=None, fps=None):
         yield names
 
 
-class Tester(unittest.TestCase):
+class TestVideo:
 
     def test_unfold(self):
         a = torch.arange(7)
@@ -58,7 +58,7 @@ class Tester(unittest.TestCase):
         ])
         assert_equal(r, expected, check_stride=False)
 
-    @unittest.skipIf(not io.video._av_available(), "this test requires av")
+    @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")
     def test_video_clips(self):
         with get_list_of_videos(num_videos=3) as video_list:
             video_clips = VideoClips(video_list, 5, 5, num_workers=2)
@@ -82,7 +82,7 @@ class Tester(unittest.TestCase):
                 assert video_idx == v_idx
                 assert clip_idx == c_idx
 
-    @unittest.skipIf(not io.video._av_available(), "this test requires av")
+    @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")
     def test_video_clips_custom_fps(self):
         with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
             num_frames = 4
@@ -124,7 +124,7 @@ class Tester(unittest.TestCase):
         num_frames = 32
         orig_fps = 30
         new_fps = 13
-        with self.assertWarns(UserWarning):
+        with pytest.warns(UserWarning):
             clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
                                                              orig_fps, new_fps)
         assert len(clips) == 0
@@ -132,4 +132,4 @@ class Tester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])
