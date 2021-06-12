@@ -1026,6 +1026,11 @@ workflows:
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
+          filters:
+            branches:
+              only: '*'
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_linux_wheel_py3.7_cpu
           python_version: '3.7'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -1424,6 +1429,12 @@ workflows:
           name: binary_win_conda_py3.9_cu111
           python_version: '3.9'
       - build_docs:
+          filters:
+            branches:
+              only:
+              - nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: build_docs
           python_version: '3.7'
           requires:
