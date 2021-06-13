@@ -78,7 +78,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
       "Expected a non empty 1-dimensional tensor");
 
   struct jpeg_decompress_struct cinfo;
-  struct torch_jpeg_error_mgr jerr;
+  struct torch_jpeg_error_mgr jerr{};
 
   auto datap = data.data_ptr<uint8_t>();
   // Setup decompression structure
