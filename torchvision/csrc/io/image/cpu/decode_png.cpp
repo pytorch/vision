@@ -25,8 +25,8 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
   auto info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
     png_destroy_read_struct(&png_ptr, nullptr, nullptr);
-    // Seems redundant with the if statement. done here to avoid leaking memory.
-    TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
+    // Seems redundant with the if statement. Done here to avoid leaking memory.
+    TORCH_CHECK(false, "libpng info structure allocation failed!")
   }
 
   auto datap = data.accessor<unsigned char, 1>().data();
