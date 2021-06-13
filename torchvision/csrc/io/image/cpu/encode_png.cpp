@@ -64,25 +64,22 @@ void torch_png_write_data(
 
 torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   // Define compression structures and error handling
-  png_structp png_write;
-  png_infop info_ptr;
-  struct torch_png_error_mgr err_ptr;
+  png_structp png_write{};
+  png_infop info_ptr{};
+  struct torch_png_error_mgr err_ptr{};
 
   // Define output buffer
-  struct torch_mem_encode buf_info;
-  buf_info.buffer = NULL;
-  buf_info.size = 0;
+  struct torch_mem_encode buf_info{};
 
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(err_ptr.setjmp_buffer)) {
     /* If we get here, the PNG code has signaled an error.
      * We need to clean up the PNG object and the buffer.
      */
-    if (info_ptr != NULL) {
-      png_destroy_info_struct(png_write, &info_ptr);
-    }
-
     if (png_write != NULL) {
+      if (info_ptr != NULL) {
+        png_destroy_info_struct(png_write, &info_ptr);
+      }
       png_destroy_write_struct(&png_write, NULL);
     }
 
