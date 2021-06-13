@@ -47,11 +47,13 @@ void torch_png_write_data(
   size_t nsize = p->size + length;
 
   /* allocate or grow buffer */
+  char *tmp = NULL;
   if (p->buffer)
-    p->buffer = (char*)realloc(p->buffer, nsize);
+    tmp = (char*)realloc(p->buffer, nsize);
   else
-    p->buffer = (char*)malloc(nsize);
+    tmp = (char*)malloc(nsize);
 
+  p->buffer = tmp;
   if (!p->buffer)
     png_error(png_ptr, "Write Error");
 
