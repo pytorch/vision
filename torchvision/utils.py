@@ -178,6 +178,11 @@ def draw_bounding_boxes(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
+    elif image.size(0) not in {1, 3}:
+        raise ValueError("Only grayscale and RGB images are supported")
+
+    if image.size(0) == 1:
+        image = torch.tile(image, (3, 1, 1))
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
