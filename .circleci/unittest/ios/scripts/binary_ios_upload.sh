@@ -20,7 +20,7 @@ lipo -i ${ZIP_DIR}/install/lib/*.a
 # copy the license
 cp ${PROJ_ROOT}/LICENSE ${ZIP_DIR}/
 # zip the library
-ZIPFILE=libtorchvision_ops_ios_nightly_build.zip
+ZIPFILE=libtorchvision_ops_ios_0.10.0.zip
 cd ${ZIP_DIR}
 #for testing
 touch version.txt
@@ -39,4 +39,4 @@ set +x
 export AWS_ACCESS_KEY_ID=${AWS_S3_ACCESS_KEY_FOR_PYTORCH_BINARY_UPLOAD}
 export AWS_SECRET_ACCESS_KEY=${AWS_S3_ACCESS_SECRET_FOR_PYTORCH_BINARY_UPLOAD}
 set -x
-aws s3 cp ${ZIPFILE} s3://ossci-ios-build/ --acl public-read
+aws s3 cp ${ZIPFILE} s3://ossci-ios/ --acl public-read
