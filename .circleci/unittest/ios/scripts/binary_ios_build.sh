@@ -5,7 +5,7 @@ echo ""
 echo "DIR: $(pwd)"
 WORKSPACE=/Users/distiller/workspace
 PROJ_ROOT_IOS=/Users/distiller/project/ios
-PYTORCH_IOS_NIGHTLY_NAME=libtorch_ios_nightly_build.zip
+PYTORCH_IOS_NIGHTLY_NAME=libtorch_ios_1.9.0.zip
 export TCLLIBPATH="/usr/local/lib"
 
 # install conda
