@@ -32,185 +32,6 @@ GRACE_HOPPER = get_file_path_2(
 
 class Tester(unittest.TestCase):
 
-    def test_center_crop(self):
-        height = random.randint(10, 32) * 2
-        width = random.randint(10, 32) * 2
-        oheight = random.randint(5, (height - 2) / 2) * 2
-        owidth = random.randint(5, (width - 2) / 2) * 2
-
-        img = torch.ones(3, height, width)
-        oh1 = (height - oheight) // 2
-        ow1 = (width - owidth) // 2
-        imgnarrow = img[:, oh1:oh1 + oheight, ow1:ow1 + owidth]
-        imgnarrow.fill_(0)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.sum(), 0,
-                         "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
-        oheight += 1
-        owidth += 1
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        sum1 = result.sum()
-        self.assertGreater(sum1, 1,
-                           "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
-        oheight += 1
-        owidth += 1
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        sum2 = result.sum()
-        self.assertGreater(sum2, 0,
-                           "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
-        self.assertGreater(sum2, sum1,
-                           "height: {} width: {} oheight: {} owdith: {}".format(height, width, oheight, owidth))
-
-    def test_center_crop_2(self):
-        """ Tests when center crop size is larger than image size, along any dimension"""
-        even_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
-        odd_image_size = (even_image_size[0] + 1, even_image_size[1] + 1)
-
-        # Since height is independent of width, we can ignore images with odd height and even width and vice-versa.
-        input_image_sizes = [even_image_size, odd_image_size]
-
-        # Get different crop sizes
-        delta = random.choice((1, 3, 5))
-        crop_size_delta = [-2 * delta, -delta, 0, delta, 2 * delta]
-        crop_size_params = itertools.product(input_image_sizes, crop_size_delta, crop_size_delta)
-
-        for (input_image_size, delta_height, delta_width) in crop_size_params:
-            img = torch.ones(3, *input_image_size)
-            crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
-
-            # Test both transforms, one with PIL input and one with tensor
-            output_pil = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.CenterCrop(crop_size),
-                transforms.ToTensor()],
-            )(img)
-            self.assertEqual(output_pil.size()[1:3], crop_size,
-                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
-
-            output_tensor = transforms.CenterCrop(crop_size)(img)
-            self.assertEqual(output_tensor.size()[1:3], crop_size,
-                             "image_size: {} crop_size: {}".format(input_image_size, crop_size))
-
-            # Ensure output for PIL and Tensor are equal
-            assert_equal(
-                output_tensor, output_pil, check_stride=False,
-                msg="image_size: {} crop_size: {}".format(input_image_size, crop_size)
-            )
-
-            # Check if content in center of both image and cropped output is same.
-            center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
-            crop_center_tl, input_center_tl = [0, 0], [0, 0]
-            for index in range(2):
-                if crop_size[index] > input_image_size[index]:
-                    crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
-                else:
-                    input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
-
-            output_center = output_pil[
-                :,
-                crop_center_tl[0]:crop_center_tl[0] + center_size[0],
-                crop_center_tl[1]:crop_center_tl[1] + center_size[1]
-            ]
-
-            img_center = img[
-                :,
-                input_center_tl[0]:input_center_tl[0] + center_size[0],
-                input_center_tl[1]:input_center_tl[1] + center_size[1]
-            ]
-
-            assert_equal(
-                output_center, img_center, check_stride=False,
-                msg="image_size: {} crop_size: {}".format(input_image_size, crop_size)
-            )
-
-    def test_five_crop(self):
-        to_pil_image = transforms.ToPILImage()
-        h = random.randint(5, 25)
-        w = random.randint(5, 25)
-        for single_dim in [True, False]:
-            crop_h = random.randint(1, h)
-            crop_w = random.randint(1, w)
-            if single_dim:
-                crop_h = min(crop_h, crop_w)
-                crop_w = crop_h
-                transform = transforms.FiveCrop(crop_h)
-            else:
-                transform = transforms.FiveCrop((crop_h, crop_w))
-
-            img = torch.FloatTensor(3, h, w).uniform_()
-            results = transform(to_pil_image(img))
-
-            self.assertEqual(len(results), 5)
-            for crop in results:
-                self.assertEqual(crop.size, (crop_w, crop_h))
-
-            to_pil_image = transforms.ToPILImage()
-            tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
-            tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
-            bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
-            br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
-            center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
-            expected_output = (tl, tr, bl, br, center)
-            self.assertEqual(results, expected_output)
-
-    def test_ten_crop(self):
-        to_pil_image = transforms.ToPILImage()
-        h = random.randint(5, 25)
-        w = random.randint(5, 25)
-        for should_vflip in [True, False]:
-            for single_dim in [True, False]:
-                crop_h = random.randint(1, h)
-                crop_w = random.randint(1, w)
-                if single_dim:
-                    crop_h = min(crop_h, crop_w)
-                    crop_w = crop_h
-                    transform = transforms.TenCrop(crop_h,
-                                                   vertical_flip=should_vflip)
-                    five_crop = transforms.FiveCrop(crop_h)
-                else:
-                    transform = transforms.TenCrop((crop_h, crop_w),
-                                                   vertical_flip=should_vflip)
-                    five_crop = transforms.FiveCrop((crop_h, crop_w))
-
-                img = to_pil_image(torch.FloatTensor(3, h, w).uniform_())
-                results = transform(img)
-                expected_output = five_crop(img)
-
-                # Checking if FiveCrop and TenCrop can be printed as string
-                transform.__repr__()
-                five_crop.__repr__()
-
-                if should_vflip:
-                    vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
-                    expected_output += five_crop(vflipped_img)
-                else:
-                    hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
-                    expected_output += five_crop(hflipped_img)
-
-                self.assertEqual(len(results), 10)
-                self.assertEqual(results, expected_output)
-
-    def test_max_value(self):
-        for dtype in int_dtypes():
-            self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
-
-        # remove float testing as it can lead to errors such as
-        # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
-        # for dtype in float_dtypes():
-        #     self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
-
     def test_convert_image_dtype_float_to_float(self):
         for input_dtype, output_dtypes in cycle_over(float_dtypes()):
             input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
@@ -329,67 +150,6 @@ class Tester(unittest.TestCase):
 
                     self.assertEqual(actual_min, desired_min)
                     self.assertEqual(actual_max, desired_max)
-
-    def test_color_jitter(self):
-        color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
-
-        x_shape = [2, 2, 3]
-        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-        x_pil = Image.fromarray(x_np, mode='RGB')
-        x_pil_2 = x_pil.convert('L')
-
-        for i in range(10):
-            y_pil = color_jitter(x_pil)
-            self.assertEqual(y_pil.mode, x_pil.mode)
-
-            y_pil_2 = color_jitter(x_pil_2)
-            self.assertEqual(y_pil_2.mode, x_pil_2.mode)
-
-        # Checking if ColorJitter can be printed as string
-        color_jitter.__repr__()
-
-    def test_linear_transformation(self):
-        num_samples = 1000
-        x = torch.randn(num_samples, 3, 10, 10)
-        flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
-        # compute principal components
-        sigma = torch.mm(flat_x.t(), flat_x) / flat_x.size(0)
-        u, s, _ = np.linalg.svd(sigma.numpy())
-        zca_epsilon = 1e-10  # avoid division by 0
-        d = torch.Tensor(np.diag(1. / np.sqrt(s + zca_epsilon)))
-        u = torch.Tensor(u)
-        principal_components = torch.mm(torch.mm(u, d), u.t())
-        mean_vector = (torch.sum(flat_x, dim=0) / flat_x.size(0))
-        # initialize whitening matrix
-        whitening = transforms.LinearTransformation(principal_components, mean_vector)
-        # estimate covariance and mean using weak law of large number
-        num_features = flat_x.size(1)
-        cov = 0.0
-        mean = 0.0
-        for i in x:
-            xwhite = whitening(i)
-            xwhite = xwhite.view(1, -1).numpy()
-            cov += np.dot(xwhite, xwhite.T) / num_features
-            mean += np.sum(xwhite) / num_features
-        # if rtol for std = 1e-3 then rtol for cov = 2e-3 as std**2 = cov
-        torch.testing.assert_close(cov / num_samples, np.identity(1), rtol=2e-3, atol=1e-8, check_dtype=False,
-                                   msg="cov not close to 1")
-        torch.testing.assert_close(mean / num_samples, 0, rtol=1e-3, atol=1e-8, check_dtype=False,
-                                   msg="mean not close to 0")
-
-        # Checking if LinearTransformation can be printed as string
-        whitening.__repr__()
-
-    def test_autoaugment(self):
-        for policy in transforms.AutoAugmentPolicy:
-            for fill in [None, 85, (128, 128, 128)]:
-                random.seed(42)
-                img = Image.open(GRACE_HOPPER)
-                transform = transforms.AutoAugment(policy=policy, fill=fill)
-                for _ in range(100):
-                    img = transform(img)
-                transform.__repr__()
 
 
 @pytest.mark.skipif(accimage is None, reason="accimage not available")
@@ -1632,6 +1392,130 @@ def test_random_order():
     random_order_transform.__repr__()
 
 
+def test_linear_transformation():
+    num_samples = 1000
+    x = torch.randn(num_samples, 3, 10, 10)
+    flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
+    # compute principal components
+    sigma = torch.mm(flat_x.t(), flat_x) / flat_x.size(0)
+    u, s, _ = np.linalg.svd(sigma.numpy())
+    zca_epsilon = 1e-10  # avoid division by 0
+    d = torch.Tensor(np.diag(1. / np.sqrt(s + zca_epsilon)))
+    u = torch.Tensor(u)
+    principal_components = torch.mm(torch.mm(u, d), u.t())
+    mean_vector = (torch.sum(flat_x, dim=0) / flat_x.size(0))
+    # initialize whitening matrix
+    whitening = transforms.LinearTransformation(principal_components, mean_vector)
+    # estimate covariance and mean using weak law of large number
+    num_features = flat_x.size(1)
+    cov = 0.0
+    mean = 0.0
+    for i in x:
+        xwhite = whitening(i)
+        xwhite = xwhite.view(1, -1).numpy()
+        cov += np.dot(xwhite, xwhite.T) / num_features
+        mean += np.sum(xwhite) / num_features
+    # if rtol for std = 1e-3 then rtol for cov = 2e-3 as std**2 = cov
+    torch.testing.assert_close(cov / num_samples, np.identity(1), rtol=2e-3, atol=1e-8, check_dtype=False,
+                               msg="cov not close to 1")
+    torch.testing.assert_close(mean / num_samples, 0, rtol=1e-3, atol=1e-8, check_dtype=False,
+                               msg="mean not close to 0")
+
+    # Checking if LinearTransformation can be printed as string
+    whitening.__repr__()
+
+
+@pytest.mark.parametrize('dtype', int_dtypes())
+def test_max_value(dtype):
+
+    assert F_t._max_value(dtype) == torch.iinfo(dtype).max
+    # remove float testing as it can lead to errors such as
+    # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
+    # for dtype in float_dtypes():
+    # self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
+
+
+@pytest.mark.parametrize('should_vflip', [True, False])
+@pytest.mark.parametrize('single_dim', [True, False])
+def test_ten_crop(should_vflip, single_dim):
+    to_pil_image = transforms.ToPILImage()
+    h = random.randint(5, 25)
+    w = random.randint(5, 25)
+    crop_h = random.randint(1, h)
+    crop_w = random.randint(1, w)
+    if single_dim:
+        crop_h = min(crop_h, crop_w)
+        crop_w = crop_h
+        transform = transforms.TenCrop(crop_h,
+                                       vertical_flip=should_vflip)
+        five_crop = transforms.FiveCrop(crop_h)
+    else:
+        transform = transforms.TenCrop((crop_h, crop_w),
+                                       vertical_flip=should_vflip)
+        five_crop = transforms.FiveCrop((crop_h, crop_w))
+
+    img = to_pil_image(torch.FloatTensor(3, h, w).uniform_())
+    results = transform(img)
+    expected_output = five_crop(img)
+
+    # Checking if FiveCrop and TenCrop can be printed as string
+    transform.__repr__()
+    five_crop.__repr__()
+
+    if should_vflip:
+        vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        expected_output += five_crop(vflipped_img)
+    else:
+        hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        expected_output += five_crop(hflipped_img)
+
+    assert len(results) == 10
+    assert results == expected_output
+
+
+@pytest.mark.parametrize('single_dim', [True, False])
+def test_five_crop(single_dim):
+    to_pil_image = transforms.ToPILImage()
+    h = random.randint(5, 25)
+    w = random.randint(5, 25)
+    crop_h = random.randint(1, h)
+    crop_w = random.randint(1, w)
+    if single_dim:
+        crop_h = min(crop_h, crop_w)
+        crop_w = crop_h
+        transform = transforms.FiveCrop(crop_h)
+    else:
+        transform = transforms.FiveCrop((crop_h, crop_w))
+
+    img = torch.FloatTensor(3, h, w).uniform_()
+
+    results = transform(to_pil_image(img))
+
+    assert len(results) == 5
+    for crop in results:
+        assert crop.size == (crop_w, crop_h)
+
+    to_pil_image = transforms.ToPILImage()
+    tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
+    tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
+    bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
+    br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
+    center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
+    expected_output = (tl, tr, bl, br, center)
+    assert results == expected_output
+
+
+@pytest.mark.parametrize('policy', transforms.AutoAugmentPolicy)
+@pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
+def test_autoaugment(policy, fill):
+    random.seed(42)
+    img = Image.open(GRACE_HOPPER)
+    transform = transforms.AutoAugment(policy=policy, fill=fill)
+    for _ in range(100):
+        img = transform(img)
+    transform.__repr__()
+
+
 def test_random_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
@@ -1676,6 +1560,123 @@ def test_random_crop():
     img = torch.ones(3, 32, 32)
     with pytest.raises(ValueError, match=r"Required crop size .+ is larger then input image size .+"):
         t(img)
+
+
+def test_center_crop():
+    height = random.randint(10, 32) * 2
+    width = random.randint(10, 32) * 2
+    oheight = random.randint(5, (height - 2) / 2) * 2
+    owidth = random.randint(5, (width - 2) / 2) * 2
+
+    img = torch.ones(3, height, width)
+    oh1 = (height - oheight) // 2
+    ow1 = (width - owidth) // 2
+    imgnarrow = img[:, oh1:oh1 + oheight, ow1:ow1 + owidth]
+    imgnarrow.fill_(0)
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.CenterCrop((oheight, owidth)),
+        transforms.ToTensor(),
+    ])(img)
+    assert result.sum() == 0
+    oheight += 1
+    owidth += 1
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.CenterCrop((oheight, owidth)),
+        transforms.ToTensor(),
+    ])(img)
+    sum1 = result.sum()
+    assert sum1 > 1
+    oheight += 1
+    owidth += 1
+    result = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.CenterCrop((oheight, owidth)),
+        transforms.ToTensor(),
+    ])(img)
+    sum2 = result.sum()
+    assert sum2 > 0
+    assert sum2 > sum1
+
+
+@pytest.mark.parametrize('odd_image_size', (True, False))
+@pytest.mark.parametrize('delta', (1, 3, 5))
+@pytest.mark.parametrize('delta_width', (-2, -1, 0, 1, 2))
+@pytest.mark.parametrize('delta_height', (-2, -1, 0, 1, 2))
+def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
+    """ Tests when center crop size is larger than image size, along any dimension"""
+
+    # Since height is independent of width, we can ignore images with odd height and even width and vice-versa.
+    input_image_size = (random.randint(10, 32) * 2, random.randint(10, 32) * 2)
+    if odd_image_size:
+        input_image_size = (input_image_size[0] + 1, input_image_size[1] + 1)
+
+    delta_height *= delta
+    delta_width *= delta
+
+    img = torch.ones(3, *input_image_size)
+    crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
+
+    # Test both transforms, one with PIL input and one with tensor
+    output_pil = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.CenterCrop(crop_size),
+        transforms.ToTensor()],
+    )(img)
+    assert output_pil.size()[1:3] == crop_size
+
+    output_tensor = transforms.CenterCrop(crop_size)(img)
+    assert output_tensor.size()[1:3] == crop_size
+
+    # Ensure output for PIL and Tensor are equal
+    assert_equal(
+        output_tensor, output_pil, check_stride=False,
+        msg="image_size: {} crop_size: {}".format(input_image_size, crop_size)
+    )
+
+    # Check if content in center of both image and cropped output is same.
+    center_size = (min(crop_size[0], input_image_size[0]), min(crop_size[1], input_image_size[1]))
+    crop_center_tl, input_center_tl = [0, 0], [0, 0]
+    for index in range(2):
+        if crop_size[index] > input_image_size[index]:
+            crop_center_tl[index] = (crop_size[index] - input_image_size[index]) // 2
+        else:
+            input_center_tl[index] = (input_image_size[index] - crop_size[index]) // 2
+
+    output_center = output_pil[
+        :,
+        crop_center_tl[0]:crop_center_tl[0] + center_size[0],
+        crop_center_tl[1]:crop_center_tl[1] + center_size[1]
+    ]
+
+    img_center = img[
+        :,
+        input_center_tl[0]:input_center_tl[0] + center_size[0],
+        input_center_tl[1]:input_center_tl[1] + center_size[1]
+    ]
+
+    assert_equal(output_center, img_center, check_stride=False)
+
+
+def test_color_jitter():
+    color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
+
+    x_shape = [2, 2, 3]
+    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = Image.fromarray(x_np, mode='RGB')
+    x_pil_2 = x_pil.convert('L')
+
+    for _ in range(10):
+        y_pil = color_jitter(x_pil)
+        assert y_pil.mode == x_pil.mode
+
+        y_pil_2 = color_jitter(x_pil_2)
+        assert y_pil_2.mode == x_pil_2.mode
+
+    # Checking if ColorJitter can be printed as string
+    color_jitter.__repr__()
 
 
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
