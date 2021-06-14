@@ -11,7 +11,6 @@ import shutil
 
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
-from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -150,6 +149,7 @@ def get_extensions():
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
+        from torch.utils.hipify import hipify_python
         hipify_python.hipify(
             project_directory=this_dir,
             output_directory=this_dir,
