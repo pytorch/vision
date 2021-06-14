@@ -34,7 +34,7 @@ mkdir -p ${PROJ_ROOT_IOS}/pytorch
 TORCH_ROOT="${PROJ_ROOT_IOS}/pytorch"
 
 cd ${TORCH_ROOT}
-wget https://ossci-ios-build.s3.amazonaws.com/${PYTORCH_IOS_NIGHTLY_NAME}
+wget https://ossci-ios.s3.amazonaws.com/${PYTORCH_IOS_NIGHTLY_NAME}
 mkdir -p ./build_ios
 unzip -d ./build_ios ./${PYTORCH_IOS_NIGHTLY_NAME}
 
