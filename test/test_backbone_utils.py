@@ -10,6 +10,7 @@ def test_lol():
     else:
         raise ValueError("Nope")
 
+
 @pytest.mark.parametrize('backbone_name', ('resnet18', 'resnet50'))
 def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device='cpu')
