@@ -1,26 +1,11 @@
 #!/bin/bash
 set -eux -o pipefail
 
-CUDA_VERSION=$CU_VERSION
+# In vision, we get cuversion like cu102
+vision_version=${cuversion/cu/}
+# from 102 -> 10.2
+CUDA_VERSION=${version%?}.${version: -1}
 cuda_major_version=${CUDA_VERSION%.*}
-
-declare -a build_dirs=(
-    "10:CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
-    "11:visual_studio_integration/CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
-)
-
-# https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html#install-cuda-software
-cuda10_packages_template="nvcc cuobjdump nvprune cupti cublas cublas_dev cudart cufft cufft_dev curand curand_dev cusolver cusolver_dev cusparse cusparse_dev nvgraph nvgraph_dev npp npp_dev nvrtc nvrtc_dev nvml_dev"
-
-cuda11_packages_template="nvcc cuobjdump nvprune nvprof cupti cublas cublas_dev cudart cufft cufft_dev curand curand_dev cusolver cusolver_dev cusparse cusparse_dev npp npp_dev nvrtc nvrtc_dev nvml_dev"
-
-declare -a install_packages=(
-    "10.1:${cuda10_packages_template}"
-    "10.2:${cuda10_packages_template}"
-    "11.1:${cuda11_packages_template}"
-    "11.2:${cuda11_packages_template}"
-    "11.3:${cuda11_packages_template} thrust"
-)
 
 # cuda_installer_name
 case "$CUDA_VERSION" in
@@ -40,22 +25,47 @@ case "$CUDA_VERSION" in
         cuda_installer_name="cuda_11.3.0_465.89_win10"
         ;;
     * )
-        cuda_installer_name=""
+        echo "CUDA_VERSION $CUDA_VERSION is not supported yet"
+        exit 1
         ;;
 esac
 
-if [ -z $cuda_installer_name ]; then
-    echo "CUDA_VERSION $CUDA_VERSION is not supported yet"
-    exit 1
-fi
-
 # msbuild_project_dir
-map_get_value $cuda_major_version "${build_dirs[@]}"
-msbuild_project_dir=$map_return_value
+case "$cuda_major_version" in
+    10 )
+        msbuild_project_dir="10:CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
+        ;;
+    11 )
+        msbuild_project_dir="11:visual_studio_integration/CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
+        ;;
+    * )
+        echo "cuda major version $cuda_major_version isn't supported"
+        exit 1
+        ;;
+esac
 
 # cuda_install_packages
-map_get_value $CUDA_VERSION "${install_packages[@]}"
-packages_template=$map_return_value
+# https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html#install-cuda-software
+cuda10_packages_template="nvcc cuobjdump nvprune cupti cublas cublas_dev cudart cufft cufft_dev curand curand_dev cusolver cusolver_dev cusparse cusparse_dev nvgraph nvgraph_dev npp npp_dev nvrtc nvrtc_dev nvml_dev"
+
+cuda11_packages_template="nvcc cuobjdump nvprune nvprof cupti cublas cublas_dev cudart cufft cufft_dev curand curand_dev cusolver cusolver_dev cusparse cusparse_dev npp npp_dev nvrtc nvrtc_dev nvml_dev"
+
+case "$CUDA_VERSION" in
+    10.1|10.2 )
+        packages_template="${cuda10_packages_template}"
+        ;;
+    11.1|11.2 )
+        packages_template="${cuda11_packages_template}"
+        ;;
+    11.3 )
+        packages_template="${cuda11_packages_template} thrust"
+        ;;
+    * )
+        echo "CUDA_VERSION $CUDA_VERSION isn't supported"
+        exit 1
+        ;;
+esac
+
 read -ra package_array <<< "$packages_template"
 package_array=("${package_array[@]/%/_$CUDA_VERSION}") # add version suffix for each package
 cuda_install_packages="${package_array[*]}"
