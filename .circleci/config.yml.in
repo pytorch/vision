@@ -58,7 +58,7 @@ commands:
     steps:
       - run:
           name: Install CUDA drivers
-          no_output_timeout: 1m
+          no_output_timeout: 10m
           command: |
               bash .circleci/unittest/windows/scripts/windows_cuda_install.sh
 
