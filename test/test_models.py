@@ -1,7 +1,7 @@
 import os
 import io
 import sys
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda, cpu_only
+from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from _utils_internal import get_relative_path
 from collections import OrderedDict
 import functools
@@ -234,7 +234,6 @@ def _make_sliced_model(model, stop_layer):
     return new_model
 
 
-@cpu_only
 @pytest.mark.parametrize('model_name', ['densenet121', 'densenet169', 'densenet201', 'densenet161'])
 def test_memory_efficient_densenet(model_name):
     input_shape = (1, 3, 300, 300)
@@ -257,7 +256,6 @@ def test_memory_efficient_densenet(model_name):
     torch.testing.assert_close(out1, out2, rtol=0.0, atol=1e-5)
 
 
-@cpu_only
 @pytest.mark.parametrize('dilate_layer_2', (True, False))
 @pytest.mark.parametrize('dilate_layer_3', (True, False))
 @pytest.mark.parametrize('dilate_layer_4', (True, False))
@@ -272,7 +270,6 @@ def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
     assert out.shape == (1, 2048, 7 * f, 7 * f)
 
 
-@cpu_only
 def test_mobilenet_v2_residual_setting():
     model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
     model.eval()
@@ -281,7 +278,6 @@ def test_mobilenet_v2_residual_setting():
     assert out.shape[-1] == 1000
 
 
-@cpu_only
 @pytest.mark.parametrize('model_name', ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"])
 def test_mobilenet_norm_layer(model_name):
     model = models.__dict__[model_name]()
@@ -295,7 +291,6 @@ def test_mobilenet_norm_layer(model_name):
     assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
 
 
-@cpu_only
 def test_inception_v3_eval():
     # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
@@ -311,7 +306,6 @@ def test_inception_v3_eval():
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
 
-@cpu_only
 def test_fasterrcnn_double():
     model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
     model.double()
@@ -327,7 +321,6 @@ def test_fasterrcnn_double():
     assert "labels" in out[0]
 
 
-@cpu_only
 def test_googlenet_eval():
     # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
@@ -376,7 +369,6 @@ def test_fasterrcnn_switch_devices():
     checkOut(out_cpu)
 
 
-@cpu_only
 def test_generalizedrcnn_transform_repr():
 
     min_size, max_size = 224, 299
@@ -573,7 +565,6 @@ def test_detection_model(model_name, dev):
         pytest.skip(msg)
 
 
-@cpu_only
 @pytest.mark.parametrize('model_name', get_available_detection_models())
 def test_detection_model_validation(model_name):
     set_rng_seed(0)

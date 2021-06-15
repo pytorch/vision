@@ -1,4 +1,4 @@
-from common_utils import needs_cuda, cpu_only, cpu_and_gpu
+from common_utils import needs_cuda, cpu_and_gpu
 from _assert_utils import assert_equal
 import math
 from abc import ABC, abstractmethod
@@ -133,7 +133,6 @@ class TestRoiPool(RoIOpTester):
                         y[roi_idx, :, i, j] = bin_x.reshape(n_channels, -1).max(dim=1)[0]
         return y
 
-    @cpu_only
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
@@ -178,7 +177,6 @@ class TestPSRoIPool(RoIOpTester):
                             y[roi_idx, c_out, i, j] = t / area
         return y
 
-    @cpu_only
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_pool)
 
@@ -262,7 +260,6 @@ class TestRoIAlign(RoIOpTester):
                         out_data[r, channel, i, j] = val
         return out_data
 
-    @cpu_only
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
@@ -403,12 +400,10 @@ class TestPSRoIAlign(RoIOpTester):
                         out_data[r, c_out, i, j] = val
         return out_data
 
-    @cpu_only
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
-@cpu_only
 class TestMultiScaleRoIAlign:
     def test_msroialign_repr(self):
         fmap_names = ['0']
@@ -464,7 +459,6 @@ class TestNMS:
         scores = torch.rand(N)
         return boxes, scores
 
-    @cpu_only
     @pytest.mark.parametrize("iou", (.2, .5, .8))
     def test_nms_ref(self, iou):
         err_msg = 'NMS incompatible between CPU and reference implementation for IoU={}'
@@ -473,7 +467,6 @@ class TestNMS:
         keep = ops.nms(boxes, scores, iou)
         assert torch.allclose(keep, keep_ref), err_msg.format(iou)
 
-    @cpu_only
     def test_nms_input_errors(self):
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(4), torch.rand(3), 0.5)
@@ -484,7 +477,6 @@ class TestNMS:
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(3, 4), torch.rand(4), 0.5)
 
-    @cpu_only
     @pytest.mark.parametrize("iou", (.2, .5, .8))
     @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
     def test_qnms(self, iou, scale, zero_point):
@@ -542,7 +534,6 @@ class TestNMS:
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
         assert_equal(keep32, keep16)
 
-    @cpu_only
     def test_batched_nms_implementations(self):
         """Make sure that both implementations of batched_nms yield identical results"""
 
@@ -689,7 +680,6 @@ class TestDeformConv:
             res.to(expected), expected, rtol=tol, atol=tol, msg='\nres:\n{}\nexpected:\n{}'.format(res, expected)
         )
 
-    @cpu_only
     def test_wrong_sizes(self):
         in_channels = 6
         out_channels = 2
@@ -786,7 +776,6 @@ class TestDeformConv:
             self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
 
 
-@cpu_only
 class TestFrozenBNT:
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
@@ -828,7 +817,6 @@ class TestFrozenBNT:
             ops.misc.FrozenBatchNorm2d(32, eps=1e-5, n=32)
 
 
-@cpu_only
 class TestBoxConversion:
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
@@ -853,7 +841,6 @@ class TestBoxConversion:
             assert_equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence))
 
 
-@cpu_only
 class TestBox:
     def test_bbox_same(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
@@ -940,7 +927,6 @@ class TestBox:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
 
 
-@cpu_only
 class TestBoxArea:
     def test_box_area(self):
         def area_check(box, expected, tolerance=1e-4):
@@ -969,7 +955,6 @@ class TestBoxArea:
         area_check(box_tensor, expected)
 
 
-@cpu_only
 class TestBoxIou:
     def test_iou(self):
         def iou_check(box, expected, tolerance=1e-4):
@@ -991,7 +976,6 @@ class TestBoxIou:
             iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
 
-@cpu_only
 class TestGenBoxIou:
     def test_gen_iou(self):
         def gen_iou_check(box, expected, tolerance=1e-4):
