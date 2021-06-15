@@ -45,13 +45,19 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                             (python_version != python_versions[-1] or
                              (cu_version not in [cu_versions[0], cu_versions[-1]])):
                             fb = "master"
+                        if not fb and (os_type == 'linux' and
+                                       cu_version == 'cpu' and
+                                       btype == 'wheel' and
+                                       python_version == '3.7'):
+                            # the fields must match the build_docs "requires" dependency
+                            fb = "*"
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
                             unicode, prefix, upload, filter_branch=fb)
 
     if not filter_branch:
         # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job(None)
+        w += build_doc_job('*')
         w += upload_doc_job('nightly')
     return indent(indentation, w)
 
@@ -83,7 +89,8 @@ def build_doc_job(filter_branch):
     }
 
     if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch)
+        job["filters"] = gen_filter_branch_tree(filter_branch,
+                                                tags_list=RC_PATTERN)
     return [{"build_docs": job}]
 
 

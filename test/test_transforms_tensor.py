@@ -18,7 +18,6 @@ from common_utils import (
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
     cpu_and_gpu,
-    cpu_only
 )
 from _assert_utils import assert_equal
 
@@ -309,7 +308,6 @@ def test_x_crop(fn, method, out_length, size, device):
             assert_equal(transformed_img, transformed_batch[i, ...])
 
 
-@cpu_only
 @pytest.mark.parametrize('method', ["FiveCrop", "TenCrop"])
 def test_x_crop_save(method):
     fn = getattr(T, method)(size=[5, ])
@@ -319,7 +317,6 @@ def test_x_crop_save(method):
 
 
 class TestResize:
-    @cpu_only
     @pytest.mark.parametrize('size', [32, 34, 35, 36, 38])
     def test_resize_int(self, size):
         # TODO: Minimal check for bug-fix, improve this later
@@ -352,7 +349,6 @@ class TestResize:
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-    @cpu_only
     def test_resize_save(self):
         transform = T.Resize(size=[32, ])
         s_transform = torch.jit.script(transform)
@@ -372,7 +368,6 @@ class TestResize:
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-    @cpu_only
     def test_resized_crop_save(self):
         transform = T.RandomResizedCrop(size=[32, ])
         s_transform = torch.jit.script(transform)
