@@ -1,10 +1,12 @@
 #!/bin/bash
 set -eux -o pipefail
 
-# In vision, we get cuversion like cu102
-version=${CU_VERSION/cu/}
-# from 102 -> 10.2
-CUDA_VERSION=${version%?}.${version: -1}
+# whoops, In binary_common cu_version(cu102) is used, CUDA_VERSION is used in unittest
+if [[ -v CU_VERSION ]]; then
+    version=${CU_VERSION/cu/}
+    # from 102 -> 10.2
+    CUDA_VERSION=${version%?}.${version: -1}
+fi
 cuda_major_version=${CUDA_VERSION%.*}
 
 # cuda_installer_name
@@ -87,7 +89,7 @@ set +e
 
 set -e
 
-cp -r ${msbuild_project_dir}/* "C:/Program Files (x86)/Microsoft Visual Studio/2019/${VC_PRODUCT}/MSBuild/Microsoft/VC/v160/BuildCustomizations/"
+# cp -r ${msbuild_project_dir}/* "C:/Program Files (x86)/Microsoft Visual Studio/2019/${VC_PRODUCT}/MSBuild/Microsoft/VC/v160/BuildCustomizations/"
 
 if ! ls "/c/Program Files/NVIDIA Corporation/NvToolsExt/bin/x64/nvToolsExt64_1.dll"
 then
