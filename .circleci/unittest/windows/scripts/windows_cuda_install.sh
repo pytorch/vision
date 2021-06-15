@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eux -o pipefail
 
+CUDA_VERSION=$CU_VERSION
 cuda_major_version=${CUDA_VERSION%.*}
 
 declare -a build_dirs=(
