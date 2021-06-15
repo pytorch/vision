@@ -279,22 +279,25 @@ def read_video(
     info = {}
     video_frames = []
     audio_frames = []
+    audio_timebase = _video_opt.default_timebase
 
     try:
         with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.audio:
+                audio_timebase = container.streams.audio[0].time_base
             time_base = _video_opt.default_timebase
             if container.streams.video:
                 time_base = container.streams.video[0].time_base
             elif container.streams.audio:
                 time_base = container.streams.audio[0].time_base
             # video_timebase is the default time_base
-            start_pts_sec, end_pts_sec, pts_unit = _video_opt._convert_to_sec(
+            start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(
                 start_pts, end_pts, pts_unit, time_base)
             if container.streams.video:
                 video_frames = _read_from_stream(
                     container,
-                    start_pts_sec,
-                    end_pts_sec,
+                    start_pts,
+                    end_pts,
                     pts_unit,
                     container.streams.video[0],
                     {"video": 0},
@@ -307,8 +310,8 @@ def read_video(
             if container.streams.audio:
                 audio_frames = _read_from_stream(
                     container,
-                    start_pts_sec,
-                    end_pts_sec,
+                    start_pts,
+                    end_pts,
                     pts_unit,
                     container.streams.audio[0],
                     {"audio": 0},
@@ -330,6 +333,10 @@ def read_video(
     if aframes_list:
         aframes = np.concatenate(aframes_list, 1)
         aframes = torch.as_tensor(aframes)
+        if pts_unit == 'sec':
+            start_pts = int(math.floor(start_pts * (1 / audio_timebase)))
+            if end_pts != float("inf"):
+                end_pts = int(math.ceil(end_pts * (1 / audio_timebase)))
         aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
