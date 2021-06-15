@@ -1,4 +1,3 @@
-
 pytorch_version = '1.9.0'
 
 Pod::Spec.new do |s|
@@ -15,7 +14,7 @@ Pod::Spec.new do |s|
     DESC
     s.ios.deployment_target = '12.0'
     s.vendored_libraries = 'install/lib/*.a'
-    s.pod_target_xcconfig = {
+    s.user_target_xcconfig = {
         'VALID_ARCHS' => 'x86_64 arm64',
         'OTHER_LDFLAGS' => '$(inherited) -force_load "$(PODS_ROOT)/LibTorchvision/install/lib/libtorchvision_ops.a"',
         'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
