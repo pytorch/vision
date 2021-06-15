@@ -1,0 +1,16 @@
+
+:orphan:
+
+.. _sphx_glr_auto_examples_sg_execution_times:
+
+Computation times
+=================
+**02:19.465** total execution time for **auto_examples** files:
+
++-----------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 02:01.508 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:12.681 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_transforms.py` (``plot_transforms.py``)                                 | 00:05.275 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------------+-----------+--------+
