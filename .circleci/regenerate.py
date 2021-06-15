@@ -57,7 +57,7 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
 
     if not filter_branch:
         # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job('nightly')
+        w += build_doc_job('*')
         w += upload_doc_job('nightly')
     return indent(indentation, w)
 
