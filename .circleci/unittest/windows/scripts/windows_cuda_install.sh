@@ -2,7 +2,7 @@
 set -eux -o pipefail
 
 # In vision, we get cuversion like cu102
-vision_version=${cuversion/cu/}
+version=${CU_VERSION/cu/}
 # from 102 -> 10.2
 CUDA_VERSION=${version%?}.${version: -1}
 cuda_major_version=${CUDA_VERSION%.*}
