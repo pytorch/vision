@@ -9,7 +9,13 @@ set SRC_DIR=%~dp0\..
 
 if not exist "%SRC_DIR%\temp_build" mkdir "%SRC_DIR%\temp_build"
 
-set /a CUDA_VER=%CU_VERSION:cu=%
+rem in unit test workflow, we get CUDA_VERSION, for example 11.1
+if defined CUDA_VERSION (
+    set CUDA_VER=%CUDA_VERSION:.=%
+) else (
+    set CUDA_VER=%CU_VERSION:cu=%
+)
+
 set CUDA_VER_MAJOR=%CUDA_VER:~0,-1%
 set CUDA_VER_MINOR=%CUDA_VER:~-1,1%
 set CUDA_VERSION_STR=%CUDA_VER_MAJOR%.%CUDA_VER_MINOR%
