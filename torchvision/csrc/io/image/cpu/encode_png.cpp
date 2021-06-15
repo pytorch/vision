@@ -47,7 +47,7 @@ void torch_png_write_data(
   size_t nsize = p->size + length;
 
   /* allocate or grow buffer */
-  char *tmp = NULL;
+  char* tmp = NULL;
   if (p->buffer)
     tmp = (char*)realloc(p->buffer, nsize);
   else
@@ -68,10 +68,10 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   // Define compression structures and error handling
   png_structp png_write{};
   png_infop info_ptr{};
-  struct torch_png_error_mgr err_ptr{};
+  struct torch_png_error_mgr err_ptr {};
 
   // Define output buffer
-  struct torch_mem_encode buf_info{};
+  struct torch_mem_encode buf_info {};
 
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(err_ptr.setjmp_buffer)) {
