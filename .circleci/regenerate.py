@@ -50,14 +50,14 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                                        btype == 'wheel' and
                                        python_version == '3.7'):
                             # the fields must match the build_docs "requires" dependency
-                            fb = "*"
+                            fb = "/.*/"
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
                             unicode, prefix, upload, filter_branch=fb)
 
     if not filter_branch:
         # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job('*')
+        w += build_doc_job('/.*/')
         w += upload_doc_job('nightly')
     return indent(indentation, w)
 
