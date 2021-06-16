@@ -159,8 +159,9 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors 
-            or a single color for all of bounding boxes. The colors can be represented as `str` or `Tuple[int, int, int]`.
+        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
+            or a single color for all of the bounding boxes. The colors can be represented as `str` or
+            `Tuple[int, int, int]`.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
