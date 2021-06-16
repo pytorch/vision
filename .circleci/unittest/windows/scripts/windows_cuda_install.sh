@@ -8,7 +8,7 @@ if [[ -v CU_VERSION ]]; then
     CUDA_VERSION=${version%?}.${version: -1}
 fi
 
-set CUDA_VERSION="11.1"
+CUDA_VERSION=11.1
 cuda_major_version=${CUDA_VERSION%.*}
 
 # cuda_installer_name
