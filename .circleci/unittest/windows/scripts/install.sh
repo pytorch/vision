@@ -5,7 +5,7 @@ unset PYTORCH_VERSION
 # so no need to set PYTORCH_VERSION.
 # In fact, keeping PYTORCH_VERSION forces us to hardcode PyTorch version in config.
 
-set -e
+set -ex
 
 # Run nvidia-smi if available
 for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
@@ -49,6 +49,9 @@ if [ $PYTHON_VERSION == "3.6" ]; then
     # Install the minimal PILLOW version. Otherwise, let setup.py install the latest
     pip install pillow>=5.3.0
 fi
+
+# test torch.cuda
+python -c "import torch; print(torch.cuda.is_available())"
 
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
