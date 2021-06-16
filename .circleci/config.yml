@@ -793,7 +793,7 @@ jobs:
           command: .circleci/unittest/windows/scripts/install.sh
       - run:
           name: Run tests
-          command: .circleci/unittest/windows/scripts/run_test.sh
+          command: packaging/windows/internal/cuda_install.bat && .circleci/unittest/windows/scripts/run_test.sh
       - run:
           name: Post process
           command: .circleci/unittest/windows/scripts/post_process.sh
