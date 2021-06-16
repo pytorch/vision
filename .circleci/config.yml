@@ -787,9 +787,7 @@ jobs:
           paths:
             - conda
             - env
-      - run:
-          name: Install cuda drivers
-          command: packaging/windows/internal/cuda_install.bat
+      - install_windows_cuda_driver
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
