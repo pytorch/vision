@@ -208,8 +208,14 @@ echo Installing GPU driver DLLs
 7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -aoa -o"C:\Windows\System32"
 
 rem show cuda version
-where nvidia-smi.exe
-nvidia-smi
+# Run nvidia-smi if available
+for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
+    if [[ -x "$path" ]]; then
+        "$path" || echo "true";
+        break
+    fi
+done
+
 where nvcc
 nvcc --version
 
