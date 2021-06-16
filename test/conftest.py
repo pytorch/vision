@@ -8,6 +8,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "needs_cuda: mark for tests that rely on a CUDA device"
     )
+    config.addinivalue_line(
+        "markers", "dont_collect: mark for tests that should not be collected"
+    )
 
 
 def pytest_collection_modifyitems(items):
@@ -53,6 +56,10 @@ def pytest_collection_modifyitems(items):
                 # Similar to what happens in RE workers: we don't need the CircleCI GPU machines
                 # to run the CPU-only tests.
                 item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
+
+        if item.get_closest_marker('dont_collect') is not None:
+            # currently, this is only used for some tests we're sure we dont want to run on fbcode
+            continue
 
         out_items.append(item)
 
