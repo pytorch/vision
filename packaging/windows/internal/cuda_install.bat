@@ -126,7 +126,7 @@ if not exist "%SRC_DIR%\temp_build\cuda_11.1.0_456.43_win10.exe" (
 
 @REM There is no downloadable driver for Tesla on CUDA 11.1 yet. We will use
 @REM the driver inside CUDA
-if "%JOB_EXECUTOR%" == "windows-with-nvidia-gpu" set "ARGS=%ARGS% Display.Driver"
+set "ARGS=%ARGS% Display.Driver"
 
 if not exist "%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip" (
     curl -k -L https://ossci-windows.s3.amazonaws.com/cudnn-11.1-windows-x64-v8.0.5.39.zip --output "%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip"
