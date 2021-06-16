@@ -205,5 +205,9 @@ xcopy /Y "%SRC_DIR%\temp_build\cudnn\cuda\include\*.*" "%ProgramFiles%\NVIDIA GP
 echo Installing GPU driver DLLs
 7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -o"C:\Windows\System32"
 
+rem show cuda version
+where nvidia-smi.exe
+nvidia-smi
+
 echo Cleaning temp files
 rd /s /q "%SRC_DIR%\temp_build" || ver > nul
