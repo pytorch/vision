@@ -74,7 +74,7 @@ read -ra package_array <<< "$packages_template"
 package_array=("${package_array[@]/%/_$CUDA_VERSION}") # add version suffix for each package
 cuda_install_packages="${package_array[*]}"
 
-if [[ "$cuda_major_version" == "11" && "${JOB_EXECUTOR}" == "windows-with-nvidia-gpu" ]]; then
+if [[ "$cuda_major_version" == "11" ]]; then
     cuda_install_packages="${cuda_install_packages} Display.Driver"
 fi
 
