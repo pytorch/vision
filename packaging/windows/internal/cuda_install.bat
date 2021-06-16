@@ -168,7 +168,9 @@ if not exist "%SRC_DIR%\temp_build\gpu_driver_dlls.7z" (
 echo Installing CUDA toolkit...
 7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
 pushd "%SRC_DIR%\temp_build\cuda"
+time /t
 start /wait setup.exe -s %ARGS%
+time /t
 popd
 
 echo Installing VS integration...
