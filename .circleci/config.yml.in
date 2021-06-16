@@ -772,12 +772,22 @@ jobs:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
-      - run:
-          name: install cuda driver
-          command: packaging/windows/internal/cuda_install.bat
+      - save_cache:
+          {% raw %}
+          key: env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - conda
+            - env
+      - install_windows_cuda_driver
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
