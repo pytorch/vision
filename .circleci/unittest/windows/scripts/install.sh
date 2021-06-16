@@ -7,6 +7,14 @@ unset PYTORCH_VERSION
 
 set -ex
 
+# Run nvidia-smi if available
+for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
+    if [[ -x "$path" ]]; then
+        "$path" || echo "true";
+        break
+    fi
+done
+
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
