@@ -1,7 +1,10 @@
 """
-This script finds all responsible users for labeling a PR by a commit SHA. It is used by the workflow in
+This script finds the merger responsible for labeling a PR by a commit SHA. It is used by the workflow in
 '.github/workflows/pr-labels.yml'. If there exists no PR associated with the commit or the PR is properly labeled,
 this script is a no-op.
+
+Note: we ping the merger only, not the reviewers, as the reviewers can sometimes be external to torchvision
+with no labeling responsibility, so we don't want to bother them.
 """
 
 import sys
