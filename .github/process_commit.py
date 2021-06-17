@@ -63,7 +63,7 @@ if __name__ == "__main__":
     commit_hash = sys.argv[1]
     pr_number = get_pr_number(commit_hash)
     if not pr_number:
-        exit
+        sys.exit(0)
 
     merger, labels = get_pr_merger_and_labels(pr_number)
     is_properly_labeled = bool(REQUIRED_LABELS.intersection(labels))
