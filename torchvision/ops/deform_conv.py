@@ -149,7 +149,7 @@ class DeformConv2d(nn.Module):
             bound = 1 / math.sqrt(fan_in)
             init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, input: Tensor, offset: Tensor, mask: Tensor = None) -> Tensor:
+    def forward(self, input: Tensor, offset: Tensor, mask: Optional[Tensor] = None) -> Tensor:
         """
         Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
