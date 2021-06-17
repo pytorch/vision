@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Process commit and find merger for labeling
+      - name: Process commit and find merger responsible for labeling
         id: commit
         run: echo "::set-output name=merger::$(python .github/process_commit.py ${{ github.sha }})"
 
