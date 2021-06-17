@@ -12,4 +12,4 @@ setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 setup_junit_results_folder
 # nvidia channel included for cudatoolkit >= 11
-conda build $CONDA_CHANNEL_FLAGS -c defaults -c nvidia --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+conda build -c defaults -c nvidia $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
