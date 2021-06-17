@@ -312,7 +312,7 @@ jobs:
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
             # cudatoolkit >= 11 isn't available for windows in the nvidia channel
-            if [[ "${CU_VERSION}" =~ "cu11*" ]]; then
+            if [[ "${CU_VERSION}" =~ cu11.* ]]; then
               export CONDA_CHANNEL_FLAGS="-c conda-forge"
             fi
             packaging/build_conda.sh

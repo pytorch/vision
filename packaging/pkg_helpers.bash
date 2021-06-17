@@ -247,7 +247,7 @@ setup_pip_pytorch_version() {
 # You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly -c pytorch"
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch-nightly -c pytorch"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
@@ -262,7 +262,7 @@ setup_conda_pytorch_constraint() {
       exit 1
     fi
   else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-${UPLOAD_CHANNEL}"
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch -c pytorch-${UPLOAD_CHANNEL}"
   fi
   if [[ "$CU_VERSION" == cpu ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
