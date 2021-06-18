@@ -591,7 +591,7 @@ def _get_perspective_coeffs(
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.linalg.lstsq(a_matrix, b_matrix).solution
+    res = torch.linalg.lstsq(a_matrix, b_matrix, driver='gels').solution
 
     output: List[float] = res.tolist()
     return output
