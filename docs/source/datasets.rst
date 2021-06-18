@@ -13,16 +13,22 @@ For example: ::
                                               shuffle=True,
                                               num_workers=args.nThreads)
 
-The following datasets are available:
-
-.. contents:: Datasets
-    :local:
+.. currentmodule:: torchvision.datasets
 
 All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
+You can also create your own datasets using the provided :ref:`base classes <base_classes_datasets>`.
 
+Caltech
+~~~~~~~
 
-.. currentmodule:: torchvision.datasets
+.. autoclass:: Caltech101
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Caltech256
+  :members: __getitem__
+  :special-members:
 
 CelebA
 ~~~~~~
@@ -74,13 +80,6 @@ Detection
   :members: __getitem__
   :special-members:
 
-DatasetFolder
-~~~~~~~~~~~~~
-
-.. autoclass:: DatasetFolder
-  :members: __getitem__
-  :special-members:
-
 
 EMNIST
 ~~~~~~
@@ -115,13 +114,6 @@ HMDB51
   :members: __getitem__
   :special-members:
 
-ImageFolder
-~~~~~~~~~~~
-
-.. autoclass:: ImageFolder
-  :members: __getitem__
-  :special-members:
-
 ImageNet
 ~~~~~~~~~~~
 
@@ -134,6 +126,13 @@ Kinetics-400
 ~~~~~~~~~~~~
 
 .. autoclass:: Kinetics400
+  :members: __getitem__
+  :special-members:
+
+KITTI
+~~~~~~~~~
+
+.. autoclass:: Kitti
   :members: __getitem__
   :special-members:
 
@@ -192,6 +191,13 @@ SBU
   :members: __getitem__
   :special-members:
 
+SEMEION
+~~~~~~~
+
+.. autoclass:: SEMEION
+  :members: __getitem__
+  :special-members:
+
 STL10
 ~~~~~
 
@@ -231,3 +237,28 @@ VOC
   :members: __getitem__
   :special-members:
 
+WIDERFace
+~~~~~~~~~
+
+.. autoclass:: WIDERFace
+  :members: __getitem__
+  :special-members:
+
+
+.. _base_classes_datasets:
+
+Base classes for custom datasets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: DatasetFolder
+  :members: __getitem__, find_classes, make_dataset
+  :special-members:
+
+
+.. autoclass:: ImageFolder
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VisionDataset
+  :members: __getitem__
+  :special-members:

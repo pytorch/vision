@@ -20,10 +20,11 @@ from .widerface import WIDERFace
 from .sbd import SBDataset
 from .vision import VisionDataset
 from .usps import USPS
-from .kinetics import Kinetics400
+from .kinetics import Kinetics400, Kinetics
 from .hmdb51 import HMDB51
 from .ucf101 import UCF101
 from .places365 import Places365
+from .kitti import Kitti
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -33,5 +34,6 @@ __all__ = ('LSUN', 'LSUNClass',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'WIDERFace', 'SBDataset',
-           'VisionDataset', 'USPS', 'Kinetics400', 'HMDB51', 'UCF101',
-           'Places365')
+           'VisionDataset', 'USPS', 'Kinetics400', "Kinetics", 'HMDB51', 'UCF101',
+           'Places365', 'Kitti',
+           )

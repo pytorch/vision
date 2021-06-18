@@ -20,31 +20,14 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-import torch
+
 import torchvision
 import pytorch_sphinx_theme
-from sphinxcontrib import googleanalytics
 
-
-# Wrap sphinxcontrib-googleanalytics setup() function to avoid a Sphinx warning:
-# "WARNING: extension ‘sphinxcontrib.googleanalytics’ returned an unsupported
-# object from its setup() function; it should return None or a metadata
-# dictionary"
-_googleanalytics_setup_original = googleanalytics.setup
-
-
-def _googleanalytics_setup_wrapper(app):
-    _googleanalytics_setup_original(app)
-    return {"version": "0.1"}
-
-
-googleanalytics.setup = _googleanalytics_setup_wrapper
 
 # -- General configuration ------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
+# Required version of sphinx is set from docs/requirements.txt
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -55,19 +38,25 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
-    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.googleanalytics',
+    'sphinx.ext.duration',
+    'sphinx_gallery.gen_gallery',
+    'sphinx_copybutton',
 ]
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../../gallery/',   # path to your example scripts
+    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    'backreferences_dir': 'gen_modules/backreferences',
+    'doc_module': ('torchvision',),
+}
 
 napoleon_use_ivar = True
 napoleon_numpy_docstring = False
 napoleon_google_docstring = True
 
-googleanalytics_id = 'UA-90545585-1'
-googleanalytics_enabled = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -75,15 +64,16 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = {
+    '.rst': 'restructuredtext',
+}
 
 # The master toctree document.
 master_doc = 'index'
 
 # General information about the project.
 project = 'Torchvision'
-copyright = '2017, Torch Contributors'
+copyright = '2017-present, Torch Contributors'
 author = 'Torch Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -133,6 +123,8 @@ html_theme_options = {
     'display_version': True,
     'logo_only': True,
     'pytorch_project': 'docs',
+    'navigation_with_keys': True,
+    'analytics_id': 'UA-117752657-2',
 }
 
 html_logo = '_static/img/pytorch-logo-dark.svg'
@@ -142,14 +134,10 @@ html_logo = '_static/img/pytorch-logo-dark.svg'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# html_style_path = 'css/pytorch_theme.css'
-# html_context = {
-#    'css_files': [
-#        'https://fonts.googleapis.com/css?family=Lato',
-#        '_static/css/pytorch_theme.css'
-#    ],
-# }
-
+# TODO: remove this once https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed
+html_css_files = [
+    'css/custom_torchvision.css',
+]
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -158,7 +146,6 @@ htmlhelp_basename = 'PyTorchdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
-
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
@@ -176,6 +163,7 @@ latex_elements = {
     #
     # 'figure_align': 'htbp',
 }
+
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
@@ -211,7 +199,10 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
+    'torch': ('https://pytorch.org/docs/stable/', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'PIL': ('https://pillow.readthedocs.io/en/stable/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
 }
 
 # -- A patch that prevents Sphinx from cross-referencing ivar tags -------
@@ -266,3 +257,33 @@ def patched_make_field(self, types, domain, items, **kw):
 
 
 TypedField.make_field = patched_make_field
+
+
+def inject_minigalleries(app, what, name, obj, options, lines):
+    """Inject a minigallery into a docstring.
+
+    This avoids having to manually write the .. minigallery directive for every item we want a minigallery for,
+    as it would be easy to miss some.
+
+    This callback is called after the .. auto directives (like ..autoclass) have been processed,
+    and modifies the lines parameter inplace to add the .. minigallery that will show which examples
+    are using which object.
+
+    It's a bit hacky, but not *that* hacky when you consider that the recommended way is to do pretty much the same,
+    but instead with templates using autosummary (which we don't want to use):
+    (https://sphinx-gallery.github.io/stable/configuration.html#auto-documenting-your-api-with-links-to-examples)
+
+    For docs on autodoc-process-docstring, see the autodoc docs:
+    https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+    """
+
+    if what in ("class", "function"):
+        lines.append(f".. minigallery:: {name}")
+        lines.append(f"    :add-heading: Examples using ``{name.split('.')[-1]}``:")
+        # avoid heading entirely to avoid warning. As a bonud it actually renders better
+        lines.append("    :heading-level: 9")
+        lines.append("\n")
+
+
+def setup(app):
+    app.connect('autodoc-process-docstring', inject_minigalleries)

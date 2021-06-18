@@ -1,6 +1,7 @@
 import math
-
 import torch
+
+from collections import OrderedDict
 from torch import Tensor
 from typing import List, Tuple
 
@@ -344,17 +345,21 @@ class Matcher(object):
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
 
 
-def smooth_l1_loss(input, target, beta: float = 1. / 9, size_average: bool = True):
-    """
-    very similar to the smooth_l1_loss from pytorch, but with
-    the extra beta parameter
-    """
-    n = torch.abs(input - target)
-    cond = n < beta
-    loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
-    if size_average:
-        return loss.mean()
-    return loss.sum()
+class SSDMatcher(Matcher):
+
+    def __init__(self, threshold):
+        super().__init__(threshold, threshold, allow_low_quality_matches=False)
+
+    def __call__(self, match_quality_matrix):
+        matches = super().__call__(match_quality_matrix)
+
+        # For each gt, find the prediction with which it has the highest quality
+        _, highest_quality_pred_foreach_gt = match_quality_matrix.max(dim=1)
+        matches[highest_quality_pred_foreach_gt] = torch.arange(highest_quality_pred_foreach_gt.size(0),
+                                                                dtype=torch.int64,
+                                                                device=highest_quality_pred_foreach_gt.device)
+
+        return matches
 
 
 def overwrite_eps(model, eps):
@@ -373,3 +378,33 @@ def overwrite_eps(model, eps):
     for module in model.modules():
         if isinstance(module, FrozenBatchNorm2d):
             module.eps = eps
+
+
+def retrieve_out_channels(model, size):
+    """
+    This method retrieves the number of output channels of a specific model.
+
+    Args:
+        model (nn.Module): The model for which we estimate the out_channels.
+            It should return a single Tensor or an OrderedDict[Tensor].
+        size (Tuple[int, int]): The size (wxh) of the input.
+
+    Returns:
+        out_channels (List[int]): A list of the output channels of the model.
+    """
+    in_training = model.training
+    model.eval()
+
+    with torch.no_grad():
+        # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
+        device = next(model.parameters()).device
+        tmp_img = torch.zeros((1, 3, size[1], size[0]), device=device)
+        features = model(tmp_img)
+        if isinstance(features, torch.Tensor):
+            features = OrderedDict([('0', features)])
+        out_channels = [x.size(1) for x in features.values()]
+
+    if in_training:
+        model.train()
+
+    return out_channels

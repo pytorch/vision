@@ -1,8 +1,7 @@
 import glob
 import os
 
-from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -62,8 +61,7 @@ class HMDB51(VisionDataset):
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
 
         extensions = ('avi',)
-        classes = sorted(list_dir(root))
-        class_to_idx = {class_: i for (i, class_) in enumerate(classes)}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,
             class_to_idx,
@@ -89,7 +87,6 @@ class HMDB51(VisionDataset):
         self.full_video_clips = video_clips
         self.fold = fold
         self.train = train
-        self.classes = classes
         self.indices = self._select_fold(video_paths, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform

@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from torch import Tensor
 from .utils import load_state_dict_from_url
@@ -45,7 +46,7 @@ class ConvBNActivation(nn.Sequential):
             norm_layer = nn.BatchNorm2d
         if activation_layer is None:
             activation_layer = nn.ReLU6
-        super(ConvBNReLU, self).__init__(
+        super().__init__(
             nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, dilation=dilation, groups=groups,
                       bias=False),
             norm_layer(out_planes),
@@ -189,8 +190,9 @@ class MobileNetV2(nn.Module):
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
         x = self.features(x)
-        # Cannot use "squeeze" as batch-size can be 1 => must use reshape with x.shape[0]
-        x = nn.functional.adaptive_avg_pool2d(x, (1, 1)).reshape(x.shape[0], -1)
+        # Cannot use "squeeze" as batch-size can be 1
+        x = nn.functional.adaptive_avg_pool2d(x, (1, 1))
+        x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
 

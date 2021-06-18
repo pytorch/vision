@@ -35,10 +35,7 @@ setup_cuda() {
   export WHEEL_DIR=""
   # Wheel builds need suffixes (but not if they're on OS X, which never has suffix)
   if [[ "$BUILD_TYPE" == "wheel" ]] && [[ "$(uname)" != Darwin ]]; then
-    # The default CUDA has no suffix
-    if [[ "$CU_VERSION" != "cu102" ]]; then
-      export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
-    fi
+    export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
     # Match the suffix scheme of pytorch, unless this package does not have
     # CUDA builds (in which case, use default)
     if [[ -z "$NO_CUDA_PACKAGE" ]]; then
@@ -56,9 +53,16 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-11.2/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
+      ;;
+    cu111)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.1"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.1/
+      fi
+      export FORCE_CUDA=1
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
       ;;
     cu110)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -67,9 +71,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-11.0/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0"
       ;;
     cu102)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -78,9 +80,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-10.2/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu101)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -89,9 +89,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-10.1/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu100)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -100,9 +98,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-10.0/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu92)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -111,9 +107,12 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-9.2/
       fi
       export FORCE_CUDA=1
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0"
       ;;
     cpu)
+      ;;
+    rocm*)
+      export FORCE_CUDA=1
       ;;
     *)
       echo "Unrecognized CU_VERSION=$CU_VERSION"
@@ -293,6 +292,9 @@ setup_conda_cudatoolkit_constraint() {
       cu112)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.2,<11.3 # [not osx]"
         ;;
+      cu111)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.1,<11.2 # [not osx]"
+        ;;
       cu110)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.0,<11.1 # [not osx]"
         ;;
@@ -330,6 +332,9 @@ setup_conda_cudatoolkit_plain_constraint() {
     case "$CU_VERSION" in
       cu112)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.2"
+        ;;
+      cu111)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.1"
         ;;
       cu102)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.2"

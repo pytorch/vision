@@ -1,4 +1,13 @@
+# onnxruntime requires python 3.5 or above
+try:
+    # This import should be before that of torch
+    # see https://github.com/onnx/onnx/issues/2394#issuecomment-581638840
+    import onnxruntime
+except ImportError:
+    onnxruntime = None
+
 from common_utils import set_rng_seed
+from _assert_utils import assert_equal
 import io
 import torch
 from torchvision import ops
@@ -6,27 +15,19 @@ from torchvision import models
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
-from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
 
-# onnxruntime requires python 3.5 or above
-try:
-    import onnxruntime
-except ImportError:
-    onnxruntime = None
-
-import unittest
+import pytest
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
 
-@unittest.skipIf(onnxruntime is None, 'ONNX Runtime unavailable')
-class ONNXExporterTester(unittest.TestCase):
+@pytest.mark.skipif(onnxruntime is None, reason='ONNX Runtime unavailable')
+class TestONNXExporter:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         torch.manual_seed(123)
 
     def run_model(self, model, inputs_list, tolerate_small_mismatch=False, do_constant_folding=True, dynamic_axes=None,
@@ -77,20 +78,34 @@ class ONNXExporterTester(unittest.TestCase):
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
                 if tolerate_small_mismatch:
-                    self.assertIn("(0.00%)", str(error), str(error))
+                    assert "(0.00%)" in str(error), str(error)
                 else:
                     raise
 
     def test_nms(self):
-        boxes = torch.rand(5, 4)
-        boxes[:, 2:] += torch.rand(5, 2)
-        scores = torch.randn(5)
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
 
         class Module(torch.nn.Module):
             def forward(self, boxes, scores):
                 return ops.nms(boxes, scores, 0.5)
 
         self.run_model(Module(), [(boxes, scores)])
+
+    def test_batched_nms(self):
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
+        idxs = torch.randint(0, 5, size=(num_boxes,))
+
+        class Module(torch.nn.Module):
+            def forward(self, boxes, scores, idxs):
+                return ops.batched_nms(boxes, scores, idxs, 0.5)
+
+        self.run_model(Module(), [(boxes, scores, idxs)])
 
     def test_clip_boxes_to_image(self):
         boxes = torch.randn(5, 4) * 500
@@ -111,6 +126,11 @@ class ONNXExporterTester(unittest.TestCase):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, -1)
         self.run_model(model, [(x, single_roi)])
 
     def test_roi_align_aligned(self):
@@ -134,7 +154,12 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
         self.run_model(model, [(x, single_roi)])
 
-    @unittest.skip  # Issue in exporting ROIAlign with aligned = True for malformed boxes
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((2, 2), 2.5, -1, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+    @pytest.mark.skip(reason="Issue in exporting ROIAlign with aligned = True for malformed boxes")
     def test_roi_align_malformed_boxes(self):
         x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
@@ -457,8 +482,8 @@ class ONNXExporterTester(unittest.TestCase):
         jit_trace = torch.jit.trace(heatmaps_to_keypoints, (maps, rois))
         out_trace = jit_trace(maps, rois)
 
-        assert torch.all(out[0].eq(out_trace[0]))
-        assert torch.all(out[1].eq(out_trace[1]))
+        assert_equal(out[0], out_trace[0])
+        assert_equal(out[1], out_trace[1])
 
         maps2 = torch.rand(20, 2, 21, 21)
         rois2 = torch.rand(20, 4)
@@ -466,8 +491,8 @@ class ONNXExporterTester(unittest.TestCase):
         out2 = heatmaps_to_keypoints(maps2, rois2)
         out_trace2 = jit_trace(maps2, rois2)
 
-        assert torch.all(out2[0].eq(out_trace2[0]))
-        assert torch.all(out2[1].eq(out_trace2[1]))
+        assert_equal(out2[0], out_trace2[0])
+        assert_equal(out2[1], out_trace2[1])
 
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
@@ -500,4 +525,4 @@ class ONNXExporterTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])

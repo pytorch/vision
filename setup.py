@@ -6,12 +6,12 @@ from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
+from distutils.version import StrictVersion
 import glob
 import shutil
 
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
-from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -67,7 +67,7 @@ requirements = [
     pytorch_dep,
 ]
 
-pillow_ver = ' >= 4.1.1'
+pillow_ver = ' >= 5.3.0'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
@@ -138,8 +138,11 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp')) + glob.glob(os.path.join(extensions_dir, 'ops',
                                                                                           '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) + glob.glob(
-        os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp'))
+    source_cpu = (
+        glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'quantized', 'cpu', '*.cpp'))
+    )
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':
@@ -147,6 +150,7 @@ def get_extensions():
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
+        from torch.utils.hipify import hipify_python
         hipify_python.hipify(
             project_directory=this_dir,
             output_directory=this_dir,
@@ -181,9 +185,7 @@ def get_extensions():
 
     define_macros = []
 
-    extra_compile_args = {
-        'cxx': []
-    }
+    extra_compile_args = {'cxx': []}
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
@@ -198,13 +200,12 @@ def get_extensions():
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
-        extra_compile_args['nvcc'] = nvcc_flags
+        extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
+
         extra_compile_args['cxx'].append('/MP')
-    elif sys.platform == 'linux':
-        extra_compile_args['cxx'].append('-fopenmp')
 
     debug_mode = os.getenv('DEBUG', '0') == '1'
     if debug_mode:
@@ -315,8 +316,23 @@ def get_extensions():
             image_library += [jpeg_lib]
             image_include += [jpeg_include]
 
+    # Locating nvjpeg
+    # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
+    nvjpeg_found = (
+        extension is CUDAExtension and
+        CUDA_HOME is not None and
+        os.path.exists(os.path.join(CUDA_HOME, 'include', 'nvjpeg.h'))
+    )
+
+    print('NVJPEG found: {0}'.format(nvjpeg_found))
+    image_macros += [('NVJPEG_FOUND', str(int(nvjpeg_found)))]
+    if nvjpeg_found:
+        print('Building torchvision with NVJPEG image support')
+        image_link_flags.append('nvjpeg')
+
     image_path = os.path.join(extensions_dir, 'io', 'image')
-    image_src = glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+    image_src = (glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+                 + glob.glob(os.path.join(image_path, 'cuda', '*.cpp')))
 
     if png_found or jpeg_found:
         ext_modules.append(extension(
@@ -331,6 +347,19 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        try:
+            ffmpeg_version = subprocess.run(
+                'ffmpeg -version | head -n1', shell=True,
+                stdout=subprocess.PIPE).stdout.decode('utf-8')
+            ffmpeg_version = ffmpeg_version.split('version')[-1].split()[0]
+            if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
+                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
+                has_ffmpeg = False
+        except (IndexError, ValueError):
+            print('Error fetching ffmpeg version, ignoring ffmpeg.')
+            has_ffmpeg = False
+
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
@@ -374,8 +403,7 @@ def get_extensions():
                 library_found |= len(glob.glob(full_path)) > 0
 
             if not library_found:
-                print('{0} header files were not found, disabling ffmpeg '
-                      'support')
+                print(f'{library} header files were not found, disabling ffmpeg support')
                 has_ffmpeg = False
 
     if has_ffmpeg:
