@@ -25,7 +25,8 @@ def process_model(model, tensor, func, name):
 
 
 def read_image1():
-    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
+    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg',
+                              'grace_hopper_517x606.jpg')
     image = Image.open(image_path)
     image = image.resize((224, 224))
     x = F.to_tensor(image)
@@ -33,7 +34,8 @@ def read_image1():
 
 
 def read_image2():
-    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
+    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg',
+                              'grace_hopper_517x606.jpg')
     image = Image.open(image_path)
     image = image.resize((299, 299))
     x = F.to_tensor(image)

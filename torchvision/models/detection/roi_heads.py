@@ -10,7 +10,7 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -18,7 +18,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     """
     Computes the loss for Faster R-CNN.
 
-    Arguments:
+    Args:
         class_logits (Tensor)
         box_regression (Tensor)
         labels (list[BoxList])
@@ -37,16 +37,16 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     # get indices that correspond to the regression targets for
     # the corresponding ground truth labels, to be used with
     # advanced indexing
-    sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
+    sampled_pos_inds_subset = torch.where(labels > 0)[0]
     labels_pos = labels[sampled_pos_inds_subset]
     N, num_classes = class_logits.shape
-    box_regression = box_regression.reshape(N, -1, 4)
+    box_regression = box_regression.reshape(N, box_regression.size(-1) // 4, 4)
 
-    box_loss = det_utils.smooth_l1_loss(
+    box_loss = F.smooth_l1_loss(
         box_regression[sampled_pos_inds_subset, labels_pos],
         regression_targets[sampled_pos_inds_subset],
         beta=1 / 9,
-        size_average=False,
+        reduction='sum',
     )
     box_loss = box_loss / labels.numel()
 
@@ -61,7 +61,7 @@ def maskrcnn_inference(x, labels):
     probability (which are of fixed size and directly output
     by the CNN) and return the masks in the mask field of the BoxList.
 
-    Arguments:
+    Args:
         x (Tensor): the mask logits
         labels (list[BoxList]): bounding boxes that are used as
             reference, one for ech image
@@ -101,7 +101,7 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
 def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     """
-    Arguments:
+    Args:
         proposals (list[BoxList])
         mask_logits (Tensor)
         targets (list[BoxList])
@@ -190,7 +190,7 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
 
     xy_preds_i_0 = x + offset_x_i.to(dtype=torch.float32)
     xy_preds_i_1 = y + offset_y_i.to(dtype=torch.float32)
-    xy_preds_i_2 = torch.ones((xy_preds_i_1.shape), dtype=torch.float32)
+    xy_preds_i_2 = torch.ones(xy_preds_i_1.shape, dtype=torch.float32)
     xy_preds_i = torch.stack([xy_preds_i_0.to(dtype=torch.float32),
                               xy_preds_i_1.to(dtype=torch.float32),
                               xy_preds_i_2.to(dtype=torch.float32)], 0)
@@ -266,7 +266,7 @@ def heatmaps_to_keypoints(maps, rois):
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
         x_int = pos % w
-        y_int = (pos - x_int) // w
+        y_int = torch.div(pos - x_int, w, rounding_mode='floor')
         # assert (roi_map_probs[k, y_int, x_int] ==
         #         roi_map_probs[k, :, :].max())
         x = (x_int.float() + 0.5) * width_correction
@@ -274,7 +274,7 @@ def heatmaps_to_keypoints(maps, rois):
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
-        end_scores[i, :] = roi_map[torch.arange(num_keypoints), y_int, x_int]
+        end_scores[i, :] = roi_map[torch.arange(num_keypoints, device=roi_map.device), y_int, x_int]
 
     return xy_preds.permute(0, 2, 1), end_scores
 
@@ -296,7 +296,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
 
     keypoint_targets = torch.cat(heatmaps, dim=0)
     valid = torch.cat(valid, dim=0).to(dtype=torch.uint8)
-    valid = torch.nonzero(valid).squeeze(1)
+    valid = torch.where(valid)[0]
 
     # torch.mean (in binary_cross_entropy_with_logits) does'nt
     # accept empty tensors, so handle it sepaartely
@@ -379,7 +379,7 @@ def expand_masks(mask, padding):
         scale = expand_masks_tracing_scale(M, padding)
     else:
         scale = float(M + 2 * padding) / M
-    padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
+    padded_mask = F.pad(mask, (padding,) * 4)
     return padded_mask, scale
 
 
@@ -482,7 +482,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
-class RoIHeads(torch.nn.Module):
+class RoIHeads(nn.Module):
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
@@ -604,7 +604,7 @@ class RoIHeads(torch.nn.Module):
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
             zip(sampled_pos_inds, sampled_neg_inds)
         ):
-            img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
+            img_sampled_inds = torch.where(pos_inds_img | neg_inds_img)[0]
             sampled_inds.append(img_sampled_inds)
         return sampled_inds
 
@@ -700,7 +700,7 @@ class RoIHeads(torch.nn.Module):
             labels = labels.reshape(-1)
 
             # remove low scoring boxes
-            inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
+            inds = torch.where(scores > self.score_thresh)[0]
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 
             # remove empty boxes
@@ -727,7 +727,7 @@ class RoIHeads(torch.nn.Module):
                 ):
         # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
-        Arguments:
+        Args:
             features (List[Tensor])
             proposals (List[Tensor[N, 4]])
             image_shapes (List[Tuple[H, W]])
@@ -753,7 +753,7 @@ class RoIHeads(torch.nn.Module):
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
 
-        result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+        result: List[Dict[str, torch.Tensor]] = []
         losses = {}
         if self.training:
             assert labels is not None and regression_targets is not None
@@ -784,7 +784,7 @@ class RoIHeads(torch.nn.Module):
                 mask_proposals = []
                 pos_matched_idxs = []
                 for img_id in range(num_images):
-                    pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
+                    pos = torch.where(labels[img_id] > 0)[0]
                     mask_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
@@ -795,7 +795,6 @@ class RoIHeads(torch.nn.Module):
                 mask_features = self.mask_head(mask_features)
                 mask_logits = self.mask_predictor(mask_features)
             else:
-                mask_logits = torch.tensor(0)
                 raise Exception("Expected mask_roi_pool to be not None")
 
             loss_mask = {}
@@ -832,7 +831,7 @@ class RoIHeads(torch.nn.Module):
                 pos_matched_idxs = []
                 assert matched_idxs is not None
                 for img_id in range(num_images):
-                    pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
+                    pos = torch.where(labels[img_id] > 0)[0]
                     keypoint_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:

@@ -1,4 +1,5 @@
 import warnings
+import os
 
 from .extension import _HAS_OPS
 
@@ -15,6 +16,14 @@ try:
     from .version import __version__  # noqa: F401
 except ImportError:
     pass
+
+# Check if torchvision is being imported within the root folder
+if (not _HAS_OPS and os.path.dirname(os.path.realpath(__file__)) ==
+        os.path.join(os.path.realpath(os.getcwd()), 'torchvision')):
+    message = ('You are importing torchvision within its own root folder ({}). '
+               'This is not expected to work and may give errors. Please exit the '
+               'torchvision project source and relaunch your python interpreter.')
+    warnings.warn(message.format(os.getcwd()))
 
 _image_backend = 'PIL'
 
@@ -55,6 +64,10 @@ def set_video_backend(backend):
             The :mod:`video_reader` package includes a native C++ implementation on
             top of FFMPEG libraries, and a python API of TorchScript custom operator.
             It is generally decoding faster than :mod:`pyav`, but perhaps is less robust.
+
+    .. note::
+        Building with FFMPEG is disabled by default in the latest master. If you want to use the 'video_reader'
+        backend, please compile torchvision from source.
     """
     global _video_backend
     if backend not in ["pyav", "video_reader"]:
@@ -72,6 +85,13 @@ def set_video_backend(backend):
 
 
 def get_video_backend():
+    """
+    Returns the currently active video backend used to decode videos.
+
+    Returns:
+        str: Name of the video backend. one of {'pyav', 'video_reader'}.
+    """
+
     return _video_backend
 
 

@@ -1,8 +1,7 @@
-#ifndef SHUFFLENETV2_H
-#define SHUFFLENETV2_H
+#pragma once
 
-#include <torch/torch.h>
-#include "general.h"
+#include <torch/nn.h>
+#include "../macros.h"
 
 namespace vision {
 namespace models {
@@ -21,19 +20,19 @@ struct VISION_API ShuffleNetV2Impl : torch::nn::Module {
 };
 
 struct VISION_API ShuffleNetV2_x0_5Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x0_5Impl(int64_t num_classes = 1000);
+  explicit ShuffleNetV2_x0_5Impl(int64_t num_classes = 1000);
 };
 
 struct VISION_API ShuffleNetV2_x1_0Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x1_0Impl(int64_t num_classes = 1000);
+  explicit ShuffleNetV2_x1_0Impl(int64_t num_classes = 1000);
 };
 
 struct VISION_API ShuffleNetV2_x1_5Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x1_5Impl(int64_t num_classes = 1000);
+  explicit ShuffleNetV2_x1_5Impl(int64_t num_classes = 1000);
 };
 
 struct VISION_API ShuffleNetV2_x2_0Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x2_0Impl(int64_t num_classes = 1000);
+  explicit ShuffleNetV2_x2_0Impl(int64_t num_classes = 1000);
 };
 
 TORCH_MODULE(ShuffleNetV2);
@@ -44,5 +43,3 @@ TORCH_MODULE(ShuffleNetV2_x2_0);
 
 } // namespace models
 } // namespace vision
-
-#endif // SHUFFLENETV2_H

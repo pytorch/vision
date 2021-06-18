@@ -3,7 +3,8 @@ from torchvision import set_video_backend
 import test_io
 
 
-set_video_backend('video_reader')
+# Disabling the video backend switching temporarily
+# set_video_backend('video_reader')
 
 
 if __name__ == '__main__':

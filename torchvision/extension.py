@@ -1,30 +1,37 @@
+import torch
+
+from ._register_extension import _get_extension_path
+
+
 _HAS_OPS = False
 
 
-def _register_extensions():
-    import os
-    import importlib
-    import torch
-
-    # load the custom_op_library and register the custom ops
-    lib_dir = os.path.dirname(__file__)
-    loader_details = (
-        importlib.machinery.ExtensionFileLoader,
-        importlib.machinery.EXTENSION_SUFFIXES
-    )
-
-    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
-    ext_specs = extfinder.find_spec("_C")
-    if ext_specs is None:
-        raise ImportError
-    torch.ops.load_library(ext_specs.origin)
+def _has_ops():
+    return False
 
 
 try:
-    _register_extensions()
+    lib_path = _get_extension_path('_C')
+    torch.ops.load_library(lib_path)
     _HAS_OPS = True
+
+    def _has_ops():  # noqa: F811
+        return True
 except (ImportError, OSError):
     pass
+
+
+def _assert_has_ops():
+    if not _has_ops():
+        raise RuntimeError(
+            "Couldn't load custom C++ ops. This can happen if your PyTorch and "
+            "torchvision versions are incompatible, or if you had errors while compiling "
+            "torchvision from source. For further information on the compatible versions, check "
+            "https://github.com/pytorch/vision#installation for the compatibility matrix. "
+            "Please check your PyTorch version with torch.__version__ and your torchvision "
+            "version with torchvision.__version__ and verify if they are compatible, and if not "
+            "please reinstall torchvision so that it matches your PyTorch install."
+        )
 
 
 def _check_cuda_version():

@@ -76,7 +76,7 @@ struct _TransitionImpl : torch::nn::SequentialImpl {
         torch::nn::Conv2d(Options(num_input_features, num_output_features, 1)
                               .stride(1)
                               .bias(false)));
-    push_back("pool", torch::nn::Functional([](torch::Tensor input) {
+    push_back("pool", torch::nn::Functional([](const torch::Tensor& input) {
                 return torch::avg_pool2d(input, 2, 2, 0, false, true);
               }));
   }
@@ -91,7 +91,7 @@ TORCH_MODULE(_Transition);
 DenseNetImpl::DenseNetImpl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate) {
@@ -157,7 +157,7 @@ torch::Tensor DenseNetImpl::forward(torch::Tensor x) {
 DenseNet121Impl::DenseNet121Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
@@ -172,7 +172,7 @@ DenseNet121Impl::DenseNet121Impl(
 DenseNet169Impl::DenseNet169Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
@@ -187,7 +187,7 @@ DenseNet169Impl::DenseNet169Impl(
 DenseNet201Impl::DenseNet201Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
@@ -202,7 +202,7 @@ DenseNet201Impl::DenseNet201Impl(
 DenseNet161Impl::DenseNet161Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)

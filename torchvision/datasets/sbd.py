@@ -1,12 +1,12 @@
 import os
 import shutil
 from .vision import VisionDataset
+from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
 
 from PIL import Image
-from .utils import download_url, verify_str_arg
-from .voc import download_extract
+from .utils import download_url, verify_str_arg, download_and_extract_archive
 
 
 class SBDataset(VisionDataset):
@@ -41,7 +41,7 @@ class SBDataset(VisionDataset):
             if `mode='boundaries'` or PIL image if `mode='segmentation'`.
     """
 
-    url = "http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz"
+    url = "https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz"
     md5 = "82b4d87ceb2ed10f6038a1cba92111cb"
     filename = "benchmark.tgz"
 
@@ -49,12 +49,14 @@ class SBDataset(VisionDataset):
     voc_split_filename = "train_noval.txt"
     voc_split_md5 = "79bff800c5f0b1ec6b21080a3c066722"
 
-    def __init__(self,
-                 root,
-                 image_set='train',
-                 mode='boundaries',
-                 download=False,
-                 transforms=None):
+    def __init__(
+            self,
+            root: str,
+            image_set: str = "train",
+            mode: str = "boundaries",
+            download: bool = False,
+            transforms: Optional[Callable] = None,
+    ) -> None:
 
         try:
             from scipy.io import loadmat
@@ -74,7 +76,7 @@ class SBDataset(VisionDataset):
         mask_dir = os.path.join(sbd_root, 'cls')
 
         if download:
-            download_extract(self.url, self.root, self.filename, self.md5)
+            download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.md5)
             extracted_ds_root = os.path.join(self.root, "benchmark_RELEASE", "dataset")
             for f in ["cls", "img", "inst", "train.txt", "val.txt"]:
                 old_path = os.path.join(extracted_ds_root, f)
@@ -88,8 +90,8 @@ class SBDataset(VisionDataset):
 
         split_f = os.path.join(sbd_root, image_set.rstrip('\n') + '.txt')
 
-        with open(os.path.join(split_f), "r") as f:
-            file_names = [x.strip() for x in f.readlines()]
+        with open(os.path.join(split_f), "r") as fh:
+            file_names = [x.strip() for x in fh.readlines()]
 
         self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
         self.masks = [os.path.join(mask_dir, x + ".mat") for x in file_names]
@@ -98,16 +100,16 @@ class SBDataset(VisionDataset):
         self._get_target = self._get_segmentation_target \
             if self.mode == "segmentation" else self._get_boundaries_target
 
-    def _get_segmentation_target(self, filepath):
+    def _get_segmentation_target(self, filepath: str) -> Image.Image:
         mat = self._loadmat(filepath)
         return Image.fromarray(mat['GTcls'][0]['Segmentation'][0])
 
-    def _get_boundaries_target(self, filepath):
+    def _get_boundaries_target(self, filepath: str) -> np.ndarray:
         mat = self._loadmat(filepath)
         return np.concatenate([np.expand_dims(mat['GTcls'][0]['Boundaries'][0][i][0].toarray(), axis=0)
                                for i in range(self.num_classes)], axis=0)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         img = Image.open(self.images[index]).convert('RGB')
         target = self._get_target(self.masks[index])
 
@@ -116,9 +118,9 @@ class SBDataset(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.images)
 
-    def extra_repr(self):
+    def extra_repr(self) -> str:
         lines = ["Image set: {image_set}", "Mode: {mode}"]
         return '\n'.join(lines).format(**self.__dict__)

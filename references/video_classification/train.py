@@ -7,13 +7,12 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
-from torchvision import transforms
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
+import presets
 import utils
 
 from scheduler import WarmupMultiStepLR
-import transforms as T
 
 try:
     from apex import amp
@@ -112,19 +111,11 @@ def main(args):
     print("Loading data")
     traindir = os.path.join(args.data_path, args.train_dir)
     valdir = os.path.join(args.data_path, args.val_dir)
-    normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
-                            std=[0.22803, 0.22145, 0.216989])
 
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    transform_train = torchvision.transforms.Compose([
-        T.ToFloatTensorInZeroOne(),
-        T.Resize((128, 171)),
-        T.RandomHorizontalFlip(),
-        normalize,
-        T.RandomCrop((112, 112))
-    ])
+    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print("Loading dataset_train from {}".format(cache_path))
@@ -139,7 +130,8 @@ def main(args):
             frames_per_clip=args.clip_len,
             step_between_clips=1,
             transform=transform_train,
-            frame_rate=15
+            frame_rate=15,
+            extensions=('avi', 'mp4', )
         )
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
@@ -151,12 +143,7 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    transform_test = torchvision.transforms.Compose([
-        T.ToFloatTensorInZeroOne(),
-        T.Resize((128, 171)),
-        normalize,
-        T.CenterCrop((112, 112))
-    ])
+    transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print("Loading dataset_test from {}".format(cache_path))
@@ -171,7 +158,8 @@ def main(args):
             frames_per_clip=args.clip_len,
             step_between_clips=1,
             transform=transform_test,
-            frame_rate=15
+            frame_rate=15,
+            extensions=('avi', 'mp4',)
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
@@ -265,7 +253,7 @@ def main(args):
 
 def parse_args():
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Classification Training')
+    parser = argparse.ArgumentParser(description='PyTorch Video Classification Training')
 
     parser.add_argument('--data-path', default='/datasets01_101/kinetics/070618/', help='dataset')
     parser.add_argument('--train-dir', default='train_avi-480p', help='name of train dir')
@@ -280,7 +268,7 @@ def parse_args():
     parser.add_argument('--epochs', default=45, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=10, type=int, metavar='N',
-                        help='number of data loading workers (default: 16)')
+                        help='number of data loading workers (default: 10)')
     parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')

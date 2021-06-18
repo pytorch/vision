@@ -35,10 +35,7 @@ setup_cuda() {
   export WHEEL_DIR=""
   # Wheel builds need suffixes (but not if they're on OS X, which never has suffix)
   if [[ "$BUILD_TYPE" == "wheel" ]] && [[ "$(uname)" != Darwin ]]; then
-    # The default CUDA has no suffix
-    if [[ "$CU_VERSION" != "cu102" ]]; then
-      export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
-    fi
+    export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
     # Match the suffix scheme of pytorch, unless this package does not have
     # CUDA builds (in which case, use default)
     if [[ -z "$NO_CUDA_PACKAGE" ]]; then
@@ -49,6 +46,33 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu112)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.2/
+      fi
+      export FORCE_CUDA=1
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
+      ;;
+    cu111)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.1"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.1/
+      fi
+      export FORCE_CUDA=1
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
+      ;;
+    cu110)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.0/
+      fi
+      export FORCE_CUDA=1
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0"
+      ;;
     cu102)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v10.2"
@@ -56,9 +80,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-10.2/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu101)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -67,9 +89,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-10.1/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu100)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -78,9 +98,7 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-10.0/
       fi
       export FORCE_CUDA=1
-      # Hard-coding gencode flags is temporary situation until
-      # https://github.com/pytorch/pytorch/pull/23408 lands
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu92)
       if [[ "$OSTYPE" == "msys" ]]; then
@@ -89,9 +107,12 @@ setup_cuda() {
         export CUDA_HOME=/usr/local/cuda-9.2/
       fi
       export FORCE_CUDA=1
-      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_50,code=compute_50"
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0"
       ;;
     cpu)
+      ;;
+    rocm*)
+      export FORCE_CUDA=1
       ;;
     *)
       echo "Unrecognized CU_VERSION=$CU_VERSION"
@@ -121,7 +142,7 @@ setup_build_version() {
   # Set build version based on tag if on tag
   if [[ -n "${CIRCLE_TAG}" ]]; then
     # Strip tag
-    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')"
+    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')${VERSION_SUFFIX}"
   fi
 }
 
@@ -132,14 +153,6 @@ setup_macos() {
   fi
 }
 
-# set variable to determine whether the typing library needs to be built in
-setup_typing() {
-  if [[ "$PYTHON_VERSION" == 3.5 ]]; then
-    export CONDA_TYPING_CONSTRAINT="- typing"
-  else
-    export CONDA_TYPING_CONSTRAINT=""
-  fi
-}
 
 # Top-level entry point for things every package will need to do
 #
@@ -148,7 +161,6 @@ setup_env() {
   setup_cuda
   setup_build_version "$1"
   setup_macos
-  setup_typing
 }
 
 # Function to retry functions that sometimes timeout or have flaky failures
@@ -168,9 +180,16 @@ setup_wheel_python() {
   if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     eval "$(conda shell.bash hook)"
     conda env remove -n "env$PYTHON_VERSION" || true
-    conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
+    if [[ "$PYTHON_VERSION" == 3.9 ]]; then
+      export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c=conda-forge"
+    fi
+    conda create ${CONDA_CHANNEL_FLAGS} -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
+    # Install libpng from Anaconda (defaults)
+    conda install ${CONDA_CHANNEL_FLAGS} -c conda-forge libpng "jpeg<=9b" -y
   else
+    # Install native CentOS libJPEG, LAME, freetype and GnuTLS
+    yum install -y libjpeg-turbo-devel lame freetype gnutls
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
@@ -183,12 +202,19 @@ setup_wheel_python() {
       3.6) python_abi=cp36-cp36m ;;
       3.7) python_abi=cp37-cp37m ;;
       3.8) python_abi=cp38-cp38 ;;
+      3.9) python_abi=cp39-cp39 ;;
       *)
         echo "Unrecognized PYTHON_VERSION=$PYTHON_VERSION"
         exit 1
         ;;
     esac
-    export PATH="/opt/python/$python_abi/bin:$PATH"
+    # Download all the dependencies required to compile image and video_reader
+    # extensions
+
+    mkdir -p ext_libraries
+    pushd ext_libraries
+    popd
+    export PATH="/opt/python/$python_abi/bin:$(pwd)/ext_libraries/bin:$PATH"
   fi
 }
 
@@ -213,9 +239,8 @@ setup_pip_pytorch_version() {
     fi
   else
     pip_install "torch==$PYTORCH_VERSION$PYTORCH_VERSION_SUFFIX" \
-      -f https://download.pytorch.org/whl/torch_stable.html \
-      -f https://download.pytorch.org/whl/test/torch_test.html \
-      -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      -f "https://download.pytorch.org/whl/${CU_VERSION}/torch_stable.html" \
+      -f "https://download.pytorch.org/whl/${UPLOAD_CHANNEL}/${CU_VERSION}/torch_${UPLOAD_CHANNEL}.html"
   fi
 }
 
@@ -225,7 +250,7 @@ setup_pip_pytorch_version() {
 # You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly -c pytorch"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
@@ -240,7 +265,7 @@ setup_conda_pytorch_constraint() {
       exit 1
     fi
   else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly -c pytorch-test"
+    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-${UPLOAD_CHANNEL}"
   fi
   if [[ "$CU_VERSION" == cpu ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
@@ -252,6 +277,9 @@ setup_conda_pytorch_constraint() {
   if [[ "$OSTYPE" == msys && "$CU_VERSION" == cu92 ]]; then
     export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c defaults -c numba/label/dev"
   fi
+  if [[ "$PYTHON_VERSION" == 3.9 ]]; then
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c=conda-forge"
+  fi
 }
 
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
@@ -261,6 +289,15 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
     case "$CU_VERSION" in
+      cu112)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.2,<11.3 # [not osx]"
+        ;;
+      cu111)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.1,<11.2 # [not osx]"
+        ;;
+      cu110)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.0,<11.1 # [not osx]"
+        ;;
       cu102)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
         ;;
@@ -285,6 +322,45 @@ setup_conda_cudatoolkit_constraint() {
   fi
 }
 
+setup_conda_cudatoolkit_plain_constraint() {
+  export CONDA_CPUONLY_FEATURE=""
+  export CMAKE_USE_CUDA=1
+  if [[ "$(uname)" == Darwin ]]; then
+    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CMAKE_USE_CUDA=0
+  else
+    case "$CU_VERSION" in
+      cu112)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.2"
+        ;;
+      cu111)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.1"
+        ;;
+      cu102)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.2"
+        ;;
+      cu101)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.1"
+        ;;
+      cu100)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.0"
+        ;;
+      cu92)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=9.2"
+        ;;
+      cpu)
+        export CONDA_CUDATOOLKIT_CONSTRAINT=""
+        export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CMAKE_USE_CUDA=0
+        ;;
+      *)
+        echo "Unrecognized CU_VERSION=$CU_VERSION"
+        exit 1
+        ;;
+    esac
+  fi
+}
+
 # Build the proper compiler package before building the final package
 setup_visual_studio_constraint() {
   if [[ "$OSTYPE" == "msys" ]]; then
@@ -297,5 +373,30 @@ setup_visual_studio_constraint() {
 setup_junit_results_folder() {
   if [[ "$CI" == "true" ]]; then
     export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
+  fi
+}
+
+
+download_copy_ffmpeg() {
+  if [[ "$OSTYPE" == "msys" ]]; then
+    # conda install -yq ffmpeg=4.2 -c pytorch
+    # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
+    # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
+    # cp Library/bin/*.dll ../torchvision
+    echo "FFmpeg is disabled currently on Windows"
+  else
+    if [[ "$(uname)" == Darwin ]]; then
+      conda install -yq ffmpeg=4.2 -c pytorch
+      conda install -yq wget
+    else
+      # pushd ext_libraries
+      # wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # rm -rf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # ldconfig
+      # which ffmpeg
+      # popd
+      echo "FFmpeg is disabled currently on Linux"
+    fi
   fi
 }

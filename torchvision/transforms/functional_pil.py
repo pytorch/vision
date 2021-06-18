@@ -1,13 +1,14 @@
 import numbers
-from typing import Any, List
+from typing import Any, List, Sequence
 
+import numpy as np
 import torch
+from PIL import Image, ImageOps, ImageEnhance
+
 try:
     import accimage
 except ImportError:
     accimage = None
-from PIL import Image, ImageOps, ImageEnhance
-import numpy as np
 
 
 @torch.jit.unused
@@ -26,15 +27,14 @@ def _get_image_size(img: Any) -> List[int]:
 
 
 @torch.jit.unused
+def _get_image_num_channels(img: Any) -> int:
+    if _is_pil_image(img):
+        return 1 if img.mode == 'L' else 3
+    raise TypeError("Unexpected type {}".format(type(img)))
+
+
+@torch.jit.unused
 def hflip(img):
-    """Horizontally flip the given PIL Image.
-
-    Args:
-        img (PIL Image): Image to be flipped.
-
-    Returns:
-        PIL Image:  Horizontally flipped image.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -43,14 +43,6 @@ def hflip(img):
 
 @torch.jit.unused
 def vflip(img):
-    """Vertically flip the given PIL Image.
-
-    Args:
-        img (PIL Image): Image to be flipped.
-
-    Returns:
-        PIL Image:  Vertically flipped image.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -59,17 +51,6 @@ def vflip(img):
 
 @torch.jit.unused
 def adjust_brightness(img, brightness_factor):
-    """Adjust brightness of an RGB image.
-
-    Args:
-        img (PIL Image): Image to be adjusted.
-        brightness_factor (float):  How much to adjust the brightness. Can be
-            any non negative number. 0 gives a black image, 1 gives the
-            original image while 2 increases the brightness by a factor of 2.
-
-    Returns:
-        PIL Image: Brightness adjusted image.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -80,15 +61,6 @@ def adjust_brightness(img, brightness_factor):
 
 @torch.jit.unused
 def adjust_contrast(img, contrast_factor):
-    """Adjust contrast of an Image.
-    Args:
-        img (PIL Image): PIL Image to be adjusted.
-        contrast_factor (float): How much to adjust the contrast. Can be any
-            non negative number. 0 gives a solid gray image, 1 gives the
-            original image while 2 increases the contrast by a factor of 2.
-    Returns:
-        PIL Image: Contrast adjusted image.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -99,15 +71,6 @@ def adjust_contrast(img, contrast_factor):
 
 @torch.jit.unused
 def adjust_saturation(img, saturation_factor):
-    """Adjust color saturation of an image.
-    Args:
-        img (PIL Image): PIL Image to be adjusted.
-        saturation_factor (float):  How much to adjust the saturation. 0 will
-            give a black and white image, 1 will give the original image while
-            2 will enhance the saturation by a factor of 2.
-    Returns:
-        PIL Image: Saturation adjusted image.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -118,30 +81,6 @@ def adjust_saturation(img, saturation_factor):
 
 @torch.jit.unused
 def adjust_hue(img, hue_factor):
-    """Adjust hue of an image.
-
-    The image hue is adjusted by converting the image to HSV and
-    cyclically shifting the intensities in the hue channel (H).
-    The image is then converted back to original image mode.
-
-    `hue_factor` is the amount of shift in H channel and must be in the
-    interval `[-0.5, 0.5]`.
-
-    See `Hue`_ for more details.
-
-    .. _Hue: https://en.wikipedia.org/wiki/Hue
-
-    Args:
-        img (PIL Image): PIL Image to be adjusted.
-        hue_factor (float):  How much to shift the hue channel. Should be in
-            [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
-            HSV space in positive and negative direction respectively.
-            0 means no shift. Therefore, both -0.5 and 0.5 will give an image
-            with complementary colors while 0 gives the original image.
-
-    Returns:
-        PIL Image: Hue adjusted image.
-    """
     if not(-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
@@ -165,40 +104,24 @@ def adjust_hue(img, hue_factor):
 
 
 @torch.jit.unused
+def adjust_gamma(img, gamma, gain=1):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if gamma < 0:
+        raise ValueError('Gamma should be a non-negative real number')
+
+    input_mode = img.mode
+    img = img.convert('RGB')
+    gamma_map = [(255 + 1 - 1e-3) * gain * pow(ele / 255., gamma) for ele in range(256)] * 3
+    img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
+
+    img = img.convert(input_mode)
+    return img
+
+
+@torch.jit.unused
 def pad(img, padding, fill=0, padding_mode="constant"):
-    r"""Pad the given PIL.Image on all sides with the given "pad" value.
-
-    Args:
-        img (PIL Image): Image to be padded.
-        padding (int or tuple or list): Padding on each border. If a single int is provided this
-            is used to pad all borders. If a tuple or list of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
-            this is the padding for the left, top, right and bottom borders respectively. For compatibility reasons
-            with ``functional_tensor.pad``, if a tuple or list of length 1 is provided, it is interpreted as
-            a single int.
-        fill (int or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
-            length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant.
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-
-            - constant: pads with a constant value, this value is specified with fill
-
-            - edge: pads with the last value on the edge of the image
-
-            - reflect: pads with reflection of image (without repeating the last value on the edge)
-
-                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
-                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
-
-            - symmetric: pads with reflection of image (repeating the last value on the edge)
-
-                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
-
-    Returns:
-        PIL Image: Padded image.
-    """
-
     if not _is_pil_image(img):
         raise TypeError("img should be PIL Image. Got {}".format(type(img)))
 
@@ -224,19 +147,14 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        if isinstance(fill, numbers.Number):
-            fill = (fill,) * len(img.getbands())
-        if len(fill) != len(img.getbands()):
-            raise ValueError("fill should have the same number of elements "
-                             "as the number of channels in the image "
-                             "({}), got {} instead".format(len(img.getbands()), len(fill)))
+        opts = _parse_fill(fill, img, name="fill")
         if img.mode == "P":
             palette = img.getpalette()
-            image = ImageOps.expand(img, border=padding, fill=fill)
+            image = ImageOps.expand(img, border=padding, **opts)
             image.putpalette(palette)
             return image
 
-        return ImageOps.expand(img, border=padding, fill=fill)
+        return ImageOps.expand(img, border=padding, **opts)
     else:
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
@@ -248,6 +166,15 @@ def pad(img, padding, fill=0, padding_mode="constant"):
             pad_top = padding[1]
             pad_right = padding[2]
             pad_bottom = padding[3]
+
+        p = [pad_left, pad_top, pad_right, pad_bottom]
+        cropping = -np.minimum(p, 0)
+
+        if cropping.any():
+            crop_left, crop_top, crop_right, crop_bottom = cropping
+            img = img.crop((crop_left, crop_top, img.width - crop_right, img.height - crop_bottom))
+
+        pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
 
         if img.mode == 'P':
             palette = img.getpalette()
@@ -270,19 +197,156 @@ def pad(img, padding, fill=0, padding_mode="constant"):
 
 @torch.jit.unused
 def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Image.Image:
-    """Crop the given PIL Image.
-
-    Args:
-        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
-        top (int): Vertical component of the top left corner of the crop box.
-        left (int): Horizontal component of the top left corner of the crop box.
-        height (int): Height of the crop box.
-        width (int): Width of the crop box.
-
-    Returns:
-        PIL Image: Cropped image.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.crop((left, top, left + width, top + height))
+
+
+@torch.jit.unused
+def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not (isinstance(size, int) or (isinstance(size, Sequence) and len(size) in (1, 2))):
+        raise TypeError('Got inappropriate size arg: {}'.format(size))
+
+    if isinstance(size, Sequence) and len(size) == 1:
+        size = size[0]
+    if isinstance(size, int):
+        w, h = img.size
+
+        short, long = (w, h) if w <= h else (h, w)
+        if short == size:
+            return img
+
+        new_short, new_long = size, int(size * long / short)
+
+        if max_size is not None:
+            if max_size <= size:
+                raise ValueError(
+                    f"max_size = {max_size} must be strictly greater than the requested "
+                    f"size for the smaller edge size = {size}"
+                )
+            if new_long > max_size:
+                new_short, new_long = int(max_size * new_short / new_long), max_size
+
+        new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
+        return img.resize((new_w, new_h), interpolation)
+    else:
+        if max_size is not None:
+            raise ValueError(
+                "max_size should only be passed if size specifies the length of the smaller edge, "
+                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+            )
+        return img.resize(size[::-1], interpolation)
+
+
+@torch.jit.unused
+def _parse_fill(fill, img, name="fillcolor"):
+    # Process fill color for affine transforms
+    num_bands = len(img.getbands())
+    if fill is None:
+        fill = 0
+    if isinstance(fill, (int, float)) and num_bands > 1:
+        fill = tuple([fill] * num_bands)
+    if isinstance(fill, (list, tuple)):
+        if len(fill) != num_bands:
+            msg = ("The number of elements in 'fill' does not match the number of "
+                   "bands of the image ({} != {})")
+            raise ValueError(msg.format(len(fill), num_bands))
+
+        fill = tuple(fill)
+
+    return {name: fill}
+
+
+@torch.jit.unused
+def affine(img, matrix, interpolation=0, fill=None):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    output_size = img.size
+    opts = _parse_fill(fill, img)
+    return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
+
+
+@torch.jit.unused
+def rotate(img, angle, interpolation=0, expand=False, center=None, fill=None):
+    if not _is_pil_image(img):
+        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+
+    opts = _parse_fill(fill, img)
+    return img.rotate(angle, interpolation, expand, center, **opts)
+
+
+@torch.jit.unused
+def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    opts = _parse_fill(fill, img)
+
+    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
+
+
+@torch.jit.unused
+def to_grayscale(img, num_output_channels):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if num_output_channels == 1:
+        img = img.convert('L')
+    elif num_output_channels == 3:
+        img = img.convert('L')
+        np_img = np.array(img, dtype=np.uint8)
+        np_img = np.dstack([np_img, np_img, np_img])
+        img = Image.fromarray(np_img, 'RGB')
+    else:
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    return img
+
+
+@torch.jit.unused
+def invert(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.invert(img)
+
+
+@torch.jit.unused
+def posterize(img, bits):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.posterize(img, bits)
+
+
+@torch.jit.unused
+def solarize(img, threshold):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.solarize(img, threshold)
+
+
+@torch.jit.unused
+def adjust_sharpness(img, sharpness_factor):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Sharpness(img)
+    img = enhancer.enhance(sharpness_factor)
+    return img
+
+
+@torch.jit.unused
+def autocontrast(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.autocontrast(img)
+
+
+@torch.jit.unused
+def equalize(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.equalize(img)
