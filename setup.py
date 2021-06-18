@@ -6,12 +6,12 @@ from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
+from distutils.version import StrictVersion
 import glob
 import shutil
 
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
-from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -150,6 +150,7 @@ def get_extensions():
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
+        from torch.utils.hipify import hipify_python
         hipify_python.hipify(
             project_directory=this_dir,
             output_directory=this_dir,
@@ -346,6 +347,19 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        try:
+            ffmpeg_version = subprocess.run(
+                'ffmpeg -version | head -n1', shell=True,
+                stdout=subprocess.PIPE).stdout.decode('utf-8')
+            ffmpeg_version = ffmpeg_version.split('version')[-1].split()[0]
+            if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
+                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
+                has_ffmpeg = False
+        except (IndexError, ValueError):
+            print('Error fetching ffmpeg version, ignoring ffmpeg.')
+            has_ffmpeg = False
+
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:

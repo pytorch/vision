@@ -44,12 +44,12 @@ conda install pytorch -c pytorch-nightly -c conda-forge
 ```bash
 git clone https://github.com/pytorch/vision.git
 cd vision
-python setup.py install
+python setup.py develop
 # or, for OSX
-# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
+# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
 # for C++ debugging, please use DEBUG=1
-# DEBUG=1 python setup.py install
-pip install flake8 typing mypy pytest scipy
+# DEBUG=1 python setup.py develop
+pip install flake8 typing mypy pytest pytest-mock scipy
 ```
 You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
 ```bash

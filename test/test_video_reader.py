@@ -1,7 +1,6 @@
 import collections
 import math
 import os
-import time
 import unittest
 from fractions import Fraction
 
@@ -9,6 +8,7 @@ import numpy as np
 import torch
 import torchvision.io as io
 from numpy.random import randint
+from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
 from common_utils import PY39_SKIP
 from _assert_utils import assert_equal
@@ -21,9 +21,6 @@ try:
     io.video._check_av_available()
 except ImportError:
     av = None
-
-
-from urllib.error import URLError
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
@@ -1238,44 +1235,25 @@ class TestVideoReader(unittest.TestCase):
             )
             # FUTURE: check value of video / audio frames
 
-    def test_audio_video_sync(self):
-        """Test if audio/video are synchronised with pyav output."""
-        for test_video, config in test_videos.items():
+    def test_invalid_file(self):
+        set_video_backend('video_reader')
+        with self.assertRaises(RuntimeError):
+            io.read_video('foo.mp4')
+
+        set_video_backend('pyav')
+        with self.assertRaises(RuntimeError):
+            io.read_video('foo.mp4')
+
+    def test_audio_present(self):
+        """Test if audio frames are returned with video_reader backend."""
+        set_video_backend('video_reader')
+        for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             container = av.open(full_path)
-            if not container.streams.audio:
-                # Skip if no audio stream
-                continue
-            start_pts_val, cutoff = 0, 1
-            if container.streams.video:
-                video = container.streams.video[0]
-                arr = []
-                for index, frame in enumerate(container.decode(video)):
-                    if index == cutoff:
-                        start_pts_val = frame.pts
-                    if index >= cutoff:
-                        arr.append(frame.to_rgb().to_ndarray())
-                visual, _, info = io.read_video(full_path, start_pts=start_pts_val, pts_unit='pts')
-                self.assertAlmostEqual(
-                    config.video_fps, info['video_fps'], delta=0.0001
-                )
-                arr = torch.Tensor(arr)
-                if arr.shape == visual.shape:
-                    self.assertGreaterEqual(
-                        torch.mean(torch.isclose(visual.float(), arr, atol=1e-5).float()), 0.99)
-
-            container = av.open(full_path)
             if container.streams.audio:
-                audio = container.streams.audio[0]
-                arr = []
-                for index, frame in enumerate(container.decode(audio)):
-                    if index >= cutoff:
-                        arr.append(frame.to_ndarray())
-                _, audio, _ = io.read_video(full_path, start_pts=start_pts_val, pts_unit='pts')
-                arr = torch.as_tensor(np.concatenate(arr, axis=1))
-                if arr.shape == audio.shape:
-                    self.assertGreaterEqual(
-                        torch.mean(torch.isclose(audio.float(), arr).float()), 0.99)
+                _, audio, _ = io.read_video(full_path)
+                self.assertGreaterEqual(audio.shape[0], 1)
+                self.assertGreaterEqual(audio.shape[1], 1)
 
 
 if __name__ == "__main__":

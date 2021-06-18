@@ -6,11 +6,13 @@ namespace ffmpeg {
 
 namespace {
 bool operator==(const VideoFormat& x, const AVFrame& y) {
-  return x.width == y.width && x.height == y.height && x.format == y.format;
+  return x.width == static_cast<size_t>(y.width) &&
+      x.height == static_cast<size_t>(y.height) && x.format == y.format;
 }
 
 bool operator==(const VideoFormat& x, const AVCodecContext& y) {
-  return x.width == y.width && x.height == y.height && x.format == y.pix_fmt;
+  return x.width == static_cast<size_t>(y.width) &&
+      x.height == static_cast<size_t>(y.height) && x.format == y.pix_fmt;
 }
 
 VideoFormat& toVideoFormat(VideoFormat& x, const AVFrame& y) {

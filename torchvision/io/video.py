@@ -1,5 +1,6 @@
 import gc
 import math
+import os
 import re
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -258,6 +259,9 @@ def read_video(
 
     from torchvision import get_video_backend
 
+    if not os.path.exists(filename):
+        raise RuntimeError(f'File not found: {filename}')
+
     if get_video_backend() != "pyav":
         return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
 
@@ -387,9 +391,9 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
                 except av.AVError:
                     warnings.warn(f"Failed decoding frames for file {filename}")
                 video_fps = float(video_stream.average_rate)
-    except av.AVError:
-        # TODO add a warning
-        pass
+    except av.AVError as e:
+        msg = f"Failed to open container for {filename}; Caught error: {e}"
+        warnings.warn(msg, RuntimeWarning)
 
     pts.sort()
 
