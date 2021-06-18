@@ -8,7 +8,6 @@ import functools
 import operator
 import torch
 import torch.fx
-
 import torch.nn as nn
 import torchvision
 from torchvision import models
