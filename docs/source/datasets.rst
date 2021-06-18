@@ -13,17 +13,11 @@ For example: ::
                                               shuffle=True,
                                               num_workers=args.nThreads)
 
-The following datasets are available:
-
-.. contents:: Datasets
-    :local:
+.. currentmodule:: torchvision.datasets
 
 All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
-
-
-.. currentmodule:: torchvision.datasets
-
+You can also create your own datasets using the provided :ref:`base classes <base_classes_datasets>`.
 
 Caltech
 ~~~~~~~
@@ -86,13 +80,6 @@ Detection
   :members: __getitem__
   :special-members:
 
-DatasetFolder
-~~~~~~~~~~~~~
-
-.. autoclass:: DatasetFolder
-  :members: __getitem__
-  :special-members:
-
 
 EMNIST
 ~~~~~~
@@ -124,13 +111,6 @@ HMDB51
 ~~~~~~~
 
 .. autoclass:: HMDB51
-  :members: __getitem__
-  :special-members:
-
-ImageFolder
-~~~~~~~~~~~
-
-.. autoclass:: ImageFolder
   :members: __getitem__
   :special-members:
 
@@ -261,5 +241,24 @@ WIDERFace
 ~~~~~~~~~
 
 .. autoclass:: WIDERFace
+  :members: __getitem__
+  :special-members:
+
+
+.. _base_classes_datasets:
+
+Base classes for custom datasets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: DatasetFolder
+  :members: __getitem__, find_classes, make_dataset
+  :special-members:
+
+
+.. autoclass:: ImageFolder
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VisionDataset
   :members: __getitem__
   :special-members:

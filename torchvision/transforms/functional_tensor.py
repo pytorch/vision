@@ -97,7 +97,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             # factor should be forced to int for torch jit script
             # otherwise factor is a float and image // factor can produce different results
             factor = int((input_max + 1) // (output_max + 1))
-            image = image // factor
+            image = torch.div(image, factor, rounding_mode='floor')
             return image.to(dtype)
         else:
             # factor should be forced to int for torch jit script
@@ -122,7 +122,14 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    return img[..., top:top + height, left:left + width]
+    w, h = _get_image_size(img)
+    right = left + width
+    bottom = top + height
+
+    if left < 0 or top < 0 or right > w or bottom > h:
+        padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
+        return pad(img[..., max(top, 0):bottom, max(left, 0):right], padding_ltrb, fill=0)
+    return img[..., top:bottom, left:right]
 
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
@@ -384,12 +391,12 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
     left_indices = [i for i in range(padding[0] - 1, -1, -1)]  # e.g. [3, 2, 1, 0]
     right_indices = [-(i + 1) for i in range(padding[1])]  # e.g. [-1, -2, -3]
-    x_indices = torch.tensor(left_indices + x_indices + right_indices)
+    x_indices = torch.tensor(left_indices + x_indices + right_indices, device=img.device)
 
     y_indices = [i for i in range(in_sizes[-2])]
     top_indices = [i for i in range(padding[2] - 1, -1, -1)]
     bottom_indices = [-(i + 1) for i in range(padding[3])]
-    y_indices = torch.tensor(top_indices + y_indices + bottom_indices)
+    y_indices = torch.tensor(top_indices + y_indices + bottom_indices, device=img.device)
 
     ndim = img.ndim
     if ndim == 3:
@@ -470,7 +477,13 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     return img
 
 
-def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_size: Optional[int] = None) -> Tensor:
+def resize(
+    img: Tensor,
+    size: List[int],
+    interpolation: str = "bilinear",
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = None
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(size, (int, tuple, list)):
@@ -493,6 +506,12 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
                 "max_size should only be passed if size specifies the length of the smaller edge, "
                 "i.e. size should be an int or a sequence of length 1 in torchscript mode."
             )
+
+    if antialias is None:
+        antialias = False
+
+    if antialias and interpolation not in ["bilinear", "bicubic"]:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
     w, h = _get_image_size(img)
 
@@ -524,7 +543,13 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear", max_si
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
+    if antialias:
+        if interpolation == "bilinear":
+            img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+        elif interpolation == "bicubic":
+            img = torch.ops.torchvision._interpolate_bicubic_aa(img, [new_h, new_w], align_corners=False)
+    else:
+        img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
@@ -908,11 +933,13 @@ def _scale_channel(img_chan):
         hist = torch.bincount(img_chan.view(-1), minlength=256)
 
     nonzero_hist = hist[hist != 0]
-    step = nonzero_hist[:-1].sum() // 255
+    step = torch.div(nonzero_hist[:-1].sum(), 255, rounding_mode='floor')
     if step == 0:
         return img_chan
 
-    lut = (torch.cumsum(hist, 0) + (step // 2)) // step
+    lut = torch.div(
+        torch.cumsum(hist, 0) + torch.div(step, 2, rounding_mode='floor'),
+        step, rounding_mode='floor')
     lut = torch.nn.functional.pad(lut, [1, 0])[:-1].clamp(0, 255)
 
     return lut[img_chan.to(torch.int64)].to(torch.uint8)

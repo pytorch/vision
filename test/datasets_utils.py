@@ -1,4 +1,3 @@
-import collections.abc
 import contextlib
 import functools
 import importlib
@@ -15,7 +14,6 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 
 import PIL
 import PIL.Image
-
 import torch
 import torchvision.datasets
 import torchvision.io
@@ -44,7 +42,7 @@ class UsageError(Exception):
 
 
 class LazyImporter:
-    r"""Lazy importer for additional dependicies.
+    r"""Lazy importer for additional dependencies.
 
     Some datasets require additional packages that are no direct dependencies of torchvision. Instances of this class
     provide modules listed in MODULES as attributes. They are only imported when accessed.
@@ -53,7 +51,6 @@ class LazyImporter:
     MODULES = (
         "av",
         "lmdb",
-        "pandas",
         "pycocotools",
         "requests",
         "scipy.io",
@@ -419,7 +416,11 @@ class DatasetTestCase(unittest.TestCase):
                 continue
 
             defaults.append(
-                {kwarg: default for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)}
+                {
+                    kwarg: default
+                    for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
+                    if not kwarg.startswith("_")
+                }
             )
 
             if not argspec.varkw:
@@ -640,7 +641,7 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
-        args_without_default = argspec.args[1:-len(argspec.defaults)]
+        args_without_default = argspec.args[1:(-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
         @functools.wraps(inject_fake_data)

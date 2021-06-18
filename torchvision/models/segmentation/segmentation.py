@@ -32,7 +32,7 @@ def _segm_model(name, backbone_name, num_classes, aux, pretrained_backbone=True)
         aux_layer = 'layer3'
         aux_inplanes = 1024
     elif 'mobilenet_v3' in backbone_name:
-        backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, _dilated=True).features
+        backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
 
         # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
         # The first and last blocks are always included because they are the C0 (conv1) and Cn.
@@ -87,7 +87,7 @@ def _load_weights(model, arch_type, backbone, progress):
 
 
 def _segm_lraspp_mobilenetv3(backbone_name, num_classes, pretrained_backbone=True):
-    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, _dilated=True).features
+    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
 
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.

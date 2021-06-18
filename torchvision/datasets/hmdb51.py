@@ -1,7 +1,6 @@
 import glob
 import os
 
-from .utils import list_dir
 from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset

@@ -59,14 +59,24 @@ Example of inspecting a video:
 Image
 -----
 
+.. autoclass:: ImageReadMode
+
 .. autofunction:: read_image
 
 .. autofunction:: decode_image
 
 .. autofunction:: encode_jpeg
 
+.. autofunction:: decode_jpeg
+
 .. autofunction:: write_jpeg
 
 .. autofunction:: encode_png
 
+.. autofunction:: decode_png
+
 .. autofunction:: write_png
+
+.. autofunction:: read_file
+
+.. autofunction:: write_file

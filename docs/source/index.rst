@@ -38,6 +38,12 @@ architectures, and common image transformations for computer vision.
    transforms
    utils
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   auto_examples/index
+
 .. automodule:: torchvision
    :members:
 
@@ -52,3 +58,9 @@ architectures, and common image transformations for computer vision.
    TorchElastic <https://pytorch.org/elastic/>
    TorchServe <https://pytorch.org/serve>
    PyTorch on XLA Devices <http://pytorch.org/xla/>
+
+
+Indices
+-------
+
+* :ref:`genindex`

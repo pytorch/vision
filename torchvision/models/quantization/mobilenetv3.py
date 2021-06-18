@@ -127,5 +127,5 @@ def mobilenet_v3_large(pretrained=False, progress=True, quantize=False, **kwargs
      quantize (bool): If True, returns a quantized model, else returns a float model
     """
     arch = "mobilenet_v3_large"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, kwargs)
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
     return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, quantize, **kwargs)

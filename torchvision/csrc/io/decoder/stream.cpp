@@ -17,7 +17,7 @@ Stream::Stream(
 
 Stream::~Stream() {
   if (frame_) {
-    av_free(frame_); // Copyright 2004-present Facebook. All Rights Reserved.
+    av_free(frame_);
   }
   if (codecCtx_) {
     avcodec_free_context(&codecCtx_);
@@ -232,7 +232,7 @@ void Stream::setFramePts(DecoderHeader* header, bool flush) {
   if (flush) {
     header->pts = nextPts_; // already in us
   } else {
-    header->pts = av_frame_get_best_effort_timestamp(frame_);
+    header->pts = frame_->best_effort_timestamp;
     if (header->pts == AV_NOPTS_VALUE) {
       header->pts = nextPts_;
     } else {
