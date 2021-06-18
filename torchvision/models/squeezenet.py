@@ -126,6 +126,7 @@ def squeezenet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any
     r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size"
     <https://arxiv.org/abs/1602.07360>`_ paper.
+    The required minimum input size of the model is 21x21.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -139,6 +140,7 @@ def squeezenet1_1(pretrained: bool = False, progress: bool = True, **kwargs: Any
     <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
     than SqueezeNet 1.0, without sacrificing accuracy.
+    The required minimum input size of the model is 17x17.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
