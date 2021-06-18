@@ -1,6 +1,8 @@
-from common_utils import set_rng_seed
+from common_utils import needs_cuda, cpu_and_gpu
+from _assert_utils import assert_equal
 import math
-import unittest
+from abc import ABC, abstractmethod
+import pytest
 
 import numpy as np
 
@@ -13,48 +15,12 @@ from torchvision import ops
 from typing import Tuple
 
 
-class OpTester(object):
-    @classmethod
-    def setUpClass(cls):
-        cls.dtype = torch.float64
+class RoIOpTester(ABC):
+    dtype = torch.float64
 
-    def test_forward_cpu_contiguous(self):
-        self._test_forward(device=torch.device('cpu'), contiguous=True)
-
-    def test_forward_cpu_non_contiguous(self):
-        self._test_forward(device=torch.device('cpu'), contiguous=False)
-
-    def test_backward_cpu_contiguous(self):
-        self._test_backward(device=torch.device('cpu'), contiguous=True)
-
-    def test_backward_cpu_non_contiguous(self):
-        self._test_backward(device=torch.device('cpu'), contiguous=False)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_forward_cuda_contiguous(self):
-        self._test_forward(device=torch.device('cuda'), contiguous=True)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_forward_cuda_non_contiguous(self):
-        self._test_forward(device=torch.device('cuda'), contiguous=False)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_backward_cuda_contiguous(self):
-        self._test_backward(device=torch.device('cuda'), contiguous=True)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_backward_cuda_non_contiguous(self):
-        self._test_backward(device=torch.device('cuda'), contiguous=False)
-
-    def _test_forward(self, device, contiguous):
-        pass
-
-    def _test_backward(self, device, contiguous):
-        pass
-
-
-class RoIOpTester(OpTester):
-    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None):
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    def test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None, **kwargs):
         x_dtype = self.dtype if x_dtype is None else x_dtype
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
@@ -70,16 +36,18 @@ class RoIOpTester(OpTester):
                             dtype=rois_dtype, device=device)
 
         pool_h, pool_w = pool_size, pool_size
-        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1)
+        y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs)
         # the following should be true whether we're running an autocast test or not.
-        self.assertTrue(y.dtype == x.dtype)
+        assert y.dtype == x.dtype
         gt_y = self.expected_fn(x, rois, pool_h, pool_w, spatial_scale=1,
-                                sampling_ratio=-1, device=device, dtype=self.dtype)
+                                sampling_ratio=-1, device=device, dtype=self.dtype, **kwargs)
 
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
-        self.assertTrue(torch.allclose(gt_y.to(y.dtype), y, rtol=tol, atol=tol))
+        torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
-    def _test_backward(self, device, contiguous):
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    def test_backward(self, device, contiguous):
         pool_size = 2
         x = torch.rand(1, 2 * (pool_size ** 2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
         if not contiguous:
@@ -94,52 +62,49 @@ class RoIOpTester(OpTester):
 
         script_func = self.get_script_fn(rois, pool_size)
 
-        self.assertTrue(gradcheck(func, (x,)))
-        self.assertTrue(gradcheck(script_func, (x,)))
+        gradcheck(func, (x,))
+        gradcheck(script_func, (x,))
 
-    def test_boxes_shape(self):
-        self._test_boxes_shape()
+    @needs_cuda
+    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
+    def test_autocast(self, x_dtype, rois_dtype):
+        with torch.cuda.amp.autocast():
+            self.test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
     def _helper_boxes_shape(self, func):
         # test boxes as Tensor[N, 5]
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3, 3]], dtype=a.dtype)
             func(a, boxes, output_size=(2, 2))
 
         # test boxes as List[Tensor[N, 4]]
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
 
+    @abstractmethod
     def fn(*args, **kwargs):
         pass
 
+    @abstractmethod
     def get_script_fn(*args, **kwargs):
         pass
 
+    @abstractmethod
     def expected_fn(*args, **kwargs):
         pass
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_autocast(self):
-        for x_dtype in (torch.float, torch.half):
-            for rois_dtype in (torch.float, torch.half):
-                with torch.cuda.amp.autocast():
-                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
-
-class RoIPoolTester(RoIOpTester, unittest.TestCase):
+class TestRoiPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.roi_pool(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.roi_pool)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
                     device=None, dtype=torch.float64):
@@ -168,27 +133,24 @@ class RoIPoolTester(RoIOpTester, unittest.TestCase):
                         y[roi_idx, :, i, j] = bin_x.reshape(n_channels, -1).max(dim=1)[0]
         return y
 
-    def _test_boxes_shape(self):
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
 
-class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
+class TestPSRoIPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.ps_roi_pool(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.ps_roi_pool)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
                     device=None, dtype=torch.float64):
         if device is None:
             device = torch.device("cpu")
         n_input_channels = x.size(1)
-        self.assertEqual(n_input_channels % (pool_h * pool_w), 0, "input channels must be divisible by ph * pw")
+        assert n_input_channels % (pool_h * pool_w) == 0, "input channels must be divisible by ph * pw"
         n_output_channels = int(n_input_channels / (pool_h * pool_w))
         y = torch.zeros(rois.size(0), n_output_channels, pool_h, pool_w, dtype=dtype, device=device)
 
@@ -215,7 +177,7 @@ class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
                             y[roi_idx, c_out, i, j] = t / area
         return y
 
-    def _test_boxes_shape(self):
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_pool)
 
 
@@ -251,17 +213,14 @@ def bilinear_interpolate(data, y, x, snap_border=False):
     return val
 
 
-class RoIAlignTester(RoIOpTester, unittest.TestCase):
+class TestRoIAlign(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
         return ops.RoIAlign((pool_h, pool_w), spatial_scale=spatial_scale,
                             sampling_ratio=sampling_ratio, aligned=aligned)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.roi_align(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.roi_align)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False,
                     device=None, dtype=torch.float64):
@@ -301,28 +260,114 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                         out_data[r, channel, i, j] = val
         return out_data
 
-    def _test_boxes_shape(self):
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    @pytest.mark.parametrize('aligned', (True, False))
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    def test_forward(self, device, contiguous, aligned, x_dtype=None, rois_dtype=None):
+        super().test_forward(device=device, contiguous=contiguous, x_dtype=x_dtype, rois_dtype=rois_dtype,
+                             aligned=aligned)
 
-class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
+    @needs_cuda
+    @pytest.mark.parametrize('aligned', (True, False))
+    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
+    def test_autocast(self, aligned, x_dtype, rois_dtype):
+        with torch.cuda.amp.autocast():
+            self.test_forward(torch.device("cuda"), contiguous=False, aligned=aligned, x_dtype=x_dtype,
+                              rois_dtype=rois_dtype)
+
+    def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
+        rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
+        rois[:, 0] = torch.randint(0, num_imgs, size=(num_rois,))  # set batch index
+        rois[:, 3:] += rois[:, 1:3]  # make sure boxes aren't degenerate
+        return rois
+
+    @pytest.mark.parametrize('aligned', (True, False))
+    @pytest.mark.parametrize('scale, zero_point', ((1, 0), (2, 10), (0.1, 50)))
+    @pytest.mark.parametrize('qdtype', (torch.qint8, torch.quint8, torch.qint32))
+    def test_qroialign(self, aligned, scale, zero_point, qdtype):
+        """Make sure quantized version of RoIAlign is close to float version"""
+        pool_size = 5
+        img_size = 10
+        n_channels = 2
+        num_imgs = 1
+        dtype = torch.float
+
+        x = torch.randint(50, 100, size=(num_imgs, n_channels, img_size, img_size)).to(dtype)
+        qx = torch.quantize_per_tensor(x, scale=scale, zero_point=zero_point, dtype=qdtype)
+
+        rois = self._make_rois(img_size, num_imgs, dtype)
+        qrois = torch.quantize_per_tensor(rois, scale=scale, zero_point=zero_point, dtype=qdtype)
+
+        x, rois = qx.dequantize(), qrois.dequantize()  # we want to pass the same inputs
+
+        y = ops.roi_align(
+            x,
+            rois,
+            output_size=pool_size,
+            spatial_scale=1,
+            sampling_ratio=-1,
+            aligned=aligned,
+        )
+        qy = ops.roi_align(
+            qx,
+            qrois,
+            output_size=pool_size,
+            spatial_scale=1,
+            sampling_ratio=-1,
+            aligned=aligned,
+        )
+
+        # The output qy is itself a quantized tensor and there might have been a loss of info when it was
+        # quantized. For a fair comparison we need to quantize y as well
+        quantized_float_y = torch.quantize_per_tensor(y, scale=scale, zero_point=zero_point, dtype=qdtype)
+
+        try:
+            # Ideally, we would assert this, which passes with (scale, zero) == (1, 0)
+            assert (qy == quantized_float_y).all()
+        except AssertionError:
+            # But because the computation aren't exactly the same between the 2 RoIAlign procedures, some
+            # rounding error may lead to a difference of 2 in the output.
+            # For example with (scale, zero) = (2, 10), 45.00000... will be quantized to 44
+            # but 45.00000001 will be rounded to 46. We make sure below that:
+            # - such discrepancies between qy and quantized_float_y are very rare (less then 5%)
+            # - any difference between qy and quantized_float_y is == scale
+            diff_idx = torch.where(qy != quantized_float_y)
+            num_diff = diff_idx[0].numel()
+            assert num_diff / qy.numel() < .05
+
+            abs_diff = torch.abs(qy[diff_idx].dequantize() - quantized_float_y[diff_idx].dequantize())
+            t_scale = torch.full_like(abs_diff, fill_value=scale)
+            torch.testing.assert_close(abs_diff, t_scale, rtol=1e-5, atol=1e-5)
+
+    def test_qroi_align_multiple_images(self):
+        dtype = torch.float
+        x = torch.randint(50, 100, size=(2, 3, 10, 10)).to(dtype)
+        qx = torch.quantize_per_tensor(x, scale=1, zero_point=0, dtype=torch.qint8)
+        rois = self._make_rois(img_size=10, num_imgs=2, dtype=dtype, num_rois=10)
+        qrois = torch.quantize_per_tensor(rois, scale=1, zero_point=0, dtype=torch.qint8)
+        with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
+            ops.roi_align(qx, qrois, output_size=5)
+
+
+class TestPSRoIAlign(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale,
                               sampling_ratio=sampling_ratio)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
-        @torch.jit.script
-        def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
-            return ops.ps_roi_align(input, rois, pool_size, 1.0)[0]
-        return lambda x: script_fn(x, rois, pool_size)
+        scriped = torch.jit.script(ops.ps_roi_align)
+        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(self, in_data, rois, pool_h, pool_w, device, spatial_scale=1,
                     sampling_ratio=-1, dtype=torch.float64):
         if device is None:
             device = torch.device("cpu")
         n_input_channels = in_data.size(1)
-        self.assertEqual(n_input_channels % (pool_h * pool_w), 0, "input channels must be divisible by ph * pw")
+        assert n_input_channels % (pool_h * pool_w) == 0, "input channels must be divisible by ph * pw"
         n_output_channels = int(n_input_channels / (pool_h * pool_w))
         out_data = torch.zeros(rois.size(0), n_output_channels, pool_h, pool_w, dtype=dtype, device=device)
 
@@ -355,11 +400,11 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
                         out_data[r, c_out, i, j] = val
         return out_data
 
-    def _test_boxes_shape(self):
+    def test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
-class MultiScaleRoIAlignTester(unittest.TestCase):
+class TestMultiScaleRoIAlign:
     def test_msroialign_repr(self):
         fmap_names = ['0']
         output_size = (7, 7)
@@ -370,11 +415,11 @@ class MultiScaleRoIAlignTester(unittest.TestCase):
         # Check integrity of object __repr__ attribute
         expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
                            f"sampling_ratio={sampling_ratio})")
-        self.assertEqual(t.__repr__(), expected_string)
+        assert repr(t) == expected_string
 
 
-class NMSTester(unittest.TestCase):
-    def reference_nms(self, boxes, scores, iou_threshold):
+class TestNMS:
+    def _reference_nms(self, boxes, scores, iou_threshold):
         """
         Args:
             box_scores (N, 5): boxes in corner-form and probabilities.
@@ -414,42 +459,70 @@ class NMSTester(unittest.TestCase):
         scores = torch.rand(N)
         return boxes, scores
 
-    def test_nms(self):
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    def test_nms_ref(self, iou):
         err_msg = 'NMS incompatible between CPU and reference implementation for IoU={}'
-        for iou in [0.2, 0.5, 0.8]:
-            boxes, scores = self._create_tensors_with_iou(1000, iou)
-            keep_ref = self.reference_nms(boxes, scores, iou)
-            keep = ops.nms(boxes, scores, iou)
-            self.assertTrue(torch.allclose(keep, keep_ref), err_msg.format(iou))
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(4), torch.rand(3), 0.5)
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 5), torch.rand(3), 0.5)
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(3, 2), 0.5)
-        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        keep_ref = self._reference_nms(boxes, scores, iou)
+        keep = ops.nms(boxes, scores, iou)
+        assert torch.allclose(keep, keep_ref), err_msg.format(iou)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_nms_cuda(self, dtype=torch.float64):
+    def test_nms_input_errors(self):
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(4), torch.rand(3), 0.5)
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(3, 5), torch.rand(3), 0.5)
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(3, 4), torch.rand(3, 2), 0.5)
+        with pytest.raises(RuntimeError):
+            ops.nms(torch.rand(3, 4), torch.rand(4), 0.5)
+
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    @pytest.mark.parametrize("scale, zero_point", ((1, 0), (2, 50), (3, 10)))
+    def test_qnms(self, iou, scale, zero_point):
+        # Note: we compare qnms vs nms instead of qnms vs reference implementation.
+        # This is because with the int convertion, the trick used in _create_tensors_with_iou
+        # doesn't really work (in fact, nms vs reference implem will also fail with ints)
+        err_msg = 'NMS and QNMS give different results for IoU={}'
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        scores *= 100  # otherwise most scores would be 0 or 1 after int convertion
+
+        qboxes = torch.quantize_per_tensor(boxes, scale=scale, zero_point=zero_point, dtype=torch.quint8)
+        qscores = torch.quantize_per_tensor(scores, scale=scale, zero_point=zero_point, dtype=torch.quint8)
+
+        boxes = qboxes.dequantize()
+        scores = qscores.dequantize()
+
+        keep = ops.nms(boxes, scores, iou)
+        qkeep = ops.nms(qboxes, qscores, iou)
+
+        assert torch.allclose(qkeep, keep), err_msg.format(iou)
+
+    @needs_cuda
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    def test_nms_cuda(self, iou, dtype=torch.float64):
         tol = 1e-3 if dtype is torch.half else 1e-5
         err_msg = 'NMS incompatible between CPU and CUDA for IoU={}'
 
-        for iou in [0.2, 0.5, 0.8]:
-            boxes, scores = self._create_tensors_with_iou(1000, iou)
-            r_cpu = ops.nms(boxes, scores, iou)
-            r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
+        boxes, scores = self._create_tensors_with_iou(1000, iou)
+        r_cpu = ops.nms(boxes, scores, iou)
+        r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
 
-            is_eq = torch.allclose(r_cpu, r_cuda.cpu())
-            if not is_eq:
-                # if the indices are not the same, ensure that it's because the scores
-                # are duplicate
-                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
-            self.assertTrue(is_eq, err_msg.format(iou))
+        is_eq = torch.allclose(r_cpu, r_cuda.cpu())
+        if not is_eq:
+            # if the indices are not the same, ensure that it's because the scores
+            # are duplicate
+            is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
+        assert is_eq, err_msg.format(iou)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_autocast(self):
-        for dtype in (torch.float, torch.half):
-            with torch.cuda.amp.autocast():
-                self.test_nms_cuda(dtype=dtype)
+    @needs_cuda
+    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    @pytest.mark.parametrize("dtype", (torch.float, torch.half))
+    def test_autocast(self, iou, dtype):
+        with torch.cuda.amp.autocast():
+            self.test_nms_cuda(iou=iou, dtype=dtype)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    @needs_cuda
     def test_nms_cuda_float16(self):
         boxes = torch.tensor([[285.3538, 185.5758, 1193.5110, 851.4551],
                               [285.1472, 188.7374, 1192.4984, 851.0669],
@@ -459,7 +532,7 @@ class NMSTester(unittest.TestCase):
         iou_thres = 0.2
         keep32 = ops.nms(boxes, scores, iou_thres)
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
-        self.assertTrue(torch.all(torch.eq(keep32, keep16)))
+        assert_equal(keep32, keep16)
 
     def test_batched_nms_implementations(self):
         """Make sure that both implementations of batched_nms yield identical results"""
@@ -476,15 +549,18 @@ class NMSTester(unittest.TestCase):
         keep_vanilla = ops.boxes._batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
         keep_trick = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
-        err_msg = "The vanilla and the trick implementation yield different nms outputs."
-        self.assertTrue(torch.allclose(keep_vanilla, keep_trick), err_msg)
+        torch.testing.assert_close(
+            keep_vanilla, keep_trick, msg="The vanilla and the trick implementation yield different nms outputs."
+        )
 
         # Also make sure an empty tensor is returned if boxes is empty
         empty = torch.empty((0,), dtype=torch.int64)
-        self.assertTrue(torch.allclose(empty, ops.batched_nms(empty, None, None, None)))
+        torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
 
 
-class DeformConvTester(OpTester, unittest.TestCase):
+class TestDeformConv:
+    dtype = torch.float64
+
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
         pad_h, pad_w = _pair(padding)
@@ -572,12 +648,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
         return x, weight, offset, mask, bias, stride, pad, dilation
 
-    def _test_forward(self, device, contiguous, dtype=None):
-        dtype = self.dtype if dtype is None else dtype
-        for batch_sz in [0, 33]:
-            self._test_forward_with_batchsize(device, contiguous, batch_sz, dtype)
-
-    def _test_forward_with_batchsize(self, device, contiguous, batch_sz, dtype):
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    @pytest.mark.parametrize('batch_sz', (0, 33))
+    def test_forward(self, device, contiguous, batch_sz, dtype=None):
+        dtype = dtype or self.dtype
         x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
         in_channels = 6
         out_channels = 2
@@ -593,30 +668,39 @@ class DeformConvTester(OpTester, unittest.TestCase):
         bias = layer.bias.data
         expected = self.expected_fn(x, weight, offset, mask, bias, stride=stride, padding=padding, dilation=dilation)
 
-        self.assertTrue(torch.allclose(res.to(expected.dtype), expected, rtol=tol, atol=tol),
-                        '\nres:\n{}\nexpected:\n{}'.format(res, expected))
+        torch.testing.assert_close(
+            res.to(expected), expected, rtol=tol, atol=tol, msg='\nres:\n{}\nexpected:\n{}'.format(res, expected)
+        )
 
         # no modulation test
         res = layer(x, offset)
         expected = self.expected_fn(x, weight, offset, None, bias, stride=stride, padding=padding, dilation=dilation)
 
-        self.assertTrue(torch.allclose(res.to(expected.dtype), expected, rtol=tol, atol=tol),
-                        '\nres:\n{}\nexpected:\n{}'.format(res, expected))
+        torch.testing.assert_close(
+            res.to(expected), expected, rtol=tol, atol=tol, msg='\nres:\n{}\nexpected:\n{}'.format(res, expected)
+        )
 
-        # test for wrong sizes
-        with self.assertRaises(RuntimeError):
+    def test_wrong_sizes(self):
+        in_channels = 6
+        out_channels = 2
+        kernel_size = (3, 2)
+        groups = 2
+        x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args('cpu', contiguous=True,
+                                                                            batch_sz=10, dtype=self.dtype)
+        layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
+                                 dilation=dilation, groups=groups)
+        with pytest.raises(RuntimeError, match="the shape of the offset"):
             wrong_offset = torch.rand_like(offset[:, :2])
-            res = layer(x, wrong_offset)
+            layer(x, wrong_offset)
 
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError, match=r'mask.shape\[1\] is not valid'):
             wrong_mask = torch.rand_like(mask[:, :2])
-            res = layer(x, offset, wrong_mask)
+            layer(x, offset, wrong_mask)
 
-    def _test_backward(self, device, contiguous):
-        for batch_sz in [0, 33]:
-            self._test_backward_with_batchsize(device, contiguous, batch_sz)
-
-    def _test_backward_with_batchsize(self, device, contiguous, batch_sz):
+    @pytest.mark.parametrize('device', cpu_and_gpu())
+    @pytest.mark.parametrize('contiguous', (True, False))
+    @pytest.mark.parametrize('batch_sz', (0, 33))
+    def test_backward(self, device, contiguous, batch_sz):
         x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(device, contiguous,
                                                                                     batch_sz, self.dtype)
 
@@ -624,13 +708,13 @@ class DeformConvTester(OpTester, unittest.TestCase):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
                                      padding=padding, dilation=dilation, mask=mask_)
 
-        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5)
+        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         def func_no_mask(x_, offset_, weight_, bias_):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
                                      padding=padding, dilation=dilation, mask=None)
 
-        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5)
+        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         @torch.jit.script
         def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
@@ -639,7 +723,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
                                      padding=pad_, dilation=dilation_, mask=mask_)
 
         gradcheck(lambda z, off, msk, wei, bi: script_func(z, off, msk, wei, bi, stride, padding, dilation),
-                  (x, offset, mask, weight, bias), nondet_tol=1e-5)
+                  (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         @torch.jit.script
         def script_func_no_mask(x_, offset_, weight_, bias_, stride_, pad_, dilation_):
@@ -648,49 +732,55 @@ class DeformConvTester(OpTester, unittest.TestCase):
                                      padding=pad_, dilation=dilation_, mask=None)
 
         gradcheck(lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
-                  (x, offset, weight, bias), nondet_tol=1e-5)
+                  (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_compare_cpu_cuda_grads(self):
+    @needs_cuda
+    @pytest.mark.parametrize('contiguous', (True, False))
+    def test_compare_cpu_cuda_grads(self, contiguous):
         # Test from https://github.com/pytorch/vision/issues/2598
         # Run on CUDA only
-        for contiguous in [False, True]:
-            # compare grads computed on CUDA with grads computed on CPU
-            true_cpu_grads = None
 
-            init_weight = torch.randn(9, 9, 3, 3, requires_grad=True)
-            img = torch.randn(8, 9, 1000, 110)
-            offset = torch.rand(8, 2 * 3 * 3, 1000, 110)
-            mask = torch.rand(8, 3 * 3, 1000, 110)
+        # compare grads computed on CUDA with grads computed on CPU
+        true_cpu_grads = None
 
-            if not contiguous:
-                img = img.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
-                offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
-                mask = mask.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
-                weight = init_weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
+        init_weight = torch.randn(9, 9, 3, 3, requires_grad=True)
+        img = torch.randn(8, 9, 1000, 110)
+        offset = torch.rand(8, 2 * 3 * 3, 1000, 110)
+        mask = torch.rand(8, 3 * 3, 1000, 110)
+
+        if not contiguous:
+            img = img.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
+            offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+            mask = mask.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+            weight = init_weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
+        else:
+            weight = init_weight
+
+        for d in ["cpu", "cuda"]:
+
+            out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
+            out.mean().backward()
+            if true_cpu_grads is None:
+                true_cpu_grads = init_weight.grad
+                assert true_cpu_grads is not None
             else:
-                weight = init_weight
+                assert init_weight.grad is not None
+                res_grads = init_weight.grad.to("cpu")
+                torch.testing.assert_close(true_cpu_grads, res_grads)
 
-            for d in ["cpu", "cuda"]:
+    @needs_cuda
+    @pytest.mark.parametrize('batch_sz', (0, 33))
+    @pytest.mark.parametrize('dtype', (torch.float, torch.half))
+    def test_autocast(self, batch_sz, dtype):
+        with torch.cuda.amp.autocast():
+            self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
 
-                out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
-                out.mean().backward()
-                if true_cpu_grads is None:
-                    true_cpu_grads = init_weight.grad
-                    self.assertTrue(true_cpu_grads is not None)
-                else:
-                    self.assertTrue(init_weight.grad is not None)
-                    res_grads = init_weight.grad.to("cpu")
-                    self.assertTrue(true_cpu_grads.allclose(res_grads))
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_autocast(self):
-        for dtype in (torch.float, torch.half):
-            with torch.cuda.amp.autocast():
-                self._test_forward(torch.device("cuda"), False, dtype=dtype)
+    def test_forward_scriptability(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/4078
+        torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
-class FrozenBNTester(unittest.TestCase):
+class TestFrozenBNT:
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
         eps = 1e-5
@@ -698,7 +788,7 @@ class FrozenBNTester(unittest.TestCase):
 
         # Check integrity of object __repr__ attribute
         expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
-        self.assertEqual(t.__repr__(), expected_string)
+        assert repr(t) == expected_string
 
     def test_frozenbatchnorm2d_eps(self):
         sample_size = (4, 32, 28, 28)
@@ -715,23 +805,23 @@ class FrozenBNTester(unittest.TestCase):
         bn = torch.nn.BatchNorm2d(sample_size[1]).eval()
         bn.load_state_dict(state_dict)
         # Difference is expected to fall in an acceptable range
-        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
+        torch.testing.assert_close(fbn(x), bn(x), rtol=1e-5, atol=1e-6)
 
         # Check computation for eps > 0
         fbn = ops.misc.FrozenBatchNorm2d(sample_size[1], eps=1e-5)
         fbn.load_state_dict(state_dict, strict=False)
         bn = torch.nn.BatchNorm2d(sample_size[1], eps=1e-5).eval()
         bn.load_state_dict(state_dict)
-        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
+        torch.testing.assert_close(fbn(x), bn(x), rtol=1e-5, atol=1e-6)
 
     def test_frozenbatchnorm2d_n_arg(self):
         """Ensure a warning is thrown when passing `n` kwarg
         (remove this when support of `n` is dropped)"""
-        self.assertWarns(DeprecationWarning, ops.misc.FrozenBatchNorm2d, 32, eps=1e-5, n=32)
+        with pytest.warns(DeprecationWarning):
+            ops.misc.FrozenBatchNorm2d(32, eps=1e-5, n=32)
 
 
-class BoxConversionTester(unittest.TestCase):
-    @staticmethod
+class TestBoxConversion:
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
         box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
@@ -740,22 +830,22 @@ class BoxConversionTester(unittest.TestCase):
         box_tuple = tuple(box_list)
         return box_tensor, box_list, box_tuple
 
-    def test_check_roi_boxes_shape(self):
+    @pytest.mark.parametrize('box_sequence', _get_box_sequences())
+    def test_check_roi_boxes_shape(self, box_sequence):
         # Ensure common sequences of tensors are supported
-        for box_sequence in self._get_box_sequences():
-            self.assertIsNone(ops._utils.check_roi_boxes_shape(box_sequence))
+        ops._utils.check_roi_boxes_shape(box_sequence)
 
-    def test_convert_boxes_to_roi_format(self):
+    @pytest.mark.parametrize('box_sequence', _get_box_sequences())
+    def test_convert_boxes_to_roi_format(self, box_sequence):
         # Ensure common sequences of tensors yield the same result
         ref_tensor = None
-        for box_sequence in self._get_box_sequences():
-            if ref_tensor is None:
-                ref_tensor = box_sequence
-            else:
-                self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
+        if ref_tensor is None:
+            ref_tensor = box_sequence
+        else:
+            assert_equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence))
 
 
-class BoxTester(unittest.TestCase):
+class TestBox:
     def test_bbox_same(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                   [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
@@ -763,20 +853,10 @@ class BoxTester(unittest.TestCase):
         exp_xyxy = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                 [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
-        box_same = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xyxy")
-        self.assertEqual(exp_xyxy.size(), torch.Size([4, 4]))
-        self.assertEqual(exp_xyxy.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_same, exp_xyxy)).item()
-
-        box_same = ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="xywh")
-        self.assertEqual(exp_xyxy.size(), torch.Size([4, 4]))
-        self.assertEqual(exp_xyxy.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_same, exp_xyxy)).item()
-
-        box_same = ops.box_convert(box_tensor, in_fmt="cxcywh", out_fmt="cxcywh")
-        self.assertEqual(exp_xyxy.size(), torch.Size([4, 4]))
-        self.assertEqual(exp_xyxy.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_same, exp_xyxy)).item()
+        assert exp_xyxy.size() == torch.Size([4, 4])
+        assert_equal(ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xyxy"), exp_xyxy)
+        assert_equal(ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="xywh"), exp_xyxy)
+        assert_equal(ops.box_convert(box_tensor, in_fmt="cxcywh", out_fmt="cxcywh"), exp_xyxy)
 
     def test_bbox_xyxy_xywh(self):
         # Simple test convert boxes to xywh and back. Make sure they are same.
@@ -786,16 +866,13 @@ class BoxTester(unittest.TestCase):
         exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                 [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
+        assert exp_xywh.size() == torch.Size([4, 4])
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
-        self.assertEqual(exp_xywh.size(), torch.Size([4, 4]))
-        self.assertEqual(exp_xywh.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_xywh, exp_xywh)).item()
+        assert_equal(box_xywh, exp_xywh)
 
         # Reverse conversion
         box_xyxy = ops.box_convert(box_xywh, in_fmt="xywh", out_fmt="xyxy")
-        self.assertEqual(box_xyxy.size(), torch.Size([4, 4]))
-        self.assertEqual(box_xyxy.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
+        assert_equal(box_xyxy, box_tensor)
 
     def test_bbox_xyxy_cxcywh(self):
         # Simple test convert boxes to xywh and back. Make sure they are same.
@@ -805,16 +882,13 @@ class BoxTester(unittest.TestCase):
         exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
                                   [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
 
+        assert exp_cxcywh.size() == torch.Size([4, 4])
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
-        self.assertEqual(exp_cxcywh.size(), torch.Size([4, 4]))
-        self.assertEqual(exp_cxcywh.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item()
+        assert_equal(box_cxcywh, exp_cxcywh)
 
         # Reverse conversion
         box_xyxy = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xyxy")
-        self.assertEqual(box_xyxy.size(), torch.Size([4, 4]))
-        self.assertEqual(box_xyxy.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
+        assert_equal(box_xyxy, box_tensor)
 
     def test_bbox_xywh_cxcywh(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
@@ -824,26 +898,22 @@ class BoxTester(unittest.TestCase):
         exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
                                   [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
 
+        assert exp_cxcywh.size() == torch.Size([4, 4])
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="cxcywh")
-        self.assertEqual(exp_cxcywh.size(), torch.Size([4, 4]))
-        self.assertEqual(exp_cxcywh.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item()
+        assert_equal(box_cxcywh, exp_cxcywh)
 
         # Reverse conversion
         box_xywh = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xywh")
-        self.assertEqual(box_xywh.size(), torch.Size([4, 4]))
-        self.assertEqual(box_xywh.dtype, box_tensor.dtype)
-        assert torch.all(torch.eq(box_xywh, box_tensor)).item()
+        assert_equal(box_xywh, box_tensor)
 
-    def test_bbox_invalid(self):
+    @pytest.mark.parametrize('inv_infmt', ["xwyh", "cxwyh"])
+    @pytest.mark.parametrize('inv_outfmt', ["xwcx", "xhwcy"])
+    def test_bbox_invalid(self, inv_infmt, inv_outfmt):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                   [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
-        invalid_infmts = ["xwyh", "cxwyh"]
-        invalid_outfmts = ["xwcx", "xhwcy"]
-        for inv_infmt in invalid_infmts:
-            for inv_outfmt in invalid_outfmts:
-                self.assertRaises(ValueError, ops.box_convert, box_tensor, inv_infmt, inv_outfmt)
+        with pytest.raises(ValueError):
+            ops.box_convert(box_tensor, inv_infmt, inv_outfmt)
 
     def test_bbox_convert_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
@@ -854,19 +924,18 @@ class BoxTester(unittest.TestCase):
 
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         scripted_xywh = scripted_fn(box_tensor, 'xyxy', 'xywh')
-        self.assertTrue((scripted_xywh - box_xywh).abs().max() < TOLERANCE)
+        torch.testing.assert_close(scripted_xywh, box_xywh, rtol=0.0, atol=TOLERANCE)
 
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
         scripted_cxcywh = scripted_fn(box_tensor, 'xyxy', 'cxcywh')
-        self.assertTrue((scripted_cxcywh - box_cxcywh).abs().max() < TOLERANCE)
+        torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
 
 
-class BoxAreaTester(unittest.TestCase):
+class TestBoxArea:
     def test_box_area(self):
         def area_check(box, expected, tolerance=1e-4):
             out = ops.box_area(box)
-            assert out.size() == expected.size()
-            assert ((out - expected).abs().max() < tolerance).item()
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
         for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
@@ -890,12 +959,11 @@ class BoxAreaTester(unittest.TestCase):
         area_check(box_tensor, expected)
 
 
-class BoxIouTester(unittest.TestCase):
+class TestBoxIou:
     def test_iou(self):
         def iou_check(box, expected, tolerance=1e-4):
             out = ops.box_iou(box, box)
-            assert out.size() == expected.size()
-            assert ((out - expected).abs().max() < tolerance).item()
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
         for dtype in [torch.int16, torch.int32, torch.int64]:
@@ -912,12 +980,11 @@ class BoxIouTester(unittest.TestCase):
             iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
 
-class GenBoxIouTester(unittest.TestCase):
+class TestGenBoxIou:
     def test_gen_iou(self):
         def gen_iou_check(box, expected, tolerance=1e-4):
             out = ops.generalized_box_iou(box, box)
-            assert out.size() == expected.size()
-            assert ((out - expected).abs().max() < tolerance).item()
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
         for dtype in [torch.int16, torch.int32, torch.int64]:
@@ -935,4 +1002,4 @@ class GenBoxIouTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])

@@ -45,6 +45,67 @@ commands:
               our_upload_channel=test
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
+  install_cuda_compatible_cmath:
+    description: "Install CUDA compatible cmath"
+    steps:
+      - run:
+          name: _HACK_ Install CUDA compatible cmath
+          no_output_timeout: 1m
+          command: |
+              powershell .circleci/scripts/vs_install_cmath.ps1
+
+  brew_update:
+    description: "Update Homebrew and install base formulae"
+    steps:
+      - run:
+          name: Update Homebrew
+          no_output_timeout: "10m"
+          command: |
+            set -ex
+
+            # Update repositories manually.
+            # Running `brew update` produces a comparison between the
+            # current checkout and the updated checkout, which takes a
+            # very long time because the existing checkout is 2y old.
+            for path in $(find /usr/local/Homebrew -type d -name .git)
+            do
+            cd $path/..
+            git fetch --depth=1 origin
+            git reset --hard origin/master
+            done
+
+            export HOMEBREW_NO_AUTO_UPDATE=1
+
+            # Install expect and moreutils so that we can call `unbuffer` and `ts`.
+            # moreutils installs a `parallel` executable by default, which conflicts
+            # with the executable from the GNU `parallel`, so we must unlink GNU
+            # `parallel` first, and relink it afterwards.
+            brew install coreutils
+            brew unlink parallel
+            brew install moreutils
+            brew link parallel --overwrite
+            brew install expect
+
+  brew_install:
+    description: "Install Homebrew formulae"
+    parameters:
+      formulae:
+        type: string
+        default: ""
+    steps:
+      - run:
+          name: Install << parameters.formulae >>
+          no_output_timeout: "10m"
+          command: |
+            set -ex
+            export HOMEBREW_NO_AUTO_UPDATE=1
+            brew install << parameters.formulae >>
+
+  run_brew_for_ios_build:
+    steps:
+      - brew_update
+      - brew_install:
+          formulae: libtool
 
 binary_common: &binary_common
   parameters:
@@ -72,7 +133,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda101"
+      default: "pytorch/manylinux-cuda102"
     conda_docker_image:
       description: "Conda only: what docker image to use"
       type: string
@@ -82,6 +143,30 @@ binary_common: &binary_common
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
+
+torchvision_ios_params: &torchvision_ios_params
+  parameters:
+    build_environment:
+      type: string
+      default: ""
+    ios_arch:
+      type: string
+      default: ""
+    ios_platform:
+      type: string
+      default: ""
+  environment:
+    BUILD_ENVIRONMENT: << parameters.build_environment >>
+    IOS_ARCH: << parameters.ios_arch >>
+    IOS_PLATFORM: << parameters.ios_platform >>
+
+torchvision_android_params: &torchvision_android_params
+  parameters:
+    build_environment:
+      type: string
+      default: ""
+  environment:
+    BUILD_ENVIRONMENT: << parameters.build_environment >>
 
 smoke_test_common: &smoke_test_common
   <<: *binary_common
@@ -120,6 +205,7 @@ jobs:
             sudo apt-get update -y
             sudo apt install -y libturbojpeg-dev
             pip install --user --progress-bar off mypy
+            pip install --user --progress-bar off types-requests
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
@@ -156,6 +242,7 @@ jobs:
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
             pip install --user --progress-bar off --editable .
+            pip install pytest
             python test/test_hub.py
 
   torch_onnx_test:
@@ -170,6 +257,7 @@ jobs:
             pip install --user --progress-bar off --editable .
             pip install --user onnx
             pip install --user onnxruntime
+            pip install --user pytest
             python test/test_onnx.py
 
   binary_linux_wheel:
@@ -212,6 +300,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Build conda packages
           no_output_timeout: 20m
@@ -239,6 +328,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Build wheel packages
           command: |
@@ -258,7 +348,7 @@ jobs:
   binary_macos_wheel:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -278,10 +368,83 @@ jobs:
           paths:
             - "*"
 
+  binary_ios_build:
+    <<: *torchvision_ios_params
+    macos:
+      xcode: "12.0"
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run_brew_for_ios_build
+    - run:
+        name: Build
+        no_output_timeout: "1h"
+        command: |
+          script="/Users/distiller/project/.circleci/unittest/ios/scripts/binary_ios_build.sh"
+          cat "$script"
+          source "$script"
+    - persist_to_workspace:
+        root: /Users/distiller/workspace/
+        paths: ios
+
+  binary_ios_upload:
+    <<: *torchvision_ios_params
+    macos:
+      xcode: "12.0"
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run_brew_for_ios_build
+    - run:
+        name: Upload
+        no_output_timeout: "1h"
+        command: |
+          script="/Users/distiller/project/.circleci/unittest/ios/scripts/binary_ios_upload.sh"
+          cat "$script"
+          source "$script"
+
+  binary_android_build:
+    <<: *torchvision_android_params
+    docker:
+      - image: circleci/android:api-29-ndk
+    resource_class: xlarge
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run:
+        name: Build
+        no_output_timeout: "1h"
+        command: |
+          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_build.sh"
+          cat "$script"
+          source "$script"
+    - store_artifacts:
+        path: ~/workspace/artifacts
+
+  binary_android_upload:
+    <<: *torchvision_android_params
+    docker:
+      - image: circleci/android:api-29-ndk
+    resource_class: xlarge
+    steps:
+    - attach_workspace:
+        at: ~/workspace
+    - checkout
+    - run:
+        name: Upload
+        no_output_timeout: "1h"
+        command: |
+          script="/home/circleci/project/.circleci/unittest/android/scripts/binary_android_upload.sh"
+          cat "$script"
+          source "$script"
+
   binary_macos_conda:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -420,7 +583,7 @@ jobs:
             fi
             conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install Pillow
+            conda install Pillow>=5.3.0
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
@@ -500,10 +663,10 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
-    resource_class: gpu.small
+      image: ubuntu-1604-cuda-10.2:202012-01
+    resource_class: gpu.nvidia.medium
     environment:
-      image_name: "pytorch/manylinux-cuda101"
+      image_name: "pytorch/manylinux-cuda102"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -528,11 +691,19 @@ jobs:
             - conda
             - env
       - run:
+          # Here we create an envlist file that contains some env variables that we want the docker container to be aware of.
+          # Normally, the CIRCLECI variable is set and available on all CI workflows: https://circleci.com/docs/2.0/env-vars/#built-in-environment-variables.
+          # They're avaiable in all the other workflows (OSX and Windows).
+          # But here, we're running the unittest_linux_gpu workflows in a docker container, where those variables aren't accessible.
+          # So instead we dump the variables we need in env.list and we pass that file when invoking "docker run".
+          name: export CIRCLECI env var
+          command: echo "CIRCLECI=true" >> ./env.list
+      - run:
           name: Install torchvision
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
+          command: docker run --env-file ./env.list -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
       - run:
           name: Post Process
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
@@ -546,6 +717,7 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -582,11 +754,12 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.1"
+      CUDA_VERSION: "10.2"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -595,7 +768,7 @@ jobs:
           {% raw %}
           keys:
             - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %} 
+          {% endraw %}
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
@@ -621,7 +794,7 @@ jobs:
   unittest_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     resource_class: large
     steps:
       - checkout
@@ -677,7 +850,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
@@ -697,7 +870,7 @@ jobs:
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "9.4.1"
+      xcode: "12.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -716,6 +889,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -729,6 +903,7 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
+      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -753,6 +928,15 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
           name: Build docs
           command: |
             set -ex
@@ -764,6 +948,12 @@ jobs:
             pip install -r requirements.txt
             make html
             popd
+      - save_cache:
+          {% raw %}
+          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:
@@ -813,6 +1003,8 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      {{ ios_workflows() }}
+      {{ android_workflows() }}
 
   unittest:
     jobs:
@@ -832,6 +1024,8 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      {{ ios_workflows(nightly=True) }}
+      {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
     triggers:

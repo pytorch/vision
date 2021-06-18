@@ -24,7 +24,13 @@ else
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
+conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
+
+if [ $PYTHON_VERSION == "3.6" ]; then
+    printf "Installing minimal PILLOW version\n"
+    # Install the minimal PILLOW version. Otherwise, let setup.py install the latest
+    pip install pillow>=5.3.0
+fi
 
 printf "* Installing torchvision\n"
 python setup.py develop

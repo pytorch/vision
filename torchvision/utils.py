@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks"]
 
 
 @torch.no_grad()
@@ -20,7 +20,8 @@ def make_grid(
     pad_value: int = 0,
     **kwargs
 ) -> torch.Tensor:
-    """Make a grid of images.
+    """
+    Make a grid of images.
 
     Args:
         tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)
@@ -29,7 +30,7 @@ def make_grid(
             The final grid size is ``(B / nrow, nrow)``. Default: ``8``.
         padding (int, optional): amount of padding. Default: ``2``.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
-            by the min and max values specified by :attr:`range`. Default: ``False``.
+            by the min and max values specified by ``value_range``. Default: ``False``.
         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
@@ -37,9 +38,8 @@ def make_grid(
             images separately rather than the (min, max) over all images. Default: ``False``.
         pad_value (float, optional): Value for the padded pixels. Default: ``0``.
 
-    Example:
-        See this notebook `here <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>`_
-
+    Returns:
+        grid (Tensor): the tensor containing grid of images.
     """
     if not (torch.is_tensor(tensor) or
             (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
@@ -117,7 +117,8 @@ def save_image(
     format: Optional[str] = None,
     **kwargs
 ) -> None:
-    """Save a given Tensor into an image file.
+    """
+    Save a given Tensor into an image file.
 
     Args:
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
@@ -150,10 +151,10 @@ def draw_bounding_boxes(
     """
     Draws bounding boxes on given image.
     The values of the input image should be uint8 between 0 and 255.
-    If filled, Resulting Tensor should be saved as PNG image.
+    If fill is True, Resulting Tensor should be saved as PNG image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W)
+        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
@@ -166,6 +167,9 @@ def draw_bounding_boxes(
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
         font_size (int): The requested font size in points.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
 
     if not isinstance(image, torch.Tensor):
@@ -174,6 +178,11 @@ def draw_bounding_boxes(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
+    elif image.size(0) not in {1, 3}:
+        raise ValueError("Only grayscale and RGB images are supported")
+
+    if image.size(0) == 1:
+        image = torch.tile(image, (3, 1, 1))
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
@@ -207,6 +216,87 @@ def draw_bounding_boxes(
             draw.rectangle(bbox, width=width, outline=color)
 
         if labels is not None:
-            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+            margin = width + 1
+            draw.text((bbox[0] + margin, bbox[1] + margin), labels[i], fill=color, font=txt_font)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+
+
+@torch.no_grad()
+def draw_segmentation_masks(
+    image: torch.Tensor,
+    masks: torch.Tensor,
+    alpha: float = 0.8,
+    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+) -> torch.Tensor:
+
+    """
+    Draws segmentation masks on given RGB image.
+    The values of the input image should be uint8 between 0 and 255.
+
+    Args:
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
+        masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
+        alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
+            0 means full transparency, 1 means no transparency.
+        colors (list or None): List containing the colors of the masks. The colors can
+            be represented as PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+            When ``masks`` has a single entry of shape (H, W), you can pass a single color instead of a list
+            with one element. By default, random colors are generated for each mask.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"The image must be a tensor, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+    elif image.size()[0] != 3:
+        raise ValueError("Pass an RGB image. Other Image formats are not supported")
+    if masks.ndim == 2:
+        masks = masks[None, :, :]
+    if masks.ndim != 3:
+        raise ValueError("masks must be of shape (H, W) or (batch_size, H, W)")
+    if masks.dtype != torch.bool:
+        raise ValueError(f"The masks must be of dtype bool. Got {masks.dtype}")
+    if masks.shape[-2:] != image.shape[-2:]:
+        raise ValueError("The image and the masks must have the same height and width")
+
+    num_masks = masks.size()[0]
+    if colors is not None and num_masks > len(colors):
+        raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
+
+    if colors is None:
+        colors = _generate_color_palette(num_masks)
+
+    if not isinstance(colors, list):
+        colors = [colors]
+    if not isinstance(colors[0], (tuple, str)):
+        raise ValueError("colors must be a tuple or a string, or a list thereof")
+    if isinstance(colors[0], tuple) and len(colors[0]) != 3:
+        raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
+
+    out_dtype = torch.uint8
+
+    colors_ = []
+    for color in colors:
+        if isinstance(color, str):
+            color = ImageColor.getrgb(color)
+        color = torch.tensor(color, dtype=out_dtype)
+        colors_.append(color)
+
+    img_to_draw = image.detach().clone()
+    # TODO: There might be a way to vectorize this
+    for mask, color in zip(masks, colors_):
+        img_to_draw[:, mask] = color[:, None]
+
+    out = image * (1 - alpha) + img_to_draw * alpha
+    return out.to(out_dtype)
+
+
+def _generate_color_palette(num_masks):
+    palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
+    return [tuple((i * palette) % 255) for i in range(num_masks)]
