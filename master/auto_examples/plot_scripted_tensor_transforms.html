@@ -199,7 +199,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+fa87fe3 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+e8831e2 ) &#x25BC</a>
     </div>
     
 
@@ -440,8 +440,6 @@ apply it on multiple tensor images of the same size</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/resnet18-f37072fd.pth&quot; to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth
-/root/project/env/lib/python3.7/site-packages/torch/nn/functional.py:718: UserWarning: Named tensors and all their associated APIs are an experimental feature and subject to change. Please do not use them for anything important until they are released as stable. (Triggered internally at  /opt/conda/conda-bld/pytorch_1623740778910/work/c10/core/TensorImpl.h:1295.)
-  return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
 </pre></div>
 </div>
 <p>We can verify that the prediction of the scripted and non-scripted models are
@@ -472,7 +470,7 @@ Prediction for Dog 2: [&#39;n02106662&#39;, &#39;German_shepherd&#39;]
 <span class="k">assert</span> <span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res_scripted_dumped</span></a> <span class="o">==</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res_scripted</span></a><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.768 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.779 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-scripted-tensor-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/6a01ac4f9248f75d7d59fd4b8e9147f5/plot_scripted_tensor_transforms.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_scripted_tensor_transforms.py</span></code></a></p>
