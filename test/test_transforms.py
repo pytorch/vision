@@ -825,6 +825,16 @@ class TestToPil:
         img = transform(input_img)
         torch.testing.assert_close(expected_output, np.array(img), check_dtype=False)
 
+    def test_tensor_to_pil_robust(self, input_img, expected_output):
+        to_pil = transforms.ToPILImage()
+        to_tensor = transforms.ToTensor()
+        input_img = torch.ByteTensor(20, 20).random_(0, 255).numpy()
+        eps = 1.0e-5
+        img_sub = to_tensor(to_pil(input_img - eps))
+        torch.testing.assert_close(input_img, np.array(img_sub), check_dtype=False)
+        img_add = to_tensor(to_pil(input_img + eps))
+        torch.testing.assert_close(input_img, np.array(img_add), check_dtype=False)
+
 
 def test_adjust_brightness():
     x_shape = [2, 2, 3]
