@@ -1,49 +1,12 @@
 import torch
-
-import os
-import os.path as osp
-import importlib.machinery
-
 from enum import Enum
 
-_HAS_IMAGE_OPT = False
+from .._register_extension import _get_extension_path
+
 
 try:
-    lib_dir = osp.abspath(osp.join(osp.dirname(__file__), ".."))
-
-    loader_details = (
-        importlib.machinery.ExtensionFileLoader,
-        importlib.machinery.EXTENSION_SUFFIXES
-    )
-
-    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)  # type: ignore[arg-type]
-    ext_specs = extfinder.find_spec("image")
-
-    if os.name == 'nt':
-        # Load the image extension using LoadLibraryExW
-        import ctypes
-
-        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
-        prev_error_mode = kernel32.SetErrorMode(0x0001)
-
-        kernel32.LoadLibraryW.restype = ctypes.c_void_p
-        if with_load_library_flags:
-            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
-
-        if ext_specs is not None:
-            res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
-            if res is None:
-                err = ctypes.WinError(ctypes.get_last_error())
-                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
-                                 'its dependencies.')
-                raise err
-
-        kernel32.SetErrorMode(prev_error_mode)
-
-    if ext_specs is not None:
-        torch.ops.load_library(ext_specs.origin)
-        _HAS_IMAGE_OPT = True
+    lib_path = _get_extension_path('image')
+    torch.ops.load_library(lib_path)
 except (ImportError, OSError):
     pass
 
