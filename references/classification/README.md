@@ -23,7 +23,8 @@ Since `AlexNet` and the original `VGG` architectures do not include batch
 normalization, the default initial learning rate `--lr 0.1` is to high.
 
 ```
-python main.py --model $MODEL --lr 1e-2
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --model $MODEL --lr 1e-2
 ```
 
 Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg13`, `vgg16` or `vgg19`. Note
