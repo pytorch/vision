@@ -5,8 +5,7 @@ set -e
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
 conda activate ./env
 
-if [ "${CU_VERSION:-}" == cpu ] ; then
-else
+if [ "${CU_VERSION:-}" != "cpu" ] ; then
     if [[ ${#CU_VERSION} -eq 4 ]]; then
         CUDA_VERSION="${CU_VERSION:2:1}.${CU_VERSION:3:1}"
     elif [[ ${#CU_VERSION} -eq 5 ]]; then
