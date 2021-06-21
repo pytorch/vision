@@ -122,7 +122,7 @@ def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
     e_idx = num_samples
     if start < audio_pts_range[0]:
         s_idx = int((audio_pts_range[0] - start) / step_per_aframe)
-    if end > audio_pts_range[1]:
+    if audio_pts_range[1] != -1 and end > audio_pts_range[1]:
         e_idx = int((audio_pts_range[1] - end) / step_per_aframe)
     return aframes[s_idx:e_idx, :]
 
