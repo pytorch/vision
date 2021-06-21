@@ -53,5 +53,9 @@ fi
 # test torch.cuda
 python -c "import torch; print(torch.cuda.is_available())"
 
+version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
+export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
+nvcc --version
+alias nvcc="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\bin\nvcc.exe"
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
