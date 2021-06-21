@@ -1028,7 +1028,7 @@ workflows:
           cu_version: cpu
           filters:
             branches:
-              only: '*'
+              only: /.*/
             tags:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_linux_wheel_py3.7_cpu
@@ -1432,7 +1432,7 @@ workflows:
           filters:
             branches:
               only:
-              - '*'
+              - /.*/
             tags:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: build_docs
