@@ -779,9 +779,6 @@ jobs:
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
-      - run:
-          name: CUDA INSTALL
-          command: packaging/windows/internal/cuda_install.bat
       - save_cache:
           {% raw %}
           key: env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
@@ -790,11 +787,8 @@ jobs:
             - conda
             - env
       - run:
-          name: Install torchvision
-          command: .circleci/unittest/windows/scripts/install.sh
-      - run:
-          name: Run tests
-          command: .circleci/unittest/windows/scripts/run_test.sh
+          name: Install torchvision and Test
+          command: packaging/windows/internal/cuda_install.bat && .circleci/unittest/windows/scripts/install.sh && .circleci/unittest/windows/scripts/run_test.sh 
       - run:
           name: Post process
           command: .circleci/unittest/windows/scripts/post_process.sh
