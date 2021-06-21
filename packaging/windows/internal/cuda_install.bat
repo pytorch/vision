@@ -209,7 +209,6 @@ rem echo Installing GPU driver DLLs
 rem 7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -aoa -o"C:\Windows\System32"
 
 rem cuda version
-C:\Windows\System32\nvidia-smi.exe
 where nvcc
 nvcc --version
 
