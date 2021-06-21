@@ -60,11 +60,11 @@ fi
 # test torch.cuda
 python -c "import torch; print(torch.cuda.is_available())"
 
-#version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
-#export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing #Toolkit/CUDA/v${version}/libnvvp:$PATH"
-#export CUDA_PATH_V11_1="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
-#export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
-#nvcc --version
-# alias nvcc="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.1/bin/nvcc.exe"
+version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
+export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
+export CUDA_PATH_V11_1="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
+export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
+nvcc --version
+
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop

@@ -60,8 +60,7 @@ commands:
           name: Install CUDA drivers
           no_output_timeout: 10m
           command: |
-              bash .circleci/unittest/windows/scripts/windows_cuda_install.sh
-
+              packaging/windows/internal/cuda_install.bat
   brew_update:
     description: "Update Homebrew and install base formulae"
     steps:
@@ -314,8 +313,8 @@ jobs:
           no_output_timeout: 20m
           command: |
             set -ex
-            packaging/windows/internal/cuda_install.bat
             source packaging/windows/internal/vc_install_helper.sh
+            packaging/windows/internal/cuda_install.bat
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
@@ -341,8 +340,8 @@ jobs:
           name: Build wheel packages
           command: |
             set -ex
-            packaging/windows/internal/cuda_install.bat            
             source packaging/windows/internal/vc_install_helper.sh
+            packaging/windows/internal/cuda_install.bat
             packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -918,8 +917,8 @@ jobs:
       - run:
           command: |
             set -ex
-            packaging/windows/internal/cuda_install.bat
             source packaging/windows/internal/vc_install_helper.sh
+            packaging/windows/internal/cuda_install.bat
             packaging/build_cmake.sh
 
   build_docs:
