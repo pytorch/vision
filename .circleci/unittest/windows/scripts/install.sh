@@ -7,9 +7,6 @@ unset PYTORCH_VERSION
 
 set -ex
 
-#check env
-env | grep CUDA
-
 # Run nvidia-smi if available
 for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
     if [[ -x "$path" ]]; then
@@ -35,6 +32,11 @@ else
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
     cudatoolkit="cudatoolkit=${version}"
+
+    # set cuda envs
+    export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
+    export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
+    export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
 fi
 
 #check env
@@ -60,11 +62,9 @@ fi
 # test torch.cuda
 python -c "import torch; print(torch.cuda.is_available())"
 
-version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
-export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
-export CUDA_PATH_V11_1="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
-export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
+
 nvcc --version
 
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
+
