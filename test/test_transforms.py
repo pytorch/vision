@@ -269,7 +269,7 @@ class TestToTensor:
         input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
         img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
         output = trans(img)  # HWC -> CHW
-        expected_output = (input_data * 255).byte()
+        expected_output = (input_data * 255).round().byte()
         torch.testing.assert_close(output, expected_output, check_stride=False)
 
         # separate test for mode '1' PIL images
