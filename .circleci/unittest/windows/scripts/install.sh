@@ -6,6 +6,8 @@ unset PYTORCH_VERSION
 # In fact, keeping PYTORCH_VERSION forces us to hardcode PyTorch version in config.
 
 set -ex
+#check env
+env | grep CUDA
 
 # Run nvidia-smi if available
 for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
@@ -33,6 +35,9 @@ else
     cudatoolkit="cudatoolkit=${version}"
 fi
 
+#check env
+env | grep CUDA
+
 # Run nvidia-smi if available
 for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
     if [[ -x "$path" ]]; then
@@ -55,7 +60,9 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
 export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
+export CUDA_PATH_V11_1="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
+export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1"
 nvcc --version
-alias nvcc="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.1\bin\nvcc.exe"
+# alias nvcc="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.1/bin/nvcc.exe"
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
