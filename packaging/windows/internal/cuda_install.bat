@@ -165,24 +165,24 @@ goto cuda_common
 :cuda_common
 
 if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
-    curl -k -L https://www.dropbox.com/s/9mcolalfdj4n979/NvToolsExt.7z?dl=1 --output "%SRC_DIR%\temp_build\NvToolsExt.7z"
+    curl -k -L https://ossci-windows.s3.amazonaws.com/NvToolsExt.7z --output "%SRC_DIR%\temp_build\NvToolsExt.7z"
     if errorlevel 1 exit /b 1
 )
 
 echo Installing CUDA toolkit...
 7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
 pushd "%SRC_DIR%\temp_build\cuda"
-time /t
 start /wait setup.exe -s %ARGS%
-time /t
 popd
 
 echo Installing VS integration...
-xcopy /Y "%SRC_DIR%\temp_build\cuda\visual_studio_integration\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\*.*" "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\BuildCustomizations"
-
-rem 11 visual_studio_integration/CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
-
-rem 10 CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions
+rem  msbuild_project_dir
+if %CUDA_VER_MAJOR% == "10" (
+    xcopy /Y "%SRC_DIR%\temp_build\cuda\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\*.*" "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\BuildCustomizations"
+)
+if %CUDA_VER_MAJOR% == "11" (
+    xcopy /Y "%SRC_DIR%\temp_build\cuda\visual_studio_integration\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\*.*" "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\BuildCustomizations"
+)
 
 echo Installing NvToolsExt...
 7z x %SRC_DIR%\temp_build\NvToolsExt.7z -o"%SRC_DIR%\temp_build\NvToolsExt"
