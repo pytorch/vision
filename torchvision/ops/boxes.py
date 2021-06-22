@@ -181,7 +181,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
 
     if in_fmt == out_fmt:
-        return boxes.clone()
+        return boxes
 
     if in_fmt != 'xyxy' and out_fmt != 'xyxy':
         # convert to xyxy and change in_fmt xyxy
