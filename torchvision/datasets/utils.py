@@ -282,12 +282,12 @@ _ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
 _COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {
     ".bz2": bz2.open,
     ".gz": gzip.open,
-    ".xz": lzma.open
+    ".xz": lzma.open,
 }
 _FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
     ".tbz": (".tar", ".bz2"),
     ".tbz2": (".tar", ".bz2"),
-    ".tgz": (".tar", ".gz")
+    ".tgz": (".tar", ".gz"),
 }
 
 
