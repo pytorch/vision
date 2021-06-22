@@ -47,6 +47,8 @@ for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Window
         break
     fi
 done
+which nvcc
+nvcc --version
 env | grep CUDA
 
 mkdir cpp_build
