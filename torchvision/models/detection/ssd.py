@@ -11,7 +11,7 @@ from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
 
 __all__ = ['SSD', 'ssd300_vgg16']
