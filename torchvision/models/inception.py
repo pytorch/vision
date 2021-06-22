@@ -116,6 +116,7 @@ class Inception3(nn.Module):
         self.Mixed_7c = inception_e(2048)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout()
+        self.flatten = nn.Flatten()
         self.fc = nn.Linear(2048, num_classes)
         if init_weights:
             for m in self.modules():
@@ -187,7 +188,7 @@ class Inception3(nn.Module):
         # N x 2048 x 1 x 1
         x = self.dropout(x)
         # N x 2048 x 1 x 1
-        x = torch.flatten(x, 1)
+        x = self.flatten(x)  # change from torch.flatten to nn.Flatten allows to override this stage, whitch was previously impossible
         # N x 2048
         x = self.fc(x)
         # N x 1000 (num_classes)
