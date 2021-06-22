@@ -7,6 +7,7 @@ from collections import OrderedDict
 import functools
 import operator
 import torch
+import torch.fx
 import torch.nn as nn
 import torchvision
 from torchvision import models
@@ -138,6 +139,13 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
     torch.testing.assert_close(eager_out, script_out, atol=1e-4, rtol=1e-4)
     assert_export_import_module(sm, args)
+
+
+def _check_fx_compatible(model, inputs):
+    model_fx = torch.fx.symbolic_trace(model)
+    out = model(inputs)
+    out_fx = model_fx(inputs)
+    torch.testing.assert_close(out, out_fx)
 
 
 # If 'unwrapper' is provided it will be called with the script model outputs
@@ -408,6 +416,7 @@ def test_classification_model(model_name, dev):
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == 50
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
