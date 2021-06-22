@@ -7,14 +7,6 @@ unset PYTORCH_VERSION
 
 set -ex
 
-# Run nvidia-smi if available
-for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
-    if [[ -x "$path" ]]; then
-        "$path" || echo "true";
-        break
-    fi
-done
-
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
@@ -31,23 +23,7 @@ else
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
     cudatoolkit="cudatoolkit=${version}"
-
-    # set cuda envs
-    export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
-    export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
-    export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
 fi
-
-#check env
-env | grep CUDA
-
-# Run nvidia-smi if available
-for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
-    if [[ -x "$path" ]]; then
-        "$path" || echo "true";
-        break
-    fi
-done
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
 conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
@@ -58,11 +34,18 @@ if [ $PYTHON_VERSION == "3.6" ]; then
     pip install pillow>=5.3.0
 fi
 
-# test torch.cuda
+# check torch 
 python -c "import torch; print(torch.cuda.is_available())"
+# check cuda driver version
+for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
+    if [[ -x "$path" ]]; then
+        "$path" || echo "true";
+        break
+    fi
+done
 
-
-nvcc --version
+# set the cuda env vars
+source "$this_dir/set_cuda_envs.sh"
 
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
