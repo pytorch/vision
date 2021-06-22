@@ -1,5 +1,5 @@
 from .._utils import IntermediateLayerGetter
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 from .. import mobilenetv3
 from .. import resnet
 from .deeplabv3 import DeepLabHead, DeepLabV3

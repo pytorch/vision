@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch import Tensor
 import torch.nn as nn
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Any, Dict, List
 
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
