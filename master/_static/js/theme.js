@@ -1085,4 +1085,43 @@ $(".stars-outer > i").on("click", function() {
     });
 })
 
+$("#pytorch-side-scroll-right li a").on("click", function (e) {
+  var href = $(this).attr("href");
+  $('html, body').stop().animate({
+    scrollTop: $(href).offset().top - 100
+  }, 850);
+  e.preventDefault;
+});
+
+var lastId,
+  topMenu = $("#pytorch-side-scroll-right"),
+  topMenuHeight = topMenu.outerHeight() + 1,
+  // All sidenav items
+  menuItems = topMenu.find("a"),
+  // Anchors for menu items
+  scrollItems = menuItems.map(function () {
+    var item = $(this).attr("href");
+    if (item.length) {
+      return item;
+    }
+  });
+
+$(window).scroll(function () {
+  var fromTop = $(this).scrollTop() + topMenuHeight;
+  var article = ".section";
+
+  $(article).each(function (i) {
+    var offsetScroll = $(this).offset().top - $(window).scrollTop();
+    if (
+      offsetScroll <= topMenuHeight + 200 &&
+      offsetScroll >= topMenuHeight - 200 &&
+      scrollItems[i] == "#" + $(this).attr("id") &&
+      $(".hidden:visible")
+    ) {
+      $(menuItems).removeClass("side-scroll-highlight");
+      $(menuItems[i]).addClass("side-scroll-highlight");
+    }
+  });
+});
+
 },{"jquery":"jquery"}]},{},[1,2,3,4,5,6,7,8,9,10,"pytorch-sphinx-theme"]);

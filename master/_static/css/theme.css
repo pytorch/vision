@@ -12074,6 +12074,10 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
   position: relative;
 }
 
+#pytorch-right-menu .side-scroll-highlight {
+  color: #ee4c2c;
+}
+
 .header-container {
   max-width: none;
   margin-top: 4px;
