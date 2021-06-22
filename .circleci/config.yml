@@ -310,6 +310,10 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
+            # cudatoolkit >= 11 isn't available for windows in the nvidia channel
+            if [[ "${CU_VERSION}" =~ cu11.* ]]; then
+              export CONDA_CHANNEL_FLAGS="-c conda-forge"
+            fi
             packaging/build_conda.sh
             rm /C/tools/miniconda3/conda-bld/win-64/vs${VC_YEAR}*.tar.bz2
       - store_artifacts:
@@ -1021,7 +1025,7 @@ workflows:
           cu_version: cpu
           filters:
             branches:
-              only: '*'
+              only: /.*/
             tags:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_linux_wheel_py3.7_cpu
@@ -1425,7 +1429,7 @@ workflows:
           filters:
             branches:
               only:
-              - '*'
+              - /.*/
             tags:
               only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: build_docs
