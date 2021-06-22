@@ -46,7 +46,7 @@ for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Window
         break
     fi
 done
-env | grep cuda
+env | grep CUDA
 
 mkdir cpp_build
 pushd cpp_build
