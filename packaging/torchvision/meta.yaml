@@ -55,6 +55,7 @@ test:
     # NOTE: Pinned to fix issues with size_t on Windows
     - jpeg <=9b
     - ca-certificates
+    - rarfile
 
 
 about:

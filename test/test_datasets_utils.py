@@ -11,9 +11,14 @@ from torch._utils_internal import get_file_path_2
 from urllib.error import URLError
 import itertools
 import lzma
+import pytest
 
 from common_utils import get_tmp_dir, call_args_to_kwargs_only
 
+try:
+    import rarfile
+except ImportError:
+    rarfile = None
 
 TEST_FILE = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
@@ -52,6 +57,7 @@ class Tester(unittest.TestCase):
 
     def test_detect_file_type(self):
         for file, expected in [
+            ("foo.rar", (".rar", ".rar", None)),
             ("foo.tar.bz2", (".tar.bz2", ".tar", ".bz2")),
             ("foo.tar.xz", (".tar.xz", ".tar", ".xz")),
             ("foo.tar", (".tar", ".tar", None)),
@@ -176,6 +182,27 @@ class Tester(unittest.TestCase):
                     call_args_to_kwargs_only(mock.call_args, utils._decompress),
                     dict(from_path=file, to_path=filename, remove_finished=remove_finished),
                 )
+
+    @pytest.skipif(rarfile is None, reason='rarfile is not available')
+    def test_extract_rar(self):
+        def create_archive(root, content="this is the content"):
+            file = os.path.join(root, "dst.txt")
+            archive = os.path.join(root, "archive.rar")
+
+            with rarfile.RarFile(archive, "w") as zf:
+                zf.writestr(os.path.basename(file), content)
+
+            return archive, file, content
+
+        with get_tmp_dir() as temp_dir:
+            archive, file, content = create_archive(temp_dir)
+
+            utils.extract_archive(archive, temp_dir)
+
+            self.assertTrue(os.path.exists(file))
+
+            with open(file, "r") as fh:
+                self.assertEqual(fh.read(), content)
 
     def test_extract_zip(self):
         def create_archive(root, content="this is the content"):

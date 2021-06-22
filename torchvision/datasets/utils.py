@@ -257,6 +257,12 @@ def _save_response_content(
         pbar.close()
 
 
+def _extract_rar(from_path: str, to_path: str, compression: Optional[str]) -> None:
+    import rarfile
+    with rarfile.RarFile(from_path, "r") as rar:
+        rar.extractall(to_path)
+
+
 def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
         tar.extractall(to_path)
@@ -276,6 +282,7 @@ def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> No
 
 
 _ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
+    ".rar": _extract_rar,
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }

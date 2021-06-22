@@ -33,7 +33,9 @@ jobs:
         run: pip install -e .
 
       - name: Install all optional dataset requirements
-        run: pip install scipy pandas pycocotools lmdb requests
+        run: |
+            sudo apt-get install unrar
+            pip install rarfile scipy pandas pycocotools lmdb requests
 
       - name: Install tests requirements
         run: pip install pytest

@@ -39,7 +39,7 @@ do
     echo "Building against ${TORCHAUDIO_PYTORCH_DEPENDENCY_VERSION}"
 
     # install torchvision dependencies
-    pip install ninja scipy pytest
+    pip install ninja scipy pytest rarfile
 
     python setup.py clean
     python setup.py bdist_wheel
