@@ -263,6 +263,7 @@ def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> No
 
 
 _ZIP_COMPRESSION_MAP: Dict[str, int] = {
+    ".bz2": zipfile.ZIP_BZIP2,
     ".xz": zipfile.ZIP_LZMA,
 }
 
