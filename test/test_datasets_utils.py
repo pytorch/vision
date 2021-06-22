@@ -63,6 +63,9 @@ class Tester(unittest.TestCase):
             ("foo.gz", (".gz", None, ".gz")),
             ("foo.zip", (".zip", ".zip", None)),
             ("foo.xz", (".xz", None, ".xz")),
+            ("foo.bar.tar.gz", (".tar.gz", ".tar", ".gz")),
+            ("foo.bar.gz", (".gz", None, ".gz")),
+            ("foo.bar.zip", (".zip", ".zip", None)),
         ]:
             with self.subTest(file=file):
                 self.assertSequenceEqual(utils._detect_file_type(file), expected)
@@ -70,14 +73,6 @@ class Tester(unittest.TestCase):
     def test_detect_file_type_no_ext(self):
         with self.assertRaises(RuntimeError):
             utils._detect_file_type("foo")
-
-    def test_detect_file_type_to_many_exts(self):
-        with self.assertRaises(RuntimeError):
-            utils._detect_file_type("foo.bar.tar.gz")
-
-    def test_detect_file_type_unknown_archive_type(self):
-        with self.assertRaises(RuntimeError):
-            utils._detect_file_type("foo.bar.gz")
 
     def test_detect_file_type_unknown_compression(self):
         with self.assertRaises(RuntimeError):
