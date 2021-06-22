@@ -17,7 +17,7 @@ import pathlib
 import torch
 from torch.utils.model_zoo import tqdm
 
-from ._utils import (
+from .._internally_replaced_utils import (
     _download_file_from_remote_location,
     _is_remote_location_available,
 )

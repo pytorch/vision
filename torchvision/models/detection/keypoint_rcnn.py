@@ -4,7 +4,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
 from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers

@@ -12,7 +12,7 @@ from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .. import mobilenet
 from ..mobilenetv3 import ConvBNActivation
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 
 __all__ = ['ssdlite320_mobilenet_v3_large']
