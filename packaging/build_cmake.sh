@@ -37,9 +37,7 @@ else
     yum install -y libpng-devel libjpeg-turbo-devel
 fi
 
-mkdir cpp_build
-pushd cpp_build
-
+pwd
 source .circleci/unittest/windows/scripts/set_cuda_envs.sh
 # check cuda driver version
 for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
@@ -48,8 +46,10 @@ for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Window
         break
     fi
 done
-
 env | grep cuda
+
+mkdir cpp_build
+pushd cpp_build
 
 # Generate libtorchvision files
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
