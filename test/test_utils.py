@@ -116,7 +116,9 @@ def test_draw_boxes():
 @pytest.mark.parametrize('colors', [
     None,
     ['red', 'blue', '#FF00FF', (1, 34, 122)],
-    'red'
+    'red',
+    '#FF00FF',
+    (1, 34, 122)
 ])
 def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
