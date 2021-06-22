@@ -40,6 +40,17 @@ fi
 mkdir cpp_build
 pushd cpp_build
 
+source .circleci/unittest/windows/scripts/set_cuda_envs.sh
+# check cuda driver version
+for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
+    if [[ -x "$path" ]]; then
+        "$path" || echo "true";
+        break
+    fi
+done
+
+env | grep cuda
+
 # Generate libtorchvision files
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 

@@ -14,5 +14,9 @@ if [ "${CU_VERSION:-}" != "cpu" ] ; then
     export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
     export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
 
-    ls $CUDA_PATH || echo "$CUDA_PATH doesn't exist" && exit 1
+   if  [ ! -d "$CUDA_PATH" ]
+   then
+        echo "$CUDA_PATH" does not exist
+        exit 1
+   fi
 fi
