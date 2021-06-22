@@ -17,6 +17,7 @@ if [ "${CU_VERSION:-}" != "cpu" ] ; then
     export CUDA_TOOLKIT_ROOT_DIR="$CUDA_PATH"
     export CUDAToolkit_ROOT="$CUDA_PATH"
     export CUDACXX="${CUDA_PATH}\bin\nvcc.exe"
+    unset CUDA_PATH_V10_1
     rm -rf "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1"
     if  [ ! -d "$CUDA_PATH" ]
     then
