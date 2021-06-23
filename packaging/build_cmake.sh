@@ -38,18 +38,7 @@ else
     yum install -y libpng-devel libjpeg-turbo-devel
 fi
 
-pwd
 source .circleci/unittest/windows/scripts/set_cuda_envs.sh
-# check cuda driver version
-for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
-    if [[ -x "$path" ]]; then
-        "$path" || echo "true";
-        break
-    fi
-done
-which nvcc
-nvcc --version
-env | grep CUDA
 
 mkdir cpp_build
 pushd cpp_build

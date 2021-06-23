@@ -19,4 +19,15 @@ if [ "${CU_VERSION:-}" != "cpu" ] ; then
         echo "$CUDA_PATH" does not exist
         exit 1
     fi
+    
+    # check cuda driver version
+    for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
+        if [[ -x "$path" ]]; then
+            "$path" || echo "true";
+            break
+        fi
+    done
+    which nvcc
+    nvcc --version
+    env | grep CUDA
 fi
