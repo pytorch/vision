@@ -1,3 +1,4 @@
+import bz2
 import os
 import os.path
 import hashlib
@@ -17,7 +18,7 @@ import pathlib
 import torch
 from torch.utils.model_zoo import tqdm
 
-from ._utils import (
+from .._internally_replaced_utils import (
     _download_file_from_remote_location,
     _is_remote_location_available,
 )
@@ -262,6 +263,7 @@ def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> No
 
 
 _ZIP_COMPRESSION_MAP: Dict[str, int] = {
+    ".bz2": zipfile.ZIP_BZIP2,
     ".xz": zipfile.ZIP_LZMA,
 }
 
@@ -277,8 +279,16 @@ _ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }
-_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {".gz": gzip.open, ".xz": lzma.open}
-_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {".tgz": (".tar", ".gz")}
+_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {
+    ".bz2": bz2.open,
+    ".gz": gzip.open,
+    ".xz": lzma.open,
+}
+_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
+    ".tbz": (".tar", ".bz2"),
+    ".tbz2": (".tar", ".bz2"),
+    ".tgz": (".tar", ".gz"),
+}
 
 
 def _verify_archive_type(archive_type: str) -> None:

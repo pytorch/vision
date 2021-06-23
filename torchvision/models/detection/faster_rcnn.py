@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .anchor_utils import AnchorGenerator
 from .generalized_rcnn import GeneralizedRCNN
