@@ -112,7 +112,7 @@ def test_draw_boxes():
     assert_equal(boxes, boxes_cp)
     assert_equal(img, img_cp)
 
-    
+
 @pytest.mark.parametrize('colors', [
     None,
     ['red', 'blue', '#FF00FF', (1, 34, 122)],
@@ -122,8 +122,8 @@ def test_draw_boxes():
 ])
 def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
-    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
-    
+    utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
+
 
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
