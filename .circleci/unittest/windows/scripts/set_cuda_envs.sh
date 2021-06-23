@@ -21,6 +21,12 @@ if [ "${CU_VERSION:-}" != "cpu" ] ; then
         exit 1
     fi
     
+    if [ ! -f "${CUDA_PATH}\include\nvjpeg.h" ]
+    then
+        echo "nvjpeg does not exist"
+        exit 1
+    fi
+    
     # check cuda driver version
     for path in '/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe' /c/Windows/System32/nvidia-smi.exe; do
         if [[ -x "$path" ]]; then
