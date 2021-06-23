@@ -330,8 +330,8 @@ def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
 
         return suffix, None, suffix
 
-    valid_suffixes = set(_FILE_TYPE_ALIASES) | set(_ARCHIVE_EXTRACTORS) | set(_COMPRESSED_FILE_OPENERS)
-    raise RuntimeError(f"Unknown compression or archive type: '{suffix}'. Known suffixes are: '{valid_suffixes}'.")
+    valid_suffixes = sorted(set(_FILE_TYPE_ALIASES) | set(_ARCHIVE_EXTRACTORS) | set(_COMPRESSED_FILE_OPENERS))
+    raise RuntimeError(f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'.")
 
 
 def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
