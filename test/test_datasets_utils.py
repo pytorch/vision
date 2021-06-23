@@ -11,6 +11,7 @@ from torch._utils_internal import get_file_path_2
 from urllib.error import URLError
 import itertools
 import lzma
+import pytest
 
 from common_utils import get_tmp_dir, call_args_to_kwargs_only
 
@@ -20,6 +21,22 @@ TEST_FILE = get_file_path_2(
 
 
 class Tester(unittest.TestCase):
+
+    @pytest.mark.parametrize("checksum", [
+        "9c0bb82894bb3af7f7675ef2b3b6dcdc",
+        "a46221cc22475aa42d22361ee54d5da353f95572",
+        "a27c253fe6e60025be248eef8804f40c291286d3a174d25de145d283",
+        "e1f57e98cf38076c0f9a058d74ffddf90f20453e436033784606b63c8ed2e49a",
+        "dbd0d28f5a70842f130d5153c5a4f6111de73f20b54a42e71506411899a17e4cdba61678f748ad8df7d1d0cb48bd05aa",
+        "ddf498519c7b0a5a4511338a79aaa6743d31f656adb163fd5c1678aeb08efbce10d3b5c1f3ceda39687e9a9dee4f5de552cf6a13295b17c6b956e90ab1eb51de",
+    ])
+    def test_verify_checksum(self, checksum):
+        fpath = TEST_FILE
+        assert utils.verify_checksum(fpath, checksum)
+
+    def test_invalid_checksum(self):
+        with pytest.raises(ValueError, match="Checksum does not match a known hashing algorithm."):
+            utils.verify_checksum(fpath, "")
 
     def test_check_md5(self):
         fpath = TEST_FILE

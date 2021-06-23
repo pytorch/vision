@@ -1,6 +1,7 @@
 import bz2
 import os
 import os.path
+import _hashlib
 import hashlib
 import gzip
 import re
@@ -50,7 +51,55 @@ def gen_bar_updater() -> Callable[[int, int, int], None]:
     return bar_update
 
 
+_HASH_FUNCTIONS: Dict[int, _hashlib.HASH] = {
+    16: hashlib.md5(),
+    20: hashlib.sha1(),
+    28: hashlib.sha224(),
+    32: hashlib.sha256(),
+    48: hashlib.sha384(),
+    64: hashlib.sha512(),
+}
+
+
+def calculate_checksum(fpath: str, algorithm: _hashlib.HASH = hashlib.md5(), chunk_size: int = 1024 * 1024) -> str:
+    """Compute the checksum of a file.
+
+    Args:
+        fpath (str): file to checksum
+        algorithm (_hashlib.HASH): hashing algorithm
+        chunk_size (int): size of each chunk to use during update
+
+    Returns:
+        (str): the calculated checksum
+    """
+    with open(fpath, 'rb') as f:
+        for chunk in iter(lambda: f.read(chunk_size), b''):
+            algorithm.update(chunk)
+    return algorithm.hexdigest()
+
+
+def verify_checksum(fpath: str, checksum: str, **kwargs: Any) -> bool:
+    """Verify the checksum of a file.
+
+    Args:
+        fpath (str): file to checksum
+        checksum (str): expected checksum
+
+    Returns:
+        (bool): True if checksums match, else False
+
+    Raises:
+        ValueError: if checksum does not match a known hashing algorithm
+    """
+    length = len(checksum)
+    if length in _HASH_FUNCTIONS:
+        return checksum == calculate_checksum(fpath, _HASH_FUNCTIONS[length], **kwargs)
+    else:
+        raise ValueError("Checksum does not match a known hashing algorithm.")
+
+
 def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
+    """DEPRECATED"""
     md5 = hashlib.md5()
     with open(fpath, 'rb') as f:
         for chunk in iter(lambda: f.read(chunk_size), b''):
@@ -59,15 +108,26 @@ def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
 
 
 def check_md5(fpath: str, md5: str, **kwargs: Any) -> bool:
+    """DEPRECATED"""
     return md5 == calculate_md5(fpath, **kwargs)
 
 
-def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
+def check_integrity(fpath: str, checksum: Optional[str] = None) -> bool:
+    """Check the integrity of a download.
+
+    Args:
+        fpath (str): file to checksum
+        checksum (str): checksum to verify
+
+    Returns:
+        (bool): True if file exists and ``checksum=None``, or if file exists and
+            checksum matches, otherwise False
+    """
     if not os.path.isfile(fpath):
         return False
-    if md5 is None:
+    if checksum is None:
         return True
-    return check_md5(fpath, md5)
+    return verify_checksum(fpath, checksum)
 
 
 def _get_redirect_url(url: str, max_hops: int = 3) -> str:
