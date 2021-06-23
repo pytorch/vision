@@ -12,6 +12,7 @@ from urllib.error import URLError
 import itertools
 import lzma
 import pytest
+import subprocess
 
 from common_utils import get_tmp_dir, call_args_to_kwargs_only
 
@@ -186,7 +187,7 @@ class Tester(unittest.TestCase):
             file = os.path.join(root, "dst.txt")
             archive = os.path.join(root, "archive.rar")
 
-            os.system(f"rar a {archive} {file}")
+            subprocess.run(["rar", "a", archive, file], check=True)
 
             return archive, file, content
 
