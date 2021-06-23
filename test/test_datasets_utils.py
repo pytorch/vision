@@ -15,10 +15,6 @@ import pytest
 
 from common_utils import get_tmp_dir, call_args_to_kwargs_only
 
-try:
-    import rarfile
-except ImportError:
-    rarfile = None
 
 TEST_FILE = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
@@ -183,8 +179,9 @@ class Tester(unittest.TestCase):
                     dict(from_path=file, to_path=filename, remove_finished=remove_finished),
                 )
 
-    @pytest.skipif(rarfile is None, reason='rarfile is not available')
     def test_extract_rar(self):
+        rarfile = pytest.importorskip("rarfile")
+
         def create_archive(root, content="this is the content"):
             file = os.path.join(root, "dst.txt")
             archive = os.path.join(root, "archive.rar")
