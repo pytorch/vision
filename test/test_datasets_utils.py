@@ -186,8 +186,7 @@ class Tester(unittest.TestCase):
             file = os.path.join(root, "dst.txt")
             archive = os.path.join(root, "archive.rar")
 
-            with rarfile.RarFile(archive, "w") as zf:
-                zf.writestr(os.path.basename(file), content)
+            os.system(f"rar a {archive} {file}")
 
             return archive, file, content
 

@@ -258,7 +258,7 @@ def _save_response_content(
 
 
 def _extract_rar(from_path: str, to_path: str, compression: Optional[str]) -> None:
-    import rarfile
+    import rarfile  # type: ignore[import]
     with rarfile.RarFile(from_path, "r") as rar:
         rar.extractall(to_path)
 

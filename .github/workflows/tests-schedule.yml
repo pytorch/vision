@@ -34,7 +34,7 @@ jobs:
 
       - name: Install all optional dataset requirements
         run: |
-            sudo apt-get install unrar
+            sudo apt-get install rar unrar
             pip install rarfile scipy pandas pycocotools lmdb requests
 
       - name: Install tests requirements
