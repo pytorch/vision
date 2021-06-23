@@ -13,12 +13,7 @@ if [ "${CU_VERSION:-}" != "cpu" ] ; then
     export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
     export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
     export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
-    
-    env | grep NVTOOLSEXT_PATH
-    export NVTOOLSEXT_PATH="C:\\Program Files\\NVIDIA Corporation\\NvToolsExt\\"
 
-
-    rm -rf "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1"
     if  [ ! -d "$CUDA_PATH" ]
     then
         echo "$CUDA_PATH" does not exist
