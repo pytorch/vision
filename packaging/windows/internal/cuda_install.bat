@@ -130,7 +130,7 @@ if not exist "%SRC_DIR%\temp_build\cuda_11.1.0_456.43_win10.exe" (
     curl -k -L https://ossci-windows.s3.amazonaws.com/cuda_11.1.0_456.43_win10.exe --output "%SRC_DIR%\temp_build\cuda_11.1.0_456.43_win10.exe"
     if errorlevel 1 exit /b 1
     set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\cuda_11.1.0_456.43_win10.exe"
-    set "ARGS=nvcc_11.1 cuobjdump_11.1 nvprune_11.1 nvprof_11.1 cupti_11.1 cublas_11.1 cublas_dev_11.1 cudart_11.1 cufft_11.1 cufft_dev_11.1 curand_11.1 curand_dev_11.1 cusolver_11.1 cusolver_dev_11.1 cusparse_11.1 cusparse_dev_11.1 npp_11.1 nvjpeg_11.1 npp_dev_11.1 nvrtc_11.1 nvrtc_dev_11.1 nvml_dev_11.1"
+    set "ARGS=nvcc_11.1 cuobjdump_11.1 nvprune_11.1 nvprof_11.1 cupti_11.1 cublas_11.1 cublas_dev_11.1 cudart_11.1 cufft_11.1 cufft_dev_11.1 curand_11.1 curand_dev_11.1 cusolver_11.1 cusolver_dev_11.1 cusparse_11.1 cusparse_dev_11.1 npp_11.1 npp_dev_11.1 libnvjpeg_11.1 nvrtc_11.1 nvrtc_dev_11.1 nvml_dev_11.1"
 )
 
 @REM There is no downloadable driver for Tesla on CUDA 11.1 yet. We will use
