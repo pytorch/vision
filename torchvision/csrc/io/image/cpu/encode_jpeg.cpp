@@ -18,8 +18,8 @@ using namespace detail;
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling
-  struct jpeg_compress_struct cinfo;
-  struct torch_jpeg_error_mgr jerr;
+  struct jpeg_compress_struct cinfo {};
+  struct torch_jpeg_error_mgr jerr {};
 
   // Define buffer to write JPEG information to and its size
   unsigned long jpegSize = 0;
