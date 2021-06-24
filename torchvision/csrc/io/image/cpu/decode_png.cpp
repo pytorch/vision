@@ -25,27 +25,41 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
   auto info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
     png_destroy_read_struct(&png_ptr, nullptr, nullptr);
-    // Seems redundant with the if statement. done here to avoid leaking memory.
+    // Seems redundant with the if statement. Done here to avoid leaking memory.
     TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
   }
 
-  auto datap = data.accessor<unsigned char, 1>().data();
+  auto deleter = [&png_ptr, &info_ptr](png_structp __unused_ptr) {
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+  };
+  std::unique_ptr<png_struct, decltype(deleter)> png_ptr_RAII(png_ptr, deleter);
+
+  auto accessor = data.accessor<unsigned char, 1>();
+  auto datap = accessor.data();
+  auto data_size = accessor.size(0);
 
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(false, "Internal error.");
   }
-  auto is_png = !png_sig_cmp(datap, 0, 8);
+
+  auto is_png = (data_size >= 8 && !png_sig_cmp(datap, 0, 8));
   TORCH_CHECK(is_png, "Content is not png!")
 
   struct Reader {
     png_const_bytep ptr;
+    unsigned char* datap;
+    size_t data_size;
   } reader;
   reader.ptr = png_const_bytep(datap) + 8;
+  reader.datap = datap;
+  reader.data_size = data_size;
 
   auto read_callback =
       [](png_structp png_ptr, png_bytep output, png_size_t bytes) {
         auto reader = static_cast<Reader*>(png_get_io_ptr(png_ptr));
+        if (reader->ptr + bytes > reader->datap + reader->data_size) {
+          png_error(png_ptr, "Content is not png!");
+        }
         std::copy(reader->ptr, reader->ptr + bytes, output);
         reader->ptr += bytes;
       };
@@ -67,15 +81,10 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
       nullptr,
       nullptr);
 
-  if (retval != 1) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(retval == 1, "Could read image metadata from content.")
-  }
+  TORCH_CHECK(retval == 1, "Could read image metadata from content.")
 
-  if (bit_depth > 8) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(false, "At most 8-bit PNG images are supported currently.")
-  }
+  TORCH_CHECK(
+      bit_depth <= 8, "At most 8-bit PNG images are supported currently.")
 
   int channels = png_get_channels(png_ptr, info_ptr);
 
@@ -161,7 +170,6 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
         }
         break;
       default:
-        png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
         TORCH_CHECK(false, "The provided mode is not supported for PNG files");
     }
 
@@ -178,7 +186,6 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     }
     ptr = tensor.accessor<uint8_t, 3>().data();
   }
-  png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});
 }
 #endif
