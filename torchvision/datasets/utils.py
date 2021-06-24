@@ -5,7 +5,7 @@ import hashlib
 import gzip
 import re
 import tarfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple
+from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
 from urllib.parse import urlparse
 import zipfile
 import lzma
@@ -184,11 +184,10 @@ def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
     return files
 
 
-def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: ignore[name-defined]
+def _quota_exceeded(first_chunk: bytes) -> bool:  # type: ignore[name-defined]
     try:
-        start = next(response.iter_content(chunk_size=128, decode_unicode=True))
-        return isinstance(start, str) and "Google Drive - Quota exceeded" in start
-    except StopIteration:
+        return "Google Drive - Quota exceeded" in first_chunk.decode()
+    except UnicodeDecodeError:
         return False
 
 
@@ -224,7 +223,12 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
             params = {'id': file_id, 'confirm': token}
             response = session.get(url, params=params, stream=True)
 
-        if _quota_exceeded(response):
+        response_content_generator = response.iter_content(32768)
+        first_chunk = None
+        while not first_chunk:  # filter out keep-alive new chunks
+            first_chunk = next(response_content_generator)
+
+        if _quota_exceeded(first_chunk):
             msg = (
                 f"The daily quota of the file {filename} is exceeded and it "
                 f"can't be downloaded. This is a limitation of Google Drive "
@@ -232,7 +236,8 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
             )
             raise RuntimeError(msg)
 
-        _save_response_content(response, fpath)
+        _save_response_content(response_content_generator, fpath, first_chunk)
+        response.close()
 
 
 def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  # type: ignore[name-defined]
@@ -244,12 +249,17 @@ def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  
 
 
 def _save_response_content(
-    response: "requests.models.Response", destination: str, chunk_size: int = 32768,  # type: ignore[name-defined]
+    response_gen: Iterator[bytes], destination: str, first_chunk: bytes,  # type: ignore[name-defined]
 ) -> None:
     with open(destination, "wb") as f:
         pbar = tqdm(total=None)
         progress = 0
-        for chunk in response.iter_content(chunk_size):
+
+        f.write(first_chunk)
+        progress += len(first_chunk)
+        pbar.update(progress - pbar.n)
+
+        for chunk in response_gen:
             if chunk:  # filter out keep-alive new chunks
                 f.write(chunk)
                 progress += len(chunk)
