@@ -9,7 +9,6 @@ from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, T
 from urllib.parse import urlparse
 import zipfile
 import lzma
-import contextlib
 import urllib
 import urllib.request
 import urllib.error
@@ -224,6 +223,10 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
             params = {'id': file_id, 'confirm': token}
             response = session.get(url, params=params, stream=True)
 
+        # Ideally, one would use response.status_code to check for quota limits, but google drive is not consistent
+        # with their own API, refer https://github.com/pytorch/vision/issues/2992#issuecomment-730614517.
+        # Should this be fixed at some place in future, one could refactor the following to no longer rely on decoding
+        # the first_chunk of the payload
         response_content_generator = response.iter_content(32768)
         first_chunk = None
         while not first_chunk:  # filter out keep-alive new chunks
