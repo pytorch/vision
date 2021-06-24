@@ -272,7 +272,8 @@ def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> No
         tar.extractall(to_path)
 
 
-_ZIP_COMPRESSION_MAP: Dict[str, int] = {
+#: Map from file extension to zip compression method
+ZIP_COMPRESSION_MAP: Dict[str, int] = {
     ".bz2": zipfile.ZIP_BZIP2,
     ".xz": zipfile.ZIP_LZMA,
 }
@@ -280,21 +281,26 @@ _ZIP_COMPRESSION_MAP: Dict[str, int] = {
 
 def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> None:
     with zipfile.ZipFile(
-        from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
+        from_path, "r", compression=ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
     ) as zip:
         zip.extractall(to_path)
 
 
-_ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
+#: Map from file extension to archival extraction function
+ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }
-_COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {
+
+#: Map from file extension to decompression function
+COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {
     ".bz2": bz2.open,
     ".gz": gzip.open,
     ".xz": lzma.open,
 }
-_FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
+
+#: Map from file extension to synonymous archive and compression file extensions
+FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
     ".tbz": (".tar", ".bz2"),
     ".tbz2": (".tar", ".bz2"),
     ".tgz": (".tar", ".gz"),
@@ -321,26 +327,26 @@ def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
     suffix = suffixes[-1]
 
     # check if the suffix is a known alias
-    if suffix in _FILE_TYPE_ALIASES:
-        return (suffix, *_FILE_TYPE_ALIASES[suffix])
+    if suffix in FILE_TYPE_ALIASES:
+        return (suffix, *FILE_TYPE_ALIASES[suffix])
 
     # check if the suffix is an archive type
-    if suffix in _ARCHIVE_EXTRACTORS:
+    if suffix in ARCHIVE_EXTRACTORS:
         return suffix, suffix, None
 
     # check if the suffix is a compression
-    if suffix in _COMPRESSED_FILE_OPENERS:
+    if suffix in COMPRESSED_FILE_OPENERS:
         # check for suffix hierarchy
         if len(suffixes) > 1:
             suffix2 = suffixes[-2]
 
             # check if the suffix2 is an archive type
-            if suffix2 in _ARCHIVE_EXTRACTORS:
+            if suffix2 in ARCHIVE_EXTRACTORS:
                 return suffix2 + suffix, suffix2, suffix
 
         return suffix, None, suffix
 
-    valid_suffixes = sorted(set(_FILE_TYPE_ALIASES) | set(_ARCHIVE_EXTRACTORS) | set(_COMPRESSED_FILE_OPENERS))
+    valid_suffixes = sorted(set(FILE_TYPE_ALIASES) | set(ARCHIVE_EXTRACTORS) | set(COMPRESSED_FILE_OPENERS))
     raise RuntimeError(f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'.")
 
 
@@ -365,7 +371,7 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
         to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
-    compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
+    compressed_file_opener = COMPRESSED_FILE_OPENERS[compression]
 
     with compressed_file_opener(from_path, "rb") as rfh, open(to_path, "wb") as wfh:
         wfh.write(rfh.read())
@@ -403,7 +409,7 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
         )
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
-    extractor = _ARCHIVE_EXTRACTORS[archive_type]
+    extractor = ARCHIVE_EXTRACTORS[archive_type]
 
     extractor(from_path, to_path, compression)
 
