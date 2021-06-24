@@ -14,6 +14,7 @@ import urllib
 import urllib.request
 import urllib.error
 import pathlib
+import itertools
 
 import torch
 from torch.utils.model_zoo import tqdm
@@ -236,7 +237,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
             )
             raise RuntimeError(msg)
 
-        _save_response_content(response_content_generator, fpath, first_chunk)
+        _save_response_content(itertools.chain((first_chunk, ), response_content_generator), fpath)
         response.close()
 
 
@@ -249,15 +250,11 @@ def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  
 
 
 def _save_response_content(
-    response_gen: Iterator[bytes], destination: str, first_chunk: bytes,  # type: ignore[name-defined]
+    response_gen: Iterator[bytes], destination: str,  # type: ignore[name-defined]
 ) -> None:
     with open(destination, "wb") as f:
         pbar = tqdm(total=None)
         progress = 0
-
-        f.write(first_chunk)
-        progress += len(first_chunk)
-        pbar.update(progress - pbar.n)
 
         for chunk in response_gen:
             if chunk:  # filter out keep-alive new chunks
