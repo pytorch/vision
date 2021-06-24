@@ -291,53 +291,47 @@ _FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
 }
 
 
-def _verify_archive_type(archive_type: str) -> None:
-    if archive_type not in _ARCHIVE_EXTRACTORS.keys():
-        valid_types = "', '".join(_ARCHIVE_EXTRACTORS.keys())
-        raise RuntimeError(f"Unknown archive type '{archive_type}'. Known archive types are '{valid_types}'.")
-
-
-def _verify_compression(compression: str) -> None:
-    if compression not in _COMPRESSED_FILE_OPENERS.keys():
-        valid_types = "', '".join(_COMPRESSED_FILE_OPENERS.keys())
-        raise RuntimeError(f"Unknown compression '{compression}'. Known compressions are '{valid_types}'.")
-
-
 def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
-    path = pathlib.Path(file)
-    suffix = path.suffix
+    """Detect the archive type and/or compression of a file.
+
+    Args:
+        file (str): the filename
+
+    Returns:
+        (tuple): tuple of suffix, archive type, and compression
+
+    Raises:
+        RuntimeError: if file has no suffix or suffix is not supported
+    """
     suffixes = pathlib.Path(file).suffixes
     if not suffixes:
         raise RuntimeError(
             f"File '{file}' has no suffixes that could be used to detect the archive type and compression."
         )
-    elif len(suffixes) > 2:
-        raise RuntimeError(
-            "Archive type and compression detection only works for 1 or 2 suffixes. " f"Got {len(suffixes)} instead."
-        )
-    elif len(suffixes) == 2:
-        # if we have exactly two suffixes we assume the first one is the archive type and the second on is the
-        # compression
-        archive_type, compression = suffixes
-        _verify_archive_type(archive_type)
-        _verify_compression(compression)
-        return "".join(suffixes), archive_type, compression
+    suffix = suffixes[-1]
 
     # check if the suffix is a known alias
-    with contextlib.suppress(KeyError):
+    if suffix in _FILE_TYPE_ALIASES:
         return (suffix, *_FILE_TYPE_ALIASES[suffix])
 
     # check if the suffix is an archive type
-    with contextlib.suppress(RuntimeError):
-        _verify_archive_type(suffix)
+    if suffix in _ARCHIVE_EXTRACTORS:
         return suffix, suffix, None
 
     # check if the suffix is a compression
-    with contextlib.suppress(RuntimeError):
-        _verify_compression(suffix)
+    if suffix in _COMPRESSED_FILE_OPENERS:
+        # check for suffix hierarchy
+        if len(suffixes) > 1:
+            suffix2 = suffixes[-2]
+
+            # check if the suffix2 is an archive type
+            if suffix2 in _ARCHIVE_EXTRACTORS:
+                return suffix2 + suffix, suffix2, suffix
+
         return suffix, None, suffix
 
-    raise RuntimeError(f"Suffix '{suffix}' is neither recognized as archive type nor as compression.")
+    valid_suffixes = sorted(set(_FILE_TYPE_ALIASES) | set(_ARCHIVE_EXTRACTORS) | set(_COMPRESSED_FILE_OPENERS))
+    raise RuntimeError(f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'.")
 
 
 def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
