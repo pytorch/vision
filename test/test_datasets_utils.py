@@ -127,7 +127,6 @@ class TestDatasetsUtils:
         utils.extract_archive(file, remove_finished=remove_finished)
 
         mocked.assert_called_once()
-        print(mocked.call_args)
 
         assert (call_args_to_kwargs_only(mocked.call_args, original_decompress) ==
                 dict(from_path=file, to_path=filename, remove_finished=remove_finished))
