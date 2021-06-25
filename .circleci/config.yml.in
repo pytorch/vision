@@ -756,12 +756,12 @@ jobs:
       - designate_upload_channel
       - install_cuda_compatible_cmath
       - run:
-        name: Update CUDA Driver for Windows
-        command: |
-          curl -O https://raw.githubusercontent.com/pytorch/pytorch/master/.circleci/scripts/windows_cuda_install.sh
-          mkdir -p "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations/"
-          JOB_EXECUTOR="windows-gpu" CUDA_VERSION="11.3" VC_PRODUCT="BuildTools" VC_YEAR="2019" bash ./windows_cuda_install.sh
-          bash -c "'/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe'"
+          name: Update CUDA Driver for Windows
+          command: |
+            curl -O https://raw.githubusercontent.com/pytorch/pytorch/master/.circleci/scripts/windows_cuda_install.sh
+            mkdir -p "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations/"
+            JOB_EXECUTOR="windows-gpu" CUDA_VERSION="11.3" VC_PRODUCT="BuildTools" VC_YEAR="2019" bash ./windows_cuda_install.sh
+            bash -c "'/c/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe'"
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
