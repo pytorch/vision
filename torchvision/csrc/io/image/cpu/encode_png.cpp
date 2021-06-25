@@ -17,8 +17,9 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
 namespace {
 
 struct torch_mem_encode {
-  char* buffer;
+  unsigned char* buffer;
   size_t size;
+  size_t buffer_size;
 };
 
 struct torch_png_error_mgr {
@@ -31,7 +32,8 @@ using torch_png_error_mgr_ptr = torch_png_error_mgr*;
 void torch_png_error(png_structp png_ptr, png_const_charp error_msg) {
   /* png_ptr->err really points to a torch_png_error_mgr struct, so coerce
    * pointer */
-  auto error_ptr = (torch_png_error_mgr_ptr)png_get_error_ptr(png_ptr);
+  auto error_ptr =
+      static_cast<torch_png_error_mgr_ptr>(png_get_error_ptr(png_ptr));
   /* Replace the error message on the error structure */
   error_ptr->pngLastErrorMsg = error_msg;
   /* Return control to the setjmp point */
@@ -46,14 +48,15 @@ void torch_png_write_data(
       (struct torch_mem_encode*)png_get_io_ptr(png_ptr);
   size_t nsize = p->size + length;
 
-  /* allocate or grow buffer */
-  if (p->buffer)
-    p->buffer = (char*)realloc(p->buffer, nsize);
-  else
-    p->buffer = (char*)malloc(nsize);
-
-  if (!p->buffer)
-    png_error(png_ptr, "Write Error");
+  /* grow buffer */
+  if (p->buffer_size < nsize) {
+    auto tmp = (unsigned char*)realloc(p->buffer, nsize);
+    if (!tmp) {
+      png_error(png_ptr, "Write Error");
+    }
+    p->buffer = tmp;
+    p->buffer_size = nsize;
+  }
 
   /* copy new bytes to end of buffer */
   memcpy(p->buffer + p->size, data, length);
@@ -65,32 +68,32 @@ void torch_png_write_data(
 torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.encode_png.encode_png");
   // Define compression structures and error handling
-  png_structp png_write;
-  png_infop info_ptr;
-  struct torch_png_error_mgr err_ptr;
+  png_structp png_write = nullptr;
+  png_infop info_ptr = nullptr;
+  struct torch_png_error_mgr err_ptr {};
 
   // Define output buffer
-  struct torch_mem_encode buf_info;
-  buf_info.buffer = NULL;
-  buf_info.size = 0;
+  struct torch_mem_encode buf_info {};
+
+  auto deleter = [&png_write, &info_ptr, &buf_info](png_structp __unused_ptr) {
+    if (png_write != nullptr) {
+      if (info_ptr != nullptr) {
+        png_destroy_info_struct(png_write, &info_ptr);
+      }
+      png_destroy_write_struct(&png_write, nullptr);
+    }
+
+    if (buf_info.buffer != nullptr) {
+      free(buf_info.buffer);
+    }
+  };
+  std::unique_ptr<png_struct, decltype(deleter)> resource_RAII(
+      png_ptr, deleter);
 
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(err_ptr.setjmp_buffer)) {
     /* If we get here, the PNG code has signaled an error.
-     * We need to clean up the PNG object and the buffer.
      */
-    if (info_ptr != NULL) {
-      png_destroy_info_struct(png_write, &info_ptr);
-    }
-
-    if (png_write != NULL) {
-      png_destroy_write_struct(&png_write, NULL);
-    }
-
-    if (buf_info.buffer != NULL) {
-      free(buf_info.buffer);
-    }
-
     TORCH_CHECK(false, err_ptr.pngLastErrorMsg);
   }
 
@@ -121,12 +124,17 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
 
   // Initialize PNG structures
   png_write = png_create_write_struct(
-      PNG_LIBPNG_VER_STRING, &err_ptr, torch_png_error, NULL);
+      PNG_LIBPNG_VER_STRING, &err_ptr, torch_png_error, nullptr);
+  TORCH_CHECK(png_write, "libpng write structure allocation failed!");
 
   info_ptr = png_create_info_struct(png_write);
+  TORCH_CHECK(png_write, "libpng info structure allocation failed!");
 
   // Define custom buffer output
-  png_set_write_fn(png_write, &buf_info, torch_png_write_data, NULL);
+  buf_info.buffer_size = channels * height * width;
+  buf_info.buffer = (unsigned char*)malloc(buf_info.buffer_size);
+  TORCH_CHECK(buf_info.buffer != nullptr, "Write Error");
+  png_set_write_fn(png_write, &buf_info, torch_png_write_data, nullptr);
 
   // Set output image information
   auto color_type = channels == 1 ? PNG_COLOR_TYPE_GRAY : PNG_COLOR_TYPE_RGB;
@@ -159,19 +167,14 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   // Write EOF
   png_write_end(png_write, info_ptr);
 
-  // Destroy structures
-  png_destroy_write_struct(&png_write, &info_ptr);
-
   torch::TensorOptions options = torch::TensorOptions{torch::kU8};
-  auto outTensor = torch::empty({(long)buf_info.size}, options);
+  auto out_tensor = torch::empty({(long)buf_info.size}, options);
 
   // Copy memory from png buffer, since torch cannot get ownership of it via
   // `from_blob`
-  auto outPtr = outTensor.data_ptr<uint8_t>();
-  std::memcpy(outPtr, buf_info.buffer, sizeof(uint8_t) * outTensor.numel());
-  free(buf_info.buffer);
-
-  return outTensor;
+  auto out_ptr = out_tensor.data_ptr<uint8_t>();
+  std::memcpy(out_ptr, buf_info.buffer, sizeof(uint8_t) * out_tensor.numel());
+  return out_tensor;
 }
 
 #endif
