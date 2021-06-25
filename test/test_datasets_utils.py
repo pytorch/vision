@@ -11,7 +11,7 @@ from urllib.error import URLError
 import itertools
 import lzma
 
-from common_utils import get_tmp_dir, call_args_to_kwargs_only
+from common_utils import get_tmp_dir
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
 
 
@@ -121,15 +121,12 @@ class TestDatasetsUtils:
     @pytest.mark.parametrize('remove_finished', [True, False])
     def test_extract_archive_defer_to_decompress(self, extension, remove_finished, mocker):
         filename = "foo"
-        original_decompress = utils._decompress
-        mocked = mocker.patch("torchvision.datasets.utils._decompress")
         file = f"{filename}{extension}"
+
+        mocked = mocker.patch("torchvision.datasets.utils._decompress")
         utils.extract_archive(file, remove_finished=remove_finished)
 
-        mocked.assert_called_once()
-
-        assert (call_args_to_kwargs_only(mocked.call_args, original_decompress) ==
-                dict(from_path=file, to_path=filename, remove_finished=remove_finished))
+        mocked.assert_called_once_with(file, filename, remove_finished=remove_finished)
 
     def test_extract_zip(self):
         def create_archive(root, content="this is the content"):
