@@ -1,3 +1,4 @@
+import bz2
 import os
 import torchvision.datasets.utils as utils
 import unittest
@@ -51,10 +52,14 @@ class Tester(unittest.TestCase):
 
     def test_detect_file_type(self):
         for file, expected in [
+            ("foo.tar.bz2", (".tar.bz2", ".tar", ".bz2")),
             ("foo.tar.xz", (".tar.xz", ".tar", ".xz")),
             ("foo.tar", (".tar", ".tar", None)),
             ("foo.tar.gz", (".tar.gz", ".tar", ".gz")),
+            ("foo.tbz", (".tbz", ".tar", ".bz2")),
+            ("foo.tbz2", (".tbz2", ".tar", ".bz2")),
             ("foo.tgz", (".tgz", ".tar", ".gz")),
+            ("foo.bz2", (".bz2", None, ".bz2")),
             ("foo.gz", (".gz", None, ".gz")),
             ("foo.zip", (".zip", ".zip", None)),
             ("foo.xz", (".xz", None, ".xz")),
@@ -81,6 +86,26 @@ class Tester(unittest.TestCase):
     def test_detect_file_type_unknown_partial_ext(self):
         with self.assertRaises(RuntimeError):
             utils._detect_file_type("foo.bar")
+
+    def test_decompress_bz2(self):
+        def create_compressed(root, content="this is the content"):
+            file = os.path.join(root, "file")
+            compressed = f"{file}.bz2"
+
+            with bz2.open(compressed, "wb") as fh:
+                fh.write(content.encode())
+
+            return compressed, file, content
+
+        with get_tmp_dir() as temp_dir:
+            compressed, file, content = create_compressed(temp_dir)
+
+            utils._decompress(compressed)
+
+            self.assertTrue(os.path.exists(file))
+
+            with open(file, "r") as fh:
+                self.assertEqual(fh.read(), content)
 
     def test_decompress_gzip(self):
         def create_compressed(root, content="this is the content"):
