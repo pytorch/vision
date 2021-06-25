@@ -4,7 +4,7 @@ from PIL import Image
 
 import os
 import os.path
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple,Union
 
 
 def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bool:
@@ -301,7 +301,7 @@ class ImageFolder(DatasetFolder):
 
     def __init__(
             self,
-            root: str,
+            root: Union[str,bytes,os.PathLike],
             transform: Optional[Callable] = None,
             target_transform: Optional[Callable] = None,
             loader: Callable[[str], Any] = default_loader,
