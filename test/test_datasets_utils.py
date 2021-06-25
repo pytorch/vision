@@ -117,13 +117,13 @@ class TestDatasetsUtils:
 
             assert not os.path.exists(compressed)
 
-    @pytest.mark.parametrize('ext', [".gz", ".xz"])
+    @pytest.mark.parametrize('extension', [".gz", ".xz"])
     @pytest.mark.parametrize('remove_finished', [True, False])
-    def test_extract_archive_defer_to_decompress(self, ext, remove_finished, mocker):
+    def test_extract_archive_defer_to_decompress(self, extension, remove_finished, mocker):
         filename = "foo"
         original_decompress = utils._decompress
         mocked = mocker.patch("torchvision.datasets.utils._decompress")
-        file = f"{filename}{ext}"
+        file = f"{filename}{extension}"
         utils.extract_archive(file, remove_finished=remove_finished)
 
         mocked.assert_called_once()
@@ -152,13 +152,13 @@ class TestDatasetsUtils:
             with open(file, "r") as fh:
                 assert fh.read() == content
 
-    @pytest.mark.parametrize('ext, mode', [
+    @pytest.mark.parametrize('extension, mode', [
         ('.tar', 'w'), ('.tar.gz', 'w:gz'), ('.tgz', 'w:gz'), ('.tar.xz', 'w:xz')])
-    def test_extract_tar(self, ext, mode):
-        def create_archive(root, ext, mode, content="this is the content"):
+    def test_extract_tar(self, extension, mode):
+        def create_archive(root, extension, mode, content="this is the content"):
             src = os.path.join(root, "src.txt")
             dst = os.path.join(root, "dst.txt")
-            archive = os.path.join(root, f"archive{ext}")
+            archive = os.path.join(root, f"archive{extension}")
 
             with open(src, "w") as fh:
                 fh.write(content)
@@ -169,7 +169,7 @@ class TestDatasetsUtils:
             return archive, dst, content
 
         with get_tmp_dir() as temp_dir:
-            archive, file, content = create_archive(temp_dir, ext, mode)
+            archive, file, content = create_archive(temp_dir, extension, mode)
 
             utils.extract_archive(archive, temp_dir)
 
