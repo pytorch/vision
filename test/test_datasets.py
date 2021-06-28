@@ -602,6 +602,146 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
             self.assertEqual(tuple(dataset.attr_names), info["attr_names"])
 
 
+class Cub2011TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Cub2011
+    FEATURE_TYPES = (PIL.Image.Image, (torch.Tensor, int, tuple, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test", "all"),
+        target_type=(["class_label"], ["segmentation"], ["bbox"]),
+    )
+
+    _SPLIT_TO_IDX = dict(train=1, test=0)
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = [pathlib.Path(tmpdir) / "Cub2011"]
+        base_folder.append(pathlib.Path(tmpdir) / "Cub2011" / "segmentations")
+        base_folder.append(pathlib.Path(tmpdir) / "Cub2011" / "CUB_200_2011")
+        base_folder.append(pathlib.Path(tmpdir) / "Cub2011" / "CUB_200_2011")
+        base_folder.append(pathlib.Path(tmpdir) / "Cub2011" / "CUB_200_2011" / "images")
+        for folder in base_folder:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
+        num_images, num_images_per_split = self._create_split_txt(base_folder)
+        target_class = '001.Black_footed_Albatross'
+        datasets_utils.create_image_folder(
+            base_folder[-1], target_class, lambda idx: f"{idx + 1:06d}.jpg", num_images
+        )
+        datasets_utils.create_image_folder(
+            base_folder[1], target_class, lambda idx: f"{idx + 1:06d}.png", num_images
+        )
+        self._create_bbox_txt(base_folder, num_images)
+
+        self._create_class_lables_txt(base_folder, num_images)
+        self._create_images_txt(base_folder, target_class, num_images)
+
+        return dict(num_examples=num_images_per_split[config["split"]])
+
+    def _create_split_txt(self, root):
+        num_images_per_split = dict(train=5, test=2)
+
+        indx = 0
+        data = []
+        for split, num_images in num_images_per_split.items():
+            for _ in range(num_images):
+                data.append([indx, self._SPLIT_TO_IDX[split]])
+                indx += 1
+        self._create_txt(root, "train_test_split.txt", data)
+
+        num_images_per_split["all"] = num_images = sum(num_images_per_split.values())
+        return num_images, num_images_per_split
+    #
+    # def _create_attr_txt(self, root, num_images):
+    #     header = ("5_o_Clock_Shadow", "Young")
+    #     data = torch.rand((num_images, len(header))).ge(0.5).int().mul(2).sub(1).tolist()
+    #     self._create_txt(root, "list_attr_celeba.txt", data, header=header, add_num_examples=True)
+    #     return header
+
+    def _create_class_lables_txt(self, root, num_images):
+        data = []
+        for ind in range(num_images):
+            data.append([ind, 1])
+        self._create_txt(root, "image_class_labels.txt", data)
+
+    def _create_bbox_txt(self, root, num_images):
+        header = ("x_1", "y_1", "width", "height")
+        data = torch.randint(10, size=(num_images, len(header))).float().tolist()
+        data_with_index = []
+        for indx, data_i in enumerate(data):
+            data_with_index.append([indx, data_i])
+        self._create_txt(
+            root, "bounding_boxes.txt", data_with_index)
+
+    def _create_images_txt(self, root, target_class, num_images):
+        data = []
+        for ind in range(num_images):
+            data.append([ind, f'{target_class}/{ind + 1:06d}.jpg'])
+        self._create_txt(root, "images.txt", data)
+
+    def _create_txt(self, root, name, data, header=None, add_num_examples=False, add_image_id_to_header=False):
+        with open(pathlib.Path(root[-2]) / name, "w") as fh:
+            if add_num_examples:
+                fh.write(f"{len(data)}\n")
+
+            if header:
+                if add_image_id_to_header:
+                    header = ("image_id", *header)
+                fh.write(f"{' '.join(header)}\n")
+
+            for idx, line in enumerate(data, 1):
+                meta_data = ''
+                if isinstance(line[1], list):
+                    for lin in line[1]:
+                        meta_data = meta_data + ' ' + str(lin)
+                    meta_data = meta_data.lstrip()
+                else:
+                    meta_data = line[1]
+                fh.write(f"{line[0]} {meta_data}\n")
+
+    def test_combined_targets(self):
+        target_types = ["class_label", "segmentation", "bbox"]
+
+        individual_targets = []
+        for target_type in target_types:
+            with self.create_dataset(target_type=[target_type]) as (dataset, _):
+                _, target = dataset[0]
+                individual_targets.append(target)
+
+        with self.create_dataset(target_type=target_types) as (dataset, _):
+            _, combined_targets = dataset[0]
+
+        actual = len(individual_targets)
+        expected = len(combined_targets)
+        self.assertEqual(
+            actual,
+            expected,
+            f"The number of the returned combined targets does not match the the number targets if requested "
+            f"individually: {actual} != {expected}",
+        )
+
+        for target_type, combined_target, individual_target in zip(target_types, combined_targets, individual_targets):
+            with self.subTest(target_type=target_type):
+                actual = type(combined_target)
+                expected = type(individual_target)
+                self.assertIs(
+                    actual,
+                    expected,
+                    f"Type of the combined target does not match the type of the corresponding individual target: "
+                    f"{actual} is not {expected}",
+                )
+
+    def test_no_target(self):
+        with self.create_dataset(target_type=[]) as (dataset, _):
+            _, target = dataset[0]
+
+        self.assertIsNone(target)
+
+    def test_dataset_length(self):
+        with self.create_dataset() as (dataset, info):
+            self.assertEqual(len(dataset.index_list), info["num_examples"])
+
+
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.VOCSegmentation
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image)
