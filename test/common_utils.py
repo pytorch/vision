@@ -240,23 +240,6 @@ def disable_console_output():
         yield
 
 
-def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
-    callable_or_arg_name = callable_or_arg_names[0]
-    if callable(callable_or_arg_name):
-        argspec = inspect.getfullargspec(callable_or_arg_name)
-        arg_names = argspec.args
-        if isinstance(callable_or_arg_name, type):
-            # remove self
-            arg_names.pop(0)
-    else:
-        arg_names = callable_or_arg_names
-
-    args, kwargs = call_args
-    kwargs_only = kwargs.copy()
-    kwargs_only.update(dict(zip(arg_names, args)))
-    return kwargs_only
-
-
 def cpu_and_gpu():
     import pytest  # noqa
     return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
