@@ -617,6 +617,7 @@ def test_video_model(model_name, dev):
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
     assert out.shape[-1] == 50
 
     if dev == torch.device("cuda"):
