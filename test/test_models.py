@@ -466,6 +466,7 @@ def test_segmentation_model(model_name, dev):
     full_validation = check_out(out)
 
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
