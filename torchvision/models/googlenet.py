@@ -34,7 +34,7 @@ def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
         aux_logits (bool): If True, adds two auxiliary branches that can improve training.
             Default: *False* when pretrained is True otherwise *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *True*
+            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
     """
     if pretrained:
         if 'transform_input' not in kwargs:
