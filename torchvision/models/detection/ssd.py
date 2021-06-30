@@ -141,7 +141,7 @@ class SSD(nn.Module):
             set of feature maps.
         size (Tuple[int, int]): the width and height to which images will be rescaled before feeding them
             to the backbone.
-        num_classes (int): number of output classes of the model (excluding the background).
+        num_classes (int): number of output classes of the model (including the background).
         image_mean (Tuple[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
