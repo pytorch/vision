@@ -108,7 +108,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
         tol = 3e-4
         try:
             torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
-        except pytest.UsageError:
+        except torch.testing._asserts.UsageError:
             # custom check for the models that return named tuples:
             # we compare field by field while ignoring None as assert_close can't handle None
             for a, b in zip(results, results_from_imported):
@@ -466,6 +466,7 @@ def test_segmentation_model(model_name, dev):
     full_validation = check_out(out)
 
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
@@ -616,6 +617,7 @@ def test_video_model(model_name, dev):
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
     assert out.shape[-1] == 50
 
     if dev == torch.device("cuda"):

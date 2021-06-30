@@ -7,7 +7,7 @@ from torch import nn, Tensor
 from typing import Dict, List, Tuple, Optional
 
 from ._utils import overwrite_eps
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
@@ -256,7 +256,7 @@ class RetinaNet(nn.Module):
             It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
             The backbone should return a single Tensor or an OrderedDict[Tensor].
-        num_classes (int): number of output classes of the model (excluding the background).
+        num_classes (int): number of output classes of the model (including the background).
         min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
         max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
         image_mean (Tuple[float, float, float]): mean values used for input normalization.
