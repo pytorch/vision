@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+333d587 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+2b53b84 ) &#x25BC</a>
     </div>
     
 
@@ -663,7 +663,8 @@
 <span class="sd">        The output image might be different depending on its type: when downsampling, the interpolation of PIL images</span>
 <span class="sd">        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences</span>
 <span class="sd">        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input</span>
-<span class="sd">        types.</span>
+<span class="sd">        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors</span>
+<span class="sd">        closer.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        img (PIL Image or Tensor): Image to be resized.</span>
@@ -689,8 +690,9 @@
 <span class="sd">            if ``size`` is an int (or a sequence of length 1 in torchscript</span>
 <span class="sd">            mode).</span>
 <span class="sd">        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias</span>
-<span class="sd">            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for</span>
-<span class="sd">            ``InterpolationMode.BILINEAR`` only mode.</span>
+<span class="sd">            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for</span>
+<span class="sd">            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors</span>
+<span class="sd">            closer.</span>
 
 <span class="sd">            .. warning::</span>
 <span class="sd">                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.</span>

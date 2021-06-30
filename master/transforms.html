@@ -199,7 +199,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+333d587 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+2b53b84 ) &#x25BC</a>
     </div>
     
 
@@ -1164,7 +1164,8 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <p>The output image might be different depending on its type: when downsampling, the interpolation of PIL images
 and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
 in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-types.</p>
+types. See also below the <code class="docutils literal notranslate"><span class="pre">antialias</span></code> parameter, which can help making the output of PIL images and tensors
+closer.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1193,8 +1194,9 @@ smaller edge may be shorter than <code class="docutils literal notranslate"><spa
 if <code class="docutils literal notranslate"><span class="pre">size</span></code> is an int (or a sequence of length 1 in torchscript
 mode).</p></li>
 <li><p><strong>antialias</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – <p>antialias flag. If <code class="docutils literal notranslate"><span class="pre">img</span></code> is PIL Image, the flag is ignored and anti-alias
-is always used. If <code class="docutils literal notranslate"><span class="pre">img</span></code> is Tensor, the flag is False by default and can be set True for
-<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> only mode.</p>
+is always used. If <code class="docutils literal notranslate"><span class="pre">img</span></code> is Tensor, the flag is False by default and can be set to True for
+<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> only mode. This can help making the output for PIL images and tensors
+closer.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>There is no autodiff support for <code class="docutils literal notranslate"><span class="pre">antialias=True</span></code> option with input <code class="docutils literal notranslate"><span class="pre">img</span></code> as Tensor.</p>
@@ -2530,7 +2532,8 @@ to have […, H, W] shape, where … means an arbitrary number of leading dimens
 <p>The output image might be different depending on its type: when downsampling, the interpolation of PIL images
 and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
 in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-types.</p>
+types. See also below the <code class="docutils literal notranslate"><span class="pre">antialias</span></code> parameter, which can help making the output of PIL images and tensors
+closer.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2560,8 +2563,9 @@ smaller edge may be shorter than <code class="docutils literal notranslate"><spa
 if <code class="docutils literal notranslate"><span class="pre">size</span></code> is an int (or a sequence of length 1 in torchscript
 mode).</p></li>
 <li><p><strong>antialias</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – <p>antialias flag. If <code class="docutils literal notranslate"><span class="pre">img</span></code> is PIL Image, the flag is ignored and anti-alias
-is always used. If <code class="docutils literal notranslate"><span class="pre">img</span></code> is Tensor, the flag is False by default and can be set True for
-<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> only mode.</p>
+is always used. If <code class="docutils literal notranslate"><span class="pre">img</span></code> is Tensor, the flag is False by default and can be set to True for
+<code class="docutils literal notranslate"><span class="pre">InterpolationMode.BILINEAR</span></code> only mode. This can help making the output for PIL images and tensors
+closer.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>There is no autodiff support for <code class="docutils literal notranslate"><span class="pre">antialias=True</span></code> option with input <code class="docutils literal notranslate"><span class="pre">img</span></code> as Tensor.</p>
