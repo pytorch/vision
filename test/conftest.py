@@ -50,12 +50,12 @@ def pytest_collection_modifyitems(items):
                 # TODO: something more robust would be to do that only in a sandcastle instance,
                 # so that we can still see the test being skipped when testing locally from a devvm
                 continue
-        # elif IN_CIRCLE_CI:
-        #     # Here we're not in fbcode, so we can safely collect and skip tests.
-        #     if not needs_cuda and torch.cuda.is_available():
-        #         # Similar to what happens in RE workers: we don't need the CircleCI GPU machines
-        #         # to run the CPU-only tests.
-        #         item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
+        elif IN_CIRCLE_CI:
+            # Here we're not in fbcode, so we can safely collect and skip tests.
+            if not needs_cuda and torch.cuda.is_available():
+                # Similar to what happens in RE workers: we don't need the CircleCI GPU machines
+                # to run the CPU-only tests.
+                item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
 
         if item.get_closest_marker('dont_collect') is not None:
             # currently, this is only used for some tests we're sure we dont want to run on fbcode
