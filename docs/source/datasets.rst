@@ -122,6 +122,12 @@ ImageNet
 .. note ::
     This requires `scipy` to be installed
 
+iNaturalist
+~~~~~~~~~~~
+
+.. autoclass:: INaturalist
+  :members: __getitem__, category_name
+
 Kinetics-400
 ~~~~~~~~~~~~
 

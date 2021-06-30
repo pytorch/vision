@@ -1760,7 +1760,8 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, (int, tuple))
 
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        target_type=("kingdom", "full", "genus", ["kingdom", "phylum", "class", "order", "family", "genus", "full"])
+        target_type=("kingdom", "full", "genus", ["kingdom", "phylum", "class", "order", "family", "genus", "full"]),
+        version=("2021_train",),
     )
 
     def inject_fake_data(self, tmpdir, config):
@@ -1773,7 +1774,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
         num_images_per_category = 3
         for category in categories:
             datasets_utils.create_image_folder(
-                root=tmpdir,
+                root=os.path.join(tmpdir, config["version"]),
                 name=category,
                 file_name_fn=lambda idx: f"image_{idx + 1:04d}.jpg",
                 num_examples=num_images_per_category,
@@ -1784,7 +1785,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
     def test_targets(self):
         target_types = ["kingdom", "phylum", "class", "order", "family", "genus", "full"]
 
-        with self.create_dataset(target_type=target_types) as (dataset, _):
+        with self.create_dataset(target_type=target_types, version="2021_valid") as (dataset, _):
             items = [d[1] for d in dataset]
             for i, item in enumerate(items):
                 self.assertEqual(dataset.category_name("kingdom", item[0]), "Akingdom")
