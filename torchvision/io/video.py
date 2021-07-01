@@ -236,7 +236,7 @@ def _align_audio_frames(
 
 
 def read_video(
-    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+    filename: str, start_pts: float = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
