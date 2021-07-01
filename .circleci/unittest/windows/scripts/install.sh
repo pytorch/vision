@@ -12,7 +12,7 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
 conda activate ./env
 
-echo $CUDA_VERSION
+echo $CU_VERSION
 
 if [ "${CU_VERSION:-}" == "cpu" ] ; then
     cudatoolkit="cpuonly"
