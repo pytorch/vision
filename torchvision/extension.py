@@ -1,6 +1,6 @@
 import torch
 
-from ._register_extension import _get_extension_path
+from ._internally_replaced_utils import _get_extension_path
 
 
 _HAS_OPS = False
