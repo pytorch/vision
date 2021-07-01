@@ -15,11 +15,7 @@ conda activate ./env
 if [ "${CU_VERSION:-}" == "cpu" ] ; then
     cudatoolkit="cpuonly"
 else
-    if [[ ${#CU_VERSION} -eq 4 ]]; then
-        CUDA_VERSION="${CU_VERSION:2:1}.${CU_VERSION:3:1}"
-    elif [[ ${#CU_VERSION} -eq 5 ]]; then
-        CUDA_VERSION="${CU_VERSION:2:2}.${CU_VERSION:4:1}"
-    fi
+    CUDA_VERSION="${CU_VERSION:2:2}.${CU_VERSION:4:1}"
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
     cudatoolkit="cudatoolkit=${version}"
