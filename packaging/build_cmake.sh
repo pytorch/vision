@@ -28,6 +28,7 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
+echo $CONDA_CUDATOOLKIT_CONSTRAINT
 conda install -yq -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
