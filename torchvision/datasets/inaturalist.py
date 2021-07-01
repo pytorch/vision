@@ -231,8 +231,10 @@ class INaturalist(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print('Files already downloaded and verified')
-            return
+            raise RuntimeError(
+                f"The directory {self.root} already exists. "
+                f"If you want to re-download or re-extract the images, delete the directory."
+            )
 
         base_root = os.path.dirname(self.root)
 
@@ -240,8 +242,7 @@ class INaturalist(VisionDataset):
             DATASET_URLS[self.version],
             base_root,
             filename=f"{self.version}.tgz",
-            md5=DATASET_MD5[self.version],
-            remove_finished=True)
+            md5=DATASET_MD5[self.version])
 
         orig_dir_name = os.path.join(base_root, os.path.basename(DATASET_URLS[self.version]).rstrip(".tar.gz"))
         if not os.path.exists(orig_dir_name):
