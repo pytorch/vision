@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from ..._internally_replaced_utils import load_state_dict_from_url
+from torchvision.models.utils import load_state_dict_from_url
 import torchvision.models.shufflenetv2
 import sys
 from .utils import _replace_relu, quantize_model

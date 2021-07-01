@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch import Tensor
-from .._internally_replaced_utils import load_state_dict_from_url
+from .utils import load_state_dict_from_url
 from typing import Callable, Any, Optional, List
 
 

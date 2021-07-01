@@ -1,6 +1,6 @@
 import torch
 from torch import nn, Tensor
-from ..._internally_replaced_utils import load_state_dict_from_url
+from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.mobilenetv3 import InvertedResidual, InvertedResidualConfig, ConvBNActivation, MobileNetV3,\
     SqueezeExcitation, model_urls, _mobilenet_v3_conf
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules

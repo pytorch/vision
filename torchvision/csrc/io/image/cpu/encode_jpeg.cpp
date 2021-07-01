@@ -18,12 +18,12 @@ using namespace detail;
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling
-  struct jpeg_compress_struct cinfo {};
-  struct torch_jpeg_error_mgr jerr {};
+  struct jpeg_compress_struct cinfo;
+  struct torch_jpeg_error_mgr jerr;
 
   // Define buffer to write JPEG information to and its size
   unsigned long jpegSize = 0;
-  uint8_t* jpegBuf = nullptr;
+  uint8_t* jpegBuf = NULL;
 
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
@@ -34,7 +34,7 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
      * We need to clean up the JPEG object and the buffer.
      */
     jpeg_destroy_compress(&cinfo);
-    if (jpegBuf != nullptr) {
+    if (jpegBuf != NULL) {
       free(jpegBuf);
     }
 
@@ -92,10 +92,16 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   jpeg_destroy_compress(&cinfo);
 
   torch::TensorOptions options = torch::TensorOptions{torch::kU8};
-  auto out_tensor =
-      torch::from_blob(jpegBuf, {(long)jpegSize}, ::free, options);
-  jpegBuf = nullptr;
-  return out_tensor;
+  auto outTensor = torch::empty({(long)jpegSize}, options);
+
+  // Copy memory from jpeg buffer, since torch cannot get ownership of it via
+  // `from_blob`
+  auto outPtr = outTensor.data_ptr<uint8_t>();
+  std::memcpy(outPtr, jpegBuf, sizeof(uint8_t) * outTensor.numel());
+
+  free(jpegBuf);
+
+  return outTensor;
 }
 #endif
 

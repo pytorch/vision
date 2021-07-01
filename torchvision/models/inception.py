@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
-from .._internally_replaced_utils import load_state_dict_from_url
+from .utils import load_state_dict_from_url
 from typing import Callable, Any, Optional, Tuple, List
 
 

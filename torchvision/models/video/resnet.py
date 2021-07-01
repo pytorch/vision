@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from ..utils import load_state_dict_from_url
 
 
 __all__ = ['r3d_18', 'mc3_18', 'r2plus1d_18']

@@ -346,8 +346,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
         and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
         in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
-        closer.
+        types.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -373,9 +372,8 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
-            closer.
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
+            ``InterpolationMode.BILINEAR`` only mode.
 
             .. warning::
                 There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.

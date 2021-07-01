@@ -71,11 +71,6 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
-  if (bit_depth > 8) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(false, "At most 8-bit PNG images are supported currently.")
-  }
-
   int channels = png_get_channels(png_ptr, info_ptr);
 
   if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)

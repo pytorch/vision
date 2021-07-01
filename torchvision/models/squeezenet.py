@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from .._internally_replaced_utils import load_state_dict_from_url
+from .utils import load_state_dict_from_url
 from typing import Any
 
 __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']

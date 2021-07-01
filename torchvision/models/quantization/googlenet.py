@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.googlenet import (
     GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls)
 

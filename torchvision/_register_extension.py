@@ -2,20 +2,6 @@ import os
 import importlib.machinery
 
 
-def _download_file_from_remote_location(fpath: str, url: str) -> None:
-    pass
-
-
-def _is_remote_location_available() -> bool:
-    return False
-
-
-try:
-    from torch.hub import load_state_dict_from_url
-except ImportError:
-    from torch.utils.model_zoo import load_url as load_state_dict_from_url
-
-
 def _get_extension_path(lib_name):
 
     lib_dir = os.path.dirname(__file__)
