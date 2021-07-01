@@ -102,8 +102,8 @@ if not exist "%SRC_DIR%\temp_build\gpu_driver_dlls.7z" (
     if errorlevel 1 exit /b 1
 )
 
-rem echo Installing GPU driver DLLs
-rem 7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -aoa -o"C:\Windows\System32"
+echo Installing GPU driver DLLs
+7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -aoa -o"C:\Windows\System32"
 
 goto cuda_common
 
