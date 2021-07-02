@@ -28,8 +28,7 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
-#conda install -yq -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE
-conda install pytorch $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE -c pytorch
+conda install -yq -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
