@@ -97,6 +97,15 @@ if not exist "%SRC_DIR%\temp_build\cudnn-10.2-windows10-x64-v7.6.5.32.zip" (
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-10.2-windows10-x64-v7.6.5.32.zip"
 )
 
+rem I tested, it's only necessary for cu102.
+if not exist "%SRC_DIR%\temp_build\gpu_driver_dlls.7z" (
+    curl -k -L "https://drive.google.com/u/0/uc?id=1injUyo3lnarMgWyRcXqKg4UGnN0ysmuq&export=download" --output "%SRC_DIR%\temp_build\gpu_driver_dlls.zip"
+    if errorlevel 1 exit /b 1
+)
+
+echo Installing GPU driver DLLs
+7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -aoa -o"C:\Windows\System32"
+
 goto cuda_common
 
 :cuda110
@@ -125,15 +134,15 @@ if not exist "%SRC_DIR%\temp_build\cuda_11.1.0_456.43_win10.exe" (
     set "ARGS=nvcc_11.1 cuobjdump_11.1 nvprune_11.1 nvprof_11.1 cupti_11.1 cublas_11.1 cublas_dev_11.1 cudart_11.1 cufft_11.1 cufft_dev_11.1 curand_11.1 curand_dev_11.1 cusolver_11.1 cusolver_dev_11.1 cusparse_11.1 cusparse_dev_11.1 npp_11.1 npp_dev_11.1 nvjpeg_11.1 nvjpeg_dev_11.1 nvrtc_11.1 nvrtc_dev_11.1 nvml_dev_11.1"
 )
 
-@REM There is no downloadable driver for Tesla on CUDA 11.1 yet. We will use
-@REM the driver inside CUDA
-set "ARGS=%ARGS% Display.Driver"
-
 if not exist "%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip" (
     curl -k -L https://ossci-windows.s3.amazonaws.com/cudnn-11.1-windows-x64-v8.0.5.39.zip --output "%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip"
     if errorlevel 1 exit /b 1
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip"
 )
+
+@REM There is no downloadable driver for Tesla on CUDA 11.1 yet. We will use
+@REM the driver inside CUDA
+if "%JOB_EXECUTOR%" == "windows-with-nvidia-gpu" set "ARGS=%ARGS% Display.Driver"
 
 goto cuda_common
 
@@ -181,15 +190,15 @@ if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
     if errorlevel 1 exit /b 1
 )
 
-if not exist "%SRC_DIR%\temp_build\gpu_driver_dlls.7z" (
-    curl -k -L "https://drive.google.com/u/0/uc?id=1injUyo3lnarMgWyRcXqKg4UGnN0ysmuq&export=download" --output "%SRC_DIR%\temp_build\gpu_driver_dlls.zip"
-    if errorlevel 1 exit /b 1
-)
-
 echo Installing CUDA toolkit...
 7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
 pushd "%SRC_DIR%\temp_build\cuda"
-start /wait setup.exe -s %ARGS%
+
+sc config wuauserv start= disabled
+sc stop wuauserv
+sc query wuauserv
+
+start /wait setup.exe -s %ARGS% -loglevel:6 -log:"%cd%/cuda_install_logs"
 popd
 
 echo Installing VS integration...
@@ -217,18 +226,21 @@ set "NVTOOLSEXT_PATH=%ProgramFiles%\NVIDIA Corporation\NvToolsExt\bin\x64"
 
 if not exist "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%\bin\nvcc.exe" (
     echo CUDA %CUDA_VERSION_STR% installed failed.
+    echo --------- setup.exe.log -------
+    type "%SRC_DIR%\temp_build\cuda\cuda_install_logs\LOG.setup.exe.log"
+    echo --------- RunDll32.exe.log
+    type "%SRC_DIR%\temp_build\cuda\cuda_install_logs\LOG.RunDll32.exe.log"
     exit /b 1
 )
-
 echo Installing cuDNN...
 7z x %CUDNN_SETUP_FILE% -o"%SRC_DIR%\temp_build\cudnn"
 xcopy /Y "%SRC_DIR%\temp_build\cudnn\cuda\bin\*.*" "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%\bin"
 xcopy /Y "%SRC_DIR%\temp_build\cudnn\cuda\lib\x64\*.*" "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%\lib\x64"
 xcopy /Y "%SRC_DIR%\temp_build\cudnn\cuda\include\*.*" "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%\include"
 
-
-echo Installing GPU driver DLLs
-7z x %SRC_DIR%\temp_build\gpu_driver_dlls.zip -aoa -o"C:\Windows\System32"
+rem cuda runtime version
+where nvcc
+nvcc --version
 
 echo Cleaning temp files
 rd /s /q "%SRC_DIR%\temp_build" || ver > nul
