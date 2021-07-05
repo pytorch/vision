@@ -908,9 +908,12 @@ jobs:
 
   build_docs:
     <<: *binary_common
-    docker:
-      - image: "pytorch/manylinux-cuda100"
-    resource_class: 2xlarge+
+    # docker:
+    #   - image: "pytorch/manylinux-cuda100"
+    # resource_class: 2xlarge+
+    machine:
+      image: ubuntu-1604-cuda-10.2:202012-01
+    resource_class: gpu.nvidia.medium
     steps:
       - attach_workspace:
           at: ~/workspace
