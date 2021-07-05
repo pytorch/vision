@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from torchvision.models.utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
 
 
@@ -19,7 +19,7 @@ model_urls = {
 
 
 class SqueezeExcitation(nn.Module):
-
+    # Implemented as described at Figure 4 of the MobileNetV3 paper
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
         super().__init__()
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
@@ -40,7 +40,7 @@ class SqueezeExcitation(nn.Module):
 
 
 class InvertedResidualConfig:
-
+    # Stores information listed at Tables 1 and 2 of the MobileNetV3 paper
     def __init__(self, input_channels: int, kernel: int, expanded_channels: int, out_channels: int, use_se: bool,
                  activation: str, stride: int, dilation: int, width_mult: float):
         self.input_channels = self.adjust_channels(input_channels, width_mult)
@@ -58,7 +58,7 @@ class InvertedResidualConfig:
 
 
 class InvertedResidual(nn.Module):
-
+    # Implemented as described at section 5 of MobileNetV3 paper
     def __init__(self, cnf: InvertedResidualConfig, norm_layer: Callable[..., nn.Module],
                  se_layer: Callable[..., nn.Module] = SqueezeExcitation):
         super().__init__()

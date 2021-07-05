@@ -23,11 +23,15 @@ void qroi_align_forward_kernel_impl(
     bool aligned,
     const at::Tensor& t_rois,
     T* output) {
-  const T* input = t_input.contiguous().data_ptr<T>();
+  // Don't delete these otherwise the .data_ptr() data might be undefined
+  auto t_input_cont = t_input.contiguous();
+  auto t_rois_cont = t_rois.contiguous();
+
+  const T* input = t_input_cont.data_ptr<T>();
   int64_t input_zp = t_input.q_zero_point();
   float input_scale = t_input.q_scale();
 
-  const T* rois = t_rois.contiguous().data_ptr<T>();
+  const T* rois = t_rois_cont.data_ptr<T>();
   int64_t rois_zp = t_rois.q_zero_point();
   float rois_scale = t_rois.q_scale();
 

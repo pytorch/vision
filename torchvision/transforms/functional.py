@@ -124,17 +124,13 @@ def to_tensor(pic):
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    if pic.mode == 'I':
-        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
-    elif pic.mode == 'I;16':
-        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
-    elif pic.mode == 'F':
-        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
-    elif pic.mode == '1':
-        img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
-    else:
-        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+    mode_to_nptype = {'I': np.int32, 'I;16': np.int16, 'F': np.float32}
+    img = torch.from_numpy(
+        np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True)
+    )
 
+    if pic.mode == '1':
+        img = 255 * img
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
@@ -350,7 +346,8 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
         and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
         in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types.
+        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
+        closer.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -376,8 +373,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
-            ``InterpolationMode.BILINEAR`` only mode.
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
+            closer.
 
             .. warning::
                 There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
@@ -463,7 +461,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given image at specified location and output size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then cropped.
 
     Args:
         img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
@@ -594,9 +593,9 @@ def _get_perspective_coeffs(
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.lstsq(b_matrix, a_matrix)[0]
+    res = torch.linalg.lstsq(a_matrix, b_matrix, driver='gels').solution
 
-    output: List[float] = res.squeeze(1).tolist()
+    output: List[float] = res.tolist()
     return output
 
 

@@ -1,9 +1,6 @@
 torchvision
 ===========
 
-.. image:: https://codecov.io/gh/pytorch/vision/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/pytorch/vision
-
 .. image:: https://pepy.tech/badge/torchvision
     :target: https://pepy.tech/project/torchvision
 
@@ -25,6 +22,10 @@ supported Python versions.
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.9.0``                | ``0.10.0``               | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.8.1``                | ``0.9.1``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.8.0``                | ``0.9.0``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
@@ -74,7 +75,7 @@ From source:
     # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
 
 
-In case building TorchVision from source fails, install the nightly version of PyTorch following 
+In case building TorchVision from source fails, install the nightly version of PyTorch following
 the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/master/CONTRIBUTING.md#development-installation>`_ and retry the install.
 
 By default, GPU support is built if CUDA is found and ``torch.cuda.is_available()`` is true.

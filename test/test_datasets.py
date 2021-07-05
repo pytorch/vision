@@ -944,6 +944,27 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
             super().test_not_found_or_corrupted()
 
 
+class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
+    DATASET_CLASS = datasets.Kinetics
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "val"), num_classes=("400", "600", "700")
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        classes = ("Abseiling", "Zumba")
+        num_videos_per_class = 2
+        tmpdir = pathlib.Path(tmpdir) / config['split']
+        digits = string.ascii_letters + string.digits + "-_"
+        for cls in classes:
+            datasets_utils.create_video_folder(
+                tmpdir,
+                cls,
+                lambda _: f"{datasets_utils.create_random_string(11, digits)}.mp4",
+                num_videos_per_class,
+            )
+        return num_videos_per_class * len(classes)
+
+
 class Kinetics400TestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics400
 
@@ -1732,6 +1753,44 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         with self.assertRaises(RuntimeError):
             with self.create_dataset({'download': True}):
                 pass
+
+
+class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.INaturalist
+    FEATURE_TYPES = (PIL.Image.Image, (int, tuple))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        target_type=("kingdom", "full", "genus", ["kingdom", "phylum", "class", "order", "family", "genus", "full"]),
+        version=("2021_train",),
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        categories = [
+            "00000_Akingdom_0phylum_Aclass_Aorder_Afamily_Agenus_Aspecies",
+            "00001_Akingdom_1phylum_Aclass_Border_Afamily_Bgenus_Aspecies",
+            "00002_Akingdom_2phylum_Cclass_Corder_Cfamily_Cgenus_Cspecies",
+        ]
+
+        num_images_per_category = 3
+        for category in categories:
+            datasets_utils.create_image_folder(
+                root=os.path.join(tmpdir, config["version"]),
+                name=category,
+                file_name_fn=lambda idx: f"image_{idx + 1:04d}.jpg",
+                num_examples=num_images_per_category,
+            )
+
+        return num_images_per_category * len(categories)
+
+    def test_targets(self):
+        target_types = ["kingdom", "phylum", "class", "order", "family", "genus", "full"]
+
+        with self.create_dataset(target_type=target_types, version="2021_valid") as (dataset, _):
+            items = [d[1] for d in dataset]
+            for i, item in enumerate(items):
+                self.assertEqual(dataset.category_name("kingdom", item[0]), "Akingdom")
+                self.assertEqual(dataset.category_name("phylum", item[1]), f"{i // 3}phylum")
+                self.assertEqual(item[6], i // 3)
 
 
 if __name__ == "__main__":

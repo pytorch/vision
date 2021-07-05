@@ -12,7 +12,7 @@ from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .. import mobilenet
 from ..mobilenetv3 import ConvBNActivation
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 
 __all__ = ['ssdlite320_mobilenet_v3_large']
@@ -23,6 +23,7 @@ model_urls = {
 }
 
 
+# Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper
 def _prediction_block(in_channels: int, out_channels: int, kernel_size: int,
                       norm_layer: Callable[..., nn.Module]) -> nn.Sequential:
     return nn.Sequential(
@@ -101,6 +102,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
+            # As described in section 6.3 of MobileNetV3 paper
             nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),  # from start until C4 expansion layer
             nn.Sequential(backbone[c4_pos].block[1:], *backbone[c4_pos + 1:]),  # from C4 depthwise until end
         )
@@ -145,7 +147,7 @@ def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, t
 
     # find the index of the layer from which we wont freeze
     assert 0 <= trainable_layers <= num_stages
-    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+    freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
         for parameter in b.parameters():
@@ -158,8 +160,13 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
                                   pretrained_backbone: bool = False, trainable_backbone_layers: Optional[int] = None,
                                   norm_layer: Optional[Callable[..., nn.Module]] = None,
                                   **kwargs: Any):
-    """
-    Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone. See `SSD` for more details.
+    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
+    `"Searching for MobileNetV3"
+    <https://arxiv.org/abs/1905.02244>`_ and
+    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
+    <https://arxiv.org/abs/1801.04381>`_.
+
+    See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
     Example:
 
@@ -169,8 +176,6 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
         >>> predictions = model(x)
 
     Args:
-        norm_layer:
-        **kwargs:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
@@ -188,7 +193,7 @@ def ssdlite320_mobilenet_v3_large(pretrained: bool = False, progress: bool = Tru
     if pretrained:
         pretrained_backbone = False
 
-    # Enable reduced tail if no pretrained backbone is selected
+    # Enable reduced tail if no pretrained backbone is selected. See Table 6 of MobileNetV3 paper.
     reduce_tail = not pretrained_backbone
 
     if norm_layer is None:
