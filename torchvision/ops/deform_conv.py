@@ -5,46 +5,68 @@ from torch import nn, Tensor
 from torch.nn import init
 from torch.nn.parameter import Parameter
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import Optional, Tuple
+from typing import Optional, Tuple
+from torchvision.extension import _assert_has_ops
 
 
-def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1)):
-    # type: (Tensor, Tensor, Tensor, Optional[Tensor], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
-    """
-    Performs Deformable Convolution, described in Deformable Convolutional Networks
+def deform_conv2d(
+    input: Tensor,
+    offset: Tensor,
+    weight: Tensor,
+    bias: Optional[Tensor] = None,
+    stride: Tuple[int, int] = (1, 1),
+    padding: Tuple[int, int] = (0, 0),
+    dilation: Tuple[int, int] = (1, 1),
+    mask: Optional[Tensor] = None,
+) -> Tensor:
+    r"""
+    Performs Deformable Convolution v2, described in
+    `Deformable ConvNets v2: More Deformable, Better Results
+    <https://arxiv.org/abs/1811.11168>`__ if :attr:`mask` is not ``None`` and
+    Performs Deformable Convolution, described in
+    `Deformable Convolutional Networks
+    <https://arxiv.org/abs/1703.06211>`__ if :attr:`mask` is ``None``.
 
-    Arguments:
+    Args:
         input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-        offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-            out_height, out_width]): offsets to be applied for each position in the
-            convolution kernel.
-        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]):
-            convolution weights, split into groups of size (in_channels // groups)
+        offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width, out_height, out_width]):
+            offsets to be applied for each position in the convolution kernel.
+        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]): convolution weights,
+            split into groups of size (in_channels // groups)
         bias (Tensor[out_channels]): optional bias of shape (out_channels,). Default: None
         stride (int or Tuple[int, int]): distance between convolution centers. Default: 1
         padding (int or Tuple[int, int]): height/width of padding of zeroes around
             each image. Default: 0
         dilation (int or Tuple[int, int]): the spacing between kernel elements. Default: 1
+        mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width, out_height, out_width]):
+            masks to be applied for each position in the convolution kernel. Default: None
 
     Returns:
-        output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution
-
+        Tensor[batch_sz, out_channels, out_h, out_w]: result of convolution
 
     Examples::
-        >>> input = torch.rand(1, 3, 10, 10)
+        >>> input = torch.rand(4, 3, 10, 10)
         >>> kh, kw = 3, 3
         >>> weight = torch.rand(5, 3, kh, kw)
-        >>> # offset should have the same spatial size as the output
+        >>> # offset and mask should have the same spatial size as the output
         >>> # of the convolution. In this case, for an input of 10, stride of 1
         >>> # and kernel size of 3, without padding, the output size is 8
-        >>> offset = torch.rand(5, 2 * kh * kw, 8, 8)
-        >>> out = deform_conv2d(input, offset, weight)
+        >>> offset = torch.rand(4, 2 * kh * kw, 8, 8)
+        >>> mask = torch.rand(4, kh * kw, 8, 8)
+        >>> out = deform_conv2d(input, offset, weight, mask=mask)
         >>> print(out.shape)
         >>> # returns
-        >>>  torch.Size([1, 5, 8, 8])
+        >>>  torch.Size([4, 5, 8, 8])
     """
 
+    _assert_has_ops()
     out_channels = weight.shape[0]
+
+    use_mask = mask is not None
+
+    if mask is None:
+        mask = torch.zeros((input.shape[0], 0), device=input.device, dtype=input.dtype)
+
     if bias is None:
         bias = torch.zeros(out_channels, device=input.device, dtype=input.dtype)
 
@@ -68,20 +90,32 @@ def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0
         input,
         weight,
         offset,
+        mask,
         bias,
         stride_h, stride_w,
         pad_h, pad_w,
         dil_h, dil_w,
         n_weight_grps,
-        n_offset_grps)
+        n_offset_grps,
+        use_mask,)
 
 
 class DeformConv2d(nn.Module):
     """
-    See deform_conv2d
+    See :func:`deform_conv2d`.
     """
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0,
-                 dilation=1, groups=1, bias=True):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
+        groups: int = 1,
+        bias: bool = True,
+    ):
         super(DeformConv2d, self).__init__()
 
         if in_channels % groups != 0:
@@ -107,25 +141,29 @@ class DeformConv2d(nn.Module):
 
         self.reset_parameters()
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+
         if self.bias is not None:
             fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in)
             init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, input, offset):
+    def forward(self, input: Tensor, offset: Tensor, mask: Optional[Tensor] = None) -> Tensor:
         """
-        Arguments:
+        Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
             offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
                 out_height, out_width]): offsets to be applied for each position in the
                 convolution kernel.
+            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
+                out_height, out_width]): masks to be applied for each position in the
+                convolution kernel.
         """
         return deform_conv2d(input, offset, self.weight, self.bias, stride=self.stride,
-                             padding=self.padding, dilation=self.dilation)
+                             padding=self.padding, dilation=self.dilation, mask=mask)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
         s += '{in_channels}'
         s += ', {out_channels}'

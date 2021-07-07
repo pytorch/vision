@@ -1,6 +1,5 @@
 #include "squeezenet.h"
 
-#include <limits>
 #include "modelsimpl.h"
 
 namespace vision {

@@ -1,12 +1,13 @@
 import bisect
 import math
+import warnings
 from fractions import Fraction
+from typing import List
 
 import torch
 from torchvision.io import (
     _probe_video_from_file,
     _read_video_from_file,
-    _read_video_timestamps_from_file,
     read_video,
     read_video_timestamps,
 )
@@ -45,20 +46,30 @@ def unfold(tensor, size, step, dilation=1):
     return torch.as_strided(tensor, new_size, new_stride)
 
 
-class _DummyDataset(object):
+class _VideoTimestampsDataset(object):
     """
-    Dummy dataset used for DataLoader in VideoClips.
-    Defined at top level so it can be pickled when forking.
+    Dataset used to parallelize the reading of the timestamps
+    of a list of videos, given their paths in the filesystem.
+
+    Used in VideoClips and defined at top level so it can be
+    pickled when forking.
     """
 
-    def __init__(self, x):
-        self.x = x
+    def __init__(self, video_paths: List[str]):
+        self.video_paths = video_paths
 
     def __len__(self):
-        return len(self.x)
+        return len(self.video_paths)
 
     def __getitem__(self, idx):
-        return read_video_timestamps(self.x[idx])
+        return read_video_timestamps(self.video_paths[idx])
+
+
+def _collate_fn(x):
+    """
+    Dummy collate function to be used with _VideoTimestampsDataset
+    """
+    return x
 
 
 class VideoClips(object):
@@ -76,7 +87,7 @@ class VideoClips(object):
     Recreating the clips for different clip lengths is fast, and can be done
     with the `compute_clips` method.
 
-    Arguments:
+    Args:
         video_paths (List[str]): paths to the video files
         clip_length_in_frames (int): size of a clip in number of frames
         frames_between_clips (int): step (in frames) between each clip
@@ -120,9 +131,6 @@ class VideoClips(object):
             self._init_from_metadata(_precomputed_metadata)
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
-    def _collate_fn(self, x):
-        return x
-
     def _compute_frame_pts(self):
         self.video_pts = []
         self.video_fps = []
@@ -132,17 +140,20 @@ class VideoClips(object):
         import torch.utils.data
 
         dl = torch.utils.data.DataLoader(
-            _DummyDataset(self.video_paths),
+            _VideoTimestampsDataset(self.video_paths),
             batch_size=16,
             num_workers=self.num_workers,
-            collate_fn=self._collate_fn,
+            collate_fn=_collate_fn,
         )
 
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
                 pbar.update(1)
                 clips, fps = list(zip(*batch))
-                clips = [torch.as_tensor(c) for c in clips]
+                # we need to specify dtype=torch.long because for empty list,
+                # torch.as_tensor will use torch.float as default dtype. This
+                # happens when decoding fails and no pts is returned in the list.
+                clips = [torch.as_tensor(c, dtype=torch.long) for c in clips]
                 self.video_pts.extend(clips)
                 self.video_fps.extend(fps)
 
@@ -200,6 +211,9 @@ class VideoClips(object):
         )
         video_pts = video_pts[idxs]
         clips = unfold(video_pts, num_frames, step)
+        if not clips.numel():
+            warnings.warn("There aren't enough frames in the current video to get a clip for the given clip length and "
+                          "frames between clips. The video (and potentially others) will be skipped.")
         if isinstance(idxs, slice):
             idxs = [idxs] * len(clips)
         else:
@@ -212,9 +226,10 @@ class VideoClips(object):
         Always returns clips of size `num_frames`, meaning that the
         last few frames in a video can potentially be dropped.
 
-        Arguments:
+        Args:
             num_frames (int): number of frames for the clip
             step (int): distance between two clips
+            frame_rate (int, optional): The frame rate
         """
         self.num_frames = num_frames
         self.step = step
@@ -270,7 +285,7 @@ class VideoClips(object):
         """
         Gets a subclip from a list of videos.
 
-        Arguments:
+        Args:
             idx (int): index of the subclip. Must be between 0 and num_clips().
 
         Returns:
@@ -365,3 +380,47 @@ class VideoClips(object):
             video.shape, self.num_frames
         )
         return video, audio, info, video_idx
+
+    def __getstate__(self):
+        video_pts_sizes = [len(v) for v in self.video_pts]
+        # To be back-compatible, we convert data to dtype torch.long as needed
+        # because for empty list, in legacy implementation, torch.as_tensor will
+        # use torch.float as default dtype. This happens when decoding fails and
+        # no pts is returned in the list.
+        video_pts = [x.to(torch.int64) for x in self.video_pts]
+        # video_pts can be an empty list if no frames have been decoded
+        if video_pts:
+            video_pts = torch.cat(video_pts)
+            # avoid bug in https://github.com/pytorch/pytorch/issues/32351
+            # TODO: Revert it once the bug is fixed.
+            video_pts = video_pts.numpy()
+
+        # make a copy of the fields of self
+        d = self.__dict__.copy()
+        d["video_pts_sizes"] = video_pts_sizes
+        d["video_pts"] = video_pts
+        # delete the following attributes to reduce the size of dictionary. They
+        # will be re-computed in "__setstate__()"
+        del d["clips"]
+        del d["resampling_idxs"]
+        del d["cumulative_sizes"]
+
+        # for backwards-compatibility
+        d["_version"] = 2
+        return d
+
+    def __setstate__(self, d):
+        # for backwards-compatibility
+        if "_version" not in d:
+            self.__dict__ = d
+            return
+
+        video_pts = torch.as_tensor(d["video_pts"], dtype=torch.int64)
+        video_pts = torch.split(video_pts, d["video_pts_sizes"], dim=0)
+        # don't need this info anymore
+        del d["video_pts_sizes"]
+
+        d["video_pts"] = video_pts
+        self.__dict__ = d
+        # recompute attributes "clips", "resampling_idxs" and other derivative ones
+        self.compute_clips(self.num_frames, self.step, self.frame_rate)

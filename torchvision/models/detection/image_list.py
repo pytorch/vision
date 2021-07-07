@@ -1,10 +1,8 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
-from torch.jit.annotations import List, Tuple
 from torch import Tensor
+from typing import List, Tuple
 
 
-@torch.jit.script
 class ImageList(object):
     """
     Structure that holds a list of images (of possibly
@@ -13,17 +11,15 @@ class ImageList(object):
     and storing in a field the original sizes of each image
     """
 
-    def __init__(self, tensors, image_sizes):
-        # type: (Tensor, List[Tuple[int, int]])
+    def __init__(self, tensors: Tensor, image_sizes: List[Tuple[int, int]]):
         """
-        Arguments:
+        Args:
             tensors (tensor)
             image_sizes (list[tuple[int, int]])
         """
         self.tensors = tensors
         self.image_sizes = image_sizes
 
-    def to(self, device):
-        # type: (Device) # noqa
+    def to(self, device: torch.device) -> 'ImageList':
         cast_tensor = self.tensors.to(device)
         return ImageList(cast_tensor, self.image_sizes)

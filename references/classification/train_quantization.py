@@ -1,7 +1,6 @@
 import datetime
 import os
 import time
-import sys
 import copy
 
 import torch
@@ -14,7 +13,6 @@ from train import train_one_epoch, evaluate, load_data
 
 
 def main(args):
-
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -38,8 +36,7 @@ def main(args):
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
 
-    dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir,
-                                                                   args.cache_dataset, args.distributed)
+    dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
         sampler=train_sampler, num_workers=args.workers, pin_memory=True)
@@ -57,6 +54,9 @@ def main(args):
         model.fuse_model()
         model.qconfig = torch.quantization.get_default_qat_qconfig(args.backend)
         torch.quantization.prepare_qat(model, inplace=True)
+
+        if args.distributed and args.sync_bn:
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
         optimizer = torch.optim.SGD(
             model.parameters(), lr=args.lr, momentum=args.momentum,
@@ -129,7 +129,7 @@ def main(args):
             print('Evaluate QAT model')
 
             evaluate(model, criterion, data_loader_test, device=device)
-            quantized_eval_model = copy.deepcopy(model)
+            quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device('cpu'))
             torch.quantization.convert(quantized_eval_model, inplace=True)
@@ -161,9 +161,9 @@ def main(args):
     print('Training time {}'.format(total_time_str))
 
 
-def parse_args():
+def get_args_parser(add_help=True):
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Classification Training')
+    parser = argparse.ArgumentParser(description='PyTorch Quantized Classification Training', add_help=add_help)
 
     parser.add_argument('--data-path',
                         default='/datasets01/imagenet_full_size/061417/',
@@ -224,6 +224,12 @@ def parse_args():
         action="store_true",
     )
     parser.add_argument(
+        "--sync-bn",
+        dest="sync_bn",
+        help="Use sync batch norm",
+        action="store_true",
+    )
+    parser.add_argument(
         "--test-only",
         dest="test_only",
         help="Only test the model",
@@ -243,11 +249,9 @@ def parse_args():
                         default='env://',
                         help='url used to set up distributed training')
 
-    args = parser.parse_args()
-
-    return args
+    return parser
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = get_args_parser().parse_args()
     main(args)

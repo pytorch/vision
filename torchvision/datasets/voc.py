@@ -1,10 +1,15 @@
 import os
-import tarfile
 import collections
 from .vision import VisionDataset
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element as ET_Element
+try:
+    from defusedxml.ElementTree import parse as ET_parse
+except ImportError:
+    from xml.etree.ElementTree import parse as ET_parse
 from PIL import Image
-from .utils import download_url, check_integrity, verify_str_arg
+from typing import Any, Callable, Dict, Optional, Tuple, List
+from .utils import download_and_extract_archive, verify_str_arg
+import warnings
 
 DATASET_YEAR_DICT = {
     '2012': {
@@ -52,13 +57,82 @@ DATASET_YEAR_DICT = {
 }
 
 
-class VOCSegmentation(VisionDataset):
+class _VOCBase(VisionDataset):
+    _SPLITS_DIR: str
+    _TARGET_DIR: str
+    _TARGET_FILE_EXT: str
+
+    def __init__(
+        self,
+        root: str,
+        year: str = "2012",
+        image_set: str = "train",
+        download: bool = False,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        transforms: Optional[Callable] = None,
+    ):
+        super().__init__(root, transforms, transform, target_transform)
+        if year == "2007-test":
+            if image_set == "test":
+                warnings.warn(
+                    "Acessing the test image set of the year 2007 with year='2007-test' is deprecated. "
+                    "Please use the combination year='2007' and image_set='test' instead."
+                )
+                year = "2007"
+            else:
+                raise ValueError(
+                    "In the test image set of the year 2007 only image_set='test' is allowed. "
+                    "For all other image sets use year='2007' instead."
+                )
+        self.year = year
+
+        valid_image_sets = ["train", "trainval", "val"]
+        if year == "2007":
+            valid_image_sets.append("test")
+        self.image_set = verify_str_arg(image_set, "image_set", valid_image_sets)
+
+        key = "2007-test" if year == "2007" and image_set == "test" else year
+        dataset_year_dict = DATASET_YEAR_DICT[key]
+
+        self.url = dataset_year_dict["url"]
+        self.filename = dataset_year_dict["filename"]
+        self.md5 = dataset_year_dict["md5"]
+
+        base_dir = dataset_year_dict["base_dir"]
+        voc_root = os.path.join(self.root, base_dir)
+
+        if download:
+            download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.md5)
+
+        if not os.path.isdir(voc_root):
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
+
+        splits_dir = os.path.join(voc_root, "ImageSets", self._SPLITS_DIR)
+        split_f = os.path.join(splits_dir, image_set.rstrip("\n") + ".txt")
+        with open(os.path.join(split_f), "r") as f:
+            file_names = [x.strip() for x in f.readlines()]
+
+        image_dir = os.path.join(voc_root, "JPEGImages")
+        self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
+
+        target_dir = os.path.join(voc_root, self._TARGET_DIR)
+        self.targets = [os.path.join(target_dir, x + self._TARGET_FILE_EXT) for x in file_names]
+
+        assert len(self.images) == len(self.targets)
+
+    def __len__(self) -> int:
+        return len(self.images)
+
+
+class VOCSegmentation(_VOCBase):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Segmentation Dataset.
 
     Args:
         root (string): Root directory of the VOC Dataset.
-        year (string, optional): The dataset year, supports years 2007 to 2012.
-        image_set (string, optional): Select the image_set to use, ``train``, ``trainval`` or ``val``
+        year (string, optional): The dataset year, supports years ``"2007"`` to ``"2012"``.
+        image_set (string, optional): Select the image_set to use, ``"train"``, ``"trainval"`` or ``"val"``. If
+            ``year=="2007"``, can also be ``"test"``.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
@@ -70,49 +144,15 @@ class VOCSegmentation(VisionDataset):
             and returns a transformed version.
     """
 
-    def __init__(self,
-                 root,
-                 year='2012',
-                 image_set='train',
-                 download=False,
-                 transform=None,
-                 target_transform=None,
-                 transforms=None):
-        super(VOCSegmentation, self).__init__(root, transforms, transform, target_transform)
-        self.year = year
-        if year == "2007" and image_set == "test":
-            year = "2007-test"
-        self.url = DATASET_YEAR_DICT[year]['url']
-        self.filename = DATASET_YEAR_DICT[year]['filename']
-        self.md5 = DATASET_YEAR_DICT[year]['md5']
-        valid_sets = ["train", "trainval", "val"]
-        if year == "2007-test":
-            valid_sets.append("test")
-        self.image_set = verify_str_arg(image_set, "image_set", valid_sets)
-        base_dir = DATASET_YEAR_DICT[year]['base_dir']
-        voc_root = os.path.join(self.root, base_dir)
-        image_dir = os.path.join(voc_root, 'JPEGImages')
-        mask_dir = os.path.join(voc_root, 'SegmentationClass')
+    _SPLITS_DIR = "Segmentation"
+    _TARGET_DIR = "SegmentationClass"
+    _TARGET_FILE_EXT = ".png"
 
-        if download:
-            download_extract(self.url, self.root, self.filename, self.md5)
+    @property
+    def masks(self) -> List[str]:
+        return self.targets
 
-        if not os.path.isdir(voc_root):
-            raise RuntimeError('Dataset not found or corrupted.' +
-                               ' You can use download=True to download it')
-
-        splits_dir = os.path.join(voc_root, 'ImageSets/Segmentation')
-
-        split_f = os.path.join(splits_dir, image_set.rstrip('\n') + '.txt')
-
-        with open(os.path.join(split_f), "r") as f:
-            file_names = [x.strip() for x in f.readlines()]
-
-        self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
-        self.masks = [os.path.join(mask_dir, x + ".png") for x in file_names]
-        assert (len(self.images) == len(self.masks))
-
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -120,7 +160,7 @@ class VOCSegmentation(VisionDataset):
         Returns:
             tuple: (image, target) where target is the image segmentation.
         """
-        img = Image.open(self.images[index]).convert('RGB')
+        img = Image.open(self.images[index]).convert("RGB")
         target = Image.open(self.masks[index])
 
         if self.transforms is not None:
@@ -128,17 +168,15 @@ class VOCSegmentation(VisionDataset):
 
         return img, target
 
-    def __len__(self):
-        return len(self.images)
 
-
-class VOCDetection(VisionDataset):
+class VOCDetection(_VOCBase):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Detection Dataset.
 
     Args:
         root (string): Root directory of the VOC Dataset.
-        year (string, optional): The dataset year, supports years 2007 to 2012.
-        image_set (string, optional): Select the image_set to use, ``train``, ``trainval`` or ``val``
+        year (string, optional): The dataset year, supports years ``"2007"`` to ``"2012"``.
+        image_set (string, optional): Select the image_set to use, ``"train"``, ``"trainval"`` or ``"val"``. If
+            ``year=="2007"``, can also be ``"test"``.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
@@ -151,50 +189,15 @@ class VOCDetection(VisionDataset):
             and returns a transformed version.
     """
 
-    def __init__(self,
-                 root,
-                 year='2012',
-                 image_set='train',
-                 download=False,
-                 transform=None,
-                 target_transform=None,
-                 transforms=None):
-        super(VOCDetection, self).__init__(root, transforms, transform, target_transform)
-        self.year = year
-        if year == "2007" and image_set == "test":
-            year = "2007-test"
-        self.url = DATASET_YEAR_DICT[year]['url']
-        self.filename = DATASET_YEAR_DICT[year]['filename']
-        self.md5 = DATASET_YEAR_DICT[year]['md5']
-        valid_sets = ["train", "trainval", "val"]
-        if year == "2007-test":
-            valid_sets.append("test")
-        self.image_set = verify_str_arg(image_set, "image_set", valid_sets)
+    _SPLITS_DIR = "Main"
+    _TARGET_DIR = "Annotations"
+    _TARGET_FILE_EXT = ".xml"
 
-        base_dir = DATASET_YEAR_DICT[year]['base_dir']
-        voc_root = os.path.join(self.root, base_dir)
-        image_dir = os.path.join(voc_root, 'JPEGImages')
-        annotation_dir = os.path.join(voc_root, 'Annotations')
+    @property
+    def annotations(self) -> List[str]:
+        return self.targets
 
-        if download:
-            download_extract(self.url, self.root, self.filename, self.md5)
-
-        if not os.path.isdir(voc_root):
-            raise RuntimeError('Dataset not found or corrupted.' +
-                               ' You can use download=True to download it')
-
-        splits_dir = os.path.join(voc_root, 'ImageSets/Main')
-
-        split_f = os.path.join(splits_dir, image_set.rstrip('\n') + '.txt')
-
-        with open(os.path.join(split_f), "r") as f:
-            file_names = [x.strip() for x in f.readlines()]
-
-        self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
-        self.annotations = [os.path.join(annotation_dir, x + ".xml") for x in file_names]
-        assert (len(self.images) == len(self.annotations))
-
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -202,41 +205,27 @@ class VOCDetection(VisionDataset):
         Returns:
             tuple: (image, target) where target is a dictionary of the XML tree.
         """
-        img = Image.open(self.images[index]).convert('RGB')
-        target = self.parse_voc_xml(
-            ET.parse(self.annotations[index]).getroot())
+        img = Image.open(self.images[index]).convert("RGB")
+        target = self.parse_voc_xml(ET_parse(self.annotations[index]).getroot())
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
         return img, target
 
-    def __len__(self):
-        return len(self.images)
-
-    def parse_voc_xml(self, node):
-        voc_dict = {}
+    def parse_voc_xml(self, node: ET_Element) -> Dict[str, Any]:
+        voc_dict: Dict[str, Any] = {}
         children = list(node)
         if children:
-            def_dic = collections.defaultdict(list)
+            def_dic: Dict[str, Any] = collections.defaultdict(list)
             for dc in map(self.parse_voc_xml, children):
                 for ind, v in dc.items():
                     def_dic[ind].append(v)
-            if node.tag == 'annotation':
-                def_dic['object'] = [def_dic['object']]
-            voc_dict = {
-                node.tag:
-                    {ind: v[0] if len(v) == 1 else v
-                     for ind, v in def_dic.items()}
-            }
+            if node.tag == "annotation":
+                def_dic["object"] = [def_dic["object"]]
+            voc_dict = {node.tag: {ind: v[0] if len(v) == 1 else v for ind, v in def_dic.items()}}
         if node.text:
             text = node.text.strip()
             if not children:
                 voc_dict[node.tag] = text
         return voc_dict
-
-
-def download_extract(url, root, filename, md5):
-    download_url(url, root, filename, md5)
-    with tarfile.open(os.path.join(root, filename), "r") as tar:
-        tar.extractall(path=root)

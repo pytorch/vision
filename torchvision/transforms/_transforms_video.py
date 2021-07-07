@@ -2,6 +2,7 @@
 
 import numbers
 import random
+import warnings
 
 from torchvision.transforms import (
     RandomCrop,
@@ -19,6 +20,11 @@ __all__ = [
     "ToTensorVideo",
     "RandomHorizontalFlipVideo",
 ]
+
+
+warnings.warn(
+    "The _transforms_video module is deprecated. Please use the transforms module instead."
+)
 
 
 class RandomCropVideo(RandomCrop):
@@ -129,7 +135,7 @@ class NormalizeVideo(object):
 class ToTensorVideo(object):
     """
     Convert tensor data type from uint8 to float, divide value by 255.0 and
-    permute the dimenions of clip tensor
+    permute the dimensions of clip tensor
     """
 
     def __init__(self):

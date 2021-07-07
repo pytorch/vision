@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torchvision.models.utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 import torchvision.models.shufflenetv2
 import sys
 from .utils import _replace_relu, quantize_model
@@ -107,6 +107,7 @@ def shufflenet_v2_x0_5(pretrained=False, progress=True, quantize=False, **kwargs
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     return _shufflenetv2('shufflenetv2_x0.5', pretrained, progress, quantize,
                          [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
@@ -121,6 +122,7 @@ def shufflenet_v2_x1_0(pretrained=False, progress=True, quantize=False, **kwargs
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     return _shufflenetv2('shufflenetv2_x1.0', pretrained, progress, quantize,
                          [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
@@ -135,6 +137,7 @@ def shufflenet_v2_x1_5(pretrained=False, progress=True, quantize=False, **kwargs
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     return _shufflenetv2('shufflenetv2_x1.5', pretrained, progress, quantize,
                          [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
@@ -149,6 +152,7 @@ def shufflenet_v2_x2_0(pretrained=False, progress=True, quantize=False, **kwargs
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
     """
     return _shufflenetv2('shufflenetv2_x2.0', pretrained, progress, quantize,
                          [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)

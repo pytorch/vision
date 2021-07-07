@@ -1,5 +1,6 @@
 import sys
 import torch
+import warnings
 
 _onnx_opset_version = 11
 
@@ -20,11 +21,20 @@ def _register_custom_op():
 
     @parse_args('v', 'v', 'f', 'i', 'i', 'i', 'i')
     def roi_align(g, input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
-        if(aligned):
-            raise RuntimeError('Unsupported: ONNX export of roi_align with aligned')
         batch_indices = _cast_Long(g, squeeze(g, select(g, rois, 1, g.op('Constant',
                                    value_t=torch.tensor([0], dtype=torch.long))), 1), False)
         rois = select(g, rois, 1, g.op('Constant', value_t=torch.tensor([1, 2, 3, 4], dtype=torch.long)))
+        if aligned:
+            warnings.warn("ONNX export of ROIAlign with aligned=True does not match PyTorch when using malformed boxes,"
+                          " ONNX forces ROIs to be 1x1 or larger.")
+            scale = torch.tensor(0.5 / spatial_scale).to(dtype=torch.float)
+            rois = g.op("Sub", rois, scale)
+
+        # ONNX doesn't support negative sampling_ratio
+        if sampling_ratio < 0:
+            warnings.warn("ONNX doesn't support negative sampling ratio,"
+                          "therefore is is set to 0 in order to be exported.")
+            sampling_ratio = 0
         return g.op('RoiAlign', input, rois, batch_indices, spatial_scale_f=spatial_scale,
                     output_height_i=pooled_height, output_width_i=pooled_width, sampling_ratio_i=sampling_ratio)
 
@@ -34,18 +44,7 @@ def _register_custom_op():
                         pooled_shape_i=(pooled_height, pooled_width), spatial_scale_f=spatial_scale)
         return roi_pool, None
 
-    @parse_args('v', 'is')
-    def new_empty_tensor_op(g, input, shape):
-        dtype = input.type().scalarType()
-        if dtype is None:
-            dtype = 'Float'
-        dtype = scalar_type_to_onnx.index(cast_pytorch_to_onnx[dtype])
-        shape = g.op("Constant", value_t=torch.tensor(shape))
-        return g.op("ConstantOfShape", shape,
-                    value_t=torch.tensor([0], dtype=scalar_type_to_pytorch_type[dtype]))
-
     from torch.onnx import register_custom_op_symbolic
     register_custom_op_symbolic('torchvision::nms', symbolic_multi_label_nms, _onnx_opset_version)
     register_custom_op_symbolic('torchvision::roi_align', roi_align, _onnx_opset_version)
     register_custom_op_symbolic('torchvision::roi_pool', roi_pool, _onnx_opset_version)
-    register_custom_op_symbolic('torchvision::_new_empty_tensor_op', new_empty_tensor_op, _onnx_opset_version)

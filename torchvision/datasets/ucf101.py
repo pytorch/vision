@@ -1,8 +1,6 @@
-import glob
 import os
 
-from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -36,10 +34,12 @@ class UCF101(VisionDataset):
             and returns a transformed version.
 
     Returns:
-        video (Tensor[T, H, W, C]): the `T` video frames
-        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        label (int): class of the video clip
+        tuple: A 3-tuple with the following entries:
+
+            - video (Tensor[T, H, W, C]): the `T` video frames
+            -  audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+               and `L` is the number of points
+            - label (int): class of the video clip
     """
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
@@ -54,10 +54,8 @@ class UCF101(VisionDataset):
         self.fold = fold
         self.train = train
 
-        classes = list(sorted(list_dir(root)))
-        class_to_idx = {classes[i]: i for i in range(len(classes))}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
-        self.classes = classes
         video_list = [x[0] for x in self.samples]
         video_clips = VideoClips(
             video_list,
@@ -71,14 +69,17 @@ class UCF101(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
         )
-        self.video_clips_metadata = video_clips.metadata
+        # we bookkeep the full version of video clips because we want to be able
+        # to return the meta data of full version rather than the subset version of
+        # video clips
+        self.full_video_clips = video_clips
         self.indices = self._select_fold(video_list, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
 
     @property
     def metadata(self):
-        return self.video_clips_metadata
+        return self.full_video_clips.metadata
 
     def _select_fold(self, video_list, annotation_path, fold, train):
         name = "train" if train else "test"
@@ -88,10 +89,10 @@ class UCF101(VisionDataset):
         with open(f, "r") as fid:
             data = fid.readlines()
             data = [x.strip().split(" ") for x in data]
-            data = [x[0] for x in data]
+            data = [os.path.join(self.root, x[0]) for x in data]
             selected_files.extend(data)
         selected_files = set(selected_files)
-        indices = [i for i in range(len(video_list)) if video_list[i][len(self.root) + 1:] in selected_files]
+        indices = [i for i in range(len(video_list)) if video_list[i] in selected_files]
         return indices
 
     def __len__(self):

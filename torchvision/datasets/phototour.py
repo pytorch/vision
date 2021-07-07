@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from PIL import Image
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
 from .vision import VisionDataset
@@ -9,7 +10,17 @@ from .utils import download_url
 
 
 class PhotoTour(VisionDataset):
-    """`Learning Local Image Descriptors Data <http://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
+    """`Multi-view Stereo Correspondence <http://matthewalunbrown.com/patchdata/patchdata.html>`_ Dataset.
+
+    .. note::
+
+        We only provide the newer version of the dataset, since the authors state that it
+
+            is more suitable for training descriptors based on difference of Gaussian, or Harris corners, as the
+            patches are centred on real interest point detections, rather than being projections of 3D points as is the
+            case in the old dataset.
+
+        The original dataset is available under http://phototour.cs.washington.edu/patches/default.htm.
 
 
     Args:
@@ -54,17 +65,19 @@ class PhotoTour(VisionDataset):
             'fdd9152f138ea5ef2091746689176414'
         ],
     }
-    mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437,
-            'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
-    std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019,
-           'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
+    means = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437,
+             'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
+    stds = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019,
+            'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
     lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092,
             'liberty_harris': 379587, 'yosemite_harris': 450912, 'notredame_harris': 325295}
     image_ext = 'bmp'
     info_file = 'info.txt'
     matches_files = 'm50_100000_100000_0.txt'
 
-    def __init__(self, root, name, train=True, transform=None, download=False):
+    def __init__(
+            self, root: str, name: str, train: bool = True, transform: Optional[Callable] = None, download: bool = False
+    ) -> None:
         super(PhotoTour, self).__init__(root, transform=transform)
         self.name = name
         self.data_dir = os.path.join(self.root, name)
@@ -72,20 +85,19 @@ class PhotoTour(VisionDataset):
         self.data_file = os.path.join(self.root, '{}.pt'.format(name))
 
         self.train = train
-        self.mean = self.mean[name]
-        self.std = self.std[name]
+        self.mean = self.means[name]
+        self.std = self.stds[name]
 
         if download:
             self.download()
 
         if not self._check_datafile_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            self.cache()
 
         # load the serialized data
         self.data, self.labels, self.matches = torch.load(self.data_file)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Union[torch.Tensor, Tuple[Any, Any, torch.Tensor]]:
         """
         Args:
             index (int): Index
@@ -105,18 +117,16 @@ class PhotoTour(VisionDataset):
             data2 = self.transform(data2)
         return data1, data2, m[2]
 
-    def __len__(self):
-        if self.train:
-            return self.lens[self.name]
-        return len(self.matches)
+    def __len__(self) -> int:
+        return len(self.data if self.train else self.matches)
 
-    def _check_datafile_exists(self):
+    def _check_datafile_exists(self) -> bool:
         return os.path.exists(self.data_file)
 
-    def _check_downloaded(self):
+    def _check_downloaded(self) -> bool:
         return os.path.exists(self.data_dir)
 
-    def download(self):
+    def download(self) -> None:
         if self._check_datafile_exists():
             print('# Found cached data {}'.format(self.data_file))
             return
@@ -138,6 +148,7 @@ class PhotoTour(VisionDataset):
 
             os.unlink(fpath)
 
+    def cache(self) -> None:
         # process and save as torch files
         print('# Caching data {}'.format(self.data_file))
 
@@ -150,20 +161,20 @@ class PhotoTour(VisionDataset):
         with open(self.data_file, 'wb') as f:
             torch.save(dataset, f)
 
-    def extra_repr(self):
+    def extra_repr(self) -> str:
         return "Split: {}".format("Train" if self.train is True else "Test")
 
 
-def read_image_file(data_dir, image_ext, n):
+def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
     """Return a Tensor containing the patches
     """
 
-    def PIL2array(_img):
+    def PIL2array(_img: Image.Image) -> np.ndarray:
         """Convert PIL image type to numpy 2D array
         """
         return np.array(_img.getdata(), dtype=np.uint8).reshape(64, 64)
 
-    def find_files(_data_dir, _image_ext):
+    def find_files(_data_dir: str, _image_ext: str) -> List[str]:
         """Return a list with the file names of the images containing the patches
         """
         files = []
@@ -178,24 +189,23 @@ def read_image_file(data_dir, image_ext, n):
 
     for fpath in list_files:
         img = Image.open(fpath)
-        for y in range(0, 1024, 64):
-            for x in range(0, 1024, 64):
+        for y in range(0, img.height, 64):
+            for x in range(0, img.width, 64):
                 patch = img.crop((x, y, x + 64, y + 64))
                 patches.append(PIL2array(patch))
     return torch.ByteTensor(np.array(patches[:n]))
 
 
-def read_info_file(data_dir, info_file):
+def read_info_file(data_dir: str, info_file: str) -> torch.Tensor:
     """Return a Tensor containing the list of labels
        Read the file and keep only the ID of the 3D point.
     """
-    labels = []
     with open(os.path.join(data_dir, info_file), 'r') as f:
         labels = [int(line.split()[0]) for line in f]
     return torch.LongTensor(labels)
 
 
-def read_matches_files(data_dir, matches_file):
+def read_matches_files(data_dir: str, matches_file: str) -> torch.Tensor:
     """Return a Tensor containing the ground truth matches
        Read the file and keep only 3D point ID.
        Matches are represented with a 1, non matches with a 0.

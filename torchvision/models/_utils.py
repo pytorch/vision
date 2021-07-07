@@ -1,8 +1,7 @@
 from collections import OrderedDict
 
-import torch
 from torch import nn
-from torch.jit.annotations import Dict
+from typing import Dict
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
@@ -18,7 +17,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
     assigned to the model. So if `model` is passed, `model.feature1` can
     be returned, but not `model.feature1.layer2`.
 
-    Arguments:
+    Args:
         model (nn.Module): model on which we will extract the features
         return_layers (Dict[name, new_name]): a dict containing the names
             of the modules for which the activations will be returned as
@@ -41,7 +40,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         "return_layers": Dict[str, str],
     }
 
-    def __init__(self, model, return_layers):
+    def __init__(self, model: nn.Module, return_layers: Dict[str, str]) -> None:
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
             raise ValueError("return_layers are not present in model")
         orig_return_layers = return_layers

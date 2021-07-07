@@ -50,7 +50,7 @@ void VGGImpl::_initialize_weights() {
 }
 
 VGGImpl::VGGImpl(
-    torch::nn::Sequential features,
+    const torch::nn::Sequential& features,
     int64_t num_classes,
     bool initialize_weights) {
   classifier = torch::nn::Sequential(

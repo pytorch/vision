@@ -1,0 +1,43 @@
+# GitHub Actions CodeQL Workflow
+
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: python, cpp
+
+      - name: Install Ninja
+        run: |
+              sudo apt-get update -y
+              sudo apt-get install -y ninja-build
+
+      - name: Update submodules
+        run: git submodule update --init --recursive
+
+      - name: Install Torch
+        run: |
+              python -m pip install cmake
+              python -m pip install --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+              sudo ln -s /usr/bin/ninja /usr/bin/ninja-build
+
+      - name: Build TorchVision
+        run: python setup.py develop --user
+
+      # If any code scanning alerts are found, they will be under Security -> CodeQL
+      # Link: https://github.com/pytorch/vision/security/code-scanning
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

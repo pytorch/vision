@@ -10,7 +10,7 @@ class FCN(_SimpleSegmentationModel):
     """
     Implements a Fully-Convolutional Network for semantic segmentation.
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             The backbone should return an OrderedDict[Tensor], with the key being
             "out" for the last feature map used, and "aux" if an auxiliary classifier

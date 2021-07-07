@@ -1,8 +1,7 @@
 import glob
 import os
 
-from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -37,10 +36,12 @@ class HMDB51(VisionDataset):
             and returns a transformed version.
 
     Returns:
-        video (Tensor[T, H, W, C]): the `T` video frames
-        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        label (int): class of the video clip
+        tuple: A 3-tuple with the following entries:
+
+            - video (Tensor[T, H, W, C]): The `T` video frames
+            - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+              and `L` is the number of points
+            - label (int): class of the video clip
     """
 
     data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
@@ -60,8 +61,7 @@ class HMDB51(VisionDataset):
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
 
         extensions = ('avi',)
-        classes = sorted(list_dir(root))
-        class_to_idx = {class_: i for (i, class_) in enumerate(classes)}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,
             class_to_idx,
@@ -81,17 +81,19 @@ class HMDB51(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
         )
+        # we bookkeep the full version of video clips because we want to be able
+        # to return the meta data of full version rather than the subset version of
+        # video clips
+        self.full_video_clips = video_clips
         self.fold = fold
         self.train = train
-        self.classes = classes
-        self.video_clips_metadata = video_clips.metadata
         self.indices = self._select_fold(video_paths, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
 
     @property
     def metadata(self):
-        return self.video_clips_metadata
+        return self.full_video_clips.metadata
 
     def _select_fold(self, video_list, annotations_dir, fold, train):
         target_tag = self.TRAIN_TAG if train else self.TEST_TAG

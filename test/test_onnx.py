@@ -1,3 +1,13 @@
+# onnxruntime requires python 3.5 or above
+try:
+    # This import should be before that of torch
+    # see https://github.com/onnx/onnx/issues/2394#issuecomment-581638840
+    import onnxruntime
+except ImportError:
+    onnxruntime = None
+
+from common_utils import set_rng_seed
+from _assert_utils import assert_equal
 import io
 import torch
 from torchvision import ops
@@ -5,27 +15,19 @@ from torchvision import models
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
-from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
 
-# onnxruntime requires python 3.5 or above
-try:
-    import onnxruntime
-except ImportError:
-    onnxruntime = None
-
-import unittest
+import pytest
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
 
-@unittest.skipIf(onnxruntime is None, 'ONNX Runtime unavailable')
-class ONNXExporterTester(unittest.TestCase):
+@pytest.mark.skipif(onnxruntime is None, reason='ONNX Runtime unavailable')
+class TestONNXExporter:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         torch.manual_seed(123)
 
     def run_model(self, model, inputs_list, tolerate_small_mismatch=False, do_constant_folding=True, dynamic_axes=None,
@@ -33,8 +35,12 @@ class ONNXExporterTester(unittest.TestCase):
         model.eval()
 
         onnx_io = io.BytesIO()
+        if isinstance(inputs_list[0][-1], dict):
+            torch_onnx_input = inputs_list[0] + ({},)
+        else:
+            torch_onnx_input = inputs_list[0]
         # export to onnx with the first input
-        torch.onnx.export(model, inputs_list[0], onnx_io,
+        torch.onnx.export(model, torch_onnx_input, onnx_io,
                           do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
                           dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
         # validate the exported model with onnx runtime
@@ -66,39 +72,40 @@ class ONNXExporterTester(unittest.TestCase):
         # compute onnxruntime output prediction
         ort_inputs = dict((ort_session.get_inputs()[i].name, inpt) for i, inpt in enumerate(inputs))
         ort_outs = ort_session.run(None, ort_inputs)
+
         for i in range(0, len(outputs)):
             try:
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
                 if tolerate_small_mismatch:
-                    self.assertIn("(0.00%)", str(error), str(error))
+                    assert "(0.00%)" in str(error), str(error)
                 else:
                     raise
 
-    @unittest.skip("Disable test until Split w/ zero sizes is implemented in ORT")
-    def test_new_empty_tensor(self):
-        class Module(torch.nn.Module):
-            def __init__(self):
-                super(Module, self).__init__()
-                self.conv2 = ops.misc.ConvTranspose2d(16, 33, (3, 5))
-
-            def forward(self, input2):
-                return self.conv2(input2)
-
-        input = torch.rand(0, 16, 10, 10)
-        test_input = torch.rand(0, 16, 20, 20)
-        self.run_model(Module(), [(input, ), (test_input,)], do_constant_folding=False)
-
     def test_nms(self):
-        boxes = torch.rand(5, 4)
-        boxes[:, 2:] += torch.rand(5, 2)
-        scores = torch.randn(5)
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
 
         class Module(torch.nn.Module):
             def forward(self, boxes, scores):
                 return ops.nms(boxes, scores, 0.5)
 
         self.run_model(Module(), [(boxes, scores)])
+
+    def test_batched_nms(self):
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
+        idxs = torch.randint(0, 5, size=(num_boxes,))
+
+        class Module(torch.nn.Module):
+            def forward(self, boxes, scores, idxs):
+                return ops.batched_nms(boxes, scores, idxs, 0.5)
+
+        self.run_model(Module(), [(boxes, scores, idxs)])
 
     def test_clip_boxes_to_image(self):
         boxes = torch.randn(5, 4) * 500
@@ -121,6 +128,44 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIAlign((5, 5), 1, 2)
         self.run_model(model, [(x, single_roi)])
 
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, -1)
+        self.run_model(model, [(x, single_roi)])
+
+    def test_roi_align_aligned(self):
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, 2, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 0.5, 3, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1.8, 2, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((2, 2), 2.5, -1, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+    @pytest.mark.skip(reason="Issue in exporting ROIAlign with aligned = True for malformed boxes")
+    def test_roi_align_malformed_boxes(self):
+        x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, 1, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
     def test_roi_pool(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         rois = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
@@ -141,7 +186,7 @@ class ONNXExporterTester(unittest.TestCase):
         input = torch.rand(3, 10, 20)
         input_test = torch.rand(3, 100, 150)
         self.run_model(TransformModule(), [(input,), (input_test,)],
-                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2, 3]})
+                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2]})
 
     def test_transform_images(self):
 
@@ -178,12 +223,14 @@ class ONNXExporterTester(unittest.TestCase):
         rpn_pre_nms_top_n = dict(training=2000, testing=1000)
         rpn_post_nms_top_n = dict(training=2000, testing=1000)
         rpn_nms_thresh = 0.7
+        rpn_score_thresh = 0.0
 
         rpn = RegionProposalNetwork(
             rpn_anchor_generator, rpn_head,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
-            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
+            score_thresh=rpn_score_thresh)
         return rpn
 
     def _init_test_roi_heads_faster_rcnn(self):
@@ -236,6 +283,8 @@ class ONNXExporterTester(unittest.TestCase):
         return features
 
     def test_rpn(self):
+        set_rng_seed(0)
+
         class RPNModule(torch.nn.Module):
             def __init__(self_module):
                 super(RPNModule, self_module).__init__()
@@ -346,13 +395,19 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
-
+        dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
+        # Test exported model on images of different size, or dummy input
+        self.run_model(model, [(images,), (test_images,), (dummy_image,)], input_names=["images_tensors"],
                        output_names=["outputs"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
+                       tolerate_small_mismatch=True)
+        # Test exported model for an image with no detections on other images
+        self.run_model(model, [(dummy_image,), (images,)], input_names=["images_tensors"],
+                       output_names=["outputs"],
+                       dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
                        tolerate_small_mismatch=True)
 
     # Verify that paste_mask_in_image beahves the same in tracing.
@@ -391,15 +446,24 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
-
+        dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)],
+        # Test exported model on images of different size, or dummy input
+        self.run_model(model, [(images,), (test_images,), (dummy_image,)],
                        input_names=["images_tensors"],
-                       output_names=["boxes", "labels", "scores"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
-                                     "scores": [0], "masks": [0, 1, 2, 3]},
+                       output_names=["boxes", "labels", "scores", "masks"],
+                       dynamic_axes={"images_tensors": [0, 1, 2], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2]},
+                       tolerate_small_mismatch=True)
+        # TODO: enable this test once dynamic model export is fixed
+        # Test exported model for an image with no detections on other images
+        self.run_model(model, [(dummy_image,), (images,)],
+                       input_names=["images_tensors"],
+                       output_names=["boxes", "labels", "scores", "masks"],
+                       dynamic_axes={"images_tensors": [0, 1, 2], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2]},
                        tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
@@ -418,8 +482,8 @@ class ONNXExporterTester(unittest.TestCase):
         jit_trace = torch.jit.trace(heatmaps_to_keypoints, (maps, rois))
         out_trace = jit_trace(maps, rois)
 
-        assert torch.all(out[0].eq(out_trace[0]))
-        assert torch.all(out[1].eq(out_trace[1]))
+        assert_equal(out[0], out_trace[0])
+        assert_equal(out[1], out_trace[1])
 
         maps2 = torch.rand(20, 2, 21, 21)
         rois2 = torch.rand(20, 4)
@@ -427,33 +491,38 @@ class ONNXExporterTester(unittest.TestCase):
         out2 = heatmaps_to_keypoints(maps2, rois2)
         out_trace2 = jit_trace(maps2, rois2)
 
-        assert torch.all(out2[0].eq(out_trace2[0]))
-        assert torch.all(out2[1].eq(out_trace2[1]))
+        assert_equal(out2[0], out_trace2[0])
+        assert_equal(out2[1], out_trace2[1])
 
     def test_keypoint_rcnn(self):
-        class KeyPointRCNN(torch.nn.Module):
-            def __init__(self):
-                super(KeyPointRCNN, self).__init__()
-                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
-                    pretrained=True, min_size=200, max_size=300)
-
-            def forward(self, images):
-                output = self.model(images)
-                # TODO: The keypoints_scores require the use of Argmax that is updated in ONNX.
-                #       For now we are testing all the output of KeypointRCNN except keypoints_scores.
-                #       Enable When Argmax is updated in ONNX Runtime.
-                return output[0]['boxes'], output[0]['labels'], output[0]['scores'], output[0]['keypoints']
-
         images, test_images = self.get_test_images()
-        model = KeyPointRCNN()
+        dummy_images = [torch.ones(3, 100, 100) * 0.3]
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)],
+        self.run_model(model, [(images,), (test_images,), (dummy_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2]},
+                       tolerate_small_mismatch=True)
+
+        self.run_model(model, [(dummy_images,), (test_images,)],
+                       input_names=["images_tensors"],
+                       output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
+                       dynamic_axes={"images_tensors": [0, 1, 2]},
+                       tolerate_small_mismatch=True)
+
+    def test_shufflenet_v2_dynamic_axes(self):
+        model = models.shufflenet_v2_x0_5(pretrained=True)
+        dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
+        test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)
+
+        self.run_model(model, [(dummy_input,), (test_inputs,)],
+                       input_names=["input_images"],
+                       output_names=["output"],
+                       dynamic_axes={"input_images": {0: 'batch_size'}, "output": {0: 'batch_size'}},
                        tolerate_small_mismatch=True)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])
