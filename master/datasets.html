@@ -199,7 +199,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+2b53b84 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+0d207d8 ) &#x25BC</a>
     </div>
     
 
@@ -944,6 +944,83 @@ target and transforms it.</p></li>
 <p class="admonition-title">Note</p>
 <p>This requires <cite>scipy</cite> to be installed</p>
 </div>
+</section>
+<section id="inaturalist">
+<h2>iNaturalist<a class="headerlink" href="#inaturalist" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="torchvision.datasets.INaturalist">
+<em class="property">class </em><code class="sig-prename descclassname">torchvision.datasets.</code><code class="sig-name descname">INaturalist</code><span class="sig-paren">(</span><em class="sig-param">root: str, version: str = '2021_train', target_type: Union[List[str], str] = 'full', transform: Optional[Callable] = None, target_transform: Optional[Callable] = None, download: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/datasets/inaturalist.html#INaturalist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.INaturalist" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://github.com/visipedia/inat_comp">iNaturalist</a> Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<em>string</em>) – Root directory of dataset where the image files are stored.
+This class does not require/use annotation files.</p></li>
+<li><p><strong>version</strong> (<em>string</em><em>, </em><em>optional</em>) – Which version of the dataset to download/use. One of
+‘2017’, ‘2018’, ‘2019’, ‘2021_train’, ‘2021_train_mini’, ‘2021_valid’.
+Default: <cite>2021_train</cite>.</p></li>
+<li><p><strong>target_type</strong> (<em>string</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>, </em><em>optional</em>) – <p>Type of target to use, for 2021 versions, one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">full</span></code>: the full category (species)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kingdom</span></code>: e.g. “Animalia”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phylum</span></code>: e.g. “Arthropoda”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">class</span></code>: e.g. “Insecta”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">order</span></code>: e.g. “Coleoptera”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">family</span></code>: e.g. “Cleridae”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">genus</span></code>: e.g. “Trichodes”</p></li>
+</ul>
+<p>for 2017-2019 versions, one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">full</span></code>: the full (numeric) category</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">super</span></code>: the super category, e.g. “Amphibians”</p></li>
+</ul>
+<p>Can also be a list to output a tuple with all specified target types.
+Defaults to <code class="docutils literal notranslate"><span class="pre">full</span></code>.</p>
+</p></li>
+<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in an PIL image
+and returns a transformed version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code></p></li>
+<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the
+target and transforms it.</p></li>
+<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – If true, downloads the dataset from the internet and
+puts it in root directory. If dataset is already downloaded, it is not
+downloaded again.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="torchvision.datasets.INaturalist.__getitem__">
+<code class="sig-name descname">__getitem__</code><span class="sig-paren">(</span><em class="sig-param">index: int</em><span class="sig-paren">)</span> &#x2192; Tuple[Any, Any]<a class="reference internal" href="_modules/torchvision/datasets/inaturalist.html#INaturalist.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.INaturalist.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – Index</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(image, target) where the type of target specified by target_type.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="torchvision.datasets.INaturalist.category_name">
+<code class="sig-name descname">category_name</code><span class="sig-paren">(</span><em class="sig-param">category_type: str</em>, <em class="sig-param">category_id: int</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/torchvision/datasets/inaturalist.html#INaturalist.category_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchvision.datasets.INaturalist.category_name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>category_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – one of “full”, “kingdom”, “phylum”, “class”, “order”, “family”, “genus” or “super”</p></li>
+<li><p><strong>category_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – an index (class id) from this category</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the name of the category</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="kinetics-400">
 <h2>Kinetics-400<a class="headerlink" href="#kinetics-400" title="Permalink to this headline">¶</a></h2>
@@ -2078,6 +2155,7 @@ target and transforms it.</p></li>
 <li><a class="reference internal" href="#flickr">Flickr</a></li>
 <li><a class="reference internal" href="#hmdb51">HMDB51</a></li>
 <li><a class="reference internal" href="#imagenet">ImageNet</a></li>
+<li><a class="reference internal" href="#inaturalist">iNaturalist</a></li>
 <li><a class="reference internal" href="#kinetics-400">Kinetics-400</a></li>
 <li><a class="reference internal" href="#kitti">KITTI</a></li>
 <li><a class="reference internal" href="#kmnist">KMNIST</a></li>
