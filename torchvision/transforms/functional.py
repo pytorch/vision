@@ -241,7 +241,7 @@ def to_pil_image(pic, mode=None):
     npimg = pic
     if isinstance(pic, torch.Tensor):
         if pic.is_floating_point() and mode != 'F':
-            pic = pic.mul(255).byte()
+            pic = pic.clamp(0, 1).mul(255).round().byte()
         npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
