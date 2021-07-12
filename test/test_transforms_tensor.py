@@ -649,7 +649,7 @@ def test_compose(device):
     t = T.Compose([
         lambda x: x,
     ])
-    with pytest.raises(RuntimeError, match="Could not get name of python class object"):
+    with pytest.raises(RuntimeError, match="cannot call a value of type 'Tensor'"):
         torch.jit.script(t)
 
 
