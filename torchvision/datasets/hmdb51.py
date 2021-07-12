@@ -60,7 +60,7 @@ class HMDB51(VisionDataset):
         annotation_path: str,
         frames_per_clip: int,
         step_between_clips: int = 1,
-        frame_rate=None,
+        frame_rate: Optional[int] = None,
         fold: int = 1,
         train: bool = True,
         transform: Optional[Callable] = None,
