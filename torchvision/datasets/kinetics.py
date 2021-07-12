@@ -8,6 +8,7 @@ import csv
 from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from multiprocessing import Pool
+from torch import Tensor
 
 from .utils import download_and_extract_archive, download_url, verify_str_arg, check_integrity
 from .folder import find_classes, make_dataset
@@ -15,7 +16,7 @@ from .video_utils import VideoClips
 from .vision import VisionDataset
 
 
-def _dl_wrap(tarpath, videopath, line):
+def _dl_wrap(tarpath: str, videopath: str, line: str) -> None:
     download_and_extract_archive(line, tarpath, videopath)
 
 
@@ -97,7 +98,7 @@ class Kinetics(VisionDataset):
         download: bool = False,
         num_download_workers: int = 1,
         num_workers: int = 1,
-        _precomputed_metadata: Optional[Dict] = None,
+        _precomputed_metadata: Optional[Dict[str, Any]] = None,
         _video_width: int = 0,
         _video_height: int = 0,
         _video_min_dimension: int = 0,
@@ -187,7 +188,7 @@ class Kinetics(VisionDataset):
             poolproc = Pool(self.num_download_workers)
             poolproc.map(part, lines)
 
-    def _make_ds_structure(self):
+    def _make_ds_structure(self) -> None:
         """move videos from
         split_folder/
             ├── clip1.avi
@@ -228,13 +229,13 @@ class Kinetics(VisionDataset):
                     )
 
     @property
-    def metadata(self):
+    def metadata(self) -> Dict[str, Any]:
         return self.video_clips.metadata
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         if not self._legacy:
             # [T,H,W,C] --> [T,C,H,W]
@@ -303,7 +304,7 @@ class Kinetics400(Kinetics):
         download: Any = None,
         num_download_workers: Any = None,
         **kwargs: Any
-    ):
+    ) -> None:
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
             "It was replaced by Kinetics(..., num_classes=\"400\").")
