@@ -63,7 +63,7 @@ def set_video_backend(backend):
             binding for the FFmpeg libraries.
             The :mod:`video_reader` package includes a native C++ implementation on
             top of FFMPEG libraries, and a python API of TorchScript custom operator.
-            It is generally decoding faster than :mod:`pyav`, but perhaps is less robust.
+            It generally decodes faster than :mod:`pyav`, but is perhaps less robust.
 
     .. note::
         Building with FFMPEG is disabled by default in the latest master. If you want to use the 'video_reader'
