@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Optional, Callable, Tuple, Dict, Any
+from typing import Optional, Callable, Tuple, Dict, Any, List
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
