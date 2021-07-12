@@ -2,7 +2,7 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import torch
 from torchvision.io import (
@@ -10,6 +10,7 @@ from torchvision.io import (
     _read_video_from_file,
     read_video,
     read_video_timestamps,
+    VideoMetaData,
 )
 
 from .utils import tqdm
@@ -27,7 +28,7 @@ def pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
     return round_func(new_pts)
 
 
-def unfold(tensor, size, step, dilation=1):
+def unfold(tensor: Tensor, size: int, step: int, dilation=1) -> List[int]:
     """
     similar to tensor.unfold, but with the dilation
     and specialized for 1d tensors
@@ -55,17 +56,17 @@ class _VideoTimestampsDataset(object):
     pickled when forking.
     """
 
-    def __init__(self, video_paths: List[str]):
+    def __init__(self, video_paths: List[str]) -> None:
         self.video_paths = video_paths
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.video_paths)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[List[int], Optional[float]]:
         return read_video_timestamps(self.video_paths[idx])
 
 
-def _collate_fn(x):
+def _collate_fn(x: Any) -> Any:
     """
     Dummy collate function to be used with _VideoTimestampsDataset
     """
@@ -100,19 +101,19 @@ class VideoClips(object):
 
     def __init__(
         self,
-        video_paths,
-        clip_length_in_frames=16,
-        frames_between_clips=1,
-        frame_rate=None,
-        _precomputed_metadata=None,
-        num_workers=0,
-        _video_width=0,
-        _video_height=0,
-        _video_min_dimension=0,
-        _video_max_dimension=0,
-        _audio_samples=0,
-        _audio_channels=0,
-    ):
+        video_paths: List[str],
+        clip_length_in_frames: int = 16,
+        frames_between_clips: int = 1,
+        frame_rate: Optional[int] = None,
+        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        num_workers: int = 0,
+        _video_width: int = 0,
+        _video_height: int = 0,
+        _video_min_dimension: int = 0,
+        _video_max_dimension: int = 0,
+        _audio_samples: int = 0,
+        _audio_channels: int = 0,
+    ) -> None:
 
         self.video_paths = video_paths
         self.num_workers = num_workers
@@ -131,7 +132,7 @@ class VideoClips(object):
             self._init_from_metadata(_precomputed_metadata)
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
-    def _compute_frame_pts(self):
+    def _compute_frame_pts(self) -> None:
         self.video_pts = []
         self.video_fps = []
 
@@ -157,7 +158,7 @@ class VideoClips(object):
                 self.video_pts.extend(clips)
                 self.video_fps.extend(fps)
 
-    def _init_from_metadata(self, metadata):
+    def _init_from_metadata(self, metadata: Dict[str, Any]) -> None:
         self.video_paths = metadata["video_paths"]
         assert len(self.video_paths) == len(metadata["video_pts"])
         self.video_pts = metadata["video_pts"]
@@ -165,7 +166,7 @@ class VideoClips(object):
         self.video_fps = metadata["video_fps"]
 
     @property
-    def metadata(self):
+    def metadata(self) -> Dict[str, Any]:
         _metadata = {
             "video_paths": self.video_paths,
             "video_pts": self.video_pts,
@@ -173,7 +174,7 @@ class VideoClips(object):
         }
         return _metadata
 
-    def subset(self, indices):
+    def subset(self, indices: List[int]) -> Any:
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
         video_fps = [self.video_fps[i] for i in indices]
@@ -198,7 +199,7 @@ class VideoClips(object):
         )
 
     @staticmethod
-    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
+    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate) -> Tuple[, List[int]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
             # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
@@ -220,7 +221,7 @@ class VideoClips(object):
             idxs = unfold(idxs, num_frames, step)
         return clips, idxs
 
-    def compute_clips(self, num_frames, step, frame_rate=None):
+    def compute_clips(self, num_frames: int, step, frame_rate: Optional[int] = None) -> None:
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
@@ -245,19 +246,19 @@ class VideoClips(object):
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
         self.cumulative_sizes = clip_lengths.cumsum(0).tolist()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.num_clips()
 
-    def num_videos(self):
+    def num_videos(self) -> int:
         return len(self.video_paths)
 
-    def num_clips(self):
+    def num_clips(self) -> int:
         """
         Number of subclips that are available in the video list.
         """
         return self.cumulative_sizes[-1]
 
-    def get_clip_location(self, idx):
+    def get_clip_location(self, idx: int) -> Tuple[int, int]:
         """
         Converts a flattened representation of the indices into a video_idx, clip_idx
         representation.
@@ -270,7 +271,7 @@ class VideoClips(object):
         return video_idx, clip_idx
 
     @staticmethod
-    def _resample_video_idx(num_frames, original_fps, new_fps):
+    def _resample_video_idx(num_frames: int, original_fps: int, new_fps: int) -> Tensor:
         step = float(original_fps) / new_fps
         if step.is_integer():
             # optimization: if step is integer, don't need to perform
@@ -281,7 +282,7 @@ class VideoClips(object):
         idxs = idxs.floor().to(torch.int64)
         return idxs
 
-    def get_clip(self, idx):
+    def get_clip(self, idx: int) -> Tuple[Tensor, Tensor, VideoMetaData, int]:
         """
         Gets a subclip from a list of videos.
 
@@ -381,7 +382,7 @@ class VideoClips(object):
         )
         return video, audio, info, video_idx
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         video_pts_sizes = [len(v) for v in self.video_pts]
         # To be back-compatible, we convert data to dtype torch.long as needed
         # because for empty list, in legacy implementation, torch.as_tensor will
@@ -409,7 +410,7 @@ class VideoClips(object):
         d["_version"] = 2
         return d
 
-    def __setstate__(self, d):
+    def __setstate__(self, d: Dict[str, Any]) -> None:
         # for backwards-compatibility
         if "_version" not in d:
             self.__dict__ = d
