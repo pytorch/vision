@@ -21,7 +21,7 @@ def pts_convert(
     timebase_from: Fraction,
     timebase_to: Fraction,
     round_func: Callable = math.floor
-) -> float:
+) -> int:
     """convert pts between different time bases
     Args:
         pts: presentation timestamp, float
@@ -145,8 +145,8 @@ class VideoClips(object):
         # so need to create a dummy dataset first
         import torch.utils.data
 
-        dl = torch.utils.data.DataLoader(
-            _VideoTimestampsDataset(self.video_paths),
+        dl: torch.utils.data.DataLoader = torch.utils.data.DataLoader(
+            _VideoTimestampsDataset(self.video_paths),  # type: ignore[arg-type]
             batch_size=16,
             num_workers=self.num_workers,
             collate_fn=_collate_fn,
@@ -227,10 +227,10 @@ class VideoClips(object):
             warnings.warn("There aren't enough frames in the current video to get a clip for the given clip length and "
                           "frames between clips. The video (and potentially others) will be skipped.")
         if isinstance(idxs, slice):
-            idxs = [idxs] * len(clips)
+            idxs = [idxs] * len(clips)  # type: ignore[assignment]
         else:
             idxs = unfold(idxs, num_frames, step)
-        return clips, idxs
+        return clips, idxs  # type: ignore[return-value]
 
     def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
         """
@@ -345,8 +345,8 @@ class VideoClips(object):
             video_fps = _info.video_fps
             audio_fps = None
 
-            video_start_pts: int = clip_pts[0].item()
-            video_end_pts: int = clip_pts[-1].item()
+            video_start_pts = int(clip_pts[0].item())
+            video_end_pts = int(clip_pts[-1].item())
 
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase = Fraction(0, 1)
@@ -402,10 +402,10 @@ class VideoClips(object):
         video_pts = [x.to(torch.int64) for x in self.video_pts]
         # video_pts can be an empty list if no frames have been decoded
         if video_pts:
-            video_pts = torch.cat(video_pts)
+            video_pts = torch.cat(video_pts)  # type: ignore[assignment]
             # avoid bug in https://github.com/pytorch/pytorch/issues/32351
             # TODO: Revert it once the bug is fixed.
-            video_pts = video_pts.numpy()
+            video_pts = video_pts.numpy()  # type: ignore[attr-defined]
 
         # make a copy of the fields of self
         d = self.__dict__.copy()
