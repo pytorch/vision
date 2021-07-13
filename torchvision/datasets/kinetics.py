@@ -91,7 +91,7 @@ class Kinetics(VisionDataset):
         frames_per_clip: int,
         num_classes: str = "400",
         split: str = "train",
-        frame_rate: Optional[float] = None,
+        frame_rate: Optional[int] = None,
         step_between_clips: int = 1,
         transform: Optional[Callable] = None,
         extensions: Tuple[str, ...] = ("avi", "mp4"),
