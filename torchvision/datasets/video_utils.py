@@ -2,7 +2,7 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable, Union, Tuple
 
 import torch
 from torchvision.io import (
@@ -16,7 +16,12 @@ from torchvision.io import (
 from .utils import tqdm
 
 
-def pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
+def pts_convert(
+    pts: int,
+    timebase_from: Fraction,
+    timebase_to: Fraction,
+    round_func: Callable = math.floor
+) -> float:
     """convert pts between different time bases
     Args:
         pts: presentation timestamp, float
@@ -28,7 +33,7 @@ def pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
     return round_func(new_pts)
 
 
-def unfold(tensor: Tensor, size: int, step: int, dilation=1) -> List[int]:
+def unfold(tensor: torch.Tensor, size: int, step: int, dilation: int = 1) -> torch.Tensor:
     """
     similar to tensor.unfold, but with the dilation
     and specialized for 1d tensors
@@ -199,7 +204,13 @@ class VideoClips(object):
         )
 
     @staticmethod
-    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate) -> Tuple[, List[int]]:
+    def compute_clips_for_video(
+        video_pts: torch.Tensor,
+        num_frames: int,
+        step: int,
+        fps: int,
+        frame_rate: Optional[int] = None
+    ) -> Tuple[torch.Tensor, Union[List[slice], torch.Tensor]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
             # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
@@ -221,7 +232,7 @@ class VideoClips(object):
             idxs = unfold(idxs, num_frames, step)
         return clips, idxs
 
-    def compute_clips(self, num_frames: int, step, frame_rate: Optional[int] = None) -> None:
+    def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
@@ -271,7 +282,7 @@ class VideoClips(object):
         return video_idx, clip_idx
 
     @staticmethod
-    def _resample_video_idx(num_frames: int, original_fps: int, new_fps: int) -> Tensor:
+    def _resample_video_idx(num_frames: int, original_fps: int, new_fps: int) -> Union[slice, torch.Tensor]:
         step = float(original_fps) / new_fps
         if step.is_integer():
             # optimization: if step is integer, don't need to perform
@@ -282,7 +293,7 @@ class VideoClips(object):
         idxs = idxs.floor().to(torch.int64)
         return idxs
 
-    def get_clip(self, idx: int) -> Tuple[Tensor, Tensor, VideoMetaData, int]:
+    def get_clip(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any], int]:
         """
         Gets a subclip from a list of videos.
 
@@ -330,21 +341,21 @@ class VideoClips(object):
             end_pts = clip_pts[-1].item()
             video, audio, info = read_video(video_path, start_pts, end_pts)
         else:
-            info = _probe_video_from_file(video_path)
-            video_fps = info.video_fps
+            _info = _probe_video_from_file(video_path)
+            video_fps = _info.video_fps
             audio_fps = None
 
-            video_start_pts = clip_pts[0].item()
-            video_end_pts = clip_pts[-1].item()
+            video_start_pts: int = clip_pts[0].item()
+            video_end_pts: int = clip_pts[-1].item()
 
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase = Fraction(0, 1)
             video_timebase = Fraction(
-                info.video_timebase.numerator, info.video_timebase.denominator
+                _info.video_timebase.numerator, _info.video_timebase.denominator
             )
-            if info.has_audio:
+            if _info.has_audio:
                 audio_timebase = Fraction(
-                    info.audio_timebase.numerator, info.audio_timebase.denominator
+                    _info.audio_timebase.numerator, _info.audio_timebase.denominator
                 )
                 audio_start_pts = pts_convert(
                     video_start_pts, video_timebase, audio_timebase, math.floor
@@ -352,7 +363,7 @@ class VideoClips(object):
                 audio_end_pts = pts_convert(
                     video_end_pts, video_timebase, audio_timebase, math.ceil
                 )
-                audio_fps = info.audio_sample_rate
+                audio_fps = _info.audio_sample_rate
             video, audio, info = _read_video_from_file(
                 video_path,
                 video_width=self._video_width,
