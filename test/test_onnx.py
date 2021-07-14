@@ -6,8 +6,7 @@ try:
 except ImportError:
     onnxruntime = None
 
-from common_utils import set_rng_seed
-from _assert_utils import assert_equal
+from common_utils import set_rng_seed, assert_equal
 import io
 import torch
 from torchvision import ops
