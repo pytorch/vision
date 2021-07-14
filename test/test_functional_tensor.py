@@ -21,8 +21,8 @@ from common_utils import (
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
     _test_fn_on_batch,
+    assert_equal,
 )
-from _assert_utils import assert_equal
 
 from typing import Dict, List, Sequence, Tuple
 

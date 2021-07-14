@@ -6,8 +6,7 @@ import pytest
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
 
-from common_utils import get_tmp_dir
-from _assert_utils import assert_equal
+from common_utils import get_tmp_dir, assert_equal
 
 
 @contextlib.contextmanager

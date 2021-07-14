@@ -19,8 +19,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import cycle_over, int_dtypes, float_dtypes
-from _assert_utils import assert_equal
+from common_utils import cycle_over, int_dtypes, float_dtypes, assert_equal
 
 
 GRACE_HOPPER = get_file_path_2(
