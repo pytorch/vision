@@ -9,8 +9,7 @@ import numpy as np
 import torch
 from PIL import Image, __version__ as PILLOW_VERSION
 import torchvision.transforms.functional as F
-from common_utils import get_tmp_dir, needs_cuda
-from _assert_utils import assert_equal
+from common_utils import get_tmp_dir, needs_cuda, assert_equal
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
@@ -280,7 +279,7 @@ def test_read_1_bit_png(shape):
         img.save(image_path)
         img1 = read_image(image_path)
         img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
-        assert_equal(img1, img2, check_stride=False)
+        assert_equal(img1, img2)
 
 
 @pytest.mark.parametrize('shape', [
