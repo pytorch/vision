@@ -277,7 +277,7 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
     if msg is None:
         msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-    assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
+    assert_equal(tensor.cpu(), pil_tensor, msg=msg)
 
 
 def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",

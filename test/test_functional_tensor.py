@@ -187,11 +187,7 @@ class TestAffine:
             tensor, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
         if config is not None:
-            assert_equal(
-                torch.rot90(tensor, **config),
-                out_tensor,
-                check_stride=False,
-            )
+            assert_equal(torch.rot90(tensor, **config), out_tensor)
 
         if out_tensor.dtype != torch.uint8:
             out_tensor = out_tensor.to(torch.uint8)
@@ -1001,10 +997,7 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     ).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
 
     out = fn(tensor, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(
-        out, true_out, rtol=0.0, atol=1.0, check_stride=False,
-        msg="{}, {}".format(ksize, sigma)
-    )
+    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg="{}, {}".format(ksize, sigma))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())

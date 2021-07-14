@@ -279,7 +279,7 @@ def test_read_1_bit_png(shape):
         img.save(image_path)
         img1 = read_image(image_path)
         img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
-        assert_equal(img1, img2, check_stride=False)
+        assert_equal(img1, img2)
 
 
 @pytest.mark.parametrize('shape', [
