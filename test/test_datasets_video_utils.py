@@ -6,8 +6,7 @@ import pytest
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
 
-from common_utils import get_tmp_dir
-from _assert_utils import assert_equal
+from common_utils import get_tmp_dir, assert_equal
 
 
 @contextlib.contextmanager
@@ -41,7 +40,7 @@ class TestVideo:
             [0, 1, 2],
             [3, 4, 5],
         ])
-        assert_equal(r, expected, check_stride=False)
+        assert_equal(r, expected)
 
         r = unfold(a, 3, 2, 1)
         expected = torch.tensor([
@@ -49,14 +48,14 @@ class TestVideo:
             [2, 3, 4],
             [4, 5, 6]
         ])
-        assert_equal(r, expected, check_stride=False)
+        assert_equal(r, expected)
 
         r = unfold(a, 3, 2, 2)
         expected = torch.tensor([
             [0, 2, 4],
             [2, 4, 6],
         ])
-        assert_equal(r, expected, check_stride=False)
+        assert_equal(r, expected)
 
     @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")
     def test_video_clips(self):

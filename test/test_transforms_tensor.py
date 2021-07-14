@@ -18,8 +18,8 @@ from common_utils import (
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
     cpu_and_gpu,
+    assert_equal,
 )
-from _assert_utils import assert_equal
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 

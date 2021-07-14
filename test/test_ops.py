@@ -1,5 +1,4 @@
-from common_utils import needs_cuda, cpu_and_gpu
-from _assert_utils import assert_equal
+from common_utils import needs_cuda, cpu_and_gpu, assert_equal
 import math
 from abc import ABC, abstractmethod
 import pytest
