@@ -19,6 +19,8 @@ known_local_folder = [
     "dataset_utils",
 ]
 
+skip = ["gallery"]
+
 
 [tool.black]
 # See link below for available options
@@ -26,3 +28,6 @@ known_local_folder = [
 
 line-length = 120
 target-version = ["py36"]
+
+exclude = "gallery"
+extend_exclude = true

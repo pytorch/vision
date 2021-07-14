@@ -7,17 +7,17 @@ This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 """
 
+from PIL import Image
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
 
 import torch
 import torchvision.transforms as T
 
-plt.rcParams["savefig.bbox"] = "tight"
-orig_img = Image.open(Path("assets") / "astronaut.jpg")
+
+plt.rcParams["savefig.bbox"] = 'tight'
+orig_img = Image.open(Path('assets') / 'astronaut.jpg')
 # if you change the seed, make sure that the randomly-applied transforms
 # properly show that the image can be both transformed and *not* transformed!
 torch.manual_seed(0)
@@ -39,7 +39,7 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
             ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
     if with_orig:
-        axs[0, 0].set(title="Original image")
+        axs[0, 0].set(title='Original image')
         axs[0, 0].title.set_size(8)
     if row_title is not None:
         for row_idx in range(num_rows):
@@ -91,7 +91,7 @@ plot([top_left, top_right, bottom_left, bottom_right, center])
 # (see also :func:`~torchvision.transforms.functional.to_grayscale`)
 # converts an image to grayscale
 gray_img = T.Grayscale()(orig_img)
-plot([gray_img], cmap="gray")
+plot([gray_img], cmap='gray')
 
 ####################################
 # Random transforms
@@ -103,7 +103,7 @@ plot([gray_img], cmap="gray")
 # ~~~~~~~~~~~
 # The :class:`~torchvision.transforms.ColorJitter` transform
 # randomly changes the brightness, saturation, and other properties of an image.
-jitter = T.ColorJitter(brightness=0.5, hue=0.3)
+jitter = T.ColorJitter(brightness=.5, hue=.3)
 jitted_imgs = [jitter(orig_img) for _ in range(4)]
 plot(jitted_imgs)
 
@@ -238,8 +238,11 @@ plot(equalized_imgs)
 # See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policies.
 policies = [T.AutoAugmentPolicy.CIFAR10, T.AutoAugmentPolicy.IMAGENET, T.AutoAugmentPolicy.SVHN]
 augmenters = [T.AutoAugment(policy) for policy in policies]
-imgs = [[augmenter(orig_img) for _ in range(4)] for augmenter in augmenters]
-row_title = [str(policy).split(".")[-1] for policy in policies]
+imgs = [
+    [augmenter(orig_img) for _ in range(4)]
+    for augmenter in augmenters
+]
+row_title = [str(policy).split('.')[-1] for policy in policies]
 plot(imgs, row_title=row_title)
 
 ####################################

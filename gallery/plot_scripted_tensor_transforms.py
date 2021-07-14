@@ -23,27 +23,24 @@ new features:
     These features are only possible with **Tensor** images.
 """
 
-import json
-import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 import torch
-import torch.nn as nn
 import torchvision.transforms as T
 from torchvision.io import read_image
-from torchvision.models import resnet18
 
-plt.rcParams["savefig.bbox"] = "tight"
+
+plt.rcParams["savefig.bbox"] = 'tight'
 torch.manual_seed(1)
 
 
 def show(imgs):
     fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
     for i, img in enumerate(imgs):
-        img = T.ToPILImage()(img.to("cpu"))
+        img = T.ToPILImage()(img.to('cpu'))
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
@@ -52,8 +49,8 @@ def show(imgs):
 # The :func:`~torchvision.io.read_image` function allows to read an image and
 # directly load it as a tensor
 
-dog1 = read_image(str(Path("assets") / "dog1.jpg"))
-dog2 = read_image(str(Path("assets") / "dog2.jpg"))
+dog1 = read_image(str(Path('assets') / 'dog1.jpg'))
+dog2 = read_image(str(Path('assets') / 'dog2.jpg'))
 show([dog1, dog2])
 
 ####################################
@@ -64,13 +61,14 @@ show([dog1, dog2])
 # :ref:`sphx_glr_auto_examples_plot_transforms.py`).
 # Using tensor images, we can run the transforms on GPUs if cuda is available!
 
+import torch.nn as nn
 
 transforms = torch.nn.Sequential(
     T.RandomCrop(224),
     T.RandomHorizontalFlip(p=0.3),
 )
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 dog1 = dog1.to(device)
 dog2 = dog2.to(device)
 
@@ -87,20 +85,19 @@ show([transformed_dog1, transformed_dog2])
 # Let's define a ``Predictor`` module that transforms the input tensor and then
 # applies an ImageNet model on it.
 
+from torchvision.models import resnet18
+
 
 class Predictor(nn.Module):
+
     def __init__(self):
         super().__init__()
         self.resnet18 = resnet18(pretrained=True, progress=False).eval()
         self.transforms = nn.Sequential(
-            T.Resize(
-                [
-                    256,
-                ]
-            ),  # We use single int value inside a list due to torchscript type restrictions
+            T.Resize([256, ]),  # We use single int value inside a list due to torchscript type restrictions
             T.CenterCrop(224),
             T.ConvertImageDtype(torch.float),
-            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -126,8 +123,9 @@ res_scripted = scripted_predictor(batch)
 # We can verify that the prediction of the scripted and non-scripted models are
 # the same:
 
+import json
 
-with open(Path("assets") / "imagenet_class_index.json", "r") as labels_file:
+with open(Path('assets') / 'imagenet_class_index.json', 'r') as labels_file:
     labels = json.load(labels_file)
 
 for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
@@ -137,6 +135,7 @@ for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
 ####################################
 # Since the model is scripted, it can be easily dumped on disk an re-used
 
+import tempfile
 
 with tempfile.NamedTemporaryFile() as f:
     scripted_predictor.save(f.name)
