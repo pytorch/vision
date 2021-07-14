@@ -4,8 +4,7 @@ import torch
 from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
 
-from _assert_utils import assert_equal
-from common_utils import TestCase
+from common_utils import TestCase, assert_equal
 
 
 class Tester(TestCase):

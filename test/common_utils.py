@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import os
 import random
 import shutil
@@ -13,8 +14,6 @@ from PIL import Image
 
 import torch
 from torch._six import string_classes
-
-from _assert_utils import assert_equal
 
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
@@ -268,6 +267,9 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+
+
 def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     np_pil_image = np.array(pil_image)
     if np_pil_image.ndim == 2:
@@ -275,7 +277,7 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
     if msg is None:
         msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-    assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
+    assert_equal(tensor.cpu(), pil_tensor, msg=msg)
 
 
 def _assert_approx_equal_tensor_to_pil(

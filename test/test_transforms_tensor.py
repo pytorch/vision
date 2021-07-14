@@ -5,15 +5,14 @@ import pytest
 
 import torch
 from torchvision import transforms as T
-from torchvision.transforms import InterpolationMode
-from torchvision.transforms import functional as F
+from torchvision.transforms import InterpolationMode, functional as F
 
-from _assert_utils import assert_equal
 from common_utils import (
     _assert_approx_equal_tensor_to_pil,
     _assert_equal_tensor_to_pil,
     _create_data,
     _create_data_batch,
+    assert_equal,
     cpu_and_gpu,
     float_dtypes,
     get_tmp_dir,

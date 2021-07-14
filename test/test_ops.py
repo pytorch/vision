@@ -12,8 +12,7 @@ from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import ops
 
-from _assert_utils import assert_equal
-from common_utils import cpu_and_gpu, needs_cuda
+from common_utils import assert_equal, cpu_and_gpu, needs_cuda
 
 
 class RoIOpTester(ABC):

@@ -8,8 +8,7 @@ from torchvision import io
 from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
 from torchvision.datasets.video_utils import VideoClips
 
-from _assert_utils import assert_equal
-from common_utils import get_tmp_dir
+from common_utils import assert_equal, get_tmp_dir
 
 
 @contextlib.contextmanager

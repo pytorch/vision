@@ -12,8 +12,7 @@ import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from torch._utils_internal import get_file_path_2
 
-from _assert_utils import assert_equal
-from common_utils import cycle_over, float_dtypes, int_dtypes
+from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
 
 try:
     import accimage
@@ -162,7 +161,7 @@ class TestAccImage:
         output = trans(accimage.Image(GRACE_HOPPER))
 
         assert expected_output.size() == output.size()
-        torch.testing.assert_close(output, expected_output, check_stride=False)
+        torch.testing.assert_close(output, expected_output)
 
     def test_accimage_resize(self):
         trans = transforms.Compose(
@@ -211,23 +210,23 @@ class TestToTensor:
         input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
         img = transforms.ToPILImage()(input_data)
         output = trans(img)
-        torch.testing.assert_close(output, input_data, check_stride=False)
+        torch.testing.assert_close(output, input_data)
 
         ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
         output = trans(ndarray)
         expected_output = ndarray.transpose((2, 0, 1)) / 255.0
-        torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+        torch.testing.assert_close(output.numpy(), expected_output, check_dtype=False)
 
         ndarray = np.random.rand(height, width, channels).astype(np.float32)
         output = trans(ndarray)
         expected_output = ndarray.transpose((2, 0, 1))
-        torch.testing.assert_close(output.numpy(), expected_output, check_stride=False, check_dtype=False)
+        torch.testing.assert_close(output.numpy(), expected_output, check_dtype=False)
 
         # separate test for mode '1' PIL images
         input_data = torch.ByteTensor(1, height, width).bernoulli_()
         img = transforms.ToPILImage()(input_data.mul(255)).convert("1")
         output = trans(img)
-        torch.testing.assert_close(input_data, output, check_dtype=False, check_stride=False)
+        torch.testing.assert_close(input_data, output, check_dtype=False)
 
     def test_to_tensor_errors(self):
         height, width = 4, 4
@@ -264,7 +263,7 @@ class TestToTensor:
         input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
         img = transforms.ToPILImage()(input_data)
         output = trans(img)
-        torch.testing.assert_close(input_data, output, check_stride=False)
+        torch.testing.assert_close(input_data, output)
 
         input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
         img = transforms.ToPILImage()(input_data)
@@ -276,13 +275,13 @@ class TestToTensor:
         img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
         output = trans(img)  # HWC -> CHW
         expected_output = (input_data * 255).byte()
-        torch.testing.assert_close(output, expected_output, check_stride=False)
+        torch.testing.assert_close(output, expected_output)
 
         # separate test for mode '1' PIL images
         input_data = torch.ByteTensor(1, height, width).bernoulli_()
         img = transforms.ToPILImage()(input_data.mul(255)).convert("1")
         output = trans(img).view(torch.uint8).bool().to(torch.uint8)
-        torch.testing.assert_close(input_data, output, check_stride=False)
+        torch.testing.assert_close(input_data, output)
 
     def test_pil_to_tensor_errors(self):
         height, width = 4, 4
@@ -451,12 +450,8 @@ class TestPad:
         eps = 1e-5
         h_padded = result[:, :padding, :]
         w_padded = result[:, :, :padding]
-        torch.testing.assert_close(
-            h_padded, torch.full_like(h_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
-        )
-        torch.testing.assert_close(
-            w_padded, torch.full_like(w_padded, fill_value=fill_v), check_stride=False, rtol=0.0, atol=eps
-        )
+        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill_v), rtol=0.0, atol=eps)
+        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill_v), rtol=0.0, atol=eps)
         pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)), transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
@@ -488,7 +483,7 @@ class TestPad:
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
         edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8))
         assert transforms.ToTensor()(edge_padded_img).size() == (3, 35, 35)
 
         # Pad 3 to left/right, 2 to top/bottom
@@ -496,7 +491,7 @@ class TestPad:
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
         reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8))
         assert transforms.ToTensor()(reflect_padded_img).size() == (3, 33, 35)
 
         # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
@@ -504,7 +499,7 @@ class TestPad:
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
         symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8))
         assert transforms.ToTensor()(symmetric_padded_img).size() == (3, 32, 34)
 
         # Check negative padding explicitly for symmetric case, since it is not
@@ -513,8 +508,8 @@ class TestPad:
         symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode="symmetric")
         symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
         symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
-        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8), check_stride=False)
-        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8), check_stride=False)
+        assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8))
+        assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8))
         assert transforms.ToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
 
     def test_pad_raises_with_invalid_pad_sequence_len(self):
@@ -533,7 +528,7 @@ class TestPad:
 
         img = Image.new("F", (10, 10))
         padded_img = transform(img)
-        assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size], check_stride=False)
+        assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
 
 
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
@@ -613,7 +608,7 @@ class TestToPil:
 
         img = transform(img_data)
         assert img.mode == expected_mode
-        torch.testing.assert_close(expected_output, to_tensor(img).numpy(), check_stride=False)
+        torch.testing.assert_close(expected_output, to_tensor(img).numpy())
 
     def test_1_channel_float_tensor_to_pil_image(self):
         img_data = torch.Tensor(1, 4, 4).uniform_()
@@ -654,7 +649,7 @@ class TestToPil:
             assert img.mode == expected_mode
         split = img.split()
         for i in range(2):
-            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
+            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]))
 
     def test_2_channel_ndarray_to_pil_image_error(self):
         img_data = torch.ByteTensor(4, 4, 2).random_(0, 255).numpy()
@@ -761,7 +756,7 @@ class TestToPil:
             assert img.mode == expected_mode
         split = img.split()
         for i in range(3):
-            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
+            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]))
 
     def test_3_channel_ndarray_to_pil_image_error(self):
         img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
@@ -818,7 +813,7 @@ class TestToPil:
             assert img.mode == expected_mode
         split = img.split()
         for i in range(4):
-            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]), check_stride=False)
+            torch.testing.assert_close(img_data[:, :, i], np.asarray(split[i]))
 
     def test_4_channel_ndarray_to_pil_image_error(self):
         img_data = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
@@ -1333,7 +1328,7 @@ def test_to_grayscale():
     assert gray_np_2.shape == tuple(x_shape), "should be 3 channel"
     assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
     assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-    assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
+    assert_equal(gray_np, gray_np_2[:, :, 0])
 
     # Case 3: 1 channel grayscale -> 1 channel grayscale
     trans3 = transforms.Grayscale(num_output_channels=1)
@@ -1351,7 +1346,7 @@ def test_to_grayscale():
     assert gray_np_4.shape == tuple(x_shape), "should be 3 channel"
     assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
     assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
-    assert_equal(gray_np, gray_np_4[:, :, 0], check_stride=False)
+    assert_equal(gray_np, gray_np_4[:, :, 0])
 
     # Checking if Grayscale can be printed as string
     trans4.__repr__()
@@ -1423,7 +1418,7 @@ def test_random_grayscale():
     assert gray_np_2.shape == tuple(x_shape), "should be 3 channel"
     assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
     assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-    assert_equal(gray_np, gray_np_2[:, :, 0], check_stride=False)
+    assert_equal(gray_np, gray_np_2[:, :, 0])
 
     # Case 3b: RGB -> 3 channel grayscale (unchanged)
     trans2 = transforms.RandomGrayscale(p=0.0)
@@ -1785,7 +1780,6 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     assert_equal(
         output_tensor,
         output_pil,
-        check_stride=False,
         msg="image_size: {} crop_size: {}".format(input_image_size, crop_size),
     )
 
@@ -1810,7 +1804,7 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
         input_center_tl[1] : input_center_tl[1] + center_size[1],
     ]
 
-    assert_equal(output_center, img_center, check_stride=False)
+    assert_equal(output_center, img_center)
 
 
 def test_color_jitter():

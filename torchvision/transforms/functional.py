@@ -10,8 +10,7 @@ from PIL import Image
 import torch
 from torch import Tensor
 
-from . import functional_pil as F_pil
-from . import functional_tensor as F_t
+from . import functional_pil as F_pil, functional_tensor as F_t
 
 try:
     import accimage

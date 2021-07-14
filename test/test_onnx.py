@@ -13,8 +13,15 @@ from torchvision.models.detection.rpn import AnchorGenerator, RegionProposalNetw
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
-from _assert_utils import assert_equal
-from common_utils import set_rng_seed
+from common_utils import assert_equal, set_rng_seed
+
+try:
+    # This import should be before that of torch
+    # see https://github.com/onnx/onnx/issues/2394#issuecomment-581638840
+    import onnxruntime
+except ImportError:
+    onnxruntime = None
+
 
 try:
     # This import should be before that of torch

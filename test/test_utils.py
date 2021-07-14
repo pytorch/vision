@@ -5,14 +5,13 @@ from io import BytesIO
 
 import numpy as np
 import pytest
-from PIL import Image, ImageColor
-from PIL import __version__ as PILLOW_VERSION
+from PIL import Image, ImageColor, __version__ as PILLOW_VERSION
 
 import torch
 import torchvision.transforms.functional as F
 import torchvision.utils as utils
 
-from _assert_utils import assert_equal
+from common_utils import assert_equal
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 

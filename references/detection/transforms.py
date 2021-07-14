@@ -3,8 +3,7 @@ from typing import Dict, List, Optional, Tuple
 import torch
 import torchvision
 from torch import Tensor, nn
-from torchvision.transforms import functional as F
-from torchvision.transforms import transforms as T
+from torchvision.transforms import functional as F, transforms as T
 
 
 def _flip_coco_person_keypoints(kps, width):

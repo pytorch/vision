@@ -6,8 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from PIL import Image
-from PIL import __version__ as PILLOW_VERSION
+from PIL import Image, __version__ as PILLOW_VERSION
 
 import torch
 import torchvision.transforms.functional as F
@@ -25,8 +24,7 @@ from torchvision.io.image import (
     write_png,
 )
 
-from _assert_utils import assert_equal
-from common_utils import get_tmp_dir, needs_cuda
+from common_utils import assert_equal, get_tmp_dir, needs_cuda
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
@@ -302,7 +300,7 @@ def test_read_1_bit_png(shape):
         img.save(image_path)
         img1 = read_image(image_path)
         img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
-        assert_equal(img1, img2, check_stride=False)
+        assert_equal(img1, img2)
 
 
 @pytest.mark.parametrize(

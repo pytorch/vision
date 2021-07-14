@@ -9,8 +9,7 @@ import torch
 import torchvision.io as io
 from torchvision import get_video_backend
 
-from _assert_utils import assert_equal
-from common_utils import get_tmp_dir
+from common_utils import assert_equal, get_tmp_dir
 
 try:
     import av

@@ -4,8 +4,7 @@ from typing import List, Optional, Tuple
 import torch
 from torch import Tensor
 from torch.jit.annotations import BroadcastingList2
-from torch.nn.functional import conv2d, grid_sample, interpolate
-from torch.nn.functional import pad as torch_pad
+from torch.nn.functional import conv2d, grid_sample, interpolate, pad as torch_pad
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:

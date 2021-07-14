@@ -7,7 +7,7 @@ import pytest
 import torch
 from torchvision.transforms import Compose
 
-from _assert_utils import assert_equal
+from common_utils import assert_equal
 
 try:
     from scipy import stats
