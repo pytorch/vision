@@ -852,7 +852,6 @@ def test_resized_crop(device, mode):
     assert_equal(
         expected_out_tensor,
         out_tensor,
-        check_stride=False,
         msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10]),
     )
 
