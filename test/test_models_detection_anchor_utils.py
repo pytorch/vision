@@ -1,14 +1,19 @@
+import pytest
+
 import torch
-from common_utils import TestCase
-from _assert_utils import assert_equal
 from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
-import pytest
+
+from _assert_utils import assert_equal
+from common_utils import TestCase
 
 
 class Tester(TestCase):
     def test_incorrect_anchors(self):
-        incorrect_sizes = ((2, 4, 8), (32, 8), )
+        incorrect_sizes = (
+            (2, 4, 8),
+            (32, 8),
+        )
         incorrect_aspects = (0.5, 1.0)
         anc = AnchorGenerator(incorrect_sizes, incorrect_aspects)
         image1 = torch.randn(3, 800, 800)
@@ -50,15 +55,19 @@ class Tester(TestCase):
         for sizes, num_anchors_per_loc in zip(grid_sizes, model.num_anchors_per_location()):
             num_anchors_estimated += sizes[0] * sizes[1] * num_anchors_per_loc
 
-        anchors_output = torch.tensor([[-5., -5., 5., 5.],
-                                       [0., -5., 10., 5.],
-                                       [5., -5., 15., 5.],
-                                       [-5., 0., 5., 10.],
-                                       [0., 0., 10., 10.],
-                                       [5., 0., 15., 10.],
-                                       [-5., 5., 5., 15.],
-                                       [0., 5., 10., 15.],
-                                       [5., 5., 15., 15.]])
+        anchors_output = torch.tensor(
+            [
+                [-5.0, -5.0, 5.0, 5.0],
+                [0.0, -5.0, 10.0, 5.0],
+                [5.0, -5.0, 15.0, 5.0],
+                [-5.0, 0.0, 5.0, 10.0],
+                [0.0, 0.0, 10.0, 10.0],
+                [5.0, 0.0, 15.0, 10.0],
+                [-5.0, 5.0, 5.0, 15.0],
+                [0.0, 5.0, 10.0, 15.0],
+                [5.0, 5.0, 15.0, 15.0],
+            ]
+        )
 
         assert num_anchors_estimated == 9
         assert len(anchors) == 2
@@ -77,12 +86,14 @@ class Tester(TestCase):
         model.eval()
         dboxes = model(images, features)
 
-        dboxes_output = torch.tensor([
-            [6.3750, 6.3750, 8.6250, 8.6250],
-            [4.7443, 4.7443, 10.2557, 10.2557],
-            [5.9090, 6.7045, 9.0910, 8.2955],
-            [6.7045, 5.9090, 8.2955, 9.0910]
-        ])
+        dboxes_output = torch.tensor(
+            [
+                [6.3750, 6.3750, 8.6250, 8.6250],
+                [4.7443, 4.7443, 10.2557, 10.2557],
+                [5.9090, 6.7045, 9.0910, 8.2955],
+                [6.7045, 5.9090, 8.2955, 9.0910],
+            ]
+        )
 
         assert len(dboxes) == 2
         assert tuple(dboxes[0].shape) == (4, 4)

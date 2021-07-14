@@ -1,59 +1,62 @@
-import os
 import collections
-from .vision import VisionDataset
+import os
+import warnings
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from xml.etree.ElementTree import Element as ET_Element
+
+from PIL import Image
+
+from .utils import download_and_extract_archive, verify_str_arg
+from .vision import VisionDataset
+
 try:
     from defusedxml.ElementTree import parse as ET_parse
 except ImportError:
     from xml.etree.ElementTree import parse as ET_parse
-from PIL import Image
-from typing import Any, Callable, Dict, Optional, Tuple, List
-from .utils import download_and_extract_archive, verify_str_arg
-import warnings
 
 DATASET_YEAR_DICT = {
-    '2012': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
-        'filename': 'VOCtrainval_11-May-2012.tar',
-        'md5': '6cd6e144f989b92b3379bac3b3de84fd',
-        'base_dir': os.path.join('VOCdevkit', 'VOC2012')
+    "2012": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar",
+        "filename": "VOCtrainval_11-May-2012.tar",
+        "md5": "6cd6e144f989b92b3379bac3b3de84fd",
+        "base_dir": os.path.join("VOCdevkit", "VOC2012"),
     },
-    '2011': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2011/VOCtrainval_25-May-2011.tar',
-        'filename': 'VOCtrainval_25-May-2011.tar',
-        'md5': '6c3384ef61512963050cb5d687e5bf1e',
-        'base_dir': os.path.join('TrainVal', 'VOCdevkit', 'VOC2011')
+    "2011": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2011/VOCtrainval_25-May-2011.tar",
+        "filename": "VOCtrainval_25-May-2011.tar",
+        "md5": "6c3384ef61512963050cb5d687e5bf1e",
+        "base_dir": os.path.join("TrainVal", "VOCdevkit", "VOC2011"),
     },
-    '2010': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar',
-        'filename': 'VOCtrainval_03-May-2010.tar',
-        'md5': 'da459979d0c395079b5c75ee67908abb',
-        'base_dir': os.path.join('VOCdevkit', 'VOC2010')
+    "2010": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar",
+        "filename": "VOCtrainval_03-May-2010.tar",
+        "md5": "da459979d0c395079b5c75ee67908abb",
+        "base_dir": os.path.join("VOCdevkit", "VOC2010"),
     },
-    '2009': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar',
-        'filename': 'VOCtrainval_11-May-2009.tar',
-        'md5': '59065e4b188729180974ef6572f6a212',
-        'base_dir': os.path.join('VOCdevkit', 'VOC2009')
+    "2009": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar",
+        "filename": "VOCtrainval_11-May-2009.tar",
+        "md5": "59065e4b188729180974ef6572f6a212",
+        "base_dir": os.path.join("VOCdevkit", "VOC2009"),
     },
-    '2008': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2008/VOCtrainval_14-Jul-2008.tar',
-        'filename': 'VOCtrainval_11-May-2012.tar',
-        'md5': '2629fa636546599198acfcfbfcf1904a',
-        'base_dir': os.path.join('VOCdevkit', 'VOC2008')
+    "2008": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2008/VOCtrainval_14-Jul-2008.tar",
+        "filename": "VOCtrainval_11-May-2012.tar",
+        "md5": "2629fa636546599198acfcfbfcf1904a",
+        "base_dir": os.path.join("VOCdevkit", "VOC2008"),
     },
-    '2007': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar',
-        'filename': 'VOCtrainval_06-Nov-2007.tar',
-        'md5': 'c52e279531787c972589f7e41ab4ae64',
-        'base_dir': os.path.join('VOCdevkit', 'VOC2007')
+    "2007": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar",
+        "filename": "VOCtrainval_06-Nov-2007.tar",
+        "md5": "c52e279531787c972589f7e41ab4ae64",
+        "base_dir": os.path.join("VOCdevkit", "VOC2007"),
     },
-    '2007-test': {
-        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar',
-        'filename': 'VOCtest_06-Nov-2007.tar',
-        'md5': 'b6e924de25625d8de591ea690078ad9f',
-        'base_dir': os.path.join('VOCdevkit', 'VOC2007')
-    }
+    "2007-test": {
+        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar",
+        "filename": "VOCtest_06-Nov-2007.tar",
+        "md5": "b6e924de25625d8de591ea690078ad9f",
+        "base_dir": os.path.join("VOCdevkit", "VOC2007"),
+    },
 }
 
 

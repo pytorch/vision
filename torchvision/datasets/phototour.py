@@ -1,12 +1,13 @@
 import os
-import numpy as np
-from PIL import Image
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+import numpy as np
+from PIL import Image
+
 import torch
-from .vision import VisionDataset
 
 from .utils import download_url
+from .vision import VisionDataset
 
 
 class PhotoTour(VisionDataset):
@@ -33,56 +34,67 @@ class PhotoTour(VisionDataset):
             downloaded again.
 
     """
+
     urls = {
-        'notredame_harris': [
-            'http://matthewalunbrown.com/patchdata/notredame_harris.zip',
-            'notredame_harris.zip',
-            '69f8c90f78e171349abdf0307afefe4d'
+        "notredame_harris": [
+            "http://matthewalunbrown.com/patchdata/notredame_harris.zip",
+            "notredame_harris.zip",
+            "69f8c90f78e171349abdf0307afefe4d",
         ],
-        'yosemite_harris': [
-            'http://matthewalunbrown.com/patchdata/yosemite_harris.zip',
-            'yosemite_harris.zip',
-            'a73253d1c6fbd3ba2613c45065c00d46'
+        "yosemite_harris": [
+            "http://matthewalunbrown.com/patchdata/yosemite_harris.zip",
+            "yosemite_harris.zip",
+            "a73253d1c6fbd3ba2613c45065c00d46",
         ],
-        'liberty_harris': [
-            'http://matthewalunbrown.com/patchdata/liberty_harris.zip',
-            'liberty_harris.zip',
-            'c731fcfb3abb4091110d0ae8c7ba182c'
+        "liberty_harris": [
+            "http://matthewalunbrown.com/patchdata/liberty_harris.zip",
+            "liberty_harris.zip",
+            "c731fcfb3abb4091110d0ae8c7ba182c",
         ],
-        'notredame': [
-            'http://icvl.ee.ic.ac.uk/vbalnt/notredame.zip',
-            'notredame.zip',
-            '509eda8535847b8c0a90bbb210c83484'
+        "notredame": [
+            "http://icvl.ee.ic.ac.uk/vbalnt/notredame.zip",
+            "notredame.zip",
+            "509eda8535847b8c0a90bbb210c83484",
         ],
-        'yosemite': [
-            'http://icvl.ee.ic.ac.uk/vbalnt/yosemite.zip',
-            'yosemite.zip',
-            '533b2e8eb7ede31be40abc317b2fd4f0'
-        ],
-        'liberty': [
-            'http://icvl.ee.ic.ac.uk/vbalnt/liberty.zip',
-            'liberty.zip',
-            'fdd9152f138ea5ef2091746689176414'
-        ],
+        "yosemite": ["http://icvl.ee.ic.ac.uk/vbalnt/yosemite.zip", "yosemite.zip", "533b2e8eb7ede31be40abc317b2fd4f0"],
+        "liberty": ["http://icvl.ee.ic.ac.uk/vbalnt/liberty.zip", "liberty.zip", "fdd9152f138ea5ef2091746689176414"],
     }
-    means = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437,
-             'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
-    stds = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019,
-            'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
-    lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092,
-            'liberty_harris': 379587, 'yosemite_harris': 450912, 'notredame_harris': 325295}
-    image_ext = 'bmp'
-    info_file = 'info.txt'
-    matches_files = 'm50_100000_100000_0.txt'
+    means = {
+        "notredame": 0.4854,
+        "yosemite": 0.4844,
+        "liberty": 0.4437,
+        "notredame_harris": 0.4854,
+        "yosemite_harris": 0.4844,
+        "liberty_harris": 0.4437,
+    }
+    stds = {
+        "notredame": 0.1864,
+        "yosemite": 0.1818,
+        "liberty": 0.2019,
+        "notredame_harris": 0.1864,
+        "yosemite_harris": 0.1818,
+        "liberty_harris": 0.2019,
+    }
+    lens = {
+        "notredame": 468159,
+        "yosemite": 633587,
+        "liberty": 450092,
+        "liberty_harris": 379587,
+        "yosemite_harris": 450912,
+        "notredame_harris": 325295,
+    }
+    image_ext = "bmp"
+    info_file = "info.txt"
+    matches_files = "m50_100000_100000_0.txt"
 
     def __init__(
-            self, root: str, name: str, train: bool = True, transform: Optional[Callable] = None, download: bool = False
+        self, root: str, name: str, train: bool = True, transform: Optional[Callable] = None, download: bool = False
     ) -> None:
         super(PhotoTour, self).__init__(root, transform=transform)
         self.name = name
         self.data_dir = os.path.join(self.root, name)
-        self.data_down = os.path.join(self.root, '{}.zip'.format(name))
-        self.data_file = os.path.join(self.root, '{}.pt'.format(name))
+        self.data_down = os.path.join(self.root, "{}.zip".format(name))
+        self.data_file = os.path.join(self.root, "{}.pt".format(name))
 
         self.train = train
         self.mean = self.means[name]
@@ -128,7 +140,7 @@ class PhotoTour(VisionDataset):
 
     def download(self) -> None:
         if self._check_datafile_exists():
-            print('# Found cached data {}'.format(self.data_file))
+            print("# Found cached data {}".format(self.data_file))
             return
 
         if not self._check_downloaded():
@@ -140,25 +152,26 @@ class PhotoTour(VisionDataset):
 
             download_url(url, self.root, filename, md5)
 
-            print('# Extracting data {}\n'.format(self.data_down))
+            print("# Extracting data {}\n".format(self.data_down))
 
             import zipfile
-            with zipfile.ZipFile(fpath, 'r') as z:
+
+            with zipfile.ZipFile(fpath, "r") as z:
                 z.extractall(self.data_dir)
 
             os.unlink(fpath)
 
     def cache(self) -> None:
         # process and save as torch files
-        print('# Caching data {}'.format(self.data_file))
+        print("# Caching data {}".format(self.data_file))
 
         dataset = (
             read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
             read_info_file(self.data_dir, self.info_file),
-            read_matches_files(self.data_dir, self.matches_files)
+            read_matches_files(self.data_dir, self.matches_files),
         )
 
-        with open(self.data_file, 'wb') as f:
+        with open(self.data_file, "wb") as f:
             torch.save(dataset, f)
 
     def extra_repr(self) -> str:
@@ -166,17 +179,14 @@ class PhotoTour(VisionDataset):
 
 
 def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
-    """Return a Tensor containing the patches
-    """
+    """Return a Tensor containing the patches"""
 
     def PIL2array(_img: Image.Image) -> np.ndarray:
-        """Convert PIL image type to numpy 2D array
-        """
+        """Convert PIL image type to numpy 2D array"""
         return np.array(_img.getdata(), dtype=np.uint8).reshape(64, 64)
 
     def find_files(_data_dir: str, _image_ext: str) -> List[str]:
-        """Return a list with the file names of the images containing the patches
-        """
+        """Return a list with the file names of the images containing the patches"""
         files = []
         # find those files with the specified extension
         for file_dir in os.listdir(_data_dir):
@@ -198,22 +208,21 @@ def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
 
 def read_info_file(data_dir: str, info_file: str) -> torch.Tensor:
     """Return a Tensor containing the list of labels
-       Read the file and keep only the ID of the 3D point.
+    Read the file and keep only the ID of the 3D point.
     """
-    with open(os.path.join(data_dir, info_file), 'r') as f:
+    with open(os.path.join(data_dir, info_file), "r") as f:
         labels = [int(line.split()[0]) for line in f]
     return torch.LongTensor(labels)
 
 
 def read_matches_files(data_dir: str, matches_file: str) -> torch.Tensor:
     """Return a Tensor containing the ground truth matches
-       Read the file and keep only 3D point ID.
-       Matches are represented with a 1, non matches with a 0.
+    Read the file and keep only 3D point ID.
+    Matches are represented with a 1, non matches with a 0.
     """
     matches = []
-    with open(os.path.join(data_dir, matches_file), 'r') as f:
+    with open(os.path.join(data_dir, matches_file), "r") as f:
         for line in f:
             line_split = line.split()
-            matches.append([int(line_split[0]), int(line_split[3]),
-                            int(line_split[1] == line_split[4])])
+            matches.append([int(line_split[0]), int(line_split[3]), int(line_split[1] == line_split[4])])
     return torch.LongTensor(matches)

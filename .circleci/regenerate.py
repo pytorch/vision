@@ -14,68 +14,77 @@ See this comment for design rationale:
 https://github.com/pytorch/vision/pull/1321#issuecomment-531033978
 """
 
-import jinja2
-from jinja2 import select_autoescape
-import yaml
 import os.path
 
+import jinja2
+import yaml
+from jinja2 import select_autoescape
 
 PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
 
-def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
+def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.1", "rocm4.2"],
-                                "win": ["cpu", "cu102", "cu111"],
-                                "macos": ["cpu"]}
+            cu_versions_dict = {
+                "linux": ["cpu", "cu102", "cu111", "rocm4.1", "rocm4.2"],
+                "win": ["cpu", "cu102", "cu111"],
+                "macos": ["cpu"],
+            }
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
                 for cu_version in cu_versions:
                     # ROCm conda packages not yet supported
-                    if cu_version.startswith('rocm') and btype == "conda":
+                    if cu_version.startswith("rocm") and btype == "conda":
                         continue
                     for unicode in [False]:
                         fb = filter_branch
-                        if windows_latest_only and os_type == "win" and filter_branch is None and \
-                            (python_version != python_versions[-1] or
-                             (cu_version not in [cu_versions[0], cu_versions[-1]])):
+                        if (
+                            windows_latest_only
+                            and os_type == "win"
+                            and filter_branch is None
+                            and (
+                                python_version != python_versions[-1]
+                                or (cu_version not in [cu_versions[0], cu_versions[-1]])
+                            )
+                        ):
                             fb = "master"
-                        if not fb and (os_type == 'linux' and
-                                       cu_version == 'cpu' and
-                                       btype == 'wheel' and
-                                       python_version == '3.7'):
+                        if not fb and (
+                            os_type == "linux" and cu_version == "cpu" and btype == "wheel" and python_version == "3.7"
+                        ):
                             # the fields must match the build_docs "requires" dependency
                             fb = "/.*/"
                         w += workflow_pair(
-                            btype, os_type, python_version, cu_version,
-                            unicode, prefix, upload, filter_branch=fb)
+                            btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
+                        )
 
     if not filter_branch:
         # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job('/.*/')
-        w += upload_doc_job('nightly')
+        w += build_doc_job("/.*/")
+        w += upload_doc_job("nightly")
     return indent(indentation, w)
 
 
-def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix='', upload=False, *, filter_branch=None):
+def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix="", upload=False, *, filter_branch=None):
 
     w = []
     unicode_suffix = "u" if unicode else ""
     base_workflow_name = f"{prefix}binary_{os_type}_{btype}_py{python_version}{unicode_suffix}_{cu_version}"
 
-    w.append(generate_base_workflow(
-        base_workflow_name, python_version, cu_version,
-        unicode, os_type, btype, filter_branch=filter_branch))
+    w.append(
+        generate_base_workflow(
+            base_workflow_name, python_version, cu_version, unicode, os_type, btype, filter_branch=filter_branch
+        )
+    )
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
-        if filter_branch == 'nightly' and os_type in ['linux', 'win']:
-            pydistro = 'pip' if btype == 'wheel' else 'conda'
+        if filter_branch == "nightly" and os_type in ["linux", "win"]:
+            pydistro = "pip" if btype == "wheel" else "conda"
             w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
@@ -85,12 +94,13 @@ def build_doc_job(filter_branch):
     job = {
         "name": "build_docs",
         "python_version": "3.7",
-        "requires": ["binary_linux_wheel_py3.7_cpu", ],
+        "requires": [
+            "binary_linux_wheel_py3.7_cpu",
+        ],
     }
 
     if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch,
-                                                tags_list=RC_PATTERN)
+        job["filters"] = gen_filter_branch_tree(filter_branch, tags_list=RC_PATTERN)
     return [{"build_docs": job}]
 
 
@@ -99,12 +109,13 @@ def upload_doc_job(filter_branch):
         "name": "upload_docs",
         "context": "org-member",
         "python_version": "3.7",
-        "requires": ["build_docs", ],
+        "requires": [
+            "build_docs",
+        ],
     }
 
     if filter_branch:
-        job["filters"] = gen_filter_branch_tree(filter_branch,
-                                                tags_list=RC_PATTERN)
+        job["filters"] = gen_filter_branch_tree(filter_branch, tags_list=RC_PATTERN)
     return [{"upload_docs": job}]
 
 
@@ -121,24 +132,25 @@ manylinux_images = {
 def get_manylinux_image(cu_version):
     if cu_version == "cpu":
         return "pytorch/manylinux-cuda102"
-    elif cu_version.startswith('cu'):
-        cu_suffix = cu_version[len('cu'):]
+    elif cu_version.startswith("cu"):
+        cu_suffix = cu_version[len("cu") :]
         return f"pytorch/manylinux-cuda{cu_suffix}"
-    elif cu_version.startswith('rocm'):
-        rocm_suffix = cu_version[len('rocm'):]
+    elif cu_version.startswith("rocm"):
+        rocm_suffix = cu_version[len("rocm") :]
         return f"pytorch/manylinux-rocm:{rocm_suffix}"
 
 
 def get_conda_image(cu_version):
     if cu_version == "cpu":
         return "pytorch/conda-builder:cpu"
-    elif cu_version.startswith('cu'):
-        cu_suffix = cu_version[len('cu'):]
+    elif cu_version.startswith("cu"):
+        cu_suffix = cu_version[len("cu") :]
         return f"pytorch/conda-builder:cuda{cu_suffix}"
 
 
-def generate_base_workflow(base_workflow_name, python_version, cu_version,
-                           unicode, os_type, btype, *, filter_branch=None):
+def generate_base_workflow(
+    base_workflow_name, python_version, cu_version, unicode, os_type, btype, *, filter_branch=None
+):
 
     d = {
         "name": base_workflow_name,
@@ -147,7 +159,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     }
 
     if os_type != "win" and unicode:
-        d["unicode_abi"] = '1'
+        d["unicode_abi"] = "1"
 
     if os_type != "win":
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
@@ -157,14 +169,12 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
 
     if filter_branch is not None:
         d["filters"] = {
-            "branches": {
-                "only": filter_branch
-            },
+            "branches": {"only": filter_branch},
             "tags": {
                 # Using a raw string here to avoid having to escape
                 # anything
                 "only": r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
-            }
+            },
         }
 
     w = f"binary_{os_type}_{btype}"
@@ -185,19 +195,17 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
         "requires": [base_workflow_name],
     }
 
-    if btype == 'wheel':
-        d["subfolder"] = "" if os_type == 'macos' else cu_version + "/"
+    if btype == "wheel":
+        d["subfolder"] = "" if os_type == "macos" else cu_version + "/"
 
     if filter_branch is not None:
         d["filters"] = {
-            "branches": {
-                "only": filter_branch
-            },
+            "branches": {"only": filter_branch},
             "tags": {
                 # Using a raw string here to avoid having to escape
                 # anything
                 "only": r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
-            }
+            },
         }
 
     return {f"binary_{btype}_upload": d}
@@ -222,8 +230,7 @@ def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, pyt
 
 
 def indent(indentation, data_list):
-    return ("\n" + " " * indentation).join(
-        yaml.dump(data_list, default_flow_style=False).splitlines())
+    return ("\n" + " " * indentation).join(yaml.dump(data_list, default_flow_style=False).splitlines())
 
 
 def unittest_workflows(indentation=6):
@@ -238,12 +245,12 @@ def unittest_workflows(indentation=6):
                     "python_version": python_version,
                 }
 
-                if device_type == 'gpu':
+                if device_type == "gpu":
                     if python_version != "3.8":
-                        job['filters'] = gen_filter_branch_tree('master', 'nightly')
-                    job['cu_version'] = 'cu102'
+                        job["filters"] = gen_filter_branch_tree("master", "nightly")
+                    job["cu_version"] = "cu102"
                 else:
-                    job['cu_version'] = 'cpu'
+                    job["cu_version"] = "cpu"
 
                 jobs.append({f"unittest_{os_type}_{device_type}": job})
 
@@ -252,20 +259,17 @@ def unittest_workflows(indentation=6):
 
 def cmake_workflows(indentation=6):
     jobs = []
-    python_version = '3.8'
-    for os_type in ['linux', 'windows', 'macos']:
+    python_version = "3.8"
+    for os_type in ["linux", "windows", "macos"]:
         # Skip OSX CUDA
-        device_types = ['cpu', 'gpu'] if os_type != 'macos' else ['cpu']
+        device_types = ["cpu", "gpu"] if os_type != "macos" else ["cpu"]
         for device in device_types:
-            job = {
-                'name': f'cmake_{os_type}_{device}',
-                'python_version': python_version
-            }
+            job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 
-            job['cu_version'] = 'cu102' if device == 'gpu' else 'cpu'
-            if device == 'gpu' and os_type == 'linux':
-                job['wheel_docker_image'] = 'pytorch/manylinux-cuda102'
-            jobs.append({f'cmake_{os_type}_{device}': job})
+            job["cu_version"] = "cu102" if device == "gpu" else "cpu"
+            if device == "gpu" and os_type == "linux":
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda102"
+            jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 
 
@@ -274,27 +278,27 @@ def ios_workflows(indentation=6, nightly=False):
     build_job_names = []
     name_prefix = "nightly_" if nightly else ""
     env_prefix = "nightly-" if nightly else ""
-    for arch, platform in [('x86_64', 'SIMULATOR'), ('arm64', 'OS')]:
-        name = f'{name_prefix}binary_libtorchvision_ops_ios_12.0.0_{arch}'
+    for arch, platform in [("x86_64", "SIMULATOR"), ("arm64", "OS")]:
+        name = f"{name_prefix}binary_libtorchvision_ops_ios_12.0.0_{arch}"
         build_job_names.append(name)
         build_job = {
-            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}',
-            'ios_arch': arch,
-            'ios_platform': platform,
-            'name': name,
+            "build_environment": f"{env_prefix}binary-libtorchvision_ops-ios-12.0.0-{arch}",
+            "ios_arch": arch,
+            "ios_platform": platform,
+            "name": name,
         }
         if nightly:
-            build_job['filters'] = gen_filter_branch_tree('nightly')
-        jobs.append({'binary_ios_build': build_job})
+            build_job["filters"] = gen_filter_branch_tree("nightly")
+        jobs.append({"binary_ios_build": build_job})
 
     if nightly:
         upload_job = {
-            'build_environment': f'{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload',
-            'context': 'org-member',
-            'filters': gen_filter_branch_tree('nightly'),
-            'requires': build_job_names,
+            "build_environment": f"{env_prefix}binary-libtorchvision_ops-ios-12.0.0-upload",
+            "context": "org-member",
+            "filters": gen_filter_branch_tree("nightly"),
+            "requires": build_job_names,
         }
-        jobs.append({'binary_ios_upload': upload_job})
+        jobs.append({"binary_ios_upload": upload_job})
     return indent(indentation, jobs)
 
 
@@ -304,23 +308,23 @@ def android_workflows(indentation=6, nightly=False):
     name_prefix = "nightly_" if nightly else ""
     env_prefix = "nightly-" if nightly else ""
 
-    name = f'{name_prefix}binary_libtorchvision_ops_android'
+    name = f"{name_prefix}binary_libtorchvision_ops_android"
     build_job_names.append(name)
     build_job = {
-        'build_environment': f'{env_prefix}binary-libtorchvision_ops-android',
-        'name': name,
+        "build_environment": f"{env_prefix}binary-libtorchvision_ops-android",
+        "name": name,
     }
 
     if nightly:
         upload_job = {
-            'build_environment': f'{env_prefix}binary-libtorchvision_ops-android-upload',
-            'context': 'org-member',
-            'filters': gen_filter_branch_tree('nightly'),
-            'name': f'{name_prefix}binary_libtorchvision_ops_android_upload'
+            "build_environment": f"{env_prefix}binary-libtorchvision_ops-android-upload",
+            "context": "org-member",
+            "filters": gen_filter_branch_tree("nightly"),
+            "name": f"{name_prefix}binary_libtorchvision_ops_android_upload",
         }
-        jobs.append({'binary_android_upload': upload_job})
+        jobs.append({"binary_android_upload": upload_job})
     else:
-        jobs.append({'binary_android_build': build_job})
+        jobs.append({"binary_android_build": build_job})
     return indent(indentation, jobs)
 
 
@@ -329,15 +333,17 @@ if __name__ == "__main__":
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
-        autoescape=select_autoescape(enabled_extensions=('html', 'xml')),
+        autoescape=select_autoescape(enabled_extensions=("html", "xml")),
         keep_trailing_newline=True,
     )
 
-    with open(os.path.join(d, 'config.yml'), 'w') as f:
-        f.write(env.get_template('config.yml.in').render(
-            build_workflows=build_workflows,
-            unittest_workflows=unittest_workflows,
-            cmake_workflows=cmake_workflows,
-            ios_workflows=ios_workflows,
-            android_workflows=android_workflows,
-        ))
+    with open(os.path.join(d, "config.yml"), "w") as f:
+        f.write(
+            env.get_template("config.yml.in").render(
+                build_workflows=build_workflows,
+                unittest_workflows=unittest_workflows,
+                cmake_workflows=cmake_workflows,
+                ios_workflows=ios_workflows,
+                android_workflows=android_workflows,
+            )
+        )

@@ -4,8 +4,8 @@ import unittest
 
 import torch
 import torchvision
-from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 from torchvision.datasets.utils import download_url
+from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 
 from common_utils import PY39_SKIP
 
@@ -35,30 +35,16 @@ def fate(name, path="."):
 
 
 test_videos = {
-    "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(
-        duration=2.0, video_fps=30.0, audio_sample_rate=None
-    ),
+    "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(duration=2.0, video_fps=30.0, audio_sample_rate=None),
     "SchoolRulesHowTheyHelpUs_wave_f_nm_np1_ba_med_0.avi": GroundTruth(
         duration=2.0, video_fps=30.0, audio_sample_rate=None
     ),
-    "TrumanShow_wave_f_nm_np1_fr_med_26.avi": GroundTruth(
-        duration=2.0, video_fps=30.0, audio_sample_rate=None
-    ),
-    "v_SoccerJuggling_g23_c01.avi": GroundTruth(
-        duration=8.0, video_fps=29.97, audio_sample_rate=None
-    ),
-    "v_SoccerJuggling_g24_c01.avi": GroundTruth(
-        duration=8.0, video_fps=29.97, audio_sample_rate=None
-    ),
-    "R6llTwEh07w.mp4": GroundTruth(
-        duration=10.0, video_fps=30.0, audio_sample_rate=44100
-    ),
-    "SOX5yA1l24A.mp4": GroundTruth(
-        duration=11.0, video_fps=29.97, audio_sample_rate=48000
-    ),
-    "WUzgd7C1pWA.mp4": GroundTruth(
-        duration=11.0, video_fps=29.97, audio_sample_rate=48000
-    ),
+    "TrumanShow_wave_f_nm_np1_fr_med_26.avi": GroundTruth(duration=2.0, video_fps=30.0, audio_sample_rate=None),
+    "v_SoccerJuggling_g23_c01.avi": GroundTruth(duration=8.0, video_fps=29.97, audio_sample_rate=None),
+    "v_SoccerJuggling_g24_c01.avi": GroundTruth(duration=8.0, video_fps=29.97, audio_sample_rate=None),
+    "R6llTwEh07w.mp4": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
+    "SOX5yA1l24A.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
+    "WUzgd7C1pWA.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
 }
 
 
@@ -83,13 +69,9 @@ class TestVideoApi(unittest.TestCase):
                         delta=0.1,
                     )
 
-                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(
-                        2, 0, 1
-                    )
+                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1)
                     vr_array = vr_frame["data"]
-                    mean_delta = torch.mean(
-                        torch.abs(av_array.float() - vr_array.float())
-                    )
+                    mean_delta = torch.mean(torch.abs(av_array.float() - vr_array.float()))
                     # on average the difference is very small and caused
                     # by decoding (around 1%)
                     # TODO: asses empirically how to set this? atm it's 1%
@@ -110,9 +92,7 @@ class TestVideoApi(unittest.TestCase):
                     av_array = torch.tensor(av_frame.to_ndarray()).permute(1, 0)
                     vr_array = vr_frame["data"]
 
-                    max_delta = torch.max(
-                        torch.abs(av_array.float() - vr_array.float())
-                    )
+                    max_delta = torch.max(torch.abs(av_array.float() - vr_array.float()))
                     # we assure that there is never more than 1% difference in signal
                     self.assertTrue(max_delta.item() < 0.001)
 
@@ -125,12 +105,8 @@ class TestVideoApi(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
             reader = VideoReader(full_path, "video")
             reader_md = reader.get_metadata()
-            self.assertAlmostEqual(
-                config.video_fps, reader_md["video"]["fps"][0], delta=0.0001
-            )
-            self.assertAlmostEqual(
-                config.duration, reader_md["video"]["duration"][0], delta=0.5
-            )
+            self.assertAlmostEqual(config.video_fps, reader_md["video"]["fps"][0], delta=0.0001)
+            self.assertAlmostEqual(config.duration, reader_md["video"]["duration"][0], delta=0.5)
 
     def test_seek_start(self):
         for test_video, config in test_videos.items():

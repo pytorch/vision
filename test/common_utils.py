@@ -1,31 +1,28 @@
-import os
-import shutil
-import tempfile
 import contextlib
-import unittest
-import argparse
-import sys
-import torch
-import __main__
+import os
 import random
-import inspect
-
-from numbers import Number
-from torch._six import string_classes
+import shutil
+import sys
+import tempfile
+import unittest
 from collections import OrderedDict
+from numbers import Number
 
 import numpy as np
 from PIL import Image
+
+import torch
+from torch._six import string_classes
 
 from _assert_utils import assert_equal
 
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
-IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
-CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
+CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
 
@@ -89,27 +86,26 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
+    def assertEqual(self, x, y, prec=None, message="", allow_inf=False):
         """
         This is copied from pytorch/test/common_utils.py's TestCase.assertEqual
         """
-        if isinstance(prec, str) and message == '':
+        if isinstance(prec, str) and message == "":
             message = prec
             prec = None
         if prec is None:
             prec = self.precision
 
         if isinstance(x, torch.Tensor) and isinstance(y, Number):
-            self.assertEqual(x.item(), y, prec=prec, message=message,
-                             allow_inf=allow_inf)
+            self.assertEqual(x.item(), y, prec=prec, message=message, allow_inf=allow_inf)
         elif isinstance(y, torch.Tensor) and isinstance(x, Number):
-            self.assertEqual(x, y.item(), prec=prec, message=message,
-                             allow_inf=allow_inf)
+            self.assertEqual(x, y.item(), prec=prec, message=message, allow_inf=allow_inf)
         elif isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor):
+
             def assertTensorsEqual(a, b):
                 super(TestCase, self).assertEqual(a.size(), b.size(), message)
                 if a.numel() > 0:
-                    if (a.device.type == 'cpu' and (a.dtype == torch.float16 or a.dtype == torch.bfloat16)):
+                    if a.device.type == "cpu" and (a.dtype == torch.float16 or a.dtype == torch.bfloat16):
                         # CPU half and bfloat16 tensors don't have the methods we need below
                         a = a.to(torch.float32)
                     b = b.to(a)
@@ -141,6 +137,7 @@ class TestCase(unittest.TestCase):
                         max_err = diff.max()
                         tolerance = prec + prec * abs(a.max())
                         self.assertLessEqual(max_err, tolerance, message)
+
             super(TestCase, self).assertEqual(x.is_sparse, y.is_sparse, message)
             super(TestCase, self).assertEqual(x.is_quantized, y.is_quantized, message)
             if x.is_sparse:
@@ -149,26 +146,36 @@ class TestCase(unittest.TestCase):
                 assertTensorsEqual(x._indices(), y._indices())
                 assertTensorsEqual(x._values(), y._values())
             elif x.is_quantized and y.is_quantized:
-                self.assertEqual(x.qscheme(), y.qscheme(), prec=prec,
-                                 message=message, allow_inf=allow_inf)
+                self.assertEqual(x.qscheme(), y.qscheme(), prec=prec, message=message, allow_inf=allow_inf)
                 if x.qscheme() == torch.per_tensor_affine:
-                    self.assertEqual(x.q_scale(), y.q_scale(), prec=prec,
-                                     message=message, allow_inf=allow_inf)
-                    self.assertEqual(x.q_zero_point(), y.q_zero_point(),
-                                     prec=prec, message=message,
-                                     allow_inf=allow_inf)
+                    self.assertEqual(x.q_scale(), y.q_scale(), prec=prec, message=message, allow_inf=allow_inf)
+                    self.assertEqual(
+                        x.q_zero_point(), y.q_zero_point(), prec=prec, message=message, allow_inf=allow_inf
+                    )
                 elif x.qscheme() == torch.per_channel_affine:
-                    self.assertEqual(x.q_per_channel_scales(), y.q_per_channel_scales(), prec=prec,
-                                     message=message, allow_inf=allow_inf)
-                    self.assertEqual(x.q_per_channel_zero_points(), y.q_per_channel_zero_points(),
-                                     prec=prec, message=message,
-                                     allow_inf=allow_inf)
-                    self.assertEqual(x.q_per_channel_axis(), y.q_per_channel_axis(),
-                                     prec=prec, message=message)
+                    self.assertEqual(
+                        x.q_per_channel_scales(),
+                        y.q_per_channel_scales(),
+                        prec=prec,
+                        message=message,
+                        allow_inf=allow_inf,
+                    )
+                    self.assertEqual(
+                        x.q_per_channel_zero_points(),
+                        y.q_per_channel_zero_points(),
+                        prec=prec,
+                        message=message,
+                        allow_inf=allow_inf,
+                    )
+                    self.assertEqual(x.q_per_channel_axis(), y.q_per_channel_axis(), prec=prec, message=message)
                 self.assertEqual(x.dtype, y.dtype)
-                self.assertEqual(x.int_repr().to(torch.int32),
-                                 y.int_repr().to(torch.int32), prec=prec,
-                                 message=message, allow_inf=allow_inf)
+                self.assertEqual(
+                    x.int_repr().to(torch.int32),
+                    y.int_repr().to(torch.int32),
+                    prec=prec,
+                    message=message,
+                    allow_inf=allow_inf,
+                )
             else:
                 assertTensorsEqual(x, y)
         elif isinstance(x, string_classes) and isinstance(y, string_classes):
@@ -177,21 +184,17 @@ class TestCase(unittest.TestCase):
             super(TestCase, self).assertEqual(x, y, message)
         elif isinstance(x, dict) and isinstance(y, dict):
             if isinstance(x, OrderedDict) and isinstance(y, OrderedDict):
-                self.assertEqual(x.items(), y.items(), prec=prec,
-                                 message=message, allow_inf=allow_inf)
+                self.assertEqual(x.items(), y.items(), prec=prec, message=message, allow_inf=allow_inf)
             else:
-                self.assertEqual(set(x.keys()), set(y.keys()), prec=prec,
-                                 message=message, allow_inf=allow_inf)
+                self.assertEqual(set(x.keys()), set(y.keys()), prec=prec, message=message, allow_inf=allow_inf)
                 key_list = list(x.keys())
-                self.assertEqual([x[k] for k in key_list],
-                                 [y[k] for k in key_list],
-                                 prec=prec, message=message,
-                                 allow_inf=allow_inf)
+                self.assertEqual(
+                    [x[k] for k in key_list], [y[k] for k in key_list], prec=prec, message=message, allow_inf=allow_inf
+                )
         elif is_iterable(x) and is_iterable(y):
             super(TestCase, self).assertEqual(len(x), len(y), message)
             for x_, y_ in zip(x, y):
-                self.assertEqual(x_, y_, prec=prec, message=message,
-                                 allow_inf=allow_inf)
+                self.assertEqual(x_, y_, prec=prec, message=message, allow_inf=allow_inf)
         elif isinstance(x, bool) and isinstance(y, bool):
             super(TestCase, self).assertEqual(x, y, message)
         elif isinstance(x, Number) and isinstance(y, Number):
@@ -220,7 +223,7 @@ def freeze_rng_state():
 
 def cycle_over(objs):
     for idx, obj1 in enumerate(objs):
-        for obj2 in objs[:idx] + objs[idx + 1:]:
+        for obj2 in objs[:idx] + objs[idx + 1 :]:
             yield obj1, obj2
 
 
@@ -242,11 +245,13 @@ def disable_console_output():
 
 def cpu_and_gpu():
     import pytest  # noqa
-    return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
+
+    return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
 
 
 def needs_cuda(test_func):
     import pytest  # noqa
+
     return pytest.mark.needs_cuda(test_func)
 
 
@@ -259,12 +264,7 @@ def _create_data(height=3, width=3, channels=3, device="cpu"):
 
 def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
-    batch_tensor = torch.randint(
-        0, 256,
-        (num_samples, channels, height, width),
-        dtype=torch.uint8,
-        device=device
-    )
+    batch_tensor = torch.randint(0, 256, (num_samples, channels, height, width), dtype=torch.uint8, device=device)
     return batch_tensor
 
 
@@ -278,8 +278,9 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
 
 
-def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
-                                       allowed_percentage_diff=None):
+def _assert_approx_equal_tensor_to_pil(
+    tensor, pil_image, tol=1e-5, msg=None, agg_method="mean", allowed_percentage_diff=None
+):
     # TODO: we could just merge this into _assert_equal_tensor_to_pil
     np_pil_image = np.array(pil_image)
     if np_pil_image.ndim == 2:

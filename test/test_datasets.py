@@ -2,10 +2,10 @@ import bz2
 import contextlib
 import io
 import itertools
+import json
 import os
 import pathlib
 import pickle
-import json
 import random
 import shutil
 import string
@@ -13,9 +13,10 @@ import unittest
 import xml.etree.ElementTree as ET
 import zipfile
 
-import PIL
 import datasets_utils
 import numpy as np
+import PIL
+
 import torch
 import torch.nn.functional as F
 from torchvision import datasets
@@ -23,8 +24,7 @@ from torchvision import datasets
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.STL10
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("train", "test", "unlabeled", "train+unlabeled"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test", "unlabeled", "train+unlabeled"))
 
     @staticmethod
     def _make_binary_file(num_elements, root, name):
@@ -209,11 +209,11 @@ class Caltech256TestCase(datasets_utils.ImageDatasetTestCase):
 class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.WIDERFace
     FEATURE_TYPES = (PIL.Image.Image, (dict, type(None)))  # test split returns None as target
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('train', 'val', 'test'))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
 
     def inject_fake_data(self, tmpdir, config):
-        widerface_dir = pathlib.Path(tmpdir) / 'widerface'
-        annotations_dir = widerface_dir / 'wider_face_split'
+        widerface_dir = pathlib.Path(tmpdir) / "widerface"
+        annotations_dir = widerface_dir / "wider_face_split"
         os.makedirs(annotations_dir)
 
         split_to_idx = split_to_num_examples = {
@@ -223,21 +223,21 @@ class WIDERFaceTestCase(datasets_utils.ImageDatasetTestCase):
         }
 
         # We need to create all folders regardless of the split in config
-        for split in ('train', 'val', 'test'):
+        for split in ("train", "val", "test"):
             split_idx = split_to_idx[split]
             num_examples = split_to_num_examples[split]
 
             datasets_utils.create_image_folder(
                 root=tmpdir,
-                name=widerface_dir / f'WIDER_{split}' / 'images' / '0--Parade',
+                name=widerface_dir / f"WIDER_{split}" / "images" / "0--Parade",
                 file_name_fn=lambda image_idx: f"0_Parade_marchingband_1_{split_idx + image_idx}.jpg",
                 num_examples=num_examples,
             )
 
             annotation_file_name = {
-                'train': annotations_dir / 'wider_face_train_bbx_gt.txt',
-                'val': annotations_dir / 'wider_face_val_bbx_gt.txt',
-                'test': annotations_dir / 'wider_face_test_filelist.txt',
+                "train": annotations_dir / "wider_face_train_bbx_gt.txt",
+                "val": annotations_dir / "wider_face_val_bbx_gt.txt",
+                "test": annotations_dir / "wider_face_test_filelist.txt",
             }[split]
 
             annotation_content = {
@@ -270,9 +270,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
         "color",
     )
     ADDITIONAL_CONFIGS = (
-        *datasets_utils.combinations_grid(
-            mode=("fine",), split=("train", "test", "val"), target_type=TARGET_TYPES
-        ),
+        *datasets_utils.combinations_grid(mode=("fine",), split=("train", "test", "val"), target_type=TARGET_TYPES),
         *datasets_utils.combinations_grid(
             mode=("coarse",),
             split=("train", "train_extra", "val"),
@@ -327,6 +325,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             gt_dir = tmpdir / f"gt{mode}"
             for split in mode_to_splits[mode]:
                 for city in cities:
+
                     def make_image(name, size=10):
                         datasets_utils.create_image_folder(
                             root=gt_dir / split,
@@ -335,6 +334,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
                             size=size,
                             num_examples=1,
                         )
+
                     make_image(f"{city}_000000_000000_gt{mode}_instanceIds.png")
                     make_image(f"{city}_000000_000000_gt{mode}_labelIds.png")
                     make_image(f"{city}_000000_000000_gt{mode}_color.png", size=(4, 10, 10))
@@ -344,7 +344,7 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
                         json.dump(polygon_target, outfile)
 
         # Create leftImg8bit folder
-        for split in ['test', 'train_extra', 'train', 'val']:
+        for split in ["test", "train_extra", "train", "val"]:
             for city in cities:
                 datasets_utils.create_image_folder(
                     root=tmpdir / "leftImg8bit" / split,
@@ -353,13 +353,13 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
                     num_examples=1,
                 )
 
-        info = {'num_examples': len(cities)}
-        if config['target_type'] == 'polygon':
-            info['expected_polygon_target'] = polygon_target
+        info = {"num_examples": len(cities)}
+        if config["target_type"] == "polygon":
+            info["expected_polygon_target"] = polygon_target
         return info
 
     def test_combined_targets(self):
-        target_types = ['semantic', 'polygon', 'color']
+        target_types = ["semantic", "polygon", "color"]
 
         with self.create_dataset(target_type=target_types) as (dataset, _):
             output = dataset[0]
@@ -373,32 +373,32 @@ class CityScapesTestCase(datasets_utils.ImageDatasetTestCase):
             self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
     def test_feature_types_target_color(self):
-        with self.create_dataset(target_type='color') as (dataset, _):
+        with self.create_dataset(target_type="color") as (dataset, _):
             color_img, color_target = dataset[0]
             self.assertTrue(isinstance(color_img, PIL.Image.Image))
             self.assertTrue(np.array(color_target).shape[2] == 4)
 
     def test_feature_types_target_polygon(self):
-        with self.create_dataset(target_type='polygon') as (dataset, info):
+        with self.create_dataset(target_type="polygon") as (dataset, info):
             polygon_img, polygon_target = dataset[0]
             self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
-            self.assertEqual(polygon_target, info['expected_polygon_target'])
+            self.assertEqual(polygon_target, info["expected_polygon_target"])
 
 
 class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageNet
-    REQUIRED_PACKAGES = ('scipy',)
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=('train', 'val'))
+    REQUIRED_PACKAGES = ("scipy",)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val"))
 
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
-        wnid = 'n01234567'
-        if config['split'] == 'train':
+        wnid = "n01234567"
+        if config["split"] == "train":
             num_examples = 3
             datasets_utils.create_image_folder(
                 root=tmpdir,
-                name=tmpdir / 'train' / wnid / wnid,
+                name=tmpdir / "train" / wnid / wnid,
                 file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
                 num_examples=num_examples,
             )
@@ -406,13 +406,13 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples = 1
             datasets_utils.create_image_folder(
                 root=tmpdir,
-                name=tmpdir / 'val' / wnid,
+                name=tmpdir / "val" / wnid,
                 file_name_fn=lambda image_ifx: "ILSVRC2012_val_0000000{image_idx}.JPEG",
                 num_examples=num_examples,
             )
 
         wnid_to_classes = {wnid: [1]}
-        torch.save((wnid_to_classes, None), tmpdir / 'meta.bin')
+        torch.save((wnid_to_classes, None), tmpdir / "meta.bin")
         return num_examples
 
 
@@ -883,10 +883,7 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
         return num_images
 
     @contextlib.contextmanager
-    def create_dataset(
-        self,
-        *args, **kwargs
-    ):
+    def create_dataset(self, *args, **kwargs):
         with super().create_dataset(*args, **kwargs) as output:
             yield output
             # Currently datasets.LSUN caches the keys in the current directory rather than in the root directory. Thus,
@@ -946,14 +943,12 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
 
 class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("train", "val"), num_classes=("400", "600", "700")
-    )
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val"), num_classes=("400", "600", "700"))
 
     def inject_fake_data(self, tmpdir, config):
         classes = ("Abseiling", "Zumba")
         num_videos_per_class = 2
-        tmpdir = pathlib.Path(tmpdir) / config['split']
+        tmpdir = pathlib.Path(tmpdir) / config["split"]
         digits = string.ascii_letters + string.digits + "-_"
         for cls in classes:
             datasets_utils.create_video_folder(
@@ -1576,7 +1571,7 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
         # We need to explicitly pass extensions=None here or otherwise it would be filled by the value from the
         # DEFAULT_CONFIG.
         with self.create_dataset(
-                config, extensions=None, is_valid_file=lambda file: pathlib.Path(file).suffix[1:] in extensions
+            config, extensions=None, is_valid_file=lambda file: pathlib.Path(file).suffix[1:] in extensions
         ) as (dataset, info):
             self.assertEqual(len(dataset), info["num_examples"])
 
@@ -1660,7 +1655,7 @@ class SvhnTestCase(datasets_utils.ImageDatasetTestCase):
         file = f"{split}_32x32.mat"
         images = np.zeros((32, 32, 3, num_examples), dtype=np.uint8)
         targets = np.zeros((num_examples,), dtype=np.uint8)
-        sio.savemat(os.path.join(tmpdir, file), {'X': images, 'y': targets})
+        sio.savemat(os.path.join(tmpdir, file), {"X": images, "y": targets})
         return num_examples
 
 
@@ -1695,8 +1690,7 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
     # (file, idx)
     _FILE_LIST_CONTENT = (
         ("Places365_val_00000001.png", 0),
-        *((f"{category}/Places365_train_00000001.png", idx)
-          for category, idx in _CATEGORIES_CONTENT),
+        *((f"{category}/Places365_train_00000001.png", idx) for category, idx in _CATEGORIES_CONTENT),
     )
 
     @staticmethod
@@ -1736,8 +1730,8 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
         return [(os.path.join(root, folder_name, image), idx) for image, idx in zip(images, idcs)]
 
     def inject_fake_data(self, tmpdir, config):
-        self._make_devkit_archive(tmpdir, config['split'])
-        return len(self._make_images_archive(tmpdir, config['split'], config['small']))
+        self._make_devkit_archive(tmpdir, config["split"])
+        return len(self._make_images_archive(tmpdir, config["split"], config["small"]))
 
     def test_classes(self):
         classes = list(map(lambda x: x[0], self._CATEGORIES_CONTENT))
@@ -1751,7 +1745,7 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
 
     def test_images_download_preexisting(self):
         with self.assertRaises(RuntimeError):
-            with self.create_dataset({'download': True}):
+            with self.create_dataset({"download": True}):
                 pass
 
 

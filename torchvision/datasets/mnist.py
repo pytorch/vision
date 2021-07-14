@@ -1,16 +1,19 @@
-from .vision import VisionDataset
-import warnings
-from PIL import Image
+import codecs
 import os
 import os.path
-import numpy as np
-import torch
-import codecs
+import shutil
 import string
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.error import URLError
-from .utils import download_and_extract_archive, extract_archive, verify_str_arg, check_integrity
-import shutil
+
+import numpy as np
+from PIL import Image
+
+import torch
+
+from .utils import check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
+from .vision import VisionDataset
 
 
 class MNIST(VisionDataset):
@@ -31,21 +34,31 @@ class MNIST(VisionDataset):
     """
 
     mirrors = [
-        'http://yann.lecun.com/exdb/mnist/',
-        'https://ossci-datasets.s3.amazonaws.com/mnist/',
+        "http://yann.lecun.com/exdb/mnist/",
+        "https://ossci-datasets.s3.amazonaws.com/mnist/",
     ]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
         ("train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
         ("t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
-        ("t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
+        ("t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c"),
     ]
 
-    training_file = 'training.pt'
-    test_file = 'test.pt'
-    classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
-               '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+    training_file = "training.pt"
+    test_file = "test.pt"
+    classes = [
+        "0 - zero",
+        "1 - one",
+        "2 - two",
+        "3 - three",
+        "4 - four",
+        "5 - five",
+        "6 - six",
+        "7 - seven",
+        "8 - eight",
+        "9 - nine",
+    ]
 
     @property
     def train_labels(self):
@@ -68,15 +81,14 @@ class MNIST(VisionDataset):
         return self.data
 
     def __init__(
-            self,
-            root: str,
-            train: bool = True,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: str,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
-        super(MNIST, self).__init__(root, transform=transform,
-                                    target_transform=target_transform)
+        super(MNIST, self).__init__(root, transform=transform, target_transform=target_transform)
         torch._C._log_api_usage_once(f"torchvision.datasets.{self.__class__.__name__}")
         self.train = train  # training set or test set
 
@@ -88,8 +100,7 @@ class MNIST(VisionDataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            raise RuntimeError("Dataset not found." + " You can use download=True to download it")
 
         self.data, self.targets = self._load_data()
 
@@ -129,7 +140,7 @@ class MNIST(VisionDataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img.numpy(), mode='L')
+        img = Image.fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -144,11 +155,11 @@ class MNIST(VisionDataset):
 
     @property
     def raw_folder(self) -> str:
-        return os.path.join(self.root, self.__class__.__name__, 'raw')
+        return os.path.join(self.root, self.__class__.__name__, "raw")
 
     @property
     def processed_folder(self) -> str:
-        return os.path.join(self.root, self.__class__.__name__, 'processed')
+        return os.path.join(self.root, self.__class__.__name__, "processed")
 
     @property
     def class_to_idx(self) -> Dict[str, int]:
@@ -174,15 +185,9 @@ class MNIST(VisionDataset):
                 url = "{}{}".format(mirror, filename)
                 try:
                     print("Downloading {}".format(url))
-                    download_and_extract_archive(
-                        url, download_root=self.raw_folder,
-                        filename=filename,
-                        md5=md5
-                    )
+                    download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
                 except URLError as error:
-                    print(
-                        "Failed to download (trying next):\n{}".format(error)
-                    )
+                    print("Failed to download (trying next):\n{}".format(error))
                     continue
                 finally:
                     print()
@@ -210,18 +215,16 @@ class FashionMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    mirrors = [
-        "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
-    ]
+
+    mirrors = ["http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
         ("train-labels-idx1-ubyte.gz", "25c81989df183df01b3e8a0aad5dffbe"),
         ("t10k-images-idx3-ubyte.gz", "bef4ecab320f06d8554ea6380940ec79"),
-        ("t10k-labels-idx1-ubyte.gz", "bb300cfdad3c16e7a12a480ee83cd310")
+        ("t10k-labels-idx1-ubyte.gz", "bb300cfdad3c16e7a12a480ee83cd310"),
     ]
-    classes = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
-               'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+    classes = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat", "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
 
 
 class KMNIST(MNIST):
@@ -240,17 +243,16 @@ class KMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    mirrors = [
-        "http://codh.rois.ac.jp/kmnist/dataset/kmnist/"
-    ]
+
+    mirrors = ["http://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
         ("train-labels-idx1-ubyte.gz", "e144d726b3acfaa3e44228e80efcd344"),
         ("t10k-images-idx3-ubyte.gz", "5c965bf0a639b31b8f53240b1b52f4d7"),
-        ("t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134")
+        ("t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134"),
     ]
-    classes = ['o', 'ki', 'su', 'tsu', 'na', 'ha', 'ma', 'ya', 're', 'wo']
+    classes = ["o", "ki", "su", "tsu", "na", "ha", "ma", "ya", "re", "wo"]
 
 
 class EMNIST(MNIST):
@@ -272,19 +274,20 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    url = 'https://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+
+    url = "https://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip"
     md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
-    splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
+    splits = ("byclass", "bymerge", "balanced", "letters", "digits", "mnist")
     # Merged Classes assumes Same structure for both uppercase and lowercase version
-    _merged_classes = {'c', 'i', 'j', 'k', 'l', 'm', 'o', 'p', 's', 'u', 'v', 'w', 'x', 'y', 'z'}
+    _merged_classes = {"c", "i", "j", "k", "l", "m", "o", "p", "s", "u", "v", "w", "x", "y", "z"}
     _all_classes = set(string.digits + string.ascii_letters)
     classes_split_dict = {
-        'byclass': sorted(list(_all_classes)),
-        'bymerge': sorted(list(_all_classes - _merged_classes)),
-        'balanced': sorted(list(_all_classes - _merged_classes)),
-        'letters': ['N/A'] + list(string.ascii_lowercase),
-        'digits': list(string.digits),
-        'mnist': list(string.digits),
+        "byclass": sorted(list(_all_classes)),
+        "bymerge": sorted(list(_all_classes - _merged_classes)),
+        "balanced": sorted(list(_all_classes - _merged_classes)),
+        "letters": ["N/A"] + list(string.ascii_lowercase),
+        "digits": list(string.digits),
+        "mnist": list(string.digits),
     }
 
     def __init__(self, root: str, split: str, **kwargs: Any) -> None:
@@ -296,11 +299,11 @@ class EMNIST(MNIST):
 
     @staticmethod
     def _training_file(split) -> str:
-        return 'training_{}.pt'.format(split)
+        return "training_{}.pt".format(split)
 
     @staticmethod
     def _test_file(split) -> str:
-        return 'test_{}.pt'.format(split)
+        return "test_{}.pt".format(split)
 
     @property
     def _file_prefix(self) -> str:
@@ -329,9 +332,9 @@ class EMNIST(MNIST):
         os.makedirs(self.raw_folder, exist_ok=True)
 
         download_and_extract_archive(self.url, download_root=self.raw_folder, md5=self.md5)
-        gzip_folder = os.path.join(self.raw_folder, 'gzip')
+        gzip_folder = os.path.join(self.raw_folder, "gzip")
         for gzip_file in os.listdir(gzip_folder):
-            if gzip_file.endswith('.gz'):
+            if gzip_file.endswith(".gz"):
                 extract_archive(os.path.join(gzip_folder, gzip_file), self.raw_folder)
         shutil.rmtree(gzip_folder)
 
@@ -366,39 +369,60 @@ class QMNIST(MNIST):
             training set ot the testing set.  Default: True.
     """
 
-    subsets = {
-        'train': 'train',
-        'test': 'test',
-        'test10k': 'test',
-        'test50k': 'test',
-        'nist': 'nist'
-    }
+    subsets = {"train": "train", "test": "test", "test10k": "test", "test50k": "test", "nist": "nist"}
     resources: Dict[str, List[Tuple[str, str]]] = {  # type: ignore[assignment]
-        'train': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
-                   'ed72d4157d28c017586c42bc6afe6370'),
-                  ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz',
-                   '0058f8dd561b90ffdd0f734c6a30e5e4')],
-        'test': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz',
-                  '1394631089c404de565df7b7aeaf9412'),
-                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz',
-                  '5b5b05890a5e13444e108efe57b788aa')],
-        'nist': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz',
-                  '7f124b3b8ab81486c9d8c2749c17f834'),
-                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz',
-                  '5ed0e788978e45d4a8bd4b7caec3d79d')]
+        "train": [
+            (
+                "https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz",
+                "ed72d4157d28c017586c42bc6afe6370",
+            ),
+            (
+                "https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz",
+                "0058f8dd561b90ffdd0f734c6a30e5e4",
+            ),
+        ],
+        "test": [
+            (
+                "https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz",
+                "1394631089c404de565df7b7aeaf9412",
+            ),
+            (
+                "https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz",
+                "5b5b05890a5e13444e108efe57b788aa",
+            ),
+        ],
+        "nist": [
+            (
+                "https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz",
+                "7f124b3b8ab81486c9d8c2749c17f834",
+            ),
+            (
+                "https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz",
+                "5ed0e788978e45d4a8bd4b7caec3d79d",
+            ),
+        ],
     }
-    classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
-               '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+    classes = [
+        "0 - zero",
+        "1 - one",
+        "2 - two",
+        "3 - three",
+        "4 - four",
+        "5 - five",
+        "6 - six",
+        "7 - seven",
+        "8 - eight",
+        "9 - nine",
+    ]
 
     def __init__(
-            self, root: str, what: Optional[str] = None, compat: bool = True,
-            train: bool = True, **kwargs: Any
+        self, root: str, what: Optional[str] = None, compat: bool = True, train: bool = True, **kwargs: Any
     ) -> None:
         if what is None:
-            what = 'train' if train else 'test'
+            what = "train" if train else "test"
         self.what = verify_str_arg(what, "what", tuple(self.subsets.keys()))
         self.compat = compat
-        self.data_file = what + '.pt'
+        self.data_file = what + ".pt"
         self.training_file = self.data_file
         self.test_file = self.data_file
         super(QMNIST, self).__init__(root, train, **kwargs)
@@ -418,16 +442,16 @@ class QMNIST(MNIST):
 
     def _load_data(self):
         data = read_sn3_pascalvincent_tensor(self.images_file)
-        assert (data.dtype == torch.uint8)
-        assert (data.ndimension() == 3)
+        assert data.dtype == torch.uint8
+        assert data.ndimension() == 3
 
         targets = read_sn3_pascalvincent_tensor(self.labels_file).long()
-        assert (targets.ndimension() == 2)
+        assert targets.ndimension() == 2
 
-        if self.what == 'test10k':
+        if self.what == "test10k":
             data = data[0:10000, :, :].clone()
             targets = targets[0:10000, :].clone()
-        elif self.what == 'test50k':
+        elif self.what == "test50k":
             data = data[10000:, :, :].clone()
             targets = targets[10000:, :].clone()
 
@@ -435,7 +459,7 @@ class QMNIST(MNIST):
 
     def download(self) -> None:
         """Download the QMNIST data if it doesn't exist already.
-           Note that we only download what has been asked for (argument 'what').
+        Note that we only download what has been asked for (argument 'what').
         """
         if self._check_exists():
             return
@@ -444,7 +468,7 @@ class QMNIST(MNIST):
         split = self.resources[self.subsets[self.what]]
 
         for url, md5 in split:
-            filename = url.rpartition('/')[2]
+            filename = url.rpartition("/")[2]
             file_path = os.path.join(self.raw_folder, filename)
             if not os.path.isfile(file_path):
                 download_and_extract_archive(url, self.raw_folder, filename=filename, md5=md5)
@@ -452,7 +476,7 @@ class QMNIST(MNIST):
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag
         img, target = self.data[index], self.targets[index]
-        img = Image.fromarray(img.numpy(), mode='L')
+        img = Image.fromarray(img.numpy(), mode="L")
         if self.transform is not None:
             img = self.transform(img)
         if self.compat:
@@ -466,22 +490,22 @@ class QMNIST(MNIST):
 
 
 def get_int(b: bytes) -> int:
-    return int(codecs.encode(b, 'hex'), 16)
+    return int(codecs.encode(b, "hex"), 16)
 
 
 SN3_PASCALVINCENT_TYPEMAP = {
     8: (torch.uint8, np.uint8, np.uint8),
     9: (torch.int8, np.int8, np.int8),
-    11: (torch.int16, np.dtype('>i2'), 'i2'),
-    12: (torch.int32, np.dtype('>i4'), 'i4'),
-    13: (torch.float32, np.dtype('>f4'), 'f4'),
-    14: (torch.float64, np.dtype('>f8'), 'f8')
+    11: (torch.int16, np.dtype(">i2"), "i2"),
+    12: (torch.int32, np.dtype(">i4"), "i4"),
+    13: (torch.float32, np.dtype(">f4"), "f4"),
+    14: (torch.float64, np.dtype(">f8"), "f8"),
 }
 
 
 def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tensor:
     """Read a SN3 file in "Pascal Vincent" format (Lush file 'libidx/idx-io.lsh').
-       Argument may be a filename, compressed filename, or file object.
+    Argument may be a filename, compressed filename, or file object.
     """
     # read
     with open(path, "rb") as f:
@@ -493,7 +517,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     assert 1 <= nd <= 3
     assert 8 <= ty <= 14
     m = SN3_PASCALVINCENT_TYPEMAP[ty]
-    s = [get_int(data[4 * (i + 1): 4 * (i + 2)]) for i in range(nd)]
+    s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))
     assert parsed.shape[0] == np.prod(s) or not strict
     return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
@@ -501,13 +525,13 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
 
 def read_label_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
-    assert(x.dtype == torch.uint8)
-    assert(x.ndimension() == 1)
+    assert x.dtype == torch.uint8
+    assert x.ndimension() == 1
     return x.long()
 
 
 def read_image_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
-    assert(x.dtype == torch.uint8)
-    assert(x.ndimension() == 3)
+    assert x.dtype == torch.uint8
+    assert x.ndimension() == 3
     return x

@@ -4,13 +4,9 @@ import numbers
 import random
 import warnings
 
-from torchvision.transforms import (
-    RandomCrop,
-    RandomResizedCrop,
-)
+from torchvision.transforms import RandomCrop, RandomResizedCrop
 
 from . import _functional_video as F
-
 
 __all__ = [
     "RandomCropVideo",
@@ -22,9 +18,7 @@ __all__ = [
 ]
 
 
-warnings.warn(
-    "The _transforms_video module is deprecated. Please use the transforms module instead."
-)
+warnings.warn("The _transforms_video module is deprecated. Please use the transforms module instead.")
 
 
 class RandomCropVideo(RandomCrop):
@@ -46,7 +40,7 @@ class RandomCropVideo(RandomCrop):
         return F.crop(clip, i, j, h, w)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(size={0})'.format(self.size)
+        return self.__class__.__name__ + "(size={0})".format(self.size)
 
 
 class RandomResizedCropVideo(RandomResizedCrop):
@@ -79,10 +73,9 @@ class RandomResizedCropVideo(RandomResizedCrop):
         return F.resized_crop(clip, i, j, h, w, self.size, self.interpolation_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + \
-            '(size={0}, interpolation_mode={1}, scale={2}, ratio={3})'.format(
-                self.size, self.interpolation_mode, self.scale, self.ratio
-            )
+        return self.__class__.__name__ + "(size={0}, interpolation_mode={1}, scale={2}, ratio={3})".format(
+            self.size, self.interpolation_mode, self.scale, self.ratio
+        )
 
 
 class CenterCropVideo(object):
@@ -103,7 +96,7 @@ class CenterCropVideo(object):
         return F.center_crop(clip, self.crop_size)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(crop_size={0})'.format(self.crop_size)
+        return self.__class__.__name__ + "(crop_size={0})".format(self.crop_size)
 
 
 class NormalizeVideo(object):
@@ -128,8 +121,7 @@ class NormalizeVideo(object):
         return F.normalize(clip, self.mean, self.std, self.inplace)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1}, inplace={2})'.format(
-            self.mean, self.std, self.inplace)
+        return self.__class__.__name__ + "(mean={0}, std={1}, inplace={2})".format(self.mean, self.std, self.inplace)
 
 
 class ToTensorVideo(object):

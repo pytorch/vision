@@ -1,7 +1,7 @@
 from collections import OrderedDict
+from typing import Dict
 
 from torch import nn
-from typing import Dict
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
@@ -35,6 +35,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         >>>     [('feat1', torch.Size([1, 64, 56, 56])),
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
     """
+
     _version = 2
     __annotations__ = {
         "return_layers": Dict[str, str],

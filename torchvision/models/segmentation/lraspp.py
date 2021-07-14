@@ -1,9 +1,8 @@
 from collections import OrderedDict
-
-from torch import nn, Tensor
-from torch.nn import functional as F
 from typing import Dict
 
+from torch import Tensor, nn
+from torch.nn import functional as F
 
 __all__ = ["LRASPP"]
 
@@ -32,7 +31,7 @@ class LRASPP(nn.Module):
     def forward(self, input):
         features = self.backbone(input)
         out = self.classifier(features)
-        out = F.interpolate(out, size=input.shape[-2:], mode='bilinear', align_corners=False)
+        out = F.interpolate(out, size=input.shape[-2:], mode="bilinear", align_corners=False)
 
         result = OrderedDict()
         result["out"] = out
@@ -41,13 +40,12 @@ class LRASPP(nn.Module):
 
 
 class LRASPPHead(nn.Module):
-
     def __init__(self, low_channels, high_channels, num_classes, inter_channels):
         super().__init__()
         self.cbr = nn.Sequential(
             nn.Conv2d(high_channels, inter_channels, 1, bias=False),
             nn.BatchNorm2d(inter_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
         self.scale = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
@@ -64,6 +62,6 @@ class LRASPPHead(nn.Module):
         x = self.cbr(high)
         s = self.scale(high)
         x = x * s
-        x = F.interpolate(x, size=low.shape[-2:], mode='bilinear', align_corners=False)
+        x = F.interpolate(x, size=low.shape[-2:], mode="bilinear", align_corners=False)
 
         return self.low_classifier(low) + self.high_classifier(x)

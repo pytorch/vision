@@ -47,20 +47,33 @@ class HMDB51(VisionDataset):
     data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
     splits = {
         "url": "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
-        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5"
+        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5",
     }
     TRAIN_TAG = 1
     TEST_TAG = 2
 
-    def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
-                 frame_rate=None, fold=1, train=True, transform=None,
-                 _precomputed_metadata=None, num_workers=1, _video_width=0,
-                 _video_height=0, _video_min_dimension=0, _audio_samples=0):
+    def __init__(
+        self,
+        root,
+        annotation_path,
+        frames_per_clip,
+        step_between_clips=1,
+        frame_rate=None,
+        fold=1,
+        train=True,
+        transform=None,
+        _precomputed_metadata=None,
+        num_workers=1,
+        _video_width=0,
+        _video_height=0,
+        _video_min_dimension=0,
+        _audio_samples=0,
+    ):
         super(HMDB51, self).__init__(root)
         if fold not in (1, 2, 3):
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
 
-        extensions = ('avi',)
+        extensions = ("avi",)
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,

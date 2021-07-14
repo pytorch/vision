@@ -1,0 +1,41 @@
+[tool.isort]
+# See link below for available options
+# https://timothycrosley.github.io/isort/docs/configuration/options/
+
+profile = "black"
+line_length = 120
+
+skip_gitignore = true
+float_to_top = true
+color_output = true
+order_by_type = true
+combine_star = true
+filter_files = true
+
+known_first_party = ["torch", "torchvision"]
+known_local_folder = ["_assert_utils", "_utils_internal", "common_utils", "dataset_utils"]
+
+#skip = [
+#  "pystiche/__init__.py",
+#  "pystiche/image/__init__.py",
+#]
+
+[tool.black]
+# See link below for available options
+# https://github.com/psf/black#configuration-format
+
+line-length = 120
+target-version = ["py36"]
+#exclude = '''
+#/(
+#    \.git
+#  | \.github
+#  | \.venv
+#  | \.tox
+#  | \.mypy_cache
+#  | \.pytest_cache
+#  | __pycache__
+#  | docs/build
+#  | docs/source/galleries
+#)/
+#'''

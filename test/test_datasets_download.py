@@ -1,25 +1,25 @@
 import contextlib
 import itertools
+import tempfile
 import time
 import unittest.mock
+import warnings
 from datetime import datetime
 from distutils import dir_util
 from os import path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import urlopen, Request
-import tempfile
-import warnings
+from urllib.request import Request, urlopen
 
 import pytest
 
 from torchvision import datasets
 from torchvision.datasets.utils import (
-    download_url,
+    USER_AGENT,
+    _get_redirect_url,
     check_integrity,
     download_file_from_google_drive,
-    _get_redirect_url,
-    USER_AGENT,
+    download_url,
 )
 
 from common_utils import get_tmp_dir

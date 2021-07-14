@@ -1,9 +1,11 @@
-import torch
-from torch import Tensor
 from typing import Tuple
-from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
+
+import torch
 import torchvision
+from torch import Tensor
 from torchvision.extension import _assert_has_ops
+
+from ._box_convert import _box_cxcywh_to_xyxy, _box_xywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xyxy_to_xywh
 
 
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
@@ -183,13 +185,13 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     if in_fmt == out_fmt:
         return boxes.clone()
 
-    if in_fmt != 'xyxy' and out_fmt != 'xyxy':
+    if in_fmt != "xyxy" and out_fmt != "xyxy":
         # convert to xyxy and change in_fmt xyxy
         if in_fmt == "xywh":
             boxes = _box_xywh_to_xyxy(boxes)
         elif in_fmt == "cxcywh":
             boxes = _box_cxcywh_to_xyxy(boxes)
-        in_fmt = 'xyxy'
+        in_fmt = "xyxy"
 
     if in_fmt == "xyxy":
         if out_fmt == "xywh":

@@ -1,11 +1,11 @@
 import math
-import torch
-
 from enum import Enum
-from torch import Tensor
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
-from . import functional as F, InterpolationMode
+import torch
+from torch import Tensor
+
+from . import functional as F
 
 __all__ = ["AutoAugmentPolicy", "AutoAugment"]
 
@@ -14,6 +14,7 @@ class AutoAugmentPolicy(Enum):
     """AutoAugment policies learned on different datasets.
     Available policies are IMAGENET, CIFAR10 and SVHN.
     """
+
     IMAGENET = "imagenet"
     CIFAR10 = "cifar10"
     SVHN = "svhn"
@@ -144,8 +145,12 @@ class AutoAugment(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
     """
 
-    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-                 interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None):
+    def __init__(
+        self,
+        policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
+        interpolation: F.InterpolationMode = F.InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ):
         super().__init__()
         self.policy = policy
         self.interpolation = interpolation
@@ -191,23 +196,54 @@ class AutoAugment(torch.nn.Module):
         for i, (op_name, p, magnitude_id) in enumerate(self.transforms[transform_id]):
             if probs[i] <= p:
                 magnitudes, signed = self._get_op_meta(op_name)
-                magnitude = float(magnitudes[magnitude_id].item()) \
-                    if magnitudes is not None and magnitude_id is not None else 0.0
+                magnitude = (
+                    float(magnitudes[magnitude_id].item())
+                    if magnitudes is not None and magnitude_id is not None
+                    else 0.0
+                )
                 if signed is not None and signed and signs[i] == 0:
                     magnitude *= -1.0
 
                 if op_name == "ShearX":
-                    img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[math.degrees(magnitude), 0.0],
-                                   interpolation=self.interpolation, fill=fill)
+                    img = F.affine(
+                        img,
+                        angle=0.0,
+                        translate=[0, 0],
+                        scale=1.0,
+                        shear=[math.degrees(magnitude), 0.0],
+                        interpolation=self.interpolation,
+                        fill=fill,
+                    )
                 elif op_name == "ShearY":
-                    img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[0.0, math.degrees(magnitude)],
-                                   interpolation=self.interpolation, fill=fill)
+                    img = F.affine(
+                        img,
+                        angle=0.0,
+                        translate=[0, 0],
+                        scale=1.0,
+                        shear=[0.0, math.degrees(magnitude)],
+                        interpolation=self.interpolation,
+                        fill=fill,
+                    )
                 elif op_name == "TranslateX":
-                    img = F.affine(img, angle=0.0, translate=[int(F._get_image_size(img)[0] * magnitude), 0], scale=1.0,
-                                   interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
+                    img = F.affine(
+                        img,
+                        angle=0.0,
+                        translate=[int(F._get_image_size(img)[0] * magnitude), 0],
+                        scale=1.0,
+                        interpolation=self.interpolation,
+                        shear=[0.0, 0.0],
+                        fill=fill,
+                    )
                 elif op_name == "TranslateY":
-                    img = F.affine(img, angle=0.0, translate=[0, int(F._get_image_size(img)[1] * magnitude)], scale=1.0,
-                                   interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
+                    img = F.affine(
+                        img,
+                        angle=0.0,
+                        translate=[0, int(F._get_image_size(img)[1] * magnitude)],
+                        scale=1.0,
+                        interpolation=self.interpolation,
+                        shear=[0.0, 0.0],
+                        fill=fill,
+                    )
                 elif op_name == "Rotate":
                     img = F.rotate(img, magnitude, interpolation=self.interpolation, fill=fill)
                 elif op_name == "Brightness":
@@ -234,4 +270,4 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)
+        return self.__class__.__name__ + "(policy={}, fill={})".format(self.policy, self.fill)

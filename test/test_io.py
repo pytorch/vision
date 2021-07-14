@@ -1,20 +1,20 @@
-import pytest
-import os
 import contextlib
+import os
 import sys
 import tempfile
+
+import pytest
+
 import torch
 import torchvision.io as io
 from torchvision import get_video_backend
-import warnings
-from urllib.error import URLError
 
-from common_utils import get_tmp_dir
 from _assert_utils import assert_equal
-
+from common_utils import get_tmp_dir
 
 try:
     import av
+
     # Do a version test too
     io.video._check_av_available()
 except ImportError:
@@ -43,29 +43,30 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
             raise ValueError("video_codec can't be specified together with lossless")
         if options is not None:
             raise ValueError("options can't be specified together with lossless")
-        video_codec = 'libx264rgb'
-        options = {'crf': '0'}
+        video_codec = "libx264rgb"
+        options = {"crf": "0"}
 
     if video_codec is None:
         if get_video_backend() == "pyav":
-            video_codec = 'libx264'
+            video_codec = "libx264"
         else:
             # when video_codec is not set, we assume it is libx264rgb which accepts
             # RGB pixel formats as input instead of YUV
-            video_codec = 'libx264rgb'
+            video_codec = "libx264rgb"
     if options is None:
         options = {}
 
     data = _create_video_frames(num_frames, height, width)
-    with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+    with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
         f.close()
         io.write_video(f.name, data, fps=fps, video_codec=video_codec, options=options)
         yield f.name, data
     os.unlink(f.name)
 
 
-@pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-                    reason="video_reader backend not available")
+@pytest.mark.skipif(
+    get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT, reason="video_reader backend not available"
+)
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 class TestVideo:
     # compression adds artifacts, thus we add a tolerance of
@@ -108,14 +109,14 @@ class TestVideo:
 
             assert pts == expected_pts
 
-    @pytest.mark.parametrize('start', range(5))
-    @pytest.mark.parametrize('offset', range(1, 4))
+    @pytest.mark.parametrize("start", range(5))
+    @pytest.mark.parametrize("offset", range(1, 4))
     def test_read_partial_video(self, start, offset):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
 
             lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1])
-            s_data = data[start:(start + offset)]
+            s_data = data[start : (start + offset)]
             assert len(lv) == offset
             assert_equal(s_data, lv)
 
@@ -126,22 +127,22 @@ class TestVideo:
                 assert len(lv) == 4
                 assert_equal(data[4:8], lv)
 
-    @pytest.mark.parametrize('start', range(0, 80, 20))
-    @pytest.mark.parametrize('offset', range(1, 4))
+    @pytest.mark.parametrize("start", range(0, 80, 20))
+    @pytest.mark.parametrize("offset", range(1, 4))
     def test_read_partial_video_bframes(self, start, offset):
         # do not use lossless encoding, to test the presence of B-frames
-        options = {'bframes': '16', 'keyint': '10', 'min-keyint': '4'}
+        options = {"bframes": "16", "keyint": "10", "min-keyint": "4"}
         with temp_video(100, 300, 300, 5, options=options) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
 
             lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1])
-            s_data = data[start:(start + offset)]
+            s_data = data[start : (start + offset)]
             assert len(lv) == offset
             assert_equal(s_data, lv, rtol=0.0, atol=self.TOLERANCE)
 
             lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
             # TODO fix this
-            if get_video_backend() == 'pyav':
+            if get_video_backend() == "pyav":
                 assert len(lv) == 4
                 assert_equal(data[4:8], lv, rtol=0.0, atol=self.TOLERANCE)
             else:
@@ -157,7 +158,7 @@ class TestVideo:
         assert fps == 30
 
     def test_read_timestamps_from_packet(self):
-        with temp_video(10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
+        with temp_video(10, 300, 300, 5, video_codec="mpeg4") as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
@@ -165,7 +166,7 @@ class TestVideo:
             with av.open(f_name) as container:
                 stream = container.streams[0]
                 # make sure we went through the optimized codepath
-                assert b'Lavc' in stream.codec_context.extradata
+                assert b"Lavc" in stream.codec_context.extradata
                 pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
                 num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
                 expected_pts = [i * pts_step for i in range(num_frames)]
@@ -174,7 +175,7 @@ class TestVideo:
 
     def test_read_video_pts_unit_sec(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            lv, _, info = io.read_video(f_name, pts_unit='sec')
+            lv, _, info = io.read_video(f_name, pts_unit="sec")
 
             assert_equal(data, lv)
             assert info["video_fps"] == 5
@@ -182,7 +183,7 @@ class TestVideo:
 
     def test_read_timestamps_pts_unit_sec(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
+            pts, _ = io.read_video_timestamps(f_name, pts_unit="sec")
 
             with av.open(f_name) as container:
                 stream = container.streams[0]
@@ -192,22 +193,22 @@ class TestVideo:
 
             assert pts == expected_pts
 
-    @pytest.mark.parametrize('start', range(5))
-    @pytest.mark.parametrize('offset', range(1, 4))
+    @pytest.mark.parametrize("start", range(5))
+    @pytest.mark.parametrize("offset", range(1, 4))
     def test_read_partial_video_pts_unit_sec(self, start, offset):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
+            pts, _ = io.read_video_timestamps(f_name, pts_unit="sec")
 
-            lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1], pts_unit='sec')
-            s_data = data[start:(start + offset)]
+            lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1], pts_unit="sec")
+            s_data = data[start : (start + offset)]
             assert len(lv) == offset
             assert_equal(s_data, lv)
 
             with av.open(f_name) as container:
                 stream = container.streams[0]
-                lv, _, _ = io.read_video(f_name,
-                                         int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
-                                         pts_unit='sec')
+                lv, _, _ = io.read_video(
+                    f_name, int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7], pts_unit="sec"
+                )
             if get_video_backend() == "pyav":
                 # for "video_reader" backend, we don't decode the closest early frame
                 # when the given start pts is not matching any frame pts
@@ -215,8 +216,8 @@ class TestVideo:
                 assert_equal(data[4:8], lv)
 
     def test_read_video_corrupted_file(self):
-        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
-            f.write(b'This is not an mpg4 file')
+        with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
+            f.write(b"This is not an mpg4 file")
             video, audio, info = io.read_video(f.name)
             assert isinstance(video, torch.Tensor)
             assert isinstance(audio, torch.Tensor)
@@ -225,8 +226,8 @@ class TestVideo:
             assert info == {}
 
     def test_read_video_timestamps_corrupted_file(self):
-        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
-            f.write(b'This is not an mpg4 file')
+        with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
+            f.write(b"This is not an mpg4 file")
             video_pts, video_fps = io.read_video_timestamps(f.name)
             assert video_pts == []
             assert video_fps is None
@@ -234,18 +235,18 @@ class TestVideo:
     @pytest.mark.skip(reason="Temporarily disabled due to new pyav")
     def test_read_video_partially_corrupted_file(self):
         with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
-            with open(f_name, 'r+b') as f:
+            with open(f_name, "r+b") as f:
                 size = os.path.getsize(f_name)
                 bytes_to_overwrite = size // 10
                 # seek to the middle of the file
                 f.seek(5 * bytes_to_overwrite)
                 # corrupt 10% of the file from the middle
-                f.write(b'\xff' * bytes_to_overwrite)
+                f.write(b"\xff" * bytes_to_overwrite)
             # this exercises the container.decode assertion check
-            video, audio, info = io.read_video(f.name, pts_unit='sec')
+            video, audio, info = io.read_video(f.name, pts_unit="sec")
             # check that size is not equal to 5, but 3
             # TODO fix this
-            if get_video_backend() == 'pyav':
+            if get_video_backend() == "pyav":
                 assert len(video) == 3
             else:
                 assert len(video) == 4
@@ -255,7 +256,7 @@ class TestVideo:
             with pytest.raises(AssertionError):
                 assert_equal(video, data)
 
-    @pytest.mark.skipif(sys.platform == 'win32', reason='temporarily disabled on Windows')
+    @pytest.mark.skipif(sys.platform == "win32", reason="temporarily disabled on Windows")
     def test_write_video_with_audio(self):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
@@ -267,15 +268,13 @@ class TestVideo:
                 video_tensor,
                 round(info["video_fps"]),
                 video_codec="libx264rgb",
-                options={'crf': '0'},
+                options={"crf": "0"},
                 audio_array=audio_tensor,
                 audio_fps=info["audio_fps"],
                 audio_codec="aac",
             )
 
-            out_video_tensor, out_audio_tensor, out_info = io.read_video(
-                out_f_name, pts_unit="sec"
-            )
+            out_video_tensor, out_audio_tensor, out_info = io.read_video(out_f_name, pts_unit="sec")
 
             assert info["video_fps"] == out_info["video_fps"]
             assert_equal(video_tensor, out_video_tensor)
@@ -291,5 +290,5 @@ class TestVideo:
     # TODO add tests for audio
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main(__file__)

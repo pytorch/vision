@@ -1,14 +1,13 @@
 import copy
+import os
+
+from PIL import Image
+from pycocotools import mask as coco_mask
+from transforms import Compose
+
 import torch
 import torch.utils.data
 import torchvision
-from PIL import Image
-
-import os
-
-from pycocotools import mask as coco_mask
-
-from transforms import Compose
 
 
 class FilterAndRemapCocoCategories(object):
@@ -90,14 +89,9 @@ def get_coco(root, image_set, transforms):
         "val": ("val2017", os.path.join("annotations", "instances_val2017.json")),
         # "train": ("val2017", os.path.join("annotations", "instances_val2017.json"))
     }
-    CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4,
-                1, 64, 20, 63, 7, 72]
+    CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4, 1, 64, 20, 63, 7, 72]
 
-    transforms = Compose([
-        FilterAndRemapCocoCategories(CAT_LIST, remap=True),
-        ConvertCocoPolysToMask(),
-        transforms
-    ])
+    transforms = Compose([FilterAndRemapCocoCategories(CAT_LIST, remap=True), ConvertCocoPolysToMask(), transforms])
 
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)

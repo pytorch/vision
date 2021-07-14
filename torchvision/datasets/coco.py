@@ -1,8 +1,10 @@
-from .vision import VisionDataset
-from PIL import Image
 import os
 import os.path
-from typing import Any, Callable, Optional, Tuple, List
+from typing import Any, Callable, List, Optional, Tuple
+
+from PIL import Image
+
+from .vision import VisionDataset
 
 
 class CocoDetection(VisionDataset):

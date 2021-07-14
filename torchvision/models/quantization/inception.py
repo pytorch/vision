@@ -5,9 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
+
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
-
 
 __all__ = [
     "QuantizableInception3",
@@ -17,8 +17,7 @@ __all__ = [
 
 quant_model_urls = {
     # fp32 weights ported from TensorFlow, quantized in PyTorch
-    "inception_v3_google_fbgemm":
-        "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth"
+    "inception_v3_google_fbgemm": "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth"  # noqa: E501
 }
 
 
@@ -57,7 +56,7 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
 
     if quantize:
         # TODO use pretrained as a string to specify the backend
-        backend = 'fbgemm'
+        backend = "fbgemm"
         quantize_model(model, backend)
     else:
         assert pretrained in [True, False]
@@ -67,12 +66,11 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
             if not original_aux_logits:
                 model.aux_logits = False
                 model.AuxLogits = None
-            model_url = quant_model_urls['inception_v3_google' + '_' + backend]
+            model_url = quant_model_urls["inception_v3_google" + "_" + backend]
         else:
-            model_url = inception_module.model_urls['inception_v3_google']
+            model_url = inception_module.model_urls["inception_v3_google"]
 
-        state_dict = load_state_dict_from_url(model_url,
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
 
         model.load_state_dict(state_dict)
 
@@ -189,8 +187,8 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionC,
                 QuantizableInceptionD,
                 QuantizableInceptionE,
-                QuantizableInceptionAux
-            ]
+                QuantizableInceptionAux,
+            ],
         )
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()

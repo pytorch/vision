@@ -2,7 +2,6 @@ from torch import nn
 
 from ._utils import _SimpleSegmentationModel
 
-
 __all__ = ["FCN"]
 
 
@@ -19,6 +18,7 @@ class FCN(_SimpleSegmentationModel):
             the backbone and returns a dense prediction.
         aux_classifier (nn.Module, optional): auxiliary classifier used during training
     """
+
     pass
 
 
@@ -30,7 +30,7 @@ class FCNHead(nn.Sequential):
             nn.BatchNorm2d(inter_channels),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Conv2d(inter_channels, channels, 1)
+            nn.Conv2d(inter_channels, channels, 1),
         ]
 
         super(FCNHead, self).__init__(*layers)

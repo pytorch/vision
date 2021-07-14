@@ -1,10 +1,9 @@
 import math
-import torch
-
 from collections import OrderedDict
-from torch import Tensor
 from typing import List, Tuple
 
+import torch
+from torch import Tensor
 from torchvision.ops.misc import FrozenBatchNorm2d
 
 
@@ -61,12 +60,8 @@ class BalancedPositiveNegativeSampler(object):
             neg_idx_per_image = negative[perm2]
 
             # create binary mask from indices
-            pos_idx_per_image_mask = torch.zeros_like(
-                matched_idxs_per_image, dtype=torch.uint8
-            )
-            neg_idx_per_image_mask = torch.zeros_like(
-                matched_idxs_per_image, dtype=torch.uint8
-            )
+            pos_idx_per_image_mask = torch.zeros_like(matched_idxs_per_image, dtype=torch.uint8)
+            neg_idx_per_image_mask = torch.zeros_like(matched_idxs_per_image, dtype=torch.uint8)
 
             pos_idx_per_image_mask[pos_idx_per_image] = 1
             neg_idx_per_image_mask[neg_idx_per_image] = 1
@@ -132,7 +127,7 @@ class BoxCoder(object):
     the representation used for training the regressors.
     """
 
-    def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
+    def __init__(self, weights, bbox_xform_clip=math.log(1000.0 / 16)):
         # type: (Tuple[float, float, float, float], float) -> None
         """
         Args:
@@ -177,9 +172,7 @@ class BoxCoder(object):
             box_sum += val
         if box_sum > 0:
             rel_codes = rel_codes.reshape(box_sum, -1)
-        pred_boxes = self.decode_single(
-            rel_codes, concat_boxes
-        )
+        pred_boxes = self.decode_single(rel_codes, concat_boxes)
         if box_sum > 0:
             pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
         return pred_boxes
@@ -243,8 +236,8 @@ class Matcher(object):
     BETWEEN_THRESHOLDS = -2
 
     __annotations__ = {
-        'BELOW_LOW_THRESHOLD': int,
-        'BETWEEN_THRESHOLDS': int,
+        "BELOW_LOW_THRESHOLD": int,
+        "BETWEEN_THRESHOLDS": int,
     }
 
     def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
@@ -283,13 +276,9 @@ class Matcher(object):
         if match_quality_matrix.numel() == 0:
             # empty targets or proposals not supported during training
             if match_quality_matrix.shape[0] == 0:
-                raise ValueError(
-                    "No ground-truth boxes available for one of the images "
-                    "during training")
+                raise ValueError("No ground-truth boxes available for one of the images " "during training")
             else:
-                raise ValueError(
-                    "No proposal boxes available for one of the images "
-                    "during training")
+                raise ValueError("No proposal boxes available for one of the images " "during training")
 
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction
@@ -301,9 +290,7 @@ class Matcher(object):
 
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
-        between_thresholds = (matched_vals >= self.low_threshold) & (
-            matched_vals < self.high_threshold
-        )
+        between_thresholds = (matched_vals >= self.low_threshold) & (matched_vals < self.high_threshold)
         matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
@@ -324,9 +311,7 @@ class Matcher(object):
         # For each gt, find the prediction with which it has highest quality
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
-        gt_pred_pairs_of_highest_quality = torch.where(
-            match_quality_matrix == highest_quality_foreach_gt[:, None]
-        )
+        gt_pred_pairs_of_highest_quality = torch.where(match_quality_matrix == highest_quality_foreach_gt[:, None])
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
         #           [    1, 32055],
@@ -346,7 +331,6 @@ class Matcher(object):
 
 
 class SSDMatcher(Matcher):
-
     def __init__(self, threshold):
         super().__init__(threshold, threshold, allow_low_quality_matches=False)
 
@@ -355,9 +339,9 @@ class SSDMatcher(Matcher):
 
         # For each gt, find the prediction with which it has the highest quality
         _, highest_quality_pred_foreach_gt = match_quality_matrix.max(dim=1)
-        matches[highest_quality_pred_foreach_gt] = torch.arange(highest_quality_pred_foreach_gt.size(0),
-                                                                dtype=torch.int64,
-                                                                device=highest_quality_pred_foreach_gt.device)
+        matches[highest_quality_pred_foreach_gt] = torch.arange(
+            highest_quality_pred_foreach_gt.size(0), dtype=torch.int64, device=highest_quality_pred_foreach_gt.device
+        )
 
         return matches
 
@@ -401,7 +385,7 @@ def retrieve_out_channels(model, size):
         tmp_img = torch.zeros((1, 3, size[1], size[0]), device=device)
         features = model(tmp_img)
         if isinstance(features, torch.Tensor):
-            features = OrderedDict([('0', features)])
+            features = OrderedDict([("0", features)])
         out_channels = [x.size(1) for x in features.values()]
 
     if in_training:

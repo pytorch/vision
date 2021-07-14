@@ -1,15 +1,14 @@
 from torch import nn
+from torch.quantization import DeQuantStub, QuantStub, fuse_modules
+from torchvision.models.mobilenetv2 import ConvBNReLU, InvertedResidual, MobileNetV2, model_urls
+
 from ..._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv2 import InvertedResidual, ConvBNReLU, MobileNetV2, model_urls
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from .utils import _replace_relu, quantize_model
 
-
-__all__ = ['QuantizableMobileNetV2', 'mobilenet_v2']
+__all__ = ["QuantizableMobileNetV2", "mobilenet_v2"]
 
 quant_model_urls = {
-    'mobilenet_v2_qnnpack':
-        'https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth'
+    "mobilenet_v2_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth"
 }
 
 
@@ -51,7 +50,7 @@ class QuantizableMobileNetV2(MobileNetV2):
     def fuse_model(self):
         for m in self.modules():
             if type(m) == ConvBNReLU:
-                fuse_modules(m, ['0', '1', '2'], inplace=True)
+                fuse_modules(m, ["0", "1", "2"], inplace=True)
             if type(m) == QuantizableInvertedResidual:
                 m.fuse_model()
 
@@ -76,19 +75,18 @@ def mobilenet_v2(pretrained=False, progress=True, quantize=False, **kwargs):
 
     if quantize:
         # TODO use pretrained as a string to specify the backend
-        backend = 'qnnpack'
+        backend = "qnnpack"
         quantize_model(model, backend)
     else:
         assert pretrained in [True, False]
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls['mobilenet_v2_' + backend]
+            model_url = quant_model_urls["mobilenet_v2_" + backend]
         else:
-            model_url = model_urls['mobilenet_v2']
+            model_url = model_urls["mobilenet_v2"]
 
-        state_dict = load_state_dict_from_url(model_url,
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
 
         model.load_state_dict(state_dict)
     return model

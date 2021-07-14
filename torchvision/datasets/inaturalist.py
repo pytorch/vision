@@ -1,29 +1,30 @@
-from PIL import Image
 import os
 import os.path
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from .vision import VisionDataset
+from PIL import Image
+
 from .utils import download_and_extract_archive, verify_str_arg
+from .vision import VisionDataset
 
 CATEGORIES_2021 = ["kingdom", "phylum", "class", "order", "family", "genus"]
 
 DATASET_URLS = {
-    '2017': 'https://ml-inat-competition-datasets.s3.amazonaws.com/2017/train_val_images.tar.gz',
-    '2018': 'https://ml-inat-competition-datasets.s3.amazonaws.com/2018/train_val2018.tar.gz',
-    '2019': 'https://ml-inat-competition-datasets.s3.amazonaws.com/2019/train_val2019.tar.gz',
-    '2021_train': 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train.tar.gz',
-    '2021_train_mini': 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train_mini.tar.gz',
-    '2021_valid': 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz',
+    "2017": "https://ml-inat-competition-datasets.s3.amazonaws.com/2017/train_val_images.tar.gz",
+    "2018": "https://ml-inat-competition-datasets.s3.amazonaws.com/2018/train_val2018.tar.gz",
+    "2019": "https://ml-inat-competition-datasets.s3.amazonaws.com/2019/train_val2019.tar.gz",
+    "2021_train": "https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train.tar.gz",
+    "2021_train_mini": "https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train_mini.tar.gz",
+    "2021_valid": "https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz",
 }
 
 DATASET_MD5 = {
-    '2017': '7c784ea5e424efaec655bd392f87301f',
-    '2018': 'b1c6952ce38f31868cc50ea72d066cc3',
-    '2019': 'c60a6e2962c9b8ccbd458d12c8582644',
-    '2021_train': '38a7bb733f7a09214d44293460ec0021',
-    '2021_train_mini': 'db6ed8330e634445efc8fec83ae81442',
-    '2021_valid': 'f6f6e0e242e3d4c9569ba56400938afc',
+    "2017": "7c784ea5e424efaec655bd392f87301f",
+    "2018": "b1c6952ce38f31868cc50ea72d066cc3",
+    "2019": "c60a6e2962c9b8ccbd458d12c8582644",
+    "2021_train": "38a7bb733f7a09214d44293460ec0021",
+    "2021_train_mini": "db6ed8330e634445efc8fec83ae81442",
+    "2021_valid": "f6f6e0e242e3d4c9569ba56400938afc",
 }
 
 
@@ -63,27 +64,26 @@ class INaturalist(VisionDataset):
     """
 
     def __init__(
-            self,
-            root: str,
-            version: str = "2021_train",
-            target_type: Union[List[str], str] = "full",
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: str,
+        version: str = "2021_train",
+        target_type: Union[List[str], str] = "full",
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         self.version = verify_str_arg(version, "version", DATASET_URLS.keys())
 
-        super(INaturalist, self).__init__(os.path.join(root, version),
-                                          transform=transform,
-                                          target_transform=target_transform)
+        super(INaturalist, self).__init__(
+            os.path.join(root, version), transform=transform, target_transform=target_transform
+        )
 
         os.makedirs(root, exist_ok=True)
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError('Dataset not found or corrupted.' +
-                               ' You can use download=True to download it')
+            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
 
         self.all_categories: List[str] = []
 
@@ -96,12 +96,10 @@ class INaturalist(VisionDataset):
         if not isinstance(target_type, list):
             target_type = [target_type]
         if self.version[:4] == "2021":
-            self.target_type = [verify_str_arg(t, "target_type", ("full", *CATEGORIES_2021))
-                                for t in target_type]
+            self.target_type = [verify_str_arg(t, "target_type", ("full", *CATEGORIES_2021)) for t in target_type]
             self._init_2021()
         else:
-            self.target_type = [verify_str_arg(t, "target_type", ("full", "super"))
-                                for t in target_type]
+            self.target_type = [verify_str_arg(t, "target_type", ("full", "super")) for t in target_type]
             self._init_pre2021()
 
         # index of all files: (full category id, filename)
@@ -118,16 +116,14 @@ class INaturalist(VisionDataset):
         self.all_categories = sorted(os.listdir(self.root))
 
         # map: category type -> name of category -> index
-        self.categories_index = {
-            k: {} for k in CATEGORIES_2021
-        }
+        self.categories_index = {k: {} for k in CATEGORIES_2021}
 
         for dir_index, dir_name in enumerate(self.all_categories):
-            pieces = dir_name.split('_')
+            pieces = dir_name.split("_")
             if len(pieces) != 8:
-                raise RuntimeError(f'Unexpected category name {dir_name}, wrong number of pieces')
-            if pieces[0] != f'{dir_index:05d}':
-                raise RuntimeError(f'Unexpected category id {pieces[0]}, expecting {dir_index:05d}')
+                raise RuntimeError(f"Unexpected category name {dir_name}, wrong number of pieces")
+            if pieces[0] != f"{dir_index:05d}":
+                raise RuntimeError(f"Unexpected category id {pieces[0]}, expecting {dir_index:05d}")
             cat_map = {}
             for cat, name in zip(CATEGORIES_2021, pieces[1:7]):
                 if name in self.categories_index[cat]:
@@ -142,7 +138,7 @@ class INaturalist(VisionDataset):
         """Initialize based on 2017-2019 layout"""
 
         # map: category type -> name of category -> index
-        self.categories_index = {'super': {}}
+        self.categories_index = {"super": {}}
 
         cat_index = 0
         super_categories = sorted(os.listdir(self.root))
@@ -165,7 +161,7 @@ class INaturalist(VisionDataset):
                     self.all_categories.extend([""] * (subcat_i - old_len + 1))
                 if self.categories_map[subcat_i]:
                     raise RuntimeError(f"Duplicate category {subcat}")
-                self.categories_map[subcat_i] = {'super': sindex}
+                self.categories_map[subcat_i] = {"super": sindex}
                 self.all_categories[subcat_i] = os.path.join(scat, subcat)
 
         # validate the dictionary
@@ -183,9 +179,7 @@ class INaturalist(VisionDataset):
         """
 
         cat_id, fname = self.index[index]
-        img = Image.open(os.path.join(self.root,
-                                      self.all_categories[cat_id],
-                                      fname))
+        img = Image.open(os.path.join(self.root, self.all_categories[cat_id], fname))
 
         target: Any = []
         for t in self.target_type:
@@ -239,10 +233,8 @@ class INaturalist(VisionDataset):
         base_root = os.path.dirname(self.root)
 
         download_and_extract_archive(
-            DATASET_URLS[self.version],
-            base_root,
-            filename=f"{self.version}.tgz",
-            md5=DATASET_MD5[self.version])
+            DATASET_URLS[self.version], base_root, filename=f"{self.version}.tgz", md5=DATASET_MD5[self.version]
+        )
 
         orig_dir_name = os.path.join(base_root, os.path.basename(DATASET_URLS[self.version]).rstrip(".tar.gz"))
         if not os.path.exists(orig_dir_name):

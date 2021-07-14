@@ -1,5 +1,6 @@
-import torch
 from bisect import bisect_right
+
+import torch
 
 
 class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
@@ -20,10 +21,7 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
             )
 
         if warmup_method not in ("constant", "linear"):
-            raise ValueError(
-                "Only 'constant' or 'linear' warmup_method accepted"
-                "got {}".format(warmup_method)
-            )
+            raise ValueError("Only 'constant' or 'linear' warmup_method accepted" "got {}".format(warmup_method))
         self.milestones = milestones
         self.gamma = gamma
         self.warmup_factor = warmup_factor
@@ -40,8 +38,6 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
                 alpha = float(self.last_epoch) / self.warmup_iters
                 warmup_factor = self.warmup_factor * (1 - alpha) + alpha
         return [
-            base_lr *
-            warmup_factor *
-            self.gamma ** bisect_right(self.milestones, self.last_epoch)
+            base_lr * warmup_factor * self.gamma ** bisect_right(self.milestones, self.last_epoch)
             for base_lr in self.base_lrs
         ]

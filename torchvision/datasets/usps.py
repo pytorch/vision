@@ -1,7 +1,8 @@
-from PIL import Image
 import os
+from typing import Any, Callable, Optional, Tuple, cast
+
 import numpy as np
-from typing import Any, Callable, cast, Optional, Tuple
+from PIL import Image
 
 from .utils import download_url
 from .vision import VisionDataset
@@ -26,28 +27,30 @@ class USPS(VisionDataset):
             downloaded again.
 
     """
+
     split_list = {
-        'train': [
+        "train": [
             "https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/usps.bz2",
-            "usps.bz2", 'ec16c51db3855ca6c91edd34d0e9b197'
+            "usps.bz2",
+            "ec16c51db3855ca6c91edd34d0e9b197",
         ],
-        'test': [
+        "test": [
             "https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/usps.t.bz2",
-            "usps.t.bz2", '8ea070ee2aca1ac39742fdd1ef5ed118'
+            "usps.t.bz2",
+            "8ea070ee2aca1ac39742fdd1ef5ed118",
         ],
     }
 
     def __init__(
-            self,
-            root: str,
-            train: bool = True,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: str,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
-        super(USPS, self).__init__(root, transform=transform,
-                                   target_transform=target_transform)
-        split = 'train' if train else 'test'
+        super(USPS, self).__init__(root, transform=transform, target_transform=target_transform)
+        split = "train" if train else "test"
         url, filename, checksum = self.split_list[split]
         full_path = os.path.join(self.root, filename)
 
@@ -55,9 +58,10 @@ class USPS(VisionDataset):
             download_url(url, self.root, filename, md5=checksum)
 
         import bz2
+
         with bz2.open(full_path) as fp:
             raw_data = [line.decode().split() for line in fp.readlines()]
-            tmp_list = [[x.split(':')[-1] for x in data[1:]] for data in raw_data]
+            tmp_list = [[x.split(":")[-1] for x in data[1:]] for data in raw_data]
             imgs = np.asarray(tmp_list, dtype=np.float32).reshape((-1, 16, 16))
             imgs = ((cast(np.ndarray, imgs) + 1) / 2 * 255).astype(dtype=np.uint8)
             targets = [int(d[0]) - 1 for d in raw_data]
@@ -77,7 +81,7 @@ class USPS(VisionDataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img, mode='L')
+        img = Image.fromarray(img, mode="L")
 
         if self.transform is not None:
             img = self.transform(img)

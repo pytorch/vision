@@ -1,13 +1,14 @@
 import contextlib
 import os
-import torch
+
 import pytest
 
+import torch
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
 
-from common_utils import get_tmp_dir
 from _assert_utils import assert_equal
+from common_utils import get_tmp_dir
 
 
 @contextlib.contextmanager
@@ -32,30 +33,29 @@ def get_list_of_videos(num_videos=5, sizes=None, fps=None):
 
 
 class TestVideo:
-
     def test_unfold(self):
         a = torch.arange(7)
 
         r = unfold(a, 3, 3, 1)
-        expected = torch.tensor([
-            [0, 1, 2],
-            [3, 4, 5],
-        ])
+        expected = torch.tensor(
+            [
+                [0, 1, 2],
+                [3, 4, 5],
+            ]
+        )
         assert_equal(r, expected, check_stride=False)
 
         r = unfold(a, 3, 2, 1)
-        expected = torch.tensor([
-            [0, 1, 2],
-            [2, 3, 4],
-            [4, 5, 6]
-        ])
+        expected = torch.tensor([[0, 1, 2], [2, 3, 4], [4, 5, 6]])
         assert_equal(r, expected, check_stride=False)
 
         r = unfold(a, 3, 2, 2)
-        expected = torch.tensor([
-            [0, 2, 4],
-            [2, 4, 6],
-        ])
+        expected = torch.tensor(
+            [
+                [0, 2, 4],
+                [2, 4, 6],
+            ]
+        )
         assert_equal(r, expected, check_stride=False)
 
     @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")
@@ -101,8 +101,7 @@ class TestVideo:
         orig_fps = 30
         duration = float(len(video_pts)) / orig_fps
         new_fps = 13
-        clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
-                                                         orig_fps, new_fps)
+        clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames, orig_fps, new_fps)
         resampled_idxs = VideoClips._resample_video_idx(int(duration * new_fps), orig_fps, new_fps)
         assert len(clips) == 1
         assert_equal(clips, idxs)
@@ -113,8 +112,7 @@ class TestVideo:
         orig_fps = 30
         duration = float(len(video_pts)) / orig_fps
         new_fps = 12
-        clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
-                                                         orig_fps, new_fps)
+        clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames, orig_fps, new_fps)
         resampled_idxs = VideoClips._resample_video_idx(int(duration * new_fps), orig_fps, new_fps)
         assert len(clips) == 3
         assert_equal(clips, idxs)
@@ -125,11 +123,10 @@ class TestVideo:
         orig_fps = 30
         new_fps = 13
         with pytest.warns(UserWarning):
-            clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
-                                                             orig_fps, new_fps)
+            clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames, orig_fps, new_fps)
         assert len(clips) == 0
         assert len(idxs) == 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

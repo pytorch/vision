@@ -1,20 +1,15 @@
 import torch
 
 from ._video_opt import (
+    _HAS_VIDEO_OPT,
     Timebase,
     VideoMetaData,
-    _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
     _read_video_from_file,
     _read_video_from_memory,
     _read_video_timestamps_from_file,
     _read_video_timestamps_from_memory,
-)
-from .video import (
-    read_video,
-    read_video_timestamps,
-    write_video,
 )
 from .image import (
     ImageReadMode,
@@ -29,7 +24,7 @@ from .image import (
     write_jpeg,
     write_png,
 )
-
+from .video import read_video, read_video_timestamps, write_video
 
 if _HAS_VIDEO_OPT:
 
