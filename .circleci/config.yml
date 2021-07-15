@@ -191,8 +191,8 @@ jobs:
     steps:
       - checkout
       - run: pip install --user --progress-bar=off isort==5 black==21.6b0 flake8
-      - run: isort --settings-path=pyproject.toml --check-only .
-      - run: black --config=pyproject.toml --check .
+      - run: isort --settings-path=setup.cfg --check-only .
+      - run: black --config=black.toml --check .
       - run: flake8 --config=setup.cfg .
 
   python_type_check:
@@ -207,7 +207,7 @@ jobs:
             pip install --user --progress-bar off mypy
             pip install --user --progress-bar off types-requests
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --user --progress-bar off --no-build-isolation --editable .
+            pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
 
   docstring_parameters_sync:

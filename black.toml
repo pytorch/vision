@@ -1,0 +1,12 @@
+# We are diverging from the standard pyproject.toml here since simply having a a pyproject.toml file in the root
+# folder changes the default behavior of pip. To use this configuration, run black with --config=black.toml.
+
+[tool.black]
+# See link below for available options
+# https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file
+
+line-length = 120
+target-version = ["py36"]
+
+exclude = "gallery"
+extend_exclude = true
