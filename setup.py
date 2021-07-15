@@ -49,9 +49,9 @@ elif sha != "Unknown":
 def write_version_file():
     version_path = os.path.join(cwd, "torchvision", "version.py")
     with open(version_path, "w") as f:
-        f.write("__version__ = '{}'\n".format(version))
-        f.write("git_version = {}\n".format(repr(sha)))
-        f.write("from torchvision.extension import _check_cuda_version\n")
+        f.write('__version__ = "{}"\n'.format(version))
+        f.write('git_version = "{}"\n'.format(sha))
+        f.write("from torchvision.extension import _check_cuda_version\n\n")
         f.write("if _check_cuda_version() > 0:\n")
         f.write("    cuda = _check_cuda_version()\n")
 
