@@ -190,10 +190,10 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
-      - run:
-          command: |
-            pip install --user --progress-bar off flake8 typing
-            flake8 --config=setup.cfg .
+      - run: pip install --user --progress-bar=off isort==5 black==21.6b0 flake8
+      - run: isort --settings-path=pyproject.toml --check-only .
+      - run: black --config=pyproject.toml --check .
+      - run: flake8 --config=setup.cfg .
 
   python_type_check:
     docker:
