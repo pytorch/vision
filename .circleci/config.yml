@@ -190,10 +190,10 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
-      - run:
-          command: |
-            pip install --user --progress-bar off flake8 typing
-            flake8 --config=setup.cfg .
+      - run: pip install --user --progress-bar=off isort==5 black==21.6b0 flake8
+      - run: isort --settings-path=pyproject.toml --check-only .
+      - run: black --config=pyproject.toml --check .
+      - run: flake8 --config=setup.cfg .
 
   python_type_check:
     docker:
@@ -241,7 +241,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation --editable .
+            pip install --user --progress-bar off .
             pip install pytest
             python test/test_hub.py
 
@@ -254,7 +254,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation --editable .
+            pip install --user --progress-bar off .
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
