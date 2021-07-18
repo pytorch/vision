@@ -77,6 +77,7 @@ class MNIST(VisionDataset):
     ) -> None:
         super(MNIST, self).__init__(root, transform=transform,
                                     target_transform=target_transform)
+        torch._C._log_api_usage_once(f"torchvision.datasets.{self.__class__.__name__}")
         self.train = train  # training set or test set
 
         if self._check_legacy_exist():
@@ -495,7 +496,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     s = [get_int(data[4 * (i + 1): 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))
     assert parsed.shape[0] == np.prod(s) or not strict
-    return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
+    return torch.from_numpy(parsed.astype(m[2])).view(*s)
 
 
 def read_label_file(path: str) -> torch.Tensor:

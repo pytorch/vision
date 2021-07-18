@@ -33,7 +33,7 @@ clear and has sufficient instructions to be able to reproduce the issue.
 ### Install PyTorch Nightly 
 
 ```bash
-conda install pytorch -c pytorch-nightly -c conda-forge
+conda install pytorch -c pytorch-nightly
 # or with pip (see https://pytorch.org/get-started/locally/)
 # pip install numpy
 # pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html

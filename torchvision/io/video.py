@@ -3,6 +3,7 @@ import math
 import os
 import re
 import warnings
+from fractions import Fraction
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -236,7 +237,10 @@ def _align_audio_frames(
 
 
 def read_video(
-    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+    filename: str,
+    start_pts: Union[float, Fraction] = 0,
+    end_pts: Optional[Union[float, Fraction]] = None,
+    pts_unit: str = "pts",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as

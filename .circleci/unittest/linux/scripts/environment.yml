@@ -1,8 +1,6 @@
 channels:
   - pytorch
   - defaults
-  # using conda-forge for python v3.9
-  - conda-forge
 dependencies:
   - pytest
   - pytest-cov
@@ -14,6 +12,6 @@ dependencies:
   - ca-certificates
   - pip:
     - future
-    - pillow >=5.3.0
+    - pillow >=5.3.0, !=8.3.0
     - scipy
     - av

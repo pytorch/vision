@@ -1,5 +1,4 @@
-from common_utils import needs_cuda, cpu_and_gpu
-from _assert_utils import assert_equal
+from common_utils import needs_cuda, cpu_and_gpu, assert_equal
 import math
 from abc import ABC, abstractmethod
 import pytest
@@ -774,6 +773,10 @@ class TestDeformConv:
     def test_autocast(self, batch_sz, dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
+
+    def test_forward_scriptability(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/4078
+        torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
 class TestFrozenBNT:

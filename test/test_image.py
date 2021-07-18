@@ -7,10 +7,9 @@ from pathlib import Path
 import pytest
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, __version__ as PILLOW_VERSION
 import torchvision.transforms.functional as F
-from common_utils import get_tmp_dir, needs_cuda
-from _assert_utils import assert_equal
+from common_utils import get_tmp_dir, needs_cuda, assert_equal
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
@@ -22,6 +21,7 @@ IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 IS_WINDOWS = sys.platform in ('win32', 'cygwin')
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
 
 def _get_safe_image_name(name):
@@ -141,7 +141,15 @@ def test_decode_png(img_path, pil_mode, mode):
     img_lpng = decode_image(data, mode=mode)
 
     tol = 0 if pil_mode is None else 1
-    assert img_lpng.allclose(img_pil, atol=tol)
+
+    if PILLOW_VERSION >= (8, 3) and pil_mode == "LA":
+        # Avoid checking the transparency channel until
+        # https://github.com/python-pillow/Pillow/issues/5593#issuecomment-878244910
+        # is fixed.
+        # TODO: remove once fix is released in PIL. Should be > 8.3.1.
+        img_lpng, img_pil = img_lpng[0], img_pil[0]
+
+    torch.testing.assert_close(img_lpng, img_pil, atol=tol, rtol=0)
 
 
 def test_decode_png_errors():
@@ -271,7 +279,7 @@ def test_read_1_bit_png(shape):
         img.save(image_path)
         img1 = read_image(image_path)
         img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
-        assert_equal(img1, img2, check_stride=False)
+        assert_equal(img1, img2)
 
 
 @pytest.mark.parametrize('shape', [
@@ -358,6 +366,18 @@ def test_encode_jpeg_errors():
         encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
 
+def _collect_if(cond):
+    # TODO: remove this once test_encode_jpeg_reference and test_write_jpeg_reference
+    # are removed
+    def _inner(test_func):
+        if cond:
+            return test_func
+        else:
+            return pytest.mark.dont_collect(test_func)
+    return _inner
+
+
+@_collect_if(cond=IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
@@ -389,6 +409,7 @@ def test_encode_jpeg_reference(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
+@_collect_if(cond=IS_WINDOWS)
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")

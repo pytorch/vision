@@ -9,7 +9,7 @@ import torchvision.utils as utils
 from io import BytesIO
 import torchvision.transforms.functional as F
 from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
-from _assert_utils import assert_equal
+from common_utils import assert_equal
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
@@ -111,6 +111,18 @@ def test_draw_boxes():
     # Check if modification is not in place
     assert_equal(boxes, boxes_cp)
     assert_equal(img, img_cp)
+
+
+@pytest.mark.parametrize('colors', [
+    None,
+    ['red', 'blue', '#FF00FF', (1, 34, 122)],
+    'red',
+    '#FF00FF',
+    (1, 34, 122)
+])
+def test_draw_boxes_colors(colors):
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
 
 def test_draw_boxes_vanilla():

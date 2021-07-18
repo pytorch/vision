@@ -9,6 +9,7 @@ import torch
 import __main__
 import random
 import inspect
+import functools
 
 from numbers import Number
 from torch._six import string_classes
@@ -16,8 +17,6 @@ from collections import OrderedDict
 
 import numpy as np
 from PIL import Image
-
-from _assert_utils import assert_equal
 
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
@@ -240,23 +239,6 @@ def disable_console_output():
         yield
 
 
-def call_args_to_kwargs_only(call_args, *callable_or_arg_names):
-    callable_or_arg_name = callable_or_arg_names[0]
-    if callable(callable_or_arg_name):
-        argspec = inspect.getfullargspec(callable_or_arg_name)
-        arg_names = argspec.args
-        if isinstance(callable_or_arg_name, type):
-            # remove self
-            arg_names.pop(0)
-    else:
-        arg_names = callable_or_arg_names
-
-    args, kwargs = call_args
-    kwargs_only = kwargs.copy()
-    kwargs_only.update(dict(zip(arg_names, args)))
-    return kwargs_only
-
-
 def cpu_and_gpu():
     import pytest  # noqa
     return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
@@ -285,6 +267,9 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+
+
 def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     np_pil_image = np.array(pil_image)
     if np_pil_image.ndim == 2:
@@ -292,7 +277,7 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
     if msg is None:
         msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-    assert_equal(tensor.cpu(), pil_tensor, check_stride=False, msg=msg)
+    assert_equal(tensor.cpu(), pil_tensor, msg=msg)
 
 
 def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
