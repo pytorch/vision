@@ -100,13 +100,12 @@ class UCF101(VisionDataset):
         name = "train" if train else "test"
         name = "{}list{:02d}.txt".format(name, fold)
         f = os.path.join(annotation_path, name)
-        selected_files = []
+        selected_files = set()
         with open(f, "r") as fid:
             data = fid.readlines()
-            data = [x.strip().split(" ") for x in data]
-            data = [os.path.join(self.root, x[0]) for x in data]
-            selected_files.extend(data)
-        selected_files = set(selected_files)
+            data = [x.strip().split(" ")[0] for x in data]
+            data = [os.path.join(self.root, x) for x in data]
+            selected_files.update(data)
         indices = [i for i in range(len(video_list)) if video_list[i] in selected_files]
         return indices
 
