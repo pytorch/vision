@@ -288,7 +288,7 @@ def _read_video_from_memory(
     video_timebase_numerator: int = 0,
     video_timebase_denominator: int = 1,
     read_audio_stream: int = 1,
-    audio_samples: int =0,
+    audio_samples: int = 0,
     audio_channels: int = 0,
     audio_pts_range: Tuple[int, int] = (0, -1),
     audio_timebase_numerator: int = 0,
