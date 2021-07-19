@@ -6,8 +6,7 @@ try:
 except ImportError:
     onnxruntime = None
 
-from common_utils import set_rng_seed
-from _assert_utils import assert_equal
+from common_utils import set_rng_seed, assert_equal
 import io
 import torch
 from torchvision import ops
@@ -19,6 +18,7 @@ from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 
 from collections import OrderedDict
+from typing import List, Tuple
 
 import pytest
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
@@ -366,32 +366,20 @@ class TestONNXExporter:
                        dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3], "input3": [0, 1, 2, 3],
                                      "input4": [0, 1, 2, 3], "input5": [0, 1, 2, 3], "input6": [0, 1, 2, 3]})
 
-    def get_image_from_url(self, url, size=None):
-        import requests
+    def get_image(self, rel_path: str, size: Tuple[int, int]) -> torch.Tensor:
+        import os
         from PIL import Image
-        from io import BytesIO
         from torchvision import transforms
 
-        data = requests.get(url)
-        image = Image.open(BytesIO(data.content)).convert("RGB")
+        data_dir = os.path.join(os.path.dirname(__file__), "assets")
+        path = os.path.join(data_dir, *rel_path.split("/"))
+        image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
 
-        if size is None:
-            size = (300, 200)
-        image = image.resize(size, Image.BILINEAR)
+        return transforms.ToTensor()(image)
 
-        to_tensor = transforms.ToTensor()
-        return to_tensor(image)
-
-    def get_test_images(self):
-        image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
-        image = self.get_image_from_url(url=image_url, size=(100, 320))
-
-        image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
-        image2 = self.get_image_from_url(url=image_url2, size=(250, 380))
-
-        images = [image]
-        test_images = [image2]
-        return images, test_images
+    def get_test_images(self) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+        return ([self.get_image("encode_jpeg/grace_hopper_517x606.jpg", (100, 320))],
+                [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))])
 
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
@@ -457,7 +445,6 @@ class TestONNXExporter:
                        dynamic_axes={"images_tensors": [0, 1, 2], "boxes": [0, 1], "labels": [0],
                                      "scores": [0], "masks": [0, 1, 2]},
                        tolerate_small_mismatch=True)
-        # TODO: enable this test once dynamic model export is fixed
         # Test exported model for an image with no detections on other images
         self.run_model(model, [(dummy_image,), (images,)],
                        input_names=["images_tensors"],
@@ -469,7 +456,6 @@ class TestONNXExporter:
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
     # (since jit_trace witll call _heatmaps_to_keypoints).
-    # @unittest.skip("Disable test until Resize bug fixed in ORT")
     def test_heatmaps_to_keypoints(self):
         # disable profiling
         torch._C._jit_set_profiling_executor(False)
