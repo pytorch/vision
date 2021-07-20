@@ -115,7 +115,7 @@ class HMDB51(VisionDataset):
         split_pattern_name = "*test_split{}.txt".format(fold)
         split_pattern_path = os.path.join(annotations_dir, split_pattern_name)
         annotation_paths = glob.glob(split_pattern_path)
-        _selected_files = []
+        selected_files = set()
         for filepath in annotation_paths:
             with open(filepath) as fid:
                 lines = fid.readlines()
@@ -123,8 +123,7 @@ class HMDB51(VisionDataset):
                 video_filename, tag_string = line.split()
                 tag = int(tag_string)
                 if tag == target_tag:
-                    _selected_files.append(video_filename)
-        selected_files = set(_selected_files)
+                    selected_files.add(video_filename)
 
         indices = []
         for video_index, video_path in enumerate(video_list):
