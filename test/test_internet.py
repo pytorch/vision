@@ -98,12 +98,12 @@ class TestDatasetUtils:
         filename = "filename"
         md5 = "md5"
 
-        mocked = mocker.patch("torchvision.datasets.utils.download_file_from_google_drive")
+        mocked = mocker.patch('torchvision.datasets.utils.download_file_from_google_drive')
         with get_tmp_dir() as root:
             utils.download_url(url, root, filename, md5)
 
         mocked.assert_called_once_with(id, root, filename, md5)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     pytest.main([__file__])
