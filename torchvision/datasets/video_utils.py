@@ -55,14 +55,15 @@ class _VideoTimestampsDataset(object):
     pickled when forking.
     """
 
-    def __init__(self, video_paths: List[str]):
+    def __init__(self, video_paths: List[str], pts_unit: str="sec"):
         self.video_paths = video_paths
+        self.pts_unit = pts_unit
 
     def __len__(self):
         return len(self.video_paths)
 
     def __getitem__(self, idx):
-        return read_video_timestamps(self.video_paths[idx])
+        return read_video_timestamps(self.video_paths[idx], pts_unit=self.pts_unit)
 
 
 def _collate_fn(x):
@@ -112,10 +113,13 @@ class VideoClips(object):
         _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
+        _pts_unit="sec"
     ):
 
         self.video_paths = video_paths
         self.num_workers = num_workers
+        # a hack to avoid rounding errors 
+        self.pts_unit = _pts_unit
 
         # these options are not valid for pyav backend
         self._video_width = _video_width
@@ -140,7 +144,7 @@ class VideoClips(object):
         import torch.utils.data
 
         dl = torch.utils.data.DataLoader(
-            _VideoTimestampsDataset(self.video_paths),
+            _VideoTimestampsDataset(self.video_paths, self.pts_unit),
             batch_size=16,
             num_workers=self.num_workers,
             collate_fn=_collate_fn,
@@ -327,7 +331,7 @@ class VideoClips(object):
         if backend == "pyav":
             start_pts = clip_pts[0].item()
             end_pts = clip_pts[-1].item()
-            video, audio, info = read_video(video_path, start_pts, end_pts)
+            video, audio, info = read_video(video_path, start_pts, end_pts, pts_unit=self.pts_unit)
         else:
             info = _probe_video_from_file(video_path)
             video_fps = info.video_fps
