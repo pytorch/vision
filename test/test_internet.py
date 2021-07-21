@@ -9,43 +9,12 @@ import os
 import pytest
 import warnings
 from urllib.error import URLError
-import contextlib
 
 import torchvision.datasets.utils as utils
 from common_utils import get_tmp_dir
 
 
-def patch_url_redirection(mocker, redirect_url):
-    class Response:
-        def __init__(self, url):
-            self.url = url
-
-    @contextlib.contextmanager
-    def patched_opener(*args, **kwargs):
-        yield Response(redirect_url)
-
-    mocker.patch("torchvision.datasets.utils.urllib.request.urlopen", new=patched_opener)
-
-
 class TestDatasetUtils:
-    def test_get_redirect_url(self, mocker):
-        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
-        expected_redirect_url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
-
-        patch_url_redirection(mocker, expected_redirect_url)
-
-        actual = utils._get_redirect_url(url)
-        assert actual == expected_redirect_url
-
-    def test_get_redirect_url_max_hops_exceeded(self, mocker):
-        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
-        redirect_url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
-
-        patch_url_redirection(mocker, redirect_url)
-
-        with pytest.raises(RecursionError):
-            utils._get_redirect_url(url, max_hops=0)
-
     def test_download_url(self):
         with get_tmp_dir() as temp_dir:
             url = "http://github.com/pytorch/vision/archive/master.zip"
