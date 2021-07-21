@@ -34,8 +34,8 @@ def patch_url_redirection(mocker, redirect_url):
 
 class TestDatasetsUtils:
     def test_get_redirect_url(self, mocker):
-        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
-        expected_redirect_url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
+        url = "https://url.org"
+        expected_redirect_url = "https://redirect.url.org"
 
         patch_url_redirection(mocker, expected_redirect_url)
 
@@ -43,8 +43,8 @@ class TestDatasetsUtils:
         assert actual == expected_redirect_url
 
     def test_get_redirect_url_max_hops_exceeded(self, mocker):
-        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
-        redirect_url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
+        url = "https://url.org"
+        redirect_url = "https://redirect.url.org"
 
         patch_url_redirection(mocker, redirect_url)
 
