@@ -10,6 +10,7 @@ from torch._utils_internal import get_file_path_2
 from urllib.error import URLError
 import itertools
 import lzma
+import contextlib
 
 from common_utils import get_tmp_dir
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
@@ -19,7 +20,44 @@ TEST_FILE = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
+def patch_url_redirection(mocker, redirect_url):
+    class Response:
+        def __init__(self, url):
+            self.url = url
+
+    @contextlib.contextmanager
+    def patched_opener(*args, **kwargs):
+        yield Response(redirect_url)
+
+    return mocker.patch("torchvision.datasets.utils.urllib.request.urlopen", side_effect=patched_opener)
+
+
 class TestDatasetsUtils:
+    def test_get_redirect_url(self, mocker):
+        url = "https://url.org"
+        expected_redirect_url = "https://redirect.url.org"
+
+        mock = patch_url_redirection(mocker, expected_redirect_url)
+
+        actual = utils._get_redirect_url(url)
+        assert actual == expected_redirect_url
+
+        assert mock.call_count == 2
+        call_args_1, call_args_2 = mock.call_args_list
+        assert call_args_1[0][0].full_url == url
+        assert call_args_2[0][0].full_url == expected_redirect_url
+
+    def test_get_redirect_url_max_hops_exceeded(self, mocker):
+        url = "https://url.org"
+        redirect_url = "https://redirect.url.org"
+
+        mock = patch_url_redirection(mocker, redirect_url)
+
+        with pytest.raises(RecursionError):
+            utils._get_redirect_url(url, max_hops=0)
+
+        assert mock.call_count == 1
+        assert mock.call_args[0][0].full_url == url
 
     def test_check_md5(self):
         fpath = TEST_FILE
