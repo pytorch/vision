@@ -68,6 +68,8 @@ class UCF101(VisionDataset):
             _video_height=_video_height,
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
+            _pts_unit="pts"
+
         )
         # we bookkeep the full version of video clips because we want to be able
         # to return the meta data of full version rather than the subset version of

@@ -55,7 +55,7 @@ class _VideoTimestampsDataset(object):
     pickled when forking.
     """
 
-    def __init__(self, video_paths: List[str], pts_unit: str="sec"):
+    def __init__(self, video_paths: List[str], pts_unit: str):
         self.video_paths = video_paths
         self.pts_unit = pts_unit
 
@@ -113,12 +113,12 @@ class VideoClips(object):
         _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
-        _pts_unit="sec"
+        _pts_unit="pts"
     ):
 
         self.video_paths = video_paths
         self.num_workers = num_workers
-        # a hack to avoid rounding errors 
+        # a hack to avoid rounding errors
         self.pts_unit = _pts_unit
 
         # these options are not valid for pyav backend
@@ -142,7 +142,6 @@ class VideoClips(object):
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
         import torch.utils.data
-
         dl = torch.utils.data.DataLoader(
             _VideoTimestampsDataset(self.video_paths, self.pts_unit),
             batch_size=16,
