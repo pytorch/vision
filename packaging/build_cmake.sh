@@ -28,7 +28,7 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
-conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c "pytorch-${UPLOAD_CHANNEL}"
+conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE "mkl==2021.2.0" "intel-openmp==2021.2.0" -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
