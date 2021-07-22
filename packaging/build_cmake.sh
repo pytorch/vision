@@ -31,9 +31,9 @@ setup_junit_results_folder
 if [[ "$(uname)" == Darwin ]]; then
   # TODO: this can be removed as soon as mkl's CMake support works with clang
   #  see https://github.com/pytorch/vision/pull/4203 for details
-  MKL_CONSTRAINT=2021.2.0
+  MKL_CONSTRAINT='mkl==2021.2.0'
 else
-  MKL_CONSTRAINT=
+  MKL_CONSTRAINT=''
 fi
 
 conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
