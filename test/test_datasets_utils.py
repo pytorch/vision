@@ -29,7 +29,7 @@ def patch_url_redirection(mocker, redirect_url):
     def patched_opener(*args, **kwargs):
         yield Response(redirect_url)
 
-    return mocker.patch("torchvision.datasets.utils.urllib.request.urlopen", new=patched_opener)
+    return mocker.patch("torchvision.datasets.utils.urllib.request.urlopen", side_effect=patched_opener)
 
 
 class TestDatasetsUtils:
@@ -37,19 +37,27 @@ class TestDatasetsUtils:
         url = "https://url.org"
         expected_redirect_url = "https://redirect.url.org"
 
-        patch_url_redirection(mocker, expected_redirect_url)
+        mock = patch_url_redirection(mocker, expected_redirect_url)
 
         actual = utils._get_redirect_url(url)
         assert actual == expected_redirect_url
+
+        assert mock.call_count == 2
+        call_args_1, call_args_2 = mock.call_args_list
+        assert call_args_1[0][0].full_url == url
+        assert call_args_2[0][0].full_url == expected_redirect_url
 
     def test_get_redirect_url_max_hops_exceeded(self, mocker):
         url = "https://url.org"
         redirect_url = "https://redirect.url.org"
 
-        patch_url_redirection(mocker, redirect_url)
+        mock = patch_url_redirection(mocker, redirect_url)
 
         with pytest.raises(RecursionError):
             utils._get_redirect_url(url, max_hops=0)
+
+        assert mock.call_count == 1
+        assert mock.call_args[0][0].full_url == url
 
     def test_check_md5(self):
         fpath = TEST_FILE
