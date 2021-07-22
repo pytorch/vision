@@ -19,7 +19,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     env_path=$(dirname $bin_path)
     if [[ "$(uname)" == Darwin ]]; then
         # Install delocate to relocate the required binaries
-        pip_install "delocate<0.9"
+        pip_install delocate==0.8.2
     else
         cp "$bin_path/Library/bin/libpng16.dll" torchvision
         cp "$bin_path/Library/bin/libjpeg.dll" torchvision
