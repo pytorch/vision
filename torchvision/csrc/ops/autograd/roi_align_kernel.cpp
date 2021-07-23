@@ -68,45 +68,45 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
   }
 };
 
-// TODO: There should be an easier way to do this
-class ROIAlignBackwardFunction
-    : public torch::autograd::Function<ROIAlignBackwardFunction> {
- public:
-  static torch::autograd::variable_list forward(
-      torch::autograd::AutogradContext* ctx,
-      const torch::autograd::Variable& grad,
-      const torch::autograd::Variable& rois,
-      double spatial_scale,
-      int64_t pooled_height,
-      int64_t pooled_width,
-      int64_t batch_size,
-      int64_t channels,
-      int64_t height,
-      int64_t width,
-      int64_t sampling_ratio,
-      bool aligned) {
-    at::AutoDispatchBelowADInplaceOrView g;
-    auto result = detail::_roi_align_backward(
-        grad,
-        rois,
-        spatial_scale,
-        pooled_height,
-        pooled_width,
-        batch_size,
-        channels,
-        height,
-        width,
-        sampling_ratio,
-        aligned);
-    return {result};
-  }
+// // TODO: There should be an easier way to do this
+// class ROIAlignBackwardFunction
+//     : public torch::autograd::Function<ROIAlignBackwardFunction> {
+//  public:
+//   static torch::autograd::variable_list forward(
+//       torch::autograd::AutogradContext* ctx,
+//       const torch::autograd::Variable& grad,
+//       const torch::autograd::Variable& rois,
+//       double spatial_scale,
+//       int64_t pooled_height,
+//       int64_t pooled_width,
+//       int64_t batch_size,
+//       int64_t channels,
+//       int64_t height,
+//       int64_t width,
+//       int64_t sampling_ratio,
+//       bool aligned) {
+//     at::AutoDispatchBelowADInplaceOrView g;
+//     auto result = detail::_roi_align_backward(
+//         grad,
+//         rois,
+//         spatial_scale,
+//         pooled_height,
+//         pooled_width,
+//         batch_size,
+//         channels,
+//         height,
+//         width,
+//         sampling_ratio,
+//         aligned);
+//     return {result};
+//   }
 
-  static torch::autograd::variable_list backward(
-      torch::autograd::AutogradContext* ctx,
-      const torch::autograd::variable_list& grad_output) {
-    TORCH_CHECK(0, "double backwards on roi_align not supported");
-  }
-};
+//   static torch::autograd::variable_list backward(
+//       torch::autograd::AutogradContext* ctx,
+//       const torch::autograd::variable_list& grad_output) {
+//     TORCH_CHECK(0, "double backwards on roi_align not supported");
+//   }
+// };
 
 at::Tensor roi_align_autograd(
     const at::Tensor& input,
@@ -126,31 +126,31 @@ at::Tensor roi_align_autograd(
       aligned)[0];
 }
 
-at::Tensor roi_align_backward_autograd(
-    const at::Tensor& grad,
-    const at::Tensor& rois,
-    double spatial_scale,
-    int64_t pooled_height,
-    int64_t pooled_width,
-    int64_t batch_size,
-    int64_t channels,
-    int64_t height,
-    int64_t width,
-    int64_t sampling_ratio,
-    bool aligned) {
-  return ROIAlignBackwardFunction::apply(
-      grad,
-      rois,
-      spatial_scale,
-      pooled_height,
-      pooled_width,
-      batch_size,
-      channels,
-      height,
-      width,
-      sampling_ratio,
-      aligned)[0];
-}
+// at::Tensor roi_align_backward_autograd(
+//     const at::Tensor& grad,
+//     const at::Tensor& rois,
+//     double spatial_scale,
+//     int64_t pooled_height,
+//     int64_t pooled_width,
+//     int64_t batch_size,
+//     int64_t channels,
+//     int64_t height,
+//     int64_t width,
+//     int64_t sampling_ratio,
+//     bool aligned) {
+//   return ROIAlignBackwardFunction::apply(
+//       grad,
+//       rois,
+//       spatial_scale,
+//       pooled_height,
+//       pooled_width,
+//       batch_size,
+//       channels,
+//       height,
+//       width,
+//       sampling_ratio,
+//       aligned)[0];
+// }
 
 } // namespace
 
@@ -158,9 +158,9 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::roi_align"),
       TORCH_FN(roi_align_autograd));
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_roi_align_backward"),
-      TORCH_FN(roi_align_backward_autograd));
+  // m.impl(
+  //     TORCH_SELECTIVE_NAME("torchvision::_roi_align_backward"),
+  //     TORCH_FN(roi_align_backward_autograd));
 }
 
 } // namespace ops
