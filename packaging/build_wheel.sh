@@ -19,7 +19,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     env_path=$(dirname $bin_path)
     if [[ "$(uname)" == Darwin ]]; then
         # Install delocate to relocate the required binaries
-        pip_install delocate==0.8.2
+        pip_install "delocate>=0.9"
     else
         cp "$bin_path/Library/bin/libpng16.dll" torchvision
         cp "$bin_path/Library/bin/libjpeg.dll" torchvision
@@ -49,7 +49,7 @@ if [[ "$(uname)" == Darwin ]]; then
     bin_path=$(dirname $python_exec)
     env_path=$(dirname $bin_path)
     for whl in *.whl; do
-        DYLD_FALLBACK_LIBRARY_PATH="$env_path/lib/:$DYLD_FALLBACK_LIBRARY_PATH" delocate-wheel -v $whl
+        DYLD_FALLBACK_LIBRARY_PATH="$env_path/lib/:$DYLD_FALLBACK_LIBRARY_PATH" delocate-wheel -v --ignore-missing-dependencies $whl
     done
 else
     if [[ "$OSTYPE" == "msys" ]]; then
