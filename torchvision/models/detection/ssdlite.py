@@ -12,7 +12,7 @@ from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .. import mobilenet
 from ..mobilenetv3 import ConvBNActivation
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 
 __all__ = ['ssdlite320_mobilenet_v3_large']
@@ -147,7 +147,7 @@ def _mobilenet_extractor(backbone_name: str, progress: bool, pretrained: bool, t
 
     # find the index of the layer from which we wont freeze
     assert 0 <= trainable_layers <= num_stages
-    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+    freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
         for parameter in b.parameters():

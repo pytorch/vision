@@ -1,7 +1,7 @@
 import torch
 from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
 import torch.nn as nn
-from torchvision.models.utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 from torch.quantization import fuse_modules
 from .utils import _replace_relu, quantize_model
 

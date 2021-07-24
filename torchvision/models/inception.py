@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Callable, Any, Optional, Tuple, List
 
 
@@ -26,6 +26,7 @@ _InceptionOutputs = InceptionOutputs
 def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "Inception3":
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
+    The required minimum input size of the model is 75x75.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of

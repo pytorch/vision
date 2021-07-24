@@ -11,7 +11,7 @@ from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
 
 __all__ = ['SSD', 'ssd300_vgg16']
@@ -141,7 +141,7 @@ class SSD(nn.Module):
             set of feature maps.
         size (Tuple[int, int]): the width and height to which images will be rescaled before feeding them
             to the backbone.
-        num_classes (int): number of output classes of the model (excluding the background).
+        num_classes (int): number of output classes of the model (including the background).
         image_mean (Tuple[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
@@ -510,7 +510,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
 
     # find the index of the layer from which we wont freeze
     assert 0 <= trainable_layers <= num_stages
-    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+    freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
         for parameter in b.parameters():

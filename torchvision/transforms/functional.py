@@ -346,7 +346,8 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
         and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
         in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types.
+        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
+        closer.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -372,8 +373,9 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
-            ``InterpolationMode.BILINEAR`` only mode.
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
+            closer.
 
             .. warning::
                 There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
@@ -591,9 +593,9 @@ def _get_perspective_coeffs(
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.lstsq(b_matrix, a_matrix)[0]
+    res = torch.linalg.lstsq(a_matrix, b_matrix, driver='gels').solution
 
-    output: List[float] = res.squeeze(1).tolist()
+    output: List[float] = res.tolist()
     return output
 
 

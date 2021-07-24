@@ -1,5 +1,4 @@
 
-import importlib
 import math
 import os
 import warnings
@@ -9,47 +8,15 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
+from .._internally_replaced_utils import _get_extension_path
 
-_HAS_VIDEO_OPT = False
 
 try:
-    lib_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-    loader_details = (
-        importlib.machinery.ExtensionFileLoader,
-        importlib.machinery.EXTENSION_SUFFIXES
-    )
-
-    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
-    ext_specs = extfinder.find_spec("video_reader")
-
-    if os.name == 'nt':
-        # Load the video_reader extension using LoadLibraryExW
-        import ctypes
-
-        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
-        prev_error_mode = kernel32.SetErrorMode(0x0001)
-
-        if with_load_library_flags:
-            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
-
-        if ext_specs is not None:
-            res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
-            if res is None:
-                err = ctypes.WinError(ctypes.get_last_error())
-                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
-                                 'its dependencies.')
-                raise err
-
-        kernel32.SetErrorMode(prev_error_mode)
-
-    if ext_specs is not None:
-        torch.ops.load_library(ext_specs.origin)
-        _HAS_VIDEO_OPT = True
+    lib_path = _get_extension_path('video_reader')
+    torch.ops.load_library(lib_path)
+    _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
-    pass
-
+    _HAS_VIDEO_OPT = False
 
 default_timebase = Fraction(0, 1)
 
@@ -155,7 +122,7 @@ def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
     e_idx = num_samples
     if start < audio_pts_range[0]:
         s_idx = int((audio_pts_range[0] - start) / step_per_aframe)
-    if end > audio_pts_range[1]:
+    if audio_pts_range[1] != -1 and end > audio_pts_range[1]:
         e_idx = int((audio_pts_range[1] - end) / step_per_aframe)
     return aframes[s_idx:e_idx, :]
 
@@ -471,6 +438,14 @@ def _probe_video_from_memory(video_data):
     return info
 
 
+def _convert_to_sec(start_pts, end_pts, pts_unit, time_base):
+    if pts_unit == 'pts':
+        start_pts = float(start_pts * time_base)
+        end_pts = float(end_pts * time_base)
+        pts_unit = 'sec'
+    return start_pts, end_pts, pts_unit
+
+
 def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     if end_pts is None:
         end_pts = float("inf")
@@ -485,32 +460,43 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
 
     has_video = info.has_video
     has_audio = info.has_audio
-
-    def get_pts(time_base):
-        start_offset = start_pts
-        end_offset = end_pts
-        if pts_unit == "sec":
-            start_offset = int(math.floor(start_pts * (1 / time_base)))
-            if end_offset != float("inf"):
-                end_offset = int(math.ceil(end_pts * (1 / time_base)))
-        if end_offset == float("inf"):
-            end_offset = -1
-        return start_offset, end_offset
-
     video_pts_range = (0, -1)
     video_timebase = default_timebase
+    audio_pts_range = (0, -1)
+    audio_timebase = default_timebase
+    time_base = default_timebase
+
     if has_video:
         video_timebase = Fraction(
             info.video_timebase.numerator, info.video_timebase.denominator
         )
-        video_pts_range = get_pts(video_timebase)
+        time_base = video_timebase
 
-    audio_pts_range = (0, -1)
-    audio_timebase = default_timebase
     if has_audio:
         audio_timebase = Fraction(
             info.audio_timebase.numerator, info.audio_timebase.denominator
         )
+        time_base = time_base if time_base else audio_timebase
+
+    # video_timebase is the default time_base
+    start_pts_sec, end_pts_sec, pts_unit = _convert_to_sec(
+        start_pts, end_pts, pts_unit, time_base)
+
+    def get_pts(time_base):
+        start_offset = start_pts_sec
+        end_offset = end_pts_sec
+        if pts_unit == "sec":
+            start_offset = int(math.floor(start_pts_sec * (1 / time_base)))
+            if end_offset != float("inf"):
+                end_offset = int(math.ceil(end_pts_sec * (1 / time_base)))
+        if end_offset == float("inf"):
+            end_offset = -1
+        return start_offset, end_offset
+
+    if has_video:
+        video_pts_range = get_pts(video_timebase)
+
+    if has_audio:
         audio_pts_range = get_pts(audio_timebase)
 
     vframes, aframes, info = _read_video_from_file(
