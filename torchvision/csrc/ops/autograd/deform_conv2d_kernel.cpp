@@ -121,67 +121,6 @@ class DeformConv2dFunction
   }
 };
 
-// TODO: There should be an easier way to do this
-class DeformConv2dBackwardFunction
-    : public torch::autograd::Function<DeformConv2dBackwardFunction> {
- public:
-  static torch::autograd::variable_list forward(
-      torch::autograd::AutogradContext* ctx,
-      const torch::autograd::Variable& grad,
-      const torch::autograd::Variable& input,
-      const torch::autograd::Variable& weight,
-      const torch::autograd::Variable& offset,
-      const torch::autograd::Variable& mask,
-      const torch::autograd::Variable& bias,
-      int64_t stride_h,
-      int64_t stride_w,
-      int64_t pad_h,
-      int64_t pad_w,
-      int64_t dilation_h,
-      int64_t dilation_w,
-      int64_t groups,
-      int64_t offset_groups,
-      bool use_mask) {
-    at::AutoDispatchBelowADInplaceOrView g;
-    auto result = detail::_deform_conv2d_backward(
-        grad,
-        input,
-        weight,
-        offset,
-        mask,
-        bias,
-        stride_h,
-        stride_w,
-        pad_h,
-        pad_w,
-        dilation_h,
-        dilation_w,
-        groups,
-        offset_groups,
-        use_mask);
-
-    auto grad_input = std::get<0>(result);
-    auto grad_weight = std::get<1>(result);
-    auto grad_offset = std::get<2>(result);
-    auto grad_mask = std::get<3>(result);
-    auto grad_bias = std::get<4>(result);
-
-    return {
-        grad_input,
-        grad_weight,
-        grad_offset,
-        grad_mask,
-        grad_bias,
-    };
-  }
-
-  static torch::autograd::variable_list backward(
-      torch::autograd::AutogradContext* ctx,
-      const torch::autograd::variable_list& grad_output) {
-    TORCH_CHECK(0, "double backwards on deform_conv2d not supported");
-  }
-};
-
 at::Tensor deform_conv2d_autograd(
     const at::Tensor& input,
     const at::Tensor& weight,
@@ -214,52 +153,12 @@ at::Tensor deform_conv2d_autograd(
       use_mask)[0];
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-deform_conv2d_backward_autograd(
-    const at::Tensor& grad,
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
-    int64_t stride_h,
-    int64_t stride_w,
-    int64_t pad_h,
-    int64_t pad_w,
-    int64_t dilation_h,
-    int64_t dilation_w,
-    int64_t groups,
-    int64_t offset_groups,
-    bool use_mask) {
-  auto result = DeformConv2dBackwardFunction::apply(
-      grad,
-      input,
-      weight,
-      offset,
-      mask,
-      bias,
-      stride_h,
-      stride_w,
-      pad_h,
-      pad_w,
-      dilation_h,
-      dilation_w,
-      groups,
-      offset_groups,
-      use_mask);
-
-  return std::make_tuple(result[0], result[1], result[2], result[3], result[4]);
-}
-
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
       TORCH_FN(deform_conv2d_autograd));
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_deform_conv2d_backward"),
-      TORCH_FN(deform_conv2d_backward_autograd));
 }
 
 } // namespace ops
