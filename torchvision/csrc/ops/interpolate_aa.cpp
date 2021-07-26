@@ -35,11 +35,11 @@ at::Tensor _interpolate_bilinear2d_aa_backward(
     const at::Tensor& grad_output,
     at::IntArrayRef output_size,
     at::IntArrayRef input_size,
-    bool align_corners)
-{
+    bool align_corners) {
   static auto op =
       c10::Dispatcher::singleton()
-          .findSchemaOrThrow("torchvision::_interpolate_bilinear2d_aa_backward", "")
+          .findSchemaOrThrow(
+              "torchvision::_interpolate_bilinear2d_aa_backward", "")
           .typed<decltype(_interpolate_bilinear2d_aa_backward)>();
   return op.call(grad_output, output_size, output_size, align_corners);
 }
@@ -48,11 +48,11 @@ at::Tensor _interpolate_bicubic2d_aa_backward(
     const at::Tensor& grad_output,
     at::IntArrayRef output_size,
     at::IntArrayRef input_size,
-    bool align_corners)
-{
+    bool align_corners) {
   static auto op =
       c10::Dispatcher::singleton()
-          .findSchemaOrThrow("torchvision::_interpolate_bicubic2d_aa_backward", "")
+          .findSchemaOrThrow(
+              "torchvision::_interpolate_bicubic2d_aa_backward", "")
           .typed<decltype(_interpolate_bicubic2d_aa_backward)>();
   return op.call(grad_output, output_size, output_size, align_corners);
 }

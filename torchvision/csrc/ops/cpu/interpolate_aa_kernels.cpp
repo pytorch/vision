@@ -1,8 +1,8 @@
+#include <ATen/Parallel.h>
 #include <ATen/TypeDefault.h>
 #include <ATen/native/IndexingUtils.h>
 #include <ATen/native/TensorIterator.h>
 #include <ATen/native/UpSample.h>
-#include <ATen/Parallel.h>
 #include <cmath>
 #include <vector>
 
@@ -142,42 +142,39 @@ void ti_cpu_upsample_generic_aa(
 // Helper structs to use with ti_upsample_generic_Nd_kernel_impl
 template <typename index_t, typename scalar_t>
 struct HelperInterpBase {
-
   template <typename filter_fn_t>
   static inline void _compute_weights_aa(
       const int64_t i,
       const int64_t input_size,
       const scalar_t scale,
       const scalar_t support,
-      scalar_t * wt_ptr,
+      scalar_t* wt_ptr,
       const int64_t interp_size,
       filter_fn_t filter_fn,
       int64_t& xmin,
-      int64_t& xsize
-  ) {
-      scalar_t center = scale * (i + 0.5);
-      scalar_t total_w = 0.0;
-      scalar_t invscale = (scale >= 1.0) ? 1.0 / scale : 1.0;
-      xmin = std::max(
-          static_cast<int64_t>(center - support + 0.5), static_cast<index_t>(0));
-      xsize =
-          std::min(static_cast<int64_t>(center + support + 0.5), input_size) -
-          xmin;
+      int64_t& xsize) {
+    scalar_t center = scale * (i + 0.5);
+    scalar_t total_w = 0.0;
+    scalar_t invscale = (scale >= 1.0) ? 1.0 / scale : 1.0;
+    xmin = std::max(
+        static_cast<int64_t>(center - support + 0.5), static_cast<index_t>(0));
+    xsize = std::min(static_cast<int64_t>(center + support + 0.5), input_size) -
+        xmin;
 
-      int64_t j = 0;
-      for (; j < xsize; j++) {
-        scalar_t w = filter_fn((j + xmin - center + 0.5) * invscale);
-        wt_ptr[j] = w;
-        total_w += w;
+    int64_t j = 0;
+    for (; j < xsize; j++) {
+      scalar_t w = filter_fn((j + xmin - center + 0.5) * invscale);
+      wt_ptr[j] = w;
+      total_w += w;
+    }
+    for (j = 0; j < xsize; j++) {
+      if (total_w != 0.0) {
+        wt_ptr[j] /= total_w;
       }
-      for (j = 0; j < xsize; j++) {
-        if (total_w != 0.0) {
-          wt_ptr[j] /= total_w;
-        }
-      }
-      for (; j < interp_size; j++) {
-        wt_ptr[j] = static_cast<scalar_t>(0.0);
-      }
+    }
+    for (; j < interp_size; j++) {
+      wt_ptr[j] = static_cast<scalar_t>(0.0);
+    }
   }
 
   template <typename filter_fn_t>
@@ -235,9 +232,16 @@ struct HelperInterpBase {
     int64_t xmin, xmax;
 
     for (int64_t i = 0; i < output_size; i++) {
-
       HelperInterpBase<index_t, scalar_t>::_compute_weights_aa(
-          i, input_size, scale, support, wt_ptr + i * interp_size, interp_size, filter_fn, xmin, xmax);
+          i,
+          input_size,
+          scale,
+          support,
+          wt_ptr + i * interp_size,
+          interp_size,
+          filter_fn,
+          xmin,
+          xmax);
 
       idx_ptr_xmin[i] = xmin * stride;
       idx_ptr_size[i] = xmax;
@@ -494,7 +498,6 @@ void _ti_upsample_bicubic2d_kernel_impl(
       output, input, align_corners, {scales_h, scales_w}, antialias);
 }
 
-
 template <
     typename scalar_t,
     typename scale_type,
@@ -505,8 +508,12 @@ void cpu_upsample_genNd_backward_aa(
     const Tensor& grad_output_,
     bool align_corners,
     const scale_type& scales) {
-  TORCH_CHECK(grad_input_.dtype() == grad_output_.dtype(), "expected dtype ", grad_output_.dtype(),
-              " for `grad_input` but got dtype ", grad_input_.dtype());
+  TORCH_CHECK(
+      grad_input_.dtype() == grad_output_.dtype(),
+      "expected dtype ",
+      grad_output_.dtype(),
+      " for `grad_input` but got dtype ",
+      grad_input_.dtype());
 
   auto grad_output = grad_output_.contiguous();
   auto grad_input = grad_input_.contiguous();
@@ -529,40 +536,23 @@ void cpu_upsample_genNd_backward_aa(
   int64_t output_slice_size = output_depth * output_height * output_width;
   int interp_size = F<int64_t, float>::interp_size;
 
-  auto loop1d = [&](int64_t begin, int64_t end) {
-    const scalar_t width_scale = area_pixel_compute_scale<scalar_t>(
-        input_width, output_width, align_corners, scales[0]);
-
-    auto input_indexr = [=](int64_t c, int64_t w) {
-      return grad_input_data + c * input_width + w;
-    };
-
-    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    int64_t iw0, iw1;
-    scalar_t w0lambda, w1lambda;
-    for (int64_t c = begin; c < end; c++){
-      for (int64_t ow = 0; ow < output_width; ow++) {
-        compute_source_index_and_lambda(
-            iw0, iw1, w0lambda, w1lambda, width_scale, ow, input_width, output_width, align_corners);
-        scalar_t grad_output_value = grad_output_data[c * output_slice_size + ow];
-        *input_indexr(c, iw0) += w0lambda * grad_output_value; /* i0 */
-        *input_indexr(c, iw1) += w1lambda * grad_output_value; /* i1 */
-      }
-    }
-  };
-
   auto loop2d = [&](int64_t begin, int64_t end) {
     const scalar_t height_scale = area_pixel_compute_scale<scalar_t>(
         input_height, output_height, align_corners, scales[0]);
     const scalar_t width_scale = area_pixel_compute_scale<scalar_t>(
         input_width, output_width, align_corners, scales[1]);
 
-    auto input_indexr = [=](int64_t c, int64_t h, int64_t w){
-      return grad_input_data + c * input_height * input_width + h * input_width + w;
+    auto input_indexr = [=](int64_t c, int64_t h, int64_t w) {
+      return grad_input_data + c * input_height * input_width +
+          h * input_width + w;
     };
 
-    const scalar_t support_h = (height_scale >= 1.0) ? (interp_size * 0.5) * height_scale : interp_size * 0.5;
-    const scalar_t support_w = (width_scale >= 1.0) ? (interp_size * 0.5) * width_scale : interp_size * 0.5;
+    const scalar_t support_h = (height_scale >= 1.0)
+        ? (interp_size * 0.5) * height_scale
+        : interp_size * 0.5;
+    const scalar_t support_w = (width_scale >= 1.0)
+        ? (interp_size * 0.5) * width_scale
+        : interp_size * 0.5;
 
     const int interp_height = (int)ceilf(support_h) * 2 + 1;
     const int interp_width = (int)ceilf(support_w) * 2 + 1;
@@ -576,86 +566,49 @@ void cpu_upsample_genNd_backward_aa(
     auto filter_fn = F<int64_t, scalar_t>::_filter;
 
     for (int64_t oh = 0; oh < output_height; oh++) {
-
       F<int64_t, scalar_t>::_compute_weights_aa(
-          oh, input_height, height_scale, support_h, wy.data(), interp_height, filter_fn, ymin, ysize);
+          oh,
+          input_height,
+          height_scale,
+          support_h,
+          wy.data(),
+          interp_height,
+          filter_fn,
+          ymin,
+          ysize);
 
       for (int64_t ow = 0; ow < output_width; ow++) {
-
         F<int64_t, scalar_t>::_compute_weights_aa(
-            ow, input_width, width_scale, support_w, wx.data(), interp_width, filter_fn, xmin, xsize);
+            ow,
+            input_width,
+            width_scale,
+            support_w,
+            wx.data(),
+            interp_width,
+            filter_fn,
+            xmin,
+            xsize);
 
         for (int64_t c = begin; c < end; c++) {
-          scalar_t grad_output_value = grad_output_data[c * output_slice_size + oh * output_width + ow];
+          scalar_t grad_output_value =
+              grad_output_data[c * output_slice_size + oh * output_width + ow];
 
           for (size_t y = 0; y < ysize; y++) {
             for (size_t x = 0; x < xsize; x++) {
-              *input_indexr(c, ymin + y, xmin + x) += wx[x] * wy[y] * grad_output_value;
+              *input_indexr(c, ymin + y, xmin + x) +=
+                  wx[x] * wy[y] * grad_output_value;
             }
           }
         }
       }
     }
-
   };
 
-  auto loop3d = [&](int64_t begin, int64_t end) {
-    const scalar_t depth_scale = area_pixel_compute_scale<scalar_t>(
-        input_depth, output_depth, align_corners, scales[0]);
-    const scalar_t height_scale = area_pixel_compute_scale<scalar_t>(
-        input_height, output_height, align_corners, scales[1]);
-    const scalar_t width_scale = area_pixel_compute_scale<scalar_t>(
-        input_width, output_width, align_corners, scales[2]);
-
-    auto input_indexr = [=](int64_t c, int64_t d, int64_t h, int64_t w) {
-      return grad_input_data + c * input_depth * input_height * input_width +
-          d * input_height * input_width + h * input_width + w;
-    };
-
-    // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-    int64_t id0, id1, ih0, ih1, iw0, iw1;
-    scalar_t d0lambda, d1lambda, h0lambda, h1lambda, w0lambda, w1lambda;
-    for (int64_t c = begin; c < end; c++) {
-      for (int64_t od = 0; od < output_depth; od++) {
-        compute_source_index_and_lambda(
-            id0, id1, d0lambda, d1lambda, depth_scale, od, input_depth, output_depth, align_corners);
-        for (int64_t oh = 0; oh < output_height; oh++) {
-          compute_source_index_and_lambda(
-              ih0, ih1, h0lambda, h1lambda, height_scale, oh, input_height, output_height, align_corners);
-          for (int64_t ow = 0; ow < output_width; ow++) {
-            compute_source_index_and_lambda(
-                iw0, iw1, w0lambda, w1lambda, width_scale, ow, input_width, output_width, align_corners);
-            scalar_t grad_output_value = grad_output_data[c * output_slice_size +
-                od *  output_height * output_width + oh * output_width + ow];
-            *input_indexr(c, id0, ih0, iw0) += d0lambda * h0lambda * w0lambda * grad_output_value; /* i000 */
-            *input_indexr(c, id0, ih0, iw1) += d0lambda * h0lambda * w1lambda * grad_output_value; /* i001 */
-            *input_indexr(c, id0, ih1, iw0) += d0lambda * h1lambda * w0lambda * grad_output_value; /* i010 */
-            *input_indexr(c, id0, ih1, iw1) += d0lambda * h1lambda * w1lambda * grad_output_value; /* i011 */
-            *input_indexr(c, id1, ih0, iw0) += d1lambda * h0lambda * w0lambda * grad_output_value; /* i100 */
-            *input_indexr(c, id1, ih0, iw1) += d1lambda * h0lambda * w1lambda * grad_output_value; /* i101 */
-            *input_indexr(c, id1, ih1, iw0) += d1lambda * h1lambda * w0lambda * grad_output_value; /* i110 */
-            *input_indexr(c, id1, ih1, iw1) += d1lambda * h1lambda * w1lambda * grad_output_value; /* i111 */
-          }
-        }
-      }
-    }
-  };
-
-  // if (ndim == 3) {
-  //   // upsample linear 1d
-  //   at::parallel_for(0, channels, at::internal::GRAIN_SIZE / output_slice_size / 2, loop1d);
-  // } else
   if (ndim == 4) {
     // upsample bilinear 2d
-    at::parallel_for(0, channels, at::internal::GRAIN_SIZE / output_slice_size / 4, loop2d);
-  }
-  // else
-  // if (ndim == 5) {
-  //   // upsample trilinear 3d
-  //   TORCH_INTERNAL_ASSERT(ndim == 5);
-  //   at::parallel_for(0, channels, at::internal::GRAIN_SIZE / output_slice_size / 8, loop3d);
-  // }
-  else {
+    at::parallel_for(
+        0, channels, at::internal::GRAIN_SIZE / output_slice_size / 4, loop2d);
+  } else {
     TORCH_CHECK(false, "Unsupported tensor ndim");
   }
 
@@ -664,20 +617,18 @@ void cpu_upsample_genNd_backward_aa(
   }
 }
 
-
 void _upsample_bilinear2d_aa_backward_kernel_impl(
     const Tensor& grad_input,
     const Tensor& grad_output,
     bool align_corners,
     c10::optional<double> scales_h,
     c10::optional<double> scales_w) {
-
-  AT_DISPATCH_FLOATING_TYPES(grad_output.scalar_type(), "upsample_bilinear2d_backward_cpu", [&] {
-    cpu_upsample_genNd_backward_aa<scalar_t, scale_t, HelperInterpLinear>(
-        grad_input, grad_output, align_corners, {scales_h, scales_w});
-  });
+  AT_DISPATCH_FLOATING_TYPES(
+      grad_output.scalar_type(), "upsample_bilinear2d_backward_cpu", [&] {
+        cpu_upsample_genNd_backward_aa<scalar_t, scale_t, HelperInterpLinear>(
+            grad_input, grad_output, align_corners, {scales_h, scales_w});
+      });
 }
-
 
 void _upsample_bicubic2d_aa_backward_kernel_impl(
     const Tensor& grad_input,
@@ -685,13 +636,12 @@ void _upsample_bicubic2d_aa_backward_kernel_impl(
     bool align_corners,
     c10::optional<double> scales_h,
     c10::optional<double> scales_w) {
-
-  AT_DISPATCH_FLOATING_TYPES(grad_output.scalar_type(), "upsample_bicubic2d_backward_cpu", [&] {
-    cpu_upsample_genNd_backward_aa<scalar_t, scale_t, HelperInterpCubic>(
-        grad_input, grad_output, align_corners, {scales_h, scales_w});
-  });
+  AT_DISPATCH_FLOATING_TYPES(
+      grad_output.scalar_type(), "upsample_bicubic2d_backward_cpu", [&] {
+        cpu_upsample_genNd_backward_aa<scalar_t, scale_t, HelperInterpCubic>(
+            grad_input, grad_output, align_corners, {scales_h, scales_w});
+      });
 }
-
 
 } // namespace internal_upsample
 } // namespace native
@@ -765,32 +715,39 @@ at::Tensor interpolate_bicubic2d_aa_forward_kernel(
 }
 
 at::Tensor interpolate_bilinear2d_aa_backward_kernel(
-  const at::Tensor& grad_output,
-  at::IntArrayRef output_size,
-  at::IntArrayRef input_size,
-  bool align_corners
-) {
-
+    const at::Tensor& grad_output,
+    at::IntArrayRef output_size,
+    at::IntArrayRef input_size,
+    bool align_corners) {
   c10::optional<c10::ArrayRef<double>> scale_factors = {};
 
   // Copied from UpSampleBilinear2d.cpp::upsample_bilinear2d_backward
   auto grad_input = at::empty({0}, grad_output.options());
-  auto osize = at::native::upsample::compute_output_size(input_size, output_size, scale_factors);
+  auto osize = at::native::upsample::compute_output_size(
+      input_size, output_size, scale_factors);
   auto scale_h = at::native::upsample::get_scale_value(scale_factors, 0);
   auto scale_w = at::native::upsample::get_scale_value(scale_factors, 1);
 
-  auto full_output_size = at::native::upsample_2d_common_check(input_size, osize);
+  auto full_output_size =
+      at::native::upsample_2d_common_check(input_size, osize);
 
   TORCH_CHECK(
       grad_output.dim() == 4,
-      "Expected grad_output to be a tensor of dimension 4 but got: dimension ", grad_output.dim());
+      "Expected grad_output to be a tensor of dimension 4 but got: dimension ",
+      grad_output.dim());
 
   for (int i = 0; i < 4; ++i) {
     TORCH_CHECK(
         grad_output.size(i) == full_output_size[i],
         "Expected grad_output to have the same shape as output;",
-        " output.size(", i, ") = ", full_output_size[i],
-        " but got grad_output.size(", i, ") = ", grad_output.size(i));
+        " output.size(",
+        i,
+        ") = ",
+        full_output_size[i],
+        " but got grad_output.size(",
+        i,
+        ") = ",
+        grad_output.size(i));
   }
 
   grad_input.resize_(input_size, grad_output.suggest_memory_format());
@@ -799,36 +756,42 @@ at::Tensor interpolate_bilinear2d_aa_backward_kernel(
       grad_input, grad_output, align_corners, scale_h, scale_w);
 
   return grad_input;
-
 }
 
 at::Tensor interpolate_bicubic2d_aa_backward_kernel(
-  const at::Tensor& grad_output,
-  at::IntArrayRef output_size,
-  at::IntArrayRef input_size,
-  bool align_corners
-) {
-
+    const at::Tensor& grad_output,
+    at::IntArrayRef output_size,
+    at::IntArrayRef input_size,
+    bool align_corners) {
   c10::optional<c10::ArrayRef<double>> scale_factors = {};
 
   // Copied from UpSampleBicubic2d.cpp::upsample_bicubic2d_backward
   auto grad_input = at::empty({0}, grad_output.options());
-  auto osize = at::native::upsample::compute_output_size(input_size, output_size, scale_factors);
+  auto osize = at::native::upsample::compute_output_size(
+      input_size, output_size, scale_factors);
   auto scale_h = at::native::upsample::get_scale_value(scale_factors, 0);
   auto scale_w = at::native::upsample::get_scale_value(scale_factors, 1);
 
-  auto full_output_size = at::native::upsample_2d_common_check(input_size, osize);
+  auto full_output_size =
+      at::native::upsample_2d_common_check(input_size, osize);
 
   TORCH_CHECK(
       grad_output.dim() == 4,
-      "Expected grad_output to be a tensor of dimension 4 but got: dimension ", grad_output.dim());
+      "Expected grad_output to be a tensor of dimension 4 but got: dimension ",
+      grad_output.dim());
 
   for (int i = 0; i < 4; ++i) {
     TORCH_CHECK(
         grad_output.size(i) == full_output_size[i],
         "Expected grad_output to have the same shape as output;",
-        " output.size(", i, ") = ", full_output_size[i],
-        " but got grad_output.size(", i, ") = ", grad_output.size(i));
+        " output.size(",
+        i,
+        ") = ",
+        full_output_size[i],
+        " but got grad_output.size(",
+        i,
+        ") = ",
+        grad_output.size(i));
   }
 
   grad_input.resize_(input_size, grad_output.suggest_memory_format());
@@ -837,7 +800,6 @@ at::Tensor interpolate_bicubic2d_aa_backward_kernel(
       grad_input, grad_output, align_corners, scale_h, scale_w);
 
   return grad_input;
-
 }
 
 } // namespace
