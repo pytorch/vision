@@ -73,8 +73,7 @@ __device__ __forceinline__ static void _compute_weights(
     int& xmax) {
   accscalar_t invscale = (scale >= 1.0) ? 1.0 / scale : 1.0;
   accscalar_t center = scale * (i + 0.5);
-  xmin = max(
-      static_cast<int>(center - support + 0.5), static_cast<int>(0));
+  xmin = max(static_cast<int>(center - support + 0.5), static_cast<int>(0));
   xmax = min(static_cast<int>(center + support + 0.5), input_size) - xmin;
 
   accscalar_t total_w = 0.0;
