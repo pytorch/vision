@@ -615,6 +615,11 @@ def test_interpolate_antialias_backward(dt, size, interpolation):
             return backward_op(grad_output, oshape, ishape, False)
 
     x = (
+        torch.rand(1, 32, 29, 3, dtype=torch.double, device=device).permute(0, 3, 1, 2).requires_grad_(True),
+    )
+    assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
+
+    x = (
         torch.rand(1, 3, 32, 29, dtype=torch.double, device=device, requires_grad=True),
     )
     assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
