@@ -10,8 +10,7 @@ import torchvision.io as io
 from numpy.random import randint
 from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
-from common_utils import PY39_SKIP
-from _assert_utils import assert_equal
+from common_utils import PY39_SKIP, assert_equal
 
 
 try:

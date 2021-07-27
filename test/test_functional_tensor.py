@@ -21,8 +21,8 @@ from common_utils import (
     _assert_equal_tensor_to_pil,
     _assert_approx_equal_tensor_to_pil,
     _test_fn_on_batch,
+    assert_equal,
 )
-from _assert_utils import assert_equal
 
 from typing import Dict, List, Sequence, Tuple
 
@@ -187,11 +187,7 @@ class TestAffine:
             tensor, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
         if config is not None:
-            assert_equal(
-                torch.rot90(tensor, **config),
-                out_tensor,
-                check_stride=False,
-            )
+            assert_equal(torch.rot90(tensor, **config), out_tensor)
 
         if out_tensor.dtype != torch.uint8:
             out_tensor = out_tensor.to(torch.uint8)
@@ -856,7 +852,6 @@ def test_resized_crop(device, mode):
     assert_equal(
         expected_out_tensor,
         out_tensor,
-        check_stride=False,
         msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10]),
     )
 
@@ -1001,10 +996,7 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     ).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
 
     out = fn(tensor, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(
-        out, true_out, rtol=0.0, atol=1.0, check_stride=False,
-        msg="{}, {}".format(ksize, sigma)
-    )
+    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg="{}, {}".format(ksize, sigma))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
