@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, __version__ as PILLOW_VERSION
 import torchvision.transforms.functional as F
 from common_utils import get_tmp_dir, needs_cuda
 from _assert_utils import assert_equal
@@ -22,6 +22,7 @@ IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 IS_WINDOWS = sys.platform in ('win32', 'cygwin')
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
 
 def _get_safe_image_name(name):
@@ -141,7 +142,15 @@ def test_decode_png(img_path, pil_mode, mode):
     img_lpng = decode_image(data, mode=mode)
 
     tol = 0 if pil_mode is None else 1
-    assert img_lpng.allclose(img_pil, atol=tol)
+
+    if PILLOW_VERSION >= (8, 3) and pil_mode == "LA":
+        # Avoid checking the transparency channel until
+        # https://github.com/python-pillow/Pillow/issues/5593#issuecomment-878244910
+        # is fixed.
+        # TODO: remove once fix is released in PIL. Should be > 8.3.1.
+        img_lpng, img_pil = img_lpng[0], img_pil[0]
+
+    torch.testing.assert_close(img_lpng, img_pil, atol=tol, rtol=0)
 
 
 def test_decode_png_errors():
