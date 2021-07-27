@@ -1,4 +1,5 @@
 import collections
+import itertools
 import math
 import os
 import unittest
@@ -1243,16 +1244,39 @@ class TestVideoReader(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             io.read_video('foo.mp4')
 
-    def test_audio_present(self):
-        """Test if audio frames are returned with video_reader backend."""
-        set_video_backend('video_reader')
+    def test_audio_present_pts(self):
+        """Test if audio frames are returned with pts unit."""
+        backends = ['video_reader', 'pyav']
+        start_offsets = [0, 1000]
+        end_offsets = [3000, None]
         for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             container = av.open(full_path)
             if container.streams.audio:
-                _, audio, _ = io.read_video(full_path)
-                self.assertGreaterEqual(audio.shape[0], 1)
-                self.assertGreaterEqual(audio.shape[1], 1)
+                for backend, start_offset, end_offset in itertools.product(
+                        backends, start_offsets, end_offsets):
+                    set_video_backend(backend)
+                    _, audio, _ = io.read_video(
+                        full_path, start_offset, end_offset, pts_unit='pts')
+                    self.assertGreaterEqual(audio.shape[0], 1)
+                    self.assertGreaterEqual(audio.shape[1], 1)
+
+    def test_audio_present_sec(self):
+        """Test if audio frames are returned with sec unit."""
+        backends = ['video_reader', 'pyav']
+        start_offsets = [0, 0.1]
+        end_offsets = [0.3, None]
+        for test_video, _ in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            container = av.open(full_path)
+            if container.streams.audio:
+                for backend, start_offset, end_offset in itertools.product(
+                        backends, start_offsets, end_offsets):
+                    set_video_backend(backend)
+                    _, audio, _ = io.read_video(
+                        full_path, start_offset, end_offset, pts_unit='sec')
+                    self.assertGreaterEqual(audio.shape[0], 1)
+                    self.assertGreaterEqual(audio.shape[1], 1)
 
 
 if __name__ == "__main__":
