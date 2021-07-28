@@ -6,7 +6,8 @@ import warnings
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks"]
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes",
+           "draw_segmentation_masks", "draw_keypoints"]
 
 
 @torch.no_grad()
@@ -298,6 +299,57 @@ def draw_segmentation_masks(
 
     out = image * (1 - alpha) + img_to_draw * alpha
     return out.to(out_dtype)
+
+
+@torch.no_grad()
+def draw_keypoints(
+    image: torch.Tensor,
+    keypoints: torch.Tensor,
+    labels: Optional[List[str]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    radius: Optional[int] = 5,
+    connect: Optional[bool] = False,
+    font: Optional[str] = None,
+    font_size: int = 10
+) -> torch.Tensor:
+
+    """
+    Draws Keypoints on given RGB image.
+    The values of the input image should be uint8 between 0 and 255.
+
+    Args:
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
+        keypoints (Tensor): Tensor of shape (num_keypoints, H, W) or (H, W) and dtype bool.
+        labels(List[str]): List containing the labels for each Keypoint.
+        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
+            or a single color for all the keypoints.
+            The colors can be represented as `str` or `Tuple[int, int, int]`.
+        radius (int): Integer denoting radius of keypoint.
+        connect (bool): If True. It connects all the visible keypints.
+        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
+            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
+            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
+        font_size (int): The requested font size in points.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor, with keypoints drawn.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"Tensor expected, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+    elif image.size()[0] != 3:
+        raise ValueError("Pass an RGB image. Other Image formats are not supported")
+
+    ndarr = image.permute(1, 2, 0).numpy()
+    img_to_draw = Image.fromarray(ndarr)
+
+    # txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
+
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
 def _generate_color_palette(num_masks):

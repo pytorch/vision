@@ -10,3 +10,5 @@ torchvision.utils
 .. autofunction:: draw_bounding_boxes
 
 .. autofunction:: draw_segmentation_masks
+
+.. autofunction:: draw_keypoints
