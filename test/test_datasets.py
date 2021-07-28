@@ -178,7 +178,7 @@ class Caltech101TestCase(datasets_utils.ImageDatasetTestCase):
                 actual = type(combined_target)
                 expected = type(individual_target)
                 assert (
-                    actual == expected
+                    actual is expected
                 ), "Type of the combined target does not match the type of the corresponding individual target: "
                 f"{actual} is not {expected}",
 
@@ -580,7 +580,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
                 actual = type(combined_target)
                 expected = type(individual_target)
                 assert (
-                    actual == expected
+                    actual is expected
                 ), "Type of the combined target does not match the type of the corresponding individual target: "
                 f"{actual} is not {expected}",
 
