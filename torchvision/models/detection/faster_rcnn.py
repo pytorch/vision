@@ -1,5 +1,6 @@
 from torch import nn
 import torch.nn.functional as F
+from typing import List, Optional
 
 from torchvision.ops import MultiScaleRoIAlign
 
@@ -141,24 +142,41 @@ class FasterRCNN(GeneralizedRCNN):
         >>> predictions = model(x)
     """
 
-    def __init__(self, backbone, num_classes=None,
-                 # transform parameters
-                 min_size=800, max_size=1333,
-                 image_mean=None, image_std=None,
-                 # RPN parameters
-                 rpn_anchor_generator=None, rpn_head=None,
-                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
-                 rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
-                 rpn_nms_thresh=0.7,
-                 rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
-                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
-                 rpn_score_thresh=0.0,
-                 # Box parameters
-                 box_roi_pool=None, box_head=None, box_predictor=None,
-                 box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
-                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
-                 box_batch_size_per_image=512, box_positive_fraction=0.25,
-                 bbox_reg_weights=None):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        num_classes: int = None,
+        # transform parameters
+        min_size: int = 800,
+        max_size: int = 1333,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
+        # RPN parameters
+        rpn_anchor_generator=None,
+        rpn_head=None,
+        rpn_pre_nms_top_n_train: int = 2000,
+        rpn_pre_nms_top_n_test: int = 1000,
+        rpn_post_nms_top_n_train: int = 2000,
+        rpn_post_nms_top_n_test: int = 1000,
+        rpn_nms_thresh: float = 0.7,
+        rpn_fg_iou_thresh: float = 0.7,
+        rpn_bg_iou_thresh: float = 0.3,
+        rpn_batch_size_per_image: int = 256,
+        rpn_positive_fraction: float = 0.5,
+        rpn_score_thresh: float = 0.0,
+        # Box parameters
+        box_roi_pool: Optional[nn.Module] = None,
+        box_head: Optional[nn.Module] = None,
+        box_predictor: Optional[nn.Module] = None,
+        box_score_thresh: float = 0.05,
+        box_nms_thresh: float = 0.5,
+        box_detections_per_img: int = 100,
+        box_fg_iou_thresh: float = 0.5,
+        box_bg_iou_thresh: float = 0.5,
+        box_batch_size_per_image: int = 512,
+        box_positive_fraction: float = 0.25,
+        bbox_reg_weights=None
+    ):
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
@@ -245,7 +263,7 @@ class TwoMLPHead(nn.Module):
         representation_size (int): size of the intermediate representation
     """
 
-    def __init__(self, in_channels, representation_size):
+    def __init__(self, in_channels: int, representation_size: int):
         super(TwoMLPHead, self).__init__()
 
         self.fc6 = nn.Linear(in_channels, representation_size)
@@ -270,7 +288,7 @@ class FastRCNNPredictor(nn.Module):
         num_classes (int): number of output classes (including background)
     """
 
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, in_channels: int, num_classes: int):
         super(FastRCNNPredictor, self).__init__()
         self.cls_score = nn.Linear(in_channels, num_classes)
         self.bbox_pred = nn.Linear(in_channels, num_classes * 4)
@@ -295,8 +313,14 @@ model_urls = {
 }
 
 
-def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
-                            num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+def fasterrcnn_resnet50_fpn(
+        pretrained: bool = False,
+        progress: bool = True,
+        num_classes: int = 91,
+        pretrained_backbone: bool = True,
+        trainable_backbone_layers: Optional[int] = None,
+        **kwargs
+):
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
 
@@ -397,8 +421,15 @@ def _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=False, progress=
     return model
 
 
-def fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
-                                          trainable_backbone_layers=None, **kwargs):
+def fasterrcnn_mobilenet_v3_large_320_fpn(
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 91,
+    pretrained_backbone: bool = True,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs
+):
+
     """
     Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
@@ -435,8 +466,15 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=False, progress=True, num_c
                                               trainable_backbone_layers=trainable_backbone_layers, **kwargs)
 
 
-def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
-                                      trainable_backbone_layers=None, **kwargs):
+def fasterrcnn_mobilenet_v3_large_fpn(
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 91,
+    pretrained_backbone: bool = True,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs
+):
+
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
