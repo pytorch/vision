@@ -319,8 +319,9 @@ def draw_keypoints(
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
-        keypoints (Tensor): Tensor of shape (num_keypoints, H, W) or (H, W) and dtype bool.
-        labels(List[str]): List containing the labels for each Keypoint.
+        keypoints (Tensor): Tensor of shape (num_keypoints, K, 3) the K keypoints location for each of the N instances,
+            in the format [x, y, visibility], where visibility=0 means that the keypoint is not visible.
+        labels (List[str]): List containing the labels for each Keypoint.
         colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
             or a single color for all the keypoints.
             The colors can be represented as `str` or `Tuple[int, int, int]`.
@@ -332,7 +333,7 @@ def draw_keypoints(
         font_size (int): The requested font size in points.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor, with keypoints drawn.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
     """
 
     if not isinstance(image, torch.Tensor):
@@ -346,10 +347,11 @@ def draw_keypoints(
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
+    out_dtype = torch.uint8
 
     # txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=out_dtype)
 
 
 def _generate_color_palette(num_masks):
