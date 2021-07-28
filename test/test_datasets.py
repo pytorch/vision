@@ -1362,7 +1362,8 @@ class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
     def test_captions(self):
         with self.create_dataset() as (dataset, info):
             _, captions = dataset[0]
-            assert captions == info["captions"]
+            assert len(captions) == len(info["captions"])
+            assert all([a == b for a, b in zip(captions, info["captions"])])
 
 
 class Flickr30kTestCase(Flickr8kTestCase):
@@ -1576,7 +1577,8 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
     @datasets_utils.test_all_configs
     def test_classes(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert dataset.classes == info["classes"]
+            assert len(dataset.classes) == len(info["classes"])
+            assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
 
 
 class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1596,7 +1598,8 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
     @datasets_utils.test_all_configs
     def test_classes(self, config):
         with self.create_dataset(config) as (dataset, info):
-            assert dataset.classes == info["classes"]
+            assert len(dataset.classes) == len(info["classes"])
+            assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
 
 
 class KittiTestCase(datasets_utils.ImageDatasetTestCase):
