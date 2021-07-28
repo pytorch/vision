@@ -307,7 +307,7 @@ def draw_keypoints(
     keypoints: torch.Tensor,
     labels: Optional[List[str]] = None,
     colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
-    radius: Optional[int] = 5,
+    radius: Optional[int] = 2,
     connect: Optional[bool] = False,
     font: Optional[str] = None,
     font_size: int = 10
@@ -347,7 +347,18 @@ def draw_keypoints(
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
+    draw = ImageDraw.Draw(img_to_draw)
     out_dtype = torch.uint8
+
+    img_kpts = keypoints.to(torch.int64).tolist()
+
+    for i, kpt_inst in enumerate(img_kpts):
+        for kpt in kpt_inst:
+            x1 = kpt[0] - radius
+            x2 = kpt[0] + radius
+            y1 = kpt[1] - radius
+            y2 = kpt[1] + radius
+            draw.ellipse([x1, y1, x2, y2], fill="red", outline=None, width=0)
 
     # txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
