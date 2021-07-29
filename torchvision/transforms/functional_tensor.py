@@ -545,9 +545,9 @@ def resize(
 
     if antialias:
         if interpolation == "bilinear":
-            img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+            img = torch.ops.torchvision._interpolate_bilinear2d_aa(img, [new_h, new_w], align_corners=False)
         elif interpolation == "bicubic":
-            img = torch.ops.torchvision._interpolate_bicubic_aa(img, [new_h, new_w], align_corners=False)
+            img = torch.ops.torchvision._interpolate_bicubic2d_aa(img, [new_h, new_w], align_corners=False)
     else:
         img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
