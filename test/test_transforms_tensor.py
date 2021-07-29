@@ -541,6 +541,21 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('augmentation_space', ['aa', 'ta_wide'])
+@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_trivialaugment(device, augmentation_space, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    s_transform = None
+    transform = T.TrivialAugment(augmentation_space=augmentation_space, fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
 def test_autoaugment_save():
     transform = T.AutoAugment()
     s_transform = torch.jit.script(transform)
