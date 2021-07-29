@@ -87,8 +87,8 @@ class ASPP(nn.Module):
             nn.Dropout(0.5))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        res = []
+        _res = []
         for conv in self.convs:
-            res.append(conv(x))
-        res = torch.cat(res, dim=1)
+            _res.append(conv(x))
+        res = torch.cat(_res, dim=1)
         return self.project(res)
