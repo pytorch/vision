@@ -562,6 +562,7 @@ def test_autoaugment_save():
     with get_tmp_dir() as tmp_dir:
         s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
+
 def test_trivialaugment_save():
     transform = T.TrivialAugment()
     s_transform = torch.jit.script(transform)

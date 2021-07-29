@@ -106,7 +106,7 @@ def _get_transforms(policy: AutoAugmentPolicy):
         ]
 
 
-def _get_magnitudes(augmentation_space: str, image_size: List[int], num_bins: int=10):
+def _get_magnitudes(augmentation_space: str, image_size: List[int], num_bins: int = 10):
     if augmentation_space == 'aa':
         shear_max = 0.3
         translate_max_x = 150.0 / 331.0 * image_size[0]
@@ -117,14 +117,13 @@ def _get_magnitudes(augmentation_space: str, image_size: List[int], num_bins: in
 
     elif augmentation_space == 'ta_wide':
         shear_max = 0.99
-        translate_max_x = 32.0 # this is an absolute
-        translate_max_y = 32.0 # this is an absolute
+        translate_max_x = 32.0  # this is an absolute
+        translate_max_y = 32.0  # this is an absolute
         rotate_max = 135.0
         enhancer_max = 0.99
         posterize_min_bits = 2
     else:
         raise ValueError(f"Provided augmentation_space arguments {augmentation_space} not available.")
-
 
     magnitudes = {
         # name: (magnitudes, signed)
@@ -137,7 +136,7 @@ def _get_magnitudes(augmentation_space: str, image_size: List[int], num_bins: in
         "Color": (torch.linspace(0.0, enhancer_max, num_bins), True),
         "Contrast": (torch.linspace(0.0, enhancer_max, num_bins), True),
         "Sharpness": (torch.linspace(0.0, enhancer_max, num_bins), True),
-        "Posterize": (8-(torch.arange(num_bins)/((num_bins-1)/(8-posterize_min_bits))).round().int(), False),
+        "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / (8 - posterize_min_bits))).round().int(), False),
         "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
         "AutoContrast": (torch.tensor(float('nan')), False),
         "Equalize": (torch.tensor(float('nan')), False),
@@ -145,8 +144,9 @@ def _get_magnitudes(augmentation_space: str, image_size: List[int], num_bins: in
     }
     return magnitudes
 
+
 def apply_aug(img: Tensor, op_name: str, magnitude: float,
-              interpolation: InterpolationMode, fill: Optional[List[float]], num_magnitude_bins: int=10,):
+              interpolation: InterpolationMode, fill: Optional[List[float]]):
     if op_name == "ShearX":
         img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[math.degrees(magnitude), 0.0],
                        interpolation=interpolation, fill=fill)
@@ -202,7 +202,8 @@ class TrivialAugment(torch.nn.Module):
             fill (sequence or number, optional): Pixel fill value for the area outside the transformed
                 image. If given a number, the value is used for all bands respectively.
         """
-    def __init__(self, augmentation_space: str = 'ta_wide', num_magnitude_bins: int=30,
+
+    def __init__(self, augmentation_space: str = 'ta_wide', num_magnitude_bins: int = 30,
                  interpolation: InterpolationMode = InterpolationMode.NEAREST,
                  fill: Optional[List[float]] = None):
         super().__init__()
@@ -298,7 +299,7 @@ class AutoAugment(torch.nn.Module):
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) \
                     if magnitudes.isnan().all() and magnitude_id is not None else 0.0
-                if signed and signs[i]==0:
+                if signed and signs[i] == 0:
                     magnitude *= -1.0
                 img = apply_aug(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
