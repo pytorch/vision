@@ -152,12 +152,10 @@ class RegionProposalNetwork(torch.nn.Module):
         self,
         anchor_generator: AnchorGenerator,
         head: nn.Module,
-        #
         fg_iou_thresh: float,
         bg_iou_thresh: float,
         batch_size_per_image: int,
         positive_fraction: float,
-        #
         pre_nms_top_n: Dict[str, int],
         post_nms_top_n: Dict[str, int],
         nms_thresh: float,

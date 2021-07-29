@@ -149,8 +149,8 @@ class FasterRCNN(GeneralizedRCNN):
         # transform parameters
         min_size: int = 800,
         max_size: int = 1333,
-        image_mean: Optional[Tuple[float]] = None,
-        image_std: Optional[Tuple[float]] = None,
+        image_mean: Optional[Tuple[float, ...]] = None,
+        image_std: Optional[Tuple[float, ...]] = None,
         # RPN parameters
         rpn_anchor_generator: Optional[AnchorGenerator] = None,
         rpn_head: Optional[nn.Module] = None,
@@ -175,7 +175,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_bg_iou_thresh: float = 0.5,
         box_batch_size_per_image: int = 512,
         box_positive_fraction: float = 0.25,
-        bbox_reg_weights: Optional[Tuple[float]] = None
+        bbox_reg_weights: Optional[Tuple[float, ...]] = None,
     ) -> None:
 
         if not hasattr(backbone, "out_channels"):

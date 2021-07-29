@@ -160,8 +160,8 @@ class KeypointRCNN(FasterRCNN):
         # transform parameters
         min_size: Optional[Tuple[int]] = None,
         max_size: int = 1333,
-        image_mean: Optional[Tuple[float]] = None,
-        image_std: Optional[Tuple[float]] = None,
+        image_mean: Optional[Tuple[float, ...]] = None,
+        image_std: Optional[Tuple[float, ...]] = None,
         # RPN parameters
         rpn_anchor_generator: Optional[AnchorGenerator] = None,
         rpn_head: Optional[nn.Module] = None,
@@ -186,7 +186,7 @@ class KeypointRCNN(FasterRCNN):
         box_bg_iou_thresh: float = 0.5,
         box_batch_size_per_image: int = 512,
         box_positive_fraction: float = 0.25,
-        bbox_reg_weights: Optional[Tuple[float]] = None,
+        bbox_reg_weights: Optional[Tuple[float, ...]] = None,
         # keypoint parameters
         keypoint_roi_pool: Optional[MultiScaleRoIAlign] = None,
         keypoint_head: Optional[nn.Module] = None,

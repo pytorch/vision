@@ -6,6 +6,7 @@ from typing import Optional, Tuple, Any
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
+from .anchor_utils import AnchorGenerator
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
@@ -157,10 +158,10 @@ class MaskRCNN(FasterRCNN):
         # transform parameters
         min_size: int = 800,
         max_size: int = 1333,
-        image_mean: Optional[Tuple[float]] = None,
-        image_std: Optional[Tuple[float]] = None,
+        image_mean: Optional[Tuple[float, ...]] = None,
+        image_std: Optional[Tuple[float, ...]] = None,
         # RPN parameters
-        rpn_anchor_generator: Optional[nn.Module] = None,
+        rpn_anchor_generator: Optional[AnchorGenerator] = None,
         rpn_head: Optional[nn.Module] = None,
         rpn_pre_nms_top_n_train: int = 2000,
         rpn_pre_nms_top_n_test: int = 1000,
@@ -173,7 +174,7 @@ class MaskRCNN(FasterRCNN):
         rpn_positive_fraction: float = 0.5,
         rpn_score_thresh: float = 0.0,
         # Box parameters
-        box_roi_pool: Optional[nn.Module] = None,
+        box_roi_pool: Optional[MultiScaleRoIAlign] = None,
         box_head: Optional[nn.Module] = None,
         box_predictor: Optional[nn.Module] = None,
         box_score_thresh: float = 0.05,
@@ -183,7 +184,7 @@ class MaskRCNN(FasterRCNN):
         box_bg_iou_thresh: float = 0.5,
         box_batch_size_per_image: int = 512,
         box_positive_fraction: float = 0.25,
-        bbox_reg_weights: Optional[Tuple[float]] = None,
+        bbox_reg_weights: Optional[Tuple[float, ...]] = None,
         # Mask parameters
         mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
         mask_head: Optional[nn.Module] = None,
