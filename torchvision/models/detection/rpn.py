@@ -146,8 +146,6 @@ class RegionProposalNetwork(torch.nn.Module):
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
         'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
-        'pre_nms_top_n': Dict[str, int],
-        'post_nms_top_n': Dict[str, int],
     }
 
     def __init__(
@@ -160,8 +158,8 @@ class RegionProposalNetwork(torch.nn.Module):
         batch_size_per_image: int,
         positive_fraction: float,
         #
-        pre_nms_top_n: Dict[int],
-        post_nms_top_n: Dict[int],
+        pre_nms_top_n: Dict[str, int],
+        post_nms_top_n: Dict[str, int],
         nms_thresh: float,
         score_thresh: float = 0.0,
     ) -> None:
