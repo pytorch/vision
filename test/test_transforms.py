@@ -1486,7 +1486,7 @@ def test_autoaugment(policy, fill):
 @pytest.mark.parametrize('augmentation_space', ['aa', 'ta_wide'])
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
 @pytest.mark.parametrize('num_magnitude_bins', [10,13,30])
-def test_autoaugment(augmentation_space, fill, num_magnitude_bins):
+def test_trivialaugment(augmentation_space, fill, num_magnitude_bins):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
     transform = transforms.TrivialAugment(augmentation_space=augmentation_space, fill=fill, num_magnitude_bins=num_magnitude_bins)
