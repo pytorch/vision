@@ -307,8 +307,8 @@ def draw_keypoints(
     keypoints: torch.Tensor,
     labels: Optional[List[str]] = None,
     colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
-    radius: Optional[int] = 2,
-    connect: Optional[bool] = False,
+    radius: int = 2,
+    connect: bool = False,
     font: Optional[str] = None,
     font_size: int = 10
 ) -> torch.Tensor:
