@@ -545,11 +545,12 @@ class RoIHeads(nn.Module):
         bg_iou_thresh: float,
         batch_size_per_image: int,
         positive_fraction: float,
-        bbox_reg_weights: Optional[Tuple[float, ...], None],
         # Faster R-CNN inference
         score_thresh: float,
         nms_thresh: float,
         detections_per_img: int,
+        # Faster-RCNN Training
+        bbox_reg_weights: Optional[Tuple[float, ...]] = None,
         # Mask
         mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
         mask_head: Optional[nn.Module] = None,
