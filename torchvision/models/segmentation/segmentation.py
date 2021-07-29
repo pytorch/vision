@@ -181,6 +181,7 @@ def lraspp_mobilenet_v3_large(pretrained=False, progress=True, num_classes=21, *
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
+        aux_loss (bool): If True, it uses an auxiliary loss
     """
     if kwargs.pop("aux_loss", False):
         raise NotImplementedError('This model does not use auxiliary loss')
