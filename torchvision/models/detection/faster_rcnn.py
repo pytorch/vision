@@ -1,6 +1,6 @@
 from torch import nn
 import torch.nn.functional as F
-from typing import List, Optional
+from typing import Optional, Tuple, Any
 
 from torchvision.ops import MultiScaleRoIAlign
 
@@ -145,15 +145,15 @@ class FasterRCNN(GeneralizedRCNN):
     def __init__(
         self,
         backbone: nn.Module,
-        num_classes: int = None,
+        num_classes: Optional[int] = None,
         # transform parameters
         min_size: int = 800,
         max_size: int = 1333,
-        image_mean: Optional[List[float]] = None,
-        image_std: Optional[List[float]] = None,
+        image_mean: Optional[Tuple[float]] = None,
+        image_std: Optional[Tuple[float]] = None,
         # RPN parameters
-        rpn_anchor_generator=None,
-        rpn_head=None,
+        rpn_anchor_generator: Optional[nn.Module] = None,
+        rpn_head: Optional[nn.Module] = None,
         rpn_pre_nms_top_n_train: int = 2000,
         rpn_pre_nms_top_n_test: int = 1000,
         rpn_post_nms_top_n_train: int = 2000,
@@ -175,7 +175,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_bg_iou_thresh: float = 0.5,
         box_batch_size_per_image: int = 512,
         box_positive_fraction: float = 0.25,
-        bbox_reg_weights=None
+        bbox_reg_weights: Optional[Tuple(float)] = None
     ):
 
         if not hasattr(backbone, "out_channels"):
@@ -319,7 +319,7 @@ def fasterrcnn_resnet50_fpn(
         num_classes: int = 91,
         pretrained_backbone: bool = True,
         trainable_backbone_layers: Optional[int] = None,
-        **kwargs
+        **kwargs: Any,
 ):
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
@@ -398,8 +398,16 @@ def fasterrcnn_resnet50_fpn(
     return model
 
 
-def _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=False, progress=True, num_classes=91,
-                                       pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+def _fasterrcnn_mobilenet_v3_large_fpn(
+    weights_name: str,
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 91,
+    pretrained_backbone: bool = True,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+):
+
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
 
@@ -427,7 +435,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     num_classes: int = 91,
     pretrained_backbone: bool = True,
     trainable_backbone_layers: Optional[int] = None,
-    **kwargs
+    **kwargs: Any,
 ):
 
     """
@@ -472,7 +480,7 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     num_classes: int = 91,
     pretrained_backbone: bool = True,
     trainable_backbone_layers: Optional[int] = None,
-    **kwargs
+    **kwargs: Any,
 ):
 
     """
