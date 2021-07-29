@@ -22,7 +22,13 @@ class GeneralizedRCNN(nn.Module):
             the model
     """
 
-    def __init__(self, backbone, rpn, roi_heads, transform):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        rpn: nn.Module,
+        roi_heads: nn.Module,
+        transform: nn.Module,
+    ) -> None:
         super(GeneralizedRCNN, self).__init__()
         self.transform = transform
         self.backbone = backbone
@@ -32,15 +38,22 @@ class GeneralizedRCNN(nn.Module):
         self._has_warned = False
 
     @torch.jit.unused
-    def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]
+    def eager_outputs(
+        self,
+        losses: Dict[str, Tensor],
+        detections: List[Dict[str, Tensor]],
+    ) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+
         if self.training:
             return losses
 
         return detections
 
-    def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+    def forward(
+        self,
+        images: List[Tensor],
+        targets: Optional[List[Dict[str, Tensor]]] = None,
+    ) -> Union[Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]]:
         """
         Args:
             images (list[Tensor]): images to be processed

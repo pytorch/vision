@@ -424,7 +424,8 @@ class RetinaNet(nn.Module):
         self,
         losses: Dict[str, Tensor],
         detections: List[Dict[str, Tensor]],
-    ):
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+
         if self.training:
             return losses
 
@@ -516,7 +517,7 @@ class RetinaNet(nn.Module):
         self,
         images: List[Tensor],
         targets: Optional[Dict[str, Tensor]] = None,
-    ):
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         """
         Args:
             images (list[Tensor]): images to be processed
