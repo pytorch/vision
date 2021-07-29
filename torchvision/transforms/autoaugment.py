@@ -229,8 +229,7 @@ class TrivialAugment(torch.nn.Module):
         if signed and torch.randint(2, (1,)):
             magnitude *= -1.0
 
-        return apply_aug(img, op_name, magnitude, interpolation=self.interpolation, fill=fill,
-                         num_magnitude_bins=self.num_magnitude_bins)
+        return apply_aug(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
 
 class AutoAugment(torch.nn.Module):
