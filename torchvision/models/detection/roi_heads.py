@@ -6,15 +6,20 @@ from torch import nn, Tensor
 
 from torchvision.ops import boxes as box_ops
 
-from torchvision.ops import roi_align
+from torchvision.ops import roi_align, MultiScaleRoIAlign
 
 from . import _utils as det_utils
 
 from typing import Optional, List, Dict, Tuple
 
 
-def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
-    # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
+def fastrcnn_loss(
+    class_logits: Tensor,
+    box_regression: Tensor,
+    labels: List[Tensor],
+    regression_targets: List[Tensor],
+) -> Tuple[Tensor, Tensor]:
+
     """
     Computes the loss for Faster R-CNN.
 
@@ -53,8 +58,11 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     return classification_loss, box_loss
 
 
-def maskrcnn_inference(x, labels):
-    # type: (Tensor, List[Tensor]) -> List[Tensor]
+def maskrcnn_inference(
+    x: Tensor,
+    labels: List[Tensor],
+) -> List[Tensor]:
+
     """
     From the results of the CNN, post process the masks
     by taking the mask corresponding to the class with max
@@ -83,8 +91,13 @@ def maskrcnn_inference(x, labels):
     return mask_prob
 
 
-def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
-    # type: (Tensor, Tensor, Tensor, int) -> Tensor
+def project_masks_on_boxes(
+    gt_masks: Tensor,
+    boxes: Tensor,
+    matched_idxs: Tensor,
+    M: int,
+) -> Tensor:
+
     """
     Given segmentation masks and the bounding boxes corresponding
     to the location of the masks in the image, this function
@@ -98,8 +111,14 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
     return roi_align(gt_masks, rois, (M, M), 1.)[:, 0]
 
 
-def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
-    # type: (Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor]) -> Tensor
+def maskrcnn_loss(
+    mask_logits: Tensor,
+    proposals: List[Tensor],
+    gt_masks: List[Tensor],
+    gt_labels: List[Tensor],
+    mask_matched_idxs: List[Tensor],
+) -> Tensor:
+
     """
     Args:
         proposals (list[BoxList])
@@ -131,8 +150,12 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     return mask_loss
 
 
-def keypoints_to_heatmap(keypoints, rois, heatmap_size):
-    # type: (Tensor, Tensor, int) -> Tuple[Tensor, Tensor]
+def keypoints_to_heatmap(
+    keypoints: Tensor,
+    rois: Tensor,
+    heatmap_size: int,
+) -> Tuple[Tensor, Tensor]:
+
     offset_x = rois[:, 0]
     offset_y = rois[:, 1]
     scale_x = heatmap_size / (rois[:, 2] - rois[:, 0])
@@ -279,8 +302,13 @@ def heatmaps_to_keypoints(maps, rois):
     return xy_preds.permute(0, 2, 1), end_scores
 
 
-def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs):
-    # type: (Tensor, List[Tensor], List[Tensor], List[Tensor]) -> Tensor
+def keypointrcnn_loss(
+    keypoint_logits: Tensor,
+    proposals: List[Tensor],
+    gt_keypoints: List[Tensor],
+    keypoint_matched_idxs: List[Tensor],
+) -> Tensor:
+
     N, K, H, W = keypoint_logits.shape
     assert H == W
     discretization_size = H
@@ -309,8 +337,11 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
     return keypoint_loss
 
 
-def keypointrcnn_inference(x, boxes):
-    # type: (Tensor, List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
+def keypointrcnn_inference(
+    x: Tensor,
+    boxes: List[Tensor],
+) -> Tuple[List[Tensor], List[Tensor]]:
+
     kp_probs = []
     kp_scores = []
 
@@ -325,8 +356,8 @@ def keypointrcnn_inference(x, boxes):
     return kp_probs, kp_scores
 
 
-def _onnx_expand_boxes(boxes, scale):
-    # type: (Tensor, float) -> Tensor
+def _onnx_expand_boxes(boxes: Tensor, scale: float) -> Tensor:
+
     w_half = (boxes[:, 2] - boxes[:, 0]) * .5
     h_half = (boxes[:, 3] - boxes[:, 1]) * .5
     x_c = (boxes[:, 2] + boxes[:, 0]) * .5
@@ -346,8 +377,8 @@ def _onnx_expand_boxes(boxes, scale):
 # the next two functions should be merged inside Masker
 # but are kept here for the moment while we need them
 # temporarily for paste_mask_in_image
-def expand_boxes(boxes, scale):
-    # type: (Tensor, float) -> Tensor
+def expand_boxes(boxes: Tensor, scale: float):
+
     if torchvision._is_tracing():
         return _onnx_expand_boxes(boxes, scale)
     w_half = (boxes[:, 2] - boxes[:, 0]) * .5
@@ -367,13 +398,18 @@ def expand_boxes(boxes, scale):
 
 
 @torch.jit.unused
-def expand_masks_tracing_scale(M, padding):
-    # type: (int, int) -> float
+def expand_masks_tracing_scale(
+    M: int,
+    padding: int
+) -> float:
     return torch.tensor(M + 2 * padding).to(torch.float32) / torch.tensor(M).to(torch.float32)
 
 
-def expand_masks(mask, padding):
-    # type: (Tensor, int) -> Tuple[Tensor, float]
+def expand_masks(
+    mask: Tensor,
+    padding: int
+) -> Tuple[Tensor, float]:
+
     M = mask.shape[-1]
     if torch._C._get_tracing_state():  # could not import is_tracing(), not sure why
         scale = expand_masks_tracing_scale(M, padding)
@@ -383,8 +419,13 @@ def expand_masks(mask, padding):
     return padded_mask, scale
 
 
-def paste_mask_in_image(mask, box, im_h, im_w):
-    # type: (Tensor, Tensor, int, int) -> Tensor
+def paste_mask_in_image(
+    mask: Tensor,
+    box: Tensor,
+    im_h: int,
+    im_w: int
+) -> Tensor:
+
     TO_REMOVE = 1
     w = int(box[2] - box[0] + TO_REMOVE)
     h = int(box[3] - box[1] + TO_REMOVE)
@@ -461,8 +502,13 @@ def _onnx_paste_masks_in_image_loop(masks, boxes, im_h, im_w):
     return res_append
 
 
-def paste_masks_in_image(masks, boxes, img_shape, padding=1):
-    # type: (Tensor, Tensor, Tuple[int, int], int) -> Tensor
+def paste_masks_in_image(
+    masks: Tensor,
+    boxes: Tensor,
+    img_shape: Tuple[int, int],
+    padding: int = 1
+) -> Tensor:
+
     masks, scale = expand_masks(masks, padding=padding)
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64)
     im_h, im_w = img_shape
@@ -489,26 +535,29 @@ class RoIHeads(nn.Module):
         'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
     }
 
-    def __init__(self,
-                 box_roi_pool,
-                 box_head,
-                 box_predictor,
-                 # Faster R-CNN training
-                 fg_iou_thresh, bg_iou_thresh,
-                 batch_size_per_image, positive_fraction,
-                 bbox_reg_weights,
-                 # Faster R-CNN inference
-                 score_thresh,
-                 nms_thresh,
-                 detections_per_img,
-                 # Mask
-                 mask_roi_pool=None,
-                 mask_head=None,
-                 mask_predictor=None,
-                 keypoint_roi_pool=None,
-                 keypoint_head=None,
-                 keypoint_predictor=None,
-                 ):
+    def __init__(
+        self,
+        box_roi_pool: MultiScaleRoIAlign,
+        box_head: nn.Module,
+        box_predictor: nn.Module,
+        # Faster R-CNN training
+        fg_iou_thresh: float,
+        bg_iou_thresh: float,
+        batch_size_per_image: int,
+        positive_fraction: float,
+        bbox_reg_weights: Optional[Tuple[float, ...], None],
+        # Faster R-CNN inference
+        score_thresh: float,
+        nms_thresh: float,
+        detections_per_img: int,
+        # Mask
+        mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        mask_head: Optional[nn.Module] = None,
+        mask_predictor: Optional[nn.Module] = None,
+        keypoint_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        keypoint_head: Optional[nn.Module] = None,
+        keypoint_predictor: Optional[nn.Module] = None,
+    ) -> None:
         super(RoIHeads, self).__init__()
 
         self.box_similarity = box_ops.box_iou
@@ -542,7 +591,7 @@ class RoIHeads(nn.Module):
         self.keypoint_head = keypoint_head
         self.keypoint_predictor = keypoint_predictor
 
-    def has_mask(self):
+    def has_mask(self) -> bool:
         if self.mask_roi_pool is None:
             return False
         if self.mask_head is None:
@@ -551,7 +600,7 @@ class RoIHeads(nn.Module):
             return False
         return True
 
-    def has_keypoint(self):
+    def has_keypoint(self) -> bool:
         if self.keypoint_roi_pool is None:
             return False
         if self.keypoint_head is None:
@@ -560,8 +609,13 @@ class RoIHeads(nn.Module):
             return False
         return True
 
-    def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
-        # type: (List[Tensor], List[Tensor], List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
+    def assign_targets_to_proposals(
+        self,
+        proposals: List[Tensor],
+        gt_boxes: List[Tensor],
+        gt_labels: List[Tensor],
+    ) -> Tuple[List[Tensor], List[Tensor]]:
+
         matched_idxs = []
         labels = []
         for proposals_in_image, gt_boxes_in_image, gt_labels_in_image in zip(proposals, gt_boxes, gt_labels):
@@ -597,8 +651,11 @@ class RoIHeads(nn.Module):
             labels.append(labels_in_image)
         return matched_idxs, labels
 
-    def subsample(self, labels):
-        # type: (List[Tensor]) -> List[Tensor]
+    def subsample(
+        self,
+        labels: List[Tensor],
+    ) -> List[Tensor]:
+
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
         sampled_inds = []
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
@@ -608,8 +665,12 @@ class RoIHeads(nn.Module):
             sampled_inds.append(img_sampled_inds)
         return sampled_inds
 
-    def add_gt_proposals(self, proposals, gt_boxes):
-        # type: (List[Tensor], List[Tensor]) -> List[Tensor]
+    def add_gt_proposals(
+        self,
+        proposals: List[Tensor],
+        gt_boxes: List[Tensor],
+    ) -> List[Tensor]:
+
         proposals = [
             torch.cat((proposal, gt_box))
             for proposal, gt_box in zip(proposals, gt_boxes)
@@ -617,19 +678,22 @@ class RoIHeads(nn.Module):
 
         return proposals
 
-    def check_targets(self, targets):
-        # type: (Optional[List[Dict[str, Tensor]]]) -> None
+    def check_targets(
+        self,
+        targets: Optional[List[Dict[str, Tensor]]] = None,
+    ) -> None:
         assert targets is not None
         assert all(["boxes" in t for t in targets])
         assert all(["labels" in t for t in targets])
         if self.has_mask():
             assert all(["masks" in t for t in targets])
 
-    def select_training_samples(self,
-                                proposals,  # type: List[Tensor]
-                                targets     # type: Optional[List[Dict[str, Tensor]]]
-                                ):
-        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
+    def select_training_samples(
+        self,
+        proposals: List[Tensor],
+        targets: Optional[List[Dict[str, Tensor]]],
+    ) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]:
+
         self.check_targets(targets)
         assert targets is not None
         dtype = proposals[0].dtype
@@ -661,13 +725,14 @@ class RoIHeads(nn.Module):
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
         return proposals, matched_idxs, labels, regression_targets
 
-    def postprocess_detections(self,
-                               class_logits,    # type: Tensor
-                               box_regression,  # type: Tensor
-                               proposals,       # type: List[Tensor]
-                               image_shapes     # type: List[Tuple[int, int]]
-                               ):
-        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]
+    def postprocess_detections(
+        self,
+        class_logits: Tensor,
+        box_regression: Tensor,
+        proposals: List[Tensor],
+        image_shapes: List[Tuple[int, int]],
+    ) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]:
+
         device = class_logits.device
         num_classes = class_logits.shape[-1]
 
@@ -719,13 +784,14 @@ class RoIHeads(nn.Module):
 
         return all_boxes, all_scores, all_labels
 
-    def forward(self,
-                features,      # type: Dict[str, Tensor]
-                proposals,     # type: List[Tensor]
-                image_shapes,  # type: List[Tuple[int, int]]
-                targets=None   # type: Optional[List[Dict[str, Tensor]]]
-                ):
-        # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
+    def forward(
+        self,
+        features: Dict[str, Tensor],
+        proposals: List[Tensor],
+        image_shapes: List[Tuple[int, int]],
+        targets: Optional[List[Dict[str, Tensor]]] = None,
+    ) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]:
+
         """
         Args:
             features (List[Tensor])
