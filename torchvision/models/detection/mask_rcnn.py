@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from torch import nn
+from typing import Optional, Tuple, Any
 
 from torchvision.ops import MultiScaleRoIAlign
 
@@ -149,26 +150,45 @@ class MaskRCNN(FasterRCNN):
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
-    def __init__(self, backbone, num_classes=None,
-                 # transform parameters
-                 min_size=800, max_size=1333,
-                 image_mean=None, image_std=None,
-                 # RPN parameters
-                 rpn_anchor_generator=None, rpn_head=None,
-                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
-                 rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
-                 rpn_nms_thresh=0.7,
-                 rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
-                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
-                 rpn_score_thresh=0.0,
-                 # Box parameters
-                 box_roi_pool=None, box_head=None, box_predictor=None,
-                 box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
-                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
-                 box_batch_size_per_image=512, box_positive_fraction=0.25,
-                 bbox_reg_weights=None,
-                 # Mask parameters
-                 mask_roi_pool=None, mask_head=None, mask_predictor=None):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        num_classes: Optional[int] = None,
+        # transform parameters
+        min_size: int = 800,
+        max_size: int = 1333,
+        image_mean: Optional[Tuple[float]] = None,
+        image_std: Optional[Tuple[float]] = None,
+        # RPN parameters
+        rpn_anchor_generator: Optional[nn.Module] = None,
+        rpn_head: Optional[nn.Module] = None,
+        rpn_pre_nms_top_n_train: int = 2000,
+        rpn_pre_nms_top_n_test: int = 1000,
+        rpn_post_nms_top_n_train: int = 2000,
+        rpn_post_nms_top_n_test: int = 1000,
+        rpn_nms_thresh: float = 0.7,
+        rpn_fg_iou_thresh: float = 0.7,
+        rpn_bg_iou_thresh: float = 0.3,
+        rpn_batch_size_per_image: int = 256,
+        rpn_positive_fraction: float = 0.5,
+        rpn_score_thresh: float = 0.0,
+        # Box parameters
+        box_roi_pool: Optional[nn.Module] = None,
+        box_head: Optional[nn.Module] = None,
+        box_predictor: Optional[nn.Module] = None,
+        box_score_thresh: float = 0.05,
+        box_nms_thresh: float = 0.5,
+        box_detections_per_img: int = 100,
+        box_fg_iou_thresh: float = 0.5,
+        box_bg_iou_thresh: float = 0.5,
+        box_batch_size_per_image: int = 512,
+        box_positive_fraction: float = 0.25,
+        bbox_reg_weights: Optional[Tuple(float)] = None,
+        # Mask parameters
+        mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        mask_head: Optional[nn.Module] = None,
+        mask_predictor: Optional[nn.Module] = None
+    ) -> None:
 
         assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
 
@@ -221,7 +241,12 @@ class MaskRCNN(FasterRCNN):
 
 
 class MaskRCNNHeads(nn.Sequential):
-    def __init__(self, in_channels, layers, dilation):
+    def __init__(
+        self,
+        in_channels: int,
+        layers: int,
+        dilation: int
+    ) -> None:
         """
         Args:
             in_channels (int): number of input channels
@@ -246,7 +271,12 @@ class MaskRCNNHeads(nn.Sequential):
 
 
 class MaskRCNNPredictor(nn.Sequential):
-    def __init__(self, in_channels, dim_reduced, num_classes):
+    def __init__(
+        self,
+        in_channels: int,
+        dim_reduced: int,
+        num_classes: int
+    ) -> None:
         super(MaskRCNNPredictor, self).__init__(OrderedDict([
             ("conv5_mask", nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
             ("relu", nn.ReLU(inplace=True)),
@@ -266,8 +296,14 @@ model_urls = {
 }
 
 
-def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
-                          num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+def maskrcnn_resnet50_fpn(
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 91,
+    pretrained_backbone: bool = True,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any
+) -> MaskRCNN:
     """
     Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.
 
