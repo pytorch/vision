@@ -11,7 +11,7 @@ class ImageList(object):
     and storing in a field the original sizes of each image
     """
 
-    def __init__(self, tensors: Tensor, image_sizes: List[Tuple[int, int]]):
+    def __init__(self, tensors: Tensor, image_sizes: List[Tuple[int, int]]) -> None:
         """
         Args:
             tensors (tensor)

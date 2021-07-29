@@ -1,9 +1,11 @@
 import torch
 from torch import nn
 
+from typing import Any, List, Optional, Tuple
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
+from .anchor_utils import AnchorGenerator
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
@@ -151,27 +153,46 @@ class KeypointRCNN(FasterRCNN):
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
-    def __init__(self, backbone, num_classes=None,
-                 # transform parameters
-                 min_size=None, max_size=1333,
-                 image_mean=None, image_std=None,
-                 # RPN parameters
-                 rpn_anchor_generator=None, rpn_head=None,
-                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
-                 rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
-                 rpn_nms_thresh=0.7,
-                 rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
-                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
-                 rpn_score_thresh=0.0,
-                 # Box parameters
-                 box_roi_pool=None, box_head=None, box_predictor=None,
-                 box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
-                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
-                 box_batch_size_per_image=512, box_positive_fraction=0.25,
-                 bbox_reg_weights=None,
-                 # keypoint parameters
-                 keypoint_roi_pool=None, keypoint_head=None, keypoint_predictor=None,
-                 num_keypoints=17):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        num_classes: Optional[int] = None,
+        # transform parameters
+        min_size: Optional[Tuple[int]] = None,
+        max_size: int = 1333,
+        image_mean: Optional[Tuple[float]] = None,
+        image_std: Optional[Tuple[float]] = None,
+        # RPN parameters
+        rpn_anchor_generator: Optional[AnchorGenerator] = None,
+        rpn_head: Optional[nn.Module] = None,
+        rpn_pre_nms_top_n_train: int = 2000,
+        rpn_pre_nms_top_n_test: int = 1000,
+        rpn_post_nms_top_n_train: int = 2000,
+        rpn_post_nms_top_n_test: int = 1000,
+        rpn_nms_thresh: float = 0.7,
+        rpn_fg_iou_thresh: float = 0.7,
+        rpn_bg_iou_thresh: float = 0.3,
+        rpn_batch_size_per_image: int = 256,
+        rpn_positive_fraction: float = 0.5,
+        rpn_score_thresh: float = 0.0,
+        # Box parameters
+        box_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        box_head: Optional[nn.Module] = None,
+        box_predictor: Optional[nn.Module] = None,
+        box_score_thresh: float = 0.05,
+        box_nms_thresh: float = 0.5,
+        box_detections_per_img: int = 100,
+        box_fg_iou_thresh: float = 0.5,
+        box_bg_iou_thresh: float = 0.5,
+        box_batch_size_per_image: int = 512,
+        box_positive_fraction: float = 0.25,
+        bbox_reg_weights: Optional[Tuple[float]] = None,
+        # keypoint parameters
+        keypoint_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        keypoint_head: Optional[nn.Module] = None,
+        keypoint_predictor: Optional[nn.Module] = None,
+        num_keypoints: int = 17,
+    ) -> None:
 
         assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
         if min_size is None:
@@ -223,7 +244,11 @@ class KeypointRCNN(FasterRCNN):
 
 
 class KeypointRCNNHeads(nn.Sequential):
-    def __init__(self, in_channels, layers):
+    def __init__(
+        self,
+        in_channels: int,
+        layers: List[int],
+    ) -> None:
         d = []
         next_feature = in_channels
         for out_channels in layers:
@@ -238,7 +263,11 @@ class KeypointRCNNHeads(nn.Sequential):
 
 
 class KeypointRCNNPredictor(nn.Module):
-    def __init__(self, in_channels, num_keypoints):
+    def __init__(
+        self,
+        in_channels: int,
+        num_keypoints: int,
+    ) -> None:
         super(KeypointRCNNPredictor, self).__init__()
         input_features = in_channels
         deconv_kernel = 4
@@ -256,7 +285,10 @@ class KeypointRCNNPredictor(nn.Module):
         self.up_scale = 2
         self.out_channels = num_keypoints
 
-    def forward(self, x):
+    def forward(
+        self,
+        x,
+    ):
         x = self.kps_score_lowres(x)
         return torch.nn.functional.interpolate(
             x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False, recompute_scale_factor=False
@@ -272,9 +304,15 @@ model_urls = {
 }
 
 
-def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
-                              num_classes=2, num_keypoints=17,
-                              pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
+def keypointrcnn_resnet50_fpn(
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 2,
+    num_keypoints: int = 17,
+    pretrained_backbone: bool = True,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+):
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 

@@ -4,7 +4,7 @@ import warnings
 from collections import OrderedDict
 from functools import partial
 from torch import nn, Tensor
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 from . import _utils as det_utils
 from .ssd import SSD, SSDScoringHead
