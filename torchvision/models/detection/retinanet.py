@@ -516,7 +516,7 @@ class RetinaNet(nn.Module):
     def forward(
         self,
         images: List[Tensor],
-        targets: Optional[Dict[str, Tensor]] = None,
+        targets: Optional[List[Dict[str, Tensor]]] = None,
     ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         """
         Args:
