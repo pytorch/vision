@@ -224,8 +224,8 @@ class TrivialAugment(torch.nn.Module):
         op_index = torch.randint(len(op_meta), (1,))
         op_name = list(op_meta.keys())[op_index.item()]
         magnitudes, signed = op_meta[op_name]
-        magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,))].item()) \
-            if magnitudes.isnan().all() else 0.0
+        magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
+            if not magnitudes.isnan().all() else 0.0
         if signed and torch.randint(2, (1,)):
             magnitude *= -1.0
 
@@ -297,7 +297,7 @@ class AutoAugment(torch.nn.Module):
                 op_meta = _get_magnitudes('aa', F._get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) \
-                    if magnitudes.isnan().all() and magnitude_id is not None else 0.0
+                    if not magnitudes.isnan().all() and magnitude_id is not None else 0.0
                 if signed and signs[i] == 0:
                     magnitude *= -1.0
                 img = apply_aug(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
