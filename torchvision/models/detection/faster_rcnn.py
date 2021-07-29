@@ -175,7 +175,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_bg_iou_thresh: float = 0.5,
         box_batch_size_per_image: int = 512,
         box_positive_fraction: float = 0.25,
-        bbox_reg_weights: Optional[Tuple(float)] = None
+        bbox_reg_weights: Optional[Tuple[float]] = None
     ) -> None:
 
         if not hasattr(backbone, "out_channels"):

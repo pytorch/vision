@@ -56,7 +56,7 @@ class RetinaNetHead(nn.Module):
         head_outputs: Dict[str, Tensor],
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
-    ) -> Dict[Tensor]:
+    ) -> Dict[str, Tensor]:
         # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
         return {
             'classification': self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
