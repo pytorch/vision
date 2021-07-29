@@ -57,7 +57,6 @@ class RetinaNetHead(nn.Module):
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
     ) -> Dict[str, Tensor]:
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
         return {
             'classification': self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
             'bbox_regression': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
@@ -67,7 +66,6 @@ class RetinaNetHead(nn.Module):
         self,
         x: List[Tensor],
     ) -> Dict[str, Tensor]:
-        # type: (List[Tensor]) -> Dict[str, Tensor]
         return {
             'cls_logits': self.classification_head(x),
             'bbox_regression': self.regression_head(x)
@@ -123,7 +121,6 @@ class RetinaNetClassificationHead(nn.Module):
         head_outputs: Dict[str, Tensor],
         matched_idxs: List[Tensor],
     ) -> Tensor:
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Tensor
         losses = []
 
         cls_logits = head_outputs['cls_logits']
@@ -156,7 +153,6 @@ class RetinaNetClassificationHead(nn.Module):
         self,
         x: List[Tensor],
     ) -> Tensor:
-        # type: (List[Tensor]) -> Tensor
         all_cls_logits = []
 
         for features in x:
@@ -217,7 +213,6 @@ class RetinaNetRegressionHead(nn.Module):
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
     ) -> Tensor:
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
         losses = []
 
         bbox_regression = head_outputs['bbox_regression']
@@ -249,7 +244,6 @@ class RetinaNetRegressionHead(nn.Module):
         self,
         x: List[Tensor],
     ) -> Tensor:
-        # type: (List[Tensor]) -> Tensor
         all_bbox_regression = []
 
         for features in x:
@@ -431,7 +425,6 @@ class RetinaNet(nn.Module):
         losses: Dict[str, Tensor],
         detections: List[Dict[str, Tensor]],
     ):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         if self.training:
             return losses
 
@@ -443,7 +436,6 @@ class RetinaNet(nn.Module):
         head_outputs: Dict[str, Tensor],
         anchors: List[Tensor],
     ) -> Dict[str, Tensor]:
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Dict[str, Tensor]
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image['boxes'].numel() == 0:
@@ -462,7 +454,6 @@ class RetinaNet(nn.Module):
         anchors: List[List[Tensor]],
         image_shapes: List[Tuple[int, int]],
     ) -> List[Dict[str, Tensor]]:
-        # type: (Dict[str, List[Tensor]], List[List[Tensor]], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
         class_logits = head_outputs['cls_logits']
         box_regression = head_outputs['bbox_regression']
 
@@ -526,7 +517,6 @@ class RetinaNet(nn.Module):
         images: List[Tensor],
         targets: Optional[Dict[str, Tensor]] = None,
     ):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
         Args:
             images (list[Tensor]): images to be processed
