@@ -3,7 +3,7 @@ import torch
 
 from enum import Enum
 from torch import Tensor
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 
 from . import functional as F, InterpolationMode
 
@@ -19,7 +19,9 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
-def _get_transforms(policy: AutoAugmentPolicy):
+def _get_transforms(
+    policy: AutoAugmentPolicy
+) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
     if policy == AutoAugmentPolicy.IMAGENET:
         return [
             (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -106,7 +108,7 @@ def _get_transforms(policy: AutoAugmentPolicy):
         ]
 
 
-def _get_magnitudes():
+def _get_magnitudes() -> Dict[str, Tuple[Optional[Tensor], Optional[bool]]]:
     _BINS = 10
     return {
         # name: (magnitudes, signed)
@@ -144,8 +146,12 @@ class AutoAugment(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
     """
 
-    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-                 interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None):
+    def __init__(
+        self,
+        policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None
+    ) -> None:
         super().__init__()
         self.policy = policy
         self.interpolation = interpolation
@@ -172,7 +178,7 @@ class AutoAugment(torch.nn.Module):
     def _get_op_meta(self, name: str) -> Tuple[Optional[Tensor], Optional[bool]]:
         return self._op_meta[name]
 
-    def forward(self, img: Tensor):
+    def forward(self, img: Tensor) -> Tensor:
         """
             img (PIL Image or Tensor): Image to be transformed.
 
@@ -233,5 +239,5 @@ class AutoAugment(torch.nn.Module):
 
         return img
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)
