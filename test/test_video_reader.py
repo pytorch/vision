@@ -2,7 +2,7 @@ import collections
 import itertools
 import math
 import os
-import unittest
+import pytest
 from fractions import Fraction
 
 import numpy as np
@@ -12,7 +12,7 @@ from numpy.random import randint
 from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
 from common_utils import PY39_SKIP, assert_equal
-import pytest
+
 
 try:
     import av
@@ -564,8 +564,6 @@ class TestVideoReader:
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            #     min_dimension, min(tv_result[0].size(1), tv_result[0].size(2))
-            # )
             assert min_dimension==min(tv_result[0].size(1), tv_result[0].size(2))
 
     def test_read_video_from_file_rescale_max_dimension(self):
@@ -606,8 +604,6 @@ class TestVideoReader:
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            #     max_dimension, max(tv_result[0].size(1), tv_result[0].size(2))
-            # )
             assert max_dimension==max(tv_result[0].size(1), tv_result[0].size(2))
 
     def test_read_video_from_file_rescale_both_min_max_dimension(self):
@@ -648,10 +644,6 @@ class TestVideoReader:
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            #     min_dimension, min(tv_result[0].size(1), tv_result[0].size(2))
-            # )
-            #     max_dimension, max(tv_result[0].size(1), tv_result[0].size(2))
-            # )
             assert min_dimension == min(tv_result[0].size(1), tv_result[0].size(2))
             assert max_dimension == max(tv_result[0].size(1), tv_result[0].size(2))
 
@@ -830,10 +822,6 @@ class TestVideoReader:
                         * float(atimebase[0])
                         / float(atimebase[1])
                     )
-                    #     aframes.size(0),
-                    #     int(duration * asample_rate.item()),
-                    #     delta=0.1 * asample_rate.item(),
-                    # )
                     assert abs(aframes.size(0)-int(duration * asample_rate.item()))<0.1 * asample_rate.item()
 
     @PY39_SKIP
