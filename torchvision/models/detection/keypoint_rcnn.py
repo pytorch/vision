@@ -285,10 +285,7 @@ class KeypointRCNNPredictor(nn.Module):
         self.up_scale = 2
         self.out_channels = num_keypoints
 
-    def forward(
-        self,
-        x,
-    ):
+    def forward(self, x):
         x = self.kps_score_lowres(x)
         return torch.nn.functional.interpolate(
             x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False, recompute_scale_factor=False
