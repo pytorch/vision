@@ -2,6 +2,8 @@ import warnings
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from typing import Any
+from torch import Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models.googlenet import (
@@ -18,7 +20,13 @@ quant_model_urls = {
 }
 
 
-def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
+def googlenet(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any
+):
+
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
 
@@ -77,41 +85,62 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
 
 class QuantizableBasicConv2d(BasicConv2d):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super(QuantizableBasicConv2d, self).__init__(*args, **kwargs)
         self.relu = nn.ReLU()
 
-    def forward(self, x):
+    def forward(
+        self,
+        x: Tensor
+    ) -> Tensor:
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
         return x
 
-    def fuse_model(self):
+    def fuse_model(self) -> None:
         torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
 
 class QuantizableInception(Inception):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super(QuantizableInception, self).__init__(
             conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
-    def forward(self, x):
+    def forward(
+        self,
+        x: Tensor,
+    ) -> Tensor:
         outputs = self._forward(x)
         return self.cat.cat(outputs, 1)
 
 
 class QuantizableInceptionAux(InceptionAux):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super(QuantizableInceptionAux, self).__init__(
             conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.7)
 
-    def forward(self, x):
+    def forward(
+        self,
+        x: Tensor,
+    ) -> Tensor:
         # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
         x = F.adaptive_avg_pool2d(x, (4, 4))
         # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
@@ -131,7 +160,11 @@ class QuantizableInceptionAux(InceptionAux):
 
 class QuantizableGoogLeNet(GoogLeNet):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
         super(QuantizableGoogLeNet, self).__init__(
             blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux],
             *args,
@@ -140,7 +173,10 @@ class QuantizableGoogLeNet(GoogLeNet):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, x):
+    def forward(
+        self,
+        x,
+    ):
         x = self._transform_input(x)
         x = self.quant(x)
         x, aux1, aux2 = self._forward(x)
@@ -153,7 +189,7 @@ class QuantizableGoogLeNet(GoogLeNet):
         else:
             return self.eager_outputs(x, aux2, aux1)
 
-    def fuse_model(self):
+    def fuse_model(self) -> None:
         r"""Fuse conv/bn/relu modules in googlenet model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.

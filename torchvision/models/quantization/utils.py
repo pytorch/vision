@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-def _replace_relu(module):
+def _replace_relu(module: nn.Module) -> None:
     reassign = {}
     for name, mod in module.named_children():
         _replace_relu(mod)
@@ -16,7 +16,7 @@ def _replace_relu(module):
         module._modules[key] = value
 
 
-def quantize_model(model, backend):
+def quantize_model(model: nn.Module, backend: str) -> None:
     _dummy_input_data = torch.rand(1, 3, 299, 299)
     if backend not in torch.backends.quantized.supported_engines:
         raise RuntimeError("Quantized backend not supported ")

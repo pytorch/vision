@@ -1,5 +1,8 @@
 import torch
 import torch.nn as nn
+from torch import Tensor
+from typing import Any
+
 from ..._internally_replaced_utils import load_state_dict_from_url
 import torchvision.models.shufflenetv2
 import sys
@@ -22,11 +25,15 @@ quant_model_urls = {
 
 
 class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         if self.stride == 1:
             x1, x2 = x.chunk(2, dim=1)
             out = self.cat.cat((x1, self.branch2(x2)), dim=1)
@@ -39,18 +46,22 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 
 
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super(QuantizableShuffleNetV2, self).__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         x = self.quant(x)
         x = self._forward_impl(x)
         x = self.dequant(x)
         return x
 
-    def fuse_model(self):
+    def fuse_model(self) -> Tensor:
         r"""Fuse conv/bn/relu modules in shufflenetv2 model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
@@ -74,7 +85,15 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
                 )
 
 
-def _shufflenetv2(arch, pretrained, progress, quantize, *args, **kwargs):
+def _shufflenetv2(
+    arch: str,
+    pretrained: bool,
+    progress: bool,
+    quantize: bool,
+    *args: Any,
+    **kwargs: Any,
+) -> QuantizableShuffleNetV2:
+
     model = QuantizableShuffleNetV2(*args, **kwargs)
     _replace_relu(model)
 
@@ -98,7 +117,12 @@ def _shufflenetv2(arch, pretrained, progress, quantize, *args, **kwargs):
     return model
 
 
-def shufflenet_v2_x0_5(pretrained=False, progress=True, quantize=False, **kwargs):
+def shufflenet_v2_x0_5(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any
+):
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -113,7 +137,12 @@ def shufflenet_v2_x0_5(pretrained=False, progress=True, quantize=False, **kwargs
                          [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
-def shufflenet_v2_x1_0(pretrained=False, progress=True, quantize=False, **kwargs):
+def shufflenet_v2_x1_0(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any
+):
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -128,7 +157,12 @@ def shufflenet_v2_x1_0(pretrained=False, progress=True, quantize=False, **kwargs
                          [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
-def shufflenet_v2_x1_5(pretrained=False, progress=True, quantize=False, **kwargs):
+def shufflenet_v2_x1_5(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any
+):
     """
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -143,7 +177,12 @@ def shufflenet_v2_x1_5(pretrained=False, progress=True, quantize=False, **kwargs
                          [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
-def shufflenet_v2_x2_0(pretrained=False, progress=True, quantize=False, **kwargs):
+def shufflenet_v2_x2_0(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any
+):
     """
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
