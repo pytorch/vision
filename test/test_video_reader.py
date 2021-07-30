@@ -3,6 +3,7 @@ import itertools
 import math
 import os
 import pytest
+from pytest import approx
 from fractions import Fraction
 
 import numpy as np
@@ -281,16 +282,16 @@ class TestVideoReader:
         video_duration = vduration.item() * Fraction(
             vtimebase[0].item(), vtimebase[1].item()
         )
-        assert abs(video_duration-config.duration)<=0.5
+        assert video_duration == approx(config.duration, abs=0.5)
 
-        assert abs(vfps.item()-config.video_fps)<=0.5
+        assert vfps.item() == approx(config.video_fps, abs=0.5)
 
         if asample_rate.numel() > 0:
             assert asample_rate.item()==config.audio_sample_rate
             audio_duration = aduration.item() * Fraction(
                 atimebase[0].item(), atimebase[1].item()
             )
-            assert abs(audio_duration-config.duration)<=0.5
+            assert audio_duration == approx(config.duration, abs=0.5)
 
         # check if pts of video frames are sorted in ascending order
         for i in range(len(vframe_pts) - 1):
@@ -306,21 +307,21 @@ class TestVideoReader:
         video_duration = vduration.item() * Fraction(
             vtimebase[0].item(), vtimebase[1].item()
         )
-        assert abs(video_duration-config.duration)<=0.5
-        assert abs(vfps.item()-config.video_fps)<=0.5
+        assert video_duration == approx(config.duration, abs=0.5)
+        assert vfps.item() == approx(config.video_fps, abs=0.5)
         if asample_rate.numel() > 0:
             assert (asample_rate.item()==config.audio_sample_rate)
             audio_duration = aduration.item() * Fraction(
                 atimebase[0].item(), atimebase[1].item()
             )
-            assert abs(audio_duration-config.duration)<=0.5
+            assert audio_duration == approx(config.duration, abs=0.5)
 
     def check_meta_result(self, result, config):
-        assert abs(result.video_duration-config.duration)<=0.5
-        assert abs(result.video_fps-config.video_fps)<=0.5
+        assert result.video_duration == approx(config.duration, abs=0.5)
+        assert result.video_fps == approx(config.video_fps, abs=0.5)
         if result.has_audio > 0:
-            assert (result.audio_sample_rate==config.audio_sample_rate)
-            assert abs(result.audio_duration-config.duration)<=0.5
+            assert result.audio_sample_rate == config.audio_sample_rate
+            assert result.audio_duration == approx(config.duration, abs=0.5)
 
     def compare_decoding_result(self, tv_result, ref_result, config=all_check_config):
         """
@@ -350,12 +351,12 @@ class TestVideoReader:
             mean_delta = torch.mean(
                 torch.abs(vframes.float() - ref_result.vframes.float())
             )
-            assert abs(mean_delta)<=8.0
+            assert mean_delta == approx(0.0, abs=8.0)
 
         mean_delta = torch.mean(
             torch.abs(vframe_pts.float() - ref_result.vframe_pts.float())
         )
-        assert abs(mean_delta)<=1.0
+        assert mean_delta == approx(0.0, abs=1.0)
 
         assert_equal(vtimebase, ref_result.vtimebase)
 
@@ -822,7 +823,7 @@ class TestVideoReader:
                         * float(atimebase[0])
                         / float(atimebase[1])
                     )
-                    assert abs(aframes.size(0)-int(duration * asample_rate.item()))<0.1 * asample_rate.item()
+                    assert aframes.size(0) == approx(int(duration * asample_rate.item()), abs=0.1 * asample_rate.item())
 
     @PY39_SKIP
     def test_compare_read_video_from_memory_and_file(self):
