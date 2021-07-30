@@ -6,7 +6,7 @@ from torch import nn, Tensor
 
 from torchvision.ops import boxes as box_ops
 
-from torchvision.ops import roi_align, MultiScaleRoIAlign
+from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
@@ -385,7 +385,7 @@ def _onnx_expand_boxes(
 def expand_boxes(
     boxes: Tensor,
     scale: float
-):
+) -> Tensor:
 
     if torchvision._is_tracing():
         return _onnx_expand_boxes(boxes, scale)
@@ -555,27 +555,27 @@ class RoIHeads(nn.Module):
 
     def __init__(
         self,
-        box_roi_pool: MultiScaleRoIAlign,
-        box_head: nn.Module,
-        box_predictor: nn.Module,
+        box_roi_pool,
+        box_head,
+        box_predictor,
         # Faster R-CNN training
-        fg_iou_thresh: float,
-        bg_iou_thresh: float,
-        batch_size_per_image: int,
-        positive_fraction: float,
+        fg_iou_thresh,
+        bg_iou_thresh,
+        batch_size_per_image,
+        positive_fraction,
         # Faster R-CNN inference
-        score_thresh: float,
-        nms_thresh: float,
-        detections_per_img: int,
+        score_thresh,
+        nms_thresh,
+        detections_per_img,
         # Faster-RCNN Training
-        bbox_reg_weights: Optional[Tuple[float, ...]] = None,
+        bbox_reg_weights,
         # Mask
-        mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
-        mask_head: Optional[nn.Module] = None,
-        mask_predictor: Optional[nn.Module] = None,
-        keypoint_roi_pool: Optional[MultiScaleRoIAlign] = None,
-        keypoint_head: Optional[nn.Module] = None,
-        keypoint_predictor: Optional[nn.Module] = None,
+        mask_roi_pool=None,
+        mask_head=None,
+        mask_predictor=None,
+        keypoint_roi_pool=None,
+        keypoint_head=None,
+        keypoint_predictor=None,
     ) -> None:
         super(RoIHeads, self).__init__()
 
@@ -805,7 +805,7 @@ class RoIHeads(nn.Module):
 
     def forward(
         self,
-        features: List[Tensor],
+        features: Dict[str, Tensor],
         proposals: List[Tensor],
         image_shapes: List[Tuple[int, int]],
         targets: Optional[List[Dict[str, Tensor]]] = None,
@@ -813,7 +813,7 @@ class RoIHeads(nn.Module):
 
         """
         Args:
-            features (List[Tensor])
+            features (Dict[str, Tensor])
             proposals (List[Tensor[N, 4]])
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
