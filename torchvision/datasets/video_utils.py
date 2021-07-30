@@ -2,7 +2,7 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import Any, Dict, List, Optional, Callable, Union, Tuple
+from typing import Any, Dict, List, Optional, Callable, Union, Tuple, TypeVar, cast
 
 import torch
 from torchvision.io import (
@@ -14,6 +14,8 @@ from torchvision.io import (
 )
 
 from .utils import tqdm
+
+T = TypeVar("T")
 
 
 def pts_convert(
@@ -71,7 +73,7 @@ class _VideoTimestampsDataset(object):
         return read_video_timestamps(self.video_paths[idx])
 
 
-def _collate_fn(x: Any) -> Any:
+def _collate_fn(x: T) -> T:
     """
     Dummy collate function to be used with _VideoTimestampsDataset
     """
@@ -179,7 +181,7 @@ class VideoClips(object):
         }
         return _metadata
 
-    def subset(self, indices: List[int]) -> Any:
+    def subset(self, indices: List[int]) -> "VideoClips":
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
         video_fps = [self.video_fps[i] for i in indices]
@@ -218,19 +220,20 @@ class VideoClips(object):
         if frame_rate is None:
             frame_rate = fps
         total_frames = len(video_pts) * (float(frame_rate) / fps)
-        idxs = VideoClips._resample_video_idx(
+        _idxs = VideoClips._resample_video_idx(
             int(math.floor(total_frames)), fps, frame_rate
         )
-        video_pts = video_pts[idxs]
+        video_pts = video_pts[_idxs]
         clips = unfold(video_pts, num_frames, step)
         if not clips.numel():
             warnings.warn("There aren't enough frames in the current video to get a clip for the given clip length and "
                           "frames between clips. The video (and potentially others) will be skipped.")
-        if isinstance(idxs, slice):
-            idxs = [idxs] * len(clips)  # type: ignore[assignment]
+        idxs: Union[List[slice], torch.Tensor]
+        if isinstance(_idxs, slice):
+            idxs = [_idxs] * len(clips)
         else:
-            idxs = unfold(idxs, num_frames, step)
-        return clips, idxs  # type: ignore[return-value]
+            idxs = unfold(_idxs, num_frames, step)
+        return clips, idxs
 
     def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
         """
@@ -345,8 +348,8 @@ class VideoClips(object):
             video_fps = _info.video_fps
             audio_fps = None
 
-            video_start_pts = int(clip_pts[0].item())
-            video_end_pts = int(clip_pts[-1].item())
+            video_start_pts = cast(int, clip_pts[0].item())
+            video_end_pts = cast(int, clip_pts[-1].item())
 
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase = Fraction(0, 1)
