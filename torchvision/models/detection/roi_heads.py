@@ -6,7 +6,7 @@ from torch import nn, Tensor
 
 from torchvision.ops import boxes as box_ops
 
-from torchvision.ops import roi_align
+from torchvision.ops import roi_align, MultiScaleRoIAlign
 
 from . import _utils as det_utils
 
@@ -555,27 +555,27 @@ class RoIHeads(nn.Module):
 
     def __init__(
         self,
-        box_roi_pool,
-        box_head,
-        box_predictor,
+        box_roi_pool: MultiScaleRoIAlign,
+        box_head: nn.Module,
+        box_predictor: nn.Module,
         # Faster R-CNN training
-        fg_iou_thresh,
-        bg_iou_thresh,
-        batch_size_per_image,
-        positive_fraction,
+        fg_iou_thresh: float,
+        bg_iou_thresh: float,
+        batch_size_per_image: int,
+        positive_fraction: float,
         # Faster R-CNN inference
-        score_thresh,
-        nms_thresh,
-        detections_per_img,
+        score_thresh: float,
+        nms_thresh: float,
+        detections_per_img: float,
         # Faster-RCNN Training
-        bbox_reg_weights,
+        bbox_reg_weights: Tuple[float, ...],
         # Mask
-        mask_roi_pool=None,
-        mask_head=None,
-        mask_predictor=None,
-        keypoint_roi_pool=None,
-        keypoint_head=None,
-        keypoint_predictor=None,
+        mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        mask_head: Optional[nn.Module] = None,
+        mask_predictor: Optional[nn.Module] = None,
+        keypoint_roi_pool: Optional[MultiScaleRoIAlign] = None,
+        keypoint_head: Optional[nn.Module] = None,
+        keypoint_predictor: Optional[nn.Module] = None,
     ) -> None:
         super(RoIHeads, self).__init__()
 
