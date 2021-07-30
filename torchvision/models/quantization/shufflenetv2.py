@@ -29,7 +29,7 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
         super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         if self.stride == 1:
             x1, x2 = x.chunk(2, dim=1)
             out = self.cat.cat((x1, self.branch2(x2)), dim=1)
@@ -47,7 +47,7 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
         x = self._forward_impl(x)
         x = self.dequant(x)
@@ -113,7 +113,7 @@ def shufflenet_v2_x0_5(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
@@ -133,7 +133,7 @@ def shufflenet_v2_x1_0(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
@@ -153,7 +153,7 @@ def shufflenet_v2_x1_5(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     """
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
@@ -173,7 +173,7 @@ def shufflenet_v2_x2_0(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     """
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in

@@ -23,7 +23,7 @@ class QuantizableInvertedResidual(InvertedResidual):
         super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return self.skip_add.add(x, self.conv(x))
         else:
@@ -47,7 +47,7 @@ class QuantizableMobileNetV2(MobileNetV2):
         self.quant = QuantStub()
         self.dequant = DeQuantStub()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
         x = self._forward_impl(x)
         x = self.dequant(x)

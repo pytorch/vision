@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from typing import Any
+from typing import Any, List
 
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
@@ -111,7 +111,7 @@ class QuantizableInceptionA(inception_module.InceptionA):
         super(QuantizableInceptionA, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return self.myop.cat(outputs, 1)
 
@@ -121,7 +121,7 @@ class QuantizableInceptionB(inception_module.InceptionB):
         super(QuantizableInceptionB, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return self.myop.cat(outputs, 1)
 
@@ -131,7 +131,7 @@ class QuantizableInceptionC(inception_module.InceptionC):
         super(QuantizableInceptionC, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return self.myop.cat(outputs, 1)
 
@@ -141,7 +141,7 @@ class QuantizableInceptionD(inception_module.InceptionD):
         super(QuantizableInceptionD, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return self.myop.cat(outputs, 1)
 
@@ -153,7 +153,7 @@ class QuantizableInceptionE(inception_module.InceptionE):
         self.myop2 = nn.quantized.FloatFunctional()
         self.myop3 = nn.quantized.FloatFunctional()
 
-    def _forward(self, x: Tensor):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
@@ -174,7 +174,7 @@ class QuantizableInceptionE(inception_module.InceptionE):
         outputs = [branch1x1, branch3x3, branch3x3dbl, branch_pool]
         return outputs
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return self.myop3.cat(outputs, 1)
 
@@ -208,7 +208,7 @@ class QuantizableInception3(inception_module.Inception3):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> InceptionOutputs:
         x = self._transform_input(x)
         x = self.quant(x)
         x, aux = self._forward(x)

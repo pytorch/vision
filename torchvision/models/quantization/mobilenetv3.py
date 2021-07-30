@@ -33,7 +33,7 @@ class QuantizableInvertedResidual(InvertedResidual):
         super().__init__(*args, se_layer=QuantizableSqueezeExcitation, **kwargs)
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return self.skip_add.add(x, self.block(x))
         else:
@@ -52,7 +52,7 @@ class QuantizableMobileNetV3(MobileNetV3):
         self.quant = QuantStub()
         self.dequant = DeQuantStub()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
         x = self._forward_impl(x)
         x = self.dequant(x)
@@ -88,7 +88,7 @@ def _mobilenet_v3_model(
     pretrained: bool,
     progress: bool,
     quantize: bool,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> QuantizableMobileNetV3:
 
     model = QuantizableMobileNetV3(inverted_residual_setting, last_channel, block=QuantizableInvertedResidual, **kwargs)

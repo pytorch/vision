@@ -27,7 +27,7 @@ class QuantizableBasicBlock(BasicBlock):
         super(QuantizableBasicBlock, self).__init__(*args, **kwargs)
         self.add_relu = torch.nn.quantized.FloatFunctional()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         identity = x
 
         out = self.conv1(x)
@@ -58,7 +58,7 @@ class QuantizableBottleneck(Bottleneck):
         self.relu1 = nn.ReLU(inplace=False)
         self.relu2 = nn.ReLU(inplace=False)
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         identity = x
         out = self.conv1(x)
         out = self.bn1(out)
@@ -92,7 +92,7 @@ class QuantizableResNet(ResNet):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
         # Ensure scriptability
         # super(QuantizableResNet,self).forward(x)
@@ -151,7 +151,7 @@ def resnet18(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
@@ -169,7 +169,7 @@ def resnet50(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
 
     r"""ResNet-50 model from
@@ -188,7 +188,7 @@ def resnext101_32x8d(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
-    **kwargs: Any
+    **kwargs: Any,
 ):
     r"""ResNeXt-101 32x8d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
