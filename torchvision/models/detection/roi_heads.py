@@ -121,9 +121,11 @@ def maskrcnn_loss(
 
     """
     Args:
-        proposals (list[BoxList])
         mask_logits (Tensor)
-        targets (list[BoxList])
+        proposals (list[BoxList])
+        gt_masks: List[Tensor]
+        gt_labels: List[Tensor]
+        mask_matched_idxs: List[Tensor],
 
     Return:
         mask_loss (Tensor): scalar tensor containing the loss
@@ -356,7 +358,10 @@ def keypointrcnn_inference(
     return kp_probs, kp_scores
 
 
-def _onnx_expand_boxes(boxes: Tensor, scale: float) -> Tensor:
+def _onnx_expand_boxes(
+    boxes: Tensor,
+    scale: float
+) -> Tensor:
 
     w_half = (boxes[:, 2] - boxes[:, 0]) * .5
     h_half = (boxes[:, 3] - boxes[:, 1]) * .5
@@ -377,7 +382,10 @@ def _onnx_expand_boxes(boxes: Tensor, scale: float) -> Tensor:
 # the next two functions should be merged inside Masker
 # but are kept here for the moment while we need them
 # temporarily for paste_mask_in_image
-def expand_boxes(boxes: Tensor, scale: float):
+def expand_boxes(
+    boxes: Tensor,
+    scale: float
+):
 
     if torchvision._is_tracing():
         return _onnx_expand_boxes(boxes, scale)
@@ -451,7 +459,12 @@ def paste_mask_in_image(
     return im_mask
 
 
-def _onnx_paste_mask_in_image(mask, box, im_h, im_w):
+def _onnx_paste_mask_in_image(
+    mask: Tensor,
+    box: Tensor,
+    im_h: int,
+    im_w: int,
+):
     one = torch.ones(1, dtype=torch.int64)
     zero = torch.zeros(1, dtype=torch.int64)
 
@@ -493,7 +506,12 @@ def _onnx_paste_mask_in_image(mask, box, im_h, im_w):
 
 
 @torch.jit._script_if_tracing
-def _onnx_paste_masks_in_image_loop(masks, boxes, im_h, im_w):
+def _onnx_paste_masks_in_image_loop(
+    masks: Tensor,
+    boxes: Tensor,
+    im_h: int,
+    im_w: int,
+):
     res_append = torch.zeros(0, im_h, im_w)
     for i in range(masks.size(0)):
         mask_res = _onnx_paste_mask_in_image(masks[i][0], boxes[i], im_h, im_w)
@@ -787,7 +805,7 @@ class RoIHeads(nn.Module):
 
     def forward(
         self,
-        features: Dict[str, Tensor],
+        features: List[Tensor],
         proposals: List[Tensor],
         image_shapes: List[Tuple[int, int]],
         targets: Optional[List[Dict[str, Tensor]]] = None,
