@@ -699,7 +699,7 @@ class RoIHeads(nn.Module):
 
     def check_targets(
         self,
-        targets: Optional[List[Dict[str, Tensor]]] = None,
+        targets: Optional[List[Dict[str, Tensor]]],
     ) -> None:
         assert targets is not None
         assert all(["boxes" in t for t in targets])
