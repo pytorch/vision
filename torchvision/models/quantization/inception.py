@@ -92,18 +92,11 @@ def inception_v3(
 
 
 class QuantizableBasicConv2d(inception_module.BasicConv2d):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableBasicConv2d, self).__init__(*args, **kwargs)
         self.relu = nn.ReLU()
 
-    def forward(
-        self,
-        x: Tensor,
-    ) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
@@ -114,42 +107,27 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
 
 
 class QuantizableInceptionA(inception_module.InceptionA):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionA, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
-    def forward(
-        self,
-        x: Tensor,
-    ):
+    def forward(self, x: Tensor):
         outputs = self._forward(x)
         return self.myop.cat(outputs, 1)
 
 
 class QuantizableInceptionB(inception_module.InceptionB):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionB, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         outputs = self._forward(x)
         return self.myop.cat(outputs, 1)
 
 
 class QuantizableInceptionC(inception_module.InceptionC):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionC, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
@@ -159,11 +137,7 @@ class QuantizableInceptionC(inception_module.InceptionC):
 
 
 class QuantizableInceptionD(inception_module.InceptionD):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionD, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
@@ -173,20 +147,13 @@ class QuantizableInceptionD(inception_module.InceptionD):
 
 
 class QuantizableInceptionE(inception_module.InceptionE):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionE, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop1 = nn.quantized.FloatFunctional()
         self.myop2 = nn.quantized.FloatFunctional()
         self.myop3 = nn.quantized.FloatFunctional()
 
-    def _forward(
-        self,
-        x,
-    ):
+    def _forward(self, x: Tensor):
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
@@ -207,20 +174,13 @@ class QuantizableInceptionE(inception_module.InceptionE):
         outputs = [branch1x1, branch3x3, branch3x3dbl, branch_pool]
         return outputs
 
-    def forward(
-        self,
-        x,
-    ):
+    def forward(self, x: Tensor):
         outputs = self._forward(x)
         return self.myop3.cat(outputs, 1)
 
 
 class QuantizableInceptionAux(inception_module.InceptionAux):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionAux, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
 
 
@@ -248,10 +208,7 @@ class QuantizableInception3(inception_module.Inception3):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(
-        self,
-        x,
-    ):
+    def forward(self, x: Tensor):
         x = self._transform_input(x)
         x = self.quant(x)
         x, aux = self._forward(x)

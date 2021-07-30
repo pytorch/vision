@@ -17,11 +17,7 @@ quant_model_urls = {
 
 
 class QuantizableSqueezeExcitation(SqueezeExcitation):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.skip_mul = nn.quantized.FloatFunctional()
 
@@ -33,15 +29,11 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
 
 
 class QuantizableInvertedResidual(InvertedResidual):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, se_layer=QuantizableSqueezeExcitation, **kwargs)
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         if self.use_res_connect:
             return self.skip_add.add(x, self.block(x))
         else:
@@ -49,11 +41,7 @@ class QuantizableInvertedResidual(InvertedResidual):
 
 
 class QuantizableMobileNetV3(MobileNetV3):
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         MobileNet V3 main class
 
@@ -64,10 +52,7 @@ class QuantizableMobileNetV3(MobileNetV3):
         self.quant = QuantStub()
         self.dequant = DeQuantStub()
 
-    def forward(
-        self,
-        x: Tensor,
-    ):
+    def forward(self, x: Tensor):
         x = self.quant(x)
         x = self._forward_impl(x)
         x = self.dequant(x)
