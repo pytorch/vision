@@ -1,6 +1,7 @@
 import collections
 import os
 import pytest
+from pytest import approx
 
 import torch
 import torchvision
@@ -77,7 +78,7 @@ class TestVideoApi:
                 for av_frame in av_reader.decode(av_reader.streams.video[0]):
                     vr_frame = next(video_reader)
 
-                    assert abs(float(av_frame.pts * av_frame.time_base)-vr_frame["pts"])<=0.1
+                    assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
 
                     av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(
                         2, 0, 1
@@ -97,7 +98,7 @@ class TestVideoApi:
                 video_reader = VideoReader(full_path, "audio")
                 for av_frame in av_reader.decode(av_reader.streams.audio[0]):
                     vr_frame = next(video_reader)
-                    assert abs(float(av_frame.pts * av_frame.time_base)-vr_frame["pts"])<=0.1
+                    assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
 
                     av_array = torch.tensor(av_frame.to_ndarray()).permute(1, 0)
                     vr_array = vr_frame["data"]
@@ -117,8 +118,8 @@ class TestVideoApi:
             full_path = os.path.join(VIDEO_DIR, test_video)
             reader = VideoReader(full_path, "video")
             reader_md = reader.get_metadata()
-            assert abs(config.video_fps-reader_md["video"]["fps"][0])<=0.0001
-            assert abs(config.duration-reader_md["video"]["duration"][0])<=0.5
+            assert config.video_fps == approx(reader_md["video"]["fps"][0], abs=0.0001)
+            assert config.duration == approx(reader_md["video"]["duration"][0], abs=0.5)
 
     def test_seek_start(self):
         for test_video, config in test_videos.items():
@@ -167,7 +168,7 @@ class TestVideoApi:
                     middle_num_frames += 1
 
                 assert (middle_num_frames < num_frames)
-                assert abs(middle_num_frames-num_frames // 2)<=1
+                assert middle_num_frames == approx(num_frames // 2, abs=1)
 
                 video_reader.seek(duration / 2)
                 frame = next(video_reader)
