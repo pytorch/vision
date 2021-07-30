@@ -107,7 +107,7 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
 def adjust_gamma(
     img: Image.Image,
     gamma: float,
-    gain: int = 1,
+    gain: float = 1,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
