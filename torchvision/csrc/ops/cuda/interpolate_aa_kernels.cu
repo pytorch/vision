@@ -62,23 +62,22 @@ __device__ __forceinline__ static accscalar_t bicubic_filter(accscalar_t x) {
 
 template <typename scalar_t, typename accscalar_t, typename filter_fn_t>
 __device__ __forceinline__ static void _compute_weights(
-    const int64_t i,
-    const int64_t input_size,
+    const int i,
+    const int input_size,
     const accscalar_t scale,
     const accscalar_t support,
     scalar_t* wt_ptr,
-    int64_t interp_size,
+    int interp_size,
     filter_fn_t filter_fn,
-    int64_t& xmin,
-    int64_t& xmax) {
+    int& xmin,
+    int& xmax) {
   accscalar_t invscale = (scale >= 1.0) ? 1.0 / scale : 1.0;
   accscalar_t center = scale * (i + 0.5);
-  xmin = max(
-      static_cast<int64_t>(center - support + 0.5), static_cast<int64_t>(0));
-  xmax = min(static_cast<int64_t>(center + support + 0.5), input_size) - xmin;
+  xmin = max(static_cast<int>(center - support + 0.5), static_cast<int>(0));
+  xmax = min(static_cast<int>(center + support + 0.5), input_size) - xmin;
 
   accscalar_t total_w = 0.0;
-  int64_t j = 0;
+  int j = 0;
   for (j = 0; j < xmax; j++) {
     accscalar_t w = filter_fn((j + xmin - center + 0.5) * invscale);
     wt_ptr[j] = static_cast<scalar_t>(w);
@@ -164,7 +163,7 @@ __global__ void upsample_gen2d_out_frame(
     scalar_t buffer2[256];
 
     // Compute weights
-    int64_t xmin, xsize, ymin, ysize;
+    int xmin, xsize, ymin, ysize;
     typedef scalar_t (*filter_fn_t)(scalar_t);
     if (interp_size == 2) {
       _compute_weights<scalar_t, accscalar_t, filter_fn_t>(
@@ -213,7 +212,7 @@ __global__ void upsample_gen2d_out_frame(
     for (int n = 0; n < batchsize; n++) {
       for (int c = 0; c < channels; ++c) {
         // interpolate on x-axis for ymin to ymin + ysize
-        for (int64_t y = 0; y < ysize; y++) {
+        for (int y = 0; y < ysize; y++) {
           // copy data into the local buffer and use
           // interpolate_aa_single_dim method
           for (int x = 0; x < xsize; x++) {
@@ -372,7 +371,7 @@ at::Tensor interpolate_gen2d_aa_forward_kernel(
   return output;
 }
 
-at::Tensor interpolate_linear_aa_forward_kernel(
+at::Tensor interpolate_bilinear2d_aa_forward_kernel(
     const at::Tensor& input,
     at::IntArrayRef output_size,
     bool align_corners) {
@@ -380,7 +379,7 @@ at::Tensor interpolate_linear_aa_forward_kernel(
       input, output_size, align_corners);
 }
 
-at::Tensor interpolate_bicubic_aa_forward_kernel(
+at::Tensor interpolate_bicubic2d_aa_forward_kernel(
     const at::Tensor& input,
     at::IntArrayRef output_size,
     bool align_corners) {
@@ -392,11 +391,11 @@ at::Tensor interpolate_bicubic_aa_forward_kernel(
 
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
   m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_interpolate_linear_aa"),
-      TORCH_FN(interpolate_linear_aa_forward_kernel));
+      TORCH_SELECTIVE_NAME("torchvision::_interpolate_bilinear2d_aa"),
+      TORCH_FN(interpolate_bilinear2d_aa_forward_kernel));
   m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_interpolate_bicubic_aa"),
-      TORCH_FN(interpolate_bicubic_aa_forward_kernel));
+      TORCH_SELECTIVE_NAME("torchvision::_interpolate_bicubic2d_aa"),
+      TORCH_FN(interpolate_bicubic2d_aa_forward_kernel));
 }
 
 } // namespace ops
