@@ -548,4 +548,4 @@ def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[U
 
     video_fps = info.video_fps if info.has_video else None
 
-    return pts, video_fps
+    return pts, video_fps  # type: ignore[return-value]
