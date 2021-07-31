@@ -1,11 +1,11 @@
 import torch
-from common_utils import TestCase, assert_equal
+from common_utils import assert_equal
 from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
 import pytest
 
 
-class Tester(TestCase):
+class Tester:
     def test_incorrect_anchors(self):
         incorrect_sizes = ((2, 4, 8), (32, 8), )
         incorrect_aspects = (0.5, 1.0)
