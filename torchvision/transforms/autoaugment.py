@@ -3,7 +3,7 @@ import torch
 
 from enum import Enum
 from torch import Tensor
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Optional, Dict, Any, cast
 
 from . import functional as F, InterpolationMode
 
@@ -19,7 +19,7 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
-def _get_transforms(
+def _get_transforms(  # type: ignore[return]
     policy: AutoAugmentPolicy
 ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
     if policy == AutoAugmentPolicy.IMAGENET:
@@ -169,7 +169,7 @@ class AutoAugment(torch.nn.Module):
         Returns:
             params required by the autoaugment transformation
         """
-        policy_id = torch.randint(transform_num, (1,)).item()
+        policy_id = cast(int, torch.randint(transform_num, (1,)).item())
         probs = torch.rand((2,))
         signs = torch.randint(2, (2,))
 
