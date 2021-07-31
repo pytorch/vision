@@ -4,14 +4,14 @@ import torch
 from torch import Tensor
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import BroadcastingList2
-from typing import Any, Optional, Tuple, List
+from typing import Optional, Tuple, List
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
 
 
-def _assert_image_tensor(img: Any) -> None:
+def _assert_image_tensor(img: Tensor) -> None:
     if not _is_tensor_a_torch_image(img):
         raise TypeError("Tensor is not a torch image.")
 
