@@ -3,7 +3,7 @@ import math
 import os
 import warnings
 from fractions import Fraction
-from typing import List, Tuple, Dict, Any, Union, Optional
+from typing import List, Tuple, Dict, Any, Union, Optional, Type, cast
 
 import numpy as np
 import torch
@@ -24,7 +24,7 @@ default_timebase = Fraction(0, 1)
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
 class Timebase(object):
-    __annotations__: Dict[str, int] = {"numerator": int, "denominator": int}
+    __annotations__: Dict[str, Type[int]] = {"numerator": int, "denominator": int}
     __slots__: List[str] = ["numerator", "denominator"]
 
     def __init__(
@@ -69,7 +69,7 @@ class VideoMetaData(object):
         self.audio_sample_rate = 0.0
 
 
-def _validate_pts(pts_range: List[int]) -> None:
+def _validate_pts(pts_range: Tuple[int, int]) -> None:
 
     if pts_range[1] > 0:
         assert (
@@ -117,7 +117,11 @@ def _fill_info(
     return meta
 
 
-def _align_audio_frames(aframes: torch.Tensor, aframe_pts: torch.Tensor, audio_pts_range: List[int]) -> torch.Tensor:
+def _align_audio_frames(
+    aframes: torch.Tensor,
+    aframe_pts: torch.Tensor,
+    audio_pts_range: Tuple[int, int]
+) -> torch.Tensor:
     start, end = aframe_pts[0], aframe_pts[-1]
     num_samples = aframes.size(0)
     step_per_aframe = float(end - start + 1) / float(num_samples)
@@ -443,7 +447,7 @@ def _probe_video_from_memory(
     return info
 
 
-def _convert_to_sec(start_pts: int, end_pts: int, pts_unit: str, time_base: int) -> Tuple[float, float, str]:
+def _convert_to_sec(start_pts: float, end_pts: float, pts_unit: str, time_base: Fraction) -> Tuple[float, float, str]:
     if pts_unit == 'pts':
         start_pts = float(start_pts * time_base)
         end_pts = float(end_pts * time_base)
@@ -456,7 +460,7 @@ def _read_video(
     start_pts: int = 0,
     end_pts: Optional[float] = None,
     pts_unit: str = "pts"
-) -> Tuple[torch.Tensor, torch.Tensor, VideoMetaData]:
+) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
     if end_pts is None:
         end_pts = float("inf")
 
@@ -527,7 +531,7 @@ def _read_video(
     return vframes, aframes, _info
 
 
-def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[int]]:
+def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[Union[int, Fraction]], Optional[float]]:
     if pts_unit == "pts":
         warnings.warn(
             "The pts_unit 'pts' gives wrong results and will be removed in a "
@@ -540,7 +544,7 @@ def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[i
         video_time_base = Fraction(
             info.video_timebase.numerator, info.video_timebase.denominator
         )
-        pts = [x * video_time_base for x in pts]
+        pts = [x * video_time_base for x in pts]  # type: ignore[misc]
 
     video_fps = info.video_fps if info.has_video else None
 
