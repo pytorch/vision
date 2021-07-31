@@ -14,6 +14,13 @@ file(GLOB VISION_SRCS
     ../../torchvision/csrc/ops/*.h
     ../../torchvision/csrc/ops/*.cpp)
 
+# Remove interpolate_aa sources as they are temporary code
+# see https://github.com/pytorch/vision/pull/3761
+# and IndexingUtils.h is unavailable on Android build
+list(REMOVE_ITEM VISION_SRCS "${CMAKE_CURRENT_LIST_DIR}/../../torchvision/csrc/ops/cpu/interpolate_aa_kernels.cpp")
+list(REMOVE_ITEM VISION_SRCS "${CMAKE_CURRENT_LIST_DIR}/../../torchvision/csrc/ops/interpolate_aa.cpp")
+list(REMOVE_ITEM VISION_SRCS "${CMAKE_CURRENT_LIST_DIR}/../../torchvision/csrc/ops/interpolate_aa.h")
+
 add_library(${TARGET} SHARED
   ${VISION_SRCS}
 )
@@ -28,7 +35,7 @@ target_compile_options(${TARGET} PRIVATE
 
 set(BUILD_SUBDIR ${ANDROID_ABI})
 
-find_library(PYTORCH_LIBRARY pytorch_jni
+find_library(PYTORCH_LIBRARY pytorch_jni_lite
   PATHS ${PYTORCH_LINK_DIRS}
   NO_CMAKE_FIND_ROOT_PATH)
 

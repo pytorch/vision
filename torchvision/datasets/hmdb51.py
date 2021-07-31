@@ -1,8 +1,9 @@
 import glob
 import os
+from typing import Optional, Callable, Tuple, Dict, Any, List
+from torch import Tensor
 
-from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -53,17 +54,29 @@ class HMDB51(VisionDataset):
     TRAIN_TAG = 1
     TEST_TAG = 2
 
-    def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
-                 frame_rate=None, fold=1, train=True, transform=None,
-                 _precomputed_metadata=None, num_workers=1, _video_width=0,
-                 _video_height=0, _video_min_dimension=0, _audio_samples=0):
+    def __init__(
+        self,
+        root: str,
+        annotation_path: str,
+        frames_per_clip: int,
+        step_between_clips: int = 1,
+        frame_rate: Optional[int] = None,
+        fold: int = 1,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        num_workers: int = 1,
+        _video_width: int = 0,
+        _video_height: int = 0,
+        _video_min_dimension: int = 0,
+        _audio_samples: int = 0,
+    ) -> None:
         super(HMDB51, self).__init__(root)
         if fold not in (1, 2, 3):
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
 
         extensions = ('avi',)
-        classes = sorted(list_dir(root))
-        class_to_idx = {class_: i for (i, class_) in enumerate(classes)}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,
             class_to_idx,
@@ -89,21 +102,20 @@ class HMDB51(VisionDataset):
         self.full_video_clips = video_clips
         self.fold = fold
         self.train = train
-        self.classes = classes
         self.indices = self._select_fold(video_paths, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
 
     @property
-    def metadata(self):
+    def metadata(self) -> Dict[str, Any]:
         return self.full_video_clips.metadata
 
-    def _select_fold(self, video_list, annotations_dir, fold, train):
+    def _select_fold(self, video_list: List[str], annotations_dir: str, fold: int, train: bool) -> List[int]:
         target_tag = self.TRAIN_TAG if train else self.TEST_TAG
         split_pattern_name = "*test_split{}.txt".format(fold)
         split_pattern_path = os.path.join(annotations_dir, split_pattern_name)
         annotation_paths = glob.glob(split_pattern_path)
-        selected_files = []
+        selected_files = set()
         for filepath in annotation_paths:
             with open(filepath) as fid:
                 lines = fid.readlines()
@@ -111,8 +123,7 @@ class HMDB51(VisionDataset):
                 video_filename, tag_string = line.split()
                 tag = int(tag_string)
                 if tag == target_tag:
-                    selected_files.append(video_filename)
-        selected_files = set(selected_files)
+                    selected_files.add(video_filename)
 
         indices = []
         for video_index, video_path in enumerate(video_list):
@@ -121,10 +132,10 @@ class HMDB51(VisionDataset):
 
         return indices
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
         video, audio, _, video_idx = self.video_clips.get_clip(idx)
         sample_index = self.indices[video_idx]
         _, class_index = self.samples[sample_index]

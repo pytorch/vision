@@ -5,16 +5,15 @@ import contextlib
 import unittest
 import argparse
 import sys
-import io
 import torch
-import warnings
 import __main__
 import random
+import inspect
+import functools
 
 from numbers import Number
 from torch._six import string_classes
 from collections import OrderedDict
-from _utils_internal import get_relative_path
 
 import numpy as np
 from PIL import Image
@@ -22,6 +21,11 @@ from PIL import Image
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
 PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
+IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
+IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
+CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
+CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
 
 @contextlib.contextmanager
@@ -40,21 +44,6 @@ def set_rng_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
-
-
-ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
-TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
-
-
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--accept', action='store_true')
-args, remaining = parser.parse_known_args()
-if not ACCEPT:
-    ACCEPT = args.accept
-for i, arg in enumerate(sys.argv):
-    if arg == '--accept':
-        del sys.argv[i]
-        break
 
 
 class MapNestedTensorObjectImpl(object):
@@ -98,70 +87,6 @@ def is_iterable(obj):
 # inputs and set maximum binary size
 class TestCase(unittest.TestCase):
     precision = 1e-5
-
-    def _get_expected_file(self, subname=None, strip_suffix=None):
-        def remove_prefix_suffix(text, prefix, suffix):
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-            if suffix is not None and text.endswith(suffix):
-                text = text[:len(text) - len(suffix)]
-            return text
-        # NB: we take __file__ from the module that defined the test
-        # class, so we place the expect directory where the test script
-        # lives, NOT where test/common_utils.py lives.
-        module_id = self.__class__.__module__
-        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
-
-        # Determine expected file based on environment
-        expected_file_base = get_relative_path(
-            os.path.realpath(sys.modules[module_id].__file__),
-            "expect")
-
-        # Set expected_file based on subname.
-        expected_file = os.path.join(expected_file_base, munged_id)
-        if subname:
-            expected_file += "_" + subname
-        expected_file += "_expect.pkl"
-
-        if not ACCEPT and not os.path.exists(expected_file):
-            raise RuntimeError(
-                f"No expect file exists for {os.path.basename(expected_file)} in {expected_file}; "
-                "to accept the current output, run:\n"
-                f"python {__main__.__file__} {munged_id} --accept")
-
-        return expected_file
-
-    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
-        r"""
-        Test that a python value matches the recorded contents of a file
-        derived from the name of this test and subname.  The value must be
-        pickable with `torch.save`. This file
-        is placed in the 'expect' directory in the same directory
-        as the test script. You can automatically update the recorded test
-        output using --accept.
-
-        If you call this multiple times in a single function, you must
-        give a unique subname each time.
-
-        strip_suffix allows different tests that expect similar numerics, e.g.
-        "test_xyz_cuda" and "test_xyz_cpu", to use the same pickled data.
-        test_xyz_cuda would pass strip_suffix="_cuda", test_xyz_cpu would pass
-        strip_suffix="_cpu", and they would both use a data file name based on
-        "test_xyz".
-        """
-        expected_file = self._get_expected_file(subname, strip_suffix)
-
-        if ACCEPT:
-            filename = {os.path.basename(expected_file)}
-            print("Accepting updated output for {}:\n\n{}".format(filename, output))
-            torch.save(output, expected_file)
-            MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
-            binary_size = os.path.getsize(expected_file)
-            if binary_size > MAX_PICKLE_SIZE:
-                raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
-        else:
-            expected = torch.load(expected_file)
-            self.assertEqual(output, expected, prec=prec)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
@@ -280,58 +205,6 @@ class TestCase(unittest.TestCase):
         else:
             super(TestCase, self).assertEqual(x, y, message)
 
-    def check_jit_scriptable(self, nn_module, args, unwrapper=None, skip=False):
-        """
-        Check that a nn.Module's results in TorchScript match eager and that it
-        can be exported
-        """
-        if not TEST_WITH_SLOW or skip:
-            # TorchScript is not enabled, skip these tests
-            msg = "The check_jit_scriptable test for {} was skipped. " \
-                  "This test checks if the module's results in TorchScript " \
-                  "match eager and that it can be exported. To run these " \
-                  "tests make sure you set the environment variable " \
-                  "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
-                  "manually skipped.".format(nn_module.__class__.__name__)
-            warnings.warn(msg, RuntimeWarning)
-            return None
-
-        sm = torch.jit.script(nn_module)
-
-        with freeze_rng_state():
-            eager_out = nn_module(*args)
-
-        with freeze_rng_state():
-            script_out = sm(*args)
-            if unwrapper:
-                script_out = unwrapper(script_out)
-
-        self.assertEqual(eager_out, script_out, prec=1e-4)
-        self.assertExportImportModule(sm, args)
-
-        return sm
-
-    def getExportImportCopy(self, m):
-        """
-        Save and load a TorchScript model
-        """
-        buffer = io.BytesIO()
-        torch.jit.save(m, buffer)
-        buffer.seek(0)
-        imported = torch.jit.load(buffer)
-        return imported
-
-    def assertExportImportModule(self, m, args):
-        """
-        Check that the results of a model are the same after saving and loading
-        """
-        m_import = self.getExportImportCopy(m)
-        with freeze_rng_state():
-            results = m(*args)
-        with freeze_rng_state():
-            results_from_imported = m_import(*args)
-        self.assertEqual(results, results_from_imported)
-
 
 @contextlib.contextmanager
 def freeze_rng_state():
@@ -344,47 +217,10 @@ def freeze_rng_state():
     torch.set_rng_state(rng_state)
 
 
-class TransformsTester(unittest.TestCase):
-
-    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
-        return tensor, pil_img
-
-    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
-        batch_tensor = torch.randint(
-            0, 256,
-            (num_samples, channels, height, width),
-            dtype=torch.uint8,
-            device=device
-        )
-        return batch_tensor
-
-    def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
-        if msg is None:
-            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
-
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean"):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
-        # error value can be mean absolute error, max abs error
-        err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-        self.assertTrue(
-            err < tol,
-            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
-        )
-
-
 def cycle_over(objs):
-    for idx, obj in enumerate(objs):
-        yield obj, objs[:idx] + objs[idx + 1:]
+    for idx, obj1 in enumerate(objs):
+        for obj2 in objs[:idx] + objs[idx + 1:]:
+            yield obj1, obj2
 
 
 def int_dtypes():
@@ -393,3 +229,86 @@ def int_dtypes():
 
 def float_dtypes():
     return torch.testing.floating_types()
+
+
+@contextlib.contextmanager
+def disable_console_output():
+    with contextlib.ExitStack() as stack, open(os.devnull, "w") as devnull:
+        stack.enter_context(contextlib.redirect_stdout(devnull))
+        stack.enter_context(contextlib.redirect_stderr(devnull))
+        yield
+
+
+def cpu_and_gpu():
+    import pytest  # noqa
+    return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
+
+
+def needs_cuda(test_func):
+    import pytest  # noqa
+    return pytest.mark.needs_cuda(test_func)
+
+
+def _create_data(height=3, width=3, channels=3, device="cpu"):
+    # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
+    tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
+    pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+    return tensor, pil_img
+
+
+def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu"):
+    # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
+    batch_tensor = torch.randint(
+        0, 256,
+        (num_samples, channels, height, width),
+        dtype=torch.uint8,
+        device=device
+    )
+    return batch_tensor
+
+
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+
+
+def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
+    np_pil_image = np.array(pil_image)
+    if np_pil_image.ndim == 2:
+        np_pil_image = np_pil_image[:, :, None]
+    pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
+    if msg is None:
+        msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+    assert_equal(tensor.cpu(), pil_tensor, msg=msg)
+
+
+def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
+                                       allowed_percentage_diff=None):
+    # TODO: we could just merge this into _assert_equal_tensor_to_pil
+    np_pil_image = np.array(pil_image)
+    if np_pil_image.ndim == 2:
+        np_pil_image = np_pil_image[:, :, None]
+    pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+
+    if allowed_percentage_diff is not None:
+        # Assert that less than a given %age of pixels are different
+        assert (tensor != pil_tensor).to(torch.float).mean() <= allowed_percentage_diff
+
+    # error value can be mean absolute error, max abs error
+    # Convert to float to avoid underflow when computing absolute difference
+    tensor = tensor.to(torch.float)
+    pil_tensor = pil_tensor.to(torch.float)
+    err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
+    assert err < tol
+
+
+def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
+    transformed_batch = fn(batch_tensors, **fn_kwargs)
+    for i in range(len(batch_tensors)):
+        img_tensor = batch_tensors[i, ...]
+        transformed_img = fn(img_tensor, **fn_kwargs)
+        assert_equal(transformed_img, transformed_batch[i, ...])
+
+    if scripted_fn_atol >= 0:
+        scripted_fn = torch.jit.script(fn)
+        # scriptable function test
+        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+        torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)

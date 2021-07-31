@@ -14,6 +14,9 @@ class WIDERFace(VisionDataset):
     Args:
         root (string): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
+
+            .. code::
+
                 <root>
                     └── widerface
                         ├── wider_face_split ('wider_face_split.zip' if compressed)
@@ -29,11 +32,12 @@ class WIDERFace(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+
     """
 
     BASE_FOLDER = "widerface"
     FILE_LIST = [
-        # File ID                        MD5 Hash                            Filename
+        # File ID                             MD5 Hash                          Filename
         ("0B6eKvaijfFUDQUUwd21EckhUbWs", "3fedf70df600953d25982bcd13d91ba2", "WIDER_train.zip"),
         ("0B6eKvaijfFUDd3dIRmpvSk8tLUk", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
         ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip")

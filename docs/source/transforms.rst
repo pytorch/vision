@@ -1,18 +1,53 @@
+.. _transforms:
+
 torchvision.transforms
 ======================
 
 .. currentmodule:: torchvision.transforms
 
 Transforms are common image transformations. They can be chained together using :class:`Compose`.
-Additionally, there is the :mod:`torchvision.transforms.functional` module.
-Functional transforms give fine-grained control over the transformations.
+Most transform classes have a function equivalent: :ref:`functional
+transforms <functional_transforms>` give fine-grained control over the
+transformations.
 This is useful if you have to build a more complex transformation pipeline
 (e.g. in the case of segmentation tasks).
 
-All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. Tensor Image is a tensor with
-``(C, H, W)`` shape, where ``C`` is a number of channels, ``H`` and ``W`` are image height and width. Batch of
-Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number of images in the batch. Deterministic or
-random transformations applied on the batch of Tensor Images identically transform all the images of the batch.
+Most transformations accept both `PIL <https://pillow.readthedocs.io>`_
+images and tensor images, although some transformations are :ref:`PIL-only
+<transforms_pil_only>` and some are :ref:`tensor-only
+<transforms_tensor_only>`. The :ref:`conversion_transforms` may be used to
+convert to and from PIL images.
+
+The transformations that accept tensor images also accept batches of tensor
+images. A Tensor Image is a tensor with ``(C, H, W)`` shape, where ``C`` is a
+number of channels, ``H`` and ``W`` are image height and width. A batch of
+Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
+of images in the batch.
+
+The expected range of the values of a tensor image is implicitely defined by
+the tensor dtype. Tensor images with a float dtype are expected to have
+values in ``[0, 1)``. Tensor images with an integer dtype are expected to
+have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
+that can be represented in that dtype.
+
+Randomized transformations will apply the same transformation to all the
+images of a given batch, but they will produce different transformations
+across calls. For reproducible transformations across calls, you may use
+:ref:`functional transforms <functional_transforms>`.
+
+The following examples illustate the use of the available transforms:
+
+    * :ref:`sphx_glr_auto_examples_plot_transforms.py`
+
+        .. figure:: ../source/auto_examples/images/sphx_glr_plot_transforms_001.png
+            :align: center
+            :scale: 65%
+
+    * :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py`
+
+        .. figure:: ../source/auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_001.png
+            :align: center
+            :scale: 30%
 
 .. warning::
 
@@ -56,6 +91,7 @@ Compositions of transforms
 --------------------------
 
 .. autoclass:: Compose
+
 
 Transforms on PIL Image and torch.\*Tensor
 ------------------------------------------
@@ -116,6 +152,26 @@ Transforms on PIL Image and torch.\*Tensor
 .. autoclass:: GaussianBlur
     :members:
 
+.. autoclass:: RandomInvert
+    :members:
+
+.. autoclass:: RandomPosterize
+    :members:
+
+.. autoclass:: RandomSolarize
+    :members:
+
+.. autoclass:: RandomAdjustSharpness
+    :members:
+
+.. autoclass:: RandomAutocontrast
+    :members:
+
+.. autoclass:: RandomEqualize
+    :members:
+
+.. _transforms_pil_only:
+
 Transforms on PIL Image only
 ----------------------------
 
@@ -123,6 +179,7 @@ Transforms on PIL Image only
 
 .. autoclass:: RandomOrder
 
+.. _transforms_tensor_only:
 
 Transforms on torch.\*Tensor only
 ---------------------------------
@@ -138,6 +195,7 @@ Transforms on torch.\*Tensor only
 
 .. autoclass:: ConvertImageDtype
 
+.. _conversion_transforms:
 
 Conversion Transforms
 ---------------------
@@ -156,13 +214,32 @@ Generic Transforms
     :members:
 
 
+AutoAugment Transforms
+----------------------
+
+`AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
+Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
+ImageNet policies provide significant improvements when applied to other datasets.
+In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
+The new transform can be used standalone or mixed-and-matched with existing transforms:
+
+.. autoclass:: AutoAugmentPolicy
+    :members:
+
+.. autoclass:: AutoAugment
+    :members:
+
+
+.. _functional_transforms:
+
 Functional Transforms
 ---------------------
 
 Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don't contain a random number
 generator for their parameters.
-That means you have to specify/generate all parameters, but you can reuse the functional transform.
+That means you have to specify/generate all parameters, but the functional transform will give you
+reproducible results across calls.
 
 Example:
 you can apply a functional transform with the same parameters to multiple images like this:

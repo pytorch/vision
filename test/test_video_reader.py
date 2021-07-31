@@ -1,7 +1,7 @@
 import collections
+import itertools
 import math
 import os
-import time
 import unittest
 from fractions import Fraction
 
@@ -9,8 +9,9 @@ import numpy as np
 import torch
 import torchvision.io as io
 from numpy.random import randint
+from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
-from common_utils import PY39_SKIP
+from common_utils import PY39_SKIP, assert_equal
 
 
 try:
@@ -20,9 +21,6 @@ try:
     io.video._check_av_available()
 except ImportError:
     av = None
-
-
-from urllib.error import URLError
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
@@ -359,8 +357,7 @@ class TestVideoReader(unittest.TestCase):
         )
         self.assertAlmostEqual(mean_delta, 0, delta=1.0)
 
-        is_same = torch.all(torch.eq(vtimebase, ref_result.vtimebase)).item()
-        self.assertEqual(is_same, True)
+        assert_equal(vtimebase, ref_result.vtimebase)
 
         if (
             config.check_aframes
@@ -369,8 +366,7 @@ class TestVideoReader(unittest.TestCase):
         ):
             """Audio stream is available and audio frame is required to return
             from decoder"""
-            is_same = torch.all(torch.eq(aframes, ref_result.aframes)).item()
-            self.assertEqual(is_same, True)
+            assert_equal(aframes, ref_result.aframes)
 
         if (
             config.check_aframe_pts
@@ -378,11 +374,9 @@ class TestVideoReader(unittest.TestCase):
             and ref_result.aframe_pts.numel() > 0
         ):
             """Audio stream is available"""
-            is_same = torch.all(torch.eq(aframe_pts, ref_result.aframe_pts)).item()
-            self.assertEqual(is_same, True)
+            assert_equal(aframe_pts, ref_result.aframe_pts)
 
-            is_same = torch.all(torch.eq(atimebase, ref_result.atimebase)).item()
-            self.assertEqual(is_same, True)
+            assert_equal(atimebase, ref_result.atimebase)
 
     @unittest.skip(
         "This stress test will iteratively decode the same set of videos."
@@ -1240,6 +1234,49 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             # FUTURE: check value of video / audio frames
+
+    def test_invalid_file(self):
+        set_video_backend('video_reader')
+        with self.assertRaises(RuntimeError):
+            io.read_video('foo.mp4')
+
+        set_video_backend('pyav')
+        with self.assertRaises(RuntimeError):
+            io.read_video('foo.mp4')
+
+    def test_audio_present_pts(self):
+        """Test if audio frames are returned with pts unit."""
+        backends = ['video_reader', 'pyav']
+        start_offsets = [0, 1000]
+        end_offsets = [3000, None]
+        for test_video, _ in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            container = av.open(full_path)
+            if container.streams.audio:
+                for backend, start_offset, end_offset in itertools.product(
+                        backends, start_offsets, end_offsets):
+                    set_video_backend(backend)
+                    _, audio, _ = io.read_video(
+                        full_path, start_offset, end_offset, pts_unit='pts')
+                    self.assertGreaterEqual(audio.shape[0], 1)
+                    self.assertGreaterEqual(audio.shape[1], 1)
+
+    def test_audio_present_sec(self):
+        """Test if audio frames are returned with sec unit."""
+        backends = ['video_reader', 'pyav']
+        start_offsets = [0, 0.1]
+        end_offsets = [0.3, None]
+        for test_video, _ in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            container = av.open(full_path)
+            if container.streams.audio:
+                for backend, start_offset, end_offset in itertools.product(
+                        backends, start_offsets, end_offsets):
+                    set_video_backend(backend)
+                    _, audio, _ = io.read_video(
+                        full_path, start_offset, end_offset, pts_unit='sec')
+                    self.assertGreaterEqual(audio.shape[0], 1)
+                    self.assertGreaterEqual(audio.shape[1], 1)
 
 
 if __name__ == "__main__":

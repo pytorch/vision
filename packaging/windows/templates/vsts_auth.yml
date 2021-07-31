@@ -1,8 +1,0 @@
-parameters:
-  auth: ''
-
-steps:
-- script: 'call packaging/windows/internal/auth.bat'
-  displayName: 'Sign in to Azure Pipelines'
-  env:
-    VSTS_AUTH: ${{ parameters.auth }}

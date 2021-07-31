@@ -15,20 +15,28 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
 export BUILD_TYPE=conda
-setup_env 0.9.0
+setup_env 0.11.0
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
 
 if [[ "$OSTYPE" == "msys" ]]; then
-    conda install -yq conda-build cmake pillow future
+    conda install -yq conda-build cmake pillow>=5.3.0 future
     pip install dataclasses
 fi
 
 setup_visual_studio_constraint
 setup_junit_results_folder
 
-conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c "pytorch-${UPLOAD_CHANNEL}"
+if [[ "$(uname)" == Darwin ]]; then
+  # TODO: this can be removed as soon as mkl's CMake support works with clang
+  #  see https://github.com/pytorch/vision/pull/4203 for details
+  MKL_CONSTRAINT='mkl==2021.2.0'
+else
+  MKL_CONSTRAINT=''
+fi
+
+conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then

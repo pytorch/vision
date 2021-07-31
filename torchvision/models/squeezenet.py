@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Any
 
 __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
 model_urls = {
-    'squeezenet1_0': 'https://download.pytorch.org/models/squeezenet1_0-a815701f.pth',
-    'squeezenet1_1': 'https://download.pytorch.org/models/squeezenet1_1-f364aa15.pth',
+    'squeezenet1_0': 'https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth',
+    'squeezenet1_1': 'https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth',
 }
 
 
@@ -126,6 +126,7 @@ def squeezenet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any
     r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size"
     <https://arxiv.org/abs/1602.07360>`_ paper.
+    The required minimum input size of the model is 21x21.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -139,6 +140,7 @@ def squeezenet1_1(pretrained: bool = False, progress: bool = True, **kwargs: Any
     <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
     than SqueezeNet 1.0, without sacrificing accuracy.
+    The required minimum input size of the model is 17x17.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

@@ -1,11 +1,10 @@
-import torch
 from torch import nn
 import torch.nn.functional as F
 
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .anchor_utils import AnchorGenerator
 from .generalized_rcnn import GeneralizedRCNN
@@ -32,8 +31,8 @@ class FasterRCNN(GeneralizedRCNN):
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values of x
-          between 0 and W and values of y between 0 and H
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
+          ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (Int64Tensor[N]): the class label for each ground-truth box
 
     The model returns a Dict[Tensor] during training, containing the classification and regression
@@ -42,8 +41,8 @@ class FasterRCNN(GeneralizedRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values of x
-          between 0 and W and values of y between 0 and H
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
+          ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
 
@@ -309,8 +308,8 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
 
-        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
-          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
+          ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
 
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
@@ -318,12 +317,14 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
-    follows:
+    follows, where ``N`` is the number of detections:
 
-        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
-          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
-        - labels (``Int64Tensor[N]``): the predicted labels for each image
-        - scores (``Tensor[N]``): the scores or each prediction
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
+          ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
+        - labels (``Int64Tensor[N]``): the predicted labels for each detection
+        - scores (``Tensor[N]``): the scores of each detection
+
+    For more details on the output, you may refer to :ref:`instance_seg_output`.
 
     Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 
@@ -400,7 +401,9 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=False, progress=True, num_c
                                           trainable_backbone_layers=None, **kwargs):
     """
     Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
-    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
+    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
+    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
+    details.
 
     Example::
 
@@ -436,7 +439,9 @@ def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_class
                                       trainable_backbone_layers=None, **kwargs):
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
-    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
+    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
+    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
+    details.
 
     Example::
 
