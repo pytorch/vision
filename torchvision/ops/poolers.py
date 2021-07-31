@@ -2,10 +2,10 @@ import torch
 from torch import nn, Tensor
 
 import torchvision
-from torchvision.ops import roi_align
+from .roi_align import roi_align
 from torchvision.ops.boxes import box_area
 
-from typing import Optional, List, Dict, Tuple, Union
+from typing import Optional, List, Dict, Tuple, Union, Sequence
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -131,12 +131,10 @@ class MultiScaleRoIAlign(nn.Module):
         canonical_level: int = 4,
     ):
         super(MultiScaleRoIAlign, self).__init__()
-        if isinstance(output_size, int):
-            output_size = (output_size, output_size)
         self.featmap_names = featmap_names
         self.sampling_ratio = sampling_ratio
-        self.output_size = tuple(output_size)
-        self.scales = None
+        self.output_size = (output_size, output_size) if isinstance(output_size, int) else tuple(output_size)
+        self.scales: Optional[Sequence[float]] = None
         self.map_levels = None
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
@@ -154,7 +152,7 @@ class MultiScaleRoIAlign(nn.Module):
         rois = torch.cat([ids, concat_boxes], dim=1)
         return rois
 
-    def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
+    def infer_scale(self, feature: Tensor, original_size: Sequence[int]) -> float:
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
         possible_scales: List[float] = []

@@ -38,12 +38,12 @@ def ps_roi_pool(
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
-    output_size = _pair(output_size)
+    _output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     output, _ = torch.ops.torchvision.ps_roi_pool(input, rois, spatial_scale,
-                                                  output_size[0],
-                                                  output_size[1])
+                                                  _output_size[0],
+                                                  _output_size[1])
     return output
 
 

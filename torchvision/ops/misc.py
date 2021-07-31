@@ -61,9 +61,13 @@ class FrozenBatchNorm2d(torch.nn.Module):
             num_features = n
         super(FrozenBatchNorm2d, self).__init__()
         self.eps = eps
+        self.weight: Tensor
         self.register_buffer("weight", torch.ones(num_features))
+        self.bias: Tensor
         self.register_buffer("bias", torch.zeros(num_features))
+        self.running_mean: Tensor
         self.register_buffer("running_mean", torch.zeros(num_features))
+        self.running_var: Tensor
         self.register_buffer("running_var", torch.ones(num_features))
 
     def _load_from_state_dict(
