@@ -388,15 +388,15 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 
     in_sizes = img.size()
 
-    x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
+    _x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
     left_indices = [i for i in range(padding[0] - 1, -1, -1)]  # e.g. [3, 2, 1, 0]
     right_indices = [-(i + 1) for i in range(padding[1])]  # e.g. [-1, -2, -3]
-    x_indices = torch.tensor(left_indices + x_indices + right_indices, device=img.device)
+    x_indices = torch.tensor(left_indices + _x_indices + right_indices, device=img.device)
 
-    y_indices = [i for i in range(in_sizes[-2])]
+    _y_indices = [i for i in range(in_sizes[-2])]
     top_indices = [i for i in range(padding[2] - 1, -1, -1)]
     bottom_indices = [-(i + 1) for i in range(padding[3])]
-    y_indices = torch.tensor(top_indices + y_indices + bottom_indices, device=img.device)
+    y_indices = torch.tensor(top_indices + _y_indices + bottom_indices, device=img.device)
 
     ndim = img.ndim
     if ndim == 3:
