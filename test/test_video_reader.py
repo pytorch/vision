@@ -268,6 +268,7 @@ def _get_video_tensor(video_dir, video_file):
 
     return full_path, video_tensor
 
+
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 @pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
 class TestVideoReader:
@@ -287,7 +288,7 @@ class TestVideoReader:
         assert vfps.item() == approx(config.video_fps, abs=0.5)
 
         if asample_rate.numel() > 0:
-            assert asample_rate.item()==config.audio_sample_rate
+            assert asample_rate.item() == config.audio_sample_rate
             audio_duration = aduration.item() * Fraction(
                 atimebase[0].item(), atimebase[1].item()
             )
@@ -565,7 +566,7 @@ class TestVideoReader:
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            assert min_dimension==min(tv_result[0].size(1), tv_result[0].size(2))
+            assert min_dimension == min(tv_result[0].size(1), tv_result[0].size(2))
 
     def test_read_video_from_file_rescale_max_dimension(self):
         """
@@ -605,7 +606,7 @@ class TestVideoReader:
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            assert max_dimension==max(tv_result[0].size(1), tv_result[0].size(2))
+            assert max_dimension == max(tv_result[0].size(1), tv_result[0].size(2))
 
     def test_read_video_from_file_rescale_both_min_max_dimension(self):
         """
@@ -1050,7 +1051,7 @@ class TestVideoReader:
                 aframes, aframe_pts, atimebase, asample_rate, aduration = (
                     tv_result
                 )
-            assert abs(config.video_fps-vfps.item())<0.01
+            assert abs(config.video_fps - vfps.item()) < 0.01
 
             for num_frames in [4, 8, 16, 32, 64, 128]:
                 start_pts_ind_max = vframe_pts.size(0) - num_frames
