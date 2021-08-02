@@ -78,8 +78,8 @@ def googlenet(
 
         if not original_aux_logits:
             model.aux_logits = False
-            model.aux1 = None
-            model.aux2 = None
+            model.aux1 = None  # type: ignore
+            model.aux2 = None  # type: ignore
     return model
 
 
