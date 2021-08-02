@@ -15,8 +15,7 @@ from .anchor_utils import AnchorGenerator
 
 
 @torch.jit.unused
-def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
-    # type: (Tensor, int) -> Tuple[int, int]
+def _onnx_get_num_anchors_and_pre_nms_top_n(ob: Tensor, orig_pre_nms_top_n: int) -> Tuple[int, int]:
     from torch.onnx import operators
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
     pre_nms_top_n = torch.min(torch.cat(

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
@@ -158,7 +158,7 @@ class KeypointRCNN(FasterRCNN):
         backbone: nn.Module,
         num_classes: Optional[int] = None,
         # transform parameters
-        min_size: Optional[Tuple[int]] = None,
+        min_size: Optional[Tuple[int, ...]] = None,
         max_size: int = 1333,
         image_mean: Optional[Tuple[float, ...]] = None,
         image_std: Optional[Tuple[float, ...]] = None,
@@ -247,7 +247,7 @@ class KeypointRCNNHeads(nn.Sequential):
     def __init__(
         self,
         in_channels: int,
-        layers: List[int],
+        layers: Tuple[int, ...],
     ) -> None:
         d = []
         next_feature = in_channels

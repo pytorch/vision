@@ -166,7 +166,8 @@ class SSD(nn.Module):
 
     def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator,
                  size: Tuple[int, int], num_classes: int,
-                 image_mean: Optional[List[float]] = None, image_std: Optional[List[float]] = None,
+                 image_mean: Optional[Tuple[float, ...]] = None,
+                 image_std: Optional[Tuple[float, ...]] = None,
                  head: Optional[nn.Module] = None,
                  score_thresh: float = 0.01,
                  nms_thresh: float = 0.45,
@@ -197,9 +198,9 @@ class SSD(nn.Module):
         self.proposal_matcher = det_utils.SSDMatcher(iou_thresh)
 
         if image_mean is None:
-            image_mean = [0.485, 0.456, 0.406]
+            image_mean = (0.485, 0.456, 0.406)
         if image_std is None:
-            image_std = [0.229, 0.224, 0.225]
+            image_std = (0.229, 0.224, 0.225)
         self.transform = GeneralizedRCNNTransform(min(size), max(size), image_mean, image_std,
                                                   size_divisible=1, fixed_size=size)
 

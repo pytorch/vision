@@ -20,7 +20,7 @@ def _get_shape_onnx(image: Tensor) -> Tensor:
 def _fake_cast_onnx(v: Tensor) -> float:
 
     # ONNX requires a tensor but here we fake its type for JIT.
-    return v
+    return v  # type: ignore
 
 
 def _resize_image_and_masks(image: Tensor, self_min_size: float, self_max_size: float,
@@ -126,13 +126,13 @@ class GeneralizedRCNNTransform(nn.Module):
                 targets[i] = target_index
 
         image_sizes = [img.shape[-2:] for img in images]
-        images = self.batch_images(images, size_divisible=self.size_divisible)
+        batched_images = self.batch_images(images, size_divisible=self.size_divisible)
         image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
             assert len(image_size) == 2
             image_sizes_list.append((image_size[0], image_size[1]))
 
-        image_list = ImageList(images, image_sizes_list)
+        image_list = ImageList(batched_images, image_sizes_list)
         return image_list, targets
 
     def normalize(
@@ -288,8 +288,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
 def resize_keypoints(
     keypoints: Tensor,
-    original_size: List[int],
-    new_size: List[int]
+    original_size: Tuple[int, int],
+    new_size: Tuple[int, int],
 ) -> Tensor:
 
     ratios = [
@@ -311,8 +311,8 @@ def resize_keypoints(
 
 def resize_boxes(
     boxes: Tensor,
-    original_size: List[int],
-    new_size: List[int],
+    original_size: Tuple[int, int],
+    new_size: Tuple[int, int],
 ) -> Tensor:
 
     ratios = [

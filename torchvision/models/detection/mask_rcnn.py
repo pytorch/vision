@@ -206,7 +206,7 @@ class MaskRCNN(FasterRCNN):
                 sampling_ratio=2)
 
         if mask_head is None:
-            mask_layers = (256, 256, 256, 256)
+            mask_layers = (56, 256, 256, 256)
             mask_dilation = 1
             mask_head = MaskRCNNHeads(out_channels, mask_layers, mask_dilation)
 
@@ -245,13 +245,13 @@ class MaskRCNNHeads(nn.Sequential):
     def __init__(
         self,
         in_channels: int,
-        layers: int,
+        layers: Tuple[int, ...],
         dilation: int
     ) -> None:
         """
         Args:
             in_channels (int): number of input channels
-            layers (list): feature dimensions of each FCN layer
+            layers (tuple): feature dimensions of each FCN layer
             dilation (int): dilation rate of kernel
         """
         d = OrderedDict()
