@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch import Tensor, Union
 
 
 def _replace_relu(module: nn.Module) -> None:
@@ -16,7 +17,7 @@ def _replace_relu(module: nn.Module) -> None:
         module._modules[key] = value
 
 
-def quantize_model(model: nn.Module, backend: str) -> None:
+def quantize_model(model: Union[nn.Module, Tensor], backend: str) -> None:
     _dummy_input_data = torch.rand(1, 3, 299, 299)
     if backend not in torch.backends.quantized.supported_engines:
         raise RuntimeError("Quantized backend not supported ")
