@@ -174,7 +174,7 @@ class TestVideoApi:
                 frame = next(video_reader)
                 lb = duration / 2 - 1 / md[stream]["fps"][0]
                 ub = duration / 2 + 1 / md[stream]["fps"][0]
-                assert (lb <= frame["pts"]) & (ub >= frame["pts"])
+                assert (lb <= frame["pts"]) and (ub >= frame["pts"])
 
     def test_fate_suite(self):
         video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)

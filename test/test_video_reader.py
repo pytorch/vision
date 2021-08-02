@@ -1199,7 +1199,7 @@ class TestVideoReader:
         audio_timebase_num, audio_timebase_den = 0, 1
 
         scripted_fun = torch.jit.script(io._read_video_from_memory)
-        assert scripted_fun
+        assert scripted_fun is not None
 
         for test_video, _config in test_videos.items():
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
