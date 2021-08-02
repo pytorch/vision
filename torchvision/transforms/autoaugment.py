@@ -3,7 +3,7 @@ import torch
 
 from enum import Enum
 from torch import Tensor
-from typing import List, Tuple, Optional, Dict, Any, cast
+from typing import List, Tuple, Optional, Dict, Any
 
 from . import functional as F, InterpolationMode
 
@@ -169,7 +169,7 @@ class AutoAugment(torch.nn.Module):
         Returns:
             params required by the autoaugment transformation
         """
-        policy_id = cast(int, torch.randint(transform_num, (1,)).item())
+        policy_id = int(torch.randint(transform_num, (1,)).item())
         probs = torch.rand((2,))
         signs = torch.randint(2, (2,))
 
