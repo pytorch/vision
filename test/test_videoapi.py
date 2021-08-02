@@ -167,21 +167,21 @@ class TestVideoApi:
                 for frame in video_reader:
                     middle_num_frames += 1
 
-                assert (middle_num_frames < num_frames)
+                assert middle_num_frames < num_frames
                 assert middle_num_frames == approx(num_frames // 2, abs=1)
 
                 video_reader.seek(duration / 2)
                 frame = next(video_reader)
                 lb = duration / 2 - 1 / md[stream]["fps"][0]
                 ub = duration / 2 + 1 / md[stream]["fps"][0]
-                assert ((lb <= frame["pts"]) & (ub >= frame["pts"]))
+                assert (lb <= frame["pts"]) & (ub >= frame["pts"])
 
     def test_fate_suite(self):
         video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
         vr = VideoReader(video_path)
         metadata = vr.get_metadata()
 
-        assert (metadata["subtitles"]["duration"] is not None)
+        assert metadata["subtitles"]["duration"] is not None
         os.remove(video_path)
 
 

@@ -295,12 +295,12 @@ class TestVideoReader:
 
         # check if pts of video frames are sorted in ascending order
         for i in range(len(vframe_pts) - 1):
-            assert (vframe_pts[i] < vframe_pts[i + 1])
+            assert vframe_pts[i] < vframe_pts[i + 1]
 
         if len(aframe_pts) > 1:
             # check if pts of audio frames are sorted in ascending order
             for i in range(len(aframe_pts) - 1):
-                assert (aframe_pts[i] < aframe_pts[i + 1])
+                assert aframe_pts[i] < aframe_pts[i + 1]
 
     def check_probe_result(self, result, config):
         vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
@@ -310,7 +310,7 @@ class TestVideoReader:
         assert video_duration == approx(config.duration, abs=0.5)
         assert vfps.item() == approx(config.video_fps, abs=0.5)
         if asample_rate.numel() > 0:
-            assert (asample_rate.item()==config.audio_sample_rate)
+            assert asample_rate.item() == config.audio_sample_rate
             audio_duration = aduration.item() * Fraction(
                 atimebase[0].item(), atimebase[1].item()
             )
@@ -1176,7 +1176,7 @@ class TestVideoReader:
 
     def test_probe_video_from_memory_script(self):
         scripted_fun = torch.jit.script(io._probe_video_from_memory)
-        assert scripted_fun
+        assert scripted_fun is not None
 
         for test_video, config in test_videos.items():
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
@@ -1247,7 +1247,7 @@ class TestVideoReader:
                     set_video_backend(backend)
                     _, audio, _ = io.read_video(
                         full_path, start_offset, end_offset, pts_unit='pts')
-                    assert all(audio.shape[:2])
+                    assert all([dimension > 0 for dimension in audio.shape[:2]])
 
     def test_audio_present_sec(self):
         """Test if audio frames are returned with sec unit."""
@@ -1263,7 +1263,7 @@ class TestVideoReader:
                     set_video_backend(backend)
                     _, audio, _ = io.read_video(
                         full_path, start_offset, end_offset, pts_unit='sec')
-                    assert all(audio.shape[:2])
+                    assert all([dimension > 0 for dimension in audio.shape[:2]])
 
 
 if __name__ == '__main__':
