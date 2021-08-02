@@ -74,7 +74,7 @@ def _load_weights(
     model: QuantizableMobileNetV3,
     model_url: Optional[str],
     progress: bool,
-):
+) -> None:
     if model_url is None:
         raise ValueError("No checkpoint is available for {}".format(arch))
     state_dict = load_state_dict_from_url(model_url, progress=progress)

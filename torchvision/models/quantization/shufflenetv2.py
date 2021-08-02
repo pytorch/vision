@@ -114,7 +114,7 @@ def shufflenet_v2_x0_5(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -134,7 +134,7 @@ def shufflenet_v2_x1_0(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -154,7 +154,7 @@ def shufflenet_v2_x1_5(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -174,7 +174,7 @@ def shufflenet_v2_x2_0(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"

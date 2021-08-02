@@ -152,7 +152,7 @@ def resnet18(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableResNet:
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
@@ -170,7 +170,7 @@ def resnet50(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableResNet:
 
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
@@ -189,7 +189,7 @@ def resnext101_32x8d(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> QuantizableResNet:
     r"""ResNeXt-101 32x8d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
 
