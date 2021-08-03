@@ -11,35 +11,40 @@ videos, together with the examples on how to build datasets and more.
 # 1. Introduction: building a new video object and examining the properties
 # -------------------------------------------------------------------------
 # First we select a video to test the object out. For the sake of argument
-# we're using one from Kinetics400 dataset.
+# we're using one from kinetics400 dataset.
 # To create it, we need to define the path and the stream we want to use.
+
+######################################
+# Chosen video statistics:
+#
+# - WUzgd7C1pWA.mp4
+#     - source:
+#         - kinetics-400
+#     - video:
+#         - H-264
+#         - MPEG-4 AVC (part 10) (avc1)
+#         - fps: 29.97
+#     - audio:
+#         - MPEG AAC audio (mp4a)
+#         - sample rate: 48K Hz
+#
 
 import torch
 import torchvision
+from torchvision.datasets.utils import download_url
 
 # Download the sample video
-from torchvision.datasets.utils import download_url
 download_url(
     "https://github.com/pytorch/vision/blob/master/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
     ".",
     "WUzgd7C1pWA.mp4"
 )
-
-"""
-Chosen video statistics:
-WUzgd7C1pWA.mp4
-  - source: kinetics-400
-  - video: H-264 - MPEG-4 AVC (part 10) (avc1)
-    - fps: 29.97
-  - audio: MPEG AAC audio (mp4a)
-    - sample rate: 48K Hz
-"""
 video_path = "./WUzgd7C1pWA.mp4"
 
 ######################################
 # Streams are defined in a similar fashion as torch devices. We encode them as strings in a form
-# of `stream_type:stream_id` where `stream_type` is a string and `stream_id` a long int.
-# The constructor accepts passing a `stream_type` only, in which case the stream is auto-discovered.
+# of ``stream_type:stream_id`` where ``stream_type`` is a string and ``stream_id`` a long int.
+# The constructor accepts passing a ``stream_type`` only, in which case the stream is auto-discovered.
 # Firstly, let's get the metadata for our particular video:
 
 stream = "video"
@@ -57,10 +62,12 @@ video.get_metadata()
 
 ######################################
 # Let's read all the frames from the video stream. By default, the return value of
-# `next(video_reader)`` is a dict containing the following fields.
+# ``next(video_reader)`` is a dict containing the following fields.
+#
 # The return fields are:
-# - `data`: containing a torch.tensor
-# - `pts`: containing a float timestamp of this particular frame
+#
+# - ``data``: containing a torch.tensor
+# - ``pts``: containing a float timestamp of this particular frame
 
 metadata = video.get_metadata()
 video.set_current_stream("audio")
@@ -79,7 +86,7 @@ print("Read data size: ", frames[0].size(0) * len(frames))
 
 ######################################
 # But what if we only want to read certain time segment of the video?
-# That can be done easily using the combination of our `seek` function, and the fact that each call
+# That can be done easily using the combination of our ``seek`` function, and the fact that each call
 # to next returns the presentation timestamp of the returned frame in seconds.
 #
 # Given that our implementation relies on python iterators,
@@ -121,7 +128,7 @@ print("Tensor size: ", frames[0].size())
 # 2. Building a sample read_video function
 # ----------------------------------------------------------------------------------------
 # We can utilize the methods above to build the read video function that follows
-# the same API to the existing read_video function.
+# the same API to the existing ``read_video`` function.
 
 
 def example_read_video(video_object, start=0, end=None, read_video=True, read_audio=True):
@@ -164,13 +171,13 @@ print(vf.size(), af.size())
 
 ####################################
 # 3. Building an example randomly sampled dataset (can be applied to training dataest of kinetics400)
-# ---------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------
 # Cool, so now we can use the same principle to make the sample dataset.
 # We suggest trying out iterable dataset for this purpose.
 # Here, we are going to build an example dataset that reads randomly selected 10 frames of video.
 
 ####################################
-# Make sample dataest
+# Make sample dataset
 import os
 os.makedirs("./dataset", exist_ok=True)
 os.makedirs("./dataset/1", exist_ok=True)
@@ -226,10 +233,11 @@ def get_samples(root, extensions=(".mp4", ".avi")):
 
 ####################################
 # We are going to define the dataset and some basic arguments.
-# We asume the structure of the FolderDataset, and add the following parameters:
-# - `frame_transform`: with this API, we can chose to apply transforms on every frame of the video
-# - `video_transform`: equally, we can also apply transform to a 4D tensor
-# - `clip_len`: do we want a single or multiple frames
+# We assume the structure of the FolderDataset, and add the following parameters:
+#
+# - ``clip_len``: length of a clip in frames
+# - ``frame_transform``: transform for every frame individually
+# - ``video_transform``: transform on a video sequence
 #
 # .. note::
 #   We actually add epoch size as using :func:`~torch.utils.data.IterableDataset`
@@ -247,9 +255,9 @@ class RandomDataset(torch.utils.data.IterableDataset):
             epoch_size = len(self.samples)
         self.epoch_size = epoch_size
 
-        self.clip_len = clip_len  # length of a clip in frames
-        self.frame_transform = frame_transform  # transform for every frame individually
-        self.video_transform = video_transform  # transform on a video sequence
+        self.clip_len = clip_len
+        self.frame_transform = frame_transform
+        self.video_transform = video_transform
 
     def __iter__(self):
         for i in range(self.epoch_size):
