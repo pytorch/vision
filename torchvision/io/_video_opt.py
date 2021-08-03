@@ -3,7 +3,7 @@ import math
 import os
 import warnings
 from fractions import Fraction
-from typing import List, Tuple, Dict, Any, Union, Optional, Type, cast
+from typing import List, Tuple, Dict, Any, Optional, Type, cast
 
 import numpy as np
 import torch
@@ -391,7 +391,7 @@ def _read_video_from_memory(
 
 
 def _read_video_timestamps_from_memory(
-    video_data: Union[torch.Tensor, np.ndarray],
+    video_data: torch.Tensor,
 ) -> Tuple[List[int], List[int], VideoMetaData]:
     """
     Decode all frames in the video. Only pts (presentation timestamp) is returned.
@@ -433,7 +433,7 @@ def _read_video_timestamps_from_memory(
 
 
 def _probe_video_from_memory(
-    video_data: Union[torch.Tensor, np.ndarray],
+    video_data: torch.Tensor,
 ) -> VideoMetaData:
     """
     Probe a video in memory and return VideoMetaData with info about the video
@@ -531,7 +531,7 @@ def _read_video(
     return vframes, aframes, _info
 
 
-def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[Union[int, Fraction]], Optional[float]]:
+def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[Fraction], Optional[float]]:
     if pts_unit == "pts":
         warnings.warn(
             "The pts_unit 'pts' gives wrong results and will be removed in a "
