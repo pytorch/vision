@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import contextlib
 import unittest
+import pytest
 import argparse
 import sys
 import torch
@@ -20,7 +21,7 @@ from PIL import Image
 
 IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
 PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
-PY39_SKIP = unittest.skipIf(IS_PY39, PY39_SEGFAULT_SKIP_MSG)
+PY39_SKIP = pytest.mark.skipif(IS_PY39, reason=PY39_SEGFAULT_SKIP_MSG)
 IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
@@ -81,129 +82,6 @@ def is_iterable(obj):
         return True
     except TypeError:
         return False
-
-
-# adapted from TestCase in torch/test/common_utils to accept non-string
-# inputs and set maximum binary size
-class TestCase(unittest.TestCase):
-    precision = 1e-5
-
-    def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
-        """
-        This is copied from pytorch/test/common_utils.py's TestCase.assertEqual
-        """
-        if isinstance(prec, str) and message == '':
-            message = prec
-            prec = None
-        if prec is None:
-            prec = self.precision
-
-        if isinstance(x, torch.Tensor) and isinstance(y, Number):
-            self.assertEqual(x.item(), y, prec=prec, message=message,
-                             allow_inf=allow_inf)
-        elif isinstance(y, torch.Tensor) and isinstance(x, Number):
-            self.assertEqual(x, y.item(), prec=prec, message=message,
-                             allow_inf=allow_inf)
-        elif isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor):
-            def assertTensorsEqual(a, b):
-                super(TestCase, self).assertEqual(a.size(), b.size(), message)
-                if a.numel() > 0:
-                    if (a.device.type == 'cpu' and (a.dtype == torch.float16 or a.dtype == torch.bfloat16)):
-                        # CPU half and bfloat16 tensors don't have the methods we need below
-                        a = a.to(torch.float32)
-                    b = b.to(a)
-
-                    if (a.dtype == torch.bool) != (b.dtype == torch.bool):
-                        raise TypeError("Was expecting both tensors to be bool type.")
-                    else:
-                        if a.dtype == torch.bool and b.dtype == torch.bool:
-                            # we want to respect precision but as bool doesn't support substraction,
-                            # boolean tensor has to be converted to int
-                            a = a.to(torch.int)
-                            b = b.to(torch.int)
-
-                        diff = a - b
-                        if a.is_floating_point():
-                            # check that NaNs are in the same locations
-                            nan_mask = torch.isnan(a)
-                            self.assertTrue(torch.equal(nan_mask, torch.isnan(b)), message)
-                            diff[nan_mask] = 0
-                            # inf check if allow_inf=True
-                            if allow_inf:
-                                inf_mask = torch.isinf(a)
-                                inf_sign = inf_mask.sign()
-                                self.assertTrue(torch.equal(inf_sign, torch.isinf(b).sign()), message)
-                                diff[inf_mask] = 0
-                        # TODO: implement abs on CharTensor (int8)
-                        if diff.is_signed() and diff.dtype != torch.int8:
-                            diff = diff.abs()
-                        max_err = diff.max()
-                        tolerance = prec + prec * abs(a.max())
-                        self.assertLessEqual(max_err, tolerance, message)
-            super(TestCase, self).assertEqual(x.is_sparse, y.is_sparse, message)
-            super(TestCase, self).assertEqual(x.is_quantized, y.is_quantized, message)
-            if x.is_sparse:
-                x = self.safeCoalesce(x)
-                y = self.safeCoalesce(y)
-                assertTensorsEqual(x._indices(), y._indices())
-                assertTensorsEqual(x._values(), y._values())
-            elif x.is_quantized and y.is_quantized:
-                self.assertEqual(x.qscheme(), y.qscheme(), prec=prec,
-                                 message=message, allow_inf=allow_inf)
-                if x.qscheme() == torch.per_tensor_affine:
-                    self.assertEqual(x.q_scale(), y.q_scale(), prec=prec,
-                                     message=message, allow_inf=allow_inf)
-                    self.assertEqual(x.q_zero_point(), y.q_zero_point(),
-                                     prec=prec, message=message,
-                                     allow_inf=allow_inf)
-                elif x.qscheme() == torch.per_channel_affine:
-                    self.assertEqual(x.q_per_channel_scales(), y.q_per_channel_scales(), prec=prec,
-                                     message=message, allow_inf=allow_inf)
-                    self.assertEqual(x.q_per_channel_zero_points(), y.q_per_channel_zero_points(),
-                                     prec=prec, message=message,
-                                     allow_inf=allow_inf)
-                    self.assertEqual(x.q_per_channel_axis(), y.q_per_channel_axis(),
-                                     prec=prec, message=message)
-                self.assertEqual(x.dtype, y.dtype)
-                self.assertEqual(x.int_repr().to(torch.int32),
-                                 y.int_repr().to(torch.int32), prec=prec,
-                                 message=message, allow_inf=allow_inf)
-            else:
-                assertTensorsEqual(x, y)
-        elif isinstance(x, string_classes) and isinstance(y, string_classes):
-            super(TestCase, self).assertEqual(x, y, message)
-        elif type(x) == set and type(y) == set:
-            super(TestCase, self).assertEqual(x, y, message)
-        elif isinstance(x, dict) and isinstance(y, dict):
-            if isinstance(x, OrderedDict) and isinstance(y, OrderedDict):
-                self.assertEqual(x.items(), y.items(), prec=prec,
-                                 message=message, allow_inf=allow_inf)
-            else:
-                self.assertEqual(set(x.keys()), set(y.keys()), prec=prec,
-                                 message=message, allow_inf=allow_inf)
-                key_list = list(x.keys())
-                self.assertEqual([x[k] for k in key_list],
-                                 [y[k] for k in key_list],
-                                 prec=prec, message=message,
-                                 allow_inf=allow_inf)
-        elif is_iterable(x) and is_iterable(y):
-            super(TestCase, self).assertEqual(len(x), len(y), message)
-            for x_, y_ in zip(x, y):
-                self.assertEqual(x_, y_, prec=prec, message=message,
-                                 allow_inf=allow_inf)
-        elif isinstance(x, bool) and isinstance(y, bool):
-            super(TestCase, self).assertEqual(x, y, message)
-        elif isinstance(x, Number) and isinstance(y, Number):
-            inf = float("inf")
-            if abs(x) == inf or abs(y) == inf:
-                if allow_inf:
-                    super(TestCase, self).assertEqual(x, y, message)
-                else:
-                    self.fail("Expected finite numeric values - x={}, y={}".format(x, y))
-                return
-            super(TestCase, self).assertLessEqual(abs(x - y), prec, message)
-        else:
-            super(TestCase, self).assertEqual(x, y, message)
 
 
 @contextlib.contextmanager
