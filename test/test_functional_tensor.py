@@ -719,7 +719,7 @@ def test_autocontrast(device, dtype):
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 def test_equalize(device):
-    torch.set_deterministic(False)
+    torch.use_deterministic_algorithms(False)
     check_functional_vs_PIL_vs_scripted(
         F.equalize,
         F_pil.equalize,
