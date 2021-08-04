@@ -72,6 +72,27 @@ Below is a gallery of examples
    :hidden:
 
    /auto_examples/plot_visualization_utils
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the APIs that torchvision offers for videos, together with the...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_video_api_thumb.png
+     :alt: Video API
+
+     :ref:`sphx_glr_auto_examples_plot_video_api.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_video_api
 .. raw:: html
 
     <div class="sphx-glr-clear"></div>
