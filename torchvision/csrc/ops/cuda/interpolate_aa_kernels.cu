@@ -324,8 +324,6 @@ __global__ void upsample_gen2d_backward_out_frame(
   // memory
   scalar_t wx[256];
   scalar_t wy[256];
-  scalar_t buffer1[256];
-  scalar_t buffer2[256];
 
   // Compute weights
   int xmin, xsize, ymin, ysize;
