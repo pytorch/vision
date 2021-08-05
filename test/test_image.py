@@ -23,7 +23,6 @@ ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 IS_WINDOWS = sys.platform in ('win32', 'cygwin')
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
-random_state_numpy = np.random.RandomState(0)
 
 
 def _get_safe_image_name(name):
@@ -275,8 +274,9 @@ def test_write_file_non_ascii():
 ])
 def test_read_1_bit_png(shape):
     with get_tmp_dir() as root:
+        np_rng = np.random.RandomState(0)
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = random_state_numpy.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path)
@@ -295,8 +295,9 @@ def test_read_1_bit_png(shape):
 ])
 def test_read_1_bit_png_consistency(shape, mode):
     with get_tmp_dir() as root:
+        np_rng = np.random.RandomState(0)
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = random_state_numpy.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path, mode)
