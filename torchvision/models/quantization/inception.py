@@ -177,7 +177,7 @@ class QuantizableInceptionAux(inception_module.InceptionAux):
 
 
 class QuantizableInception3(inception_module.Inception3):
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False):
+    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, **kwargs):
         super(QuantizableInception3, self).__init__(
             num_classes=num_classes,
             aux_logits=aux_logits,
@@ -190,7 +190,8 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionD,
                 QuantizableInceptionE,
                 QuantizableInceptionAux
-            ]
+            ],
+            **kwargs
         )
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
