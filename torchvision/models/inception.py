@@ -120,8 +120,8 @@ class Inception3(nn.Module):
         if init_weights:
             for m in self.modules():
                 if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                    stddev = m.stddev if hasattr(m, 'stddev') else 0.1  # type: ignore[assignment]
-                    torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=float(stddev), a=-2, b=2)
+                    stddev = m.stddev if hasattr(m, 'stddev') else 0.1  # type: ignore
+                    torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=stddev, a=-2, b=2)
                 elif isinstance(m, nn.BatchNorm2d):
                     nn.init.constant_(m.weight, 1)
                     nn.init.constant_(m.bias, 0)
