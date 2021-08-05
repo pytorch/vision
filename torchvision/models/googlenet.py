@@ -124,7 +124,7 @@ class GoogLeNet(nn.Module):
     def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                torch.nn.init.trunc_normal_(m.weight, mran=0.0, std=0.01, a=-2, b=2)
+                torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=0.01, a=-2, b=2)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
