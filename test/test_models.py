@@ -1,5 +1,6 @@
 import os
 import io
+import sys
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from _utils_internal import get_relative_path
 from collections import OrderedDict
@@ -556,7 +557,7 @@ def test_detection_model(model_name, dev):
         return True  # Full validation performed
 
     full_validation = check_out(out)
-    _check_jit_scriptable(model, ((x),), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None))
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
