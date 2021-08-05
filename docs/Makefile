@@ -6,7 +6,7 @@ ifneq ($(EXAMPLES_PATTERN),)
 endif
 
 # You can set these variables from the command line.
-SPHINXOPTS    = -j auto $(EXAMPLES_PATTERN_OPTS)
+SPHINXOPTS    = -W -j auto $(EXAMPLES_PATTERN_OPTS)
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = torchvision
 SOURCEDIR     = source
