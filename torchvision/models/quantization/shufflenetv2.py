@@ -4,12 +4,8 @@ from torch import Tensor
 from typing import Any
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-# import torchvision.models.shufflenetv2
 from torchvision.models import shufflenetv2
-# import sys
 from .utils import _replace_relu, quantize_model
-
-# shufflenetv2 = sys.modules['torchvision.models.shufflenetv2']
 
 __all__ = [
     'QuantizableShuffleNetV2', 'shufflenet_v2_x0_5', 'shufflenet_v2_x1_0',
@@ -33,9 +29,9 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
     def forward(self, x: Tensor) -> Tensor:
         if self.stride == 1:
             x1, x2 = x.chunk(2, dim=1)
-            out = self.cat.cat((x1, self.branch2(x2)), dim=1)  # type: ignore
+            out = self.cat.cat((x1, self.branch2(x2)), dim=1)  # type: ignore[arg-type]
         else:
-            out = self.cat.cat((self.branch1(x), self.branch2(x)), dim=1)  # type: ignore
+            out = self.cat.cat((self.branch1(x), self.branch2(x)), dim=1)  # type: ignore[arg-type]
 
         out = shufflenetv2.channel_shuffle(out, 2)
 

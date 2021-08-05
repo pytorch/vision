@@ -24,15 +24,15 @@ def quantize_model(model: nn.Module, backend: str) -> None:
     model.eval()
     # Make sure that weight qconfig matches that of the serialized models
     if backend == 'fbgemm':
-        model.qconfig = torch.quantization.QConfig(  # type: ignore
+        model.qconfig = torch.quantization.QConfig(  # type: ignore[assignment]
             activation=torch.quantization.default_observer,
             weight=torch.quantization.default_per_channel_weight_observer)
     elif backend == 'qnnpack':
-        model.qconfig = torch.quantization.QConfig(  # type: ignore
+        model.qconfig = torch.quantization.QConfig(  # type: ignore[assignment]
             activation=torch.quantization.default_observer,
             weight=torch.quantization.default_weight_observer)
 
-    model.fuse_model()  # type: ignore
+    model.fuse_model()  # type: ignore[operator]
     torch.quantization.prepare(model, inplace=True)
     model(_dummy_input_data)
     torch.quantization.convert(model, inplace=True)
