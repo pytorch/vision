@@ -21,8 +21,6 @@ import torch
 import torch.nn.functional as F
 from torchvision import datasets
 
-random_state_numpy = np.random.RandomState(0)
-
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.STL10
@@ -446,8 +444,9 @@ class CIFAR10TestCase(datasets_utils.ImageDatasetTestCase):
         )
 
     def _create_batch_file(self, root, name, num_images):
+        np_rng = np.random.RandomState(0)
         data = datasets_utils.create_image_or_video_tensor((num_images, 32 * 32 * 3))
-        labels = random_state_numpy.randint(0, self._VERSION_CONFIG["num_categories"], size=num_images).tolist()
+        labels = np_rng.randint(0, self._VERSION_CONFIG["num_categories"], size=num_images).tolist()
         self._create_binary_file(root, name, {"data": data, self._VERSION_CONFIG["labels_key"]: labels})
 
     def _create_meta_file(self, root):

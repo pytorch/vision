@@ -16,8 +16,6 @@ with warnings.catch_warnings(record=True):
     warnings.simplefilter("always")
     import torchvision.transforms._transforms_video as transforms
 
-random_state_numpy = np.random.RandomState(0)
-
 
 class TestVideoTransforms():
 
@@ -133,7 +131,8 @@ class TestVideoTransforms():
         trans = transforms.ToTensorVideo()
 
         with pytest.raises(TypeError):
-            trans(random_state_numpy.rand(numFrames, height, width, 1).tolist())
+            np_rng = np.random.RandomState(0)
+            trans(np_rng.rand(numFrames, height, width, 1).tolist())
             trans(torch.rand((numFrames, height, width, 1), dtype=torch.float))
 
         with pytest.raises(ValueError):
