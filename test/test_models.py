@@ -1,6 +1,5 @@
 import os
 import io
-import sys
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from _utils_internal import get_relative_path
 from collections import OrderedDict
@@ -14,12 +13,9 @@ from torchvision import models
 import pytest
 import warnings
 import traceback
-import numpy as np
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
-
-random_state_numpy = np.random.RandomState(0)
 
 
 def get_available_classification_models():
@@ -197,7 +193,6 @@ autocast_flaky_numerics = (
 _model_params = {
     'inception_v3': {
         'input_shape': (1, 3, 299, 299),
-        'random_state_numpy': random_state_numpy,
     },
     'retinanet_resnet50_fpn': {
         'num_classes': 20,

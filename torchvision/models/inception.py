@@ -1,7 +1,6 @@
 from collections import namedtuple
 import warnings
 import torch
-import numpy as np
 from torch import nn, Tensor
 import torch.nn.functional as F
 from .._internally_replaced_utils import load_state_dict_from_url
@@ -70,8 +69,7 @@ class Inception3(nn.Module):
         aux_logits: bool = True,
         transform_input: bool = False,
         inception_blocks: Optional[List[Callable[..., nn.Module]]] = None,
-        init_weights: Optional[bool] = None,
-        random_state_numpy: np.random.RandomState = np.random.RandomState(),
+        init_weights: Optional[bool] = None
     ) -> None:
         super(Inception3, self).__init__()
         if inception_blocks is None:
@@ -125,9 +123,7 @@ class Inception3(nn.Module):
                     import scipy.stats as stats
                     stddev = m.stddev if hasattr(m, 'stddev') else 0.1
                     X = stats.truncnorm(-2, 2, scale=stddev)
-                    values = torch.as_tensor(
-                        X.rvs(m.weight.numel(), random_state=random_state_numpy),
-                        dtype=m.weight.dtype)
+                    values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
                     values = values.view(m.weight.size())
                     with torch.no_grad():
                         m.weight.copy_(values)
