@@ -180,12 +180,12 @@ class GeneralizedRCNNTransform(nn.Module):
             return image, target
 
         bbox = target["boxes"]
-        bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
+        bbox = resize_boxes(bbox, (h, w), (image.shape[1], image.shape[2]))
         target["boxes"] = bbox
 
         if "keypoints" in target:
             keypoints = target["keypoints"]
-            keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
+            keypoints = resize_keypoints(keypoints, (h, w), (image.shape[1], image.shape[2]))
             target["keypoints"] = keypoints
         return image, target
 
