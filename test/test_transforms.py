@@ -207,7 +207,6 @@ class TestToTensor:
         output = trans(img)
         torch.testing.assert_close(output, input_data)
 
-        np_rng = np.random.RandomState(0)
         ndarray = np_rng.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
         output = trans(ndarray)
         expected_output = ndarray.transpose((2, 0, 1)) / 255.0
@@ -229,7 +228,6 @@ class TestToTensor:
         trans = transforms.ToTensor()
         np_rng = np.random.RandomState(0)
 
-        np_rng = np.random.RandomState(0)
         with pytest.raises(TypeError):
             trans(np_rng.rand(1, height, width).tolist())
 

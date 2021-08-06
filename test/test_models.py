@@ -1,5 +1,6 @@
 import os
 import io
+import sys
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from _utils_internal import get_relative_path
 from collections import OrderedDict
@@ -192,7 +193,7 @@ autocast_flaky_numerics = (
 # the _test_*_model methods.
 _model_params = {
     'inception_v3': {
-        'input_shape': (1, 3, 299, 299),
+        'input_shape': (1, 3, 299, 299)
     },
     'retinanet_resnet50_fpn': {
         'num_classes': 20,
