@@ -145,7 +145,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0, check_stride=False)
 
 
 def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
