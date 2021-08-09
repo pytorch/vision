@@ -200,18 +200,19 @@ class TestToTensor:
     def test_to_tensor(self, channels):
         height, width = 4, 4
         trans = transforms.ToTensor()
+        np_rng = np.random.RandomState(0)
 
         input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
         img = transforms.ToPILImage()(input_data)
         output = trans(img)
         torch.testing.assert_close(output, input_data, check_stride=False)
 
-        ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+        ndarray = np_rng.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
         output = trans(ndarray)
         expected_output = ndarray.transpose((2, 0, 1)) / 255.0
         torch.testing.assert_close(output.numpy(), expected_output, check_dtype=False, check_stride=False)
 
-        ndarray = np.random.rand(height, width, channels).astype(np.float32)
+        ndarray = np_rng.rand(height, width, channels).astype(np.float32)
         output = trans(ndarray)
         expected_output = ndarray.transpose((2, 0, 1))
         torch.testing.assert_close(output.numpy(), expected_output, check_dtype=False, check_stride=False)
@@ -225,22 +226,24 @@ class TestToTensor:
     def test_to_tensor_errors(self):
         height, width = 4, 4
         trans = transforms.ToTensor()
+        np_rng = np.random.RandomState(0)
 
         with pytest.raises(TypeError):
-            trans(np.random.rand(1, height, width).tolist())
+            trans(np_rng.rand(1, height, width).tolist())
 
         with pytest.raises(ValueError):
-            trans(np.random.rand(height))
+            trans(np_rng.rand(height))
 
         with pytest.raises(ValueError):
-            trans(np.random.rand(1, 1, height, width))
+            trans(np_rng.rand(1, 1, height, width))
 
     @pytest.mark.parametrize('dtype', [torch.float16, torch.float, torch.double])
     def test_to_tensor_with_other_default_dtypes(self, dtype):
+        np_rng = np.random.RandomState(0)
         current_def_dtype = torch.get_default_dtype()
 
         t = transforms.ToTensor()
-        np_arr = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
+        np_arr = np_rng.randint(0, 255, (32, 32, 3), dtype=np.uint8)
         img = Image.fromarray(np_arr)
 
         torch.set_default_dtype(dtype)
@@ -253,19 +256,20 @@ class TestToTensor:
     def test_pil_to_tensor(self, channels):
         height, width = 4, 4
         trans = transforms.PILToTensor()
+        np_rng = np.random.RandomState(0)
 
         input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
         img = transforms.ToPILImage()(input_data)
         output = trans(img)
         torch.testing.assert_close(input_data, output, check_stride=False)
 
-        input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+        input_data = np_rng.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
         img = transforms.ToPILImage()(input_data)
         output = trans(img)
         expected_output = input_data.transpose((2, 0, 1))
         torch.testing.assert_close(output.numpy(), expected_output)
 
-        input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+        input_data = torch.as_tensor(np_rng.rand(channels, height, width).astype(np.float32))
         img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
         output = trans(img)  # HWC -> CHW
         expected_output = (input_data * 255).byte()
@@ -280,12 +284,13 @@ class TestToTensor:
     def test_pil_to_tensor_errors(self):
         height, width = 4, 4
         trans = transforms.PILToTensor()
+        np_rng = np.random.RandomState(0)
 
         with pytest.raises(TypeError):
-            trans(np.random.rand(1, height, width).tolist())
+            trans(np_rng.rand(1, height, width).tolist())
 
         with pytest.raises(TypeError):
-            trans(np.random.rand(1, height, width))
+            trans(np_rng.rand(1, height, width))
 
 
 def test_randomresized_params():
@@ -1180,10 +1185,11 @@ def test_random_grayscale():
     """Unit tests for random grayscale transform"""
 
     # Test Set 1: RGB -> 3 channel grayscale
+    np_rng = np.random.RandomState(0)
     random_state = random.getstate()
     random.seed(42)
     x_shape = [2, 2, 3]
-    x_np = np.random.randint(0, 256, x_shape, np.uint8)
+    x_np = np_rng.randint(0, 256, x_shape, np.uint8)
     x_pil = Image.fromarray(x_np, mode='RGB')
     x_pil_2 = x_pil.convert('L')
     gray_np = np.array(x_pil_2)
@@ -1206,7 +1212,7 @@ def test_random_grayscale():
     random_state = random.getstate()
     random.seed(42)
     x_shape = [2, 2, 3]
-    x_np = np.random.randint(0, 256, x_shape, np.uint8)
+    x_np = np_rng.randint(0, 256, x_shape, np.uint8)
     x_pil = Image.fromarray(x_np, mode='RGB')
     x_pil_2 = x_pil.convert('L')
     gray_np = np.array(x_pil_2)
