@@ -30,8 +30,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "rocm4.1", "rocm4.2"],
-                                "win": ["cpu", "cu102", "cu111"],
+            cu_versions_dict = {"linux": ["cpu", "cu102", "cu111", "cu113", "rocm4.1", "rocm4.2"],
+                                "win": ["cpu", "cu102", "cu111", "cu113"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -115,6 +115,7 @@ manylinux_images = {
     "cu110": "pytorch/manylinux-cuda110",
     "cu111": "pytorch/manylinux-cuda111",
     "cu112": "pytorch/manylinux-cuda112",
+    "cu113": "pytorch/manylinux-cuda113",
 }
 
 

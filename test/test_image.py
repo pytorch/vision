@@ -272,9 +272,10 @@ def test_write_file_non_ascii():
     (105, 105),
 ])
 def test_read_1_bit_png(shape):
+    np_rng = np.random.RandomState(0)
     with get_tmp_dir() as root:
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path)
@@ -292,9 +293,10 @@ def test_read_1_bit_png(shape):
     ImageReadMode.GRAY,
 ])
 def test_read_1_bit_png_consistency(shape, mode):
+    np_rng = np.random.RandomState(0)
     with get_tmp_dir() as root:
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path, mode)
