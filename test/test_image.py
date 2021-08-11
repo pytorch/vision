@@ -304,6 +304,20 @@ def test_read_1_bit_png_consistency(shape, mode):
         assert_equal(img1, img2)
 
 
+def test_read_interlaced_png():
+    np_rng = np.random.RandomState(0)
+    with get_tmp_dir() as root:
+        pixels = np_rng.rand(64, 64) > 0.5
+        img = Image.fromarray(pixels)
+        image_path_interlaced = os.path.join(root, f'test_interlaced.png')
+        img.save(image_path_interlaced, interlaced=True) 
+        image_path = os.path.join(root, f'test.png')
+        img.save(image_path, interlaced=False) 
+        img1 = read_image(image_path_interlaced, ImageReadMode.UNCHANGED)
+        img2 = read_image(image_path, ImageReadMode.UNCHANGED)
+        assert_equal(img1, img2)
+
+
 @needs_cuda
 @pytest.mark.parametrize('img_path', [
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
