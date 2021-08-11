@@ -20,6 +20,7 @@ FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
+INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 IS_WINDOWS = sys.platform in ('win32', 'cygwin')
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
@@ -305,17 +306,12 @@ def test_read_1_bit_png_consistency(shape, mode):
 
 
 def test_read_interlaced_png():
-    np_rng = np.random.RandomState(0)
-    with get_tmp_dir() as root:
-        pixels = np_rng.rand(64, 64) > 0.5
-        img = Image.fromarray(pixels)
-        image_path_interlaced = os.path.join(root, f'test_interlaced.png')
-        img.save(image_path_interlaced, interlaced=True) 
-        image_path = os.path.join(root, f'test.png')
-        img.save(image_path, interlaced=False) 
-        img1 = read_image(image_path_interlaced, ImageReadMode.UNCHANGED)
-        img2 = read_image(image_path, ImageReadMode.UNCHANGED)
-        assert_equal(img1, img2)
+    imgs = list(get_images(INTERLACED_PNG, ".png"))
+    with Image.open(imgs[0]) as im1, Image.open(imgs[1]) as im2:
+        assert not (im1.info.get("interlace") is im2.info.get("interlace"))
+    img1 = read_image(imgs[0])
+    img2 = read_image(imgs[1])
+    assert_equal(img1, img2)
 
 
 @needs_cuda
