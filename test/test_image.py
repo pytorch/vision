@@ -272,9 +272,10 @@ def test_write_file_non_ascii():
     (105, 105),
 ])
 def test_read_1_bit_png(shape):
+    np_rng = np.random.RandomState(0)
     with get_tmp_dir() as root:
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path)
@@ -292,9 +293,10 @@ def test_read_1_bit_png(shape):
     ImageReadMode.GRAY,
 ])
 def test_read_1_bit_png_consistency(shape, mode):
+    np_rng = np.random.RandomState(0)
     with get_tmp_dir() as root:
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path, mode)
@@ -326,7 +328,8 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
 @pytest.mark.parametrize('cuda_device', ('cuda', 'cuda:0', torch.device('cuda')))
 def test_decode_jpeg_cuda_device_param(cuda_device):
     """Make sure we can pass a string or a torch.device as device param"""
-    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    path = next(path for path in get_images(IMAGE_ROOT, ".jpg") if 'cmyk' not in path)
+    data = read_file(path)
     decode_jpeg(data, device=cuda_device)
 
 
