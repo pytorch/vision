@@ -218,7 +218,7 @@ Decoder::~Decoder() {
 // here). Function reads in information about the streams from the container
 // into inputCtx and then passes it to decoder::openStreams. Finally, if seek is
 // specified within the decoder parameters, it seeks into the correct frame
-// (note, the seek defined here is"precise" seek).
+// (note, the seek defined here is "precise" seek).
 bool Decoder::init(
     const DecoderParameters& params,
     DecoderInCallback&& in,
