@@ -14,7 +14,10 @@ class UCF101(VisionDataset):
     UCF101 is an action recognition video dataset.
     This dataset consider every video as a collection of video clips of fixed size, specified
     by ``frames_per_clip``, where the step in frames between each clip is given by
-    ``step_between_clips``.
+    ``step_between_clips``. The dataset itself can be downloaded from `here
+    <https://www.crcv.ucf.edu/data/UCF101/UCF101.rar>`; annotations that ``annotation_path``
+    should be pointing to can be downloaded from `here
+    <https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip>`.
 
     To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``
     and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two
