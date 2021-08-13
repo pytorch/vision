@@ -215,10 +215,10 @@ Decoder::~Decoder() {
 
 // Initialise the format context that holds information about the container and
 // fill it with minimal information about the format (codecs are not opened
-// here). Function reads in intformation about the streams from the container
+// here). Function reads in information about the streams from the container
 // into inputCtx and then passes it to decoder::openStreams. Finally, if seek is
-// specified, it seeks into the correct frame (note, the seek defined here is
-// "precise" seek.
+// specified within the decoder parameters, it seeks into the correct frame
+// (note, the seek defined here is"precise" seek).
 bool Decoder::init(
     const DecoderParameters& params,
     DecoderInCallback&& in,
@@ -385,7 +385,7 @@ bool Decoder::init(
     cleanUp();
     return false;
   }
-  // not sure what this does?
+  // SyncDecoder inherits Decoder which would override onInit.
   onInit();
 
   if (params.startOffset != 0) {
@@ -485,7 +485,7 @@ void Decoder::cleanUp() {
 }
 
 // function does actual work, derived class calls it in working thread
-// periodically. On success method returns 0, ENOADATA on EOF, ETIMEDOUT if
+// periodically. On success method returns 0, ENODATA on EOF, ETIMEDOUT if
 // no frames got decoded in the specified timeout time, and error on
 // unrecoverable error.
 int Decoder::getFrame(size_t workingTimeInMs) {
