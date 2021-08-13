@@ -131,7 +131,8 @@ class TestVideoTransforms():
         trans = transforms.ToTensorVideo()
 
         with pytest.raises(TypeError):
-            trans(np.random.rand(numFrames, height, width, 1).tolist())
+            np_rng = np.random.RandomState(0)
+            trans(np_rng.rand(numFrames, height, width, 1).tolist())
             trans(torch.rand((numFrames, height, width, 1), dtype=torch.float))
 
         with pytest.raises(ValueError):
