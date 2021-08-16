@@ -7,10 +7,13 @@ truth, but rather as a handy reference guide.
 ### What is public?
 
 * In the torchvision folder:
-    * For Python, the usual convention applies: anything that has a leading
-      underscore in its name or in its path is private. The rest is implicitly
-      public, even if it’s not properly documented, and even if it’s not exposed
-      in an `__init__` file.
+    * For Python, the [usual
+      convention](https://www.python.org/dev/peps/pep-0008/#public-and-internal-interfaces)
+      applies: anything that has a leading underscore in its name or in its path
+      is private. The rest is public, even if it’s not properly documented, and
+      even if it’s not exposed in an `__init__` file. While we discourage use of
+      undocumented public interfaces, we must still consider backwards
+      compatibility when making changes to such potentially in-use code.
     * For C++, code is private. If a change breaks fbcode, fix fbcode or revert
       the change. We should be careful about models running in prod and relying
       on torchvision ops. FYI PyTorch as BC API checks for its ops.
@@ -21,7 +24,7 @@ truth, but rather as a handy reference guide.
   are possible, but we should make sure that the tutorials are still running
   properly, and that their intended narrative is preserved (by e.g. checking
   outputs, etc.).
-* The rest of the folders (build, android, ios) is private and has no BC
+* The rest of the folders (build, android, ios) are private and have no BC
   breaking guarantees.
 
 ### Should this attribute be public? Should this function be private?
@@ -65,8 +68,8 @@ or to introduce a breaking change:
    OK to break, as we want to prevent users from doing wrong things or having
    wrong results. See this example:
    [_https://github.com/pytorch/vision/pull/2954_](https://github.com/pytorch/vision/pull/2954)
-5. Debate this openly among people of the team and community, and adapt the
-   decision based on the feedback.
+5. Debate this openly among people of the team and community (e.g. open an
+   issue, ask on slack, etc.), and adapt the decision based on the feedback.
 
 Either way, make sure to let users know how to work around and adapt to the new
 change. For deprecations, this can often be done as part of the deprecation
