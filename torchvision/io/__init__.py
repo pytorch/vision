@@ -1,5 +1,5 @@
 import torch
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 from ._video_opt import (
     Timebase,
@@ -127,10 +127,10 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self) -> Any:
+    def __iter__(self) -> Iterator['VideoReader']:
         return self
 
-    def seek(self, time_s: float) -> Any:
+    def seek(self, time_s: float) -> 'VideoReader':
         """Seek within current stream.
 
         Args:
