@@ -326,7 +326,7 @@ def rotate(
 def perspective(
     img: Image.Image,
     perspective_coeffs: float,
-    interpolation=Image.BICUBIC,
+    interpolation: int = Image.BICUBIC,
     fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
 ) -> Image.Image:
 
