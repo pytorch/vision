@@ -107,7 +107,7 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
 def adjust_gamma(
     img: Image.Image,
     gamma: float,
-    gain: float = 1,
+    gain: float = 1.0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -128,8 +128,8 @@ def adjust_gamma(
 @torch.jit.unused
 def pad(
     img: Image.Image,
-    padding: Union[int, List, Tuple],
-    fill: Union[str, int, Tuple] = 0,
+    padding: Union[int, List[int], Tuple[int, ...]],
+    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]],
     padding_mode: str = "constant",
 ) -> Image.Image:
 
@@ -224,8 +224,8 @@ def crop(
 @torch.jit.unused
 def resize(
     img: Image.Image,
-    size: Union[Sequence, int],
-    interpolation=Image.BILINEAR,
+    size: Union[Sequence[int], int],
+    interpolation: int = Image.BILINEAR,
     max_size: Optional[int] = None,
 ) -> Image.Image:
 
@@ -267,7 +267,7 @@ def resize(
 
 @torch.jit.unused
 def _parse_fill(
-    fill: Union[int, float, List, Tuple],
+    fill: Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]],
     img: Image.Image,
     name: str = "fillcolor",
 ) -> Dict[str, Union[int, float, List, Tuple]]:
@@ -292,9 +292,9 @@ def _parse_fill(
 @torch.jit.unused
 def affine(
     img: Image.Image,
-    matrix,
+    matrix: List[float],
     interpolation: int = 0,
-    fill: Optional[Union[int, float, List, Tuple]] = None,
+    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -312,7 +312,7 @@ def rotate(
     interpolation: int = 0,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
-    fill: Optional[Union[int, float, List, Tuple]] = None,
+    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -327,7 +327,7 @@ def perspective(
     img: Image.Image,
     perspective_coeffs: float,
     interpolation=Image.BICUBIC,
-    fill: Optional[Union[int, float, List, Tuple]] = None,
+    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
