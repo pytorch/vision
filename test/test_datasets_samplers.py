@@ -17,7 +17,7 @@ from common_utils import assert_equal
 
 
 @contextlib.contextmanager
-def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
+def get_list_of_videos(num_videos=5, sizes=None, fps=None):
     with get_tmp_dir() as tmp_dir:
         names = []
         for i in range(num_videos):
