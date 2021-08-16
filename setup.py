@@ -1,17 +1,18 @@
 import os
 import io
+import re
 import sys
 from setuptools import setup, find_packages
 from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
+from distutils.version import StrictVersion
 import glob
 import shutil
 
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
-from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -67,7 +68,8 @@ requirements = [
     pytorch_dep,
 ]
 
-pillow_ver = ' >= 5.3.0'
+# Excluding 8.3.0 because of https://github.com/pytorch/vision/issues/4146
+pillow_ver = ' >= 5.3.0, !=8.3.0'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
@@ -150,6 +152,7 @@ def get_extensions():
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
+        from torch.utils.hipify import hipify_python
         hipify_python.hipify(
             project_directory=this_dir,
             output_directory=this_dir,
@@ -346,6 +349,19 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        try:
+            # this splits on both dots and spaces as the output format differs across versions / platforms
+            ffmpeg_version_str = str(subprocess.check_output(["ffmpeg", "-version"]))
+            ffmpeg_version = re.split(r"ffmpeg version |\.| |-", ffmpeg_version_str)[1:3]
+            ffmpeg_version = ".".join(ffmpeg_version)
+            if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
+                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
+                has_ffmpeg = False
+        except (IndexError, ValueError):
+            print('Error fetching ffmpeg version, ignoring ffmpeg.')
+            has_ffmpeg = False
+
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:

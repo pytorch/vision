@@ -35,10 +35,7 @@ setup_cuda() {
   export WHEEL_DIR=""
   # Wheel builds need suffixes (but not if they're on OS X, which never has suffix)
   if [[ "$BUILD_TYPE" == "wheel" ]] && [[ "$(uname)" != Darwin ]]; then
-    # The default CUDA has no suffix
-    if [[ "$CU_VERSION" != "cu102" ]]; then
-      export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
-    fi
+    export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
     # Match the suffix scheme of pytorch, unless this package does not have
     # CUDA builds (in which case, use default)
     if [[ -z "$NO_CUDA_PACKAGE" ]]; then
@@ -49,6 +46,15 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu113)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.3"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.3/
+      fi
+      export FORCE_CUDA=1
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
+      ;;
     cu112)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2"
@@ -183,16 +189,13 @@ setup_wheel_python() {
   if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     eval "$(conda shell.bash hook)"
     conda env remove -n "env$PYTHON_VERSION" || true
-    if [[ "$PYTHON_VERSION" == 3.9 ]]; then
-      export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c=conda-forge"
-    fi
     conda create ${CONDA_CHANNEL_FLAGS} -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
     # Install libpng from Anaconda (defaults)
-    conda install ${CONDA_CHANNEL_FLAGS} -c conda-forge libpng "jpeg<=9b" -y
+    conda install ${CONDA_CHANNEL_FLAGS} libpng "jpeg<=9b" -y
   else
-    # Install native CentOS libJPEG, LAME, freetype and GnuTLS
-    yum install -y libjpeg-turbo-devel lame freetype gnutls
+    # Install native CentOS libJPEG, freetype and GnuTLS
+    yum install -y libjpeg-turbo-devel freetype gnutls
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
@@ -253,7 +256,7 @@ setup_pip_pytorch_version() {
 # You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly -c pytorch"
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch-nightly -c pytorch"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
@@ -268,7 +271,7 @@ setup_conda_pytorch_constraint() {
       exit 1
     fi
   else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-${UPLOAD_CHANNEL}"
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch -c pytorch-${UPLOAD_CHANNEL}"
   fi
   if [[ "$CU_VERSION" == cpu ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
@@ -280,9 +283,6 @@ setup_conda_pytorch_constraint() {
   if [[ "$OSTYPE" == msys && "$CU_VERSION" == cu92 ]]; then
     export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c defaults -c numba/label/dev"
   fi
-  if [[ "$PYTHON_VERSION" == 3.9 ]]; then
-    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c=conda-forge"
-  fi
 }
 
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
@@ -292,6 +292,9 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
     case "$CU_VERSION" in
+      cu113)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.3,<11.4 # [not osx]"
+        ;;
       cu112)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.2,<11.3 # [not osx]"
         ;;
@@ -333,6 +336,9 @@ setup_conda_cudatoolkit_plain_constraint() {
     export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
+      cu113)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.3"
+        ;;
       cu112)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.2"
         ;;

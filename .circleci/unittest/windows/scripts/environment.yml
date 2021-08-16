@@ -1,11 +1,10 @@
 channels:
   - pytorch
   - defaults
-  # use conda-forge for python v3.9+
-  - conda-forge
 dependencies:
   - pytest
   - pytest-cov
+  - pytest-mock
   - pip
   - libpng
   # NOTE: Pinned to fix issues with size_t on Windows
@@ -13,7 +12,7 @@ dependencies:
   - ca-certificates
   - pip:
     - future
-    - pillow >=5.3.0
+    - pillow >=5.3.0, !=8.3.0
     - scipy
     - av
     - dataclasses

@@ -1,5 +1,6 @@
 #include "decoder.h"
 #include <c10/util/Logging.h>
+#include <libavutil/avutil.h>
 #include <future>
 #include <iostream>
 #include <mutex>
@@ -196,6 +197,10 @@ int64_t Decoder::seekCallback(int64_t offset, int whence) {
 void Decoder::initOnce() {
   static std::once_flag flagInit;
   std::call_once(flagInit, []() {
+#if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
+    av_register_all();
+    avcodec_register_all();
+#endif
     avformat_network_init();
     // register ffmpeg lock manager
     av_lockmgr_register(&ffmpeg_lock);
@@ -403,10 +408,14 @@ bool Decoder::init(
 // open appropriate CODEC for every type of stream and move it to the class
 // variable `streams_` and make sure it is in range for decoding
 bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
-  for (int i = 0; i < static_cast<int>(inputCtx_->nb_streams); i++) {
+  for (unsigned int i = 0; i < inputCtx_->nb_streams; i++) {
     // - find the corespondent format at params_.formats set
     MediaFormat format;
+#if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
+    const auto media = inputCtx_->streams[i]->codec->codec_type;
+#else // FFMPEG 4.0+
     const auto media = inputCtx_->streams[i]->codecpar->codec_type;
+#endif
     if (!mapFfmpegType(media, &format.type)) {
       VLOG(1) << "Stream media: " << media << " at index " << i
               << " gets ignored, unknown type";

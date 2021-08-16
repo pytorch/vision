@@ -30,7 +30,7 @@ def make_grid(
             The final grid size is ``(B / nrow, nrow)``. Default: ``8``.
         padding (int, optional): amount of padding. Default: ``2``.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
-            by the min and max values specified by :attr:`range`. Default: ``False``.
+            by the min and max values specified by ``value_range``. Default: ``False``.
         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
@@ -141,7 +141,7 @@ def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
     labels: Optional[List[str]] = None,
-    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
@@ -159,8 +159,9 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
-            be represented as `str` or `Tuple[int, int, int]`.
+        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
+            or a single color for all of the bounding boxes. The colors can be represented as `str` or
+            `Tuple[int, int, int]`.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -178,6 +179,11 @@ def draw_bounding_boxes(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
+    elif image.size(0) not in {1, 3}:
+        raise ValueError("Only grayscale and RGB images are supported")
+
+    if image.size(0) == 1:
+        image = torch.tile(image, (3, 1, 1))
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
@@ -195,8 +201,10 @@ def draw_bounding_boxes(
     for i, bbox in enumerate(img_boxes):
         if colors is None:
             color = None
-        else:
+        elif isinstance(colors, list):
             color = colors[i]
+        else:
+            color = colors
 
         if fill:
             if color is None:

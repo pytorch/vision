@@ -33,7 +33,7 @@ clear and has sufficient instructions to be able to reproduce the issue.
 ### Install PyTorch Nightly 
 
 ```bash
-conda install pytorch -c pytorch-nightly -c conda-forge
+conda install pytorch -c pytorch-nightly
 # or with pip (see https://pytorch.org/get-started/locally/)
 # pip install numpy
 # pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
@@ -49,7 +49,7 @@ python setup.py develop
 # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
 # for C++ debugging, please use DEBUG=1
 # DEBUG=1 python setup.py develop
-pip install flake8 typing mypy pytest scipy
+pip install flake8 typing mypy pytest pytest-mock scipy
 ```
 You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
 ```bash

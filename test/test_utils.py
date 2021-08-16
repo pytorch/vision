@@ -9,7 +9,7 @@ import torchvision.utils as utils
 from io import BytesIO
 import torchvision.transforms.functional as F
 from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
-from _assert_utils import assert_equal
+from common_utils import assert_equal
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
@@ -113,6 +113,18 @@ def test_draw_boxes():
     assert_equal(img, img_cp)
 
 
+@pytest.mark.parametrize('colors', [
+    None,
+    ['red', 'blue', '#FF00FF', (1, 34, 122)],
+    'red',
+    '#FF00FF',
+    (1, 34, 122)
+])
+def test_draw_boxes_colors(colors):
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
+
+
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
@@ -131,6 +143,13 @@ def test_draw_boxes_vanilla():
     assert_equal(img, img_cp)
 
 
+def test_draw_boxes_grayscale():
+    img = torch.full((1, 4, 4), fill_value=255, dtype=torch.uint8)
+    boxes = torch.tensor([[0, 0, 3, 3]], dtype=torch.int64)
+    bboxed_img = utils.draw_bounding_boxes(image=img, boxes=boxes, colors=["#1BBC9B"])
+    assert bboxed_img.size(0) == 3
+
+
 def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
     img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
@@ -143,6 +162,8 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong1, boxes)
     with pytest.raises(ValueError, match="Pass individual images, not batches"):
         utils.draw_bounding_boxes(img_wrong2, boxes)
+    with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
+        utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
 
 
 @pytest.mark.parametrize('colors', [

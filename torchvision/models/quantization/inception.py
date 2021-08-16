@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
-from torchvision.models.utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
 
 

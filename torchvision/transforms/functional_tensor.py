@@ -11,7 +11,7 @@ def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
 
 
-def _assert_image_tensor(img):
+def _assert_image_tensor(img: Tensor) -> None:
     if not _is_tensor_a_torch_image(img):
         raise TypeError("Tensor is not a torch image.")
 
@@ -317,7 +317,7 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
     return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
-def _rgb2hsv(img):
+def _rgb2hsv(img: Tensor) -> Tensor:
     r, g, b = img.unbind(dim=-3)
 
     # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
@@ -356,7 +356,7 @@ def _rgb2hsv(img):
     return torch.stack((h, s, maxc), dim=-3)
 
 
-def _hsv2rgb(img):
+def _hsv2rgb(img: Tensor) -> Tensor:
     h, s, v = img.unbind(dim=-3)
     i = torch.floor(h * 6.0)
     f = (h * 6.0) - i
@@ -388,15 +388,15 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 
     in_sizes = img.size()
 
-    x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
+    _x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
     left_indices = [i for i in range(padding[0] - 1, -1, -1)]  # e.g. [3, 2, 1, 0]
     right_indices = [-(i + 1) for i in range(padding[1])]  # e.g. [-1, -2, -3]
-    x_indices = torch.tensor(left_indices + x_indices + right_indices, device=img.device)
+    x_indices = torch.tensor(left_indices + _x_indices + right_indices, device=img.device)
 
-    y_indices = [i for i in range(in_sizes[-2])]
+    _y_indices = [i for i in range(in_sizes[-2])]
     top_indices = [i for i in range(padding[2] - 1, -1, -1)]
     bottom_indices = [-(i + 1) for i in range(padding[3])]
-    y_indices = torch.tensor(top_indices + y_indices + bottom_indices, device=img.device)
+    y_indices = torch.tensor(top_indices + _y_indices + bottom_indices, device=img.device)
 
     ndim = img.ndim
     if ndim == 3:
@@ -545,9 +545,9 @@ def resize(
 
     if antialias:
         if interpolation == "bilinear":
-            img = torch.ops.torchvision._interpolate_linear_aa(img, [new_h, new_w], align_corners=False)
+            img = torch.ops.torchvision._interpolate_bilinear2d_aa(img, [new_h, new_w], align_corners=False)
         elif interpolation == "bicubic":
-            img = torch.ops.torchvision._interpolate_bicubic_aa(img, [new_h, new_w], align_corners=False)
+            img = torch.ops.torchvision._interpolate_bicubic2d_aa(img, [new_h, new_w], align_corners=False)
     else:
         img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
 
@@ -560,13 +560,13 @@ def resize(
 
 
 def _assert_grid_transform_inputs(
-        img: Tensor,
-        matrix: Optional[List[float]],
-        interpolation: str,
-        fill: Optional[List[float]],
-        supported_interpolation_modes: List[str],
-        coeffs: Optional[List[float]] = None,
-):
+    img: Tensor,
+    matrix: Optional[List[float]],
+    interpolation: str,
+    fill: Optional[List[float]],
+    supported_interpolation_modes: List[str],
+    coeffs: Optional[List[float]] = None,
+) -> None:
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError("Input img should be Tensor")
@@ -612,7 +612,7 @@ def _cast_squeeze_in(img: Tensor, req_dtypes: List[torch.dtype]) -> Tuple[Tensor
     return img, need_cast, need_squeeze, out_dtype
 
 
-def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype):
+def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype) -> Tensor:
     if need_squeeze:
         img = img.squeeze(dim=0)
 
@@ -732,7 +732,7 @@ def rotate(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device):
+def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device) -> Tensor:
     # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
     # src/libImaging/Geometry.c#L394
 
@@ -922,7 +922,7 @@ def autocontrast(img: Tensor) -> Tensor:
     return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 
 
-def _scale_channel(img_chan):
+def _scale_channel(img_chan: Tensor) -> Tensor:
     # TODO: we should expect bincount to always be faster than histc, but this
     # isn't always the case. Once
     # https://github.com/pytorch/pytorch/issues/53194 is fixed, remove the if
