@@ -14,6 +14,8 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 
 #else
 
+using jpeg_size_t = size_t;
+
 using namespace detail;
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
@@ -22,7 +24,7 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   struct torch_jpeg_error_mgr jerr {};
 
   // Define buffer to write JPEG information to and its size
-  unsigned long jpegSize = 0;
+  jpeg_size_t jpegSize = 0;
   uint8_t* jpegBuf = nullptr;
 
   cinfo.err = jpeg_std_error(&jerr.pub);
