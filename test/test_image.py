@@ -20,6 +20,7 @@ FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
+INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 IS_WINDOWS = sys.platform in ('win32', 'cygwin')
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
@@ -272,9 +273,10 @@ def test_write_file_non_ascii():
     (105, 105),
 ])
 def test_read_1_bit_png(shape):
+    np_rng = np.random.RandomState(0)
     with get_tmp_dir() as root:
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path)
@@ -292,14 +294,24 @@ def test_read_1_bit_png(shape):
     ImageReadMode.GRAY,
 ])
 def test_read_1_bit_png_consistency(shape, mode):
+    np_rng = np.random.RandomState(0)
     with get_tmp_dir() as root:
         image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
+        pixels = np_rng.rand(*shape) > 0.5
         img = Image.fromarray(pixels)
         img.save(image_path)
         img1 = read_image(image_path, mode)
         img2 = read_image(image_path, mode)
         assert_equal(img1, img2)
+
+
+def test_read_interlaced_png():
+    imgs = list(get_images(INTERLACED_PNG, ".png"))
+    with Image.open(imgs[0]) as im1, Image.open(imgs[1]) as im2:
+        assert not (im1.info.get("interlace") is im2.info.get("interlace"))
+    img1 = read_image(imgs[0])
+    img2 = read_image(imgs[1])
+    assert_equal(img1, img2)
 
 
 @needs_cuda
@@ -326,7 +338,8 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
 @pytest.mark.parametrize('cuda_device', ('cuda', 'cuda:0', torch.device('cuda')))
 def test_decode_jpeg_cuda_device_param(cuda_device):
     """Make sure we can pass a string or a torch.device as device param"""
-    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    path = next(path for path in get_images(IMAGE_ROOT, ".jpg") if 'cmyk' not in path)
+    data = read_file(path)
     decode_jpeg(data, device=cuda_device)
 
 

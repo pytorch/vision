@@ -579,13 +579,11 @@ def test_assert_resize_antialias(interpolation):
         F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
 
 
+@pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dt', [torch.float32, torch.float64, torch.float16])
 @pytest.mark.parametrize('size', [[10, 7], [10, 42], [42, 7]])
 @pytest.mark.parametrize('interpolation', [BILINEAR, BICUBIC])
-def test_interpolate_antialias_backward(dt, size, interpolation):
-
-    # temporarily hard-code device as CPU, CUDA support will be done later
-    device = "cpu"
+def test_interpolate_antialias_backward(device, dt, size, interpolation):
 
     if dt == torch.float16 and device == "cpu":
         # skip float16 on CPU case
