@@ -14,7 +14,12 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 
 #else
 
+#if (JPEG_LIB_VERSION_MAJOR <= 9 && JPEG_LIB_VERSION_MINOR <= 2) || \
+    defined(_WIN32)
+using jpeg_size_t = unsigned long;
+#else
 using jpeg_size_t = size_t;
+#endif
 
 using namespace detail;
 
