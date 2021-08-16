@@ -270,7 +270,7 @@ def _parse_fill(
     fill: Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]],
     img: Image.Image,
     name: str = "fillcolor",
-) -> Dict[str, Union[int, float, List, Tuple]]:
+) -> Dict[str, Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]]:
 
     # Process fill color for affine transforms
     num_bands = len(img.getbands())
