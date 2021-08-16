@@ -30,7 +30,8 @@ def inception_v3(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> "QuantizableInception3":
+
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 

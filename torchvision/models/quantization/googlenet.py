@@ -25,7 +25,7 @@ def googlenet(
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-):
+) -> "QuantizableGoogLeNet":
 
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
