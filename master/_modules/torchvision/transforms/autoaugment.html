@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+3d460b4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>master (0.11.0a0+4154061 ) &#x25BC</a>
     </div>
     
 
@@ -320,7 +320,7 @@
 
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 
@@ -336,7 +336,9 @@
     <span class="n">SVHN</span> <span class="o">=</span> <span class="s2">&quot;svhn&quot;</span></div>
 
 
-<span class="k">def</span> <span class="nf">_get_transforms</span><span class="p">(</span><span class="n">policy</span><span class="p">:</span> <span class="n">AutoAugmentPolicy</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_get_transforms</span><span class="p">(</span>  <span class="c1"># type: ignore[return]</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="n">AutoAugmentPolicy</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]]:</span>
     <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="n">AutoAugmentPolicy</span><span class="o">.</span><span class="n">IMAGENET</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">((</span><span class="s2">&quot;Posterize&quot;</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Rotate&quot;</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">9</span><span class="p">)),</span>
@@ -423,7 +425,7 @@
         <span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_get_magnitudes</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">_get_magnitudes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]]:</span>
     <span class="n">_BINS</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="c1"># name: (magnitudes, signed)</span>
@@ -461,8 +463,12 @@
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">AutoAugmentPolicy</span> <span class="o">=</span> <span class="n">AutoAugmentPolicy</span><span class="o">.</span><span class="n">IMAGENET</span><span class="p">,</span>
-                 <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">policy</span><span class="p">:</span> <span class="n">AutoAugmentPolicy</span> <span class="o">=</span> <span class="n">AutoAugmentPolicy</span><span class="o">.</span><span class="n">IMAGENET</span><span class="p">,</span>
+        <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
+        <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">policy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
@@ -480,7 +486,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            params required by the autoaugment transformation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">policy_id</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">transform_num</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">policy_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">transform_num</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
         <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
         <span class="n">signs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,))</span>
 
@@ -489,7 +495,7 @@
     <span class="k">def</span> <span class="nf">_get_op_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_op_meta</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-<div class="viewcode-block" id="AutoAugment.forward"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.AutoAugment.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+<div class="viewcode-block" id="AutoAugment.forward"><a class="viewcode-back" href="../../../transforms.html#torchvision.transforms.AutoAugment.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be transformed.</span>
 
@@ -550,7 +556,7 @@
 
         <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(policy=</span><span class="si">{}</span><span class="s1">, fill=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">)</span></div>
 </pre></div>
 
