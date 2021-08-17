@@ -28,9 +28,14 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         fuse_modules(self, ['fc1', 'relu'], inplace=True)
 
 
+# TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
 class QuantizableInvertedResidual(InvertedResidual):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, se_layer=QuantizableSqueezeExcitation, **kwargs)
+        super().__init__(  # type: ignore[misc]
+            se_layer=QuantizableSqueezeExcitation,
+            *args,
+            **kwargs
+        )
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:

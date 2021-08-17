@@ -29,9 +29,9 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
     def forward(self, x: Tensor) -> Tensor:
         if self.stride == 1:
             x1, x2 = x.chunk(2, dim=1)
-            out = self.cat.cat((x1, self.branch2(x2)), dim=1)  # type: ignore[arg-type]
+            out = self.cat.cat([x1, self.branch2(x2)], dim=1)
         else:
-            out = self.cat.cat((self.branch1(x), self.branch2(x)), dim=1)  # type: ignore[arg-type]
+            out = self.cat.cat([self.branch1(x), self.branch2(x)], dim=1)
 
         out = shufflenetv2.channel_shuffle(out, 2)
 
@@ -40,7 +40,12 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableShuffleNetV2, self).__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)
+        # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+        super(QuantizableShuffleNetV2, self).__init__(  # type: ignore[misc]
+            *args,
+            inverted_residual=QuantizableInvertedResidual,
+            **kwargs
+        )
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 

@@ -106,10 +106,16 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
     def fuse_model(self) -> None:
         torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
+# TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+
 
 class QuantizableInceptionA(inception_module.InceptionA):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInceptionA, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionA, self).__init__(  # type: ignore[misc]
+            conv_block=QuantizableBasicConv2d,
+            *args,
+            **kwargs
+        )
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -119,7 +125,11 @@ class QuantizableInceptionA(inception_module.InceptionA):
 
 class QuantizableInceptionB(inception_module.InceptionB):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInceptionB, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionB, self).__init__(  # type: ignore[misc]
+            conv_block=QuantizableBasicConv2d,
+            *args,
+            **kwargs
+        )
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -129,7 +139,11 @@ class QuantizableInceptionB(inception_module.InceptionB):
 
 class QuantizableInceptionC(inception_module.InceptionC):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInceptionC, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionC, self).__init__(  # type: ignore[misc]
+            conv_block=QuantizableBasicConv2d,
+            *args,
+            **kwargs
+        )
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -139,7 +153,11 @@ class QuantizableInceptionC(inception_module.InceptionC):
 
 class QuantizableInceptionD(inception_module.InceptionD):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInceptionD, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionD, self).__init__(  # type: ignore[misc]
+            conv_block=QuantizableBasicConv2d,
+            *args,
+            **kwargs
+        )
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -149,7 +167,11 @@ class QuantizableInceptionD(inception_module.InceptionD):
 
 class QuantizableInceptionE(inception_module.InceptionE):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInceptionE, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionE, self).__init__(  # type: ignore[misc]
+            conv_block=QuantizableBasicConv2d,
+            *args,
+            **kwargs
+        )
         self.myop1 = nn.quantized.FloatFunctional()
         self.myop2 = nn.quantized.FloatFunctional()
         self.myop3 = nn.quantized.FloatFunctional()
@@ -182,7 +204,11 @@ class QuantizableInceptionE(inception_module.InceptionE):
 
 class QuantizableInceptionAux(inception_module.InceptionAux):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInceptionAux, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionAux, self).__init__(  # type: ignore[misc]
+            conv_block=QuantizableBasicConv2d,
+            *args,
+            **kwargs
+        )
 
 
 class QuantizableInception3(inception_module.Inception3):
