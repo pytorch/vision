@@ -19,7 +19,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 
-from common_utils import get_tmp_dir, disable_console_output
+from common_utils import disable_console_output
 
 
 __all__ = [
@@ -36,6 +36,17 @@ __all__ = [
     "create_video_folder",
     "create_random_string",
 ]
+
+@contextlib.contextmanager
+def get_tmp_dir(src=None, **kwargs):
+    tmp_dir = tempfile.mkdtemp(**kwargs)
+    if src is not None:
+        os.rmdir(tmp_dir)
+        shutil.copytree(src, tmp_dir)
+    try:
+        yield tmp_dir
+    finally:
+        shutil.rmtree(tmp_dir)
 
 
 class UsageError(Exception):
