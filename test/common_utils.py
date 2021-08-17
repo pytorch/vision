@@ -1,5 +1,4 @@
 import os
-import shutil
 import contextlib
 import unittest
 import pytest

@@ -107,8 +107,6 @@ def _test_op(func, method, device, tmpdir, fn_kwargs=None, meth_kwargs=None, tes
         (F.equalize, T.RandomEqualize, None, {})
     ]
 )
-
-
 @pytest.mark.parametrize('device', cpu_and_gpu())
 class TestColorJitter:
 

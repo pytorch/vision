@@ -6,6 +6,7 @@ import itertools
 import os
 import pathlib
 import random
+import shutil
 import string
 import tempfile
 import unittest
@@ -110,6 +111,8 @@ class LazyImporter:
 
 
 lazy_importer = LazyImporter()
+
+
 def requires_lazy_imports(*modules):
     def outer_wrapper(fn):
         @functools.wraps(fn)
