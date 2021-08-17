@@ -293,7 +293,7 @@ def _parse_fill(
 def affine(
     img: Image.Image,
     matrix: List[float],
-    interpolation: int = 0,
+    interpolation: int = Image.NEAREST,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
@@ -309,7 +309,7 @@ def affine(
 def rotate(
     img: Image.Image,
     angle: float,
-    interpolation: int = 0,
+    interpolation: int = Image.NEAREST,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
