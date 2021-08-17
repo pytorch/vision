@@ -27,7 +27,7 @@ def get_list_of_videos(num_videos=5, sizes=None, fps=None):
             names.append(name)
             io.write_video(name, data, fps=f)
 
-            yield names
+        yield names
 
 
 class TestVideo:
