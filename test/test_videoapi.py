@@ -2,6 +2,7 @@ import collections
 import os
 import pytest
 from pytest import approx
+import urllib
 
 import torch
 import torchvision
@@ -177,7 +178,10 @@ class TestVideoApi:
                 assert (lb <= frame["pts"]) and (ub >= frame["pts"])
 
     def test_fate_suite(self):
-        video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
+        try:
+            video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
+        except (urllib.error.URLError, ConnectionError) as error:
+            pytest.skip(f"Skipping due to connectivity issues: {error}")
         vr = VideoReader(video_path)
         metadata = vr.get_metadata()
 
