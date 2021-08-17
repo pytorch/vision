@@ -225,8 +225,8 @@ class TrivialAugment(torch.nn.Module):
                 fill = [float(f) for f in fill]
 
         op_meta = _get_magnitudes(self.augmentation_space, F._get_image_size(img), num_bins=self.num_magnitude_bins)
-        op_index = torch.randint(len(op_meta), (1,))
-        op_name = list(op_meta.keys())[op_index.item()]
+        op_index: int = torch.randint(len(op_meta), (1,)).item() # type: ignore[assignment]
+        op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
         magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
             if not magnitudes.isnan().all() else 0.0
@@ -280,9 +280,6 @@ class AutoAugment(torch.nn.Module):
         signs = torch.randint(2, (2,))
 
         return policy_id, probs, signs
-
-    def _get_op_meta(self, name: str) -> Tuple[Optional[Tensor], Optional[bool]]:
-        return self._op_meta[name]
 
     def forward(self, img: Tensor) -> Tensor:
         """
