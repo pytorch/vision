@@ -1,6 +1,5 @@
 import os
 import shutil
-import tempfile
 import contextlib
 import unittest
 import pytest

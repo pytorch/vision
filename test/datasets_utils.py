@@ -7,6 +7,7 @@ import os
 import pathlib
 import random
 import string
+import tempfile
 import unittest
 import unittest.mock
 from collections import defaultdict
@@ -36,6 +37,7 @@ __all__ = [
     "create_video_folder",
     "create_random_string",
 ]
+
 
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
@@ -108,8 +110,6 @@ class LazyImporter:
 
 
 lazy_importer = LazyImporter()
-
-
 def requires_lazy_imports(*modules):
     def outer_wrapper(fn):
         @functools.wraps(fn)
