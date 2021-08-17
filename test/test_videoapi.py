@@ -178,6 +178,7 @@ class TestVideoApi:
                 assert (lb <= frame["pts"]) and (ub >= frame["pts"])
 
     def test_fate_suite(self):
+        # TODO: remove the try-except statement once the connectivity issues are resolved
         try:
             video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
         except (urllib.error.URLError, ConnectionError) as error:
