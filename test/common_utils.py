@@ -1,4 +1,6 @@
 import os
+import shutil
+import tempfile
 import contextlib
 import unittest
 import pytest
@@ -25,6 +27,18 @@ IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
+
+
+@contextlib.contextmanager
+def get_tmp_dir(src=None, **kwargs):
+    tmp_dir = tempfile.mkdtemp(**kwargs)
+    if src is not None:
+        os.rmdir(tmp_dir)
+        shutil.copytree(src, tmp_dir)
+    try:
+        yield tmp_dir
+    finally:
+        shutil.rmtree(tmp_dir)
 
 
 def set_rng_seed(seed):

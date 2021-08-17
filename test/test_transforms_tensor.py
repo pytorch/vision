@@ -10,6 +10,7 @@ import pytest
 from typing import Sequence
 
 from common_utils import (
+    get_tmp_dir,
     int_dtypes,
     float_dtypes,
     _create_data,
@@ -58,7 +59,7 @@ def _test_functional_op(f, device, fn_kwargs=None, test_exact_match=True, **matc
         _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
 
-def _test_class_op(method, device, tmpdir, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     # TODO: change the name: it's not a method, it's a class.
     meth_kwargs = meth_kwargs or {}
 
@@ -84,12 +85,13 @@ def _test_class_op(method, device, tmpdir, meth_kwargs=None, test_exact_match=Tr
     batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=device)
     _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
-    scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
+    with get_tmp_dir() as tmp_dir:
+        scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
 
 
-def _test_op(func, method, device, tmpdir, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     _test_functional_op(func, device, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
-    _test_class_op(method, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+    _test_class_op(method, device, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -107,54 +109,53 @@ def _test_op(func, method, device, tmpdir, fn_kwargs=None, meth_kwargs=None, tes
         (F.equalize, T.RandomEqualize, None, {})
     ]
 )
+def test_random(func, method, device, fn_kwargs, match_kwargs):
+    _test_op(func, method, device, fn_kwargs, fn_kwargs, **match_kwargs)
+
+
 @pytest.mark.parametrize('device', cpu_and_gpu())
 class TestColorJitter:
 
     @pytest.mark.parametrize('brightness', [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
-    @pytest.fixture()
-    def test_color_jitter_brightness(self, brightness, device, tmpdir):
+    def test_color_jitter_brightness(self, brightness, device):
         tol = 1.0 + 1e-10
         meth_kwargs = {"brightness": brightness}
         _test_class_op(
-            T.ColorJitter, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=False,
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
             tol=tol, agg_method="max"
         )
 
     @pytest.mark.parametrize('contrast', [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]])
-    @pytest.fixture()
-    def test_color_jitter_contrast(self, contrast, device, tmpdir):
+    def test_color_jitter_contrast(self, contrast, device):
         tol = 1.0 + 1e-10
         meth_kwargs = {"contrast": contrast}
         _test_class_op(
-            T.ColorJitter, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=False,
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
             tol=tol, agg_method="max"
         )
 
     @pytest.mark.parametrize('saturation', [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]])
-    @pytest.fixture()
-    def test_color_jitter_saturation(self, saturation, device, tmpdir):
+    def test_color_jitter_saturation(self, saturation, device):
         tol = 1.0 + 1e-10
         meth_kwargs = {"saturation": saturation}
         _test_class_op(
-            T.ColorJitter, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=False,
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
             tol=tol, agg_method="max"
         )
 
     @pytest.mark.parametrize('hue', [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]])
-    @pytest.fixture()
-    def test_color_jitter_hue(self, hue, device, tmpdir):
+    def test_color_jitter_hue(self, hue, device):
         meth_kwargs = {"hue": hue}
         _test_class_op(
-            T.ColorJitter, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=False,
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
             tol=16.1, agg_method="max"
         )
 
-    @pytest.fixture()
-    def test_color_jitter_all(self, device, tmpdir):
+    def test_color_jitter_all(self, device):
         # All 4 parameters together
         meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
         _test_class_op(
-            T.ColorJitter, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=False,
+            T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
             tol=12.1, agg_method="max"
         )
 
@@ -162,8 +163,7 @@ class TestColorJitter:
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('m', ["constant", "edge", "reflect", "symmetric"])
 @pytest.mark.parametrize('mul', [1, -1])
-@pytest.fixture()
-def test_pad(m, mul, device, tmpdir):
+def test_pad(m, mul, device):
     fill = 127 if m == "constant" else 0
 
     # Test functional.pad (PIL and Tensor) with padding as single int
@@ -174,28 +174,27 @@ def test_pad(m, mul, device, tmpdir):
     # Test functional.pad and transforms.Pad with padding as [int, ]
     fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
     _test_op(
-        F.pad, T.Pad, device, tmpdir, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
     # Test functional.pad and transforms.Pad with padding as list
     fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
     _test_op(
-        F.pad, T.Pad, device, tmpdir, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
     # Test functional.pad and transforms.Pad with padding as tuple
     fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
     _test_op(
-        F.pad, T.Pad, device, tmpdir, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.fixture()
-def test_crop(device, tmpdir):
+def test_crop(device):
     fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
     # Test transforms.RandomCrop with size and padding as tuple
     meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
     _test_op(
-        F.crop, T.RandomCrop, device, tmpdir, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        F.crop, T.RandomCrop, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
 
     # Test transforms.functional.crop including outside the image area
@@ -224,26 +223,24 @@ def test_crop(device, tmpdir):
     {"padding_mode": "reflect"}
 ])
 @pytest.mark.parametrize('size', [5, [5, ], [6, 6]])
-@pytest.fixture()
-def test_crop_pad(size, padding_config, device, tmpdir):
+def test_crop_pad(size, padding_config, device):
     config = dict(padding_config)
     config["size"] = size
-    _test_class_op(T.RandomCrop, device, tmpdir, config)
+    _test_class_op(T.RandomCrop, device, config)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.fixture()
 def test_center_crop(device, tmpdir):
     fn_kwargs = {"output_size": (4, 5)}
     meth_kwargs = {"size": (4, 5), }
     _test_op(
-        F.center_crop, T.CenterCrop, device, tmpdir, fn_kwargs=fn_kwargs,
+        F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
         meth_kwargs=meth_kwargs
     )
     fn_kwargs = {"output_size": (5,)}
     meth_kwargs = {"size": (5,)}
     _test_op(
-        F.center_crop, T.CenterCrop, device, tmpdir, fn_kwargs=fn_kwargs,
+        F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
         meth_kwargs=meth_kwargs
     )
     tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=device)
@@ -482,11 +479,10 @@ def test_random_perspective_save(tmpdir):
     (T.Grayscale, {"num_output_channels": 3}),
     (T.RandomGrayscale, {})
 ])
-@pytest.fixture()
-def test_to_grayscale(device, Klass, meth_kwargs, tmpdir):
+def test_to_grayscale(device, Klass, meth_kwargs):
     tol = 1.0 + 1e-10
     _test_class_op(
-        Klass, device, tmpdir, meth_kwargs=meth_kwargs, test_exact_match=False,
+        Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
         tol=tol, agg_method="max"
     )
 
@@ -685,10 +681,9 @@ def test_random_apply(device):
     {"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
     {"kernel_size": [23], "sigma": 0.75}
 ])
-@pytest.fixture()
-def test_gaussian_blur(device, meth_kwargs, tmpdir):
+def test_gaussian_blur(device, meth_kwargs):
     tol = 1.0 + 1e-10
     _test_class_op(
-        T.GaussianBlur, device, tmpdir, meth_kwargs=meth_kwargs,
-        test_exact_match=False, agg_method="max", tol=tol
+        T.GaussianBlur, meth_kwargs=meth_kwargs,
+        test_exact_match=False, device=device, agg_method="max", tol=tol
     )
