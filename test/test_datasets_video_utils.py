@@ -6,27 +6,28 @@ import pytest
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
 
-from common_utils import assert_equal
+from common_utils import get_tmp_dir, assert_equal
 
 
 @contextlib.contextmanager
-def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
-    names = []
-    for i in range(num_videos):
-        if sizes is None:
-            size = 5 * (i + 1)
-        else:
-            size = sizes[i]
-        if fps is None:
-            f = 5
-        else:
-            f = fps[i]
-        data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
-        name = os.path.join(tmpdir, "{}.mp4".format(i))
-        names.append(name)
-        io.write_video(name, data, fps=f)
+def get_list_of_videos(num_videos=5, sizes=None, fps=None):
+    with get_tmp_dir() as tmp_dir:
+        names = []
+        for i in range(num_videos):
+            if sizes is None:
+                size = 5 * (i + 1)
+            else:
+                size = sizes[i]
+            if fps is None:
+                f = 5
+            else:
+                f = fps[i]
+            data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
+            name = os.path.join(tmp_dir, "{}.mp4".format(i))
+            names.append(name)
+            io.write_video(name, data, fps=f)
 
-        yield names
+            yield names
 
 
 class TestVideo:
