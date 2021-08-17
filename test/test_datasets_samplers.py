@@ -50,7 +50,7 @@ class TestDatasetsSamplers:
             assert_equal(count, torch.tensor([3, 3, 3]))
 
     def test_random_clip_sampler_unequal(self, tmpdir):
-        with get_list_of_videos(tmpdir, tmpnum_videos=3, sizes=[10, 25, 25]) as video_list:
+        with get_list_of_videos(tmpdir, num_videos=3, sizes=[10, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
             sampler = RandomClipSampler(video_clips, 3)
             assert len(sampler) == 2 + 3 + 3
