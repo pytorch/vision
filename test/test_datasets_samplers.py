@@ -13,27 +13,7 @@ from torchvision.datasets.samplers import (
 from torchvision.datasets.video_utils import VideoClips, unfold
 from torchvision import get_video_backend
 
-from common_utils import assert_equal
-
-
-@contextlib.contextmanager
-def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
-    names = []
-    for i in range(num_videos):
-        if sizes is None:
-            size = 5 * (i + 1)
-        else:
-            size = sizes[i]
-        if fps is None:
-            f = 5
-        else:
-            f = fps[i]
-        data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
-        name = os.path.join(tmpdir, "{}.mp4".format(i))
-        names.append(name)
-        io.write_video(name, data, fps=f)
-
-    yield names
+from common_utils import get_list_of_videos, assert_equal
 
 
 @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")

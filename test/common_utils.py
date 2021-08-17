@@ -132,6 +132,24 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
 
 assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
 
+def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
+    names = []
+    for i in range(num_videos):
+        if sizes is None:
+            size = 5 * (i + 1)
+        else:
+            size = sizes[i]
+        if fps is None:
+            f = 5
+        else:
+            f = fps[i]
+        data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
+        name = os.path.join(tmpdir, "{}.mp4".format(i))
+        names.append(name)
+        io.write_video(name, data, fps=f)
+
+    return names
+
 
 def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     np_pil_image = np.array(pil_image)
