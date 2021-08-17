@@ -15,6 +15,7 @@ import functools
 from numbers import Number
 from torch._six import string_classes
 from collections import OrderedDict
+from torchvision import io
 
 import numpy as np
 from PIL import Image
@@ -145,6 +146,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
 
 
 assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
     names = []
