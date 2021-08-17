@@ -108,7 +108,9 @@ def _get_transforms(  # type: ignore[return]
         ]
 
 
-def _get_magnitudes(augmentation_space: str, image_size: List[int], num_bins: int = 10) -> Dict[str, Tuple[Tensor, bool]]:
+def _get_magnitudes(
+        augmentation_space: str, image_size: List[int], num_bins: int = 10
+) -> Dict[str, Tuple[Tensor, bool]]:
     if augmentation_space == 'aa':
         shear_max = 0.3
         translate_max_x = 150.0 / 331.0 * image_size[0]
