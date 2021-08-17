@@ -129,7 +129,7 @@ def adjust_gamma(
 def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
-    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]],
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
     padding_mode: str = "constant",
 ) -> Image.Image:
 
@@ -267,10 +267,10 @@ def resize(
 
 @torch.jit.unused
 def _parse_fill(
-    fill: Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]],
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]],
     img: Image.Image,
     name: str = "fillcolor",
-) -> Dict[str, Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]]:
+) -> Dict[str, Optional[Union[float, List[float], Tuple[float, ...]]]]:
 
     # Process fill color for affine transforms
     num_bands = len(img.getbands())
@@ -294,7 +294,7 @@ def affine(
     img: Image.Image,
     matrix: List[float],
     interpolation: int = 0,
-    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -312,7 +312,7 @@ def rotate(
     interpolation: int = 0,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
-    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -327,7 +327,7 @@ def perspective(
     img: Image.Image,
     perspective_coeffs: float,
     interpolation: int = Image.BICUBIC,
-    fill: Optional[Union[numbers.Number, List[numbers.Number], Tuple[numbers.Number, ...]]] = 0,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
