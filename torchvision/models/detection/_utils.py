@@ -78,11 +78,11 @@ class BalancedPositiveNegativeSampler(object):
 
 class OhemPositiveNegativeSampler(object):
     """
-    This class samples all positiveand negative proposals
+    This class samples all positive and negative proposals
     """
 
     def __init__(self):
-        
+
         pass
 
     def __call__(self, matched_idxs):
