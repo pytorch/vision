@@ -25,7 +25,7 @@ truth, but rather as a handy reference guide.
   properly, and that their intended narrative is preserved (by e.g. checking
   outputs, etc.).
 * The rest of the folders (build, android, ios) are private and have no BC
-  breaking guarantees.
+  guarantees.
 
 ### Should this attribute be public? Should this function be private?
 
@@ -63,7 +63,7 @@ or to introduce a breaking change:
 2. Look for usages on Github for usages of X. This is often difficult due to the
    forks, copy-pastes, and name conflicts.
 3. Look on FBcode where we can get a cleaner (but also biased) signal of the
-   usage.
+   usage - if you're not a fb employee, ask someone to do that for you.
 4. Weigh the pros and cons of breaking. When there is a bug involved, it’s often
    OK to break, as we want to prevent users from doing wrong things or having
    wrong results. See this example:
