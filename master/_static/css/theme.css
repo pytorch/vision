@@ -9639,7 +9639,6 @@ code span, kbd span, pre span, samp span {
 
 pre {
   padding: 1.125rem;
-  background-color: #f3f4f7;
 }
 pre code {
   font-size: 0.875rem;
@@ -10412,7 +10411,6 @@ span.pre {
 }
 
 pre {
-  background-color: #f3f4f7;
   padding: 1.375rem;
 }
 
@@ -10788,29 +10786,6 @@ article.pytorch-article .attention table,
 article.pytorch-article .error table {
   margin: 0 2rem;
   width: auto;
-}
-article.pytorch-article .note .pre,
-article.pytorch-article .note pre,
-article.pytorch-article .warning .pre,
-article.pytorch-article .warning pre,
-article.pytorch-article .tip .pre,
-article.pytorch-article .tip pre,
-article.pytorch-article .seealso .pre,
-article.pytorch-article .seealso pre,
-article.pytorch-article .hint .pre,
-article.pytorch-article .hint pre,
-article.pytorch-article .important .pre,
-article.pytorch-article .important pre,
-article.pytorch-article .caution .pre,
-article.pytorch-article .caution pre,
-article.pytorch-article .danger .pre,
-article.pytorch-article .danger pre,
-article.pytorch-article .attention .pre,
-article.pytorch-article .attention pre,
-article.pytorch-article .error .pre,
-article.pytorch-article .error pre {
-  background: #ffffff;
-  outline: 1px solid #e9e9e9;
 }
 article.pytorch-article .note :not(dt) > code,
 article.pytorch-article .warning :not(dt) > code,
