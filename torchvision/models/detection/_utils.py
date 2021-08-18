@@ -78,14 +78,11 @@ class BalancedPositiveNegativeSampler(object):
 
 class OhemPositiveNegativeSampler(object):
     """
-    This class samples batches, ensuring that they contain a fixed proportion of positives
+    This class samples all positiveand negative proposals
     """
 
     def __init__(self):
-        """
-        Arguments:
-            batch_size_per_image (int): number of elements to be selected per image
-        """
+        
         pass
 
     def __call__(self, matched_idxs):
