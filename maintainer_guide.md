@@ -2,7 +2,8 @@
 
 This document aims at documenting common questions and workflows that arise when
 developing and maintaining torchvision. It does not serve as an absolute ground
-truth, but rather as a handy reference guide.
+truth, but rather as a handy reference guide. The audience here mainly is the
+torchvision maintainers, not the general pool of contributors.
 
 ### What is public?
 
