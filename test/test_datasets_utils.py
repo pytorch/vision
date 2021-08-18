@@ -12,7 +12,6 @@ import itertools
 import lzma
 import contextlib
 
-from common_utils import get_tmp_dir
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
 
 
@@ -113,7 +112,7 @@ class TestDatasetsUtils:
             utils._detect_file_type(file)
 
     @pytest.mark.parametrize('extension', [".bz2", ".gz", ".xz"])
-    def test_decompress(self, extension):
+    def test_decompress(self, extension, tmpdir):
         def create_compressed(root, content="this is the content"):
             file = os.path.join(root, "file")
             compressed = f"{file}{extension}"
@@ -124,21 +123,20 @@ class TestDatasetsUtils:
 
             return compressed, file, content
 
-        with get_tmp_dir() as temp_dir:
-            compressed, file, content = create_compressed(temp_dir)
+        compressed, file, content = create_compressed(tmpdir)
 
-            utils._decompress(compressed)
+        utils._decompress(compressed)
 
-            assert os.path.exists(file)
+        assert os.path.exists(file)
 
-            with open(file, "r") as fh:
-                assert fh.read() == content
+        with open(file, "r") as fh:
+            assert fh.read() == content
 
     def test_decompress_no_compression(self):
         with pytest.raises(RuntimeError):
             utils._decompress("foo.tar")
 
-    def test_decompress_remove_finished(self):
+    def test_decompress_remove_finished(self, tmpdir):
         def create_compressed(root, content="this is the content"):
             file = os.path.join(root, "file")
             compressed = f"{file}.gz"
@@ -148,12 +146,11 @@ class TestDatasetsUtils:
 
             return compressed, file, content
 
-        with get_tmp_dir() as temp_dir:
-            compressed, file, content = create_compressed(temp_dir)
+        compressed, file, content = create_compressed(tmpdir)
 
-            utils.extract_archive(compressed, temp_dir, remove_finished=True)
+        utils.extract_archive(compressed, tmpdir, remove_finished=True)
 
-            assert not os.path.exists(compressed)
+        assert not os.path.exists(compressed)
 
     @pytest.mark.parametrize('extension', [".gz", ".xz"])
     @pytest.mark.parametrize('remove_finished', [True, False])
@@ -166,7 +163,7 @@ class TestDatasetsUtils:
 
         mocked.assert_called_once_with(file, filename, remove_finished=remove_finished)
 
-    def test_extract_zip(self):
+    def test_extract_zip(self, tmpdir):
         def create_archive(root, content="this is the content"):
             file = os.path.join(root, "dst.txt")
             archive = os.path.join(root, "archive.zip")
@@ -176,19 +173,18 @@ class TestDatasetsUtils:
 
             return archive, file, content
 
-        with get_tmp_dir() as temp_dir:
-            archive, file, content = create_archive(temp_dir)
+        archive, file, content = create_archive(tmpdir)
 
-            utils.extract_archive(archive, temp_dir)
+        utils.extract_archive(archive, tmpdir)
 
-            assert os.path.exists(file)
+        assert os.path.exists(file)
 
-            with open(file, "r") as fh:
-                assert fh.read() == content
+        with open(file, "r") as fh:
+            assert fh.read() == content
 
     @pytest.mark.parametrize('extension, mode', [
         ('.tar', 'w'), ('.tar.gz', 'w:gz'), ('.tgz', 'w:gz'), ('.tar.xz', 'w:xz')])
-    def test_extract_tar(self, extension, mode):
+    def test_extract_tar(self, extension, mode, tmpdir):
         def create_archive(root, extension, mode, content="this is the content"):
             src = os.path.join(root, "src.txt")
             dst = os.path.join(root, "dst.txt")
@@ -202,15 +198,14 @@ class TestDatasetsUtils:
 
             return archive, dst, content
 
-        with get_tmp_dir() as temp_dir:
-            archive, file, content = create_archive(temp_dir, extension, mode)
+        archive, file, content = create_archive(tmpdir, extension, mode)
 
-            utils.extract_archive(archive, temp_dir)
+        utils.extract_archive(archive, tmpdir)
 
-            assert os.path.exists(file)
+        assert os.path.exists(file)
 
-            with open(file, "r") as fh:
-                assert fh.read() == content
+        with open(file, "r") as fh:
+            assert fh.read() == content
 
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
