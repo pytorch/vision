@@ -727,15 +727,6 @@ class RoIHeads(nn.Module):
 
         return all_boxes, all_scores, all_labels
 
-    def cat(tensors, dim=0):
-        """
-        Efficient version of torch.cat that avoids a copy if there is only a single element in a list
-        """
-        assert isinstance(tensors, (list, tuple))
-        if len(tensors) == 1:
-            return tensors[0]
-        return torch.cat(tensors, dim)
-
     def mining(self, proposals, labels, regression_targets, n_proposals_per_img, image_shapes, class_logits, box_regression):
 
         """
