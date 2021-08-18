@@ -39,8 +39,8 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 
 
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
         super(QuantizableShuffleNetV2, self).__init__(  # type: ignore[misc]
             *args,
             inverted_residual=QuantizableInvertedResidual,

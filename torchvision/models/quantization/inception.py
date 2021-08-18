@@ -106,10 +106,9 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
     def fuse_model(self) -> None:
         torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
-# TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
-
 
 class QuantizableInceptionA(inception_module.InceptionA):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionA, self).__init__(  # type: ignore[misc]
             conv_block=QuantizableBasicConv2d,
@@ -124,6 +123,7 @@ class QuantizableInceptionA(inception_module.InceptionA):
 
 
 class QuantizableInceptionB(inception_module.InceptionB):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionB, self).__init__(  # type: ignore[misc]
             conv_block=QuantizableBasicConv2d,
@@ -138,6 +138,7 @@ class QuantizableInceptionB(inception_module.InceptionB):
 
 
 class QuantizableInceptionC(inception_module.InceptionC):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionC, self).__init__(  # type: ignore[misc]
             conv_block=QuantizableBasicConv2d,
@@ -152,6 +153,7 @@ class QuantizableInceptionC(inception_module.InceptionC):
 
 
 class QuantizableInceptionD(inception_module.InceptionD):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionD, self).__init__(  # type: ignore[misc]
             conv_block=QuantizableBasicConv2d,
@@ -166,6 +168,7 @@ class QuantizableInceptionD(inception_module.InceptionD):
 
 
 class QuantizableInceptionE(inception_module.InceptionE):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionE, self).__init__(  # type: ignore[misc]
             conv_block=QuantizableBasicConv2d,
@@ -203,6 +206,7 @@ class QuantizableInceptionE(inception_module.InceptionE):
 
 
 class QuantizableInceptionAux(inception_module.InceptionAux):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionAux, self).__init__(  # type: ignore[misc]
             conv_block=QuantizableBasicConv2d,

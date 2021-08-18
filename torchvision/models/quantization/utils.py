@@ -32,6 +32,7 @@ def quantize_model(model: nn.Module, backend: str) -> None:
             activation=torch.quantization.default_observer,
             weight=torch.quantization.default_weight_observer)
 
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     model.fuse_model()  # type: ignore[operator]
     torch.quantization.prepare(model, inplace=True)
     model(_dummy_input_data)
