@@ -31,13 +31,13 @@ def masks() -> torch.Tensor:
 
 def test_masks_to_bounding_boxes(masks):
     expected = torch.tensor(
-       [[ 127.,    2.,  165.,   40. ],  # noqa: E201, E202
-        [   4.,  100.,   88.,  184. ],  # noqa: E201, E202
-        [ 168.,  189.,  294.,  300. ],  # noqa: E201, E202
-        [ 556.,  272.,  700.,  416. ],  # noqa: E201, E202
-        [ 800.,  560.,  990.,  725. ],  # noqa: E201, E202
-        [ 294.,  828.,  594., 1092. ],  # noqa: E201, E202
-        [ 756., 1036., 1064., 1491. ]]  # noqa: E201, E202
+       [[ 127.,    2.,  165.,   40. ],  # noqa: E121, E201, E202, E241
+        [   4.,  100.,   88.,  184. ],  # noqa:       E201, E202, E241
+        [ 168.,  189.,  294.,  300. ],  # noqa:       E201, E202, E241
+        [ 556.,  272.,  700.,  416. ],  # noqa:       E201, E202, E241
+        [ 800.,  560.,  990.,  725. ],  # noqa:       E201, E202, E241
+        [ 294.,  828.,  594., 1092. ],  # noqa:       E201, E202, E241
+        [ 756., 1036., 1064., 1491. ]]  # noqa:       E201, E202, E241
     )
 
     torch.testing.assert_close(torchvision.ops.masks_to_bounding_boxes(masks), expected)
