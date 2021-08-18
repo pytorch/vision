@@ -186,6 +186,8 @@ def lraspp_mobilenet_v3_large(pretrained=False, progress=True, num_classes=21, *
         raise NotImplementedError('This model does not use auxiliary loss')
 
     backbone_name = 'mobilenet_v3_large'
+    if pretrained:
+        kwargs["pretrained_backbone"] = False
     model = _segm_lraspp_mobilenetv3(backbone_name, num_classes, **kwargs)
 
     if pretrained:
