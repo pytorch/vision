@@ -508,6 +508,7 @@ class RoIHeads(nn.Module):
                  keypoint_roi_pool=None,
                  keypoint_head=None,
                  keypoint_predictor=None,
+                 ohem=True
                  ):
         super(RoIHeads, self).__init__()
 
@@ -518,7 +519,10 @@ class RoIHeads(nn.Module):
             bg_iou_thresh,
             allow_low_quality_matches=False)
 
-        self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
+        if ohem:
+            self.fg_bg_sampler = det_utils.OhemPositiveNegativeSampler()
+        else:
+            self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
             batch_size_per_image,
             positive_fraction)
 
@@ -529,6 +533,7 @@ class RoIHeads(nn.Module):
         self.box_roi_pool = box_roi_pool
         self.box_head = box_head
         self.box_predictor = box_predictor
+        self.batch_size_per_image = batch_size_per_image
 
         self.score_thresh = score_thresh
         self.nms_thresh = nms_thresh
@@ -541,6 +546,7 @@ class RoIHeads(nn.Module):
         self.keypoint_roi_pool = keypoint_roi_pool
         self.keypoint_head = keypoint_head
         self.keypoint_predictor = keypoint_predictor
+        self.ohem = ohem
 
     def has_mask(self):
         if self.mask_roi_pool is None:
@@ -646,10 +652,12 @@ class RoIHeads(nn.Module):
         # sample a fixed proportion of positive-negative proposals
         sampled_inds = self.subsample(labels)
         matched_gt_boxes = []
+        n_proposals_per_img = []
         num_images = len(proposals)
         for img_id in range(num_images):
             img_sampled_inds = sampled_inds[img_id]
             proposals[img_id] = proposals[img_id][img_sampled_inds]
+            n_proposals_per_img.append(len(proposals[img_id]))
             labels[img_id] = labels[img_id][img_sampled_inds]
             matched_idxs[img_id] = matched_idxs[img_id][img_sampled_inds]
 
@@ -659,7 +667,7 @@ class RoIHeads(nn.Module):
             matched_gt_boxes.append(gt_boxes_in_image[matched_idxs[img_id]])
 
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
-        return proposals, matched_idxs, labels, regression_targets
+        return proposals, matched_idxs, labels, regression_targets,n_proposals_per_img
 
     def postprocess_detections(self,
                                class_logits,    # type: Tensor
@@ -719,6 +727,73 @@ class RoIHeads(nn.Module):
 
         return all_boxes, all_scores, all_labels
 
+    def cat(tensors, dim=0):
+        """
+        Efficient version of torch.cat that avoids a copy if there is only a single element in a list
+        """
+        assert isinstance(tensors, (list, tuple))
+        if len(tensors) == 1:
+            return tensors[0]
+        return torch.cat(tensors, dim)
+
+    def mining(self, proposals, labels, regression_targets, n_proposals_per_img, image_shapes, class_logits, box_regression):
+
+        """
+        Returns rois with top loss, i.e. hard proposals
+        """
+
+        class_logits = torch.cat(class_logits, dim=0)
+        box_regression = torch.cat(box_regression, dim=0)
+        device = class_logits.device
+
+        labs = torch.cat([l for l in labels], dim=0)
+        reg = torch.cat(
+            [rt for rt in regression_targets], dim=0
+        )
+
+        classification_loss = F.cross_entropy(class_logits, labs, reduction='none')
+
+        # get indices that correspond to the regression targets for
+        # the corresponding ground truth labels, to be used with
+        # advanced indexing
+        sampled_pos_inds_subset = torch.nonzero(labs > 0).squeeze(1)
+        labels_pos = labs[sampled_pos_inds_subset]
+        
+        map_inds = 4 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3], device=device)
+
+        box_loss = F.smooth_l1_loss(
+            box_regression[sampled_pos_inds_subset[:, None], map_inds],
+            reg[sampled_pos_inds_subset],
+            reduction='none',
+            beta=1,
+        ).sum(dim=1, keepdim=True)
+
+        ohem_loss = classification_loss.clone()
+        #adding cls and reg loss
+        ohem_loss[sampled_pos_inds_subset[:, None]] = ohem_loss[sampled_pos_inds_subset[:, None]] + box_loss
+        proposals_ohem = []
+        lab = []
+        reg_targets = []
+        img_shapes = []
+
+        if ohem_loss.size(0) > self.batch_size_per_image:
+            #choosing proposals with high loss
+            ohem_idx = ohem_loss.topk(self.batch_size_per_image)[1].cpu()
+            lengs = [0,] + n_proposals_per_img
+            milestones = torch.cumsum(torch.tensor(lengs), dim=0)
+            ms1 = milestones[:-1]
+            ms2 = milestones[1:]
+            ohem_idx = ohem_idx.sort()[0]
+            lengs = [torch.sum((el1 <= ohem_idx)*(ohem_idx < el2)) for el1, el2 in zip(ms1, ms2)]
+            ohem_idx = ohem_idx.split(lengs)
+            ohem_idx = [el-ms1[i] for i, el in enumerate(ohem_idx)]
+            proposals_ohem = [proposals[i][el] for i, el in enumerate(ohem_idx)]
+            img_shapes = [image_shapes[i] for i, el in enumerate(ohem_idx)]
+            lab = [labels[i][el] for i, el in enumerate(ohem_idx)]
+            reg_targets = [regression_targets[i][el] for i, el in enumerate(ohem_idx)]
+
+        return proposals_ohem, img_shapes, lab, reg_targets
+
     def forward(self,
                 features,      # type: Dict[str, Tensor]
                 proposals,     # type: List[Tensor]
@@ -743,7 +818,14 @@ class RoIHeads(nn.Module):
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
 
         if self.training:
-            proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
+            proposals, matched_idxs, labels, regression_targets,n_proposals_per_img = self.select_training_samples(proposals, targets)
+            #selecting hard proposals
+            if self.ohem:
+                with torch.no_grad():
+                    box_features = self.box_roi_pool(features, proposals, image_shapes)
+                    box_features = self.box_head(box_features)
+                    class_logits, box_regression = self.box_predictor(box_features)
+                    proposals, image_shapes, labels,regression_targets = self.mining(proposals, labels, regression_targets, n_proposals_per_img, image_shapes, [class_logits], [box_regression])
         else:
             labels = None
             regression_targets = None

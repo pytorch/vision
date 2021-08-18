@@ -76,6 +76,112 @@ class BalancedPositiveNegativeSampler(object):
 
         return pos_idx, neg_idx
 
+class OhemPositiveNegativeSampler(object):
+    """
+    This class samples batches, ensuring that they contain a fixed proportion of positives
+    """
+
+    def __init__(self):
+        """
+        Arguments:
+            batch_size_per_image (int): number of elements to be selected per image
+        """
+        pass
+
+    def __call__(self, matched_idxs):
+        """
+        Arguments:
+            matched idxs: list of tensors containing -1, 0 or positive values.
+                Each tensor corresponds to a specific image.
+                -1 values are ignored, 0 are considered as negatives and > 0 as
+                positives.
+        Returns:
+            pos_idx (list[tensor])
+            neg_idx (list[tensor])
+        Returns two lists of binary masks for each image.
+        The first list contains the positive elements that were selected,
+        and the second list the negative example.
+        """
+        pos_idx = []
+        neg_idx = []
+        for matched_idxs_per_image in matched_idxs:
+            pos_idx_per_image = torch.nonzero(matched_idxs_per_image >= 1).squeeze(1)
+            neg_idx_per_image = torch.nonzero(matched_idxs_per_image == 0).squeeze(1)
+
+            # create binary mask from indices
+            pos_idx_per_image_mask = torch.zeros_like(
+                matched_idxs_per_image, dtype=torch.uint8
+            )
+            neg_idx_per_image_mask = torch.zeros_like(
+                matched_idxs_per_image, dtype=torch.uint8
+            )
+            pos_idx_per_image_mask[pos_idx_per_image] = 1
+            neg_idx_per_image_mask[neg_idx_per_image] = 1
+
+            pos_idx.append(pos_idx_per_image_mask)
+            neg_idx.append(neg_idx_per_image_mask)
+
+        return pos_idx, neg_idx
+        
+class Sampler(object):
+    """
+    This class samples batches, ensuring that they contain a fixed proportion of positives
+    """
+
+    def __init__(self,):
+        # type: (int, float) -> None
+        """
+        Args:
+            batch_size_per_image (int): number of elements to be selected per image
+            positive_fraction (float): percentace of positive elements per batch
+        """
+    def __call__(self, matched_idxs):
+        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
+        """
+        Args:
+            matched idxs: list of tensors containing -1, 0 or positive values.
+                Each tensor corresponds to a specific image.
+                -1 values are ignored, 0 are considered as negatives and > 0 as
+                positives.
+
+        Returns:
+            pos_idx (list[tensor])
+            neg_idx (list[tensor])
+
+        Returns two lists of binary masks for each image.
+        The first list contains the positive elements that were selected,
+        and the second list the negative example.
+        """
+        pos_idx = []
+        neg_idx = []
+
+        for matched_idxs_per_image in matched_idxs:
+            positive = torch.where(matched_idxs_per_image >= 1)[0]
+            negative = torch.where(matched_idxs_per_image == 0)[0]
+
+            # randomly select positive and negative examples
+            perm1 = torch.randperm(positive.numel(), device=positive.device)
+            perm2 = torch.randperm(negative.numel(), device=negative.device)
+
+            pos_idx_per_image = positive[perm1]
+            neg_idx_per_image = negative[perm2]
+
+            # create binary mask from indices
+            pos_idx_per_image_mask = torch.zeros_like(
+                matched_idxs_per_image, dtype=torch.uint8
+            )
+            neg_idx_per_image_mask = torch.zeros_like(
+                matched_idxs_per_image, dtype=torch.uint8
+            )
+
+            pos_idx_per_image_mask[pos_idx_per_image] = 1
+            neg_idx_per_image_mask[neg_idx_per_image] = 1
+
+            pos_idx.append(pos_idx_per_image_mask)
+            neg_idx.append(neg_idx_per_image_mask)
+
+        return pos_idx, neg_idx
+
 
 @torch.jit._script_if_tracing
 def encode_boxes(reference_boxes, proposals, weights):
