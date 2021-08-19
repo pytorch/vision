@@ -6,8 +6,7 @@ dependencies:
   - pytest-cov
   - pip
   - libpng
-  # NOTE: Pinned to fix issues with size_t on Windows
-  - jpeg <=9b
+  - jpeg
   - ca-certificates
   - pip:
     - future
