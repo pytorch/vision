@@ -51,7 +51,20 @@ torch::Tensor decode_jpeg_cuda(
   std::once_flag nvjpeg_handle_creation_flag;
   std::call_once(nvjpeg_handle_creation_flag, []() {
     if (nvjpeg_handle == nullptr) {
-      nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
+    //   nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
+      nvjpegStatus_t create_status = nvjpegCreateEx(
+          // TODO: How to detect whether user has an A100??? Does it actually matter?
+          NVJPEG_BACKEND_HARDWARE,
+          NULL,  // default device allocator
+          NULL,  // default host allocator
+          // From nvjpeg docs: To be used when the library is initialized with
+          // NVJPEG_BACKEND_HARDWARE. It will be ignored for other back-ends.
+          // nvjpeg in batched decode mode buffers additional images to achieve
+          // optimal performance. Use this flag to disable buffering of
+          // additional images.
+          NVJPEG_FLAGS_HW_DECODE_NO_PIPELINE,
+          &nvjpeg_handle);
+
 
       if (create_status != NVJPEG_STATUS_SUCCESS) {
         // Reset handle so that one can still call the function again in the
