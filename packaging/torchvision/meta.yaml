@@ -9,7 +9,8 @@ requirements:
   build:
     - {{ compiler('c') }} # [win]
     - libpng
-    - jpeg
+    # NOTE: Pinned to fix issues with size_t on Windows
+    - jpeg <=9b
     # NOTE: The only ffmpeg version that we build is actually 4.2
     - ffmpeg >=4.2  # [not win]
 
@@ -24,7 +25,8 @@ requirements:
     - python
     - libpng
     - ffmpeg >=4.2  # [not win]
-    - jpeg
+    # NOTE: Pinned to fix issues with size_t on Windows
+    - jpeg <=9b
     - pillow >=5.3.0
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
@@ -50,7 +52,8 @@ test:
   requires:
     - pytest
     - scipy
-    - jpeg
+    # NOTE: Pinned to fix issues with size_t on Windows
+    - jpeg <=9b
     - ca-certificates
 
 
