@@ -15,15 +15,15 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 #else
 // For libjpeg version <= 9b, the out_size parameter in jpeg_mem_dest() is
 // defined as unsigned long, where as in later version, it is defined as size_t.
-// For windows backward compability, we define JpegSizeType as different types
+// For windows backward compatibility, we define JpegSizeType as different types
 // according to the libjpeg version used, in order to prevent compilcation
 // errors.
 #if defined(_WIN32) || !defined(JPEG_LIB_VERSION_MAJOR) || \
     (JPEG_LIB_VERSION_MAJOR < 9) ||                        \
     (JPEG_LIB_VERSION_MAJOR == 9 && JPEG_LIB_VERSION_MINOR <= 2)
-typedef unsigned long JpegSizeType;
+using JpegSizeType = unsigned long;
 #else
-typedef size_t JpegSizeType;
+using JpegSizeType = size_t;
 #endif
 
 using namespace detail;
