@@ -102,11 +102,11 @@ def cycle_over(objs):
 
 
 def int_dtypes():
-    return torch.testing.integral_types()
+    return (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
 
 
 def float_dtypes():
-    return torch.testing.floating_types()
+    return (torch.float32, torch.float64)
 
 
 @contextlib.contextmanager
