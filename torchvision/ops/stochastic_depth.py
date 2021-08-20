@@ -30,7 +30,7 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
         raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
     size = [1] * input.ndim
     if mode == "row":
-       size[0] = input.shape[0]
+        size[0] = input.shape[0]
     noise = torch.empty(size, dtype=input.dtype, device=input.device)
     noise = noise.bernoulli_(survival_rate).div_(survival_rate)
     return input * noise
