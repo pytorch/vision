@@ -40,7 +40,7 @@ class StochasticDepth(nn.Module):
     """
     See :func:`stochastic_depth`.
     """
-    def __init__(self, mode: str, p: float):
+    def __init__(self, mode: str, p: float) -> None:
         super().__init__()
         self.mode = mode
         self.p = p

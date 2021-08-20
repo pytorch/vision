@@ -2,6 +2,7 @@ from common_utils import needs_cuda, cpu_and_gpu, assert_equal
 import math
 from abc import ABC, abstractmethod
 import pytest
+import random
 
 import numpy as np
 
@@ -12,6 +13,11 @@ from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import ops
 from typing import Tuple
+
+try:
+    from scipy import stats
+except ImportError:
+    stats = None
 
 
 class RoIOpTester(ABC):
@@ -998,6 +1004,35 @@ class TestGenBoxIou:
                                        [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
             expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
             gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
+
+
+class TestStochasticDepth:
+    @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
+    @pytest.mark.parametrize('mode', ["batch", "row"])
+    @pytest.mark.parametrize('p', [0.2, 0.5, 0.8])
+    def test_stochastic_depth(self, mode, p):
+        random.seed(42)
+        batch_size = 5
+        x = torch.ones(size=(batch_size, 3, 4, 4))
+        layer = ops.StochasticDepth(mode=mode, p=p).to(device=x.device, dtype=x.dtype)
+        layer.__repr__()
+
+        trials = 250
+        num_samples = 0
+        counts = 0
+        for _ in range(trials):
+            out = layer(x)
+            non_zero_count = out.sum(dim=(1, 2, 3)).nonzero().size(0)
+            if mode == "batch":
+                if non_zero_count == 0:
+                    counts += 1
+                num_samples += 1
+            elif mode == "row":
+                counts += batch_size - non_zero_count
+                num_samples += batch_size
+
+        p_value = stats.binom_test(counts, num_samples, p=p)
+        assert p_value > 0.0001
 
 
 if __name__ == '__main__':
