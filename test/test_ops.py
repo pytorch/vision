@@ -13,11 +13,6 @@ from torch.nn.modules.utils import _pair
 from torchvision import ops
 from typing import Tuple
 
-try:
-    from scipy import stats
-except ImportError:
-    stats = None
-
 
 class RoIOpTester(ABC):
     dtype = torch.float64
@@ -1006,10 +1001,10 @@ class TestGenBoxIou:
 
 
 class TestStochasticDepth:
-    @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
     @pytest.mark.parametrize('p', [0.2, 0.5, 0.8])
     @pytest.mark.parametrize('mode', ["batch", "row"])
     def test_stochastic_depth(self, mode, p):
+        stats = pytest.importorskip("scipy.stats")
         batch_size = 5
         x = torch.ones(size=(batch_size, 3, 4, 4))
         layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
