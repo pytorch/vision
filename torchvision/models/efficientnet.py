@@ -5,6 +5,7 @@ from torch.nn import functional as F
 from typing import Any, Callable, List, Optional
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from torchvision.ops import stochastic_depth
 
 # TODO: refactor this to a common place?
 from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
@@ -17,13 +18,6 @@ __all__ = ["EfficientNet"]
 model_urls = {
     "efficientnet_b0": "",  # TODO: Add weights
 }
-
-
-def stochastic_depth(x: Tensor, drop_rate: float) -> Tensor:
-    survival_rate = 1.0 - drop_rate
-    keep = torch.rand(size=(x.size(0), ), dtype=x.dtype, device=x.device) > drop_rate
-    keep = keep[(None, ) * (x.ndim - 1)].T
-    return x / survival_rate * keep
 
 
 class MBConvConfig:
@@ -76,11 +70,10 @@ class MBConv(nn.Module):
         self.block = nn.Sequential(*layers)
         self.out_channels = cnf.out_channels
 
-    def forward(self, input: Tensor, drop_rate: Optional[float] = None) -> Tensor:
+    def forward(self, input: Tensor, drop_rate: float = 0.0) -> Tensor:
         result = self.block(input)
         if self.use_res_connect:
-            if self.training and drop_rate:
-                result = stochastic_depth(result, drop_rate)
+            result = stochastic_depth(result, drop_rate, "row", training=self.training)
             result += input
         return result
 
