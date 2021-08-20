@@ -485,7 +485,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     """
     # read
     with open(path, "rb") as f:
-        data = f.read()
+        data = bytearray(f.read())
     # parse
     magic = get_int(data[0:4])
     nd = magic % 256
