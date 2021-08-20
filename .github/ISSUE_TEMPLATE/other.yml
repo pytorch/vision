@@ -1,0 +1,9 @@
+name: Others
+description: For anything that doesn't fit into the other categories
+
+- type: textarea
+  attributes:
+    description: >
+      Write your comments below.
+      
+      Please note that this issue tracker is not a help platform, and this issue may be closed if you ask for help with torchvision here. We have a set of [listed resources available on the website](https://pytorch.org/resources). Our primary means of support is our [discussion Forum](https://discuss.pytorch.org/)
