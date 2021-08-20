@@ -31,9 +31,9 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     size = [1] * input.ndim
     if mode == "row":
        size[0] = input.shape[0]
-   noise = torch.empty(size, dtype=input.dtype, device=input.device)
-   noise = noise.bernoulli_(survival_rate).div_(survival_rate)
-   return input * noise
+    noise = torch.empty(size, dtype=input.dtype, device=input.device)
+    noise = noise.bernoulli_(survival_rate).div_(survival_rate)
+    return input * noise
 
 
 class StochasticDepth(nn.Module):
