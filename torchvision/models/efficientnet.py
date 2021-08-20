@@ -79,7 +79,7 @@ class MBConv(nn.Module):
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.out_channels = cnf.out_channels
 
-    def forward(self, input: Tensor, drop_rate: float = 0.0) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         result = self.block(input)
         if self.use_res_connect:
             result = self.stochastic_depth(result)
