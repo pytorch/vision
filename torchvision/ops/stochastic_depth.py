@@ -26,14 +26,14 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
         return input
 
     survival_rate = 1.0 - p
-    if mode == "batch":
-        keep = torch.rand(size=(1, ), dtype=input.dtype, device=input.device) < survival_rate
-    elif mode == "row":
-        keep = torch.rand(size=(input.size(0),), dtype=input.dtype, device=input.device) < survival_rate
-        keep = keep[(None, ) * (input.ndim - 1)].T
-    else:
+    if mode not in ["batch", "row"]:
         raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
-    return input / survival_rate * keep
+    size = [1] * input.ndim
+    if mode == "row":
+       size[0] = input.shape[0]
+   noise = torch.empty(size, dtype=input.dtype, device=input.device)
+   noise = noise.bernoulli_(survival_rate).div_(survival_rate)
+   return input * noise
 
 
 class StochasticDepth(nn.Module):
