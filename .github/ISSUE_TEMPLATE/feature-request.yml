@@ -1,10 +1,10 @@
-name: Feature request
+name: 🚀 Feature request
 description: Submit a proposal/request for a new torchvision feature
 
 body:
 - type: textarea
   attributes:
-    label: The feature
+    label: 🚀 The feature
     description: >
       A clear and concise description of the feature proposal
   validations:
