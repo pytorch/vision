@@ -1008,13 +1008,13 @@ class TestGenBoxIou:
 
 class TestStochasticDepth:
     @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-    @pytest.mark.parametrize('mode', ["batch", "row"])
     @pytest.mark.parametrize('p', [0.2, 0.5, 0.8])
+    @pytest.mark.parametrize('mode', ["batch", "row"])
     def test_stochastic_depth(self, mode, p):
         random.seed(42)
         batch_size = 5
         x = torch.ones(size=(batch_size, 3, 4, 4))
-        layer = ops.StochasticDepth(mode=mode, p=p).to(device=x.device, dtype=x.dtype)
+        layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
         layer.__repr__()
 
         trials = 250

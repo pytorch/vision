@@ -2,7 +2,7 @@ import torch
 from torch import nn, Tensor
 
 
-def stochastic_depth(input: Tensor, mode: str, p: float, training: bool = True) -> Tensor:
+def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) -> Tensor:
     """
     Implements the Stochastic Depth from `"Deep Networks with Stochastic Depth"
     <https://arxiv.org/abs/1603.09382>`_ used for randomly dropping residual
@@ -11,10 +11,10 @@ def stochastic_depth(input: Tensor, mode: str, p: float, training: bool = True) 
     Args:
         input (Tensor[N, ...]): The input tensor or arbitrary dimensions with the first one
                     being its batch i.e. a batch with ``N`` rows.
+        p (float): probability of the input to be zeroed.
         mode (str): ``"batch"`` or ``"row"``.
                     ``"batch"`` randomly zeroes the entire input, ``"row"`` zeroes
                     randomly selected rows from the batch.
-        p (float): probability of the input to be zeroed.
         training: apply dropout if is ``True``. Default: ``True``
 
     Returns:
@@ -40,17 +40,17 @@ class StochasticDepth(nn.Module):
     """
     See :func:`stochastic_depth`.
     """
-    def __init__(self, mode: str, p: float) -> None:
+    def __init__(self, p: float, mode: str) -> None:
         super().__init__()
-        self.mode = mode
         self.p = p
+        self.mode = mode
 
     def forward(self, input: Tensor) -> Tensor:
-        return stochastic_depth(input, self.mode, self.p, self.training)
+        return stochastic_depth(input, self.p, self.mode, self.training)
 
     def __repr__(self) -> str:
         tmpstr = self.__class__.__name__ + '('
-        tmpstr += 'mode=' + str(self.mode)
-        tmpstr += ', p=' + str(self.p)
+        tmpstr += 'p=' + str(self.p)
+        tmpstr += ', mode=' + str(self.mode)
         tmpstr += ')'
         return tmpstr
