@@ -15,7 +15,7 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
         mode (str): ``"batch"`` or ``"row"``.
                     ``"batch"`` randomly zeroes the entire input, ``"row"`` zeroes
                     randomly selected rows from the batch.
-        training: apply dropout if is ``True``. Default: ``True``
+        training: apply stochastic depth if is ``True``. Default: ``True``
 
     Returns:
         Tensor[N, ...]: The randomly zeroed tensor.
