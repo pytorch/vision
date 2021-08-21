@@ -730,7 +730,7 @@ class RoIHeads(nn.Module):
     def mining(self, proposals, labels, regression_targets, n_proposals_per_img, image_shapes, class_logits, box_regression):
 
         """
-        Returns rois with top loss, i.e. hard proposals
+        Returns RoIs with top loss, i.e. hard proposals
         """
 
         class_logits = torch.cat(class_logits, dim=0)
@@ -744,20 +744,29 @@ class RoIHeads(nn.Module):
 
         classification_loss = F.cross_entropy(class_logits, labs, reduction='none')
 
-        # get indices that correspond to the regression targets for
-        # the corresponding ground truth labels, to be used with
-        # advanced indexing
-        sampled_pos_inds_subset = torch.nonzero(labs > 0).squeeze(1)
+        sampled_pos_inds_subset = torch.where(labs > 0)[0]
         labels_pos = labs[sampled_pos_inds_subset]
-        
-        map_inds = 4 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3], device=device)
+        N, num_classes = class_logits.shape
+        box_regression = box_regression.reshape(N, box_regression.size(-1) // 4, 4)
 
         box_loss = F.smooth_l1_loss(
-            box_regression[sampled_pos_inds_subset[:, None], map_inds],
-            reg[sampled_pos_inds_subset],
-            reduction='none',
-            beta=1,
+        box_regression[sampled_pos_inds_subset, labels_pos],
+        reg[sampled_pos_inds_subset],
+        beta=1,
+        reduction='none',
         ).sum(dim=1, keepdim=True)
+
+        #sampled_pos_inds_subset = torch.nonzero(labs > 0).squeeze(1)
+        #labels_pos = labs[sampled_pos_inds_subset]
+        
+        #map_inds = 4 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3], device=device)
+
+        #box_loss = F.smooth_l1_loss(
+            #box_regression[sampled_pos_inds_subset[:, None], map_inds],
+            #reg[sampled_pos_inds_subset],
+            #reduction='none',
+            #beta=1,
+        #).sum(dim=1, keepdim=True)
 
         ohem_loss = classification_loss.clone()
         #adding cls and reg loss
@@ -767,21 +776,18 @@ class RoIHeads(nn.Module):
         reg_targets = []
         img_shapes = []
 
-        if ohem_loss.size(0) > self.batch_size_per_image:
-            #choosing proposals with high loss
-            ohem_idx = ohem_loss.topk(self.batch_size_per_image)[1].cpu()
-            lengs = [0,] + n_proposals_per_img
-            milestones = torch.cumsum(torch.tensor(lengs), dim=0)
-            ms1 = milestones[:-1]
-            ms2 = milestones[1:]
-            ohem_idx = ohem_idx.sort()[0]
-            lengs = [torch.sum((el1 <= ohem_idx)*(ohem_idx < el2)) for el1, el2 in zip(ms1, ms2)]
-            ohem_idx = ohem_idx.split(lengs)
-            ohem_idx = [el-ms1[i] for i, el in enumerate(ohem_idx)]
-            proposals_ohem = [proposals[i][el] for i, el in enumerate(ohem_idx)]
-            img_shapes = [image_shapes[i] for i, el in enumerate(ohem_idx)]
-            lab = [labels[i][el] for i, el in enumerate(ohem_idx)]
-            reg_targets = [regression_targets[i][el] for i, el in enumerate(ohem_idx)]
+        prev=0
+        for i,size in enumerate(n_proposals_per_img):
+
+            ohem_loss_img = ohem_loss[prev:prev+size]
+            prev = size
+
+            ohem_idx = ohem_loss_img.topk(64).indices
+
+            proposals_ohem.append(torch.cat([proposals[i][el].unsqueeze(0) for el in ohem_idx],dim=0))
+            img_shapes.append(image_shapes[i])
+            lab.append(torch.cat([labels[i][el].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
+            reg_targets.append(torch.cat([regression_targets[i][el].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
 
         return proposals_ohem, img_shapes, lab, reg_targets
 
@@ -938,3 +944,4 @@ class RoIHeads(nn.Module):
             losses.update(loss_keypoint)
 
         return result, losses
+        
