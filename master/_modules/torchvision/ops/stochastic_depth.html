@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.datasets.kitti &mdash; Torchvision master documentation</title>
+  <title>torchvision.ops.stochastic_depth &mdash; Torchvision master documentation</title>
   
 
   
@@ -286,7 +286,7 @@
         
           <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
         
-      <li>torchvision.datasets.kitti</li>
+      <li>torchvision.ops.stochastic_depth</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -314,170 +314,63 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torchvision.datasets.kitti</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">csv</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
-
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span>
-<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
+  <h1>Source code for torchvision.ops.stochastic_depth</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
 
-<div class="viewcode-block" id="Kitti"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kitti">[docs]</a><span class="k">class</span> <span class="nc">Kitti</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;`KITTI &lt;http://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark&gt;`_ Dataset.</span>
-
-<span class="sd">    It corresponds to the &quot;left color images of object&quot; dataset, for object detection.</span>
+<div class="viewcode-block" id="stochastic_depth"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.stochastic_depth">[docs]</a><span class="k">def</span> <span class="nf">stochastic_depth</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Stochastic Depth from `&quot;Deep Networks with Stochastic Depth&quot;</span>
+<span class="sd">    &lt;https://arxiv.org/abs/1603.09382&gt;`_ used for randomly dropping residual</span>
+<span class="sd">    branches of residual architectures.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        root (string): Root directory where images are downloaded to.</span>
-<span class="sd">            Expects the following folder structure if download=False:</span>
+<span class="sd">        input (Tensor[N, ...]): The input tensor or arbitrary dimensions with the first one</span>
+<span class="sd">                    being its batch i.e. a batch with ``N`` rows.</span>
+<span class="sd">        p (float): probability of the input to be zeroed.</span>
+<span class="sd">        mode (str): ``&quot;batch&quot;`` or ``&quot;row&quot;``.</span>
+<span class="sd">                    ``&quot;batch&quot;`` randomly zeroes the entire input, ``&quot;row&quot;`` zeroes</span>
+<span class="sd">                    randomly selected rows from the batch.</span>
+<span class="sd">        training: apply stochastic depth if is ``True``. Default: ``True``</span>
 
-<span class="sd">            .. code::</span>
-
-<span class="sd">                &lt;root&gt;</span>
-<span class="sd">                    └── Kitti</span>
-<span class="sd">                        └─ raw</span>
-<span class="sd">                            ├── training</span>
-<span class="sd">                            |   ├── image_2</span>
-<span class="sd">                            |   └── label_2</span>
-<span class="sd">                            └── testing</span>
-<span class="sd">                                └── image_2</span>
-<span class="sd">        train (bool, optional): Use ``train`` split if true, else ``test`` split.</span>
-<span class="sd">            Defaults to ``train``.</span>
-<span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image</span>
-<span class="sd">            and returns a transformed version. E.g, ``transforms.ToTensor``</span>
-<span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
-<span class="sd">            target and transforms it.</span>
-<span class="sd">        transforms (callable, optional): A function/transform that takes input sample</span>
-<span class="sd">            and its target as entry and returns a transformed version.</span>
-<span class="sd">        download (bool, optional): If true, downloads the dataset from the internet and</span>
-<span class="sd">            puts it in root directory. If dataset is already downloaded, it is not</span>
-<span class="sd">            downloaded again.</span>
-
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor[N, ...]: The randomly zeroed tensor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;drop probability has to be between 0 and 1, but got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">training</span> <span class="ow">or</span> <span class="n">p</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">input</span>
 
-    <span class="n">data_url</span> <span class="o">=</span> <span class="s2">&quot;https://s3.eu-central-1.amazonaws.com/avg-kitti/&quot;</span>
-    <span class="n">resources</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;data_object_image_2.zip&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;data_object_label_2.zip&quot;</span><span class="p">,</span>
-    <span class="p">]</span>
-    <span class="n">image_dir_name</span> <span class="o">=</span> <span class="s2">&quot;image_2&quot;</span>
-    <span class="n">labels_dir_name</span> <span class="o">=</span> <span class="s2">&quot;label_2&quot;</span>
+    <span class="n">survival_rate</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">p</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode has to be either &#39;batch&#39; or &#39;row&#39;, but got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">input</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;row&quot;</span><span class="p">:</span>
+        <span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span><span class="o">.</span><span class="n">bernoulli_</span><span class="p">(</span><span class="n">survival_rate</span><span class="p">)</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="n">survival_rate</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">input</span> <span class="o">*</span> <span class="n">noise</span></div>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">root</span><span class="p">,</span>
-            <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span>
-            <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">,</span>
-            <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="o">=</span> <span class="n">train</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_location</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="k">else</span> <span class="s2">&quot;testing&quot;</span>
 
-        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;Dataset not found. You may use download=True to download it.&quot;</span>
-            <span class="p">)</span>
+<div class="viewcode-block" id="StochasticDepth"><a class="viewcode-back" href="../../../ops.html#torchvision.ops.StochasticDepth">[docs]</a><span class="k">class</span> <span class="nc">StochasticDepth</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    See :func:`stochastic_depth`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
 
-        <span class="n">image_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_dir_name</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
-            <span class="n">labels_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_dir_name</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">img_file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">image_dir</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">img_file</span><span class="p">))</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">labels_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">img_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.txt&quot;</span><span class="p">)</span>
-                <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stochastic_depth</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Kitti.__getitem__"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.Kitti.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Get item at a given index.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            index (int): Index</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            tuple: (image, target), where</span>
-<span class="sd">            target is a list of dictionaries with the following keys:</span>
-
-<span class="sd">            - type: str</span>
-<span class="sd">            - truncated: float</span>
-<span class="sd">            - occluded: int</span>
-<span class="sd">            - alpha: float</span>
-<span class="sd">            - bbox: float[4]</span>
-<span class="sd">            - dimensions: float[3]</span>
-<span class="sd">            - locations: float[3]</span>
-<span class="sd">            - rotation_y: float</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_target</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
-            <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span></div>
-
-    <span class="k">def</span> <span class="nf">_parse_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="n">index</span><span class="p">])</span> <span class="k">as</span> <span class="n">inp</span><span class="p">:</span>
-            <span class="n">content</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
-                <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                    <span class="s2">&quot;truncated&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-                    <span class="s2">&quot;occluded&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
-                    <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
-                    <span class="s2">&quot;bbox&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">8</span><span class="p">]],</span>
-                    <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">11</span><span class="p">]],</span>
-                    <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[</span><span class="mi">11</span><span class="p">:</span><span class="mi">14</span><span class="p">]],</span>
-                    <span class="s2">&quot;rotation_y&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">14</span><span class="p">]),</span>
-                <span class="p">})</span>
-        <span class="k">return</span> <span class="n">target</span>
-
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_raw_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;raw&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Check if the data directory exists.&quot;&quot;&quot;</span>
-        <span class="n">folders</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_dir_name</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
-            <span class="n">folders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_dir_name</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_location</span><span class="p">,</span> <span class="n">fname</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">folders</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Download the KITTI data if it doesn&#39;t exist already.&quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">return</span>
-
-        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-        <span class="c1"># download files</span>
-        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">:</span>
-            <span class="n">download_and_extract_archive</span><span class="p">(</span>
-                <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_url</span><span class="si">}{</span><span class="n">fname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                <span class="n">download_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw_folder</span><span class="p">,</span>
-                <span class="n">filename</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span>
-            <span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">tmpstr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span>
+        <span class="n">tmpstr</span> <span class="o">+=</span> <span class="s1">&#39;p=&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">tmpstr</span> <span class="o">+=</span> <span class="s1">&#39;, mode=&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+        <span class="n">tmpstr</span> <span class="o">+=</span> <span class="s1">&#39;)&#39;</span>
+        <span class="k">return</span> <span class="n">tmpstr</span></div>
 </pre></div>
 
              </article>
