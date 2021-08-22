@@ -782,12 +782,40 @@ class RoIHeads(nn.Module):
             ohem_loss_img = ohem_loss[prev:prev+size]
             prev = size
 
-            ohem_idx = ohem_loss_img.topk(64).indices
+            #sorting all proposals
+            ohem_dict = ohem_loss_img.topk(size)
+            ohem_idx = ohem_dict.indices
+            ohem_loss_sorted = ohem_dict.values
 
             proposals_ohem.append(torch.cat([proposals[i][el].unsqueeze(0) for el in ohem_idx],dim=0))
             img_shapes.append(image_shapes[i])
             lab.append(torch.cat([labels[i][el].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
             reg_targets.append(torch.cat([regression_targets[i][el].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
+
+            boxes = proposals_ohem[i]
+            boxes = box_ops.clip_boxes_to_image(boxes, image_shapes[i])
+
+            # batch everything, by making every class prediction be a separate instance
+            boxes = boxes.reshape(-1, 4)
+            ohem_loss_sorted = ohem_loss_sorted.reshape(-1)
+
+            # remove low scoring boxes
+            #inds = torch.where(scores > self.score_thresh)[0]
+            #boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
+
+            # remove empty boxes
+            keep = box_ops.remove_small_boxes(boxes, min_size=1e-2)
+            boxes, ohem_loss_sorted, lab[i], reg_targets[i] = boxes[keep], ohem_loss_sorted[keep], lab[i][keep], reg_targets[i][keep]
+
+            # non-maximum suppression, independently done per class, threshold of 0.7
+            keep = box_ops.batched_nms(boxes, ohem_loss_sorted, lab[i], self.nms_thresh)
+
+            # keep certain no. of predictions
+            keep = keep[:64]
+
+            boxes, ohem_loss_sorted, lab[i], reg_targets[i] = boxes[keep], ohem_loss_sorted[keep], lab[i][keep], reg_targets[i][keep]
+
+            proposals_ohem[i] = boxes
 
         return proposals_ohem, img_shapes, lab, reg_targets
 
@@ -944,4 +972,3 @@ class RoIHeads(nn.Module):
             losses.update(loss_keypoint)
 
         return result, losses
-        
