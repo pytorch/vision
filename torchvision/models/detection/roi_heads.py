@@ -508,7 +508,7 @@ class RoIHeads(nn.Module):
                  keypoint_roi_pool=None,
                  keypoint_head=None,
                  keypoint_predictor=None,
-                 ohem=True
+                 sampler=None
                  ):
         super(RoIHeads, self).__init__()
 
@@ -519,7 +519,7 @@ class RoIHeads(nn.Module):
             bg_iou_thresh,
             allow_low_quality_matches=False)
 
-        if ohem:
+        if sampler=='ohem':
             self.fg_bg_sampler = det_utils.OhemPositiveNegativeSampler()
         else:
             self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
@@ -546,7 +546,7 @@ class RoIHeads(nn.Module):
         self.keypoint_roi_pool = keypoint_roi_pool
         self.keypoint_head = keypoint_head
         self.keypoint_predictor = keypoint_predictor
-        self.ohem = ohem
+        self.sampler = sampler
 
     def has_mask(self):
         if self.mask_roi_pool is None:
@@ -756,18 +756,6 @@ class RoIHeads(nn.Module):
         reduction='none',
         ).sum(dim=1, keepdim=True)
 
-        #sampled_pos_inds_subset = torch.nonzero(labs > 0).squeeze(1)
-        #labels_pos = labs[sampled_pos_inds_subset]
-        
-        #map_inds = 4 * labels_pos[:, None] + torch.tensor([0, 1, 2, 3], device=device)
-
-        #box_loss = F.smooth_l1_loss(
-            #box_regression[sampled_pos_inds_subset[:, None], map_inds],
-            #reg[sampled_pos_inds_subset],
-            #reduction='none',
-            #beta=1,
-        #).sum(dim=1, keepdim=True)
-
         ohem_loss = classification_loss.clone()
         #adding cls and reg loss
         ohem_loss[sampled_pos_inds_subset[:, None]] = ohem_loss[sampled_pos_inds_subset[:, None]] + box_loss
@@ -782,40 +770,32 @@ class RoIHeads(nn.Module):
             ohem_loss_img = ohem_loss[prev:prev+size]
             prev = size
 
-            #sorting all proposals
-            ohem_dict = ohem_loss_img.topk(size)
-            ohem_idx = ohem_dict.indices
-            ohem_loss_sorted = ohem_dict.values
+            idx_list = [index for index in range(size)]
+            idx_list = torch.tensor(idx_list, dtype=torch.int)
 
-            proposals_ohem.append(torch.cat([proposals[i][el].unsqueeze(0) for el in ohem_idx],dim=0))
-            img_shapes.append(image_shapes[i])
-            lab.append(torch.cat([labels[i][el].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
-            reg_targets.append(torch.cat([regression_targets[i][el].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
-
-            boxes = proposals_ohem[i]
+            boxes = proposals[i]
+            labels_temp = labels[i]
             boxes = box_ops.clip_boxes_to_image(boxes, image_shapes[i])
 
             # batch everything, by making every class prediction be a separate instance
             boxes = boxes.reshape(-1, 4)
-            ohem_loss_sorted = ohem_loss_sorted.reshape(-1)
-
-            # remove low scoring boxes
-            #inds = torch.where(scores > self.score_thresh)[0]
-            #boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
+            ohem_loss_img = ohem_loss_img.reshape(-1)
 
             # remove empty boxes
             keep = box_ops.remove_small_boxes(boxes, min_size=1e-2)
-            boxes, ohem_loss_sorted, lab[i], reg_targets[i] = boxes[keep], ohem_loss_sorted[keep], lab[i][keep], reg_targets[i][keep]
+            boxes, ohem_loss_img, labels_temp, idx_list = boxes[keep], ohem_loss_img[keep], labels_temp[keep], idx_list[keep]
 
-            # non-maximum suppression, independently done per class, threshold of 0.7
-            keep = box_ops.batched_nms(boxes, ohem_loss_sorted, lab[i], self.nms_thresh)
+            # non-maximum suppression, independently done per class
+            keep = box_ops.batched_nms(boxes, ohem_loss_img, labels_temp, self.nms_thresh)
+            boxes, ohem_loss_img, labels_temp, idx_list = boxes[keep], ohem_loss_img[keep], labels_temp[keep], idx_list[keep]
 
-            # keep certain no. of predictions
-            keep = keep[:64]
+            #sort and keep top 64 proposals
+            ohem_idx = ohem_loss_img.topk(64).indices
 
-            boxes, ohem_loss_sorted, lab[i], reg_targets[i] = boxes[keep], ohem_loss_sorted[keep], lab[i][keep], reg_targets[i][keep]
-
-            proposals_ohem[i] = boxes
+            proposals_ohem.append(torch.cat([proposals[i][idx_list[el]].unsqueeze(0) for el in ohem_idx],dim=0))
+            img_shapes.append(image_shapes[i])
+            lab.append(torch.cat([labels[i][idx_list[el]].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
+            reg_targets.append(torch.cat([regression_targets[i][idx_list[el]].unsqueeze(0) for j, el in enumerate(ohem_idx)],dim=0))
 
         return proposals_ohem, img_shapes, lab, reg_targets
 
@@ -845,7 +825,7 @@ class RoIHeads(nn.Module):
         if self.training:
             proposals, matched_idxs, labels, regression_targets,n_proposals_per_img = self.select_training_samples(proposals, targets)
             #selecting hard proposals
-            if self.ohem:
+            if self.sampler=='ohem':
                 with torch.no_grad():
                     box_features = self.box_roi_pool(features, proposals, image_shapes)
                     box_features = self.box_head(box_features)
