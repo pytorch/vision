@@ -226,7 +226,7 @@ class VideoResNet(nn.Module):
             block (nn.Module): resnet building block
             conv_makers (list(functions)): generator function for each layer
             layers (List[int]): number of blocks per layer
-            stem (Type[nn.Module]): module class to instantiate the ResNet stem.
+            stem (Callable[..., nn.Module]): module specifying the ResNet stem.
             num_classes (int, optional): Dimension of the final FC layer. Defaults to 400.
             zero_init_residual (bool, optional): Zero init bottleneck residual BN. Defaults to False.
         """
