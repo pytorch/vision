@@ -28,7 +28,7 @@ def _segm_model(
     name: str,
     backbone_name: str,
     num_classes: int,
-    aux: Optional[bool] = None,
+    aux: bool,
     pretrained_backbone: bool = True
 ) -> nn.Module:
     if 'resnet' in backbone_name:
@@ -80,7 +80,7 @@ def _load_model(
     pretrained: bool,
     progress: bool,
     num_classes: int,
-    aux_loss: Optional[bool] = None,
+    aux_loss: bool,
     **kwargs: Any
 ) -> nn.Module:
     if pretrained:
@@ -218,7 +218,6 @@ def lraspp_mobilenet_v3_large(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
     **kwargs: Any
 ) -> nn.Module:
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
