@@ -216,7 +216,7 @@ class VideoResNet(nn.Module):
         block: Type[nn.Module],
         conv_makers: List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
         layers: List[int],
-        stem: nn.Module,
+        stem: nn.Module = BasicStem,
         num_classes: int = 400,
         zero_init_residual: bool = False,
     ) -> None:
