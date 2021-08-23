@@ -12,7 +12,6 @@ from torchvision.ops import StochasticDepth
 
 # TODO: refactor this to a common place?
 from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
-from torchvision.models.mobilenetv3 import SqueezeExcitation
 
 
 __all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b3"]
@@ -24,18 +23,36 @@ model_urls = {  # TODO: Add weights
 }
 
 
+class SqueezeExcitation(nn.Module):
+    def __init__(self, input_channels: int, squeeze_channels: int):
+        super().__init__()
+        self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
+        self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
+
+    def _scale(self, input: Tensor) -> Tensor:
+        scale = F.adaptive_avg_pool2d(input, 1)
+        scale = self.fc1(scale)
+        scale = F.silu(scale, inplace=True)
+        scale = self.fc2(scale)
+        return F.hardsigmoid(scale, inplace=True)
+
+    def forward(self, input: Tensor) -> Tensor:
+        scale = self._scale(input)
+        return scale * input
+
+
 class MBConvConfig:
     # Stores information listed at Tables 1 of the EfficientNet paper
     def __init__(self,
                  expand_ratio: float, kernel: int, stride: int,
                  input_channels: int, out_channels: int, num_layers: int,
                  width_mult: float, depth_mult: float) -> None:
-        self.expanded_channels = self.adjust_channels(input_channels, expand_ratio * width_mult)
+        self.expand_ratio = expand_ratio
         self.kernel = kernel
         self.stride = stride
         self.input_channels = self.adjust_channels(input_channels, width_mult)
         self.out_channels = self.adjust_channels(out_channels, width_mult)
-        self.num_layers = self.adjust_depth(num_layers, depth_mult)
+        self.num_layers = self.adjust_depth(num_layers, depth_mult)  # TODO: add __repr__
 
     @staticmethod
     def adjust_channels(channels: int, width_mult: float, min_value: Optional[int] = None) -> int:
@@ -60,21 +77,22 @@ class MBConv(nn.Module):
         activation_layer = nn.SiLU
 
         # expand
-        if cnf.expanded_channels != cnf.input_channels:
-            layers.append(ConvBNActivation(cnf.input_channels, cnf.expanded_channels, kernel_size=1,
+        expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
+        if expanded_channels != cnf.input_channels:
+            layers.append(ConvBNActivation(cnf.input_channels, expanded_channels, kernel_size=1,
                                            norm_layer=norm_layer, activation_layer=activation_layer))
 
         # depthwise
-        layers.append(ConvBNActivation(cnf.expanded_channels, cnf.expanded_channels, kernel_size=cnf.kernel,
-                                       stride=cnf.stride, groups=cnf.expanded_channels,
+        layers.append(ConvBNActivation(expanded_channels, expanded_channels, kernel_size=cnf.kernel,
+                                       stride=cnf.stride, groups=expanded_channels,
                                        norm_layer=norm_layer, activation_layer=activation_layer))
 
         # squeeze and excitation
-        layers.append(se_layer(cnf.expanded_channels, min_value=1,
-                               activation_layer=activation_layer, activation_fn=F.sigmoid))
+        squeeze_channels = max(1, cnf.input_channels // 4)
+        layers.append(se_layer(expanded_channels, squeeze_channels))
 
         # project
-        layers.append(ConvBNActivation(cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
+        layers.append(ConvBNActivation(expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
                                        activation_layer=nn.Identity))
 
         self.block = nn.Sequential(*layers)

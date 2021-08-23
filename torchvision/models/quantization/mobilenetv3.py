@@ -22,7 +22,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         self.skip_mul = nn.quantized.FloatFunctional()
 
     def forward(self, input: Tensor) -> Tensor:
-        return self.skip_mul.mul(self._scale(input), input)
+        return self.skip_mul.mul(self._scale(input, False), input)
 
     def fuse_model(self):
         fuse_modules(self, ['fc1', 'relu'], inplace=True)
