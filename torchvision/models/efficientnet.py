@@ -15,11 +15,12 @@ from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
 from torchvision.models.mobilenetv3 import SqueezeExcitation
 
 
-__all__ = ["EfficientNet", "efficientnet_b0"]
+__all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b3"]
 
 
-model_urls = {
-    "efficientnet_b0": None,  # TODO: Add weights
+model_urls = {  # TODO: Add weights
+    "efficientnet_b0": None,
+    "efficientnet_b3": None,
 }
 
 
@@ -235,3 +236,16 @@ def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: A
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.0, **kwargs)
     return _efficientnet_model("efficientnet_b0", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
+
+
+def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B3 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=1.2, depth_mult=1.4, **kwargs)
+    return _efficientnet_model("efficientnet_b3", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
