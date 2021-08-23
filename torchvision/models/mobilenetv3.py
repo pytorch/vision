@@ -21,11 +21,12 @@ model_urls = {
 class SqueezeExcitation(nn.Module):
     # Implemented as described at Figure 4 of the MobileNetV3 paper
     def __init__(self, input_channels: int, squeeze_factor: int = 4, min_value: Optional[int] = None,
+                 activation_layer: Callable[..., nn.Module] = nn.ReLU,
                  activation_fn: Callable[..., Tensor] = F.hardsigmoid):
         super().__init__()
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8, min_value)
         self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = activation_layer()
         self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
         self.activation_fn = activation_fn
 

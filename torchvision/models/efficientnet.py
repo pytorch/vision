@@ -69,7 +69,8 @@ class MBConv(nn.Module):
                                        norm_layer=norm_layer, activation_layer=activation_layer))
 
         # squeeze and excitation
-        layers.append(se_layer(cnf.expanded_channels, min_value=1, activation_fn=F.sigmoid))
+        layers.append(se_layer(cnf.expanded_channels, min_value=1,
+                               activation_layer=activation_layer, activation_fn=F.sigmoid))
 
         # project
         layers.append(ConvBNActivation(cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
