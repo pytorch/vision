@@ -13,6 +13,18 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 }
 
 #else
+// For libjpeg version <= 9b, the out_size parameter in jpeg_mem_dest() is
+// defined as unsigned long, where as in later version, it is defined as size_t.
+// For windows backward compatibility, we define JpegSizeType as different types
+// according to the libjpeg version used, in order to prevent compilcation
+// errors.
+#if defined(_WIN32) || !defined(JPEG_LIB_VERSION_MAJOR) || \
+    (JPEG_LIB_VERSION_MAJOR < 9) ||                        \
+    (JPEG_LIB_VERSION_MAJOR == 9 && JPEG_LIB_VERSION_MINOR <= 2)
+using JpegSizeType = unsigned long;
+#else
+using JpegSizeType = size_t;
+#endif
 
 using namespace detail;
 
@@ -22,7 +34,7 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   struct torch_jpeg_error_mgr jerr {};
 
   // Define buffer to write JPEG information to and its size
-  unsigned long jpegSize = 0;
+  JpegSizeType jpegSize = 0;
   uint8_t* jpegBuf = nullptr;
 
   cinfo.err = jpeg_std_error(&jerr.pub);

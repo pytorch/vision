@@ -22,8 +22,6 @@ from torchvision.datasets.utils import (
     USER_AGENT,
 )
 
-from common_utils import get_tmp_dir
-
 
 def limit_requests_per_time(min_secs_between_requests=2.0):
     last_requests = {}
@@ -166,16 +164,15 @@ def assert_url_is_accessible(url, timeout=5.0):
         urlopen(request, timeout=timeout)
 
 
-def assert_file_downloads_correctly(url, md5, timeout=5.0):
-    with get_tmp_dir() as root:
-        file = path.join(root, path.basename(url))
-        with assert_server_response_ok():
-            with open(file, "wb") as fh:
-                request = Request(url, headers={"User-Agent": USER_AGENT})
-                response = urlopen(request, timeout=timeout)
-                fh.write(response.read())
+def assert_file_downloads_correctly(url, md5, tmpdir, timeout=5.0):
+    file = path.join(tmpdir, path.basename(url))
+    with assert_server_response_ok():
+        with open(file, "wb") as fh:
+            request = Request(url, headers={"User-Agent": USER_AGENT})
+            response = urlopen(request, timeout=timeout)
+            fh.write(response.read())
 
-        assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
+    assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
 
 
 class DownloadConfig:
