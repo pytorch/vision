@@ -131,13 +131,18 @@ class TestVideoTransforms():
         trans = transforms.ToTensorVideo()
 
         with pytest.raises(TypeError):
-            trans(np.random.rand(numFrames, height, width, 1).tolist())
+            np_rng = np.random.RandomState(0)
+            trans(np_rng.rand(numFrames, height, width, 1).tolist())
+        with pytest.raises(TypeError):
             trans(torch.rand((numFrames, height, width, 1), dtype=torch.float))
 
         with pytest.raises(ValueError):
             trans(torch.ones((3, numFrames, height, width, 3), dtype=torch.uint8))
+        with pytest.raises(ValueError):
             trans(torch.ones((height, width, 3), dtype=torch.uint8))
+        with pytest.raises(ValueError):
             trans(torch.ones((width, 3), dtype=torch.uint8))
+        with pytest.raises(ValueError):
             trans(torch.ones((3), dtype=torch.uint8))
 
         trans.__repr__()
