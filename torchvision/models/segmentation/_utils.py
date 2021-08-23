@@ -3,7 +3,6 @@ from typing import Optional, Dict
 
 from torch import nn, Tensor
 from torch.nn import functional as F
-from .._utils import IntermediateLayerGetter
 
 
 class _SimpleSegmentationModel(nn.Module):
@@ -11,7 +10,7 @@ class _SimpleSegmentationModel(nn.Module):
 
     def __init__(
         self,
-        backbone: IntermediateLayerGetter,
+        backbone: nn.Module,
         classifier: nn.Module,
         aux_classifier: Optional[nn.Module] = None
     ) -> None:

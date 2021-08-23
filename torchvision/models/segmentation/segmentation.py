@@ -1,6 +1,5 @@
 from torch import nn
-from typing import Any
-from ._utils import _SimpleSegmentationModel
+from typing import Any, Optional
 from .._utils import IntermediateLayerGetter
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .. import mobilenetv3
@@ -29,9 +28,9 @@ def _segm_model(
     name: str,
     backbone_name: str,
     num_classes: int,
-    aux: bool,
+    aux: Optional[bool] = None,
     pretrained_backbone: bool = True
-) -> _SimpleSegmentationModel:
+) -> nn.Module:
     if 'resnet' in backbone_name:
         backbone = resnet.__dict__[backbone_name](
             pretrained=pretrained_backbone,
@@ -81,9 +80,9 @@ def _load_model(
     pretrained: bool,
     progress: bool,
     num_classes: int,
-    aux_loss: bool,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> _SimpleSegmentationModel:
+) -> nn.Module:
     if pretrained:
         aux_loss = True
         kwargs["pretrained_backbone"] = False
@@ -124,9 +123,9 @@ def fcn_resnet50(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> FCN:
+) -> nn.Module:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
 
     Args:
@@ -143,9 +142,9 @@ def fcn_resnet101(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> FCN:
+) -> nn.Module:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
 
     Args:
@@ -162,9 +161,9 @@ def deeplabv3_resnet50(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> DeepLabV3:
+) -> nn.Module:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
     Args:
@@ -181,9 +180,9 @@ def deeplabv3_resnet101(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> DeepLabV3:
+) -> nn.Module:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
 
     Args:
@@ -200,9 +199,9 @@ def deeplabv3_mobilenet_v3_large(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> DeepLabV3:
+) -> nn.Module:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.
 
     Args:
@@ -219,9 +218,9 @@ def lraspp_mobilenet_v3_large(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     **kwargs: Any
-) -> LRASPP:
+) -> nn.Module:
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
 
     Args:
