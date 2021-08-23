@@ -213,7 +213,7 @@ class VideoResNet(nn.Module):
 
     def __init__(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
+        block: Callable[..., Union[BasicBlock, Bottleneck]],
         conv_makers: List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
         layers: List[int],
         stem: Callable[..., nn.Module],
