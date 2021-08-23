@@ -28,7 +28,7 @@ def _segm_model(
     name: str,
     backbone_name: str,
     num_classes: int,
-    aux: bool,
+    aux: Optional[bool],
     pretrained_backbone: bool = True
 ) -> nn.Module:
     if 'resnet' in backbone_name:
@@ -80,7 +80,7 @@ def _load_model(
     pretrained: bool,
     progress: bool,
     num_classes: int,
-    aux_loss: bool,
+    aux_loss: Optional[bool],
     **kwargs: Any
 ) -> nn.Module:
     if pretrained:
