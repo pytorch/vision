@@ -213,7 +213,7 @@ class VideoResNet(nn.Module):
 
     def __init__(
         self,
-        block: Callable[..., Union[BasicBlock, Bottleneck]],
+        block: Type[Union[BasicBlock, Bottleneck]],
         conv_makers: List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
         layers: List[int],
         stem: Callable[..., nn.Module],
@@ -223,7 +223,7 @@ class VideoResNet(nn.Module):
         """Generic resnet video generator.
 
         Args:
-            block (Callable[..., Union[BasicBlock, Bottleneck]])): resnet building block
+            block (Type[Union[BasicBlock, Bottleneck]]): resnet building block
             conv_makers (List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]]): generator
                 function for each layer
             layers (List[int]): number of blocks per layer
