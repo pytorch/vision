@@ -44,7 +44,7 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
                             (python_version != python_versions[-1] or
                              (cu_version not in [cu_versions[0], cu_versions[-1]])):
-                            fb = "master"
+                            fb = "main"
                         if not fb and (os_type == 'linux' and
                                        cu_version == 'cpu' and
                                        btype == 'wheel' and
@@ -241,7 +241,7 @@ def unittest_workflows(indentation=6):
 
                 if device_type == 'gpu':
                     if python_version != "3.8":
-                        job['filters'] = gen_filter_branch_tree('master', 'nightly')
+                        job['filters'] = gen_filter_branch_tree('main', 'nightly')
                     job['cu_version'] = 'cu102'
                 else:
                     job['cu_version'] = 'cpu'
