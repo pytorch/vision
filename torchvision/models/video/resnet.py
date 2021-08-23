@@ -94,7 +94,7 @@ class BasicBlock(nn.Module):
         self,
         inplanes: int,
         planes: int,
-        conv_builder: Callable,
+        conv_builder: Callable[..., nn.Module],
         stride: int = 1,
         downsample: Optional[nn.Module] = None,
     ) -> None:
@@ -135,7 +135,7 @@ class Bottleneck(nn.Module):
         self,
         inplanes: int,
         planes: int,
-        conv_builder: Callable,
+        conv_builder: Callable[..., nn.Module],
         stride: int = 1,
         downsample: Optional[nn.Module] = None,
     ) -> None:
