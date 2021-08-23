@@ -224,7 +224,8 @@ class VideoResNet(nn.Module):
 
         Args:
             block (nn.Module): resnet building block
-            conv_makers (list(functions)): generator function for each layer
+            conv_makers (List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]]):
+                generator function for each layer
             layers (List[int]): number of blocks per layer
             stem (Callable[..., nn.Module]): module specifying the ResNet stem.
             num_classes (int, optional): Dimension of the final FC layer. Defaults to 400.
