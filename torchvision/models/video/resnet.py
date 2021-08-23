@@ -213,10 +213,10 @@ class VideoResNet(nn.Module):
 
     def __init__(
         self,
-        block: Type[nn.Module],
+        block: Type[Union[BasicBlock, Bottleneck]],
         conv_makers: List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
         layers: List[int],
-        stem: nn.Module = BasicStem,
+        stem: Type[nn.Module] = BasicStem,
         num_classes: int = 400,
         zero_init_residual: bool = False,
     ) -> None:
@@ -268,7 +268,7 @@ class VideoResNet(nn.Module):
 
     def _make_layer(
         self,
-        block: Type[nn.Module],
+        block: Type[Union[BasicBlock, Bottleneck]],
         conv_builder: Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]],
         planes: int,
         blocks: int,
