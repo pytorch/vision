@@ -24,7 +24,7 @@ default_timebase = Fraction(0, 1)
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
 class Timebase(object):
-    __annotations__: Dict[str, Type[int]] = {"numerator": int, "denominator": int}
+    __annotations__: Dict[str, Type] = {"numerator": int, "denominator": int}
     __slots__: List[str] = ["numerator", "denominator"]
 
     def __init__(
@@ -37,7 +37,7 @@ class Timebase(object):
 
 
 class VideoMetaData(object):
-    __annotations__: Dict[str, Any] = {
+    __annotations__: Dict[str, Type] = {
         "has_video": bool,
         "video_timebase": Timebase,
         "video_duration": float,
@@ -531,21 +531,25 @@ def _read_video(
     return vframes, aframes, _info
 
 
-def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[Fraction], Optional[float]]:
+def _read_video_timestamps(
+    filename: str,
+    pts_unit: str = "pts"
+) -> Tuple[Union[List[int], List[Fraction]], Optional[float]]::
     if pts_unit == "pts":
         warnings.warn(
             "The pts_unit 'pts' gives wrong results and will be removed in a "
             + "follow-up version. Please use pts_unit 'sec'."
         )
 
+    pts: Union[List[int], List[Fraction]]
     pts, _, info = _read_video_timestamps_from_file(filename)
 
     if pts_unit == "sec":
         video_time_base = Fraction(
             info.video_timebase.numerator, info.video_timebase.denominator
         )
-        pts = [x * video_time_base for x in pts]  # type: ignore[misc]
+        pts = [x * video_time_base for x in pts]
 
     video_fps = info.video_fps if info.has_video else None
 
-    return pts, video_fps  # type: ignore[return-value]
+    return pts, video_fps
