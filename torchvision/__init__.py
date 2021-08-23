@@ -66,7 +66,7 @@ def set_video_backend(backend):
             It generally decodes faster than :mod:`pyav`, but is perhaps less robust.
 
     .. note::
-        Building with FFMPEG is disabled by default in the latest master. If you want to use the 'video_reader'
+        Building with FFMPEG is disabled by default in the latest `main`. If you want to use the 'video_reader'
         backend, please compile torchvision from source.
     """
     global _video_backend
