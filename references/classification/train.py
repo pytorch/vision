@@ -89,10 +89,10 @@ def load_data(traindir, valdir, args):
         resize_size, crop_size = 342, 299
     elif args.model.startswith('efficientnet_'):
         sizes = {
-            'B0': 224, 'B1': 240, 'B2': 260, 'B3': 300,
-            'B4': 380, 'B5': 456, 'B6': 528, 'B7': 600,
+            'b0': 224, 'b1': 240, 'b2': 260, 'b3': 300,
+            'b4': 380, 'b5': 456, 'b6': 528, 'b7': 600,
         }
-        e_type = args.model.replace('efficientnet_', '').upper()
+        e_type = args.model.replace('efficientnet_', '')
         resize_size = crop_size = sizes[e_type]
         interpolation = InterpolationMode.BICUBIC
 

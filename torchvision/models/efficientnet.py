@@ -52,7 +52,18 @@ class MBConvConfig:
         self.stride = stride
         self.input_channels = self.adjust_channels(input_channels, width_mult)
         self.out_channels = self.adjust_channels(out_channels, width_mult)
-        self.num_layers = self.adjust_depth(num_layers, depth_mult)  # TODO: add __repr__
+        self.num_layers = self.adjust_depth(num_layers, depth_mult)
+
+    def __repr__(self) -> str:
+        s = self.__class__.__name__ + '('
+        s += 'expand_ratio={expand_ratio}'
+        s += ', kernel={kernel}'
+        s += ', stride={stride}'
+        s += ', input_channels={input_channels}'
+        s += ', out_channels={out_channels}'
+        s += ', num_layers={num_layers}'
+        s += ')'
+        return s.format(**self.__dict__)
 
     @staticmethod
     def adjust_channels(channels: int, width_mult: float, min_value: Optional[int] = None) -> int:
