@@ -14,12 +14,20 @@ from torchvision.ops import StochasticDepth
 from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
 
 
-__all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b3"]
+__all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b1", "efficientnet_b2", "efficientnet_b3",
+           "efficientnet_b4", "efficientnet_b5", "efficientnet_b6", "efficientnet_b7"]
 
 
-model_urls = {  # TODO: Add weights
-    "efficientnet_b0": None,
-    "efficientnet_b3": None,
+model_urls = {
+    # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
+    "efficientnet_b0": "https://download.pytorch.org/models/efficientnet_b0-lukemelas.pth",
+    "efficientnet_b1": "https://download.pytorch.org/models/efficientnet_b1-lukemelas.pth",
+    "efficientnet_b2": "https://download.pytorch.org/models/efficientnet_b2-lukemelas.pth",
+    "efficientnet_b3": "https://download.pytorch.org/models/efficientnet_b3-lukemelas.pth",
+    "efficientnet_b4": "https://download.pytorch.org/models/efficientnet_b4-lukemelas.pth",
+    "efficientnet_b5": "https://download.pytorch.org/models/efficientnet_b5-lukemelas.pth",
+    "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6-lukemelas.pth",
+    "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7-lukemelas.pth",
 }
 
 
@@ -267,6 +275,32 @@ def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: A
     return _efficientnet_model("efficientnet_b0", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
 
 
+def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B1 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.1, **kwargs)
+    return _efficientnet_model("efficientnet_b1", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
+
+
+def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B2 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=1.1, depth_mult=1.2, **kwargs)
+    return _efficientnet_model("efficientnet_b2", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
+
+
 def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
     """
     Constructs a EfficientNet B3 architecture from
@@ -278,3 +312,55 @@ def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: A
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.2, depth_mult=1.4, **kwargs)
     return _efficientnet_model("efficientnet_b3", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
+
+
+def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B4 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=1.4, depth_mult=1.8, **kwargs)
+    return _efficientnet_model("efficientnet_b4", inverted_residual_setting, 0.4, pretrained, progress, **kwargs)
+
+
+def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B5 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=1.6, depth_mult=2.2, **kwargs)
+    return _efficientnet_model("efficientnet_b5", inverted_residual_setting, 0.4, pretrained, progress, **kwargs)
+
+
+def efficientnet_b6(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B6 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=1.8, depth_mult=2.6, **kwargs)
+    return _efficientnet_model("efficientnet_b6", inverted_residual_setting, 0.5, pretrained, progress, **kwargs)
+
+
+def efficientnet_b7(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs a EfficientNet B7 architecture from
+    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    inverted_residual_setting = _efficientnet_conf(width_mult=2.0, depth_mult=3.1, **kwargs)
+    return _efficientnet_model("efficientnet_b7", inverted_residual_setting, 0.5, pretrained, progress, **kwargs)
