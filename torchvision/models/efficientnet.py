@@ -141,7 +141,7 @@ class EfficientNet(nn.Module):
             block = MBConv
 
         if norm_layer is None:
-            norm_layer = partial(nn.BatchNorm2d, momentum=0.003)
+            norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
 
         layers: List[nn.Module] = []
 
