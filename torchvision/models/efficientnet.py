@@ -34,7 +34,7 @@ class SqueezeExcitation(nn.Module):
         scale = self.fc1(scale)
         scale = F.silu(scale, inplace=True)
         scale = self.fc2(scale)
-        return F.hardsigmoid(scale, inplace=True)
+        return scale.sigmoid()
 
     def forward(self, input: Tensor) -> Tensor:
         scale = self._scale(input)
@@ -141,7 +141,7 @@ class EfficientNet(nn.Module):
             block = MBConv
 
         if norm_layer is None:
-            norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
+            norm_layer = partial(nn.BatchNorm2d, momentum=0.003)
 
         layers: List[nn.Module] = []
 
