@@ -10590,7 +10590,6 @@ article.pytorch-article .function dt em, article.pytorch-article .attribute dt e
   font-size: 87.5%;
 }
 article.pytorch-article .function dt a, article.pytorch-article .attribute dt a, article.pytorch-article .class .attribute dt a, article.pytorch-article .class dt a {
-  position: absolute;
   right: 30px;
   padding-right: 0;
   top: 50%;
@@ -10616,6 +10615,8 @@ article.pytorch-article .function dt > code, article.pytorch-article .attribute 
   box-decoration-break: clone;
 }
 article.pytorch-article .function .viewcode-link, article.pytorch-article .attribute .viewcode-link, article.pytorch-article .class .viewcode-link {
+  padding-left: 0.6rem;
+  position: absolute;
   font-size: 0.875rem;
   color: #979797;
   letter-spacing: 0;
