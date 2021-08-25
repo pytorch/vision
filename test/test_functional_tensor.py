@@ -624,7 +624,7 @@ def test_interpolate_antialias_backward(device, dt, size, interpolation):
 
 
 def check_functional_vs_PIL_vs_scripted(fn, fn_pil, fn_t, config, device, dtype, tol=2.0 + 1e-10, agg_method="max"):
-
+    torch._C._jit_override_can_fuse_on_cpu(False)
     script_fn = torch.jit.script(fn)
     torch.manual_seed(15)
     tensor, pil_img = _create_data(26, 34, device=device)
