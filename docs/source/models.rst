@@ -19,9 +19,9 @@ architectures for image classification:
 -  `ResNet`_
 -  `SqueezeNet`_
 -  `DenseNet`_
--  `InceptionV3`_
+-  `Inception`_ v3
 -  `GoogLeNet`_
--  `ShuffleNetV2`_
+-  `ShuffleNet`_ v2
 -  `MobileNetV2`_
 -  `MobileNetV3`_
 -  `ResNeXt`_
@@ -130,8 +130,8 @@ Unfortunately, the concrete `subset` that was used is lost. For more
 information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
 or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
-The sizes of the EfficientNet models depends on the variant. For the exact configuration check
-`here <https://github.com/pytorch/vision/blob/d2bfd639e46e1c5dc3c177f889dc7750c8d137c7/references/classification/train.py#L92-L93>`_
+The sizes of the EfficientNet models depend on the variant. For the exact input sizes
+`check here <https://github.com/pytorch/vision/blob/d2bfd639e46e1c5dc3c177f889dc7750c8d137c7/references/classification/train.py#L92-L93>`_
 
 ImageNet 1-crop error rates
 
