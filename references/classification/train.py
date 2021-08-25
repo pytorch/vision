@@ -90,7 +90,7 @@ def load_data(traindir, valdir, args):
     elif args.model.startswith('efficientnet_'):
         sizes = {
             'b0': (256, 224), 'b1': (256, 240), 'b2': (288, 288), 'b3': (320, 300),
-            'b4': (384, 380), 'b5': (489, 456), 'b6': (561, 528), 'b7': (633, 600),
+            'b4': (384, 380), 'b5': (456, 456), 'b6': (528, 528), 'b7': (600, 600),
         }
         e_type = args.model.replace('efficientnet_', '')
         resize_size, crop_size = sizes[e_type]
