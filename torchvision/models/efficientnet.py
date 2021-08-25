@@ -10,7 +10,6 @@ from typing import Any, Callable, List, Optional, Sequence
 from .._internally_replaced_utils import load_state_dict_from_url
 from torchvision.ops import StochasticDepth
 
-# TODO: refactor this to a common place?
 from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
 
 
@@ -20,15 +19,15 @@ __all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b1", "efficientnet_b
 
 model_urls = {
     # Weights ported from https://github.com/rwightman/pytorch-image-models/
-    "efficientnet_b0": "https://download.pytorch.org/models/efficientnet_b0-rwightman.pth",
-    "efficientnet_b1": "https://download.pytorch.org/models/efficientnet_b1-rwightman.pth",
-    "efficientnet_b2": "https://download.pytorch.org/models/efficientnet_b2-rwightman.pth",
-    "efficientnet_b3": "https://download.pytorch.org/models/efficientnet_b3-rwightman.pth",
-    "efficientnet_b4": "https://download.pytorch.org/models/efficientnet_b4-rwightman.pth",
+    "efficientnet_b0": "https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
+    "efficientnet_b1": "https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
+    "efficientnet_b2": "https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
+    "efficientnet_b3": "https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
+    "efficientnet_b4": "https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
     # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
-    "efficientnet_b5": "https://download.pytorch.org/models/efficientnet_b5-lukemelas.pth",
-    "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6-lukemelas.pth",
-    "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7-lukemelas.pth",
+    "efficientnet_b5": "https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
+    "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
+    "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
 }
 
 
