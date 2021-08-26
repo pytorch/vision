@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import BroadcastingList2
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union, Sequence
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
@@ -217,7 +217,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
-def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
+def adjust_gamma(img: Tensor, gamma: float, gain: float = 1.0) -> Tensor:
     if not isinstance(img, torch.Tensor):
         raise TypeError('Input img should be a Tensor.')
 
@@ -407,7 +407,13 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+# TODO: Align with functional pad
+def pad(
+    img: Tensor,
+    padding: List[int],
+    fill: float = 0,
+    padding_mode: str = "constant"
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
@@ -479,7 +485,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
 def resize(
     img: Tensor,
-    size: List[int],
+    size: Union[Sequence[int], int],
     interpolation: str = "bilinear",
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None
