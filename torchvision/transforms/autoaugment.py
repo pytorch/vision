@@ -220,11 +220,11 @@ class TrivialAugment(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
-        op_meta = _get_magnitudes(self.augmentation_space, F._get_image_size(img), num_bins=self.num_magnitude_bins)
+        op_meta = _get_magnitudes(self.augmentation_space, F.get_image_size(img), num_bins=self.num_magnitude_bins)
         op_index = int(torch.randint(len(op_meta), (1,)).item())
         op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
@@ -291,7 +291,7 @@ class AutoAugment(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
@@ -299,7 +299,7 @@ class AutoAugment(torch.nn.Module):
 
         for i, (op_name, p, magnitude_id) in enumerate(self.transforms[transform_id]):
             if probs[i] <= p:
-                op_meta = _get_magnitudes('aa', F._get_image_size(img))
+                op_meta = _get_magnitudes('aa', F.get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) \
                     if not magnitudes.isnan().all() and magnitude_id is not None else 0.0
