@@ -64,6 +64,9 @@ class _LFW(VisionDataset):
         download_and_extract_archive(url, self.root, filename=self.filename, md5=self.md5)
         download_url(f"{self.download_url_prefix}{self.view}Dev{self.split}.txt", self.root)
 
+    def __len__(self):
+        return len(self.data)
+
 
 class LFWPeople(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
@@ -117,10 +120,14 @@ class LFWPeople(_LFW):
 
         return cls_to_names, data, targets
 
-    def __len__(self):
-        return len(self.data)
-
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: Tuple (image, target) where target is the identity of the person.
+        """
         img = self.loader(self.data[index])
         target = self.targets[index]
 
@@ -198,10 +205,14 @@ class LFWPairs(_LFW):
 
         return pair_names, data, targets
 
-    def __len__(self):
-        return len(self.data)
-
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image1, image2, target) where target is `0` for different indentities and `1` for same identities.
+        """
         img1, img2 = self.data[index]
         img1, img2 = self.loader(img1), self.loader(img2)
         target = self.targets[index]
