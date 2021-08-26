@@ -7,7 +7,7 @@ from typing import List, Tuple, Optional, Dict
 
 from . import functional as F, InterpolationMode
 
-__all__ = ["AutoAugmentPolicy", "AutoAugment", "TrivialAugment"]
+__all__ = ["AutoAugmentPolicy", "AugmentationSpace", "AutoAugment", "TrivialAugment"]
 
 
 class AutoAugmentPolicy(Enum):
@@ -17,6 +17,14 @@ class AutoAugmentPolicy(Enum):
     IMAGENET = "imagenet"
     CIFAR10 = "cifar10"
     SVHN = "svhn"
+
+
+class AugmentationSpace(Enum):
+    """The augmentation space to use.
+    Available spaces are `AA` for AutoAugment and `TA_WIDE` for the TrivialAugment.
+    """
+    AA = "aa"
+    TA_WIDE = "ta_wide"
 
 
 def _get_transforms(  # type: ignore[return]
@@ -109,9 +117,9 @@ def _get_transforms(  # type: ignore[return]
 
 
 def _get_magnitudes(
-        augmentation_space: str, image_size: List[int], num_bins: int = 10
+        augmentation_space: AugmentationSpace, image_size: List[int], num_bins: int = 10
 ) -> Dict[str, Tuple[Tensor, bool]]:
-    if augmentation_space == 'aa':
+    if augmentation_space == AugmentationSpace.AA:
         shear_max = 0.3
         translate_max_x = 150.0 / 331.0 * image_size[0]
         translate_max_y = 150.0 / 331.0 * image_size[1]
@@ -119,7 +127,7 @@ def _get_magnitudes(
         enhancer_max = 0.9
         posterize_min_bits = 4
 
-    elif augmentation_space == 'ta_wide':
+    elif augmentation_space == AugmentationSpace.TA_WIDE:
         shear_max = 0.99
         translate_max_x = 32.0  # this is an absolute
         translate_max_y = 32.0  # this is an absolute
@@ -196,9 +204,8 @@ class TrivialAugment(torch.nn.Module):
         If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
         Args:
-            augmentation_space (str): A string defining which augmentation space to use.
-                The augmentation space can either set to be the one used for AutoAugment (`aa`)
-                or to the strongest augmentation space from the TrivialAugment paper (`ta_wide`).
+            augmentation_space (AugmentationSpace): Desired augmentation space enum defined by
+                :class:`torchvision.transforms.autoaugment.AugmentationSpace`. Default is ``AugmentationSpace.TA_WIDE``.
             num_magnitude_bins (int): The number of different magnitude values.
             interpolation (InterpolationMode): Desired interpolation enum defined by
                 :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
@@ -207,9 +214,9 @@ class TrivialAugment(torch.nn.Module):
                 image. If given a number, the value is used for all bands respectively.
         """
 
-    def __init__(self, augmentation_space: str = 'ta_wide', num_magnitude_bins: int = 30,
+    def __init__(self, augmentation_space: AugmentationSpace = AugmentationSpace.TA_WIDE, num_magnitude_bins: int = 30,
                  interpolation: InterpolationMode = InterpolationMode.NEAREST,
-                 fill: Optional[List[float]] = None):
+                 fill: Optional[List[float]] = None) -> None:
         super().__init__()
         self.augmentation_space = augmentation_space
         self.num_magnitude_bins = num_magnitude_bins
@@ -299,7 +306,7 @@ class AutoAugment(torch.nn.Module):
 
         for i, (op_name, p, magnitude_id) in enumerate(self.transforms[transform_id]):
             if probs[i] <= p:
-                op_meta = _get_magnitudes('aa', F.get_image_size(img))
+                op_meta = _get_magnitudes(AugmentationSpace.AA, F.get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) \
                     if not magnitudes.isnan().all() and magnitude_id is not None else 0.0

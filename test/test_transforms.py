@@ -1490,7 +1490,7 @@ def test_autoaugment(policy, fill):
     transform.__repr__()
 
 
-@pytest.mark.parametrize('augmentation_space', ['aa', 'ta_wide'])
+@pytest.mark.parametrize('augmentation_space', [space for space in transforms.AugmentationSpace])
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
 @pytest.mark.parametrize('num_magnitude_bins', [10, 13, 30])
 def test_trivialaugment(augmentation_space, fill, num_magnitude_bins):

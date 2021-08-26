@@ -540,7 +540,7 @@ def test_autoaugment_save(tmpdir):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('augmentation_space', ['aa', 'ta_wide'])
+@pytest.mark.parametrize('augmentation_space', [space for space in T.AugmentationSpace])
 @pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
 def test_trivialaugment(device, augmentation_space, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
