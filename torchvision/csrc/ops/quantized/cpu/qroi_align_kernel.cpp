@@ -129,20 +129,16 @@ void qroi_align_forward_kernel_impl(
     // Do not using rounding; this implementation detail is critical
     float offset = aligned ? 0.5 : 0.;
     float roi_start_w =
-        dequantize_val(rois_scale, rois_zp, offset_rois[1]) *
-            spatial_scale -
+        dequantize_val(rois_scale, rois_zp, offset_rois[1]) * spatial_scale -
         offset;
     float roi_start_h =
-        dequantize_val(rois_scale, rois_zp, offset_rois[2]) *
-            spatial_scale -
+        dequantize_val(rois_scale, rois_zp, offset_rois[2]) * spatial_scale -
         offset;
     float roi_end_w =
-        dequantize_val(rois_scale, rois_zp, offset_rois[3]) *
-            spatial_scale -
+        dequantize_val(rois_scale, rois_zp, offset_rois[3]) * spatial_scale -
         offset;
     float roi_end_h =
-        dequantize_val(rois_scale, rois_zp, offset_rois[4]) *
-            spatial_scale -
+        dequantize_val(rois_scale, rois_zp, offset_rois[4]) * spatial_scale -
         offset;
 
     float roi_width = roi_end_w - roi_start_w;
