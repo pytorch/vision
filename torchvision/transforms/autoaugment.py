@@ -225,8 +225,8 @@ class TrivialAugment(torch.nn.Module):
                 fill = [float(f) for f in fill]
 
         op_meta = _get_magnitudes(self.augmentation_space, F._get_image_size(img), num_bins=self.num_magnitude_bins)
-        op_index = torch.randint(len(op_meta), (1,))
-        op_name = list(op_meta.keys())[op_index.item()]  # type: ignore[index]
+        op_index = int(torch.randint(len(op_meta), (1,)).item())
+        op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
         magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
             if not magnitudes.isnan().all() else 0.0
