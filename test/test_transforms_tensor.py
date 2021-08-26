@@ -533,6 +533,12 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
+def test_autoaugment_save(tmpdir):
+    transform = T.AutoAugment()
+    s_transform = torch.jit.script(transform)
+    s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
+
+
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('augmentation_space', ['aa', 'ta_wide'])
 @pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
@@ -547,17 +553,11 @@ def test_trivialaugment(device, augmentation_space, fill):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-        
-def test_autoaugment_save(tmpdir):
-    transform = T.AutoAugment()
-    s_transform = torch.jit.script(transform)
-    s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
 
-
-def test_trivialaugment_save(tmp_dir):
+def test_trivialaugment_save(tmpdir):
     transform = T.TrivialAugment()
     s_transform = torch.jit.script(transform)
-    s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
+    s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
