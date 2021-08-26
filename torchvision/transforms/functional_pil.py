@@ -20,14 +20,14 @@ def _is_pil_image(img: Any) -> bool:
 
 
 @torch.jit.unused
-def _get_image_size(img: Any) -> List[int]:
+def get_image_size(img: Any) -> List[int]:
     if _is_pil_image(img):
-        return img.size
+        return list(img.size)
     raise TypeError("Unexpected type {}".format(type(img)))
 
 
 @torch.jit.unused
-def _get_image_num_channels(img: Any) -> int:
+def get_image_num_channels(img: Any) -> int:
     if _is_pil_image(img):
         return 1 if img.mode == 'L' else 3
     raise TypeError("Unexpected type {}".format(type(img)))
