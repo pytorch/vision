@@ -50,7 +50,7 @@ class SqueezeExcitation(nn.Module):
 
 
 class MBConvConfig:
-    # Stores information listed at Tables 1 of the EfficientNet paper
+    # Stores information listed at Table 1 of the EfficientNet paper
     def __init__(self,
                  expand_ratio: float, kernel: int, stride: int,
                  input_channels: int, out_channels: int, num_layers: int,
