@@ -24,12 +24,19 @@ class LRASPP(nn.Module):
         inter_channels (int, optional): the number of channels for intermediate computations.
     """
 
-    def __init__(self, backbone, low_channels, high_channels, num_classes, inter_channels=128):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        low_channels: int,
+        high_channels: int,
+        num_classes: int,
+        inter_channels: int = 128
+    ) -> None:
         super().__init__()
         self.backbone = backbone
         self.classifier = LRASPPHead(low_channels, high_channels, num_classes, inter_channels)
 
-    def forward(self, input):
+    def forward(self, input: Tensor) -> Dict[str, Tensor]:
         features = self.backbone(input)
         out = self.classifier(features)
         out = F.interpolate(out, size=input.shape[-2:], mode='bilinear', align_corners=False)
@@ -42,7 +49,13 @@ class LRASPP(nn.Module):
 
 class LRASPPHead(nn.Module):
 
-    def __init__(self, low_channels, high_channels, num_classes, inter_channels):
+    def __init__(
+        self,
+        low_channels: int,
+        high_channels: int,
+        num_classes: int,
+        inter_channels: int
+    ) -> None:
         super().__init__()
         self.cbr = nn.Sequential(
             nn.Conv2d(high_channels, inter_channels, 1, bias=False),

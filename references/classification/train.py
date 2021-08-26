@@ -6,6 +6,7 @@ import torch
 import torch.utils.data
 from torch import nn
 import torchvision
+from torchvision.transforms.functional import InterpolationMode
 
 import presets
 import utils
@@ -82,7 +83,18 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    resize_size, crop_size = (342, 299) if args.model == 'inception_v3' else (256, 224)
+    resize_size, crop_size = 256, 224
+    interpolation = InterpolationMode.BILINEAR
+    if args.model == 'inception_v3':
+        resize_size, crop_size = 342, 299
+    elif args.model.startswith('efficientnet_'):
+        sizes = {
+            'b0': (256, 224), 'b1': (256, 240), 'b2': (288, 288), 'b3': (320, 300),
+            'b4': (384, 380), 'b5': (456, 456), 'b6': (528, 528), 'b7': (600, 600),
+        }
+        e_type = args.model.replace('efficientnet_', '')
+        resize_size, crop_size = sizes[e_type]
+        interpolation = InterpolationMode.BICUBIC
 
     print("Loading training data")
     st = time.time()
@@ -113,7 +125,8 @@ def load_data(traindir, valdir, args):
     else:
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size))
+            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size,
+                                             interpolation=interpolation))
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
