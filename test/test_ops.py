@@ -1000,5 +1000,33 @@ class TestGenBoxIou:
             gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
 
 
+class TestStochasticDepth:
+    @pytest.mark.parametrize('p', [0.2, 0.5, 0.8])
+    @pytest.mark.parametrize('mode', ["batch", "row"])
+    def test_stochastic_depth(self, mode, p):
+        stats = pytest.importorskip("scipy.stats")
+        batch_size = 5
+        x = torch.ones(size=(batch_size, 3, 4, 4))
+        layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
+        layer.__repr__()
+
+        trials = 250
+        num_samples = 0
+        counts = 0
+        for _ in range(trials):
+            out = layer(x)
+            non_zero_count = out.sum(dim=(1, 2, 3)).nonzero().size(0)
+            if mode == "batch":
+                if non_zero_count == 0:
+                    counts += 1
+                num_samples += 1
+            elif mode == "row":
+                counts += batch_size - non_zero_count
+                num_samples += batch_size
+
+        p_value = stats.binom_test(counts, num_samples, p=p)
+        assert p_value > 0.0001
+
+
 if __name__ == '__main__':
     pytest.main([__file__])
