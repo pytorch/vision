@@ -404,6 +404,8 @@ def test_fasterrcnn_switch_devices():
 
     checkOut(out)
 
+    _check_input_backprop(model, model_input)
+
     # now switch to cpu and make sure it works
     model.cpu()
     x = x.cpu()
@@ -411,7 +413,7 @@ def test_fasterrcnn_switch_devices():
 
     checkOut(out_cpu)
 
-    _check_input_backprop(model, model_input)
+    _check_input_backprop(model, [x])
 
 
 def test_generalizedrcnn_transform_repr():
