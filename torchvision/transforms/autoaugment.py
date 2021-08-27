@@ -3,7 +3,7 @@ import torch
 
 from enum import Enum
 from torch import Tensor
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 from . import functional as F, InterpolationMode
 
@@ -19,7 +19,9 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
-def _get_transforms(policy: AutoAugmentPolicy):
+def _get_transforms(  # type: ignore[return]
+    policy: AutoAugmentPolicy
+) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
     if policy == AutoAugmentPolicy.IMAGENET:
         return [
             (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -106,7 +108,7 @@ def _get_transforms(policy: AutoAugmentPolicy):
         ]
 
 
-def _get_magnitudes():
+def _get_magnitudes() -> Dict[str, Tuple[Optional[Tensor], Optional[bool]]]:
     _BINS = 10
     return {
         # name: (magnitudes, signed)
@@ -144,8 +146,12 @@ class AutoAugment(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
     """
 
-    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-                 interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None):
+    def __init__(
+        self,
+        policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None
+    ) -> None:
         super().__init__()
         self.policy = policy
         self.interpolation = interpolation
@@ -163,7 +169,7 @@ class AutoAugment(torch.nn.Module):
         Returns:
             params required by the autoaugment transformation
         """
-        policy_id = torch.randint(transform_num, (1,)).item()
+        policy_id = int(torch.randint(transform_num, (1,)).item())
         probs = torch.rand((2,))
         signs = torch.randint(2, (2,))
 
@@ -172,7 +178,7 @@ class AutoAugment(torch.nn.Module):
     def _get_op_meta(self, name: str) -> Tuple[Optional[Tensor], Optional[bool]]:
         return self._op_meta[name]
 
-    def forward(self, img: Tensor):
+    def forward(self, img: Tensor) -> Tensor:
         """
             img (PIL Image or Tensor): Image to be transformed.
 
@@ -182,7 +188,7 @@ class AutoAugment(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
@@ -203,10 +209,10 @@ class AutoAugment(torch.nn.Module):
                     img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[0.0, math.degrees(magnitude)],
                                    interpolation=self.interpolation, fill=fill)
                 elif op_name == "TranslateX":
-                    img = F.affine(img, angle=0.0, translate=[int(F._get_image_size(img)[0] * magnitude), 0], scale=1.0,
+                    img = F.affine(img, angle=0.0, translate=[int(F.get_image_size(img)[0] * magnitude), 0], scale=1.0,
                                    interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
                 elif op_name == "TranslateY":
-                    img = F.affine(img, angle=0.0, translate=[0, int(F._get_image_size(img)[1] * magnitude)], scale=1.0,
+                    img = F.affine(img, angle=0.0, translate=[0, int(F.get_image_size(img)[1] * magnitude)], scale=1.0,
                                    interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
                 elif op_name == "Rotate":
                     img = F.rotate(img, magnitude, interpolation=self.interpolation, fill=fill)
@@ -233,5 +239,5 @@ class AutoAugment(torch.nn.Module):
 
         return img
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)

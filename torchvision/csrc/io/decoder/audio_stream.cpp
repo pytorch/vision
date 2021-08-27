@@ -68,6 +68,7 @@ int AudioStream::initFormat() {
       : -1;
 }
 
+// copies audio sample bytes via swr_convert call in audio_sampler.cpp
 int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
   if (!sampler_) {
     sampler_ = std::make_unique<AudioSampler>(codecCtx_);
@@ -95,6 +96,8 @@ int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
             << ", channels: " << format_.format.audio.channels
             << ", format: " << format_.format.audio.format;
   }
+  // calls to a sampler that converts the audio samples and copies them to the
+  // out buffer via ffmpeg::swr_convert
   return sampler_->sample(flush ? nullptr : frame_, out);
 }
 
