@@ -28,7 +28,8 @@ class UCF101(VisionDataset):
 
     Args:
         root (string): Root directory of the UCF101 Dataset.
-        annotation_path (str): path to the folder containing the split files; see docstring above for download instructions of these files
+        annotation_path (str): path to the folder containing the split files;
+            see docstring above for download instructions of these files
         frames_per_clip (int): number of frames in a clip.
         step_between_clips (int, optional): number of frames between each clip.
         fold (int, optional): which fold to use. Should be between 1 and 3.
