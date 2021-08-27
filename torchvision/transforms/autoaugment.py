@@ -7,24 +7,7 @@ from typing import List, Tuple, Optional, Dict
 
 from . import functional as F, InterpolationMode
 
-__all__ = ["AutoAugmentPolicy", "AugmentationSpace", "AutoAugment", "TrivialAugment"]
-
-
-class AutoAugmentPolicy(Enum):
-    """AutoAugment policies learned on different datasets.
-    Available policies are IMAGENET, CIFAR10 and SVHN.
-    """
-    IMAGENET = "imagenet"
-    CIFAR10 = "cifar10"
-    SVHN = "svhn"
-
-
-class AugmentationSpace(Enum):
-    """The augmentation space to use.
-    Available spaces are `AA` for AutoAugment and `TA_WIDE` for the TrivialAugment.
-    """
-    AA = "aa"
-    TA_WIDE = "ta_wide"
+__all__ = ["AutoAugmentPolicy", "AutoAugment", "AugmentationSpace", "TrivialAugment"]
 
 
 def _apply_op(img: Tensor, op_name: str, magnitude: float,
@@ -66,82 +49,13 @@ def _apply_op(img: Tensor, op_name: str, magnitude: float,
     return img
 
 
-class TrivialAugment(torch.nn.Module):
-    r"""Dataset-independent data-augmentation with TrivialAugment, as described in
-    `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
-        If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-        to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-        If img is PIL Image, it is expected to be in mode "L" or "RGB".
-
-        Args:
-            augmentation_space (AugmentationSpace): Desired augmentation space enum defined by
-                :class:`torchvision.transforms.autoaugment.AugmentationSpace`. Default is ``AugmentationSpace.TA_WIDE``.
-            num_magnitude_bins (int): The number of different magnitude values.
-            interpolation (InterpolationMode): Desired interpolation enum defined by
-                :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-                If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            fill (sequence or number, optional): Pixel fill value for the area outside the transformed
-                image. If given a number, the value is used for all bands respectively.
-        """
-
-    def __init__(self, augmentation_space: AugmentationSpace = AugmentationSpace.TA_WIDE, num_magnitude_bins: int = 30,
-                 interpolation: InterpolationMode = InterpolationMode.NEAREST,
-                 fill: Optional[List[float]] = None) -> None:
-        super().__init__()
-        self.augmentation_space = augmentation_space
-        self.num_magnitude_bins = num_magnitude_bins
-        self.interpolation = interpolation
-        self.fill = fill
-
-    @staticmethod
-    def _get_magnitudes(num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
-        return {
-            # name: (magnitudes, signed)
-            "ShearX": (torch.linspace(0.0, 0.99, num_bins), True),
-            "ShearY": (torch.linspace(0.0, 0.99, num_bins), True),
-            "TranslateX": (torch.linspace(0.0, 32.0, num_bins), True),
-            "TranslateY": (torch.linspace(0.0, 32.0, num_bins), True),
-            "Rotate": (torch.linspace(0.0, 135.0, num_bins), True),
-            "Brightness": (torch.linspace(0.0, 0.99, num_bins), True),
-            "Color": (torch.linspace(0.0, 0.99, num_bins), True),
-            "Contrast": (torch.linspace(0.0, 0.99, num_bins), True),
-            "Sharpness": (torch.linspace(0.0, 0.99, num_bins), True),
-            "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)).round().int(), False),
-            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
-            "AutoContrast": (torch.tensor(float('nan')), False),
-            "Equalize": (torch.tensor(float('nan')), False),
-            "Invert": (torch.tensor(float('nan')), False),
-        }
-
-    def forward(self, img: Tensor):
-        """
-            img (PIL Image or Tensor): Image to be transformed.
-
-        Returns:
-            PIL Image or Tensor: TrivialAugmented image.
-        """
-        fill = self.fill
-        if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F.get_image_num_channels(img)
-            elif fill is not None:
-                fill = [float(f) for f in fill]
-
-        if self.augmentation_space == AugmentationSpace.AA:
-            op_meta = AutoAugment._get_magnitudes(self.num_magnitude_bins, F.get_image_size(img))
-        elif self.augmentation_space == AugmentationSpace.TA_WIDE:
-            op_meta = self._get_magnitudes(self.num_magnitude_bins)
-        else:
-            raise ValueError(f"Provided augmentation_space arguments {self.augmentation_space} not available.")
-        op_index = int(torch.randint(len(op_meta), (1,)).item())
-        op_name = list(op_meta.keys())[op_index]
-        magnitudes, signed = op_meta[op_name]
-        magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
-            if not magnitudes.isnan().all() else 0.0
-        if signed and torch.randint(2, (1,)):
-            magnitude *= -1.0
-
-        return _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
+class AutoAugmentPolicy(Enum):
+    """AutoAugment policies learned on different datasets.
+    Available policies are IMAGENET, CIFAR10 and SVHN.
+    """
+    IMAGENET = "imagenet"
+    CIFAR10 = "cifar10"
+    SVHN = "svhn"
 
 
 class AutoAugment(torch.nn.Module):
@@ -327,3 +241,98 @@ class AutoAugment(torch.nn.Module):
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)
+
+
+class AugmentationSpace(Enum):
+    """The augmentation space to use.
+    Available spaces are `AA` for AutoAugment and `TA_WIDE` for the TrivialAugment.
+    """
+    AA = "aa"
+    TA_WIDE = "ta_wide"
+
+
+class TrivialAugment(torch.nn.Module):
+    r"""Dataset-independent data-augmentation with TrivialAugment, as described in
+    `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
+        If the image is torch Tensor, it should be of type torch.uint8, and it is expected
+        to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+        If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+        Args:
+            augmentation_space (AugmentationSpace): Desired augmentation space enum defined by
+                :class:`torchvision.transforms.autoaugment.AugmentationSpace`. Default is ``AugmentationSpace.TA_WIDE``.
+            num_magnitude_bins (int): The number of different magnitude values.
+            interpolation (InterpolationMode): Desired interpolation enum defined by
+                :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+                If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+                image. If given a number, the value is used for all bands respectively.
+        """
+
+    def __init__(self, augmentation_space: AugmentationSpace = AugmentationSpace.TA_WIDE, num_magnitude_bins: int = 30,
+                 interpolation: InterpolationMode = InterpolationMode.NEAREST,
+                 fill: Optional[List[float]] = None) -> None:
+        super().__init__()
+        self.augmentation_space = augmentation_space
+        self.num_magnitude_bins = num_magnitude_bins
+        self.interpolation = interpolation
+        self.fill = fill
+
+    @staticmethod
+    def _get_magnitudes(num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
+        return {
+            # name: (magnitudes, signed)
+            "ShearX": (torch.linspace(0.0, 0.99, num_bins), True),
+            "ShearY": (torch.linspace(0.0, 0.99, num_bins), True),
+            "TranslateX": (torch.linspace(0.0, 32.0, num_bins), True),
+            "TranslateY": (torch.linspace(0.0, 32.0, num_bins), True),
+            "Rotate": (torch.linspace(0.0, 135.0, num_bins), True),
+            "Brightness": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Color": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Contrast": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Sharpness": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)).round().int(), False),
+            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
+            "AutoContrast": (torch.tensor(float('nan')), False),
+            "Equalize": (torch.tensor(float('nan')), False),
+            "Invert": (torch.tensor(float('nan')), False),
+        }
+
+    def forward(self, img: Tensor):
+        """
+            img (PIL Image or Tensor): Image to be transformed.
+
+        Returns:
+            PIL Image or Tensor: TrivialAugmented image.
+        """
+        fill = self.fill
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F.get_image_num_channels(img)
+            elif fill is not None:
+                fill = [float(f) for f in fill]
+
+        if self.augmentation_space == AugmentationSpace.AA:
+            op_meta = AutoAugment._get_magnitudes(self.num_magnitude_bins, F.get_image_size(img))
+        elif self.augmentation_space == AugmentationSpace.TA_WIDE:
+            op_meta = self._get_magnitudes(self.num_magnitude_bins)
+        else:
+            raise ValueError(f"Provided augmentation_space arguments {self.augmentation_space} not available.")
+        op_index = int(torch.randint(len(op_meta), (1,)).item())
+        op_name = list(op_meta.keys())[op_index]
+        magnitudes, signed = op_meta[op_name]
+        magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
+            if not magnitudes.isnan().all() else 0.0
+        if signed and torch.randint(2, (1,)):
+            magnitude *= -1.0
+
+        return _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
+
+    def __repr__(self) -> str:
+        s = self.__class__.__name__ + '('
+        s += 'augmentation_space={augmentation_space}'
+        s += ', num_magnitude_bins={num_magnitude_bins}'
+        s += ', interpolation={interpolation}'
+        s += ', fill={fill}'
+        s += ')'
+        return s.format(**self.__dict__)
