@@ -7,7 +7,7 @@ from typing import List, Tuple, Optional, Dict
 
 from . import functional as F, InterpolationMode
 
-__all__ = ["AutoAugmentPolicy", "AutoAugment", "AugmentationSpace", "TrivialAugment"]
+__all__ = ["AutoAugmentPolicy", "AutoAugment", "TrivialAugmentWide"]
 
 
 def _apply_op(img: Tensor, op_name: str, magnitude: float,
@@ -178,8 +178,7 @@ class AutoAugment(torch.nn.Module):
         else:
             raise ValueError("The provided policy {} is not recognized.".format(policy))
 
-    @staticmethod
-    def _get_magnitudes(num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _get_magnitudes(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
@@ -243,24 +242,14 @@ class AutoAugment(torch.nn.Module):
         return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)
 
 
-class AugmentationSpace(Enum):
-    """The augmentation space to use.
-    Available spaces are `AA` for AutoAugment and `TA_WIDE` for the TrivialAugment.
-    """
-    AA = "aa"
-    TA_WIDE = "ta_wide"
-
-
-class TrivialAugment(torch.nn.Module):
-    r"""Dataset-independent data-augmentation with TrivialAugment, as described in
+class TrivialAugmentWide(torch.nn.Module):
+    r"""Dataset-independent data-augmentation with TrivialAugment Wide, as described in
     `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
         If the image is torch Tensor, it should be of type torch.uint8, and it is expected
         to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
         If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
         Args:
-            augmentation_space (AugmentationSpace): Desired augmentation space enum defined by
-                :class:`torchvision.transforms.autoaugment.AugmentationSpace`. Default is ``AugmentationSpace.TA_WIDE``.
             num_magnitude_bins (int): The number of different magnitude values.
             interpolation (InterpolationMode): Desired interpolation enum defined by
                 :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
@@ -269,17 +258,14 @@ class TrivialAugment(torch.nn.Module):
                 image. If given a number, the value is used for all bands respectively.
         """
 
-    def __init__(self, augmentation_space: AugmentationSpace = AugmentationSpace.TA_WIDE, num_magnitude_bins: int = 30,
-                 interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    def __init__(self, num_magnitude_bins: int = 30, interpolation: InterpolationMode = InterpolationMode.NEAREST,
                  fill: Optional[List[float]] = None) -> None:
         super().__init__()
-        self.augmentation_space = augmentation_space
         self.num_magnitude_bins = num_magnitude_bins
         self.interpolation = interpolation
         self.fill = fill
 
-    @staticmethod
-    def _get_magnitudes(num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
+    def _get_magnitudes(self, num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.99, num_bins), True),
@@ -303,7 +289,7 @@ class TrivialAugment(torch.nn.Module):
             img (PIL Image or Tensor): Image to be transformed.
 
         Returns:
-            PIL Image or Tensor: TrivialAugmented image.
+            PIL Image or Tensor: Transformed image.
         """
         fill = self.fill
         if isinstance(img, Tensor):
@@ -312,12 +298,7 @@ class TrivialAugment(torch.nn.Module):
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
-        if self.augmentation_space == AugmentationSpace.AA:
-            op_meta = AutoAugment._get_magnitudes(self.num_magnitude_bins, F.get_image_size(img))
-        elif self.augmentation_space == AugmentationSpace.TA_WIDE:
-            op_meta = self._get_magnitudes(self.num_magnitude_bins)
-        else:
-            raise ValueError(f"Provided augmentation_space arguments {self.augmentation_space} not available.")
+        op_meta = self._get_magnitudes(self.num_magnitude_bins)
         op_index = int(torch.randint(len(op_meta), (1,)).item())
         op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
@@ -330,8 +311,7 @@ class TrivialAugment(torch.nn.Module):
 
     def __repr__(self) -> str:
         s = self.__class__.__name__ + '('
-        s += 'augmentation_space={augmentation_space}'
-        s += ', num_magnitude_bins={num_magnitude_bins}'
+        s += 'num_magnitude_bins={num_magnitude_bins}'
         s += ', interpolation={interpolation}'
         s += ', fill={fill}'
         s += ')'
