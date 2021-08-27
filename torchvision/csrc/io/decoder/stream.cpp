@@ -1,6 +1,8 @@
 #include "stream.h"
 #include <c10/util/Logging.h>
 #include "util.h"
+#include <stdio.h>
+#include <string.h>
 
 namespace ffmpeg {
 const AVRational timeBaseQ = AVRational{1, AV_TIME_BASE};
@@ -33,7 +35,7 @@ AVCodec* Stream::findCodec(AVCodecParameters* params) {
 // decode/encode process. Then fill this codec context with CODEC parameters
 // defined in stream parameters. Open the codec, and allocate the global frame
 // defined in the header file
-int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
+int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
   AVStream* steam = inputCtx_->streams[format_.stream];
 
   AVCodec* codec = findCodec(steam->codecpar);
@@ -49,7 +51,51 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
                << ", avcodec_alloc_context3 failed";
     return AVERROR(ENOMEM);
   }
+  // multithreading heuristics
+  // this is a dumb conservative limit; ideally we'd use 
+  // int max_threads = at::get_num_threads(); but this would cause 
+  // fb sync to fail as it would add dependency to ATen to the decoder API
+  int max_threads = 12;
+  if (num_threads > max_threads) {
+    num_threads = max_threads;
+  }
 
+  if (num_threads > 0) {
+    if (num_threads > 1) {
+      codecCtx_->active_thread_type = 1;
+    }
+    // if user defined, respect that
+    codecCtx_->thread_count = num_threads;
+
+  } else {
+    // otherwise set sensible defaults
+    // with the special case for the different MPEG4 codecs
+    // that don't have threading context functions
+    // TODO: potentially automate this using native c++ function lookups
+    if (strcmp(codecCtx_->codec->name, "mpeg4") == 0 &&
+        codecCtx_->codec_type == 0) {
+      if (codecCtx_->codec_tag == 1684633208) {
+        codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
+        codecCtx_->thread_type = 1;
+      } else {
+        codecCtx_->thread_count = (2 <= max_threads) ? 2 : max_threads;
+        codecCtx_->thread_type = 2;
+      }
+    } else {
+      // otherwise default to multithreading
+      codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
+      codecCtx_->active_thread_type = 1;
+    }
+  }
+
+  // print codec type and number of threads
+  LOG(INFO) << "Codec " << codecCtx_->codec->long_name
+            << " Codec id: " << codecCtx_->codec_id
+            << " Codec tag: " << codecCtx_->codec_tag
+            << " Codec type: " << codecCtx_->codec_type
+            << " Codec extradata: " << codecCtx_->extradata
+            << " Number of threads: " << codecCtx_->thread_count
+            << " Thread type: " << codecCtx_->thread_type;
   int ret;
   // Copy codec parameters from input stream to output codec context
   if ((ret = avcodec_parameters_to_context(codecCtx_, steam->codecpar)) < 0) {
