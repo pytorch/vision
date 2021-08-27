@@ -27,137 +27,7 @@ class AugmentationSpace(Enum):
     TA_WIDE = "ta_wide"
 
 
-def _get_transforms(  # type: ignore[return]
-    policy: AutoAugmentPolicy
-) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
-    if policy == AutoAugmentPolicy.IMAGENET:
-        return [
-            (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
-            (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
-            (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
-            (("Posterize", 0.6, 7), ("Posterize", 0.6, 6)),
-            (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
-            (("Equalize", 0.4, None), ("Rotate", 0.8, 8)),
-            (("Solarize", 0.6, 3), ("Equalize", 0.6, None)),
-            (("Posterize", 0.8, 5), ("Equalize", 1.0, None)),
-            (("Rotate", 0.2, 3), ("Solarize", 0.6, 8)),
-            (("Equalize", 0.6, None), ("Posterize", 0.4, 6)),
-            (("Rotate", 0.8, 8), ("Color", 0.4, 0)),
-            (("Rotate", 0.4, 9), ("Equalize", 0.6, None)),
-            (("Equalize", 0.0, None), ("Equalize", 0.8, None)),
-            (("Invert", 0.6, None), ("Equalize", 1.0, None)),
-            (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
-            (("Rotate", 0.8, 8), ("Color", 1.0, 2)),
-            (("Color", 0.8, 8), ("Solarize", 0.8, 7)),
-            (("Sharpness", 0.4, 7), ("Invert", 0.6, None)),
-            (("ShearX", 0.6, 5), ("Equalize", 1.0, None)),
-            (("Color", 0.4, 0), ("Equalize", 0.6, None)),
-            (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
-            (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
-            (("Invert", 0.6, None), ("Equalize", 1.0, None)),
-            (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
-            (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
-        ]
-    elif policy == AutoAugmentPolicy.CIFAR10:
-        return [
-            (("Invert", 0.1, None), ("Contrast", 0.2, 6)),
-            (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
-            (("Sharpness", 0.8, 1), ("Sharpness", 0.9, 3)),
-            (("ShearY", 0.5, 8), ("TranslateY", 0.7, 9)),
-            (("AutoContrast", 0.5, None), ("Equalize", 0.9, None)),
-            (("ShearY", 0.2, 7), ("Posterize", 0.3, 7)),
-            (("Color", 0.4, 3), ("Brightness", 0.6, 7)),
-            (("Sharpness", 0.3, 9), ("Brightness", 0.7, 9)),
-            (("Equalize", 0.6, None), ("Equalize", 0.5, None)),
-            (("Contrast", 0.6, 7), ("Sharpness", 0.6, 5)),
-            (("Color", 0.7, 7), ("TranslateX", 0.5, 8)),
-            (("Equalize", 0.3, None), ("AutoContrast", 0.4, None)),
-            (("TranslateY", 0.4, 3), ("Sharpness", 0.2, 6)),
-            (("Brightness", 0.9, 6), ("Color", 0.2, 8)),
-            (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
-            (("Equalize", 0.2, None), ("AutoContrast", 0.6, None)),
-            (("Equalize", 0.2, None), ("Equalize", 0.6, None)),
-            (("Color", 0.9, 9), ("Equalize", 0.6, None)),
-            (("AutoContrast", 0.8, None), ("Solarize", 0.2, 8)),
-            (("Brightness", 0.1, 3), ("Color", 0.7, 0)),
-            (("Solarize", 0.4, 5), ("AutoContrast", 0.9, None)),
-            (("TranslateY", 0.9, 9), ("TranslateY", 0.7, 9)),
-            (("AutoContrast", 0.9, None), ("Solarize", 0.8, 3)),
-            (("Equalize", 0.8, None), ("Invert", 0.1, None)),
-            (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
-        ]
-    elif policy == AutoAugmentPolicy.SVHN:
-        return [
-            (("ShearX", 0.9, 4), ("Invert", 0.2, None)),
-            (("ShearY", 0.9, 8), ("Invert", 0.7, None)),
-            (("Equalize", 0.6, None), ("Solarize", 0.6, 6)),
-            (("Invert", 0.9, None), ("Equalize", 0.6, None)),
-            (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
-            (("ShearX", 0.9, 4), ("AutoContrast", 0.8, None)),
-            (("ShearY", 0.9, 8), ("Invert", 0.4, None)),
-            (("ShearY", 0.9, 5), ("Solarize", 0.2, 6)),
-            (("Invert", 0.9, None), ("AutoContrast", 0.8, None)),
-            (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
-            (("ShearX", 0.9, 4), ("Solarize", 0.3, 3)),
-            (("ShearY", 0.8, 8), ("Invert", 0.7, None)),
-            (("Equalize", 0.9, None), ("TranslateY", 0.6, 6)),
-            (("Invert", 0.9, None), ("Equalize", 0.6, None)),
-            (("Contrast", 0.3, 3), ("Rotate", 0.8, 4)),
-            (("Invert", 0.8, None), ("TranslateY", 0.0, 2)),
-            (("ShearY", 0.7, 6), ("Solarize", 0.4, 8)),
-            (("Invert", 0.6, None), ("Rotate", 0.8, 4)),
-            (("ShearY", 0.3, 7), ("TranslateX", 0.9, 3)),
-            (("ShearX", 0.1, 6), ("Invert", 0.6, None)),
-            (("Solarize", 0.7, 2), ("TranslateY", 0.6, 7)),
-            (("ShearY", 0.8, 4), ("Invert", 0.8, None)),
-            (("ShearX", 0.7, 9), ("TranslateY", 0.8, 3)),
-            (("ShearY", 0.8, 5), ("AutoContrast", 0.7, None)),
-            (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
-        ]
-
-
-def _get_magnitudes(
-        augmentation_space: AugmentationSpace, image_size: List[int], num_bins: int = 10
-) -> Dict[str, Tuple[Tensor, bool]]:
-    if augmentation_space == AugmentationSpace.AA:
-        shear_max = 0.3
-        translate_max_x = 150.0 / 331.0 * image_size[0]
-        translate_max_y = 150.0 / 331.0 * image_size[1]
-        rotate_max = 30.0
-        enhancer_max = 0.9
-        posterize_min_bits = 4
-
-    elif augmentation_space == AugmentationSpace.TA_WIDE:
-        shear_max = 0.99
-        translate_max_x = 32.0  # this is an absolute
-        translate_max_y = 32.0  # this is an absolute
-        rotate_max = 135.0
-        enhancer_max = 0.99
-        posterize_min_bits = 2
-    else:
-        raise ValueError(f"Provided augmentation_space arguments {augmentation_space} not available.")
-
-    magnitudes = {
-        # name: (magnitudes, signed)
-        "ShearX": (torch.linspace(0.0, shear_max, num_bins), True),
-        "ShearY": (torch.linspace(0.0, shear_max, num_bins), True),
-        "TranslateX": (torch.linspace(0.0, translate_max_x, num_bins), True),
-        "TranslateY": (torch.linspace(0.0, translate_max_y, num_bins), True),
-        "Rotate": (torch.linspace(0.0, rotate_max, num_bins), True),
-        "Brightness": (torch.linspace(0.0, enhancer_max, num_bins), True),
-        "Color": (torch.linspace(0.0, enhancer_max, num_bins), True),
-        "Contrast": (torch.linspace(0.0, enhancer_max, num_bins), True),
-        "Sharpness": (torch.linspace(0.0, enhancer_max, num_bins), True),
-        "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / (8 - posterize_min_bits))).round().int(), False),
-        "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
-        "AutoContrast": (torch.tensor(float('nan')), False),
-        "Equalize": (torch.tensor(float('nan')), False),
-        "Invert": (torch.tensor(float('nan')), False),
-    }
-    return magnitudes
-
-
-def apply_aug(img: Tensor, op_name: str, magnitude: float,
+def _apply_op(img: Tensor, op_name: str, magnitude: float,
               interpolation: InterpolationMode, fill: Optional[List[float]]):
     if op_name == "ShearX":
         img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[math.degrees(magnitude), 0.0],
@@ -223,7 +93,33 @@ class TrivialAugment(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
+    @staticmethod
+    def _get_magnitudes(num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
+        return {
+            # name: (magnitudes, signed)
+            "ShearX": (torch.linspace(0.0, 0.99, num_bins), True),
+            "ShearY": (torch.linspace(0.0, 0.99, num_bins), True),
+            "TranslateX": (torch.linspace(0.0, 32.0, num_bins), True),
+            "TranslateY": (torch.linspace(0.0, 32.0, num_bins), True),
+            "Rotate": (torch.linspace(0.0, 135.0, num_bins), True),
+            "Brightness": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Color": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Contrast": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Sharpness": (torch.linspace(0.0, 0.99, num_bins), True),
+            "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)).round().int(), False),
+            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
+            "AutoContrast": (torch.tensor(float('nan')), False),
+            "Equalize": (torch.tensor(float('nan')), False),
+            "Invert": (torch.tensor(float('nan')), False),
+        }
+
     def forward(self, img: Tensor):
+        """
+            img (PIL Image or Tensor): Image to be transformed.
+
+        Returns:
+            PIL Image or Tensor: TrivialAugmented image.
+        """
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
@@ -231,7 +127,12 @@ class TrivialAugment(torch.nn.Module):
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
-        op_meta = _get_magnitudes(self.augmentation_space, F.get_image_size(img), num_bins=self.num_magnitude_bins)
+        if self.augmentation_space == AugmentationSpace.AA:
+            op_meta = AutoAugment._get_magnitudes(self.num_magnitude_bins, F.get_image_size(img))
+        elif self.augmentation_space == AugmentationSpace.TA_WIDE:
+            op_meta = self._get_magnitudes(self.num_magnitude_bins)
+        else:
+            raise ValueError(f"Provided augmentation_space arguments {self.augmentation_space} not available.")
         op_index = int(torch.randint(len(op_meta), (1,)).item())
         op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
@@ -240,7 +141,7 @@ class TrivialAugment(torch.nn.Module):
         if signed and torch.randint(2, (1,)):
             magnitude *= -1.0
 
-        return apply_aug(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
+        return _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
 
 class AutoAugment(torch.nn.Module):
@@ -270,10 +171,118 @@ class AutoAugment(torch.nn.Module):
         self.policy = policy
         self.interpolation = interpolation
         self.fill = fill
+        self.transforms = self._get_transforms(policy)
 
-        self.transforms = _get_transforms(policy)
-        if self.transforms is None:
+    def _get_transforms(
+        self,
+        policy: AutoAugmentPolicy
+    ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
+        if policy == AutoAugmentPolicy.IMAGENET:
+            return [
+                (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
+                (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
+                (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
+                (("Posterize", 0.6, 7), ("Posterize", 0.6, 6)),
+                (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
+                (("Equalize", 0.4, None), ("Rotate", 0.8, 8)),
+                (("Solarize", 0.6, 3), ("Equalize", 0.6, None)),
+                (("Posterize", 0.8, 5), ("Equalize", 1.0, None)),
+                (("Rotate", 0.2, 3), ("Solarize", 0.6, 8)),
+                (("Equalize", 0.6, None), ("Posterize", 0.4, 6)),
+                (("Rotate", 0.8, 8), ("Color", 0.4, 0)),
+                (("Rotate", 0.4, 9), ("Equalize", 0.6, None)),
+                (("Equalize", 0.0, None), ("Equalize", 0.8, None)),
+                (("Invert", 0.6, None), ("Equalize", 1.0, None)),
+                (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
+                (("Rotate", 0.8, 8), ("Color", 1.0, 2)),
+                (("Color", 0.8, 8), ("Solarize", 0.8, 7)),
+                (("Sharpness", 0.4, 7), ("Invert", 0.6, None)),
+                (("ShearX", 0.6, 5), ("Equalize", 1.0, None)),
+                (("Color", 0.4, 0), ("Equalize", 0.6, None)),
+                (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
+                (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
+                (("Invert", 0.6, None), ("Equalize", 1.0, None)),
+                (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
+                (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
+            ]
+        elif policy == AutoAugmentPolicy.CIFAR10:
+            return [
+                (("Invert", 0.1, None), ("Contrast", 0.2, 6)),
+                (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
+                (("Sharpness", 0.8, 1), ("Sharpness", 0.9, 3)),
+                (("ShearY", 0.5, 8), ("TranslateY", 0.7, 9)),
+                (("AutoContrast", 0.5, None), ("Equalize", 0.9, None)),
+                (("ShearY", 0.2, 7), ("Posterize", 0.3, 7)),
+                (("Color", 0.4, 3), ("Brightness", 0.6, 7)),
+                (("Sharpness", 0.3, 9), ("Brightness", 0.7, 9)),
+                (("Equalize", 0.6, None), ("Equalize", 0.5, None)),
+                (("Contrast", 0.6, 7), ("Sharpness", 0.6, 5)),
+                (("Color", 0.7, 7), ("TranslateX", 0.5, 8)),
+                (("Equalize", 0.3, None), ("AutoContrast", 0.4, None)),
+                (("TranslateY", 0.4, 3), ("Sharpness", 0.2, 6)),
+                (("Brightness", 0.9, 6), ("Color", 0.2, 8)),
+                (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
+                (("Equalize", 0.2, None), ("AutoContrast", 0.6, None)),
+                (("Equalize", 0.2, None), ("Equalize", 0.6, None)),
+                (("Color", 0.9, 9), ("Equalize", 0.6, None)),
+                (("AutoContrast", 0.8, None), ("Solarize", 0.2, 8)),
+                (("Brightness", 0.1, 3), ("Color", 0.7, 0)),
+                (("Solarize", 0.4, 5), ("AutoContrast", 0.9, None)),
+                (("TranslateY", 0.9, 9), ("TranslateY", 0.7, 9)),
+                (("AutoContrast", 0.9, None), ("Solarize", 0.8, 3)),
+                (("Equalize", 0.8, None), ("Invert", 0.1, None)),
+                (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
+            ]
+        elif policy == AutoAugmentPolicy.SVHN:
+            return [
+                (("ShearX", 0.9, 4), ("Invert", 0.2, None)),
+                (("ShearY", 0.9, 8), ("Invert", 0.7, None)),
+                (("Equalize", 0.6, None), ("Solarize", 0.6, 6)),
+                (("Invert", 0.9, None), ("Equalize", 0.6, None)),
+                (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
+                (("ShearX", 0.9, 4), ("AutoContrast", 0.8, None)),
+                (("ShearY", 0.9, 8), ("Invert", 0.4, None)),
+                (("ShearY", 0.9, 5), ("Solarize", 0.2, 6)),
+                (("Invert", 0.9, None), ("AutoContrast", 0.8, None)),
+                (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
+                (("ShearX", 0.9, 4), ("Solarize", 0.3, 3)),
+                (("ShearY", 0.8, 8), ("Invert", 0.7, None)),
+                (("Equalize", 0.9, None), ("TranslateY", 0.6, 6)),
+                (("Invert", 0.9, None), ("Equalize", 0.6, None)),
+                (("Contrast", 0.3, 3), ("Rotate", 0.8, 4)),
+                (("Invert", 0.8, None), ("TranslateY", 0.0, 2)),
+                (("ShearY", 0.7, 6), ("Solarize", 0.4, 8)),
+                (("Invert", 0.6, None), ("Rotate", 0.8, 4)),
+                (("ShearY", 0.3, 7), ("TranslateX", 0.9, 3)),
+                (("ShearX", 0.1, 6), ("Invert", 0.6, None)),
+                (("Solarize", 0.7, 2), ("TranslateY", 0.6, 7)),
+                (("ShearY", 0.8, 4), ("Invert", 0.8, None)),
+                (("ShearX", 0.7, 9), ("TranslateY", 0.8, 3)),
+                (("ShearY", 0.8, 5), ("AutoContrast", 0.7, None)),
+                (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
+            ]
+        else:
             raise ValueError("The provided policy {} is not recognized.".format(policy))
+
+    @staticmethod
+    def _get_magnitudes(num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+        return {
+            # name: (magnitudes, signed)
+            "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
+            "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
+            "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
+            "TranslateY": (torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+            "Rotate": (torch.linspace(0.0, 30.0, num_bins), True),
+            "Brightness": (torch.linspace(0.0, 0.9, num_bins), True),
+            "Color": (torch.linspace(0.0, 0.9, num_bins), True),
+            "Contrast": (torch.linspace(0.0, 0.9, num_bins), True),
+            "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
+            "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)).round().int(), False),
+            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
+            "AutoContrast": (torch.tensor(float('nan')), False),
+            "Equalize": (torch.tensor(float('nan')), False),
+            "Invert": (torch.tensor(float('nan')), False),
+        }
 
     @staticmethod
     def get_params(transform_num: int) -> Tuple[int, Tensor, Tensor]:
@@ -306,13 +315,13 @@ class AutoAugment(torch.nn.Module):
 
         for i, (op_name, p, magnitude_id) in enumerate(self.transforms[transform_id]):
             if probs[i] <= p:
-                op_meta = _get_magnitudes(AugmentationSpace.AA, F.get_image_size(img))
+                op_meta = self._get_magnitudes(10, F.get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) \
                     if not magnitudes.isnan().all() and magnitude_id is not None else 0.0
                 if signed and signs[i] == 0:
                     magnitude *= -1.0
-                img = apply_aug(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
+                img = _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
         return img
 
