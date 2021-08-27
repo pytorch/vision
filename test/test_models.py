@@ -149,11 +149,32 @@ def _check_fx_compatible(model, inputs):
 
 
 def _check_input_backprop(model, inputs):
-    requires_grad = inputs.requires_grad
-    inputs.requires_grad = True
-    out = model(inputs)[0]
-    assert len(out) > 1
-    inputs.requires_grad = requires_grad
+    if isinstance(inputs, list):
+        requires_grad = list()
+        for inp in inputs:
+            requires_grad.append(inp.requires_grad)
+            inp.requires_grad_(True)
+    else:
+        requires_grad = inputs.requires_grad
+        inputs.requires_grad_(True)
+
+    out = model(inputs)
+
+    if isinstance(out, dict):
+        out["out"].sum().backward()
+    else:
+        if isinstance(out[0], dict):
+            out[0]["scores"].sum().backward()
+        else:
+            out[0].sum().backward()
+
+    if isinstance(inputs, list):
+        for i, inp in enumerate(inputs):
+            assert inputs[i].grad is not None
+            inp.requires_grad_(requires_grad[i])
+    else:
+        assert inputs.grad is not None
+        inputs.requires_grad_(requires_grad)
 
 
 # If 'unwrapper' is provided it will be called with the script model outputs
@@ -339,11 +360,7 @@ def test_fasterrcnn_double():
     assert "boxes" in out[0]
     assert "scores" in out[0]
     assert "labels" in out[0]
-
-    # check input backpropagation
-    model_input[0].requires_grad = True
-    out = model(model_input)[0]
-    assert len(out) == 3
+    _check_input_backprop(model, model_input)
 
 
 def test_googlenet_eval():
@@ -394,10 +411,7 @@ def test_fasterrcnn_switch_devices():
 
     checkOut(out_cpu)
 
-    # check input backpropagation
-    model_input[0].requires_grad = True
-    out = model(model_input)[0]
-    assert len(out) == 1
+    _check_input_backprop(model, model_input)
 
 
 def test_generalizedrcnn_transform_repr():
@@ -435,7 +449,6 @@ def test_classification_model(model_name, dev):
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
-    _check_input_backprop(model, x)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == 50
@@ -449,6 +462,8 @@ def test_classification_model(model_name, dev):
             if model_name not in autocast_flaky_numerics:
                 _assert_expected(out.cpu(), model_name, prec=0.1)
             assert out.shape[-1] == 50
+
+    _check_input_backprop(model, x)
 
 
 @pytest.mark.parametrize('model_name', get_available_segmentation_models())
@@ -507,10 +522,7 @@ def test_segmentation_model(model_name, dev):
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
 
-    # check input backpropagation
-    x.requires_grad = True
-    out = model(x)["out"]
-    assert len(out) == 1
+    _check_input_backprop(model, x)
 
 
 @pytest.mark.parametrize('model_name', get_available_detection_models())
@@ -603,10 +615,7 @@ def test_detection_model(model_name, dev):
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
 
-    # check input backpropagation
-    model_input[0].requires_grad = True
-    out = model(model_input)[0]
-    assert 3 <= len(out) <= 5
+    _check_input_backprop(model, model_input)
 
 
 @pytest.mark.parametrize('model_name', get_available_detection_models())
@@ -652,13 +661,14 @@ def test_video_model(model_name, dev):
     out = model(x)
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
-    _check_input_backprop(model, x)
     assert out.shape[-1] == 50
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
             out = model(x)
             assert out.shape[-1] == 50
+
+    _check_input_backprop(model, x)
 
 
 @pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
