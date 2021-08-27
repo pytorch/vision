@@ -20,7 +20,7 @@ body:
       import torchvision
       from torchvision.ops import nms
 
-      # A succint reproducing example trimmed down to the essential parts:
+      # A succinct reproducing example trimmed down to the essential parts:
       N = 5
       boxes = torch.rand(N, 4)  # Note: the bug is here, we should enforce that x1 < x2 and y1 < y2!
       scores = torch.rand(N)
