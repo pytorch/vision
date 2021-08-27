@@ -221,7 +221,8 @@ class GeneralizedRCNNTransform(nn.Module):
         batch_shape = [len(images)] + max_size
         batched_imgs = images[0].new_full(batch_shape, 0)
         for i in range(batched_imgs.shape[0]):
-            batched_imgs[i][: images[i].shape[0], : images[i].shape[1], : images[i].shape[2]].copy_(images[i])
+            img = images[i]
+            batched_imgs[i, : img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
 
         return batched_imgs
 
