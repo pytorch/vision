@@ -188,7 +188,7 @@ class AutoAugment(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
@@ -209,10 +209,10 @@ class AutoAugment(torch.nn.Module):
                     img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[0.0, math.degrees(magnitude)],
                                    interpolation=self.interpolation, fill=fill)
                 elif op_name == "TranslateX":
-                    img = F.affine(img, angle=0.0, translate=[int(F._get_image_size(img)[0] * magnitude), 0], scale=1.0,
+                    img = F.affine(img, angle=0.0, translate=[int(F.get_image_size(img)[0] * magnitude), 0], scale=1.0,
                                    interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
                 elif op_name == "TranslateY":
-                    img = F.affine(img, angle=0.0, translate=[0, int(F._get_image_size(img)[1] * magnitude)], scale=1.0,
+                    img = F.affine(img, angle=0.0, translate=[0, int(F.get_image_size(img)[1] * magnitude)], scale=1.0,
                                    interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
                 elif op_name == "Rotate":
                     img = F.rotate(img, magnitude, interpolation=self.interpolation, fill=fill)
