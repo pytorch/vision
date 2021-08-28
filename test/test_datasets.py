@@ -1804,7 +1804,7 @@ class _LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         "deepfunneled": "lfw-deepfunneled"
     }
 
-    def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
+    def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "lfw-py"
         os.makedirs(tmpdir, exist_ok=True)
         split = "Train" if config["train"] else "Test"
