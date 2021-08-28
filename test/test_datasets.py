@@ -719,7 +719,7 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
     _IMAGE_FOLDER = "images"
     _ANNOTATIONS_FOLDER = "annotations"
     _ANNOTATIONS_FILE = "annotations.json"
-`
+
     def dataset_args(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
         root = tmpdir / self._IMAGE_FOLDER

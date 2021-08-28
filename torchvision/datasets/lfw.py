@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from PIL import Image
 from torchvision.datasets import VisionDataset
 from torchvision.datasets.utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
@@ -34,7 +34,7 @@ class _LFW(VisionDataset):
 
         self.view = verify_str_arg(view.lower(), 'view', ['people', 'pairs'])
         self.split = "Train" if train else "Test"
-        self.data = []
+        self.data: List[Any] = []
 
         if download:
             self.download()
