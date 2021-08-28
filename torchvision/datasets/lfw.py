@@ -34,6 +34,7 @@ class _LFW(VisionDataset):
 
         self.view = verify_str_arg(view.lower(), 'view', ['people', 'pairs'])
         self.split = "Train" if train else "Test"
+        self.data = []
 
         if download:
             self.download()
@@ -44,7 +45,7 @@ class _LFW(VisionDataset):
 
         self.images_dir = os.path.join(self.root, images_dir)
 
-    def loader(self, path: str) -> Image.Image:
+    def _loader(self, path: str) -> Image.Image:
         with open(path, 'rb') as f:
             img = Image.open(f)
             return img.convert('RGB')
@@ -128,7 +129,7 @@ class LFWPeople(_LFW):
         Returns:
             tuple: Tuple (image, target) where target is the identity of the person.
         """
-        img = self.loader(self.data[index])
+        img = self._loader(self.data[index])
         target = self.targets[index]
 
         if self.transform is not None:
@@ -214,7 +215,7 @@ class LFWPairs(_LFW):
             tuple: (image1, image2, target) where target is `0` for different indentities and `1` for same identities.
         """
         img1, img2 = self.data[index]
-        img1, img2 = self.loader(img1), self.loader(img2)
+        img1, img2 = self._loader(img1), self._loader(img2)
         target = self.targets[index]
 
         if self.transform is not None:

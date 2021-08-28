@@ -719,7 +719,7 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
     _IMAGE_FOLDER = "images"
     _ANNOTATIONS_FOLDER = "annotations"
     _ANNOTATIONS_FILE = "annotations.json"
-
+`
     def dataset_args(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
         root = tmpdir / self._IMAGE_FOLDER
@@ -1788,6 +1788,68 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
                 assert dataset.category_name("kingdom", item[0]) == "Akingdom"
                 assert dataset.category_name("phylum", item[1]) == f"{i // 3}phylum"
                 assert item[6] == i // 3
+
+
+class _LFWPeopleTestCase(datasets_utils.DatasetTestCase):
+    DATASET_CLASS = datasets.LFWPeople
+    FEATURE_TYPES = (PIL.Image.Image, int)
+    DEFAULT_CONFIG = dict(image_set="deepfunneled")
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        train=(True, False),
+        image_set=('original', 'funneled', 'deepfunneled')
+    )
+    _IMAGES_DIR = {
+        "original": "lfw",
+        "funneled": "lfw_funneled",
+        "deepfunneled": "lfw-deepfunneled"
+    }
+
+    def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
+        tmpdir = pathlib.Path(tmpdir) / "lfw-py"
+        os.makedirs(tmpdir, exist_ok=True)
+        split = "Train" if config["train"] else "Test"
+        self._create_images_dir(tmpdir, self._IMAGES_DIR[config["image_set"]], split)
+
+    def _create_images_dir(self, root, idir, split):
+        num_people = 5
+        with open(pathlib.Path(root) / f"peopleDev{split}.txt", "w") as file:
+            file.write(num_people)
+            for i in num_people:
+                name = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
+                    + datasets_utils.create_random_string(random.randint(4, 7))
+                no = random.randint(1, 100)
+                file.write(f"\n{name}\t{no}")
+                datasets_utils.create_image_file(os.path.join(root, idir), f"{name}_{no:04d}.jpg", 250)
+
+        return num_people
+
+
+class _LFWPairsTestCase(datasets_utils.DatasetTestCase):
+    DATASET_CLASS = datasets.LFWPairs
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, int)
+
+    def _create_images_dir(self, root, idir, split):
+        num_pairs = 7  # effectively 7*2 = 14
+        with open(pathlib.Path(root) / f"pairsDev{split}.txt", "w") as file:
+            file.write(num_pairs)
+            for i in num_pairs:
+                name1 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
+                    + datasets_utils.create_random_string(random.randint(4, 7))
+                no1, no2 = random.randint(1, 100), random.randint(1, 100)
+                file.write(f"\n{name1}\t{no1}\t{no2}")
+                datasets_utils.create_image_file(os.path.join(root, idir), f"{name1}_{no1:04d}.jpg", 250)
+                datasets_utils.create_image_file(os.path.join(root, idir), f"{name1}_{no2:04d}.jpg", 250)
+            for i in num_pairs:
+                name1 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
+                    + datasets_utils.create_random_string(random.randint(4, 7))
+                name2 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
+                    + datasets_utils.create_random_string(random.randint(4, 7))
+                no1, no2 = random.randint(1, 100), random.randint(1, 100)
+                file.write(f"\n{name1}\t{no1}\t{name2}\t{no2}")
+                datasets_utils.create_image_file(os.path.join(root, idir), f"{name1}_{no1:04d}.jpg", 250)
+                datasets_utils.create_image_file(os.path.join(root, idir), f"{name2}_{no2:04d}.jpg", 250)
+
+        return num_pairs * 2
 
 
 if __name__ == "__main__":
