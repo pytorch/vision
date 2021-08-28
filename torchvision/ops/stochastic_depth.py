@@ -22,12 +22,12 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     """
     if p < 0.0 or p > 1.0:
         raise ValueError("drop probability has to be between 0 and 1, but got {}".format(p))
+    if mode not in ["batch", "row"]:
+        raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
     if not training or p == 0.0:
         return input
 
     survival_rate = 1.0 - p
-    if mode not in ["batch", "row"]:
-        raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
     size = [1] * input.ndim
     if mode == "row":
         size[0] = input.shape[0]
