@@ -199,7 +199,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+5e3685c ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+9274137 ) &#x25BC</a>
     </div>
     
 
@@ -1658,7 +1658,9 @@ downloaded again.</p></li>
 <p>UCF101 is an action recognition video dataset.
 This dataset consider every video as a collection of video clips of fixed size, specified
 by <code class="docutils literal notranslate"><span class="pre">frames_per_clip</span></code>, where the step in frames between each clip is given by
-<code class="docutils literal notranslate"><span class="pre">step_between_clips</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">step_between_clips</span></code>. The dataset itself can be downloaded from the dataset website;
+annotations that <code class="docutils literal notranslate"><span class="pre">annotation_path</span></code> should be pointing to can be downloaded from <cite>here
+&lt;https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip&gt;</cite>.</p>
 <p>To give an example, for 2 videos with 10 and 15 frames respectively, if <code class="docutils literal notranslate"><span class="pre">frames_per_clip=5</span></code>
 and <code class="docutils literal notranslate"><span class="pre">step_between_clips=5</span></code>, the dataset size will be (2 + 3) = 5, where the first two
 elements will come from video 1, and the next three elements from video 2.
@@ -1669,7 +1671,8 @@ frames in a video might be present.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>root</strong> (<em>string</em>) – Root directory of the UCF101 Dataset.</p></li>
-<li><p><strong>annotation_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – path to the folder containing the split files</p></li>
+<li><p><strong>annotation_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a>) – path to the folder containing the split files;
+see docstring above for download instructions of these files</p></li>
 <li><p><strong>frames_per_clip</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – number of frames in a clip.</p></li>
 <li><p><strong>step_between_clips</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – number of frames between each clip.</p></li>
 <li><p><strong>fold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>optional</em>) – which fold to use. Should be between 1 and 3.</p></li>
