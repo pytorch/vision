@@ -1,14 +1,16 @@
-from typing import Any, Dict, Callable, List, Union
+from typing import Any, Dict, Callable, List, Union, Optional
 from collections import OrderedDict
 import warnings
 import re
 from pprint import pprint
 from inspect import ismethod
+from copy import deepcopy
+from itertools import chain
 
 import torch
-from torch import Tensor
 from torch import nn
 from torch import fx
+from torch.fx.graph_module import _copy_attr
 
 
 class IntermediateLayerGetter(nn.ModuleDict):
@@ -120,7 +122,7 @@ class NodePathTracer(fx.Tracer):
             self.current_module_qualname = old_qualname
 
     def create_proxy(self, kind: str, target: fx.node.Target, args, kwargs,
-                     name=None, type_expr=None) -> fx.proxy.Proxy:
+                     name=None, type_expr=None, *_) -> fx.proxy.Proxy:
         """
         Override of `Tracer.create_proxy`. This override intercepts the recording
         of every operation and stores away the current traced module's qualified
@@ -151,6 +153,7 @@ class NodePathTracer(fx.Tracer):
                         next_index = 1
                     node_qualname += f'_{next_index}'
                     break
+                pass
         else:
             # Node terminates in non- leaf module so the node name needs to be
             # appended
@@ -159,6 +162,43 @@ class NodePathTracer(fx.Tracer):
                 node_qualname += '.'
             node_qualname += str(node)
         return node_qualname
+
+
+def _is_subseq(x, y):
+    """Check if y is a subseqence of x
+    https://stackoverflow.com/a/24017747/4391249
+    """
+    iter_x = iter(x)
+    return all(any(x_item == y_item for x_item in iter_x) for y_item in y)
+
+
+def _warn_graph_differences(
+        train_tracer: NodePathTracer, eval_tracer: NodePathTracer):
+    """
+    Utility function for warning the user if there are differences between
+    the train graph and the eval graph.
+    """
+    train_nodes = list(train_tracer.node_to_qualname.values())
+    eval_nodes = list(eval_tracer.node_to_qualname.values())
+
+    if len(train_nodes) == len(eval_nodes) and [
+            t == e for t, e in zip(train_nodes, eval_nodes)]:
+        return
+
+    suggestion_msg = (
+        "When choosing nodes for feature extraction, you may need to specify "
+        "output nodes for train and eval mode separately.")
+
+    if _is_subseq(train_nodes, eval_nodes):
+        msg = ("NOTE: The nodes obtained by tracing the model in eval mode "
+               "are a subsequence of those obtained in train mode. ")
+    elif _is_subseq(eval_nodes, train_nodes):
+        msg = ("NOTE: The nodes obtained by tracing the model in train mode "
+               "are a subsequence of those obtained in eval mode. ")
+    else:
+        msg = ("The nodes obtained by tracing the model in train mode "
+               "are different to those obtained in eval mode. ")
+    warnings.warn(msg + suggestion_msg)
 
 
 def print_graph_node_qualified_names(
@@ -171,6 +211,9 @@ def print_graph_node_qualified_names(
            fall within this category.
         2. Node qualified names that occur more than once in the graph get a
            `_{counter}` postfix.
+    The model will be traced twice: once in train mode, and once in eval mode.
+    If there are discrepancies between the graphs produced, both sets will
+    be printed and the user will be warned.
 
     Args:
         model (nn.Module): model on which we will extract the features
@@ -178,14 +221,93 @@ def print_graph_node_qualified_names(
             `NodePathTracer` (which passes them onto it's parent class
             `torch.fx.Tracer`).
     """
-    tracer = NodePathTracer(**tracer_kwargs)
-    tracer.trace(model)
-    pprint(list(tracer.node_to_qualname.values()))
+    train_tracer = NodePathTracer(**tracer_kwargs)
+    train_tracer.trace(model.train())
+    eval_tracer = NodePathTracer(**tracer_kwargs)
+    eval_tracer.trace(model.eval())
+    train_nodes = list(train_tracer.node_to_qualname.values())
+    eval_nodes = list(eval_tracer.node_to_qualname.values())
+    if len(train_nodes) == len(eval_nodes) and [
+            t == e for t, e in zip(train_nodes, eval_nodes)]:
+        # Nodes are aligned in train vs eval mode
+        pprint(list(train_tracer.node_to_qualname.values()))
+        return
+    print("Nodes from train mode:")
+    pprint(list(train_tracer.node_to_qualname.values()))
+    print()
+    print("Nodes from eval mode:")
+    pprint(list(eval_tracer.node_to_qualname.values()))
+    print()
+    _warn_graph_differences(train_tracer, eval_tracer)
+
+
+class DualGraphModule(fx.GraphModule):
+    """
+    A derivative of `fx.GraphModule`. Differs in the following ways:
+    - Requires a train and eval version of the underlying graph
+    - Copies submodules according to the nodes of both train and eval graphs.
+    - Calling train(mode) switches between train graph and eval graph.
+    """
+    def __init__(self,
+                 root: torch.nn.Module,
+                 train_graph: fx.Graph,
+                 eval_graph: fx.Graph,
+                 class_name: str = 'GraphModule'):
+        """
+        Args:
+            root (torch.nn.Module): module from which the copied module
+                hierarchy is built
+            train_graph (Graph): the graph that should be used in train mode
+            eval_graph (Graph): the graph that should be used in eval mode
+        """
+        super(fx.GraphModule, self).__init__()
+
+        self.__class__.__name__ = class_name
+
+        self.train_graph = train_graph
+        self.eval_graph = eval_graph
+
+        # Copy all get_attr and call_module ops (indicated by BOTH train and
+        # eval graphs)
+        for node in chain(iter(train_graph.nodes), iter(eval_graph.nodes)):
+            if node.op in ['get_attr', 'call_module']:
+                assert isinstance(node.target, str)
+                _copy_attr(root, self, node.target)
+
+        # eval mode by default
+        self.eval()
+        self.graph = eval_graph
+
+        # (borrowed from fx.GraphModule):
+        # Store the Tracer class responsible for creating a Graph separately as part of the
+        # GraphModule state, except when the Tracer is defined in a local namespace.
+        # Locally defined Tracers are not pickleable. This is needed because torch.package will
+        # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
+        # to re-create the Graph during deserialization.
+        assert self.eval_graph._tracer_cls == self.train_graph._tracer_cls, \
+            "Train mode and eval mode should use the same tracer class"
+        self._tracer_cls = None
+        if self.graph._tracer_cls and '<locals>' not in self.graph._tracer_cls.__qualname__:
+            self._tracer_cls = self.graph._tracer_cls
+
+    def train(self, mode=True):
+        """
+        Swap out the graph depending on the training mode.
+        NOTE this should be safe when calling model.eval() because that just
+        calls this with mode == False.
+        """
+        if mode:
+            self.graph = self.train_graph
+        else:
+            self.graph = self.eval_graph
+        return super().train(mode=mode)
 
 
 def build_feature_graph_net(
         model: nn.Module,
         return_nodes: Union[List[str], Dict[str, str]],
+        train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
+        eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
         tracer_kwargs: Dict = {}) -> fx.GraphModule:
     """
     Creates a new graph module that returns intermediate nodes from a given
@@ -203,6 +325,10 @@ def build_feature_graph_net(
     `print_graph_node_qualified_names` is a useful helper function for getting
     a list of qualified names of a model.
 
+    An attempt is made to keep all non-parametric properties of the original
+    model, but existing properties of the constructed `GraphModule` are not
+    overwritten.
+
     Args:
         model (nn.Module): model on which we will extract the features
         return_nodes (Union[List[name], Dict[name, new_name]])): either a list
@@ -216,13 +342,6 @@ def build_feature_graph_net(
             `NodePathTracer` (which passes them onto it's parent class
             `torch.fx.Tracer`).
 
-    NOTE: Static control flow will be frozen into place for the resulting
-        `GraphModule`. Among other consequences, this means that control flow
-        that relies on whether the model is in train or eval mode will be
-        frozen into place (except for leaf modules which are not traced
-        through). Therefore, calling `.train()` or `.eval()` on the resulting
-        `GraphModule` may not have all the desired effects.
-
     Examples::
 
         >>> model = torchvision.models.resnet18()
@@ -235,118 +354,114 @@ def build_feature_graph_net(
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
 
     """
-    if isinstance(return_nodes, list):
-        return_nodes = {n: n for n in return_nodes}
-    return_nodes = {str(k): str(v) for k, v in return_nodes.items()}
+    is_training = model.training
 
-    # Instantiate our NodePathTracer and use that to trace the model
-    tracer = NodePathTracer(**tracer_kwargs)
-    graph = tracer.trace(model)
+    assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), \
+        ("If any of `train_return_nodes` and `eval_return_nodes` are "
+         "specified, then both should be specified")
 
-    name = model.__class__.__name__ if isinstance(model, nn.Module) else model.__name__
-    graph_module = fx.GraphModule(tracer.root, graph, name)
+    # Put *_return_nodes into Dict[str, str] format
+    def to_strdict(n) -> Dict[str, str]:
+        if isinstance(n, list):
+            return {str(i): str(i) for i in n}
+        return {str(k): str(v) for k, v in n.items()}
 
-    available_nodes = [f'{v}.{k}' for k, v in tracer.node_to_qualname.items()]
-    # FIXME We don't know if we should expect this to happen
-    assert len(set(available_nodes)) == len(available_nodes), \
-        "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
-    # Check that all outputs in return_nodes are present in the model
-    for query in return_nodes.keys():
-        if not any([m.startswith(query) for m in available_nodes]):
-            raise ValueError(f"return_node: {query} is not present in model")
+    if train_return_nodes is None:
+        return_nodes = to_strdict(return_nodes)
+        train_return_nodes = deepcopy(return_nodes)
+        eval_return_nodes = deepcopy(return_nodes)
+    else:
+        train_return_nodes = to_strdict(train_return_nodes)
+        eval_return_nodes = to_strdict(eval_return_nodes)
 
-    # Remove existing output nodes
-    orig_output_node = None
-    for n in reversed(graph_module.graph.nodes):
-        if n.op == "output":
-            orig_output_node = n
-    assert orig_output_node
-    # And remove it
-    graph_module.graph.erase_node(orig_output_node)
-    # Find nodes corresponding to return_nodes and make them into output_nodes
-    nodes = [n for n in graph_module.graph.nodes]
-    output_nodes = OrderedDict()
-    for n in reversed(nodes):
-        if 'tensor_constant' in str(n):
-            # NOTE Without this control flow we would get a None value for
-            # `module_qualname = tracer.node_to_qualname.get(n)`.
-            # On the other hand, we can safely assume that we'll never need to
-            # get this as an interesting intermediate node.
-            continue
-        module_qualname = tracer.node_to_qualname.get(n)
-        for query in return_nodes:
-            depth = query.count('.')
-            if '.'.join(module_qualname.split('.')[:depth + 1]) == query:
-                output_nodes[return_nodes[query]] = n
-                return_nodes.pop(query)
-                break
-    output_nodes = OrderedDict(reversed(list(output_nodes.items())))
+    # Repeat the tracing and graph rewriting for train and eval mode
+    tracers = {}
+    graphs = {}
+    mode_return_nodes : Dict[str, Dict[str, str]] = {
+        'train': train_return_nodes,
+        'eval': eval_return_nodes
+    }
+    for mode in ['train', 'eval']:
+        if mode == 'train':
+            model.train()
+        elif mode == 'eval':
+            model.eval()
 
-    # And add them in the end of the graph
-    with graph_module.graph.inserting_after(nodes[-1]):
-        graph_module.graph.output(output_nodes)
+        # Instantiate our NodePathTracer and use that to trace the model
+        tracer = NodePathTracer(**tracer_kwargs)
+        graph = tracer.trace(model)
 
-    # Remove unused modules / parameters
-    graph_module.graph.eliminate_dead_code()
-    graph_module.recompile()
-    graph_module = fx.GraphModule(graph_module, graph_module.graph, name)
+        name = model.__class__.__name__ if isinstance(
+            model, nn.Module) else model.__name__
+        graph_module = fx.GraphModule(tracer.root, graph, name)
+
+        available_nodes = [f'{v}.{k}' for k, v in tracer.node_to_qualname.items()]
+        # FIXME We don't know if we should expect this to happen
+        assert len(set(available_nodes)) == len(available_nodes), \
+            "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+        # Check that all outputs in return_nodes are present in the model
+        for query in mode_return_nodes[mode].keys():
+            if not any([m.startswith(query) for m in available_nodes]):
+                raise ValueError(f"return_node: {query} is not present in model")
+
+        # Remove existing output nodes (train mode)
+        orig_output_nodes = []
+        for n in reversed(graph_module.graph.nodes):
+            if n.op == "output":
+                orig_output_nodes.append(n)
+        assert len(orig_output_nodes)
+        for n in orig_output_nodes:
+            graph_module.graph.erase_node(n)
+
+        # Find nodes corresponding to return_nodes and make them into output_nodes
+        nodes = [n for n in graph_module.graph.nodes]
+        output_nodes = OrderedDict()
+        for n in reversed(nodes):
+            if 'tensor_constant' in str(n):
+                # NOTE Without this control flow we would get a None value for
+                # `module_qualname = tracer.node_to_qualname.get(n)`.
+                # On the other hand, we can safely assume that we'll never need to
+                # get this as an interesting intermediate node.
+                continue
+            module_qualname = tracer.node_to_qualname.get(n)
+            for query in mode_return_nodes[mode]:
+                depth = query.count('.')
+                if '.'.join(module_qualname.split('.')[:depth + 1]) == query:
+                    output_nodes[mode_return_nodes[mode][query]] = n
+                    mode_return_nodes[mode].pop(query)
+                    break
+        output_nodes = OrderedDict(reversed(list(output_nodes.items())))
+
+        # And add them in the end of the graph
+        with graph_module.graph.inserting_after(nodes[-1]):
+            graph_module.graph.output(output_nodes)
+
+        # Remove unused modules / parameters
+        graph_module.graph.eliminate_dead_code()
+        graph_module.recompile()
+
+        # Keep track of the tracer and graph so we can choose the main one
+        tracers[mode] = tracer
+        graphs[mode] = graph
+
+    # Warn user if there are any discrepancies between the graphs of the
+    # train and eval modes
+    _warn_graph_differences(tracers['train'], tracers['eval'])
+
+    # Build the final graph module
+    graph_module = DualGraphModule(
+        model, graphs['train'], graphs['eval'], class_name=name)
+
+    # Keep non-parameter model properties for reference
+    for attr_str in model.__dir__():
+        attr = getattr(model, attr_str)
+        if (not attr_str.startswith('_')
+                and attr_str not in graph_module.__dir__()
+                and not ismethod(attr)
+                and not isinstance(attr, (nn.Module, nn.Parameter))):
+            setattr(graph_module, attr_str, attr)
+
+    # Restore original training mode
+    graph_module.train(is_training)
+
     return graph_module
-
-
-class FeatureGraphNet(nn.Module):
-    """
-    Wrap a `GraphModule` from `build_feature_graph_net` while also keeping the
-    original model's non-parameter properties for reference. The original
-    model's paremeters are discarded.
-
-    See `build_feature_graph_net` docstring for more  information.
-
-    NOTE: This puts the input model into eval mode prior to tracing. This
-        means that any control flow dependent on the model being in train mode
-        will be lost.
-    """
-    def __init__(self, model: nn.Module,
-                 return_nodes: Union[List[str], Dict[str, str]],
-                 tracer_kwargs: Dict = {}):
-        """
-        Args:
-            model (nn.Module): model on which we will extract the features
-            return_nodes (Union[List[name], Dict[name, new_name]])): either a list
-                or a dict containing the names (or partial names - see note above)
-                of the nodes for which the activations will be returned. If it is
-                a `Dict`, the keys are the qualified node names, and the values
-                are the user-specified keys for the graph module's returned
-                dictionary. If it is a `List`, it is treated as a `Dict` mapping
-                node specification strings directly to output names.
-            tracer_kwargs (Dict): a dictionary of keywork arguments for
-                `NodePathTracer` (which passes them onto it's parent class
-                `torch.fx.Tracer`).
-        """
-        super(FeatureGraphNet, self).__init__()
-        model.eval()
-        self.graph_module = build_feature_graph_net(
-            model, return_nodes, tracer_kwargs)
-        # Keep non-parameter model properties for reference
-        for attr_str in model.__dir__():
-            attr = getattr(model, attr_str)
-            if (not attr_str.startswith('_')
-                    and attr_str not in self.__dir__()
-                    and not ismethod(attr)
-                    and not isinstance(attr, (nn.Module, nn.Parameter))):
-                setattr(self, attr_str, attr)
-
-    def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        return self.graph_module(x)
-
-    def train(self, mode: bool = True):
-        """
-        NOTE: This also covers `self.eval()` as that just calls self.train(False)
-        """
-        if mode:
-            warnings.warn(
-                "Setting a FeatureGraphNet to training mode won't necessarily"
-                " have the desired effect. Control flow depending on"
-                " `self.training` will follow the `False` path. See"
-                " `FeatureGraphNet` doc-string for more details.")
-
-        super(FeatureGraphNet, self).train(mode)
