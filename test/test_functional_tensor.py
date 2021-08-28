@@ -31,6 +31,24 @@ from typing import Dict, List, Sequence, Tuple
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('fn', [F.get_image_size, F.get_image_num_channels])
+def test_image_sizes(device, fn):
+    script_F = torch.jit.script(fn)
+
+    img_tensor, pil_img = _create_data(16, 18, 3, device=device)
+    value_img = fn(img_tensor)
+    value_pil_img = fn(pil_img)
+    assert value_img == value_pil_img
+
+    value_img_script = script_F(img_tensor)
+    assert value_img == value_img_script
+
+    batch_tensors = _create_data_batch(16, 18, 3, num_samples=4, device=device)
+    value_img_batch = fn(batch_tensors)
+    assert value_img == value_img_batch
+
+
 @needs_cuda
 def test_scale_channel():
     """Make sure that _scale_channel gives the same results on CPU and GPU as
@@ -908,7 +926,7 @@ def test_resized_crop(device, mode):
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('func, args', [
-    (F_t._get_image_size, ()), (F_t.vflip, ()),
+    (F_t.get_image_size, ()), (F_t.vflip, ()),
     (F_t.hflip, ()), (F_t.crop, (1, 2, 4, 5)),
     (F_t.adjust_brightness, (0., )), (F_t.adjust_contrast, (1., )),
     (F_t.adjust_hue, (-0.5, )), (F_t.adjust_saturation, (2., )),
