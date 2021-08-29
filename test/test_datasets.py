@@ -1790,7 +1790,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
                 assert item[6] == i // 3
 
 
-class _LFWPeopleTestCase(datasets_utils.DatasetTestCase):
+class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
     DATASET_CLASS = datasets.LFWPeople
     FEATURE_TYPES = (PIL.Image.Image, int)
     DEFAULT_CONFIG = dict(image_set="deepfunneled")
@@ -1808,46 +1808,56 @@ class _LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         tmpdir = pathlib.Path(tmpdir) / "lfw-py"
         os.makedirs(tmpdir, exist_ok=True)
         split = "Train" if config["train"] else "Test"
-        self._create_images_dir(tmpdir, self._IMAGES_DIR[config["image_set"]], split)
+        return dict(
+            num_examples=self._create_images_dir(tmpdir, self._IMAGES_DIR[config["image_set"]], split),
+            split=split
+        )
 
     def _create_images_dir(self, root, idir, split):
-        num_people = 5
-        with open(pathlib.Path(root) / f"peopleDev{split}.txt", "w") as file:
-            file.write(num_people)
-            for i in num_people:
-                name = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
-                    + datasets_utils.create_random_string(random.randint(4, 7))
-                no = random.randint(1, 100)
-                file.write(f"\n{name}\t{no}")
-                datasets_utils.create_image_file(os.path.join(root, idir), f"{name}_{no:04d}.jpg", 250)
+        idir = os.path.join(root, idir)
+        os.makedirs(idir, exist_ok=True)
+        num_people = 4
+        num_examples = 0
+        flines = [str(num_people)]
+        for i in range(num_people):
+            name = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
+                + datasets_utils.create_random_string(random.randint(4, 7))
+            no = random.randint(1, 10)
+            flines.append(f"\n{name}\t{no}")
+            datasets_utils.create_image_folder(idir, name, lambda n: f"{name}_{n+1:04d}.jpg", no, 250)
+            num_examples += no
+        with open(pathlib.Path(root) / f"peopleDev{split}.txt", "w") as f:
+            f.writelines(flines)
 
-        return num_people
+        return num_examples
 
 
-class _LFWPairsTestCase(datasets_utils.DatasetTestCase):
+class LFWPairsTestCase(LFWPeopleTestCase):
     DATASET_CLASS = datasets.LFWPairs
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, int)
+    FEATURE_TYPES = ((PIL.Image.Image, PIL.Image.Image), int)
 
     def _create_images_dir(self, root, idir, split):
+        idir = os.path.join(root, idir)
+        os.makedirs(idir, exist_ok=True)
         num_pairs = 7  # effectively 7*2 = 14
         with open(pathlib.Path(root) / f"pairsDev{split}.txt", "w") as file:
-            file.write(num_pairs)
-            for i in num_pairs:
+            file.write(str(num_pairs))
+            for i in range(num_pairs):
                 name1 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
                     + datasets_utils.create_random_string(random.randint(4, 7))
                 no1, no2 = random.randint(1, 100), random.randint(1, 100)
                 file.write(f"\n{name1}\t{no1}\t{no2}")
-                datasets_utils.create_image_file(os.path.join(root, idir), f"{name1}_{no1:04d}.jpg", 250)
-                datasets_utils.create_image_file(os.path.join(root, idir), f"{name1}_{no2:04d}.jpg", 250)
-            for i in num_pairs:
+                datasets_utils.create_image_folder(idir, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
+                datasets_utils.create_image_folder(idir, name1, lambda _: f"{name1}_{no2:04d}.jpg", 1, 250)
+            for i in range(num_pairs):
                 name1 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
                     + datasets_utils.create_random_string(random.randint(4, 7))
                 name2 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
                     + datasets_utils.create_random_string(random.randint(4, 7))
                 no1, no2 = random.randint(1, 100), random.randint(1, 100)
                 file.write(f"\n{name1}\t{no1}\t{name2}\t{no2}")
-                datasets_utils.create_image_file(os.path.join(root, idir), f"{name1}_{no1:04d}.jpg", 250)
-                datasets_utils.create_image_file(os.path.join(root, idir), f"{name2}_{no2:04d}.jpg", 250)
+                datasets_utils.create_image_folder(idir, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
+                datasets_utils.create_image_folder(idir, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
 
         return num_pairs * 2
 
