@@ -11,13 +11,13 @@ ASSETS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ass
 
 
 @pytest.fixture
-def labeled_image() -> torch.Tensor:
+def labeled_image():
     with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "labeled_image.png")) as image:
         return torch.tensor(numpy.array(image, numpy.int))
 
 
 @pytest.fixture
-def masks() -> torch.Tensor:
+def masks():
     with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
         frames = numpy.zeros((image.n_frames, image.height, image.width), numpy.int)
 
