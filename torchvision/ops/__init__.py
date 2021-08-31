@@ -8,7 +8,7 @@ from .ps_roi_pool import ps_roi_pool, PSRoIPool
 from .poolers import MultiScaleRoIAlign
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
-from ._masks_to_bounding_boxes import masks_to_bounding_boxes
+from ._masks_to_boxes import masks_to_boxes
 
 from ._register_onnx_ops import _register_custom_op
 
@@ -21,5 +21,5 @@ __all__ = [
     'box_area', 'box_iou', 'generalized_box_iou', 'roi_align', 'RoIAlign', 'roi_pool',
     'RoIPool', 'ps_roi_align', 'PSRoIAlign', 'ps_roi_pool',
     'PSRoIPool', 'MultiScaleRoIAlign', 'FeaturePyramidNetwork',
-    'sigmoid_focal_loss', 'masks_to_bounding_boxes'
+    'sigmoid_focal_loss', 'masks_to_boxes'
 ]

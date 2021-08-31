@@ -10,7 +10,7 @@ import torchvision.ops
 ASSETS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
 
-def test_masks_to_bounding_boxes():
+def test_masks_to_boxes():
     with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
         frames = numpy.zeros((image.n_frames, image.height, image.width), numpy.int)
 
@@ -31,4 +31,4 @@ def test_masks_to_bounding_boxes():
         [ 756., 1036., 1064., 1491. ]]  # noqa:       E201, E202, E241
     )
 
-    torch.testing.assert_close(torchvision.ops.masks_to_bounding_boxes(masks), expected)
+    torch.testing.assert_close(torchvision.ops.masks_to_boxes(masks), expected)

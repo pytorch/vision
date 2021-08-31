@@ -1,7 +1,7 @@
 import torch
 
 
-def masks_to_bounding_boxes(masks: torch.Tensor) -> torch.Tensor:
+def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     """Compute the bounding boxes around the provided masks
     The masks should be in format [N, H, W] where N is the number of masks, (H, W) are the spatial dimensions.
     Returns a [N, 4] tensors, with the boxes in xyxy format
