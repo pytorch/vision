@@ -230,7 +230,7 @@ def test_crop_pad(size, padding_config, device):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-def test_center_crop(device):
+def test_center_crop(device, tmpdir):
     fn_kwargs = {"output_size": (4, 5)}
     meth_kwargs = {"size": (4, 5), }
     _test_op(
@@ -259,8 +259,7 @@ def test_center_crop(device):
     scripted_fn = torch.jit.script(f)
     scripted_fn(tensor)
 
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_center_crop.pt"))
+    scripted_fn.save(os.path.join(tmpdir, "t_center_crop.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -309,11 +308,10 @@ def test_x_crop(fn, method, out_length, size, device):
 
 
 @pytest.mark.parametrize('method', ["FiveCrop", "TenCrop"])
-def test_x_crop_save(method):
+def test_x_crop_save(method, tmpdir):
     fn = getattr(T, method)(size=[5, ])
     scripted_fn = torch.jit.script(fn)
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
+    scripted_fn.save(os.path.join(tmpdir, "t_op_list_{}.pt".format(method)))
 
 
 class TestResize:
@@ -349,11 +347,10 @@ class TestResize:
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-    def test_resize_save(self):
+    def test_resize_save(self, tmpdir):
         transform = T.Resize(size=[32, ])
         s_transform = torch.jit.script(transform)
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_resize.pt"))
+        s_transform.save(os.path.join(tmpdir, "t_resize.pt"))
 
     @pytest.mark.parametrize('device', cpu_and_gpu())
     @pytest.mark.parametrize('scale', [(0.7, 1.2), [0.7, 1.2]])
@@ -368,11 +365,10 @@ class TestResize:
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-    def test_resized_crop_save(self):
+    def test_resized_crop_save(self, tmpdir):
         transform = T.RandomResizedCrop(size=[32, ])
         s_transform = torch.jit.script(transform)
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
+        s_transform.save(os.path.join(tmpdir, "t_resized_crop.pt"))
 
 
 def _test_random_affine_helper(device, **kwargs):
@@ -386,11 +382,10 @@ def _test_random_affine_helper(device, **kwargs):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-def test_random_affine(device):
+def test_random_affine(device, tmpdir):
     transform = T.RandomAffine(degrees=45.0)
     s_transform = torch.jit.script(transform)
-    with get_tmp_dir() as tmp_dir:
-        s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
+    s_transform.save(os.path.join(tmpdir, "t_random_affine.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -447,11 +442,10 @@ def test_random_rotate(device, center, expand, degrees, interpolation, fill):
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-def test_random_rotate_save():
+def test_random_rotate_save(tmpdir):
     transform = T.RandomRotation(degrees=45.0)
     s_transform = torch.jit.script(transform)
-    with get_tmp_dir() as tmp_dir:
-        s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
+    s_transform.save(os.path.join(tmpdir, "t_random_rotate.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -473,11 +467,10 @@ def test_random_perspective(device, distortion_scale, interpolation, fill):
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-def test_random_perspective_save():
+def test_random_perspective_save(tmpdir):
     transform = T.RandomPerspective()
     s_transform = torch.jit.script(transform)
-    with get_tmp_dir() as tmp_dir:
-        s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
+    s_transform.save(os.path.join(tmpdir, "t_perspective.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -519,11 +512,10 @@ def test_convert_image_dtype(device, in_dtype, out_dtype):
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
 
 
-def test_convert_image_dtype_save():
+def test_convert_image_dtype_save(tmpdir):
     fn = T.ConvertImageDtype(dtype=torch.uint8)
     scripted_fn = torch.jit.script(fn)
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
+    scripted_fn.save(os.path.join(tmpdir, "t_convert_dtype.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -541,11 +533,10 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-def test_autoaugment_save():
+def test_autoaugment_save(tmpdir):
     transform = T.AutoAugment()
     s_transform = torch.jit.script(transform)
-    with get_tmp_dir() as tmp_dir:
-        s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
+    s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -567,11 +558,10 @@ def test_random_erasing(device, config):
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
 
-def test_random_erasing_save():
+def test_random_erasing_save(tmpdir):
     fn = T.RandomErasing(value=0.2)
     scripted_fn = torch.jit.script(fn)
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
+    scripted_fn.save(os.path.join(tmpdir, "t_random_erasing.pt"))
 
 
 def test_random_erasing_with_invalid_data():
@@ -583,7 +573,7 @@ def test_random_erasing_with_invalid_data():
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-def test_normalize(device):
+def test_normalize(device, tmpdir):
     fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     tensor, _ = _create_data(26, 34, device=device)
 
@@ -598,12 +588,11 @@ def test_normalize(device):
     _test_transform_vs_scripted(fn, scripted_fn, tensor)
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+    scripted_fn.save(os.path.join(tmpdir, "t_norm.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-def test_linear_transformation(device):
+def test_linear_transformation(device, tmpdir):
     c, h, w = 3, 24, 32
 
     tensor, _ = _create_data(h, w, channels=c, device=device)
@@ -625,8 +614,7 @@ def test_linear_transformation(device):
     s_transformed_batch = scripted_fn(batch_tensors)
     assert_equal(transformed_batch, s_transformed_batch)
 
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+    scripted_fn.save(os.path.join(tmpdir, "t_norm.pt"))
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
