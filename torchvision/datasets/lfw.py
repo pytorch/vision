@@ -1,8 +1,8 @@
 import os
 from typing import Any, Callable, List, Optional, Tuple
 from PIL import Image
-from torchvision.datasets import VisionDataset
-from torchvision.datasets.utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
+from .vision import VisionDataset
+from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 
 
 class _LFW(VisionDataset):
@@ -71,6 +71,7 @@ class _LFW(VisionDataset):
 
 class LFWPeople(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
+
     Args:
         root (string): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
@@ -85,6 +86,7 @@ class LFWPeople(_LFW):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+
     """
 
     def __init__(
@@ -146,6 +148,7 @@ class LFWPeople(_LFW):
 
 class LFWPairs(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
+
     Args:
         root (string): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
@@ -160,6 +163,7 @@ class LFWPairs(_LFW):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+
     """
 
     def __init__(
@@ -206,7 +210,7 @@ class LFWPairs(_LFW):
 
         return pair_names, data, targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> Tuple[Any, Any, int]:
         """
         Args:
             index (int): Index
@@ -224,7 +228,7 @@ class LFWPairs(_LFW):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        return (img1, img2), target
+        return img1, img2, target
 
     def extra_repr(self) -> str:
         return "Split: {}".format(self.split)

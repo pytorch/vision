@@ -1793,7 +1793,6 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
 class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
     DATASET_CLASS = datasets.LFWPeople
     FEATURE_TYPES = (PIL.Image.Image, int)
-    DEFAULT_CONFIG = dict(image_set="deepfunneled")
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         train=(True, False),
         image_set=('original', 'funneled', 'deepfunneled')
@@ -1820,8 +1819,7 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         num_examples = 0
         flines = [str(num_people)]
         for i in range(num_people):
-            name = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
-                + datasets_utils.create_random_string(random.randint(4, 7))
+            name = self._create_random_id()
             no = random.randint(1, 10)
             flines.append(f"\n{name}\t{no}")
             datasets_utils.create_image_folder(idir, name, lambda n: f"{name}_{n+1:04d}.jpg", no, 250)
@@ -1831,35 +1829,38 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
 
         return num_examples
 
+    def _create_random_id(self):
+        return datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
+            + datasets_utils.create_random_string(random.randint(4, 7))
+
 
 class LFWPairsTestCase(LFWPeopleTestCase):
     DATASET_CLASS = datasets.LFWPairs
-    FEATURE_TYPES = ((PIL.Image.Image, PIL.Image.Image), int)
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, int)
 
     def _create_images_dir(self, root, idir, split):
         idir = os.path.join(root, idir)
         os.makedirs(idir, exist_ok=True)
         num_pairs = 7  # effectively 7*2 = 14
-        with open(pathlib.Path(root) / f"pairsDev{split}.txt", "w") as file:
-            file.write(str(num_pairs))
-            for i in range(num_pairs):
-                name1 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
-                    + datasets_utils.create_random_string(random.randint(4, 7))
-                no1, no2 = random.randint(1, 100), random.randint(1, 100)
-                file.write(f"\n{name1}\t{no1}\t{no2}")
-                datasets_utils.create_image_folder(idir, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
-                datasets_utils.create_image_folder(idir, name1, lambda _: f"{name1}_{no2:04d}.jpg", 1, 250)
-            for i in range(num_pairs):
-                name1 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
-                    + datasets_utils.create_random_string(random.randint(4, 7))
-                name2 = datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
-                    + datasets_utils.create_random_string(random.randint(4, 7))
-                no1, no2 = random.randint(1, 100), random.randint(1, 100)
-                file.write(f"\n{name1}\t{no1}\t{name2}\t{no2}")
-                datasets_utils.create_image_folder(idir, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
-                datasets_utils.create_image_folder(idir, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
+        flines = [str(num_pairs)]
+        for i in range(num_pairs):
+            name1 = self._create_random_id()
+            no1, no2 = random.randint(1, 100), random.randint(1, 100)
+            flines.append(f"\n{name1}\t{no1}\t{no2}")
+            self._create_id_folder(idir, name1, no1, name1, no2)
+        for i in range(num_pairs):
+            name1, name2 = self._create_random_id(), self._create_random_id()
+            no1, no2 = random.randint(1, 100), random.randint(1, 100)
+            flines.append(f"\n{name1}\t{no1}\t{name2}\t{no2}")
+            self._create_id_folder(idir, name1, no1, name2, no2)
+        with open(pathlib.Path(root) / f"pairsDev{split}.txt", "w") as f:
+            f.writelines(flines)
 
         return num_pairs * 2
+
+    def _create_id_folder(self, root, name1, no1, name2, no2):
+        datasets_utils.create_image_folder(root, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
+        datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
 
 
 if __name__ == "__main__":
