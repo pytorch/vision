@@ -10,14 +10,7 @@ import torchvision.ops
 ASSETS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
 
-@pytest.fixture
-def labeled_image():
-    with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "labeled_image.png")) as image:
-        return torch.tensor(numpy.array(image, numpy.int))
-
-
-@pytest.fixture
-def masks():
+def test_masks_to_bounding_boxes():
     with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
         frames = numpy.zeros((image.n_frames, image.height, image.width), numpy.int)
 
@@ -26,10 +19,8 @@ def masks():
 
             frames[index] = numpy.array(image)
 
-        return torch.tensor(frames)
+        masks = torch.tensor(frames)
 
-
-def test_masks_to_bounding_boxes(masks):
     expected = torch.tensor(
        [[ 127.,    2.,  165.,   40. ],  # noqa: E121, E201, E202, E241
         [   4.,  100.,   88.,  184. ],  # noqa:       E201, E202, E241
