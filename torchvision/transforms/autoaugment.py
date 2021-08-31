@@ -192,9 +192,9 @@ class AutoAugment(torch.nn.Module):
             "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
             "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)).round().int(), False),
             "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
-            "AutoContrast": (torch.tensor(float('nan')), False),
-            "Equalize": (torch.tensor(float('nan')), False),
-            "Invert": (torch.tensor(float('nan')), False),
+            "AutoContrast": (torch.tensor(0.0), False),
+            "Equalize": (torch.tensor(0.0), False),
+            "Invert": (torch.tensor(0.0), False),
         }
 
     @staticmethod
@@ -230,8 +230,7 @@ class AutoAugment(torch.nn.Module):
             if probs[i] <= p:
                 op_meta = self._get_magnitudes(10, F.get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
-                magnitude = float(magnitudes[magnitude_id].item()) \
-                    if not magnitudes.isnan().all() and magnitude_id is not None else 0.0
+                magnitude = float(magnitudes[magnitude_id].item()) if magnitude_id is not None else 0.0
                 if signed and signs[i] == 0:
                     magnitude *= -1.0
                 img = _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
@@ -279,9 +278,9 @@ class TrivialAugmentWide(torch.nn.Module):
             "Sharpness": (torch.linspace(0.0, 0.99, num_bins), True),
             "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)).round().int(), False),
             "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
-            "AutoContrast": (torch.tensor(float('nan')), False),
-            "Equalize": (torch.tensor(float('nan')), False),
-            "Invert": (torch.tensor(float('nan')), False),
+            "AutoContrast": (torch.tensor(0.0), False),
+            "Equalize": (torch.tensor(0.0), False),
+            "Invert": (torch.tensor(0.0), False),
         }
 
     def forward(self, img: Tensor):
@@ -303,7 +302,7 @@ class TrivialAugmentWide(torch.nn.Module):
         op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
         magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
-            if not magnitudes.isnan().all() else 0.0
+            if magnitudes.ndim > 0 else 0.0
         if signed and torch.randint(2, (1,)):
             magnitude *= -1.0
 
