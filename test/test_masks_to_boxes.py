@@ -2,7 +2,6 @@ import os.path
 
 import PIL.Image
 import numpy
-import pytest
 import torch
 
 import torchvision.ops
