@@ -339,7 +339,7 @@ def build_feature_graph_net(
             a `Dict`, the keys are the qualified node names, and the values
             are the user-specified keys for the graph module's returned
             dictionary. If it is a `List`, it is treated as a `Dict` mapping
-            node specification strings directly to output names. In the case 
+            node specification strings directly to output names. In the case
             that `train_return_nodes` and `eval_return_nodes` are specified,
             this should not be specified.
         train_return_nodes (Optional[Union[List[str], Dict[str, str]]]):
@@ -395,7 +395,7 @@ def build_feature_graph_net(
     # Repeat the tracing and graph rewriting for train and eval mode
     tracers = {}
     graphs = {}
-    mode_return_nodes : Dict[str, Dict[str, str]] = {
+    mode_return_nodes: Dict[str, Dict[str, str]] = {
         'train': train_return_nodes,
         'eval': eval_return_nodes
     }
