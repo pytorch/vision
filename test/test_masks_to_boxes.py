@@ -5,6 +5,7 @@ import numpy
 import torch
 
 import torchvision.ops
+import torchvision.ops.boxes
 
 ASSETS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
@@ -30,4 +31,4 @@ def test_masks_to_boxes():
          [756, 1036, 1064, 1491]]
     )
 
-    torch.testing.assert_close(torchvision.ops.masks_to_boxes(masks), expected)
+    torch.testing.assert_close(torchvision.ops.boxes.masks_to_boxes(masks), expected)

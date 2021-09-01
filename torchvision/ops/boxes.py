@@ -297,3 +297,37 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     areai = whi[:, :, 0] * whi[:, :, 1]
 
     return iou - (areai - union) / areai
+
+
+def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
+    """
+    Compute the bounding boxes around the provided masks
+
+    Returns a [N, 4] tensors, with the boxes in xyxy format
+
+    Args:
+        masks (Tensor[N, H, W]): masks to transform where N is the number of
+        masks and (H, W) are the spatial dimensions.
+
+    Returns:
+        Tensor: int64 tensor with the indices of the elements that have been kept
+        by NMS, sorted in decreasing order of scores
+    """
+    if masks.numel() == 0:
+        return torch.zeros((0, 4), device=masks.device)
+
+    h, w = masks.shape[-2:]
+
+    y = torch.arange(0, h, dtype=torch.float)
+    x = torch.arange(0, w, dtype=torch.float)
+    y, x = torch.meshgrid(y, x)
+
+    x_mask = masks * x.unsqueeze(0)
+    x_max = x_mask.flatten(1).max(-1)[0]
+    x_min = x_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
+
+    y_mask = masks * y.unsqueeze(0)
+    y_max = y_mask.flatten(1).max(-1)[0]
+    y_min = y_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
+
+    return torch.stack([x_min, y_min, x_max, y_max], 1)
