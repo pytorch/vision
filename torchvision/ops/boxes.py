@@ -303,15 +303,14 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     """
     Compute the bounding boxes around the provided masks
 
-    Returns a [N, 4] tensors, with the boxes in xyxy format
+    Returns a [N, 4] tensors, with the boxes in (X, Y, X, Y) format.
 
     Args:
         masks (Tensor[N, H, W]): masks to transform where N is the number of
         masks and (H, W) are the spatial dimensions.
 
     Returns:
-        Tensor: int64 tensor with the indices of the elements that have been kept
-        by NMS, sorted in decreasing order of scores
+        Tensor[N, 4]: bounding boxes
     """
     if masks.numel() == 0:
         return torch.zeros((0, 4), device=masks.device)
