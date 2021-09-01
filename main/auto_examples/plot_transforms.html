@@ -6,8 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Illustration of transforms &mdash; Torchvision main documentation</title>
@@ -29,11 +28,11 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Visualization utilities" href="plot_visualization_utils.html" />
@@ -199,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+910cfb1 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+00f0345 ) &#x25BC</a>
     </div>
     
 
@@ -223,7 +222,7 @@
               
             
             
-              <p><span class="caption-text">Package Reference</span></p>
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">torchvision.io</a></li>
@@ -232,11 +231,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">torchvision.utils</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Example gallery</a></li>
 </ul>
-<p><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -324,7 +323,7 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-auto-examples-plot-transforms-py"><span class="std std-ref">here</span></a>
 to download the full example code</p>
 </div>
-<section class="sphx-glr-example-title" id="illustration-of-transforms">
+<div class="sphx-glr-example-title section" id="illustration-of-transforms">
 <span id="sphx-glr-auto-examples-plot-transforms-py"></span><h1>Illustration of transforms<a class="headerlink" href="#illustration-of-transforms" title="Permalink to this headline">¶</a></h1>
 <p>This example illustrates the various transforms available in <a class="reference internal" href="../transforms.html#transforms"><span class="std std-ref">the
 torchvision.transforms module</span></a>.</p>
@@ -369,7 +368,7 @@ torchvision.transforms module</span></a>.</p>
     <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.tight_layout.html#matplotlib.pyplot.tight_layout" title="matplotlib.pyplot.tight_layout" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<section id="pad">
+<div class="section" id="pad">
 <h2>Pad<a class="headerlink" href="#pad" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.Pad" title="torchvision.transforms.Pad"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pad</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.pad" title="torchvision.transforms.functional.pad"><code class="xref py py-func docutils literal notranslate"><span class="pre">pad()</span></code></a>)
@@ -379,8 +378,8 @@ fills image borders with some pixel values.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_001.png" />
-</section>
-<section id="resize">
+</div>
+<div class="section" id="resize">
 <h2>Resize<a class="headerlink" href="#resize" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.Resize" title="torchvision.transforms.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.resize" title="torchvision.transforms.functional.resize"><code class="xref py py-func docutils literal notranslate"><span class="pre">resize()</span></code></a>)
@@ -390,8 +389,8 @@ resizes an image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_002.png" />
-</section>
-<section id="centercrop">
+</div>
+<div class="section" id="centercrop">
 <h2>CenterCrop<a class="headerlink" href="#centercrop" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.CenterCrop" title="torchvision.transforms.CenterCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">CenterCrop</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.center_crop" title="torchvision.transforms.functional.center_crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">center_crop()</span></code></a>)
@@ -401,8 +400,8 @@ crops the given image at the center.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_003.png" />
-</section>
-<section id="fivecrop">
+</div>
+<div class="section" id="fivecrop">
 <h2>FiveCrop<a class="headerlink" href="#fivecrop" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.FiveCrop" title="torchvision.transforms.FiveCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">FiveCrop</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.five_crop" title="torchvision.transforms.functional.five_crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">five_crop()</span></code></a>)
@@ -412,8 +411,8 @@ crops the given image into four corners and the central crop.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_004.png" />
-</section>
-<section id="grayscale">
+</div>
+<div class="section" id="grayscale">
 <h2>Grayscale<a class="headerlink" href="#grayscale" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.Grayscale" title="torchvision.transforms.Grayscale"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grayscale</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.to_grayscale" title="torchvision.transforms.functional.to_grayscale"><code class="xref py py-func docutils literal notranslate"><span class="pre">to_grayscale()</span></code></a>)
@@ -423,12 +422,12 @@ converts an image to grayscale</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_005.png" />
-</section>
-<section id="random-transforms">
+</div>
+<div class="section" id="random-transforms">
 <h2>Random transforms<a class="headerlink" href="#random-transforms" title="Permalink to this headline">¶</a></h2>
 <p>The following transforms are random, which means that the same transfomer
 instance will produce different result each time it transforms a given image.</p>
-<section id="colorjitter">
+<div class="section" id="colorjitter">
 <h3>ColorJitter<a class="headerlink" href="#colorjitter" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.ColorJitter" title="torchvision.transforms.ColorJitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ColorJitter</span></code></a> transform
 randomly changes the brightness, saturation, and other properties of an image.</p>
@@ -438,8 +437,8 @@ randomly changes the brightness, saturation, and other properties of an image.</
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_006.png" />
-</section>
-<section id="gaussianblur">
+</div>
+<div class="section" id="gaussianblur">
 <h3>GaussianBlur<a class="headerlink" href="#gaussianblur" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.GaussianBlur" title="torchvision.transforms.GaussianBlur"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBlur</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.gaussian_blur" title="torchvision.transforms.functional.gaussian_blur"><code class="xref py py-func docutils literal notranslate"><span class="pre">gaussian_blur()</span></code></a>)
@@ -450,8 +449,8 @@ performs gaussian blur transform on an image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_007.png" />
-</section>
-<section id="randomperspective">
+</div>
+<div class="section" id="randomperspective">
 <h3>RandomPerspective<a class="headerlink" href="#randomperspective" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomPerspective" title="torchvision.transforms.RandomPerspective"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomPerspective</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.perspective" title="torchvision.transforms.functional.perspective"><code class="xref py py-func docutils literal notranslate"><span class="pre">perspective()</span></code></a>)
@@ -462,8 +461,8 @@ performs random perspective transform on an image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_008.png" />
-</section>
-<section id="randomrotation">
+</div>
+<div class="section" id="randomrotation">
 <h3>RandomRotation<a class="headerlink" href="#randomrotation" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomRotation" title="torchvision.transforms.RandomRotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomRotation</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.rotate" title="torchvision.transforms.functional.rotate"><code class="xref py py-func docutils literal notranslate"><span class="pre">rotate()</span></code></a>)
@@ -474,8 +473,8 @@ rotates an image with random angle.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_009.png" />
-</section>
-<section id="randomaffine">
+</div>
+<div class="section" id="randomaffine">
 <h3>RandomAffine<a class="headerlink" href="#randomaffine" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomAffine" title="torchvision.transforms.RandomAffine"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAffine</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.affine" title="torchvision.transforms.functional.affine"><code class="xref py py-func docutils literal notranslate"><span class="pre">affine()</span></code></a>)
@@ -486,8 +485,8 @@ performs random affine transform on an image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_010.png" />
-</section>
-<section id="randomcrop">
+</div>
+<div class="section" id="randomcrop">
 <h3>RandomCrop<a class="headerlink" href="#randomcrop" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomCrop" title="torchvision.transforms.RandomCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomCrop</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.crop" title="torchvision.transforms.functional.crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">crop()</span></code></a>)
@@ -498,8 +497,8 @@ crops an image at a random location.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_011.png" />
-</section>
-<section id="randomresizedcrop">
+</div>
+<div class="section" id="randomresizedcrop">
 <h3>RandomResizedCrop<a class="headerlink" href="#randomresizedcrop" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomResizedCrop" title="torchvision.transforms.RandomResizedCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.resized_crop" title="torchvision.transforms.functional.resized_crop"><code class="xref py py-func docutils literal notranslate"><span class="pre">resized_crop()</span></code></a>)
@@ -511,8 +510,8 @@ size.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_012.png" />
-</section>
-<section id="randominvert">
+</div>
+<div class="section" id="randominvert">
 <h3>RandomInvert<a class="headerlink" href="#randominvert" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomInvert" title="torchvision.transforms.RandomInvert"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomInvert</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.invert" title="torchvision.transforms.functional.invert"><code class="xref py py-func docutils literal notranslate"><span class="pre">invert()</span></code></a>)
@@ -523,8 +522,8 @@ randomly inverts the colors of the given image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_013.png" />
-</section>
-<section id="randomposterize">
+</div>
+<div class="section" id="randomposterize">
 <h3>RandomPosterize<a class="headerlink" href="#randomposterize" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomPosterize" title="torchvision.transforms.RandomPosterize"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomPosterize</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.posterize" title="torchvision.transforms.functional.posterize"><code class="xref py py-func docutils literal notranslate"><span class="pre">posterize()</span></code></a>)
@@ -536,8 +535,8 @@ of each color channel.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_014.png" />
-</section>
-<section id="randomsolarize">
+</div>
+<div class="section" id="randomsolarize">
 <h3>RandomSolarize<a class="headerlink" href="#randomsolarize" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomSolarize" title="torchvision.transforms.RandomSolarize"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomSolarize</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.solarize" title="torchvision.transforms.functional.solarize"><code class="xref py py-func docutils literal notranslate"><span class="pre">solarize()</span></code></a>)
@@ -549,8 +548,8 @@ the threshold.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_015.png" />
-</section>
-<section id="randomadjustsharpness">
+</div>
+<div class="section" id="randomadjustsharpness">
 <h3>RandomAdjustSharpness<a class="headerlink" href="#randomadjustsharpness" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomAdjustSharpness" title="torchvision.transforms.RandomAdjustSharpness"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAdjustSharpness</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.adjust_sharpness" title="torchvision.transforms.functional.adjust_sharpness"><code class="xref py py-func docutils literal notranslate"><span class="pre">adjust_sharpness()</span></code></a>)
@@ -561,8 +560,8 @@ randomly adjusts the sharpness of the given image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_016.png" />
-</section>
-<section id="randomautocontrast">
+</div>
+<div class="section" id="randomautocontrast">
 <h3>RandomAutocontrast<a class="headerlink" href="#randomautocontrast" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomAutocontrast" title="torchvision.transforms.RandomAutocontrast"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAutocontrast</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.autocontrast" title="torchvision.transforms.functional.autocontrast"><code class="xref py py-func docutils literal notranslate"><span class="pre">autocontrast()</span></code></a>)
@@ -573,8 +572,8 @@ randomly applies autocontrast to the given image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_017.png" />
-</section>
-<section id="randomequalize">
+</div>
+<div class="section" id="randomequalize">
 <h3>RandomEqualize<a class="headerlink" href="#randomequalize" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomEqualize" title="torchvision.transforms.RandomEqualize"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomEqualize</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.equalize" title="torchvision.transforms.functional.equalize"><code class="xref py py-func docutils literal notranslate"><span class="pre">equalize()</span></code></a>)
@@ -585,8 +584,8 @@ randomly equalizes the histogram of the given image.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_018.png" />
-</section>
-<section id="autoaugment">
+</div>
+<div class="section" id="autoaugment">
 <h3>AutoAugment<a class="headerlink" href="#autoaugment" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.AutoAugment" title="torchvision.transforms.AutoAugment"><code class="xref py py-class docutils literal notranslate"><span class="pre">AutoAugment</span></code></a> transform
 automatically augments data based on a given auto-augmentation policy.
@@ -602,14 +601,14 @@ See <a class="reference internal" href="../transforms.html#torchvision.transform
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_019.png" />
-</section>
-</section>
-<section id="randomly-applied-transforms">
+</div>
+</div>
+<div class="section" id="randomly-applied-transforms">
 <h2>Randomly-applied transforms<a class="headerlink" href="#randomly-applied-transforms" title="Permalink to this headline">¶</a></h2>
 <p>Some transforms are randomly-applied given a probability <code class="docutils literal notranslate"><span class="pre">p</span></code>.  That is, the
 transformed image may actually be the same as the original one, even when
 called with the same transformer instance!</p>
-<section id="randomhorizontalflip">
+<div class="section" id="randomhorizontalflip">
 <h3>RandomHorizontalFlip<a class="headerlink" href="#randomhorizontalflip" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomHorizontalFlip" title="torchvision.transforms.RandomHorizontalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.hflip" title="torchvision.transforms.functional.hflip"><code class="xref py py-func docutils literal notranslate"><span class="pre">hflip()</span></code></a>)
@@ -620,8 +619,8 @@ performs horizontal flip of an image, with a given probability.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_020.png" />
-</section>
-<section id="randomverticalflip">
+</div>
+<div class="section" id="randomverticalflip">
 <h3>RandomVerticalFlip<a class="headerlink" href="#randomverticalflip" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomVerticalFlip" title="torchvision.transforms.RandomVerticalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomVerticalFlip</span></code></a> transform
 (see also <a class="reference internal" href="../transforms.html#torchvision.transforms.functional.vflip" title="torchvision.transforms.functional.vflip"><code class="xref py py-func docutils literal notranslate"><span class="pre">vflip()</span></code></a>)
@@ -632,8 +631,8 @@ performs vertical flip of an image, with a given probability.</p>
 </pre></div>
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_021.png" />
-</section>
-<section id="randomapply">
+</div>
+<div class="section" id="randomapply">
 <h3>RandomApply<a class="headerlink" href="#randomapply" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.RandomApply" title="torchvision.transforms.RandomApply"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomApply</span></code></a> transform
 randomly applies a list of transforms, with a given probability.</p>
@@ -653,9 +652,9 @@ randomly applies a list of transforms, with a given probability.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
-</section>
-</section>
+</div>
+</div>
+</div>
 
 
              </article>
@@ -749,10 +748,8 @@ randomly applies a list of transforms, with a given probability.</p>
          <script src="../_static/jquery.js"></script>
          <script src="../_static/underscore.js"></script>
          <script src="../_static/doctools.js"></script>
-         <script src="../_static/language_data.js"></script>
          <script src="../_static/clipboard.min.js"></script>
          <script src="../_static/copybutton.js"></script>
-         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   

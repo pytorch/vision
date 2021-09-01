@@ -6,8 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Tensor transforms and JIT &mdash; Torchvision main documentation</title>
@@ -29,11 +28,11 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Illustration of transforms" href="plot_transforms.html" />
@@ -199,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+910cfb1 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+00f0345 ) &#x25BC</a>
     </div>
     
 
@@ -223,7 +222,7 @@
               
             
             
-              <p><span class="caption-text">Package Reference</span></p>
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">torchvision.io</a></li>
@@ -232,11 +231,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">torchvision.utils</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Example gallery</a></li>
 </ul>
-<p><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -324,7 +323,7 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">here</span></a>
 to download the full example code</p>
 </div>
-<section class="sphx-glr-example-title" id="tensor-transforms-and-jit">
+<div class="sphx-glr-example-title section" id="tensor-transforms-and-jit">
 <span id="sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"></span><h1>Tensor transforms and JIT<a class="headerlink" href="#tensor-transforms-and-jit" title="Permalink to this headline">¶</a></h1>
 <p>This example illustrates various features that are now supported by the
 <a class="reference internal" href="../transforms.html#transforms"><span class="std std-ref">image transformations</span></a> on Tensor images. In particular, we
@@ -375,7 +374,7 @@ directly load it as a tensor</p>
 </pre></div>
 </div>
 <img alt="plot scripted tensor transforms" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_scripted_tensor_transforms_001.png" />
-<section id="transforming-images-on-gpu">
+<div class="section" id="transforming-images-on-gpu">
 <h2>Transforming images on GPU<a class="headerlink" href="#transforming-images-on-gpu" title="Permalink to this headline">¶</a></h2>
 <p>Most transforms natively support tensors on top of PIL images (to visualize
 the effect of the transforms, you may refer to see
@@ -398,8 +397,8 @@ Using tensor images, we can run the transforms on GPUs if cuda is available!</p>
 </pre></div>
 </div>
 <img alt="plot scripted tensor transforms" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_scripted_tensor_transforms_002.png" />
-</section>
-<section id="scriptable-transforms-for-easier-deployment-via-torchscript">
+</div>
+<div class="section" id="scriptable-transforms-for-easier-deployment-via-torchscript">
 <h2>Scriptable transforms for easier deployment via torchscript<a class="headerlink" href="#scriptable-transforms-for-easier-deployment-via-torchscript" title="Permalink to this headline">¶</a></h2>
 <p>We now show how to combine image transformations and a model forward pass,
 while using <code class="docutils literal notranslate"><span class="pre">torch.jit.script</span></code> to obtain a single scripted module.</p>
@@ -480,8 +479,8 @@ Prediction for Dog 2: [&#39;n02106662&#39;, &#39;German_shepherd&#39;]
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
-</section>
+</div>
+</div>
 
 
              </article>
@@ -549,10 +548,8 @@ Prediction for Dog 2: [&#39;n02106662&#39;, &#39;German_shepherd&#39;]
          <script src="../_static/jquery.js"></script>
          <script src="../_static/underscore.js"></script>
          <script src="../_static/doctools.js"></script>
-         <script src="../_static/language_data.js"></script>
          <script src="../_static/clipboard.min.js"></script>
          <script src="../_static/copybutton.js"></script>
-         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   

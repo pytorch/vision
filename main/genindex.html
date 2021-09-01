@@ -1,7 +1,6 @@
 
 
 
-
 <!DOCTYPE html>
 <!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
@@ -29,11 +28,11 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
   <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
   <link rel="stylesheet" href="_static/gallery-binder.css" type="text/css" />
   <link rel="stylesheet" href="_static/gallery-dataframe.css" type="text/css" />
   <link rel="stylesheet" href="_static/gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
   <!-- Google Analytics -->
@@ -197,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+910cfb1 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+00f0345 ) &#x25BC</a>
     </div>
     
 
@@ -221,7 +220,7 @@
               
             
             
-              <p><span class="caption-text">Package Reference</span></p>
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a></li>
@@ -230,11 +229,11 @@
 <li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
 </ul>
-<p><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -787,12 +786,12 @@
 </li>
       <li><a href="models.html#torchvision.models.mnasnet0_75">mnasnet0_75() (in module torchvision.models)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="models.html#torchvision.models.mnasnet1_0">mnasnet1_0() (in module torchvision.models)</a>
 </li>
       <li><a href="models.html#torchvision.models.mnasnet1_3">mnasnet1_3() (in module torchvision.models)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="datasets.html#torchvision.datasets.MNIST">MNIST (class in torchvision.datasets)</a>
 </li>
       <li><a href="models.html#torchvision.models.mobilenet_v2">mobilenet_v2() (in module torchvision.models)</a>
@@ -801,6 +800,15 @@
 </li>
       <li><a href="models.html#torchvision.models.mobilenet_v3_small">mobilenet_v3_small() (in module torchvision.models)</a>
 </li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="index.html#module-torchvision">torchvision</a>
+</li>
+        <li><a href="transforms.html#module-torchvision.transforms.functional">torchvision.transforms.functional</a>
+</li>
+      </ul></li>
       <li><a href="ops.html#torchvision.ops.MultiScaleRoIAlign">MultiScaleRoIAlign (class in torchvision.ops)</a>
 </li>
   </ul></td>
@@ -1025,16 +1033,26 @@
 </li>
       <li><a href="transforms.html#torchvision.transforms.functional.to_pil_image">to_pil_image() (in module torchvision.transforms.functional)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="transforms.html#torchvision.transforms.functional.to_tensor">to_tensor() (in module torchvision.transforms.functional)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="transforms.html#torchvision.transforms.ToPILImage">ToPILImage (class in torchvision.transforms)</a>
 </li>
-      <li><a href="index.html#module-torchvision">torchvision (module)</a>
+      <li>
+    torchvision
+
+      <ul>
+        <li><a href="index.html#module-torchvision">module</a>
 </li>
-      <li><a href="transforms.html#module-torchvision.transforms.functional">torchvision.transforms.functional (module)</a>
+      </ul></li>
+      <li>
+    torchvision.transforms.functional
+
+      <ul>
+        <li><a href="transforms.html#module-torchvision.transforms.functional">module</a>
 </li>
+      </ul></li>
       <li><a href="transforms.html#torchvision.transforms.ToTensor">ToTensor (class in torchvision.transforms)</a>
 </li>
   </ul></td>
@@ -1159,10 +1177,8 @@
          <script src="_static/jquery.js"></script>
          <script src="_static/underscore.js"></script>
          <script src="_static/doctools.js"></script>
-         <script src="_static/language_data.js"></script>
          <script src="_static/clipboard.min.js"></script>
          <script src="_static/copybutton.js"></script>
-         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   

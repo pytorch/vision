@@ -6,8 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Visualization utilities &mdash; Torchvision main documentation</title>
@@ -29,11 +28,11 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Video API" href="plot_video_api.html" />
@@ -199,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+910cfb1 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+00f0345 ) &#x25BC</a>
     </div>
     
 
@@ -223,7 +222,7 @@
               
             
             
-              <p><span class="caption-text">Package Reference</span></p>
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">torchvision.io</a></li>
@@ -232,11 +231,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">torchvision.utils</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Example gallery</a></li>
 </ul>
-<p><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -324,7 +323,7 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-auto-examples-plot-visualization-utils-py"><span class="std std-ref">here</span></a>
 to download the full example code</p>
 </div>
-<section class="sphx-glr-example-title" id="visualization-utilities">
+<div class="sphx-glr-example-title section" id="visualization-utilities">
 <span id="sphx-glr-auto-examples-plot-visualization-utils-py"></span><h1>Visualization utilities<a class="headerlink" href="#visualization-utilities" title="Permalink to this headline">¶</a></h1>
 <p>This example illustrates some of the utilities that torchvision offers for
 visualizing images, bounding boxes, and segmentation masks.</p>
@@ -349,7 +348,7 @@ visualizing images, bounding boxes, and segmentation masks.</p>
         <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xticklabels</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticklabels</span><span class="o">=</span><span class="p">[],</span> <span class="n">xticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
 </pre></div>
 </div>
-<section id="visualizing-a-grid-of-images">
+<div class="section" id="visualizing-a-grid-of-images">
 <h2>Visualizing a grid of images<a class="headerlink" href="#visualizing-a-grid-of-images" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../utils.html#torchvision.utils.make_grid" title="torchvision.utils.make_grid"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_grid()</span></code></a> function can be used to create a
 tensor that represents multiple images in a grid.  This util requires a single
@@ -366,8 +365,8 @@ image of dtype <code class="docutils literal notranslate"><span class="pre">uint
 </pre></div>
 </div>
 <img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_001.png" />
-</section>
-<section id="visualizing-bounding-boxes">
+</div>
+<div class="section" id="visualizing-bounding-boxes">
 <h2>Visualizing bounding boxes<a class="headerlink" href="#visualizing-bounding-boxes" title="Permalink to this headline">¶</a></h2>
 <p>We can use <a class="reference internal" href="../utils.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a> to draw boxes on an
 image. We can set the colors, labels, width as well as font and font size.
@@ -424,14 +423,14 @@ score greater than a given threshold.</p>
 </pre></div>
 </div>
 <img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_003.png" />
-</section>
-<section id="visualizing-segmentation-masks">
+</div>
+<div class="section" id="visualizing-segmentation-masks">
 <h2>Visualizing segmentation masks<a class="headerlink" href="#visualizing-segmentation-masks" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> function can be used to
 draw segmentation masks on images. Semantic segmentation and instance
 segmentation models have different outputs, so we will treat each
 independently.</p>
-<section id="semantic-segmentation-models">
+<div class="section" id="semantic-segmentation-models">
 <span id="semantic-seg-output"></span><h3>Semantic segmentation models<a class="headerlink" href="#semantic-segmentation-models" title="Permalink to this headline">¶</a></h3>
 <p>We will see how to use it with torchvision’s FCN Resnet-50, loaded with
 <a class="reference internal" href="../models.html#torchvision.models.segmentation.fcn_resnet50" title="torchvision.models.segmentation.fcn_resnet50"><code class="xref py py-func docutils literal notranslate"><span class="pre">fcn_resnet50()</span></code></a>.  You can also try using
@@ -574,8 +573,8 @@ but involves a bit more juggling with the dimensions.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([21, 2, 500, 500]), dtype = torch.bool
 </pre></div>
 </div>
-</section>
-<section id="instance-segmentation-models">
+</div>
+<div class="section" id="instance-segmentation-models">
 <span id="instance-seg-output"></span><h3>Instance segmentation models<a class="headerlink" href="#instance-segmentation-models" title="Permalink to this headline">¶</a></h3>
 <p>Instance segmentation models have a significantly different output from the
 semantic segmentation models. We will see here how to plot the masks for such
@@ -732,7 +731,7 @@ relevant masks:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([0.9987, 0.7187, 0.6525], grad_fn=&lt;IndexBackward&gt;)
 </pre></div>
 </div>
-<p>Clearly the model is less confident about the dog detection than it is about
+<p>Clearly the model is more confident about the dog detection than it is about
 the people detections. That’s good news. When plotting the masks, we can ask
 for only those that have a good score. Let’s use a score threshold of .75
 here, and also plot the masks of the second dog.</p>
@@ -754,7 +753,7 @@ here, and also plot the masks of the second dog.</p>
 <p>The two ‘people’ masks in the first image where not selected because they have
 a lower score than the score threshold. Similarly in the second image, the
 instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.930 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  10.274 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-visualization-utils-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/1031091ece7f376de0a2c941f5c11f30/plot_visualization_utils.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_visualization_utils.py</span></code></a></p>
@@ -764,9 +763,9 @@ instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
-</section>
-</section>
+</div>
+</div>
+</div>
 
 
              </article>
@@ -839,10 +838,8 @@ instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
          <script src="../_static/jquery.js"></script>
          <script src="../_static/underscore.js"></script>
          <script src="../_static/doctools.js"></script>
-         <script src="../_static/language_data.js"></script>
          <script src="../_static/clipboard.min.js"></script>
          <script src="../_static/copybutton.js"></script>
-         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   

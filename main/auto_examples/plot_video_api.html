@@ -6,8 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Video API &mdash; Torchvision main documentation</title>
@@ -29,11 +28,11 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Visualization utilities" href="plot_visualization_utils.html" />
@@ -198,7 +197,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+910cfb1 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+00f0345 ) &#x25BC</a>
     </div>
     
 
@@ -222,7 +221,7 @@
               
             
             
-              <p><span class="caption-text">Package Reference</span></p>
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">torchvision.datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">torchvision.io</a></li>
@@ -231,11 +230,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">torchvision.transforms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">torchvision.utils</a></li>
 </ul>
-<p><span class="caption-text">Examples</span></p>
+<p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Example gallery</a></li>
 </ul>
-<p><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -323,11 +322,11 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-auto-examples-plot-video-api-py"><span class="std std-ref">here</span></a>
 to download the full example code</p>
 </div>
-<section class="sphx-glr-example-title" id="video-api">
+<div class="sphx-glr-example-title section" id="video-api">
 <span id="sphx-glr-auto-examples-plot-video-api-py"></span><h1>Video API<a class="headerlink" href="#video-api" title="Permalink to this headline">¶</a></h1>
 <p>This example illustrates some of the APIs that torchvision offers for
 videos, together with the examples on how to build datasets and more.</p>
-<section id="introduction-building-a-new-video-object-and-examining-the-properties">
+<div class="section" id="introduction-building-a-new-video-object-and-examining-the-properties">
 <h2>1. Introduction: building a new video object and examining the properties<a class="headerlink" href="#introduction-building-a-new-video-object-and-examining-the-properties" title="Permalink to this headline">¶</a></h2>
 <p>First we select a video to test the object out. For the sake of argument
 we’re using one from kinetics400 dataset.
@@ -1347,8 +1346,8 @@ We can expect approx:  89.91008991008991
 Tensor size:  torch.Size([3, 256, 340])
 </pre></div>
 </div>
-</section>
-<section id="building-a-sample-read-video-function">
+</div>
+<div class="section" id="building-a-sample-read-video-function">
 <h2>2. Building a sample read_video function<a class="headerlink" href="#building-a-sample-read-video-function" title="Permalink to this headline">¶</a></h2>
 <p>We can utilize the methods above to build the read video function that follows
 the same API to the existing <code class="docutils literal notranslate"><span class="pre">read_video</span></code> function.</p>
@@ -1395,8 +1394,8 @@ the same API to the existing <code class="docutils literal notranslate"><span cl
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>torch.Size([327, 3, 256, 340]) torch.Size([523264, 1])
 </pre></div>
 </div>
-</section>
-<section id="building-an-example-randomly-sampled-dataset-can-be-applied-to-training-dataest-of-kinetics400">
+</div>
+<div class="section" id="building-an-example-randomly-sampled-dataset-can-be-applied-to-training-dataest-of-kinetics400">
 <h2>3. Building an example randomly sampled dataset (can be applied to training dataest of kinetics400)<a class="headerlink" href="#building-an-example-randomly-sampled-dataset-can-be-applied-to-training-dataest-of-kinetics400" title="Permalink to this headline">¶</a></h2>
 <p>Cool, so now we can use the same principle to make the sample dataset.
 We suggest trying out iterable dataset for this purpose.
@@ -4356,8 +4355,8 @@ class allows us to naturally oversample clips or images from each video if neede
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;video&#39;: [&#39;./dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi&#39;, &#39;./dataset/2/SOX5yA1l24A.mp4&#39;, &#39;./dataset/2/v_SoccerJuggling_g24_c01.avi&#39;, &#39;./dataset/2/SOX5yA1l24A.mp4&#39;, &#39;./dataset/2/SOX5yA1l24A.mp4&#39;], &#39;start&#39;: [1.4823292551153742, 4.843415806301033, 2.722190669991999, 1.690561874038201, 7.145727921117616], &#39;end&#39;: [2.0, 5.372033, 3.236567, 2.2022, 7.674333], &#39;tensorsize&#39;: [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 </pre></div>
 </div>
-</section>
-<section id="data-visualization">
+</div>
+<div class="section" id="data-visualization">
 <h2>4. Data Visualization<a class="headerlink" href="#data-visualization" title="Permalink to this headline">¶</a></h2>
 <p>Example of visualized video</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -4387,8 +4386,8 @@ class allows us to naturally oversample clips or images from each video if neede
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</section>
-</section>
+</div>
+</div>
 
 
              </article>
@@ -4456,10 +4455,8 @@ class allows us to naturally oversample clips or images from each video if neede
          <script src="../_static/jquery.js"></script>
          <script src="../_static/underscore.js"></script>
          <script src="../_static/doctools.js"></script>
-         <script src="../_static/language_data.js"></script>
          <script src="../_static/clipboard.min.js"></script>
          <script src="../_static/copybutton.js"></script>
-         <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
      
 
   
