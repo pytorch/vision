@@ -85,9 +85,9 @@ class AutoAugment(torch.nn.Module):
         self.policy = policy
         self.interpolation = interpolation
         self.fill = fill
-        self.transforms = self._get_transforms(policy)
+        self.policies = self._get_policies(policy)
 
-    def _get_transforms(
+    def _get_policies(
         self,
         policy: AutoAugmentPolicy
     ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
@@ -178,9 +178,9 @@ class AutoAugment(torch.nn.Module):
         else:
             raise ValueError("The provided policy {} is not recognized.".format(policy))
 
-    def _get_magnitudes(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
-            # name: (magnitudes, signed)
+            # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
             "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
@@ -224,11 +224,11 @@ class AutoAugment(torch.nn.Module):
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
-        transform_id, probs, signs = self.get_params(len(self.transforms))
+        transform_id, probs, signs = self.get_params(len(self.policies))
 
-        for i, (op_name, p, magnitude_id) in enumerate(self.transforms[transform_id]):
+        for i, (op_name, p, magnitude_id) in enumerate(self.policies[transform_id]):
             if probs[i] <= p:
-                op_meta = self._get_magnitudes(10, F.get_image_size(img))
+                op_meta = self._augmentation_space(10, F.get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) if magnitude_id is not None else 0.0
                 if signed and signs[i] == 0:
@@ -268,9 +268,9 @@ class RandAugment(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _get_magnitudes(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
-            # name: (magnitudes, signed)
+            # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
             "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
@@ -301,7 +301,7 @@ class RandAugment(torch.nn.Module):
                 fill = [float(f) for f in fill]
 
         for _ in range(self.num_ops):
-            op_meta = self._get_magnitudes(30, F.get_image_size(img))
+            op_meta = self._augmentation_space(30, F.get_image_size(img))
             op_index = int(torch.randint(len(op_meta), (1,)).item())
             op_name = list(op_meta.keys())[op_index]
             magnitudes, signed = op_meta[op_name]
