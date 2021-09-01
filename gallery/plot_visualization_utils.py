@@ -343,7 +343,7 @@ show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 print(dog1_output['scores'])
 
 #####################################
-# Clearly the model is less confident about the dog detection than it is about
+# Clearly the model is more confident about the dog detection than it is about
 # the people detections. That's good news. When plotting the masks, we can ask
 # for only those that have a good score. Let's use a score threshold of .75
 # here, and also plot the masks of the second dog.
