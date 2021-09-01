@@ -3,7 +3,7 @@ from torch import nn
 from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
 
 from torchvision.ops import misc as misc_nn_ops
-from .._utils import IntermediateLayerGetter
+from ..feature_extraction import IntermediateLayerGetter
 from .. import mobilenet
 from .. import resnet
 

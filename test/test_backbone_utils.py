@@ -2,8 +2,8 @@ import unittest
 import torch
 import torchvision
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models._utils import build_feature_graph_net
-from torchvision.models._utils import IntermediateLayerGetter
+from torchvision.models.feature_extraction import build_feature_graph_net
+from torchvision.models.feature_extraction import IntermediateLayerGetter
 
 import pytest
 
@@ -13,6 +13,11 @@ def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device='cpu')
     y = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False)(x)
     assert list(y.keys()) == ['0', '1', '2', '3', 'pool']
+
+
+# Needed by TestFeatureExtraction.test_feature_graph_net_leaf_module_and_function
+def leaf_function(x):
+    return int(x)
 
 
 class TestFeatureExtraction(unittest.TestCase):
@@ -35,6 +40,9 @@ class TestFeatureExtraction(unittest.TestCase):
         # Check that it works with both a list and dict for return nodes
         build_feature_graph_net(self.model, self.return_layers)
         build_feature_graph_net(self.model, list(self.return_layers.keys()))
+        # Check must specify return nodes
+        with pytest.raises(AssertionError):
+            build_feature_graph_net(self.model)
         # Check return_nodes and train_return_nodes / eval_return nodes
         # mutual exclusivity
         with pytest.raises(AssertionError):
@@ -170,3 +178,35 @@ class TestFeatureExtraction(unittest.TestCase):
         # Check outputs after switching to train mode
         fgn_model.train()
         checks(fgn_model, 'train')
+
+    def test_feature_graph_net_leaf_module_and_function(self):
+        class LeafModule(torch.nn.Module):
+            def forward(self, x):
+                # This would raise a TypeError if it were not in a leaf module
+                int(x.shape[0])
+                return torch.nn.functional.relu(x + 4)
+
+        class TestModule(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv = torch.nn.Conv2d(3, 1, 3)
+                self.leaf_module = LeafModule()
+
+            def forward(self, x):
+                leaf_function(x.shape[0])
+                x = self.conv(x)
+                return self.leaf_module(x)
+
+        model = build_feature_graph_net(
+            TestModule(), return_nodes=['leaf_module'],
+            tracer_kwargs={'leaf_modules': [LeafModule],
+                           'autowrap_functions': [leaf_function]})
+
+        # Check that LeafModule is not in the list of nodes
+        assert 'relu' not in [str(n) for n in model.graph.nodes]
+        assert 'leaf_module' in [str(n) for n in model.graph.nodes]
+
+        # Check forward
+        out = model(self.inp)
+        # And backward
+        out['leaf_module'].mean().backward()

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Callable, List, Union, Optional
+from typing import Dict, Callable, List, Union, Optional, Set
 from collections import OrderedDict
 import warnings
 import re
@@ -15,7 +15,7 @@ from torch.fx.graph_module import _copy_attr
 
 class IntermediateLayerGetter(nn.ModuleDict):
     """
-    Module wrapper that returns intermediate layers from a model
+    Module wrapper that returns intermediate layers from a model.
 
     It has a strong assumption that the modules have been registered
     into the model in the same order as they are used.
@@ -25,6 +25,9 @@ class IntermediateLayerGetter(nn.ModuleDict):
     Additionally, it is only able to query submodules that are directly
     assigned to the model. So if `model` is passed, `model.feature1` can
     be returned, but not `model.feature1.layer2`.
+
+    For a more flexibile feature extraction, see
+    :func:`build_feature_graph_net`.
 
     Args:
         model (nn.Module): model on which we will extract the features
@@ -75,14 +78,33 @@ class IntermediateLayerGetter(nn.ModuleDict):
         return out
 
 
-class NodePathTracer(fx.Tracer):
+class LeafModuleAwareTracer(fx.Tracer):
+    """
+    An fx.Tracer that allows the user to specify a set of leaf modules, ie.
+    modules that are not to be traced through. The resulting graph ends up
+    having single nodes referencing calls to the leaf modules' forward methods.
+    """
+    def __init__(self, *args, **kwargs):
+        self.leaf_modules = {}
+        if 'leaf_modules' in kwargs:
+            leaf_modules = kwargs.pop('leaf_modules')
+            self.leaf_modules = leaf_modules
+        super(LeafModuleAwareTracer, self).__init__(*args, **kwargs)
+
+    def is_leaf_module(self, m: nn.Module, module_qualname: str) -> bool:
+        if isinstance(m, tuple(self.leaf_modules)):
+            return True
+        return super().is_leaf_module(m, module_qualname)
+
+
+class NodePathTracer(LeafModuleAwareTracer):
     """
     NodePathTracer is an FX tracer that, for each operation, also records the
     qualified name of the Node from which the operation originated. A
     qualified name here is a `.` seperated path walking the hierarchy from top
     level module down to leaf operation or leaf module. The name of the top
     level module is not included as part of the qualified name. For example,
-    if we trace a module who's forward method applies a ReLU module, the
+    if we trace a module whose forward method applies a ReLU module, the
     qualified name for that node will simply be 'relu'.
 
     Some notes on the specifics:
@@ -207,19 +229,27 @@ def print_graph_node_qualified_names(
     Dev utility to prints nodes in order of execution. Useful for choosing
     nodes for a FeatureGraphNet design. There are two reasons that qualified
     node names can't easily be read directly from the code for a model:
+
         1. Not all submodules are traced through. Modules from `torch.nn` all
-           fall within this category.
+        fall within this category.
+
         2. Node qualified names that occur more than once in the graph get a
-           `_{counter}` postfix.
-    The model will be traced twice: once in train mode, and once in eval mode.
-    If there are discrepancies between the graphs produced, both sets will
-    be printed and the user will be warned.
+        `_{counter}` postfix.
+
+    The model is traced twice: once in train mode, and once in eval mode.
+    If there are discrepancies between the graphs produced, both sets of nodes
+    will be printed and the user will be warned.
 
     Args:
-        model (nn.Module): model on which we will extract the features
+        model (nn.Module): model for which we'd like to print node names
         tracer_kwargs (Dict): a dictionary of keywork arguments for
-            `NodePathTracer` (which passes them onto it's parent class
+            `NodePathTracer` (which in turn passes them onto it's parent class
             `torch.fx.Tracer`).
+
+    Examples::
+
+        >>> model = torchvision.models.resnet18()
+        >>> print_graph_node_qualified_names(model)
     """
     train_tracer = NodePathTracer(**tracer_kwargs)
     train_tracer.trace(model.train())
@@ -324,17 +354,38 @@ def build_feature_graph_net(
     `return_nodes` argument should point to either a node's qualified name,
     or some truncated version of it. For example, one could provide `blocks.5`
     as a key, and the last node with that prefix will be selected.
-    `print_graph_node_qualified_names` is a useful helper function for getting
-    a list of qualified names of a model.
+    :func:`print_graph_node_qualified_names` is a useful helper function
+    for getting a list of qualified node names of a model.
 
     An attempt is made to keep all non-parametric properties of the original
     model, but existing properties of the constructed `GraphModule` are not
     overwritten.
 
+    Not all models will be FX traceable, although with some massaging they can
+    be made to cooperate. Here's a (not exhaustive) list of tips:
+
+        - If you don't need to trace through a particular, problematic
+          sub-module, turn it into a "leaf module" by passing a list of
+          `leaf_modules` as one of the `tracer_kwargs` (see example below). It
+          will not be traced through, but rather, the resulting graph will
+          hold a reference to that module's forward method.
+        - Likewise, you may turn functions into leaf functions by passing a
+          list of `autowrap_functions` as one of the `tracer_kwargs` (see
+          example below).
+        - Some inbuilt Python functions can be problematic. For instance,
+          `int` will raise an error during tracig. You may wrap them in your
+          own function and then pass that in `autowrap_functions` as one of
+          the `tracer_kwargs`.
+        - Use `torch.matmul(tensor_a, tensor_b)` instead of `tensor_a @
+          tensor_b`.
+
+    For further information on FX see the
+    `torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_.
+
     Args:
         model (nn.Module): model on which we will extract the features
-        return_nodes (Optional[Union[List[str], Dict[str, str]]]): either a list
-            or a dict containing the names (or partial names - see note above)
+        return_nodes (Optional[Union[List[str], Dict[str, str]]]): either a `List`
+            or a `Dict` containing the names (or partial names - see note above)
             of the nodes for which the activations will be returned. If it is
             a `Dict`, the keys are the qualified node names, and the values
             are the user-specified keys for the graph module's returned
@@ -358,6 +409,7 @@ def build_feature_graph_net(
 
     Examples::
 
+        >>> # Feature extraction with resnet
         >>> model = torchvision.models.resnet18()
         >>> # extract layer1 and layer3, giving as names `feat1` and feat2`
         >>> graph_module = torchvision.models._utils.build_feature_graph_net(m,
@@ -367,8 +419,40 @@ def build_feature_graph_net(
         >>>     [('feat1', torch.Size([1, 64, 56, 56])),
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
 
+        >>> # Specifying leaf modules and leaf functions
+        >>> def leaf_function(x):
+        >>>     # This would raise a TypeError if traced through
+        >>>     return int(x)
+        >>>
+        >>> class LeafModule(torch.nn.Module):
+        >>>     def forward(self, x):
+        >>>         # This would raise a TypeError if traced through
+        >>>         int(x.shape[0])
+        >>>         return torch.nn.functional.relu(x + 4)
+        >>>
+        >>> class MyModule(torch.nn.Module):
+        >>>     def __init__(self):
+        >>>         super().__init__()
+        >>>         self.conv = torch.nn.Conv2d(3, 1, 3)
+        >>>         self.leaf_module = LeafModule()
+        >>>
+        >>>     def forward(self, x):
+        >>>         leaf_function(x.shape[0])
+        >>>         x = self.conv(x)
+        >>>         return self.leaf_module(x)
+        >>>
+        >>> model = build_feature_graph_net(
+        >>>     MyModule(), return_nodes=['leaf_module'],
+        >>>     tracer_kwargs={'leaf_modules': [LeafModule],
+        >>>                    'autowrap_functions': [leaf_function]})
+
     """
     is_training = model.training
+
+    assert any(arg is not None for arg in [
+        return_nodes, train_return_nodes, eval_return_nodes]), (
+            "Either `return_nodes` or `train_return_nodes` and "
+            "`eval_return_nodes` together, should be specified")
 
     assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), \
         ("If any of `train_return_nodes` and `eval_return_nodes` are "
