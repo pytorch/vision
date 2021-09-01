@@ -252,6 +252,7 @@ class RandAugment(torch.nn.Module):
     Args:
         num_ops (int): Number of augmentation transformations to apply sequentially.
         magnitude (int): Magnitude for all the transformations.
+        num_magnitude_bins (int): The number of different magnitude values.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -259,12 +260,13 @@ class RandAugment(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
         """
 
-    def __init__(self, num_ops: int = 2, magnitude: int = 9,
+    def __init__(self, num_ops: int = 2, magnitude: int = 9, num_magnitude_bins: int = 30,
                  interpolation: InterpolationMode = InterpolationMode.NEAREST,
                  fill: Optional[List[float]] = None) -> None:
         super().__init__()
         self.num_ops = num_ops
         self.magnitude = magnitude
+        self.num_magnitude_bins = num_magnitude_bins
         self.interpolation = interpolation
         self.fill = fill
 
@@ -301,7 +303,7 @@ class RandAugment(torch.nn.Module):
                 fill = [float(f) for f in fill]
 
         for _ in range(self.num_ops):
-            op_meta = self._augmentation_space(30, F.get_image_size(img))
+            op_meta = self._augmentation_space(self.num_magnitude_bins, F.get_image_size(img))
             op_index = int(torch.randint(len(op_meta), (1,)).item())
             op_name = list(op_meta.keys())[op_index]
             magnitudes, signed = op_meta[op_name]
@@ -316,6 +318,7 @@ class RandAugment(torch.nn.Module):
         s = self.__class__.__name__ + '('
         s += 'num_ops={num_ops}'
         s += ', magnitude={magnitude}'
+        s += ', num_magnitude_bins={num_magnitude_bins}'
         s += ', interpolation={interpolation}'
         s += ', fill={fill}'
         s += ')'
