@@ -231,10 +231,9 @@ def print_graph_node_qualified_names(
     node names can't easily be read directly from the code for a model:
 
         1. Not all submodules are traced through. Modules from `torch.nn` all
-        fall within this category.
-
+           fall within this category.
         2. Node qualified names that occur more than once in the graph get a
-        `_{counter}` postfix.
+           `_{counter}` postfix.
 
     The model is traced twice: once in train mode, and once in eval mode.
     If there are discrepancies between the graphs produced, both sets of nodes

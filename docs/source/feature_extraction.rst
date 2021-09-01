@@ -14,7 +14,7 @@ applications in computer vision. Just a few examples are:
   with a specific task in mind. For example, passing a hierarchy of features
   to a Feature Pyramid Network with object detection heads.
 
-Torchvision provides two helpers for doing feature extraction. :class:`IntermediateLayerGetter`
+Torchvision provides two utilities for doing feature extraction. :class:`IntermediateLayerGetter`
 is easy to understand and effective. That said, it only allows coarse control
 over which features are extracted, and makes some assumptions about the layout
 of the input module. :func:`build_feature_graph_net` is far more
