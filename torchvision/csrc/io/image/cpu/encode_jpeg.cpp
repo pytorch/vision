@@ -19,7 +19,7 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
 // according to the libjpeg version used, in order to prevent compilation
 // errors.
 #if defined(_WIN32) || !defined(JPEG_LIB_VERSION_MAJOR) || \
-    JPEG_LIB_VERSION_MAJOR < 9 ||                        \
+    JPEG_LIB_VERSION_MAJOR < 9 ||                          \
     (JPEG_LIB_VERSION_MAJOR == 9 && JPEG_LIB_VERSION_MINOR <= 2)
 using JpegSizeType = unsigned long;
 #else
