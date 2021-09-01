@@ -181,8 +181,8 @@ def _warn_graph_differences(
     train_nodes = list(train_tracer.node_to_qualname.values())
     eval_nodes = list(eval_tracer.node_to_qualname.values())
 
-    if len(train_nodes) == len(eval_nodes) and [
-            t == e for t, e in zip(train_nodes, eval_nodes)]:
+    if len(train_nodes) == len(eval_nodes) and all(
+            t == e for t, e in zip(train_nodes, eval_nodes)):
         return
 
     suggestion_msg = (
@@ -227,8 +227,8 @@ def print_graph_node_qualified_names(
     eval_tracer.trace(model.eval())
     train_nodes = list(train_tracer.node_to_qualname.values())
     eval_nodes = list(eval_tracer.node_to_qualname.values())
-    if len(train_nodes) == len(eval_nodes) and [
-            t == e for t, e in zip(train_nodes, eval_nodes)]:
+    if len(train_nodes) == len(eval_nodes) and all(
+            t == e for t, e in zip(train_nodes, eval_nodes)):
         # Nodes are aligned in train vs eval mode
         pprint(list(train_tracer.node_to_qualname.values()))
         return
@@ -274,9 +274,9 @@ class DualGraphModule(fx.GraphModule):
                 assert isinstance(node.target, str)
                 _copy_attr(root, self, node.target)
 
-        # eval mode by default
-        self.eval()
-        self.graph = eval_graph
+        # train mode by default
+        self.train()
+        self.graph = train_graph
 
         # (borrowed from fx.GraphModule):
         # Store the Tracer class responsible for creating a Graph separately as part of the
@@ -292,20 +292,22 @@ class DualGraphModule(fx.GraphModule):
 
     def train(self, mode=True):
         """
-        Swap out the graph depending on the training mode.
+        Swap out the graph depending on the selected training mode.
         NOTE this should be safe when calling model.eval() because that just
         calls this with mode == False.
         """
-        if mode:
+        # NOTE: Only set self.graph if the current graph is not the desired
+        # one. This saves us from recompiling the graph where not necessary.
+        if mode and not self.training:
             self.graph = self.train_graph
-        else:
+        elif not mode and self.training:
             self.graph = self.eval_graph
         return super().train(mode=mode)
 
 
 def build_feature_graph_net(
         model: nn.Module,
-        return_nodes: Union[List[str], Dict[str, str]],
+        return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
         train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
         eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
         tracer_kwargs: Dict = {}) -> fx.GraphModule:
@@ -331,13 +333,25 @@ def build_feature_graph_net(
 
     Args:
         model (nn.Module): model on which we will extract the features
-        return_nodes (Union[List[name], Dict[name, new_name]])): either a list
+        return_nodes (Optional[Union[List[str], Dict[str, str]]]): either a list
             or a dict containing the names (or partial names - see note above)
             of the nodes for which the activations will be returned. If it is
             a `Dict`, the keys are the qualified node names, and the values
             are the user-specified keys for the graph module's returned
             dictionary. If it is a `List`, it is treated as a `Dict` mapping
-            node specification strings directly to output names.
+            node specification strings directly to output names. In the case 
+            that `train_return_nodes` and `eval_return_nodes` are specified,
+            this should not be specified.
+        train_return_nodes (Optional[Union[List[str], Dict[str, str]]]):
+            similar to `return_nodes`. This can be used if the return nodes
+            for train mode are different than those from eval mode.
+            If this is specified, `eval_return_nodes` must also be specified,
+            and `return_nodes` should not be specified.
+        eval_return_nodes (Optional[Union[List[str], Dict[str, str]]]):
+            similar to `return_nodes`. This can be used if the return nodes
+            for train mode are different than those from eval mode.
+            If this is specified, `train_return_nodes` must also be specified,
+            and `return_nodes` should not be specified.
         tracer_kwargs (Dict): a dictionary of keywork arguments for
             `NodePathTracer` (which passes them onto it's parent class
             `torch.fx.Tracer`).
@@ -359,6 +373,10 @@ def build_feature_graph_net(
     assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), \
         ("If any of `train_return_nodes` and `eval_return_nodes` are "
          "specified, then both should be specified")
+
+    assert ((return_nodes is None) ^ (train_return_nodes is None)), \
+        ("If `train_return_nodes` and `eval_return_nodes` are specified, "
+         "then both should be specified")
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:
@@ -402,7 +420,12 @@ def build_feature_graph_net(
         # Check that all outputs in return_nodes are present in the model
         for query in mode_return_nodes[mode].keys():
             if not any([m.startswith(query) for m in available_nodes]):
-                raise ValueError(f"return_node: {query} is not present in model")
+                raise ValueError(
+                    f"node: '{query}' is not present in model. Hint: use "
+                    "`print_graph_node_qualified_names` to make sure the "
+                    "`return_nodes` you specified are present. It may even "
+                    "be that you need to specify `train_return_nodes` and "
+                    "`eval_return_nodes` seperately.")
 
         # Remove existing output nodes (train mode)
         orig_output_nodes = []
@@ -462,6 +485,7 @@ def build_feature_graph_net(
             setattr(graph_module, attr_str, attr)
 
     # Restore original training mode
+    model.train(is_training)
     graph_module.train(is_training)
 
     return graph_module
