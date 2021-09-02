@@ -90,7 +90,7 @@ inline unsigned int GET_THREADS() {
 
 inline unsigned int GET_BLOCKS(
     const unsigned int THREADS,
-    const unsigned int N) {
+    const unsigned int64_t N) {
   unsigned int kMaxGridNum =
       at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
   return std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
@@ -158,8 +158,7 @@ __global__ void deformable_im2col_kernel(
     index_t out_w,
     bool use_mask,
     scalar_t* columns_ptr) {
-  // Here index is int, but n can be int64
-  CUDA_1D_KERNEL_LOOP(index, n) {
+  CUDA_1D_KERNEL_LOOP_T(index, n, index_t) {
     const index_t out_x = index % out_w;
     const index_t out_y = (index / out_w) % out_h;
     const index_t out_b = (index / (out_w * out_h)) % batch_sz;
@@ -232,7 +231,7 @@ void deformable_im2col(
     int deformable_group,
     bool use_mask,
     at::Tensor data_col) {
-  int num_kernels = n_in_channels * out_h * out_w * parallel_imgs;
+  int64_t num_kernels = (int64_t) n_in_channels * out_h * out_w * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
@@ -240,7 +239,8 @@ void deformable_im2col(
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
   bool use_64bits_indexing = false;
-  // Checks if columns numel is larger than 2 ** 31
+  // Checks if num_kernels or columns numel larger than 2 ** 31
+  use_64bits_indexing |= num_kernels > (1 << 31);
   use_64bits_indexing |= ((int64_t) n_in_channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
 
   if (use_64bits_indexing) {
@@ -338,8 +338,7 @@ __global__ void deformable_col2im_kernel(
     index_t out_w,
     bool use_mask,
     scalar_t* grad_im) {
-  // Here index is int, but n can be int64
-  CUDA_1D_KERNEL_LOOP(index, n) {
+  CUDA_1D_KERNEL_LOOP_T(index, n, int64_t) {
     const index_t out_x = index % out_w;
     const index_t out_y = (index / out_w) % out_h;
     const index_t b = (index / (out_w * out_h)) % batch_sz;
@@ -381,7 +380,7 @@ __global__ void deformable_col2im_kernel(
         index_t xp = (index_t) x + dx;
         if (0 <= yp && yp < height && 0 <= xp && xp < width &&
             std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
-          int grad_pos = ((b * channels + c) * height + yp) * width + xp;
+          index_t grad_pos = ((b * channels + c) * height + yp) * width + xp;
           scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
           atomicAdd(grad_im + grad_pos, mask_value * weight * col[index]);
         }
@@ -413,8 +412,9 @@ void compute_grad_input(
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
       (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
-  int num_kernels =
-      channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
+
+  int64_t num_kernels =
+      (int64_t) channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
@@ -422,8 +422,8 @@ void compute_grad_input(
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
   bool use_64bits_indexing = false;
-  // Checks if columns numel is larger than 2 ** 31
-  use_64bits_indexing |= ((int64_t) channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
+  // Checks if num_kernels or columns numel larger than 2 ** 31
+  use_64bits_indexing |= num_kernels > (1 << 31);
 
   if (use_64bits_indexing) {
 
@@ -545,8 +545,7 @@ __global__ void deformable_col2im_coord_kernel(
     const bool use_mask,
     scalar_t* grad_offset,
     scalar_t* grad_mask) {
-  // Here index is int, but n can be int64
-  CUDA_1D_KERNEL_LOOP(index, n) {
+  CUDA_1D_KERNEL_LOOP_T(index, n, int64_t) {
     scalar_t grad_offset_val = 0;
     scalar_t grad_mask_val = 0;
 
@@ -655,8 +654,8 @@ void compute_grad_offset_and_mask(
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
       (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
-  int num_kernels =
-      out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
+  int64_t num_kernels =
+      (int64_t) out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
@@ -665,6 +664,7 @@ void compute_grad_offset_and_mask(
   // https://github.com/pytorch/vision/issues/4269
   bool use_64bits_indexing = false;
   // Checks if columns numel is larger than 2 ** 31
+  use_64bits_indexing |= num_kernels > (1 << 31);
   use_64bits_indexing |= ((int64_t) channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
 
   if (use_64bits_indexing) {
@@ -842,7 +842,6 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
           weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
     }
 
-    // ERROR INSIDE WITH CUDNN: RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
     compute_grad_offset_and_mask(
         columns,
         input[elt],
@@ -865,25 +864,26 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
         grad_offset[elt],
         grad_mask[elt]);
 
-    // compute_grad_input(
-    //     columns,
-    //     offset[elt],
-    //     mask[elt],
-    //     n_in_channels,
-    //     in_h,
-    //     in_w,
-    //     weight_h,
-    //     weight_w,
-    //     pad_h,
-    //     pad_w,
-    //     stride_h,
-    //     stride_w,
-    //     dilation_h,
-    //     dilation_w,
-    //     n_parallel_imgs,
-    //     n_offset_grps,
-    //     use_mask,
-    //     grad_input[elt]);
+    // ERROR INSIDE WITH CUDNN: RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
+    compute_grad_input(
+        columns,
+        offset[elt],
+        mask[elt],
+        n_in_channels,
+        in_h,
+        in_w,
+        weight_h,
+        weight_w,
+        pad_h,
+        pad_w,
+        stride_h,
+        stride_w,
+        dilation_h,
+        dilation_w,
+        n_parallel_imgs,
+        n_offset_grps,
+        use_mask,
+        grad_input[elt]);
   }
 
   grad_input = grad_input.view({batch_sz, n_in_channels, in_h, in_w});
