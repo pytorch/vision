@@ -9,7 +9,9 @@ class ClassificationPresetTrain:
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
-            if auto_augment_policy == "ta_wide":
+            if auto_augment_policy == "ra":
+                trans.append(autoaugment.RandAugment())
+            elif auto_augment_policy == "ta_wide":
                 trans.append(autoaugment.TrivialAugmentWide())
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)

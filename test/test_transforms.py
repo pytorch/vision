@@ -1490,6 +1490,17 @@ def test_autoaugment(policy, fill):
     transform.__repr__()
 
 
+@pytest.mark.parametrize('num_ops', [1, 2, 3])
+@pytest.mark.parametrize('magnitude', [7, 9, 11])
+@pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
+def test_randaugment(num_ops, magnitude, fill):
+    random.seed(42)
+    img = Image.open(GRACE_HOPPER)
+    transform = transforms.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
+    for _ in range(100):
+        img = transform(img)
+    transform.__repr__()
+
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
 @pytest.mark.parametrize('num_magnitude_bins', [10, 13, 30])
 def test_trivialaugmentwide(fill, num_magnitude_bins):

@@ -525,7 +525,6 @@ def test_autoaugment(device, policy, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
-    s_transform = None
     transform = T.AutoAugment(policy=policy, fill=fill)
     s_transform = torch.jit.script(transform)
     for _ in range(25):
@@ -533,10 +532,19 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-def test_autoaugment_save(tmpdir):
-    transform = T.AutoAugment()
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('num_ops', [1, 2, 3])
+@pytest.mark.parametrize('magnitude', [7, 9, 11])
+@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_randaugment(device, num_ops, magnitude, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
     s_transform = torch.jit.script(transform)
-    s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -552,8 +560,9 @@ def test_trivialaugmentwide(device, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-def test_trivialaugmentwide_save(tmpdir):
-    transform = T.TrivialAugmentWide()
+@pytest.mark.parametrize('augmentation', [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide])
+def test_autoaugment_save(augmentation, tmpdir):
+    transform = augmentation()
     s_transform = torch.jit.script(transform)
     s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
 
