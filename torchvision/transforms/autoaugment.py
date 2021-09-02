@@ -369,7 +369,7 @@ class TrivialAugmentWide(torch.nn.Module):
             "Invert": (torch.tensor(0.0), False),
         }
 
-    def forward(self, img: Tensor):
+    def forward(self, img: Tensor) -> Tensor:
         """
             img (PIL Image or Tensor): Image to be transformed.
 
