@@ -255,7 +255,7 @@ plot(imgs)
 
 ####################################
 # TrivialAugmentWide
-# ~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~
 # The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
 augmenter = T.TrivialAugmentWide()
 imgs = [augmenter(orig_img) for _ in range(4)]

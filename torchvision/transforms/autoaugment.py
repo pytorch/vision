@@ -330,17 +330,17 @@ class RandAugment(torch.nn.Module):
 class TrivialAugmentWide(torch.nn.Module):
     r"""Dataset-independent data-augmentation with TrivialAugment Wide, as described in
     `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
-        If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-        to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-        If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    If the image is torch Tensor, it should be of type torch.uint8, and it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
-        Args:
-            num_magnitude_bins (int): The number of different magnitude values.
-            interpolation (InterpolationMode): Desired interpolation enum defined by
-                :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-                If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            fill (sequence or number, optional): Pixel fill value for the area outside the transformed
-                image. If given a number, the value is used for all bands respectively.
+    Args:
+        num_magnitude_bins (int): The number of different magnitude values.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
         """
 
     def __init__(self, num_magnitude_bins: int = 30, interpolation: InterpolationMode = InterpolationMode.NEAREST,
