@@ -231,7 +231,7 @@ void deformable_im2col(
     int deformable_group,
     bool use_mask,
     at::Tensor data_col) {
-  int64_t num_kernels = (int64_t) n_in_channels * out_h * out_w * parallel_imgs;
+  int64_t num_kernels = (int64_t)n_in_channels * out_h * out_w * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
@@ -241,10 +241,12 @@ void deformable_im2col(
   bool use_64bits_indexing = false;
   // Checks if num_kernels or columns numel larger than 2 ** 31
   use_64bits_indexing |= num_kernels > (1 << 31);
-  use_64bits_indexing |= ((int64_t) n_in_channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
+  use_64bits_indexing |=
+      ((int64_t)n_in_channels * weight_h * weight_w * parallel_imgs * out_h *
+           out_w >
+       (1 << 31));
 
   if (use_64bits_indexing) {
-
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
           deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads>>>(
@@ -272,7 +274,6 @@ void deformable_im2col(
         }));
 
   } else {
-
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
           deformable_im2col_kernel<scalar_t, int><<<blocks, threads>>>(
@@ -343,7 +344,8 @@ __global__ void deformable_col2im_kernel(
     const index_t out_y = (index / out_w) % out_h;
     const index_t b = (index / (out_w * out_h)) % batch_sz;
     const index_t j = (index / (out_w * out_h * batch_sz)) % kernel_w;
-    const index_t i = (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
+    const index_t i =
+        (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
     const index_t c = index / (out_w * out_h * batch_sz * kernel_w * kernel_h);
 
     index_t c_per_offset_grp = channels / n_offset_grps;
@@ -361,7 +363,8 @@ __global__ void deformable_col2im_kernel(
     const index_t offset_idx = 2 * mask_idx;
 
     const index_t offset_h_ptr = ((offset_idx)*out_h + out_y) * out_w + out_x;
-    const index_t offset_w_ptr = ((offset_idx + 1) * out_h + out_y) * out_w + out_x;
+    const index_t offset_w_ptr =
+        ((offset_idx + 1) * out_h + out_y) * out_w + out_x;
 
     const scalar_t offset_h = offset_ptr[offset_h_ptr];
     const scalar_t offset_w = offset_ptr[offset_w_ptr];
@@ -376,8 +379,8 @@ __global__ void deformable_col2im_kernel(
 
     for (index_t dy = -1; dy <= 1; dy++) {
       for (index_t dx = -1; dx <= 1; dx++) {
-        index_t yp = (index_t) y + dy;
-        index_t xp = (index_t) x + dx;
+        index_t yp = (index_t)y + dy;
+        index_t xp = (index_t)x + dx;
         if (0 <= yp && yp < height && 0 <= xp && xp < width &&
             std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           index_t grad_pos = ((b * channels + c) * height + yp) * width + xp;
@@ -414,7 +417,7 @@ void compute_grad_input(
       (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
 
   int64_t num_kernels =
-      (int64_t) channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
+      (int64_t)channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
@@ -426,7 +429,6 @@ void compute_grad_input(
   use_64bits_indexing |= num_kernels > (1 << 31);
 
   if (use_64bits_indexing) {
-
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
           deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads>>>(
@@ -578,7 +580,8 @@ __global__ void deformable_col2im_coord_kernel(
 
     const index_t c_bound = c_per_offset_grp * weight_h * weight_w;
     for (index_t col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
-      const index_t col_pos = (((col_c * batch_sz + b) * out_h) + h) * out_w + w;
+      const index_t col_pos =
+          (((col_c * batch_sz + b) * out_h) + h) * out_w + w;
 
       index_t out_x = col_pos % out_w;
       index_t out_y = (col_pos / out_w) % out_h;
@@ -654,8 +657,8 @@ void compute_grad_offset_and_mask(
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
       (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
-  int64_t num_kernels =
-      (int64_t) out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
+  int64_t num_kernels = (int64_t)out_h * out_w * 2 * weight_h * weight_w *
+      n_offset_grps * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
@@ -665,37 +668,39 @@ void compute_grad_offset_and_mask(
   bool use_64bits_indexing = false;
   // Checks if columns numel is larger than 2 ** 31
   use_64bits_indexing |= num_kernels > (1 << 31);
-  use_64bits_indexing |= ((int64_t) channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
+  use_64bits_indexing |=
+      ((int64_t)channels * weight_h * weight_w * parallel_imgs * out_h * out_w >
+       (1 << 31));
 
   if (use_64bits_indexing) {
-
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
-          deformable_col2im_coord_kernel<scalar_t, int64_t><<<blocks, threads>>>(
-              num_kernels,
-              columns.data_ptr<scalar_t>(),
-              input.data_ptr<scalar_t>(),
-              offset.data_ptr<scalar_t>(),
-              mask.data_ptr<scalar_t>(),
-              channels,
-              height,
-              width,
-              weight_h,
-              weight_w,
-              pad_h,
-              pad_w,
-              stride_h,
-              stride_w,
-              dilation_h,
-              dilation_w,
-              parallel_imgs,
-              2 * weight_h * weight_w * n_offset_grps,
-              n_offset_grps,
-              out_h,
-              out_w,
-              use_mask,
-              grad_offset.data_ptr<scalar_t>(),
-              grad_mask.data_ptr<scalar_t>());
+          deformable_col2im_coord_kernel<scalar_t, int64_t>
+              <<<blocks, threads>>>(
+                  num_kernels,
+                  columns.data_ptr<scalar_t>(),
+                  input.data_ptr<scalar_t>(),
+                  offset.data_ptr<scalar_t>(),
+                  mask.data_ptr<scalar_t>(),
+                  channels,
+                  height,
+                  width,
+                  weight_h,
+                  weight_w,
+                  pad_h,
+                  pad_w,
+                  stride_h,
+                  stride_w,
+                  dilation_h,
+                  dilation_w,
+                  parallel_imgs,
+                  2 * weight_h * weight_w * n_offset_grps,
+                  n_offset_grps,
+                  out_h,
+                  out_w,
+                  use_mask,
+                  grad_offset.data_ptr<scalar_t>(),
+                  grad_mask.data_ptr<scalar_t>());
         }));
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
@@ -864,7 +869,6 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
         grad_offset[elt],
         grad_mask[elt]);
 
-    // ERROR INSIDE WITH CUDNN: RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
     compute_grad_input(
         columns,
         offset[elt],
