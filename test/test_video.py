@@ -244,11 +244,11 @@ def _template_read_video(video_object, s=0, e=None):
     video_frames = torch.empty(0)
     frames = []
     video_pts = []
-    for frame in itertools.takewhile(lambda x: x["pts"] <= e, video_object):
-        if frame["pts"] < s:
+    for frame in itertools.takewhile(lambda x: x['pts'] <= e, video_object):
+        if frame['pts'] < s:
             continue
-        frames.append(frame["data"])
-        video_pts.append(frame["pts"])
+        frames.append(frame['data'])
+        video_pts.append(frame['pts'])
     if len(frames) > 0:
         video_frames = torch.stack(frames, 0)
 
@@ -257,11 +257,11 @@ def _template_read_video(video_object, s=0, e=None):
     audio_frames = torch.empty(0)
     frames = []
     audio_pts = []
-    for frame in itertools.takewhile(lambda x: x["pts"] <= e, video_object):
-        if frame["pts"] < s:
+    for frame in itertools.takewhile(lambda x: x['pts'] <= e, video_object):
+        if frame['pts'] < s:
             continue
-        frames.append(frame["data"])
-        audio_pts.append(frame["pts"])
+        frames.append(frame['data'])
+        audio_pts.append(frame['pts'])
     if len(frames) > 0:
         audio_frames = torch.stack(frames, 0)
 
@@ -294,7 +294,7 @@ class TestVideo(unittest.TestCase):
             reader = VideoReader(full_path, "video")
             frames = []
             for frame in reader:
-                frames.append(frame["data"])
+                frames.append(frame['data'])
             new_api = torch.stack(frames, 0)
             self.assertEqual(tv_result.size(), new_api.size())
 
