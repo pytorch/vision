@@ -215,11 +215,11 @@ class BoxCoder(object):
         pred_ctr_y = dy * heights[:, None] + ctr_y[:, None]
         pred_w = torch.exp(dw) * widths[:, None]
         pred_h = torch.exp(dh) * heights[:, None]
-        
-        # Distance from center to box's corner. 
+
+        # Distance from center to box's corner.
         c_to_c_h = torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
         c_to_c_w = torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
-        
+
         pred_boxes1 = pred_ctr_x - c_to_c_w
         pred_boxes2 = pred_ctr_y - c_to_c_h
         pred_boxes3 = pred_ctr_x + c_to_c_w
