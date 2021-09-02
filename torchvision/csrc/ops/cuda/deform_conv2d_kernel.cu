@@ -88,12 +88,9 @@ inline unsigned int GET_THREADS() {
   return 512;
 }
 
-inline unsigned int GET_BLOCKS(
-    const unsigned int THREADS,
-    const unsigned int64_t N) {
-  unsigned int kMaxGridNum =
-      at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
-  return std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
+inline unsigned int GET_BLOCKS(const unsigned int THREADS, const int64_t N) {
+  int64_t kMaxGridNum = at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
+  return (unsigned int)std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
 }
 
 template <typename scalar_t, typename index_t>
