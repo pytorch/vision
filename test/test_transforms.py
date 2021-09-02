@@ -1501,6 +1501,7 @@ def test_randaugment(num_ops, magnitude, fill):
         img = transform(img)
     transform.__repr__()
 
+
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
 @pytest.mark.parametrize('num_magnitude_bins', [10, 13, 30])
 def test_trivialaugmentwide(fill, num_magnitude_bins):
