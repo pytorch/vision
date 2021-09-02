@@ -103,7 +103,7 @@ class VideoReader:
             will depend on the version of FFMPEG codecs supported.
     """
 
-    def __init__(self, path, stream="video"):
+    def __init__(self, path, stream="video", num_threads=0):
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
