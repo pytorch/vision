@@ -96,21 +96,21 @@ inline unsigned int GET_BLOCKS(
   return std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
 }
 
-template <typename scalar_t>
+template <typename scalar_t, typename index_t>
 __device__ scalar_t bilinear_interpolate(
     const scalar_t* in,
-    int height,
-    int width,
+    index_t height,
+    index_t width,
     scalar_t h,
     scalar_t w) {
   if (h <= -1 || height <= h || w <= -1 || width <= w) {
     return 0;
   }
 
-  int h_low = floor(h);
-  int w_low = floor(w);
-  int h_high = h_low + 1;
-  int w_high = w_low + 1;
+  index_t h_low = floor(h);
+  index_t w_low = floor(w);
+  index_t h_high = h_low + 1;
+  index_t w_high = w_low + 1;
 
   scalar_t lh = h - h_low;
   scalar_t lw = w - w_low;
@@ -135,38 +135,39 @@ __device__ scalar_t bilinear_interpolate(
   return val;
 }
 
-template <typename scalar_t>
+template <typename scalar_t, typename index_t>
 __global__ void deformable_im2col_kernel(
-    int n,
+    index_t n,
     const scalar_t* input_ptr,
     const scalar_t* offset_ptr,
     const scalar_t* mask_ptr,
-    int height,
-    int width,
-    int weight_h,
-    int weight_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int batch_sz,
-    int n_in_channels,
-    int n_offset_grps,
-    int out_h,
-    int out_w,
+    index_t height,
+    index_t width,
+    index_t weight_h,
+    index_t weight_w,
+    index_t pad_h,
+    index_t pad_w,
+    index_t stride_h,
+    index_t stride_w,
+    index_t dilation_h,
+    index_t dilation_w,
+    index_t batch_sz,
+    index_t n_in_channels,
+    index_t n_offset_grps,
+    index_t out_h,
+    index_t out_w,
     bool use_mask,
     scalar_t* columns_ptr) {
+  // Here index is int, but n can be int64
   CUDA_1D_KERNEL_LOOP(index, n) {
-    const int out_x = index % out_w;
-    const int out_y = (index / out_w) % out_h;
-    const int out_b = (index / (out_w * out_h)) % batch_sz;
-    const int in_c = index / (out_w * out_h * batch_sz);
-    const int out_c = in_c * weight_h * weight_w;
+    const index_t out_x = index % out_w;
+    const index_t out_y = (index / out_w) % out_h;
+    const index_t out_b = (index / (out_w * out_h)) % batch_sz;
+    const index_t in_c = index / (out_w * out_h * batch_sz);
+    const index_t out_c = in_c * weight_h * weight_w;
 
-    int c_per_offset_grp = n_in_channels / n_offset_grps;
-    const int grp_idx = in_c / c_per_offset_grp;
+    index_t c_per_offset_grp = n_in_channels / n_offset_grps;
+    const index_t grp_idx = in_c / c_per_offset_grp;
 
     columns_ptr +=
         (out_c * (batch_sz * out_h * out_w) + out_b * (out_h * out_w) +
@@ -185,8 +186,8 @@ __global__ void deformable_im2col_kernel(
 
     for (int i = 0; i < weight_h; ++i) {
       for (int j = 0; j < weight_w; ++j) {
-        const int mask_idx = i * weight_w + j;
-        const int offset_idx = 2 * mask_idx;
+        const index_t mask_idx = i * weight_w + j;
+        const index_t offset_idx = 2 * mask_idx;
 
         scalar_t mask_value = 1;
         if (use_mask) {
@@ -236,31 +237,68 @@ void deformable_im2col(
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "deformable_im2col", ([&] {
-        deformable_im2col_kernel<<<blocks, threads>>>(
-            num_kernels,
-            input.data_ptr<scalar_t>(),
-            data_offset.data_ptr<scalar_t>(),
-            data_mask.data_ptr<scalar_t>(),
-            height,
-            width,
-            weight_h,
-            weight_w,
-            pad_h,
-            pad_w,
-            stride_h,
-            stride_w,
-            dilation_h,
-            dilation_w,
-            parallel_imgs,
-            n_in_channels,
-            deformable_group,
-            out_h,
-            out_w,
-            use_mask,
-            data_col.data_ptr<scalar_t>());
-      }));
+  // Checks if we should use 64bits indexing
+  // https://github.com/pytorch/vision/issues/4269
+  bool use_64bits_indexing = false;
+  // Checks if columns numel is larger than 2 ** 31
+  use_64bits_indexing |= ((int64_t) n_in_channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
+
+  if (use_64bits_indexing) {
+
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(), "deformable_im2col", ([&] {
+          deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+              num_kernels,
+              input.data_ptr<scalar_t>(),
+              data_offset.data_ptr<scalar_t>(),
+              data_mask.data_ptr<scalar_t>(),
+              height,
+              width,
+              weight_h,
+              weight_w,
+              pad_h,
+              pad_w,
+              stride_h,
+              stride_w,
+              dilation_h,
+              dilation_w,
+              parallel_imgs,
+              n_in_channels,
+              deformable_group,
+              out_h,
+              out_w,
+              use_mask,
+              data_col.data_ptr<scalar_t>());
+        }));
+
+  } else {
+
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(), "deformable_im2col", ([&] {
+          deformable_im2col_kernel<scalar_t, int><<<blocks, threads>>>(
+              num_kernels,
+              input.data_ptr<scalar_t>(),
+              data_offset.data_ptr<scalar_t>(),
+              data_mask.data_ptr<scalar_t>(),
+              height,
+              width,
+              weight_h,
+              weight_w,
+              pad_h,
+              pad_w,
+              stride_h,
+              stride_w,
+              dilation_h,
+              dilation_w,
+              parallel_imgs,
+              n_in_channels,
+              deformable_group,
+              out_h,
+              out_w,
+              use_mask,
+              data_col.data_ptr<scalar_t>());
+        }));
+  }
 
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
@@ -277,39 +315,40 @@ int get_greatest_divisor_below_bound(int n, int bound) {
   return 1;
 }
 
-template <typename scalar_t>
+template <typename scalar_t, typename index_t>
 __global__ void deformable_col2im_kernel(
-    int n,
+    index_t n,
     const scalar_t* col,
     const scalar_t* offset_ptr,
     const scalar_t* mask_ptr,
-    int channels,
-    int height,
-    int width,
-    int kernel_h,
-    int kernel_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int batch_sz,
-    int n_offset_grps,
-    int out_h,
-    int out_w,
+    index_t channels,
+    index_t height,
+    index_t width,
+    index_t kernel_h,
+    index_t kernel_w,
+    index_t pad_h,
+    index_t pad_w,
+    index_t stride_h,
+    index_t stride_w,
+    index_t dilation_h,
+    index_t dilation_w,
+    index_t batch_sz,
+    index_t n_offset_grps,
+    index_t out_h,
+    index_t out_w,
     bool use_mask,
     scalar_t* grad_im) {
+  // Here index is int, but n can be int64
   CUDA_1D_KERNEL_LOOP(index, n) {
-    const int out_x = index % out_w;
-    const int out_y = (index / out_w) % out_h;
-    const int b = (index / (out_w * out_h)) % batch_sz;
-    const int j = (index / (out_w * out_h * batch_sz)) % kernel_w;
-    const int i = (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
-    const int c = index / (out_w * out_h * batch_sz * kernel_w * kernel_h);
+    const index_t out_x = index % out_w;
+    const index_t out_y = (index / out_w) % out_h;
+    const index_t b = (index / (out_w * out_h)) % batch_sz;
+    const index_t j = (index / (out_w * out_h * batch_sz)) % kernel_w;
+    const index_t i = (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
+    const index_t c = index / (out_w * out_h * batch_sz * kernel_w * kernel_h);
 
-    int c_per_offset_grp = channels / n_offset_grps;
-    const int offset_grp = c / c_per_offset_grp;
+    index_t c_per_offset_grp = channels / n_offset_grps;
+    const index_t offset_grp = c / c_per_offset_grp;
 
     offset_ptr += (b * n_offset_grps + offset_grp) * 2 * kernel_h * kernel_w *
         out_h * out_w;
@@ -319,11 +358,11 @@ __global__ void deformable_col2im_kernel(
           out_h * out_w;
     }
 
-    const int mask_idx = i * kernel_w + j;
-    const int offset_idx = 2 * mask_idx;
+    const index_t mask_idx = i * kernel_w + j;
+    const index_t offset_idx = 2 * mask_idx;
 
-    const int offset_h_ptr = ((offset_idx)*out_h + out_y) * out_w + out_x;
-    const int offset_w_ptr = ((offset_idx + 1) * out_h + out_y) * out_w + out_x;
+    const index_t offset_h_ptr = ((offset_idx)*out_h + out_y) * out_w + out_x;
+    const index_t offset_w_ptr = ((offset_idx + 1) * out_h + out_y) * out_w + out_x;
 
     const scalar_t offset_h = offset_ptr[offset_h_ptr];
     const scalar_t offset_w = offset_ptr[offset_w_ptr];
@@ -336,10 +375,10 @@ __global__ void deformable_col2im_kernel(
     const scalar_t y = (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
     const scalar_t x = (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
 
-    for (int dy = -1; dy <= 1; dy++) {
-      for (int dx = -1; dx <= 1; dx++) {
-        int yp = int(y) + dy;
-        int xp = int(x) + dx;
+    for (index_t dy = -1; dy <= 1; dy++) {
+      for (index_t dx = -1; dx <= 1; dx++) {
+        index_t yp = (index_t) y + dy;
+        index_t xp = (index_t) x + dx;
         if (0 <= yp && yp < height && 0 <= xp && xp < width &&
             std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           int grad_pos = ((b * channels + c) * height + yp) * width + xp;
@@ -380,31 +419,66 @@ void compute_grad_input(
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "compute_grad_input", ([&] {
-        deformable_col2im_kernel<<<blocks, threads>>>(
-            num_kernels,
-            columns.data_ptr<scalar_t>(),
-            offset.data_ptr<scalar_t>(),
-            mask.data_ptr<scalar_t>(),
-            channels,
-            height,
-            width,
-            weight_h,
-            weight_w,
-            pad_h,
-            pad_w,
-            stride_h,
-            stride_w,
-            dilation_h,
-            dilation_w,
-            parallel_imgs,
-            n_offset_grps,
-            out_h,
-            out_w,
-            use_mask,
-            grad_im.data_ptr<scalar_t>());
-      }));
+  // Checks if we should use 64bits indexing
+  // https://github.com/pytorch/vision/issues/4269
+  bool use_64bits_indexing = false;
+  // Checks if columns numel is larger than 2 ** 31
+  use_64bits_indexing |= ((int64_t) channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
+
+  if (use_64bits_indexing) {
+
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        columns.scalar_type(), "compute_grad_input", ([&] {
+          deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+              num_kernels,
+              columns.data_ptr<scalar_t>(),
+              offset.data_ptr<scalar_t>(),
+              mask.data_ptr<scalar_t>(),
+              channels,
+              height,
+              width,
+              weight_h,
+              weight_w,
+              pad_h,
+              pad_w,
+              stride_h,
+              stride_w,
+              dilation_h,
+              dilation_w,
+              parallel_imgs,
+              n_offset_grps,
+              out_h,
+              out_w,
+              use_mask,
+              grad_im.data_ptr<scalar_t>());
+        }));
+  } else {
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        columns.scalar_type(), "compute_grad_input", ([&] {
+          deformable_col2im_kernel<scalar_t, int><<<blocks, threads>>>(
+              num_kernels,
+              columns.data_ptr<scalar_t>(),
+              offset.data_ptr<scalar_t>(),
+              mask.data_ptr<scalar_t>(),
+              channels,
+              height,
+              width,
+              weight_h,
+              weight_w,
+              pad_h,
+              pad_w,
+              stride_h,
+              stride_w,
+              dilation_h,
+              dilation_w,
+              parallel_imgs,
+              n_offset_grps,
+              out_h,
+              out_w,
+              use_mask,
+              grad_im.data_ptr<scalar_t>());
+        }));
+  }
 
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
@@ -412,18 +486,18 @@ void compute_grad_input(
   }
 }
 
-template <typename scalar_t>
+template <typename scalar_t, typename index_t>
 __device__ scalar_t get_coordinate_weight(
     const scalar_t* im_data,
-    int height,
-    int width,
+    index_t height,
+    index_t width,
     scalar_t y,
     scalar_t x,
     bool is_y_direction) {
-  int y_l = floor(y);
-  int x_l = floor(x);
-  int y_h = y_l + 1;
-  int x_h = x_l + 1;
+  index_t y_l = floor(y);
+  index_t x_l = floor(x);
+  index_t y_h = y_l + 1;
+  index_t x_h = x_l + 1;
 
   bool valid_y_l = 0 <= y_l && y_l < height;
   bool valid_y_h = 0 <= y_h && y_h < height;
@@ -445,47 +519,48 @@ __device__ scalar_t get_coordinate_weight(
   }
 }
 
-template <typename scalar_t>
+template <typename scalar_t, typename index_t>
 __global__ void deformable_col2im_coord_kernel(
-    int n,
+    index_t n,
     const scalar_t* col_ptr,
     const scalar_t* im_ptr,
     const scalar_t* offset_ptr,
     const scalar_t* mask_ptr,
-    int channels,
-    int height,
-    int width,
-    int weight_h,
-    int weight_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int batch_sz,
-    int offset_channels,
-    int n_offset_grps,
-    int out_h,
-    int out_w,
+    index_t channels,
+    index_t height,
+    index_t width,
+    index_t weight_h,
+    index_t weight_w,
+    index_t pad_h,
+    index_t pad_w,
+    index_t stride_h,
+    index_t stride_w,
+    index_t dilation_h,
+    index_t dilation_w,
+    index_t batch_sz,
+    index_t offset_channels,
+    index_t n_offset_grps,
+    index_t out_h,
+    index_t out_w,
     const bool use_mask,
     scalar_t* grad_offset,
     scalar_t* grad_mask) {
+  // Here index is int, but n can be int64
   CUDA_1D_KERNEL_LOOP(index, n) {
     scalar_t grad_offset_val = 0;
     scalar_t grad_mask_val = 0;
 
-    int w = index % out_w;
-    int h = (index / out_w) % out_h;
-    int w_w = (index / (out_w * out_h * 2)) % weight_w;
-    int w_h = (index / (out_w * out_h * 2 * weight_w)) % weight_h;
-    int c = (index / (out_w * out_h)) % offset_channels;
-    int b = index / (out_w * out_h * offset_channels);
+    index_t w = index % out_w;
+    index_t h = (index / out_w) % out_h;
+    index_t w_w = (index / (out_w * out_h * 2)) % weight_w;
+    index_t w_h = (index / (out_w * out_h * 2 * weight_w)) % weight_h;
+    index_t c = (index / (out_w * out_h)) % offset_channels;
+    index_t b = index / (out_w * out_h * offset_channels);
 
-    const int offset_grp = c / (2 * weight_h * weight_w);
-    const int col_step = weight_h * weight_w;
+    const index_t offset_grp = c / (2 * weight_h * weight_w);
+    const index_t col_step = weight_h * weight_w;
 
-    int c_per_offset_grp = channels / n_offset_grps;
+    index_t c_per_offset_grp = channels / n_offset_grps;
 
     col_ptr += offset_grp * c_per_offset_grp * weight_h * weight_w * batch_sz *
         out_w * out_h;
@@ -499,23 +574,23 @@ __global__ void deformable_col2im_coord_kernel(
           out_h * out_w;
     }
 
-    const int offset_c = c - offset_grp * 2 * weight_h * weight_w;
+    const index_t offset_c = c - offset_grp * 2 * weight_h * weight_w;
     const bool is_y_direction = offset_c % 2 == 0;
 
-    const int c_bound = c_per_offset_grp * weight_h * weight_w;
-    for (int col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
-      const int col_pos = (((col_c * batch_sz + b) * out_h) + h) * out_w + w;
+    const index_t c_bound = c_per_offset_grp * weight_h * weight_w;
+    for (index_t col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
+      const index_t col_pos = (((col_c * batch_sz + b) * out_h) + h) * out_w + w;
 
-      int out_x = col_pos % out_w;
-      int out_y = (col_pos / out_w) % out_h;
-      int j = (col_pos / (out_w * out_h * batch_sz)) % weight_w;
-      int i = (col_pos / (out_w * out_h * batch_sz * weight_w)) % weight_h;
+      index_t out_x = col_pos % out_w;
+      index_t out_y = (col_pos / out_w) % out_h;
+      index_t j = (col_pos / (out_w * out_h * batch_sz)) % weight_w;
+      index_t i = (col_pos / (out_w * out_h * batch_sz * weight_w)) % weight_h;
 
-      const int mask_idx = i * weight_w + j;
+      const index_t mask_idx = i * weight_w + j;
 
-      const int offset_h_ptr =
+      const index_t offset_h_ptr =
           (((2 * mask_idx) * out_h + out_y) * out_w + out_x);
-      const int offset_w_ptr =
+      const index_t offset_w_ptr =
           (((2 * mask_idx + 1) * out_h + out_y) * out_w + out_x);
       const scalar_t offset_h = offset_ptr[offset_h_ptr];
       const scalar_t offset_w = offset_ptr[offset_w_ptr];
@@ -543,7 +618,7 @@ __global__ void deformable_col2im_coord_kernel(
     grad_offset[index] = grad_offset_val;
 
     if (use_mask && is_y_direction) {
-      const int idx =
+      const index_t idx =
           ((((b * n_offset_grps + offset_grp) * weight_h + w_h) * weight_w +
             w_w) *
                out_h +
@@ -586,34 +661,72 @@ void compute_grad_offset_and_mask(
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
-        deformable_col2im_coord_kernel<<<blocks, threads>>>(
-            num_kernels,
-            columns.data_ptr<scalar_t>(),
-            input.data_ptr<scalar_t>(),
-            offset.data_ptr<scalar_t>(),
-            mask.data_ptr<scalar_t>(),
-            channels,
-            height,
-            width,
-            weight_h,
-            weight_w,
-            pad_h,
-            pad_w,
-            stride_h,
-            stride_w,
-            dilation_h,
-            dilation_w,
-            parallel_imgs,
-            2 * weight_h * weight_w * n_offset_grps,
-            n_offset_grps,
-            out_h,
-            out_w,
-            use_mask,
-            grad_offset.data_ptr<scalar_t>(),
-            grad_mask.data_ptr<scalar_t>());
-      }));
+  // Checks if we should use 64bits indexing
+  // https://github.com/pytorch/vision/issues/4269
+  bool use_64bits_indexing = false;
+  // Checks if columns numel is larger than 2 ** 31
+  use_64bits_indexing |= ((int64_t) channels * weight_h * weight_w * parallel_imgs * out_h * out_w > (1 << 31));
+
+  if (use_64bits_indexing) {
+
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
+          deformable_col2im_coord_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+              num_kernels,
+              columns.data_ptr<scalar_t>(),
+              input.data_ptr<scalar_t>(),
+              offset.data_ptr<scalar_t>(),
+              mask.data_ptr<scalar_t>(),
+              channels,
+              height,
+              width,
+              weight_h,
+              weight_w,
+              pad_h,
+              pad_w,
+              stride_h,
+              stride_w,
+              dilation_h,
+              dilation_w,
+              parallel_imgs,
+              2 * weight_h * weight_w * n_offset_grps,
+              n_offset_grps,
+              out_h,
+              out_w,
+              use_mask,
+              grad_offset.data_ptr<scalar_t>(),
+              grad_mask.data_ptr<scalar_t>());
+        }));
+  } else {
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
+          deformable_col2im_coord_kernel<scalar_t, int><<<blocks, threads>>>(
+              num_kernels,
+              columns.data_ptr<scalar_t>(),
+              input.data_ptr<scalar_t>(),
+              offset.data_ptr<scalar_t>(),
+              mask.data_ptr<scalar_t>(),
+              channels,
+              height,
+              width,
+              weight_h,
+              weight_w,
+              pad_h,
+              pad_w,
+              stride_h,
+              stride_w,
+              dilation_h,
+              dilation_w,
+              parallel_imgs,
+              2 * weight_h * weight_w * n_offset_grps,
+              n_offset_grps,
+              out_h,
+              out_w,
+              use_mask,
+              grad_offset.data_ptr<scalar_t>(),
+              grad_mask.data_ptr<scalar_t>());
+        }));
+  }
 
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
@@ -729,6 +842,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
           weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
     }
 
+    // ERROR INSIDE WITH CUDNN: RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
     compute_grad_offset_and_mask(
         columns,
         input[elt],
@@ -751,25 +865,25 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
         grad_offset[elt],
         grad_mask[elt]);
 
-    compute_grad_input(
-        columns,
-        offset[elt],
-        mask[elt],
-        n_in_channels,
-        in_h,
-        in_w,
-        weight_h,
-        weight_w,
-        pad_h,
-        pad_w,
-        stride_h,
-        stride_w,
-        dilation_h,
-        dilation_w,
-        n_parallel_imgs,
-        n_offset_grps,
-        use_mask,
-        grad_input[elt]);
+    // compute_grad_input(
+    //     columns,
+    //     offset[elt],
+    //     mask[elt],
+    //     n_in_channels,
+    //     in_h,
+    //     in_w,
+    //     weight_h,
+    //     weight_w,
+    //     pad_h,
+    //     pad_w,
+    //     stride_h,
+    //     stride_w,
+    //     dilation_h,
+    //     dilation_w,
+    //     n_parallel_imgs,
+    //     n_offset_grps,
+    //     use_mask,
+    //     grad_input[elt]);
   }
 
   grad_input = grad_input.view({batch_sz, n_in_channels, in_h, in_w});
