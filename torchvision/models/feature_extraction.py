@@ -187,7 +187,7 @@ def get_graph_node_names(
 
     Returns:
         tuple(list, list): a list of node names from tracing the model in
-            train mode, and another from tracing the model in eval mode.
+        train mode, and another from tracing the model in eval mode.
 
     Examples::
 
