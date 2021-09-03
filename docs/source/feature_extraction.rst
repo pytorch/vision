@@ -1,5 +1,5 @@
-torchvision.feature_extraction
-==============================
+torchvision.models.feature_extraction
+=====================================
 
 .. currentmodule:: torchvision.models.feature_extraction
 
@@ -14,17 +14,21 @@ applications in computer vision. Just a few examples are:
   with a specific task in mind. For example, passing a hierarchy of features
   to a Feature Pyramid Network with object detection heads.
 
-Torchvision provides two utilities for doing feature extraction. :class:`IntermediateLayerGetter`
-is easy to understand and effective. That said, it only allows coarse control
-over which features are extracted, and makes some assumptions about the layout
-of the input module. :func:`build_feature_graph_net` is far more
-flexible, but does have some rough edges as it requires that the input model
-is symbolically traceable (see 
-`torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_ for more
-information on symbolic tracing).
+Torchvision provides :func:`build_feature_extractor` for this purpose.
+It works by following roughly these steps:
 
-.. autoclass:: IntermediateLayerGetter
+1. Symbolically tracing the model to get a graphical representation of
+   how it transforms the input, step by step.
+2. Setting the user-selected graph nodes as ouputs.
+3. Removing all redundant nodes (anything downstream of the ouput nodes).
+4. Generating python code from the resulting graph and bundling that, together
+   with the graph, and bundling that into a PyTorch module.
 
-.. autofunction:: build_feature_graph_net
+|
 
-.. autofunction:: print_graph_node_qualified_names
+See `torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_ for
+more information on symbolic tracing.
+
+.. autofunction:: build_feature_extractor
+
+.. autofunction:: get_graph_node_names

@@ -1,11 +1,29 @@
-import unittest
+from functools import partial
+import random
+
 import torch
-import torchvision
+from torchvision import models
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models.feature_extraction import build_feature_graph_net
-from torchvision.models.feature_extraction import IntermediateLayerGetter
+from torchvision.models.feature_extraction import build_feature_extractor
+from torchvision.models.feature_extraction import get_graph_node_names
+from torchvision.models._utils import IntermediateLayerGetter
 
 import pytest
+
+from common_utils import set_rng_seed
+
+
+# Suppress diff warning from build_feature_extractor
+build_feature_extractor = partial(
+    build_feature_extractor, suppress_diff_warning=True)
+get_graph_node_names = partial(
+    get_graph_node_names, suppress_diff_warning=True)
+
+
+def get_available_models():
+    # TODO add a registration mechanism to torchvision.models
+    return [k for k, v in models.__dict__.items()
+            if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
 @pytest.mark.parametrize('backbone_name', ('resnet18', 'resnet50'))
@@ -15,104 +33,105 @@ def test_resnet_fpn_backbone(backbone_name):
     assert list(y.keys()) == ['0', '1', '2', '3', 'pool']
 
 
-# Needed by TestFeatureExtraction.test_feature_graph_net_leaf_module_and_function
+# Needed by TestFxFeatureExtraction.test_leaf_module_and_function
 def leaf_function(x):
     return int(x)
 
 
-class TestFeatureExtraction(unittest.TestCase):
-    model = torchvision.models.resnet18(pretrained=False, num_classes=1).eval()
-    return_layers = {
-        'layer1': 'layer1',
-        'layer2': 'layer2',
-        'layer3': 'layer3',
-        'layer4': 'layer4'
-    }
+class TestFxFeatureExtraction:
     inp = torch.rand(1, 3, 224, 224, dtype=torch.float32, device='cpu')
-    expected_out_shapes = [
-        torch.Size([1, 64, 56, 56]),
-        torch.Size([1, 128, 28, 28]),
-        torch.Size([1, 256, 14, 14]),
-        torch.Size([1, 512, 7, 7])
-    ]
+    model_defaults = {
+        'num_classes': 1,
+        'pretrained': False
+    }
 
-    def test_build_feature_graph_net(self):
+    def _get_return_nodes(self, model):
+        set_rng_seed(0)
+        exclude_nodes_filter = ['getitem', 'floordiv', 'size', 'chunk']
+        train_nodes, eval_nodes = get_graph_node_names(model)
+        # Get rid of any nodes that don't return tensors as they cause issues
+        # when testing backward pass.
+        train_nodes = [n for n in train_nodes
+                       if not any(x in n for x in exclude_nodes_filter)]
+        eval_nodes = [n for n in eval_nodes
+                      if not any(x in n for x in exclude_nodes_filter)]
+        return random.sample(train_nodes, 10), random.sample(eval_nodes, 10)
+
+    @pytest.mark.parametrize('model_name', get_available_models())
+    def test_build_fx_feature_extractor(self, model_name):
+        set_rng_seed(0)
+        model = models.__dict__[model_name](**self.model_defaults).eval()
+        train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         # Check that it works with both a list and dict for return nodes
-        build_feature_graph_net(self.model, self.return_layers)
-        build_feature_graph_net(self.model, list(self.return_layers.keys()))
+        build_feature_extractor(
+            model, train_return_nodes={v: v for v in train_return_nodes},
+            eval_return_nodes=eval_return_nodes)
+        build_feature_extractor(
+            model, train_return_nodes=train_return_nodes,
+            eval_return_nodes=eval_return_nodes)
         # Check must specify return nodes
         with pytest.raises(AssertionError):
-            build_feature_graph_net(self.model)
+            build_feature_extractor(model)
         # Check return_nodes and train_return_nodes / eval_return nodes
         # mutual exclusivity
         with pytest.raises(AssertionError):
-            build_feature_graph_net(
-                self.model, return_nodes=self.return_layers,
-                train_return_nodes=self.return_layers)
+            build_feature_extractor(model, return_nodes=train_return_nodes,
+                                    train_return_nodes=train_return_nodes)
         # Check train_return_nodes / eval_return nodes must both be specified
         with pytest.raises(AssertionError):
-            build_feature_graph_net(
-                self.model, train_return_nodes=self.return_layers)
+            build_feature_extractor(
+                model, train_return_nodes=train_return_nodes)
 
-    def test_feature_graph_net_forward_backward(self):
-        model = build_feature_graph_net(self.model, self.return_layers)
+    @pytest.mark.parametrize('model_name', get_available_models())
+    def test_forward_backward(self, model_name):
+        model = models.__dict__[model_name](**self.model_defaults).train()
+        train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
+        model = build_feature_extractor(
+            model, train_return_nodes=train_return_nodes,
+            eval_return_nodes=eval_return_nodes)
         out = model(self.inp)
-        # Check output shape
-        for o, e in zip(out.values(), self.expected_out_shapes):
-            assert o.shape == e
-        # Backward
-        sum([o.mean() for o in out.values()]).backward()
-
-    def test_intermediate_layer_getter_forward_backward(self):
-        model = IntermediateLayerGetter(self.model, self.return_layers).eval()
-        out = model(self.inp)
-        # Check output shape
-        for o, e in zip(out.values(), self.expected_out_shapes):
-            assert o.shape == e
-        # Backward
         sum([o.mean() for o in out.values()]).backward()
 
     def test_feature_extraction_methods_equivalence(self):
+        model = models.resnet18(**self.model_defaults).eval()
+        return_layers = {
+            'layer1': 'layer1',
+            'layer2': 'layer2',
+            'layer3': 'layer3',
+            'layer4': 'layer4'
+        }
+
         ilg_model = IntermediateLayerGetter(
-            self.model, self.return_layers).eval()
-        fgn_model = build_feature_graph_net(self.model, self.return_layers)
+            model, return_layers).eval()
+        fx_model = build_feature_extractor(model, return_layers)
 
         # Check that we have same parameters
         for (n1, p1), (n2, p2) in zip(ilg_model.named_parameters(),
-                                      fgn_model.named_parameters()):
-            self.assertEqual(n1, n2)
-            self.assertTrue(p1.equal(p2))
+                                      fx_model.named_parameters()):
+            assert n1 == n2
+            assert p1.equal(p2)
 
-        # And state_dict matches
-        for (n1, p1), (n2, p2) in zip(ilg_model.state_dict().items(),
-                                      fgn_model.state_dict().items()):
-            self.assertEqual(n1, n2)
-            self.assertTrue(p1.equal(p2))
-
+        # And that ouputs match
         with torch.no_grad():
             ilg_out = ilg_model(self.inp)
-            fgn_out = fgn_model(self.inp)
-
-        self.assertEqual(ilg_out.keys(), fgn_out.keys())
+            fgn_out = fx_model(self.inp)
+        assert all(k1 == k2 for k1, k2 in zip(ilg_out.keys(), fgn_out.keys()))
         for k in ilg_out.keys():
-            o1 = ilg_out[k]
-            o2 = fgn_out[k]
-            self.assertTrue(o1.equal(o2))
+            assert ilg_out[k].equal(fgn_out[k])
 
-    def test_intermediate_layer_getter_scriptable_forward_backward(self):
-        ilg_model = IntermediateLayerGetter(
-            self.model, self.return_layers).eval()
-        ilg_model = torch.jit.script(ilg_model)
-        ilg_out = ilg_model(self.inp)
-        sum([o.mean() for o in ilg_out.values()]).backward()
-
-    def test_feature_graph_net_scriptable_forward_backward(self):
-        fgn_model = build_feature_graph_net(self.model, self.return_layers)
-        fgn_model = torch.jit.script(fgn_model)
-        fgn_out = fgn_model(self.inp)
+    @pytest.mark.parametrize('model_name', get_available_models())
+    def test_jit_forward_backward(self, model_name):
+        set_rng_seed(0)
+        model = models.__dict__[model_name](**self.model_defaults).train()
+        train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
+        model = build_feature_extractor(
+            model, train_return_nodes=train_return_nodes,
+            eval_return_nodes=eval_return_nodes)
+        model = torch.jit.script(model)
+        fgn_out = model(self.inp)
         sum([o.mean() for o in fgn_out.values()]).backward()
 
-    def test_feature_graph_net_train_eval(self):
+    def test_train_eval(self):
         class TestModel(torch.nn.Module):
             def __init__(self):
                 super().__init__()
@@ -153,33 +172,33 @@ class TestFeatureExtraction(unittest.TestCase):
 
         # Starting from train mode
         model.train()
-        fgn_model = build_feature_graph_net(
+        fx_model = build_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         # Check that the models stay in their original training state
         assert model.training
-        assert fgn_model.training
+        assert fx_model.training
         # Check outputs
-        checks(fgn_model, 'train')
+        checks(fx_model, 'train')
         # Check outputs after switching to eval mode
-        fgn_model.eval()
-        checks(fgn_model, 'eval')
+        fx_model.eval()
+        checks(fx_model, 'eval')
 
         # Starting from eval mode
         model.eval()
-        fgn_model = build_feature_graph_net(
+        fx_model = build_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         # Check that the models stay in their original training state
         assert not model.training
-        assert not fgn_model.training
+        assert not fx_model.training
         # Check outputs
-        checks(fgn_model, 'eval')
+        checks(fx_model, 'eval')
         # Check outputs after switching to train mode
-        fgn_model.train()
-        checks(fgn_model, 'train')
+        fx_model.train()
+        checks(fx_model, 'train')
 
-    def test_feature_graph_net_leaf_module_and_function(self):
+    def test_leaf_module_and_function(self):
         class LeafModule(torch.nn.Module):
             def forward(self, x):
                 # This would raise a TypeError if it were not in a leaf module
@@ -197,10 +216,10 @@ class TestFeatureExtraction(unittest.TestCase):
                 x = self.conv(x)
                 return self.leaf_module(x)
 
-        model = build_feature_graph_net(
+        model = build_feature_extractor(
             TestModule(), return_nodes=['leaf_module'],
             tracer_kwargs={'leaf_modules': [LeafModule],
-                           'autowrap_functions': [leaf_function]})
+                           'autowrap_functions': [leaf_function]}).train()
 
         # Check that LeafModule is not in the list of nodes
         assert 'relu' not in [str(n) for n in model.graph.nodes]

@@ -1,4 +1,4 @@
-from ..feature_extraction import IntermediateLayerGetter
+from .._utils import IntermediateLayerGetter
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .. import mobilenetv3
 from .. import resnet
