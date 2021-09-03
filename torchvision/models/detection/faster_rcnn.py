@@ -97,6 +97,11 @@ class FasterRCNN(GeneralizedRCNN):
             of the classification head
         bbox_reg_weights (Tuple[float, float, float, float]): weights for the encoding/decoding of the
             bounding boxes
+        transform : A transformation method/class comprising of series of custom pre-processing steps.
+            If None, `GeneralizedRCNN` is used.
+        postprocess : Postprocessing transformation function, whose signature must match
+            `GeneralizedRCNNTransform`'s `postprocess` method. 
+
 
     Example::
 
@@ -143,8 +148,9 @@ class FasterRCNN(GeneralizedRCNN):
 
     def __init__(self, backbone, num_classes=None,
                  # transform parameters
-                 min_size=800, max_size=1333,
-                 image_mean=None, image_std=None,
+                 min_size=None, max_size=None,
+                 image_mean=None,
+                 image_std=None,
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
@@ -158,7 +164,9 @@ class FasterRCNN(GeneralizedRCNN):
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
                  box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
-                 bbox_reg_weights=None):
+                 bbox_reg_weights=None,
+                 transform=None,
+                 postprocess=None):
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
@@ -227,13 +235,26 @@ class FasterRCNN(GeneralizedRCNN):
             bbox_reg_weights,
             box_score_thresh, box_nms_thresh, box_detections_per_img)
 
-        if image_mean is None:
-            image_mean = [0.485, 0.456, 0.406]
-        if image_std is None:
-            image_std = [0.229, 0.224, 0.225]
-        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        if transform is None:
+            if min_size is None:
+                min_size = 800
+            if max_size is None:
+                max_size = 1333
+            if image_mean is None:
+                image_mean = [0.485, 0.456, 0.406]
+            if image_std is None:
+                image_std = [0.229, 0.224, 0.225]
+            transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+            postprocess = transform.postprocess
+        else:
+            if min_size or max_size or image_mean or image_std:
+                raise ValueError("min_size, max_size, image_std and image_mean has to be None"\
+                                 "while using custom Transformation")
 
-        super(FasterRCNN, self).__init__(backbone, rpn, roi_heads, transform)
+        if postprocess is None:
+            raise ValueError("Custom transformation must be accompanied with custom postprocessing")
+
+        super(FasterRCNN, self).__init__(backbone, rpn, roi_heads, transform, postprocess)
 
 
 class TwoMLPHead(nn.Module):

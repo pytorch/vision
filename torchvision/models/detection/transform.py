@@ -228,10 +228,11 @@ class GeneralizedRCNNTransform(nn.Module):
     def postprocess(self,
                     result,               # type: List[Dict[str, Tensor]]
                     image_shapes,         # type: List[Tuple[int, int]]
-                    original_image_sizes  # type: List[Tuple[int, int]]
+                    original_image_sizes,  # type: List[Tuple[int, int]]
+                    is_training            # type : bool
                     ):
         # type: (...) -> List[Dict[str, Tensor]]
-        if self.training:
+        if is_training:
             return result
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
             boxes = pred["boxes"]
