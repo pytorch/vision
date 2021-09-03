@@ -246,6 +246,14 @@ row_title = [str(policy).split('.')[-1] for policy in policies]
 plot(imgs, row_title=row_title)
 
 ####################################
+# RandAugment
+# ~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
+augmenter = T.RandAugment()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
 # Randomly-applied transforms
 # ---------------------------
 #
