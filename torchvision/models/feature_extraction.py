@@ -178,17 +178,16 @@ def get_graph_node_names(
 
     Args:
         model (nn.Module): model for which we'd like to print node names
-        tracer_kwargs (Dict): a dictionary of keywork arguments for
-            `NodePathTracer` (which in turn passes them onto it's parent class
+        tracer_kwargs (dict): a dictionary of keywork arguments for
+            `NodePathTracer` (they are eventually passed onto
             `torch.fx.Tracer`).
         suppress_diff_warning (bool): whether to suppress a warning when there
             are discrepancies between the train and eval version of the graph.
             Defaults to False.
 
     Returns:
-        Tuple[List[str], List[str]]: a list of node names from tracing the
-            model in train mode, and another from tracing the model in eval
-            mode.
+        tuple(list, list): a list of node names from tracing the model in
+            train mode, and another from tracing the model in eval mode.
 
     Examples::
 
@@ -223,10 +222,10 @@ class DualGraphModule(fx.GraphModule):
                  class_name: str = 'GraphModule'):
         """
         Args:
-            root (torch.nn.Module): module from which the copied module
-                hierarchy is built
-            train_graph (Graph): the graph that should be used in train mode
-            eval_graph (Graph): the graph that should be used in eval mode
+            root (nn.Module): module from which the copied module hierarchy is
+                built
+            train_graph (fx.Graph): the graph that should be used in train mode
+            eval_graph (fx.Graph): the graph that should be used in eval mode
         """
         super(fx.GraphModule, self).__init__()
 
@@ -319,8 +318,8 @@ def build_feature_extractor(
 
     Args:
         model (nn.Module): model on which we will extract the features
-        return_nodes (Optional[Union[List[str], Dict[str, str]]]): either a `List`
-            or a `Dict` containing the names (or partial names - see note above)
+        return_nodes (list or dict, optional): either a `List` or a `Dict`
+            containing the names (or partial names - see note above)
             of the nodes for which the activations will be returned. If it is
             a `Dict`, the keys are the node names, and the values
             are the user-specified keys for the graph module's returned
@@ -328,17 +327,17 @@ def build_feature_extractor(
             node specification strings directly to output names. In the case
             that `train_return_nodes` and `eval_return_nodes` are specified,
             this should not be specified.
-        train_return_nodes (Optional[Union[List[str], Dict[str, str]]]):
-            similar to `return_nodes`. This can be used if the return nodes
+        train_return_nodes (list or dict, optional): similar to
+            `return_nodes`. This can be used if the return nodes
             for train mode are different than those from eval mode.
             If this is specified, `eval_return_nodes` must also be specified,
             and `return_nodes` should not be specified.
-        eval_return_nodes (Optional[Union[List[str], Dict[str, str]]]):
-            similar to `return_nodes`. This can be used if the return nodes
+        eval_return_nodes (list or dict, optional): similar to
+            `return_nodes`. This can be used if the return nodes
             for train mode are different than those from eval mode.
             If this is specified, `train_return_nodes` must also be specified,
             and `return_nodes` should not be specified.
-        tracer_kwargs (Dict): a dictionary of keywork arguments for
+        tracer_kwargs (dict): a dictionary of keywork arguments for
             `NodePathTracer` (which passes them onto it's parent class
             `torch.fx.Tracer`).
         suppress_diff_warning (bool): whether to suppress a warning when there
