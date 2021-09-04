@@ -11,6 +11,9 @@ from torch import fx
 from torch.fx.graph_module import _copy_attr
 
 
+__all__ = ['build_feature_extractor', 'get_graph_node_names']
+
+
 class LeafModuleAwareTracer(fx.Tracer):
     """
     An fx.Tracer that allows the user to specify a set of leaf modules, ie.
@@ -349,7 +352,7 @@ def build_feature_extractor(
         >>> # Feature extraction with resnet
         >>> model = torchvision.models.resnet18()
         >>> # extract layer1 and layer3, giving as names `feat1` and feat2`
-        >>> model = torchvision.models._utils.build_feature_extractor(
+        >>> model = build_feature_extractor(
         >>>     model, {'layer1': 'feat1', 'layer3': 'feat2'})
         >>> out = model(torch.rand(1, 3, 224, 224))
         >>> print([(k, v.shape) for k, v in out.items()])
