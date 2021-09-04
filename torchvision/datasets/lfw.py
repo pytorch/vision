@@ -16,10 +16,13 @@ class _LFW(VisionDataset):
         'deepfunneled': ("lfw-deepfunneled", "lfw-deepfunneled.tgz", "68331da3eb755a505a502b5aacb3c201")
     }
 
+    annot_file = {'10fold': '', 'train': 'DevTrain', 'test': 'DevTest'}
+    names = "lfw-names.txt"
+
     def __init__(
         self,
         root: str,
-        train: bool,
+        split: str,
         image_set: str,
         view: str,
         transform: Optional[Callable] = None,
@@ -33,7 +36,8 @@ class _LFW(VisionDataset):
         images_dir, self.filename, self.md5 = self.file_dict[image_set]
 
         self.view = verify_str_arg(view.lower(), 'view', ['people', 'pairs'])
-        self.split = "Train" if train else "Test"
+        self.split = verify_str_arg(split.lower(), 'split', ['10fold', 'train', 'test'])
+        self.labels_file = f"{self.view}{self.annot_file[self.split]}.txt"
         self.data: List[Any] = []
 
         if download:
@@ -51,10 +55,10 @@ class _LFW(VisionDataset):
             return img.convert('RGB')
 
     def _check_integrity(self):
-        fpath = os.path.join(self.root, self.filename)
-        fname = os.path.join(self.root, f"{self.view}Dev{self.split}.txt")
-        if not check_integrity(fpath, self.md5) or not check_integrity(fname):
+        if not check_integrity(os.path.join(self.root, self.filename), self.md5) or not check_integrity(os.path.join(self.root, self.labels_file)):
             return False
+        if self.view == "people":
+            return check_integrity(os.path.join(self.root, self.names))
         return True
 
     def download(self):
@@ -63,7 +67,15 @@ class _LFW(VisionDataset):
             return
         url = f"{self.download_url_prefix}{self.filename}"
         download_and_extract_archive(url, self.root, filename=self.filename, md5=self.md5)
-        download_url(f"{self.download_url_prefix}{self.view}Dev{self.split}.txt", self.root)
+        download_url(f"{self.download_url_prefix}{self.labels_file}", self.root)
+        if self.view == "people":
+            download_url(f"{self.download_url_prefix}{self.names}", self.root)
+
+    def _get_path(self, identity, no):
+        return os.path.join(self.images_dir, identity, f"{identity}_{int(no):04d}.jpg")
+
+    def extra_repr(self) -> str:
+        return "Split: {}".format(self.split)
 
     def __len__(self):
         return len(self.data)
@@ -92,36 +104,43 @@ class LFWPeople(_LFW):
     def __init__(
         self,
         root: str,
-        train: bool = True,
-        image_set: str = "original",
+        split: str = "10fold",
+        image_set: str = "funneled",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ):
-        super(LFWPeople, self).__init__(root, train, image_set, "people",
+        super(LFWPeople, self).__init__(root, split, image_set, "people",
                                         transform, target_transform, download)
 
-        self.people_file = os.path.join(self.root, f"peopleDev{self.split}.txt")
-        self.cls_to_names, self.data, self.targets = self._get_people(self.images_dir, self.people_file)
+        self.class_to_idx = self._get_classes()
+        self.data, self.targets = self._get_people()
 
-    def _get_people(self, images_dir, people_file):
-        with open(people_file, 'r') as f:
+    def _get_people(self):
+        with open(os.path.join(self.root, self.labels_file), 'r') as f:
             lines = f.readlines()
-            n_lines = int(lines[0])
-            people = [line.strip().split("\t") for line in lines[1: n_lines + 1]]
+            n_folds, s = int(lines[0]), 1 if self.split == "10fold" else 1, 0
 
-            cls_to_names = []
-            data = []
-            targets = []
-            for cls, (identity, num_imgs) in enumerate(people):
-                cls_to_names.append(identity)
-                for num in range(1, int(num_imgs) + 1):
-                    img = os.path.join(images_dir, identity, f"{identity}_{num:04d}.jpg")
-                    if os.path.exists(img):
-                        data.append(img)
-                        targets.append(cls)
+            data, target = [], []
+            for fold in range(n_folds):
+                n_lines = int(lines[s])
+                people = [line.strip().split("\t") for line in lines[s + 1: s + n_lines + 2]]
+                s += n_lines + 2
+                for i, (identity, num_imgs) in enumerate(people):
+                    for num in range(1, int(num_imgs) + 1):
+                        img = self._get_path(identity, num)
+                        if os.path.exists(img):
+                            data.append(img)
+                            targets.append(self.class_to_idx[identity])
 
-        return cls_to_names, data, targets
+        return data, targets
+
+    def _get_classes(self):
+        with open(os.path.join(self.root, self.names), 'r') as f:
+            lines = f.readlines()
+            names = [line.strip().split()[0] for line in lines]
+        class_to_idx = {name: i for i, name in enumerate(names)}
+        return class_to_idx
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
@@ -143,7 +162,7 @@ class LFWPeople(_LFW):
         return img, target
 
     def extra_repr(self) -> str:
-        return "Split: {} \nNo. of classes: {}".format(self.split, len(self.cls_to_names))
+        return "No. of classes: {}".format(len(self.class_to_idx))
 
 
 class LFWPairs(_LFW):
@@ -169,44 +188,43 @@ class LFWPairs(_LFW):
     def __init__(
         self,
         root: str,
-        train: bool = True,
-        image_set: str = "original",
+        split: str = "10fold",
+        image_set: str = "funneled",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ):
-        super(LFWPairs, self).__init__(root, train, image_set, "pairs",
+        super(LFWPairs, self).__init__(root, split, image_set, "pairs",
                                        transform, target_transform, download)
 
-        self.pairs_file = os.path.join(self.root, f"pairsDev{self.split}.txt")
-        self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir, self.pairs_file)
+        self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)
 
-    def _get_pairs(self, images_dir, pairs_file):
-        with open(pairs_file, 'r') as f:
+    def _get_pairs(self, images_dir):
+        with open(os.path.join(self.root, self.labels_file), 'r') as f:
             lines = f.readlines()
-            n_pairs = int(lines[0])
-            matched_pairs = [line.strip().split("\t") for line in lines[1: n_pairs + 1]]
-            unmatched_pairs = [line.strip().split("\t") for line in lines[n_pairs + 1: 2 * n_pairs + 1]]
-
-            pair_names = []
-            data = []
-            targets = []
-            for pair in matched_pairs:
-                img1 = os.path.join(images_dir, pair[0], f"{pair[0]}_{int(pair[1]):04d}.jpg")
-                img2 = os.path.join(images_dir, pair[0], f"{pair[0]}_{int(pair[2]):04d}.jpg")
-                same = 1  # same = True
-                if os.path.exists(img1) and os.path.exists(img2):
-                    pair_names.append((pair[0], pair[0]))
-                    data.append((img1, img2))
-                    targets.append(same)
-            for pair in unmatched_pairs:
-                img1 = os.path.join(images_dir, pair[0], f"{pair[0]}_{int(pair[1]):04d}.jpg")
-                img2 = os.path.join(images_dir, pair[2], f"{pair[2]}_{int(pair[3]):04d}.jpg")
-                same = 0  # same = False
-                if os.path.exists(img1) and os.path.exists(img2):
-                    pair_names.append((pair[0], pair[2]))
-                    data.append((img1, img2))
-                    targets.append(same)
+            if self.split == "10fold":
+                n_folds, n_pairs = lines[0].split("\t")
+                n_folds, n_pairs = int(n_folds), int(n_pairs)
+            else:
+                n_folds, n_pairs = 1, int(lines[0])
+            s = 1
+            pair_names, data, targets = [], [], []
+            for fold in range(n_folds):
+                matched_pairs = [line.strip().split("\t") for line in lines[s: s + n_pairs]]
+                unmatched_pairs = [line.strip().split("\t") for line in lines[s + n_pairs: s + (2 * n_pairs)]]
+                s += (2 * n_pairs)
+                for pair in matched_pairs:
+                    img1, img2, same = self._get_path(pair[0], pair[1]), self._get_path(pair[0], pair[2]), 1
+                    if os.path.exists(img1) and os.path.exists(img2):
+                        pair_names.append((pair[0], pair[0]))
+                        data.append((img1, img2))
+                        targets.append(same)
+                for pair in unmatched_pairs:
+                    img1, img2, same = self._get_path(pair[0], pair[1]), self._get_path(pair[2], pair[3]), 0
+                    if os.path.exists(img1) and os.path.exists(img2):
+                        pair_names.append((pair[0], pair[2]))
+                        data.append((img1, img2))
+                        targets.append(same)
 
         return pair_names, data, targets
 
