@@ -118,6 +118,9 @@ Here is an example of how we might extract features for MaskRCNN:
   model = MaskRCNN(Resnet50WithFPN(), num_classes=91).eval()
 
 
+API Reference
+-------------
+
 .. autofunction:: build_feature_extractor
 
 .. autofunction:: get_graph_node_names
