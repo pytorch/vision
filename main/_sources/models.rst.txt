@@ -7,6 +7,15 @@ different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection and video classification.
 
+.. note ::
+    Backward compatibility is guaranteed for loading a serialized 
+    `state_dict` to the model created using old PyTorch version. 
+    On the contrary, loading entire saved models or serialized 
+    `ScriptModules` (seralized using older versions of PyTorch) 
+    will preserve the historic behaviour. Refer to the following 
+    `documentation 
+    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
+
 
 Classification
 ==============

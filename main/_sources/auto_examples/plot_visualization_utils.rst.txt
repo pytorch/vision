@@ -779,7 +779,7 @@ instance with class 15 (which corresponds to 'bench') was not selected.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  10.282 seconds)
+   **Total running time of the script:** ( 0 minutes  10.371 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:
