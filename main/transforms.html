@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+e71c2b3 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+c8ca9f8 ) &#x25BC</a>
     </div>
     
 
@@ -441,16 +441,7 @@ int instead of sequence like (h, w), a square crop (size, size) is
 made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">CenterCrop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id6">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id7">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.CenterCrop.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#CenterCrop.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.CenterCrop.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -493,12 +484,7 @@ Should have 0&lt;= hue &lt;= 0.5 or -0.5 &lt;= min &lt;= max &lt;= 0.5.</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">ColorJitter</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id8">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.ColorJitter.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#ColorJitter.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.ColorJitter.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -575,12 +561,7 @@ If provided a sequence of length 1, it will be interpreted as (size[0], size[0])
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result_avg</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">bs</span><span class="p">,</span> <span class="n">ncrops</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># avg over crops</span>
 </pre></div>
 </div>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">FiveCrop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id9">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id9" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.FiveCrop.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#FiveCrop.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.FiveCrop.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -617,12 +598,7 @@ to have […, 3, H, W] shape, where … means an arbitrary number of leading dim
 <dd class="field-odd"><p>PIL Image</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">Grayscale</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id10">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.Grayscale.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Grayscale.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.Grayscale.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -683,12 +659,7 @@ will result in [2, 1, 1, 2, 3, 4, 4, 3]</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">Pad</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id11">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id11" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.Pad.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Pad.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.Pad.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -743,12 +714,7 @@ Please use the <code class="docutils literal notranslate"><span class="pre">inte
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomAffine</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id12">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomAffine.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomAffine.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomAffine.forward" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
@@ -802,12 +768,7 @@ transforms as shown below:</p>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomApply</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id13">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id13" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py class">
 <dt id="torchvision.transforms.RandomCrop">
@@ -858,16 +819,7 @@ will result in [2, 1, 1, 2, 3, 4, 4, 3]</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomCrop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id14">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id14" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id15">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id15" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomCrop.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomCrop.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomCrop.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -955,16 +907,7 @@ dimensions</p>
 <dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability of the image being flipped. Default value is 0.5</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id16">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id16" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id17">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id17" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomHorizontalFlip.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomHorizontalFlip.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomHorizontalFlip.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1003,12 +946,7 @@ image. Default is <code class="docutils literal notranslate"><span class="pre">0
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomPerspective</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id18">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id18" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomPerspective.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomPerspective.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomPerspective.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1077,12 +1015,7 @@ For backward compatibility integer values (e.g. <code class="docutils literal no
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomResizedCrop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id19">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id19" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomResizedCrop.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomResizedCrop.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomResizedCrop.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1151,12 +1084,7 @@ Please use the <code class="docutils literal notranslate"><span class="pre">inte
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomRotation</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id20">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id20" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomRotation.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomRotation.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomRotation.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1206,12 +1134,7 @@ dimensions</p>
 <dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability of the image being flipped. Default value is 0.5</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomVerticalFlip</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id21">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id21" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomVerticalFlip.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomVerticalFlip.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomVerticalFlip.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1281,16 +1204,7 @@ closer.</p>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">Resize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id22">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id22" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id23">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id23" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.Resize.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Resize.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.Resize.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1388,12 +1302,7 @@ given range.</p></li>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">GaussianBlur</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id24">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id24" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.GaussianBlur.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#GaussianBlur.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.GaussianBlur.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1443,12 +1352,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
 <dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability of the image being color inverted. Default value is 0.5</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomInvert</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id25">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id25" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomInvert.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomInvert.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomInvert.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1481,12 +1385,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomPosterize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id26">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id26" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomPosterize.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomPosterize.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomPosterize.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1519,12 +1418,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomSolarize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id27">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id27" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomSolarize.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomSolarize.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomSolarize.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1557,12 +1451,7 @@ original image while 2 increases the sharpness by a factor of 2.</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomAdjustSharpness</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id28">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id28" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomAdjustSharpness.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomAdjustSharpness.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomAdjustSharpness.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1592,12 +1481,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
 <dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability of the image being autocontrasted. Default value is 0.5</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomAutocontrast</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id29">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id29" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomAutocontrast.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomAutocontrast.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomAutocontrast.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1627,12 +1511,7 @@ If img is PIL Image, it is expected to be in mode “P”, “L” or “RGB”.
 <dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – probability of the image being equalized. Default value is 0.5</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandomEqualize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id30">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id30" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandomEqualize.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#RandomEqualize.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandomEqualize.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1732,12 +1611,7 @@ channels, this transform will normalize each channel of the input
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">Normalize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id31">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id31" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.Normalize.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/transforms/transforms.html#Normalize.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.Normalize.forward" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -1852,12 +1726,7 @@ If converted back and forth, this mismatch has no effect.</p>
     of the integer <code class="docutils literal notranslate"><span class="pre">dtype</span></code>.</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">ConvertImageDtype</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id32">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id32" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 </div>
 <div class="section" id="conversion-transforms">
@@ -1879,12 +1748,7 @@ If <code class="docutils literal notranslate"><span class="pre">mode</span></cod
 <code class="docutils literal notranslate"><span class="pre">short</span></code>).</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">ToPILImage</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id33">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id33" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py class">
 <dt id="torchvision.transforms.ToTensor">
@@ -1898,7 +1762,7 @@ or if the numpy.ndarray has dtype = np.uint8</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
-transforming target image masks. See the <a class="reference external" href="https://github.com/pytorch/vision/tree/master/references/segmentation">references</a> for implementing the transforms for image masks.</p>
+transforming target image masks. See the <a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation">references</a> for implementing the transforms for image masks.</p>
 </div>
 </dd></dl>
 
@@ -1929,12 +1793,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.transforms.</span></code><code class="sig-name descname"><span class="pre">AutoAugmentPolicy</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/transforms/autoaugment.html#AutoAugmentPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.AutoAugmentPolicy" title="Permalink to this definition">¶</a></dt>
 <dd><p>AutoAugment policies learned on different datasets.
 Available policies are IMAGENET, CIFAR10 and SVHN.</p>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">AutoAugmentPolicy</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id34">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id34" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py class">
 <dt id="torchvision.transforms.AutoAugment">
@@ -1957,12 +1816,7 @@ image. If given a number, the value is used for all bands respectively.</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">AutoAugment</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id35">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id35" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.AutoAugment.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/transforms/autoaugment.html#AutoAugment.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.AutoAugment.forward" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
@@ -2014,12 +1868,7 @@ image. If given a number, the value is used for all bands respectively.</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">RandAugment</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id36">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id36" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
+<dl class="py method">
 <dt id="torchvision.transforms.RandAugment.forward">
 <code class="sig-name descname"><span class="pre">forward</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.0a0+gitd69c22d)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/transforms/autoaugment.html#RandAugment.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.RandAugment.forward" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
@@ -2242,12 +2091,7 @@ original image while 2 increases the sharpness by a factor of 2.</p></li>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">adjust_sharpness</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id37">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id37" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.affine">
@@ -2290,12 +2134,7 @@ Please use the <code class="docutils literal notranslate"><span class="pre">inte
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">affine</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id38">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id38" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.autocontrast">
@@ -2317,12 +2156,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">autocontrast</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id39">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id39" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.center_crop">
@@ -2346,12 +2180,7 @@ it is used for both directions.</p></li>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">center_crop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id40">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id40" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.convert_image_dtype">
@@ -2385,12 +2214,7 @@ If converted back and forth, this mismatch has no effect.</p>
     of the integer <code class="docutils literal notranslate"><span class="pre">dtype</span></code>.</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">convert_image_dtype</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id41">
-<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id41" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.crop">
@@ -2416,12 +2240,7 @@ If image size is smaller than output size along any edge, image is padded with 0
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">crop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id42">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id42" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.equalize">
@@ -2444,12 +2263,7 @@ If img is PIL Image, it is expected to be in mode “P”, “L” or “RGB”.
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">equalize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id43">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id43" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.erase">
@@ -2505,12 +2319,7 @@ Corresponding top left, top right, bottom left, bottom right and center crop.</p
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.9)">tuple</a></p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">five_crop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id44">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id44" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.gaussian_blur">
@@ -2550,12 +2359,7 @@ not supported, use a sequence of length 1: <code class="docutils literal notrans
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">gaussian_blur</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id45">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id45" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.get_image_num_channels">
@@ -2609,12 +2413,7 @@ dimensions.</p>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">hflip</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id46">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id46" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.invert">
@@ -2634,12 +2433,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">invert</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id47">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id47" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.normalize">
@@ -2667,12 +2461,7 @@ This transform does not support PIL Image.</p>
 <dd class="field-odd"><p>Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">normalize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id48">
-<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id48" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.pad">
@@ -2724,12 +2513,7 @@ will result in [2, 1, 1, 2, 3, 4, 4, 3]</p></li>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">pad</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id49">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id49" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.perspective">
@@ -2766,12 +2550,7 @@ of length 1: <code class="docutils literal notranslate"><span class="pre">[value
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">perspective</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id50">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id50" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.pil_to_tensor">
@@ -2814,12 +2593,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p></li>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">posterize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id51">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id51" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.resize">
@@ -2880,12 +2654,7 @@ closer.</p>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">resize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id52">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id52" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.resized_crop">
@@ -2917,12 +2686,7 @@ For backward compatibility integer values (e.g. <code class="docutils literal no
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">resized_crop</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id53">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id53" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.rgb_to_grayscale">
@@ -2994,12 +2758,7 @@ of length 1: <code class="docutils literal notranslate"><span class="pre">[value
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">rotate</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id54">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id54" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.solarize">
@@ -3022,12 +2781,7 @@ If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p></li>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">solarize</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id55">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id55" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.ten_crop">
@@ -3087,12 +2841,7 @@ This transform does not support torch Tensor.</p>
 <dd class="field-odd"><p>PIL Image</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">to_grayscale</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id56">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id56" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.to_pil_image">
@@ -3115,12 +2864,7 @@ This transform does not support torch Tensor.</p>
 <dd class="field-even"><p>PIL Image</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">to_pil_image</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id57">
-<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id57" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.transforms.functional.to_tensor">
@@ -3159,12 +2903,7 @@ dimensions.</p>
 <dd class="field-odd"><p>PIL Image or Tensor</p>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">vflip</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates the various transforms available in the torchvision.transforms module ..."><div class="figure align-default" id="id58">
-<img alt="Illustration of transforms" src="_images/sphx_glr_plot_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_transforms.html#sphx-glr-auto-examples-plot-transforms-py"><span class="std std-ref">Illustration of transforms</span></a></span><a class="headerlink" href="#id58" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 </div>
 </div>
