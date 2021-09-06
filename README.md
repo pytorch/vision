@@ -10,13 +10,13 @@ served under the same CNAME. The branch directory structure reflects the
 release history of the project:
 - each numbered directory holds the version of the documents at the time of
   release
-- there are two special directories: `master` and `stable`. The first holds the
+- there are two special directories: `main` and `stable`. The first holds the
   current HEAD version of the documentation, and can be updated from time to
   time (a future enhancement: merging a PR updates this automatically) via
   something like
   ```
   # get a clean environment
-  git checkout master
+  git checkout main
   git clean -xfd
   virtualenv /tmp/venv
   source /tmp/venv/bin/activate
@@ -33,10 +33,10 @@ release history of the project:
   # now docs are built and are in build/html
   # copy them over the current pages
   git checkout gh-pages
-  rm -rf master/*
-  cp -r docs/build/html/* master
+  rm -rf main/*
+  cp -r docs/build/html/* main
   # let git do its thing
-  git add master
+  git add main
   git commit -m"generate new docs"
   git push -u origin
   ```
