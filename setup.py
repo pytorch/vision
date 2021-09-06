@@ -175,18 +175,6 @@ def get_extensions():
     sources = main_file + source_cpu
     extension = CppExtension
 
-    compile_cpp_tests = os.getenv('WITH_CPP_MODELS_TEST', '0') == '1'
-    if compile_cpp_tests:
-        test_dir = os.path.join(this_dir, 'test')
-        models_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'models')
-        test_file = glob.glob(os.path.join(test_dir, '*.cpp'))
-        source_models = glob.glob(os.path.join(models_dir, '*.cpp'))
-
-        test_file = [os.path.join(test_dir, s) for s in test_file]
-        source_models = [os.path.join(models_dir, s) for s in source_models]
-        tests = test_file + source_models
-        tests_include_dirs = [test_dir, models_dir]
-
     define_macros = []
 
     extra_compile_args = {'cxx': []}
@@ -238,16 +226,6 @@ def get_extensions():
             extra_compile_args=extra_compile_args,
         )
     ]
-    if compile_cpp_tests:
-        ext_modules.append(
-            extension(
-                'torchvision._C_tests',
-                tests,
-                include_dirs=tests_include_dirs,
-                define_macros=define_macros,
-                extra_compile_args=extra_compile_args,
-            )
-        )
 
     # ------------------- Torchvision extra extensions ------------------------
     vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
