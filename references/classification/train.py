@@ -6,6 +6,7 @@ import torch
 import torch.utils.data
 from torch import nn
 import torchvision
+from torchvision.transforms.functional import InterpolationMode
 
 import presets
 import utils
@@ -82,7 +83,18 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    resize_size, crop_size = (342, 299) if args.model == 'inception_v3' else (256, 224)
+    resize_size, crop_size = 256, 224
+    interpolation = InterpolationMode.BILINEAR
+    if args.model == 'inception_v3':
+        resize_size, crop_size = 342, 299
+    elif args.model.startswith('efficientnet_'):
+        sizes = {
+            'b0': (256, 224), 'b1': (256, 240), 'b2': (288, 288), 'b3': (320, 300),
+            'b4': (384, 380), 'b5': (456, 456), 'b6': (528, 528), 'b7': (600, 600),
+        }
+        e_type = args.model.replace('efficientnet_', '')
+        resize_size, crop_size = sizes[e_type]
+        interpolation = InterpolationMode.BICUBIC
 
     print("Loading training data")
     st = time.time()
@@ -113,7 +125,8 @@ def load_data(traindir, valdir, args):
     else:
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size))
+            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size,
+                                             interpolation=interpolation))
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
@@ -162,7 +175,7 @@ def main(args):
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     opt_name = args.opt.lower()
     if opt_name == 'sgd':
@@ -243,6 +256,9 @@ def get_args_parser(add_help=True):
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
+    parser.add_argument('--label-smoothing', default=0.0, type=float,
+                        help='label smoothing (default: 0.0)',
+                        dest='label_smoothing')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')

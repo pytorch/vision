@@ -24,7 +24,7 @@ number of channels, ``H`` and ``W`` are image height and width. A batch of
 Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
 of images in the batch.
 
-The expected range of the values of a tensor image is implicitely defined by
+The expected range of the values of a tensor image is implicitly defined by
 the tensor dtype. Tensor images with a float dtype are expected to have
 values in ``[0, 1)``. Tensor images with an integer dtype are expected to
 have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
@@ -35,7 +35,7 @@ images of a given batch, but they will produce different transformations
 across calls. For reproducible transformations across calls, you may use
 :ref:`functional transforms <functional_transforms>`.
 
-The following examples illustate the use of the available transforms:
+The following examples illustrate the use of the available transforms:
 
     * :ref:`sphx_glr_auto_examples_plot_transforms.py`
 
@@ -214,8 +214,8 @@ Generic Transforms
     :members:
 
 
-AutoAugment Transforms
-----------------------
+Automatic Augmentation Transforms
+---------------------------------
 
 `AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
 Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
@@ -229,6 +229,10 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 .. autoclass:: AutoAugment
     :members:
 
+`RandAugment <https://arxiv.org/abs/1909.13719>`_ is a simple high-performing Data Augmentation technique which improves the accuracy of Image Classification models.
+
+.. autoclass:: RandAugment
+    :members:
 
 .. _functional_transforms:
 
