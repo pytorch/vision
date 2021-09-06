@@ -1502,6 +1502,17 @@ def test_randaugment(num_ops, magnitude, fill):
     transform.__repr__()
 
 
+@pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
+@pytest.mark.parametrize('num_magnitude_bins', [10, 13, 30])
+def test_trivialaugmentwide(fill, num_magnitude_bins):
+    random.seed(42)
+    img = Image.open(GRACE_HOPPER)
+    transform = transforms.TrivialAugmentWide(fill=fill, num_magnitude_bins=num_magnitude_bins)
+    for _ in range(100):
+        img = transform(img)
+    transform.__repr__()
+
+
 def test_random_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
