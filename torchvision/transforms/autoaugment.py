@@ -44,6 +44,8 @@ def _apply_op(img: Tensor, op_name: str, magnitude: float,
         img = F.equalize(img)
     elif op_name == "Invert":
         img = F.invert(img)
+    elif op_name == "Identity":
+        pass
     else:
         raise ValueError("The provided operator {} is not recognized.".format(op_name))
     return img
@@ -353,6 +355,7 @@ class TrivialAugmentWide(torch.nn.Module):
     def _augmentation_space(self, num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
+            "Identity": (torch.tensor(0.0), False),
             "ShearX": (torch.linspace(0.0, 0.99, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.99, num_bins), True),
             "TranslateX": (torch.linspace(0.0, 32.0, num_bins), True),
@@ -366,7 +369,6 @@ class TrivialAugmentWide(torch.nn.Module):
             "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
             "AutoContrast": (torch.tensor(0.0), False),
             "Equalize": (torch.tensor(0.0), False),
-            "Invert": (torch.tensor(0.0), False),
         }
 
     def forward(self, img: Tensor) -> Tensor:
