@@ -345,7 +345,7 @@ class TrivialAugmentWide(torch.nn.Module):
             image. If given a number, the value is used for all bands respectively.
         """
 
-    def __init__(self, num_magnitude_bins: int = 30, interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    def __init__(self, num_magnitude_bins: int = 31, interpolation: InterpolationMode = InterpolationMode.NEAREST,
                  fill: Optional[List[float]] = None) -> None:
         super().__init__()
         self.num_magnitude_bins = num_magnitude_bins
