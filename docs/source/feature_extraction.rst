@@ -14,7 +14,7 @@ applications in computer vision. Just a few examples are:
   with a specific task in mind. For example, passing a hierarchy of features
   to a Feature Pyramid Network with object detection heads.
 
-Torchvision provides :func:`build_feature_extractor` for this purpose.
+Torchvision provides :func:`create_feature_extractor` for this purpose.
 It works by following roughly these steps:
 
 1. Symbolically tracing the model to get a graphical representation of
@@ -37,7 +37,7 @@ Here is an example of how we might extract features for MaskRCNN:
   import torch
   from torchvision.models import resnet50
   from torchvision.models.feature_extraction import get_graph_node_names
-  from torchvision.models.feature_extraction import build_feature_extractor
+  from torchvision.models.feature_extraction import create_feature_extractor
   from torchvision.models.detection.mask_rcnn import MaskRCNN
   from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork
 
@@ -63,7 +63,7 @@ Here is an example of how we might extract features for MaskRCNN:
       'layer4.2.relu_2': 'layer4',
   }
 
-  # But `build_feature_extractor` can also accept truncated node specifications
+  # But `create_feature_extractor` can also accept truncated node specifications
   # like "layer1", as it will just pick the last node that's a descendent of
   # of the specification. (Tip: be careful with this, especially when a layer
   # has multiple outputs. It's not always guaranteed that the last operation
@@ -84,7 +84,7 @@ Here is an example of how we might extract features for MaskRCNN:
   #     'layer3': ouput of layer 3,
   #     'layer4': ouput of layer 4,
   # }
-  build_feature_extractor(m, return_nodes=return_nodes)
+  create_feature_extractor(m, return_nodes=return_nodes)
 
   # Let's put all that together to wrap resnet50 with MaskRCNN
 
@@ -96,10 +96,10 @@ Here is an example of how we might extract features for MaskRCNN:
           m = resnet50()
           # Extract 4 main layers (note: you can also provide a list for return
           # nodes if the keys and the values are the same)
-          self.body = build_feature_extractor(
+          self.body = create_feature_extractor(
               m, return_nodes=['layer1', 'layer2', 'layer3', 'layer4'])
           # Dry run to get number of channels for FPN
-          inp = torch.randn(1, 3, 224, 224)
+          inp = torch.randn(2, 3, 224, 224)
           with torch.no_grad():
               out = self.body(inp)
           in_channels_list = [o.shape[1] for o in out.values()]
@@ -121,6 +121,6 @@ Here is an example of how we might extract features for MaskRCNN:
 API Reference
 -------------
 
-.. autofunction:: build_feature_extractor
+.. autofunction:: create_feature_extractor
 
 .. autofunction:: get_graph_node_names

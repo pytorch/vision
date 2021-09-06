@@ -1,10 +1,11 @@
 from functools import partial
+from itertools import chain
 import random
 
 import torch
 from torchvision import models
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models.feature_extraction import build_feature_extractor
+from torchvision.models.feature_extraction import create_feature_extractor
 from torchvision.models.feature_extraction import get_graph_node_names
 from torchvision.models._utils import IntermediateLayerGetter
 
@@ -13,9 +14,9 @@ import pytest
 from common_utils import set_rng_seed
 
 
-# Suppress diff warning from build_feature_extractor
-build_feature_extractor = partial(
-    build_feature_extractor, suppress_diff_warning=True)
+# Suppress diff warning from create_feature_extractor
+create_feature_extractor = partial(
+    create_feature_extractor, suppress_diff_warning=True)
 get_graph_node_names = partial(
     get_graph_node_names, suppress_diff_warning=True)
 
@@ -63,30 +64,39 @@ class TestFxFeatureExtraction:
         model = models.__dict__[model_name](**self.model_defaults).eval()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
         # Check that it works with both a list and dict for return nodes
-        build_feature_extractor(
+        create_feature_extractor(
             model, train_return_nodes={v: v for v in train_return_nodes},
             eval_return_nodes=eval_return_nodes)
-        build_feature_extractor(
+        create_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         # Check must specify return nodes
         with pytest.raises(AssertionError):
-            build_feature_extractor(model)
+            create_feature_extractor(model)
         # Check return_nodes and train_return_nodes / eval_return nodes
         # mutual exclusivity
         with pytest.raises(AssertionError):
-            build_feature_extractor(model, return_nodes=train_return_nodes,
-                                    train_return_nodes=train_return_nodes)
+            create_feature_extractor(model, return_nodes=train_return_nodes,
+                                     train_return_nodes=train_return_nodes)
         # Check train_return_nodes / eval_return nodes must both be specified
         with pytest.raises(AssertionError):
-            build_feature_extractor(
+            create_feature_extractor(
                 model, train_return_nodes=train_return_nodes)
+        # Check invalid node name raises ValueError
+        with pytest.raises(ValueError):
+            # First just double check that this node really doesn't exist
+            if not any(n.startswith('l') or n.startswith('l.') for n
+                       in chain(train_return_nodes, eval_return_nodes)):
+                create_feature_extractor(
+                    model, train_return_nodes=['l'], eval_return_nodes=['l'])
+            else:  # otherwise skip this check
+                raise ValueError
 
     @pytest.mark.parametrize('model_name', get_available_models())
     def test_forward_backward(self, model_name):
         model = models.__dict__[model_name](**self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
-        model = build_feature_extractor(
+        model = create_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         out = model(self.inp)
@@ -103,7 +113,7 @@ class TestFxFeatureExtraction:
 
         ilg_model = IntermediateLayerGetter(
             model, return_layers).eval()
-        fx_model = build_feature_extractor(model, return_layers)
+        fx_model = create_feature_extractor(model, return_layers)
 
         # Check that we have same parameters
         for (n1, p1), (n2, p2) in zip(ilg_model.named_parameters(),
@@ -124,7 +134,7 @@ class TestFxFeatureExtraction:
         set_rng_seed(0)
         model = models.__dict__[model_name](**self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
-        model = build_feature_extractor(
+        model = create_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         model = torch.jit.script(model)
@@ -172,7 +182,7 @@ class TestFxFeatureExtraction:
 
         # Starting from train mode
         model.train()
-        fx_model = build_feature_extractor(
+        fx_model = create_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         # Check that the models stay in their original training state
@@ -186,7 +196,7 @@ class TestFxFeatureExtraction:
 
         # Starting from eval mode
         model.eval()
-        fx_model = build_feature_extractor(
+        fx_model = create_feature_extractor(
             model, train_return_nodes=train_return_nodes,
             eval_return_nodes=eval_return_nodes)
         # Check that the models stay in their original training state
@@ -216,7 +226,7 @@ class TestFxFeatureExtraction:
                 x = self.conv(x)
                 return self.leaf_module(x)
 
-        model = build_feature_extractor(
+        model = create_feature_extractor(
             TestModule(), return_nodes=['leaf_module'],
             tracer_kwargs={'leaf_modules': [LeafModule],
                            'autowrap_functions': [leaf_function]}).train()

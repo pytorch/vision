@@ -11,7 +11,7 @@ from torch import fx
 from torch.fx.graph_module import _copy_attr
 
 
-__all__ = ['build_feature_extractor', 'get_graph_node_names']
+__all__ = ['create_feature_extractor', 'get_graph_node_names']
 
 
 class LeafModuleAwareTracer(fx.Tracer):
@@ -167,7 +167,7 @@ def get_graph_node_names(
         suppress_diff_warning: bool = False) -> Tuple[List[str], List[str]]:
     """
     Dev utility to return node names in order of execution. See note on node
-    names under :func:`build_feature_extractor`. Useful for seeing which node
+    names under :func:`create_feature_extractor`. Useful for seeing which node
     names are available for feature extraction. There are two reasons that
     node names can't easily be read directly from the code for a model:
 
@@ -181,12 +181,12 @@ def get_graph_node_names(
 
     Args:
         model (nn.Module): model for which we'd like to print node names
-        tracer_kwargs (dict): a dictionary of keywork arguments for
+        tracer_kwargs (dict, optional): a dictionary of keywork arguments for
             `NodePathTracer` (they are eventually passed onto
             `torch.fx.Tracer`).
-        suppress_diff_warning (bool): whether to suppress a warning when there
-            are discrepancies between the train and eval version of the graph.
-            Defaults to False.
+        suppress_diff_warning (bool, optional): whether to suppress a warning
+            when there are discrepancies between the train and eval version of
+            the graph. Defaults to False.
 
     Returns:
         tuple(list, list): a list of node names from tracing the model in
@@ -275,7 +275,7 @@ class DualGraphModule(fx.GraphModule):
         return super().train(mode=mode)
 
 
-def build_feature_extractor(
+def create_feature_extractor(
         model: nn.Module,
         return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
         train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
@@ -313,8 +313,6 @@ def build_feature_extractor(
           `int` will raise an error during tracing. You may wrap them in your
           own function and then pass that in `autowrap_functions` as one of
           the `tracer_kwargs`.
-        - Use `torch.matmul(tensor_a, tensor_b)` instead of `tensor_a @
-          tensor_b`.
 
     For further information on FX see the
     `torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_.
@@ -340,19 +338,19 @@ def build_feature_extractor(
             for train mode are different than those from eval mode.
             If this is specified, `train_return_nodes` must also be specified,
             and `return_nodes` should not be specified.
-        tracer_kwargs (dict): a dictionary of keywork arguments for
+        tracer_kwargs (dict, optional): a dictionary of keywork arguments for
             `NodePathTracer` (which passes them onto it's parent class
             `torch.fx.Tracer`).
-        suppress_diff_warning (bool): whether to suppress a warning when there
-            are discrepancies between the train and eval version of the graph.
-            Defaults to False.
+        suppress_diff_warning (bool, optional): whether to suppress a warning
+            when there are discrepancies between the train and eval version of
+            the graph. Defaults to False.
 
     Examples::
 
         >>> # Feature extraction with resnet
         >>> model = torchvision.models.resnet18()
         >>> # extract layer1 and layer3, giving as names `feat1` and feat2`
-        >>> model = build_feature_extractor(
+        >>> model = create_feature_extractor(
         >>>     model, {'layer1': 'feat1', 'layer3': 'feat2'})
         >>> out = model(torch.rand(1, 3, 224, 224))
         >>> print([(k, v.shape) for k, v in out.items()])
@@ -381,7 +379,7 @@ def build_feature_extractor(
         >>>         x = self.conv(x)
         >>>         return self.leaf_module(x)
         >>>
-        >>> model = build_feature_extractor(
+        >>> model = create_feature_extractor(
         >>>     MyModule(), return_nodes=['leaf_module'],
         >>>     tracer_kwargs={'leaf_modules': [LeafModule],
         >>>                    'autowrap_functions': [leaf_function]})
@@ -445,14 +443,14 @@ def build_feature_extractor(
         for query in mode_return_nodes[mode].keys():
             # To check if a query is available we need to check that at least
             # one of the available names starts with it up to a .
-            if not any([re.match(rf'^{query}.?', n) is not None
+            if not any([re.match(rf'^{query}(\.|$)', n) is not None
                         for n in available_nodes]):
                 raise ValueError(
                     f"node: '{query}' is not present in model. Hint: use "
                     "`get_graph_node_names` to make sure the "
                     "`return_nodes` you specified are present. It may even "
                     "be that you need to specify `train_return_nodes` and "
-                    "`eval_return_nodes` seperately.")
+                    "`eval_return_nodes` separately.")
 
         # Remove existing output nodes (train mode)
         orig_output_nodes = []
