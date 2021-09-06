@@ -234,6 +234,11 @@ The new transform can be used standalone or mixed-and-matched with existing tran
 .. autoclass:: RandAugment
     :members:
 
+`TrivialAugmentWide <https://arxiv.org/abs/2103.10158>`_ is a dataset-independent data-augmentation technique which improves the accuracy of Image Classification models.
+
+.. autoclass:: TrivialAugmentWide
+    :members:
+
 .. _functional_transforms:
 
 Functional Transforms
