@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+c8ca9f8 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+ff80aec ) &#x25BC</a>
     </div>
     
 
@@ -612,6 +612,16 @@ See <a class="reference internal" href="../transforms.html#torchvision.transform
 </div>
 <img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_020.png" />
 </div>
+<div class="section" id="trivialaugmentwide">
+<h3>TrivialAugmentWide<a class="headerlink" href="#trivialaugmentwide" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="../transforms.html#torchvision.transforms.TrivialAugmentWide" title="torchvision.transforms.TrivialAugmentWide"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialAugmentWide</span></code></a> transform automatically augments the data.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">augmenter</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">T</span><span class="o">.</span><span class="n">TrivialAugmentWide</span></a><span class="p">()</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">augmenter</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">imgs</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_021.png" />
+</div>
 </div>
 <div class="section" id="randomly-applied-transforms">
 <h2>Randomly-applied transforms<a class="headerlink" href="#randomly-applied-transforms" title="Permalink to this headline">¶</a></h2>
@@ -628,7 +638,7 @@ performs horizontal flip of an image, with a given probability.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transformed_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_021.png" />
+<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_022.png" />
 </div>
 <div class="section" id="randomverticalflip">
 <h3>RandomVerticalFlip<a class="headerlink" href="#randomverticalflip" title="Permalink to this headline">¶</a></h3>
@@ -640,7 +650,7 @@ performs vertical flip of an image, with a given probability.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transformed_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_022.png" />
+<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_023.png" />
 </div>
 <div class="section" id="randomapply">
 <h3>RandomApply<a class="headerlink" href="#randomapply" title="Permalink to this headline">¶</a></h3>
@@ -651,8 +661,8 @@ randomly applies a list of transforms, with a given probability.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">transformed_imgs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_023.png" />
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.659 seconds)</p>
+<img alt="Original image" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_transforms_024.png" />
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.931 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2fc879ef12ea97750926a04c0a48c66b/plot_transforms.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_transforms.py</span></code></a></p>
@@ -731,6 +741,7 @@ randomly applies a list of transforms, with a given probability.</p>
 <li><a class="reference internal" href="#randomequalize">RandomEqualize</a></li>
 <li><a class="reference internal" href="#autoaugment">AutoAugment</a></li>
 <li><a class="reference internal" href="#randaugment">RandAugment</a></li>
+<li><a class="reference internal" href="#trivialaugmentwide">TrivialAugmentWide</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#randomly-applied-transforms">Randomly-applied transforms</a><ul>
