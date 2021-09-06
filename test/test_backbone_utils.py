@@ -15,13 +15,6 @@ import pytest
 from common_utils import set_rng_seed
 
 
-# Suppress diff warning from create_feature_extractor
-create_feature_extractor = partial(
-    create_feature_extractor, suppress_diff_warning=True)
-get_graph_node_names = partial(
-    get_graph_node_names, suppress_diff_warning=True)
-
-
 def get_available_models():
     # TODO add a registration mechanism to torchvision.models
     return [k for k, v in models.__dict__.items()
@@ -52,16 +45,22 @@ class TestFxFeatureExtraction:
         """
         Apply leaf modules
         """
+        tracer_kwargs = {}
+        if 'tracer_kwargs' not in kwargs:
+            tracer_kwargs = {'leaf_modules': self.leaf_modules}
+        else:
+            tracer_kwargs = kwargs.pop('tracer_kwargs')
         return create_feature_extractor(
             *args, **kwargs,
-            tracer_kwargs={'leaf_modules': self.leaf_modules},
+            tracer_kwargs=tracer_kwargs,
             suppress_diff_warning=True)
 
     def _get_return_nodes(self, model):
         set_rng_seed(0)
         exclude_nodes_filter = ['getitem', 'floordiv', 'size', 'chunk']
         train_nodes, eval_nodes = get_graph_node_names(
-            model, tracer_kwargs={'leaf_modules': self.leaf_modules})
+            model, tracer_kwargs={'leaf_modules': self.leaf_modules},
+            suppress_diff_warning=True)
         # Get rid of any nodes that don't return tensors as they cause issues
         # when testing backward pass.
         train_nodes = [n for n in train_nodes
