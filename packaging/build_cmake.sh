@@ -97,7 +97,7 @@ fi
 
 # Compile and run the CPP example
 popd
-cd examples/cpp/hello_world
+pushd examples/cpp/hello_world
 
 mkdir build
 cd build
@@ -112,3 +112,22 @@ fi
 
 # Run CPP example
 ./hello-world
+
+
+# Compile and run the CPP ops test
+popd
+pushd test/cpp-ops
+mkdir build
+cd build
+cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
+cmake  --build .
+
+# Disable exit on non 0
+set +e
+./vision-ops-test
+# Ensure that there are 9 registered ops.
+if [ "$?" != "9" ]; then
+  exit 1
+fi
+# Enable exit on non 0
+set -e
