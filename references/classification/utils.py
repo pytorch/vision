@@ -161,6 +161,25 @@ class MetricLogger(object):
         print('{} Total time: {}'.format(header, total_time_str))
 
 
+class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
+    """Maintains moving averages of model parameters using an
+    exponential decay.
+    `ema_avg = decay * avg_model_param + (1 - decay) * model_param`
+    `torch.optim.swa_utils.AveragedModel <https://pytorch.org/docs/stable/optim.html#custom-averaging-strategies>`
+    is used to compute the EMA.
+    """
+    def __init__(self, model, decay, device='cpu', name='ExponentialMovingAverage'):
+        ema_avg = (lambda avg_model_param, model_param, num_averaged:
+                   decay * avg_model_param + (1 - decay) * model_param)
+        super().__init__(model, device, ema_avg)
+        self._name = name
+
+    @property
+    def name(self):
+        """ExponentialMovingAverage object's name."""
+        return self._name
+
+
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
