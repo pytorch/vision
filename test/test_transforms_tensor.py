@@ -715,3 +715,46 @@ def test_gaussian_blur(device, meth_kwargs):
         T.GaussianBlur, meth_kwargs=meth_kwargs,
         test_exact_match=False, device=device, agg_method="max", tol=tol
     )
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('alphas', [
+    {"mixup_alpha": 1.0, "cutmix_alpha": 1.0, 'cutmix_p': 1.0},
+    {"mixup_alpha": 1.0, "cutmix_alpha": 1.0, 'cutmix_p': 0.0},
+    {"mixup_alpha": 1.0, "cutmix_alpha": 1.0, 'p': 0.0},
+    {"mixup_alpha": 0.0, "cutmix_alpha": 1.0},
+    {"mixup_alpha": 1.0, "cutmix_alpha": 0.0},
+])
+@pytest.mark.parametrize('label_smoothing', [0.0, 0.1])
+@pytest.mark.parametrize('inplace', [True, False])
+def test_random_mixupcutmix(device, alphas, label_smoothing, inplace):
+    batch_size = 4
+    num_classes = 10
+    batch = torch.rand(batch_size, 3, 44, 56, device=device)
+    targets = torch.randint(num_classes, (batch_size, ), device=device, dtype=torch.int64)
+
+    trans = T.RandomMixupCutmix(num_classes, label_smoothing=label_smoothing, inplace=inplace, **alphas)
+
+    original_shape = batch.shape
+    batch, targets = trans(batch, targets)
+    assert batch.shape == original_shape
+    assert targets.shape == (batch_size, num_classes)
+
+    trans.__repr__()
+
+
+def test_random_mixupcutmix_with_invalid_data():
+    with pytest.raises(AssertionError, match="Please provide a valid positive value for the num_classes."):
+        T.RandomMixupCutmix(0)
+    with pytest.raises(AssertionError, match="Both alpha params can't be zero."):
+        T.RandomMixupCutmix(10, mixup_alpha=0.0, cutmix_alpha=0.0)
+
+    t = T.RandomMixupCutmix(10)
+    with pytest.raises(ValueError, match="Batch ndim should be 4."):
+        t(torch.rand(3, 60, 60), torch.randint(10, (1, )))
+    with pytest.raises(ValueError, match="Target ndim should be 1."):
+        t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, 1)))
+    with pytest.raises(ValueError, match="Target dtype should be torch.int64."):
+        t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, ), dtype=torch.int32))
+    with pytest.raises(ValueError, match="The batch size should be even."):
+        t(torch.rand(31, 3, 60, 60), torch.randint(10, (31, )))
