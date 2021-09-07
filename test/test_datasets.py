@@ -605,7 +605,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
             with self.create_dataset(split=split) as (dataset, _):
                 merged_imgs_names += dataset.filename
 
-        assert(merged_imgs_names == all_imgs_names)
+        assert merged_imgs_names == all_imgs_names
 
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
