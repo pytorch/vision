@@ -2043,12 +2043,12 @@ class RandomMixupCutmix(torch.nn.Module):
 
         if use_mixup:
             # Implemented as on mixup paper, page 3.
-            lambda_param = self._mixup_dist.sample()
+            lambda_param = self._mixup_dist.sample().item()
             batch_flipped.mul_(1.0 - lambda_param)
             batch.mul_(lambda_param).add_(batch_flipped)
         else:
             # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
-            lambda_param = self._cutmix_dist.sample()
+            lambda_param = self._cutmix_dist.sample().item()
             W, H = F.get_image_size(batch)
 
             r_x = torch.randint(W, (1,))
@@ -2064,7 +2064,7 @@ class RandomMixupCutmix(torch.nn.Module):
             y2 = torch.clamp(r_y + r_h_half, max=H)
 
             batch[:, :, y1:y2, x1:x2] = batch_flipped[:, :, y1:y2, x1:x2]
-            lambda_param = 1.0 - (x2 - x1) * (y2 - y1) / (W * H)
+            lambda_param = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
         target_flipped.mul_(1.0 - lambda_param)
         target.mul_(lambda_param).add_(target_flipped)

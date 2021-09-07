@@ -1,6 +1,7 @@
 import os
 import torch
 from torch._utils_internal import get_file_path_2
+from torch.utils.data import TensorDataset, DataLoader
 from torchvision import transforms as T
 from torchvision.io import read_image
 from torchvision.transforms import functional as F
@@ -763,25 +764,28 @@ def test_random_mixupcutmix_with_invalid_data():
 
 
 def test_random_mixupcutmix_with_real_data():
-    torch.manual_seed(112)
+    torch.manual_seed(12)
 
-    resize = T.Resize((224, 224))
-    mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0, label_smoothing=0.1)
-
+    # Build dummy dataset
     images = []
     for test_file in [("encode_jpeg", "grace_hopper_517x606.jpg"), ("fakedata", "logos", "rgb_pytorch.png")]:
         fullpath = (os.path.dirname(os.path.abspath(__file__)), 'assets') + test_file
         img = read_image(get_file_path_2(*fullpath))
-        images.append(resize(img))
+        images.append(F.resize(img, [224, 224]))
+    dataset = TensorDataset(torch.stack(images).to(torch.float32), torch.tensor([0, 1]))
 
-    batch = torch.stack(images).to(torch.float32)
-    targets = torch.tensor([0, 1])
+    # Use mixup in the collate
+    mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0, label_smoothing=0.1)
+    dataloader = DataLoader(dataset, batch_size=2,
+                            collate_fn=lambda batch: mixup(*(torch.stack(x) for x in zip(*batch))))
 
+    # Test against known statistics about the produced images
     stats = []
     for _ in range(25):
-        b, t = mixup(batch, targets)
-        stats.append([b.mean().item(), b.std().item(), t.mean().item(), t.std().item()])
-    
+        for b, t in dataloader:
+            stats.append(torch.stack([b.mean(), b.std(), t.std()]))
+
     torch.testing.assert_close(
-        torch.tensor(stats).mean(dim=0),
-        torch.tensor([46.9443, 58.3993,  0.5000,  0.1987]), rtol=0.0, atol=1e-4)
+        torch.stack(stats).mean(dim=0),
+        torch.tensor([46.94434738, 64.79092407, 0.23949696])
+    )
