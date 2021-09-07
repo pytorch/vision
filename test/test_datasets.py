@@ -596,9 +596,8 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
             assert tuple(dataset.attr_names) == info["attr_names"]
 
     def test_images_names_split(self):
-        splits = ["train", "valid", "test"]
         with self.create_dataset(split='all') as (dataset, _):
-            all_imgs_names = dataset.filename
+            all_imgs_names = set(dataset.filename)
 
         merged_imgs_names = set()
         for split in ["train", "valid", "test"]:
