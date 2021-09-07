@@ -101,8 +101,6 @@ class CelebA(VisionDataset):
 
         if mask == slice(None):  # if split == all
             self.filename = splits.index
-        elif len(torch.nonzero(mask)) == 1:  # check for the case of a single sample
-            self.filename = [splits.index[torch.nonzero(mask)]]
         else:
             self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]
         self.identity = identity.data[mask]

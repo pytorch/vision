@@ -512,7 +512,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         return dict(num_examples=num_images_per_split[config["split"]], attr_names=attr_names)
 
     def _create_split_txt(self, root):
-        num_images_per_split = dict(train=3, valid=2, test=1)
+        num_images_per_split = dict(train=3, valid=2, test=2)
 
         data = [
             [self._SPLIT_TO_IDX[split]] for split, num_images in num_images_per_split.items() for _ in range(num_images)
