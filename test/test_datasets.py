@@ -600,10 +600,10 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(split='all') as (dataset, _):
             all_imgs_names = dataset.filename
 
-        merged_imgs_names = []
-        for split in splits:
+        merged_imgs_names = set()
+        for split in ["train", "valid", "test"]:
             with self.create_dataset(split=split) as (dataset, _):
-                merged_imgs_names += dataset.filename
+                merged_imgs_names.update(dataset.filename)
 
         assert merged_imgs_names == all_imgs_names
 
