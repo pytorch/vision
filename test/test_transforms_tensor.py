@@ -1,6 +1,8 @@
 import os
 import torch
+from torch._utils_internal import get_file_path_2
 from torchvision import transforms as T
+from torchvision.io import read_image
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
 
@@ -758,3 +760,28 @@ def test_random_mixupcutmix_with_invalid_data():
         t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, ), dtype=torch.int32))
     with pytest.raises(ValueError, match="The batch size should be even."):
         t(torch.rand(31, 3, 60, 60), torch.randint(10, (31, )))
+
+
+def test_random_mixupcutmix_with_real_data():
+    torch.manual_seed(112)
+
+    resize = T.Resize((224, 224))
+    mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0, label_smoothing=0.1)
+
+    images = []
+    for test_file in [("encode_jpeg", "grace_hopper_517x606.jpg"), ("fakedata", "logos", "rgb_pytorch.png")]:
+        fullpath = (os.path.dirname(os.path.abspath(__file__)), 'assets') + test_file
+        img = read_image(get_file_path_2(*fullpath))
+        images.append(resize(img))
+
+    batch = torch.stack(images).to(torch.float32)
+    targets = torch.tensor([0, 1])
+
+    stats = []
+    for _ in range(25):
+        b, t = mixup(batch, targets)
+        stats.append([b.mean().item(), b.std().item(), t.mean().item(), t.std().item()])
+    
+    torch.testing.assert_close(
+        torch.tensor(stats).mean(dim=0),
+        torch.tensor([46.9443, 58.3993,  0.5000,  0.1987]), rtol=0.0, atol=1e-4)
