@@ -595,6 +595,18 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset() as (dataset, info):
             assert tuple(dataset.attr_names) == info["attr_names"]
 
+    def test_images_names_split(self):
+        splits = ["train", "valid", "test"]
+        with self.create_dataset(split='all') as (dataset, _):
+            all_imgs_names = dataset.filename
+
+        merged_imgs_names = []
+        for split in splits:
+            with self.create_dataset(split=split) as (dataset, _):
+                merged_imgs_names += dataset.filename
+
+        assert(merged_imgs_names == all_imgs_names)
+
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.VOCSegmentation
