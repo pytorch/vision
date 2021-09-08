@@ -99,7 +99,7 @@ class CelebA(VisionDataset):
 
         mask = slice(None) if split_ is None else (splits.data == split_).squeeze()
 
-        if mask == slice(None):  # if split == all
+        if mask == slice(None):  # if split == "all"
             self.filename = splits.index
         else:
             self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]
