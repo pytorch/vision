@@ -300,6 +300,8 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
 
+    Reference: `"Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks" <https://arxiv.org/abs/1506.01497>`_.
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
