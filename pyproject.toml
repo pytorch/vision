@@ -1,0 +1,16 @@
+[tool.usort]
+
+[tool.usort.known]
+
+first_party = ["torch", "torchvision"]
+
+[tool.black]
+
+line-length = 120
+target-version = ["py36"]
+
+[tool.ufmt]
+
+excludes = [
+    "gallery",
+]
