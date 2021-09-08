@@ -1992,12 +1992,6 @@ class RandomMixupCutmix(torch.nn.Module):
         self.label_smoothing = label_smoothing
         self.inplace = inplace
 
-        # Torch.distributions.* are not JIT scriptable. see https://github.com/pytorch/pytorch/issues/29843
-        self._mixup_dist = torch.distributions.Beta(self.mixup_alpha,
-                                                    self.mixup_alpha) if self.mixup_alpha > 0 else None
-        self._cutmix_dist = torch.distributions.Beta(self.cutmix_alpha,
-                                                     self.cutmix_alpha) if self.cutmix_alpha > 0 else None
-
     def _smooth_one_hot(self, target: Tensor) -> Tensor:
         N = target.shape[0]
         device = target.device
@@ -2036,19 +2030,19 @@ class RandomMixupCutmix(torch.nn.Module):
         batch_flipped = batch.flip(0)
         target_flipped = target.flip(0)
 
-        if self._mixup_dist is None:
+        if self.mixup_alpha <= 0.0:
             use_mixup = False
         else:
-            use_mixup = self._cutmix_dist is None or torch.rand(1).item() >= self.cutmix_p
+            use_mixup = self.cutmix_alpha <= 0.0 or torch.rand(1).item() >= self.cutmix_p
 
         if use_mixup:
             # Implemented as on mixup paper, page 3.
-            lambda_param = self._mixup_dist.sample().item()
+            lambda_param = float(torch._sample_dirichlet(torch.tensor([self.mixup_alpha, self.mixup_alpha]))[0])
             batch_flipped.mul_(1.0 - lambda_param)
             batch.mul_(lambda_param).add_(batch_flipped)
         else:
             # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
-            lambda_param = self._cutmix_dist.sample().item()
+            lambda_param = float(torch._sample_dirichlet(torch.tensor([self.cutmix_alpha, self.cutmix_alpha]))[0])
             W, H = F.get_image_size(batch)
 
             r_x = torch.randint(W, (1,))
@@ -2058,10 +2052,10 @@ class RandomMixupCutmix(torch.nn.Module):
             r_w_half = int(r * W)
             r_h_half = int(r * H)
 
-            x1 = torch.clamp(r_x - r_w_half, min=0)
-            y1 = torch.clamp(r_y - r_h_half, min=0)
-            x2 = torch.clamp(r_x + r_w_half, max=W)
-            y2 = torch.clamp(r_y + r_h_half, max=H)
+            x1 = int(torch.clamp(r_x - r_w_half, min=0))
+            y1 = int(torch.clamp(r_y - r_h_half, min=0))
+            x2 = int(torch.clamp(r_x + r_w_half, max=W))
+            y2 = int(torch.clamp(r_y + r_h_half, max=H))
 
             batch[:, :, y1:y2, x1:x2] = batch_flipped[:, :, y1:y2, x1:x2]
             lambda_param = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))

@@ -731,19 +731,23 @@ def test_gaussian_blur(device, meth_kwargs):
 @pytest.mark.parametrize('label_smoothing', [0.0, 0.1])
 @pytest.mark.parametrize('inplace', [True, False])
 def test_random_mixupcutmix(device, alphas, label_smoothing, inplace):
-    batch_size = 4
+    batch_size = 32
     num_classes = 10
     batch = torch.rand(batch_size, 3, 44, 56, device=device)
     targets = torch.randint(num_classes, (batch_size, ), device=device, dtype=torch.int64)
 
-    trans = T.RandomMixupCutmix(num_classes, label_smoothing=label_smoothing, inplace=inplace, **alphas)
+    fn = T.RandomMixupCutmix(num_classes, label_smoothing=label_smoothing, inplace=inplace, **alphas)
+    scripted_fn = torch.jit.script(fn)
 
-    original_shape = batch.shape
-    batch, targets = trans(batch, targets)
-    assert batch.shape == original_shape
-    assert targets.shape == (batch_size, num_classes)
+    seed = torch.seed()
+    output = fn(batch.clone(), targets.clone())
 
-    trans.__repr__()
+    torch.manual_seed(seed)
+    output_scripted = scripted_fn(batch.clone(), targets.clone())
+    assert_equal(output[0], output_scripted[0])
+    assert_equal(output[1], output_scripted[1])
+
+    fn.__repr__()
 
 
 def test_random_mixupcutmix_with_invalid_data():
