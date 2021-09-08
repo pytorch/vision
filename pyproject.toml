@@ -1,5 +1,3 @@
-[tool.usort]
-
 [tool.usort.known]
 
 first_party = ["torch", "torchvision"]
