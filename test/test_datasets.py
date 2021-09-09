@@ -512,7 +512,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         return dict(num_examples=num_images_per_split[config["split"]], attr_names=attr_names)
 
     def _create_split_txt(self, root):
-        num_images_per_split = dict(train=3, valid=2, test=1)
+        num_images_per_split = dict(train=4, valid=3, test=2)
 
         data = [
             [self._SPLIT_TO_IDX[split]] for split, num_images in num_images_per_split.items() for _ in range(num_images)
@@ -594,6 +594,17 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
     def test_attr_names(self):
         with self.create_dataset() as (dataset, info):
             assert tuple(dataset.attr_names) == info["attr_names"]
+
+    def test_images_names_split(self):
+        with self.create_dataset(split='all') as (dataset, _):
+            all_imgs_names = set(dataset.filename)
+
+        merged_imgs_names = set()
+        for split in ["train", "valid", "test"]:
+            with self.create_dataset(split=split) as (dataset, _):
+                merged_imgs_names.update(dataset.filename)
+
+        assert merged_imgs_names == all_imgs_names
 
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):

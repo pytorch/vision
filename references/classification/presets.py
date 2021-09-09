@@ -11,6 +11,8 @@ class ClassificationPresetTrain:
         if auto_augment_policy is not None:
             if auto_augment_policy == "ra":
                 trans.append(autoaugment.RandAugment())
+            elif auto_augment_policy == "ta_wide":
+                trans.append(autoaugment.TrivialAugmentWide())
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
                 trans.append(autoaugment.AutoAugment(policy=aa_policy))

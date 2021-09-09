@@ -22,7 +22,7 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py --data-
 ```
 
 **Note:** all our models were trained on 8 nodes with 8 V100 GPUs each for a total of 64 GPUs. Expected training time for 64 GPUs is 24 hours, depending on the storage solution.
-**Note 2:** hyperparameters for exact replication of our training can be found [here](https://github.com/pytorch/vision/blob/master/torchvision/models/video/README.md). Some hyperparameters such as learning rate are scaled linearly in proportion to the number of GPUs.
+**Note 2:** hyperparameters for exact replication of our training can be found [here](https://github.com/pytorch/vision/blob/main/torchvision/models/video/README.md). Some hyperparameters such as learning rate are scaled linearly in proportion to the number of GPUs.
 
 ### Single GPU 
 
