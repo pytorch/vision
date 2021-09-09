@@ -1,6 +1,23 @@
+[tool.usort]
+
+categories = [
+    "future",
+    "standard_library",
+    "third_party",
+    "pytorch",
+    "first_party",
+    "local_utils",
+]
+
 [tool.usort.known]
 
-first_party = ["torch", "torchvision"]
+pytorch = ["torch"]
+first_party = ["torchvision"]
+local_utils = [
+    "_utils_internal",
+    "common_utils",
+    "dataset_utils",
+]
 
 [tool.black]
 
