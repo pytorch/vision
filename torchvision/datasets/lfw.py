@@ -15,7 +15,15 @@ class _LFW(VisionDataset):
         'funneled': ("lfw_funneled", "lfw-funneled.tgz", "1b42dfed7d15c9b2dd63d5e5840c86ad"),
         'deepfunneled': ("lfw-deepfunneled", "lfw-deepfunneled.tgz", "68331da3eb755a505a502b5aacb3c201")
     }
-
+    checksums = {
+        'pairs.txt': '9f1ba174e4e1c508ff7cdf10ac338a7d',
+        'pairsDevTest.txt': '5132f7440eb68cf58910c8a45a2ac10b',
+        'pairsDevTrain.txt': '4f27cbf15b2da4a85c1907eb4181ad21',
+        'people.txt': '450f0863dd89e85e73936a6d71a3474b',
+        'peopleDevTest.txt': 'e4bf5be0a43b5dcd9dc5ccfcb8fb19c5',
+        'peopleDevTrain.txt': '54eaac34beb6d042ed3a7d883e247a21',
+        'lfw-names.txt': 'a6d0a479bd074669f656265a6e693f6d'
+    }
     annot_file = {'10fold': '', 'train': 'DevTrain', 'test': 'DevTest'}
     names = "lfw-names.txt"
 
@@ -55,11 +63,12 @@ class _LFW(VisionDataset):
             return img.convert('RGB')
 
     def _check_integrity(self):
-        if not check_integrity(os.path.join(self.root, self.filename), self.md5) \
-            or not check_integrity(os.path.join(self.root, self.labels_file)):
+        st1 = check_integrity(os.path.join(self.root, self.filename), self.md5)
+        st2 = check_integrity(os.path.join(self.root, self.labels_file), self.checksums[self.labels_file])
+        if not st1 or not st2:
             return False
         if self.view == "people":
-            return check_integrity(os.path.join(self.root, self.names))
+            return check_integrity(os.path.join(self.root, self.names), self.checksums[self.names])
         return True
 
     def download(self):
