@@ -1971,15 +1971,13 @@ class RandomMixupCutmix(torch.nn.Module):
             Default value is 0.5.
         cutmix_alpha (float): hyperparameter of the Beta distribution used for cutmix.
             Set to 0.0 to turn off. Default value is 0.0.
-        label_smoothing (float): the amount of smoothing using when one-hot encoding.
-            Set to 0.0 to turn off. Default value is 0.0.
         inplace (bool): boolean to make this transform inplace. Default set to False.
     """
 
     def __init__(self, num_classes: int,
                  p: float = 1.0, mixup_alpha: float = 1.0,
                  cutmix_p: float = 0.5, cutmix_alpha: float = 0.0,
-                 label_smoothing: float = 0.0, inplace: bool = False) -> None:
+                 inplace: bool = False) -> None:
         super().__init__()
         assert num_classes > 0, "Please provide a valid positive value for the num_classes."
         assert mixup_alpha > 0 or cutmix_alpha > 0, "Both alpha params can't be zero."
@@ -1989,15 +1987,7 @@ class RandomMixupCutmix(torch.nn.Module):
         self.mixup_alpha = mixup_alpha
         self.cutmix_p = cutmix_p
         self.cutmix_alpha = cutmix_alpha
-        self.label_smoothing = label_smoothing
         self.inplace = inplace
-
-    def _smooth_one_hot(self, target: Tensor) -> Tensor:
-        N = target.shape[0]
-        device = target.device
-        v = torch.full(size=(N, 1), fill_value=1 - self.label_smoothing, device=device)
-        return torch.full(size=(N, self.num_classes), fill_value=self.label_smoothing / self.num_classes,
-                          device=device).scatter_add_(1, target.unsqueeze(1), v)
 
     def forward(self, batch: Tensor, target: Tensor) -> Tuple[Tensor, Tensor]:
         """
@@ -2014,21 +2004,18 @@ class RandomMixupCutmix(torch.nn.Module):
             raise ValueError("Target ndim should be 1. Got {}".format(target.ndim))
         elif target.dtype != torch.int64:
             raise ValueError("Target dtype should be torch.int64. Got {}".format(target.dtype))
-        elif batch.size(0) % 2 != 0:
-            # speed optimization, see below
-            raise ValueError("The batch size should be even.")
 
         if not self.inplace:
             batch = batch.clone()
             # target = target.clone()
 
-        target = self._smooth_one_hot(target)
+        target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
         if torch.rand(1).item() >= self.p:
             return batch, target
 
-        # It's faster to flip the batch instead of shuffling it to create image pairs
-        batch_flipped = batch.flip(0)
-        target_flipped = target.flip(0)
+        # It's faster to roll the batch by one instead of shuffling it to create image pairs
+        batch_flipped = batch.roll(1)
+        target_flipped = target.roll(1)
 
         if self.mixup_alpha <= 0.0:
             use_mixup = False
@@ -2072,7 +2059,6 @@ class RandomMixupCutmix(torch.nn.Module):
         s += ', mixup_alpha={mixup_alpha}'
         s += ', cutmix_p={cutmix_p}'
         s += ', cutmix_alpha={cutmix_alpha}'
-        s += ', label_smoothing={label_smoothing}'
         s += ', inplace={inplace}'
         s += ')'
         return s.format(**self.__dict__)

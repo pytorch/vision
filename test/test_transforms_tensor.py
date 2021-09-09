@@ -728,15 +728,14 @@ def test_gaussian_blur(device, meth_kwargs):
     {"mixup_alpha": 0.0, "cutmix_alpha": 1.0},
     {"mixup_alpha": 1.0, "cutmix_alpha": 0.0},
 ])
-@pytest.mark.parametrize('label_smoothing', [0.0, 0.1])
 @pytest.mark.parametrize('inplace', [True, False])
-def test_random_mixupcutmix(device, alphas, label_smoothing, inplace):
+def test_random_mixupcutmix(device, alphas, inplace):
     batch_size = 32
     num_classes = 10
     batch = torch.rand(batch_size, 3, 44, 56, device=device)
     targets = torch.randint(num_classes, (batch_size, ), device=device, dtype=torch.int64)
 
-    fn = T.RandomMixupCutmix(num_classes, label_smoothing=label_smoothing, inplace=inplace, **alphas)
+    fn = T.RandomMixupCutmix(num_classes, inplace=inplace, **alphas)
     scripted_fn = torch.jit.script(fn)
 
     seed = torch.seed()
@@ -763,8 +762,6 @@ def test_random_mixupcutmix_with_invalid_data():
         t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, 1)))
     with pytest.raises(ValueError, match="Target dtype should be torch.int64."):
         t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, ), dtype=torch.int32))
-    with pytest.raises(ValueError, match="The batch size should be even."):
-        t(torch.rand(31, 3, 60, 60), torch.randint(10, (31, )))
 
 
 def test_random_mixupcutmix_with_real_data():
@@ -779,7 +776,7 @@ def test_random_mixupcutmix_with_real_data():
     dataset = TensorDataset(torch.stack(images).to(torch.float32), torch.tensor([0, 1]))
 
     # Use mixup in the collate
-    mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0, label_smoothing=0.1)
+    mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0)
     dataloader = DataLoader(dataset, batch_size=2,
                             collate_fn=lambda batch: mixup(*(torch.stack(x) for x in zip(*batch))))
 
@@ -791,5 +788,5 @@ def test_random_mixupcutmix_with_real_data():
 
     torch.testing.assert_close(
         torch.stack(stats).mean(dim=0),
-        torch.tensor([46.94434738, 64.79092407, 0.23949696])
+        torch.tensor([46.931968688964844, 69.97343444824219, 0.459820032119751])
     )
