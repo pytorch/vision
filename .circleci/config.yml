@@ -190,7 +190,7 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
-      - run: pip install --user --progress-bar=off ufmt>=1.3 usort==0.6.4 black==21.8b0 flake8
+      - run: pip install --user --progress-bar=off "ufmt>=1.3" usort==0.6.4 black==21.8b0 flake8
       - run: ufmt check .
       - run: flake8 --config=setup.cfg .
 
