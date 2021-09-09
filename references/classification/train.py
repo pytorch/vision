@@ -165,10 +165,16 @@ def main(args):
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
+
+    collate_fn = None
+    if args.mixup_alpha > 0.0 or args.cutmix_alpha > 0.0:
+        mixupcutmix = torchvision.transforms.RandomMixupCutmix(len(dataset.classes), mixup_alpha=args.mixup_alpha,
+                                                               cutmix_alpha=args.cutmix_alpha)
+        collate_fn = lambda batch: mixupcutmix(*torch.utils.data._utils.collate.default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
-
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True,
+        collate_fn=collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
@@ -273,6 +279,8 @@ def get_args_parser(add_help=True):
     parser.add_argument('--label-smoothing', default=0.0, type=float,
                         help='label smoothing (default: 0.0)',
                         dest='label_smoothing')
+    parser.add_argument('--mixup-alpha', default=0.0, type=float, help='mixup alpha (default: 0.0)')
+    parser.add_argument('--cutmix-alpha', default=0.0, type=float, help='cutmix alpha (default: 0.0)')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')

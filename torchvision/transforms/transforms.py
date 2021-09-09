@@ -1955,8 +1955,9 @@ class RandomEqualize(torch.nn.Module):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
+# TODO: move this to references before merging and delete the tests
 class RandomMixupCutmix(torch.nn.Module):
-    """Randomly apply Mixum or Cutmix to the provided batch and targets.
+    """Randomly apply Mixup or Cutmix to the provided batch and targets.
     The class implements the data augmentations as described in the papers
     `"mixup: Beyond Empirical Risk Minimization" <https://arxiv.org/abs/1710.09412>`_ and
     `"CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features"
@@ -2014,8 +2015,8 @@ class RandomMixupCutmix(torch.nn.Module):
             return batch, target
 
         # It's faster to roll the batch by one instead of shuffling it to create image pairs
-        batch_flipped = batch.roll(1)
-        target_flipped = target.roll(1)
+        batch_rolled = batch.roll(1, 0)
+        target_rolled = target.roll(1)
 
         if self.mixup_alpha <= 0.0:
             use_mixup = False
@@ -2025,8 +2026,8 @@ class RandomMixupCutmix(torch.nn.Module):
         if use_mixup:
             # Implemented as on mixup paper, page 3.
             lambda_param = float(torch._sample_dirichlet(torch.tensor([self.mixup_alpha, self.mixup_alpha]))[0])
-            batch_flipped.mul_(1.0 - lambda_param)
-            batch.mul_(lambda_param).add_(batch_flipped)
+            batch_rolled.mul_(1.0 - lambda_param)
+            batch.mul_(lambda_param).add_(batch_rolled)
         else:
             # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
             lambda_param = float(torch._sample_dirichlet(torch.tensor([self.cutmix_alpha, self.cutmix_alpha]))[0])
@@ -2044,11 +2045,11 @@ class RandomMixupCutmix(torch.nn.Module):
             x2 = int(torch.clamp(r_x + r_w_half, max=W))
             y2 = int(torch.clamp(r_y + r_h_half, max=H))
 
-            batch[:, :, y1:y2, x1:x2] = batch_flipped[:, :, y1:y2, x1:x2]
+            batch[:, :, y1:y2, x1:x2] = batch_rolled[:, :, y1:y2, x1:x2]
             lambda_param = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
-        target_flipped.mul_(1.0 - lambda_param)
-        target.mul_(lambda_param).add_(target_flipped)
+        target_rolled.mul_(1.0 - lambda_param)
+        target.mul_(lambda_param).add_(target_rolled)
 
         return batch, target
 

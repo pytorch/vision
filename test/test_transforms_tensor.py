@@ -788,5 +788,5 @@ def test_random_mixupcutmix_with_real_data():
 
     torch.testing.assert_close(
         torch.stack(stats).mean(dim=0),
-        torch.tensor([46.931968688964844, 69.97343444824219, 0.459820032119751])
+        torch.tensor([46.9443473815918, 64.79092407226562, 0.459820032119751])
     )
