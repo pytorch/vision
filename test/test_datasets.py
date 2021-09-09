@@ -1842,7 +1842,7 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         with open(pathlib.Path(root) / f"people{self._split[split]}.txt", "w") as f:
             f.writelines(flines)
         with open(pathlib.Path(root) / "lfw-names.txt", "w") as f:
-            f.writelines(names)
+            f.writelines(sorted(names))
 
         return num_examples
 
