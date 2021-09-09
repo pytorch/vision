@@ -39,7 +39,7 @@ class TestFxFeatureExtraction:
         'num_classes': 1,
         'pretrained': False
     }
-    leaf_modules = [torchvision.ops.StochasticDepth]
+    leaf_modules = []
 
     def _create_feature_extractor(self, *args, **kwargs):
         """
