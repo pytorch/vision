@@ -205,7 +205,7 @@ def main(args):
 
     model_ema = None
     if args.model_ema:
-        model_ema = utils.ExponentialMovingAverage(model, device=device, decay=args.model_ema_decay)
+        model_ema = utils.ExponentialMovingAverage(model_without_ddp, device=device, decay=args.model_ema_decay)
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
