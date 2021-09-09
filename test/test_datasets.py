@@ -1838,7 +1838,7 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
     def _create_random_id(self):
         part1 = datasets_utils.create_random_string(random.randint(5, 7))
         part2 = datasets_utils.create_random_string(random.randint(4, 7))
-        return f"{part1}_{part2}" 
+        return f"{part1}_{part2}"
 
 
 class LFWPairsTestCase(LFWPeopleTestCase):

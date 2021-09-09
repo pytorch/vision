@@ -55,7 +55,8 @@ class _LFW(VisionDataset):
             return img.convert('RGB')
 
     def _check_integrity(self):
-        if not check_integrity(os.path.join(self.root, self.filename), self.md5) or not check_integrity(os.path.join(self.root, self.labels_file)):
+        if not check_integrity(os.path.join(self.root, self.filename), self.md5) \
+            or not check_integrity(os.path.join(self.root, self.labels_file)):
             return False
         if self.view == "people":
             return check_integrity(os.path.join(self.root, self.names))
@@ -209,7 +210,7 @@ class LFWPairs(_LFW):
             else:
                 n_folds, n_pairs = 1, int(lines[0])
             s = 1
-            
+
             for fold in range(n_folds):
                 matched_pairs = [line.strip().split("\t") for line in lines[s: s + n_pairs]]
                 unmatched_pairs = [line.strip().split("\t") for line in lines[s + n_pairs: s + (2 * n_pairs)]]
