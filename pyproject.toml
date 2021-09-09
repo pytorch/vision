@@ -6,14 +6,16 @@ categories = [
     "third_party",
     "pytorch",
     "first_party",
-    "local_utils",
+    "local_test_utils",
 ]
 
 [tool.usort.known]
 
 pytorch = ["torch"]
 first_party = ["torchvision"]
-local_utils = [
+# These are local utilities in our test/ folder. Since that folder is not a Python package, i.e. test/__init__.py is
+# missing, usort mistakes these modules as third party packages.
+local_test_utils = [
     "_utils_internal",
     "common_utils",
     "dataset_utils",
