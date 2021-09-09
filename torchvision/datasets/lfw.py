@@ -32,8 +32,8 @@ class _LFW(VisionDataset):
         super(_LFW, self).__init__(os.path.join(root, self.base_folder),
                                    transform=transform, target_transform=target_transform)
 
-        image_set = verify_str_arg(image_set.lower(), 'image_set', self.file_dict.keys())
-        images_dir, self.filename, self.md5 = self.file_dict[image_set]
+        self.image_set = verify_str_arg(image_set.lower(), 'image_set', self.file_dict.keys())
+        images_dir, self.filename, self.md5 = self.file_dict[self.image_set]
 
         self.view = verify_str_arg(view.lower(), 'view', ['people', 'pairs'])
         self.split = verify_str_arg(split.lower(), 'split', ['10fold', 'train', 'test'])
@@ -75,7 +75,7 @@ class _LFW(VisionDataset):
         return os.path.join(self.images_dir, identity, f"{identity}_{int(no):04d}.jpg")
 
     def extra_repr(self) -> str:
-        return "Split: {}".format(self.split)
+        return f"Alignment: {self.image_set}\nSplit: {self.split}"
 
     def __len__(self):
         return len(self.data)
@@ -87,12 +87,12 @@ class LFWPeople(_LFW):
     Args:
         root (string): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
-        train (bool, optional): If True, creates dataset from "DevTrain" set, otherwise
-            creates from "DevTest" set.
+        split (string, optional): The image split to use. Can be one of ``train`` (default), ``test``,
+            ``10fold``.
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
             ``deepfunneled``. Defaults to ``original``.
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.RandomCrop``
+            and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -104,7 +104,7 @@ class LFWPeople(_LFW):
     def __init__(
         self,
         root: str,
-        split: str = "10fold",
+        split: str = "train",
         image_set: str = "funneled",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -117,15 +117,15 @@ class LFWPeople(_LFW):
         self.data, self.targets = self._get_people()
 
     def _get_people(self):
+        data, targets = [], []
         with open(os.path.join(self.root, self.labels_file), 'r') as f:
             lines = f.readlines()
-            n_folds, s = int(lines[0]), 1 if self.split == "10fold" else 1, 0
+            n_folds, s = (int(lines[0]), 1) if self.split == "10fold" else (1, 0)
 
-            data, target = [], []
             for fold in range(n_folds):
                 n_lines = int(lines[s])
-                people = [line.strip().split("\t") for line in lines[s + 1: s + n_lines + 2]]
-                s += n_lines + 2
+                people = [line.strip().split("\t") for line in lines[s + 1: s + n_lines + 1]]
+                s += n_lines + 1
                 for i, (identity, num_imgs) in enumerate(people):
                     for num in range(1, int(num_imgs) + 1):
                         img = self._get_path(identity, num)
@@ -162,7 +162,7 @@ class LFWPeople(_LFW):
         return img, target
 
     def extra_repr(self) -> str:
-        return "No. of classes: {}".format(len(self.class_to_idx))
+        return super().extra_repr() + "\nClasses (identities): {}".format(len(self.class_to_idx))
 
 
 class LFWPairs(_LFW):
@@ -171,12 +171,12 @@ class LFWPairs(_LFW):
     Args:
         root (string): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
-        train (bool, optional): If True, creates dataset from "DevTrain" set, otherwise
-            creates from "DevTest" set.
+        split (string, optional): The image split to use. Can be one of ``train``, ``test``,
+            ``10fold``. Defaults to ``10fold``.
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
             ``deepfunneled``. Defaults to ``original``.
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.RandomCrop``
+            and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -200,6 +200,7 @@ class LFWPairs(_LFW):
         self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)
 
     def _get_pairs(self, images_dir):
+        pair_names, data, targets = [], [], []
         with open(os.path.join(self.root, self.labels_file), 'r') as f:
             lines = f.readlines()
             if self.split == "10fold":
@@ -208,7 +209,7 @@ class LFWPairs(_LFW):
             else:
                 n_folds, n_pairs = 1, int(lines[0])
             s = 1
-            pair_names, data, targets = [], [], []
+            
             for fold in range(n_folds):
                 matched_pairs = [line.strip().split("\t") for line in lines[s: s + n_pairs]]
                 unmatched_pairs = [line.strip().split("\t") for line in lines[s + n_pairs: s + (2 * n_pairs)]]
@@ -247,6 +248,3 @@ class LFWPairs(_LFW):
             target = self.target_transform(target)
 
         return img1, img2, target
-
-    def extra_repr(self) -> str:
-        return "Split: {}".format(self.split)

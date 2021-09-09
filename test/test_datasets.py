@@ -1794,7 +1794,7 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
     DATASET_CLASS = datasets.LFWPeople
     FEATURE_TYPES = (PIL.Image.Image, int)
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        train=(True, False),
+        split=('10fold', 'train', 'test'),
         image_set=('original', 'funneled', 'deepfunneled')
     )
     _IMAGES_DIR = {
@@ -1802,36 +1802,43 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         "funneled": "lfw_funneled",
         "deepfunneled": "lfw-deepfunneled"
     }
+    _split = {'10fold': '', 'train': 'DevTrain', 'test': 'DevTest'}
 
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "lfw-py"
         os.makedirs(tmpdir, exist_ok=True)
-        split = "Train" if config["train"] else "Test"
         return dict(
-            num_examples=self._create_images_dir(tmpdir, self._IMAGES_DIR[config["image_set"]], split),
-            split=split
+            num_examples=self._create_images_dir(tmpdir, self._IMAGES_DIR[config["image_set"]], config["split"]),
+            split=config["split"]
         )
 
     def _create_images_dir(self, root, idir, split):
         idir = os.path.join(root, idir)
         os.makedirs(idir, exist_ok=True)
-        num_people = 4
+        n, flines = (10, ["10\n"]) if split == "10fold" else (1, [])
         num_examples = 0
-        flines = [str(num_people)]
-        for i in range(num_people):
-            name = self._create_random_id()
-            no = random.randint(1, 10)
-            flines.append(f"\n{name}\t{no}")
-            datasets_utils.create_image_folder(idir, name, lambda n: f"{name}_{n+1:04d}.jpg", no, 250)
-            num_examples += no
-        with open(pathlib.Path(root) / f"peopleDev{split}.txt", "w") as f:
+        names = []
+        for _ in range(n):
+            num_people = random.randint(2, 5)
+            flines.append(f"{num_people}\n")
+            for i in range(num_people):
+                name = self._create_random_id()
+                no = random.randint(1, 10)
+                flines.append(f"{name}\t{no}\n")
+                names.append(f"{name}\t{no}\n")
+                datasets_utils.create_image_folder(idir, name, lambda n: f"{name}_{n+1:04d}.jpg", no, 250)
+                num_examples += no
+        with open(pathlib.Path(root) / f"people{self._split[split]}.txt", "w") as f:
             f.writelines(flines)
+        with open(pathlib.Path(root) / "lfw-names.txt", "w") as f:
+            f.writelines(names)
 
         return num_examples
 
     def _create_random_id(self):
-        return datasets_utils.create_random_string(random.randint(5, 7)) + '_' \
-            + datasets_utils.create_random_string(random.randint(4, 7))
+        part1 = datasets_utils.create_random_string(random.randint(5, 7))
+        part2 = datasets_utils.create_random_string(random.randint(4, 7))
+        return f"{part1}_{part2}" 
 
 
 class LFWPairsTestCase(LFWPeopleTestCase):
@@ -1841,26 +1848,28 @@ class LFWPairsTestCase(LFWPeopleTestCase):
     def _create_images_dir(self, root, idir, split):
         idir = os.path.join(root, idir)
         os.makedirs(idir, exist_ok=True)
-        num_pairs = 7  # effectively 7*2 = 14
-        flines = [str(num_pairs)]
+        num_pairs = 7  # effectively 7*2*n = 14*n
+        n, self.flines = (10, [f"10\t{num_pairs}"]) if split == "10fold" else (1, [str(num_pairs)])
+        for _ in range(n):
+            self._inject_pairs(idir, num_pairs, True)
+            self._inject_pairs(idir, num_pairs, False)
+            with open(pathlib.Path(root) / f"pairs{self._split[split]}.txt", "w") as f:
+                f.writelines(self.flines)
+
+        return num_pairs * 2 * n
+
+    def _inject_pairs(self, root, num_pairs, same):
         for i in range(num_pairs):
             name1 = self._create_random_id()
+            name2 = name1 if same else self._create_random_id()
             no1, no2 = random.randint(1, 100), random.randint(1, 100)
-            flines.append(f"\n{name1}\t{no1}\t{no2}")
-            self._create_id_folder(idir, name1, no1, name1, no2)
-        for i in range(num_pairs):
-            name1, name2 = self._create_random_id(), self._create_random_id()
-            no1, no2 = random.randint(1, 100), random.randint(1, 100)
-            flines.append(f"\n{name1}\t{no1}\t{name2}\t{no2}")
-            self._create_id_folder(idir, name1, no1, name2, no2)
-        with open(pathlib.Path(root) / f"pairsDev{split}.txt", "w") as f:
-            f.writelines(flines)
+            if same:
+                self.flines.append(f"\n{name1}\t{no1}\t{no2}")
+            else:
+                self.flines.append(f"\n{name1}\t{no1}\t{name2}\t{no2}")
 
-        return num_pairs * 2
-
-    def _create_id_folder(self, root, name1, no1, name2, no2):
-        datasets_utils.create_image_folder(root, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
-        datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
+            datasets_utils.create_image_folder(root, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
+            datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
 
 
 if __name__ == "__main__":
