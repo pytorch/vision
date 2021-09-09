@@ -245,7 +245,7 @@ class AutoAugment(torch.nn.Module):
 class RandAugment(torch.nn.Module):
     r"""RandAugment data augmentation method based on
     `"RandAugment: Practical automated data augmentation with a reduced search space"
-    <https://arxiv.org/abs/1909.13719>`.
+    <https://arxiv.org/abs/1909.13719>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
@@ -293,6 +293,7 @@ class RandAugment(torch.nn.Module):
     def forward(self, img: Tensor) -> Tensor:
         """
             img (PIL Image or Tensor): Image to be transformed.
+
         Returns:
             PIL Image or Tensor: Transformed image.
         """
