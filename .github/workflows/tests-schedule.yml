@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: 3.6
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+      - name: Upgrade system packages
+        run: python -m pip install --upgrade pip setuptools wheel
 
       - name: Checkout repository
         uses: actions/checkout@v2

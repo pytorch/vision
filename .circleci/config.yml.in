@@ -240,7 +240,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off .
+            pip install --user --progress-bar off --no-build-isolation .
             pip install pytest
             python test/test_hub.py
 
@@ -253,7 +253,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off .
+            pip install --user --progress-bar off --no-build-isolation .
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
