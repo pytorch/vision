@@ -139,9 +139,8 @@ class LFWPeople(_LFW):
                 for i, (identity, num_imgs) in enumerate(people):
                     for num in range(1, int(num_imgs) + 1):
                         img = self._get_path(identity, num)
-                        if os.path.exists(img):
-                            data.append(img)
-                            targets.append(self.class_to_idx[identity])
+                        data.append(img)
+                        targets.append(self.class_to_idx[identity])
 
         return data, targets
 
@@ -226,16 +225,14 @@ class LFWPairs(_LFW):
                 s += (2 * n_pairs)
                 for pair in matched_pairs:
                     img1, img2, same = self._get_path(pair[0], pair[1]), self._get_path(pair[0], pair[2]), 1
-                    if os.path.exists(img1) and os.path.exists(img2):
-                        pair_names.append((pair[0], pair[0]))
-                        data.append((img1, img2))
-                        targets.append(same)
+                    pair_names.append((pair[0], pair[0]))
+                    data.append((img1, img2))
+                    targets.append(same)
                 for pair in unmatched_pairs:
                     img1, img2, same = self._get_path(pair[0], pair[1]), self._get_path(pair[2], pair[3]), 0
-                    if os.path.exists(img1) and os.path.exists(img2):
-                        pair_names.append((pair[0], pair[2]))
-                        data.append((img1, img2))
-                        targets.append(same)
+                    pair_names.append((pair[0], pair[2]))
+                    data.append((img1, img2))
+                    targets.append(same)
 
         return pair_names, data, targets
 
