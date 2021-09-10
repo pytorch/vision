@@ -7,11 +7,8 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
-      - id: no-commit-to-branch
-      - id: check-added-large-files
       - id: check-docstring-first
       - id: check-toml
       - id: check-yaml
         exclude: packaging/.*
-      - id: check-json
       - id: end-of-file-fixer
