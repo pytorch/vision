@@ -34,6 +34,7 @@ architectures, and common image transformations for computer vision.
    datasets
    io
    models
+   feature_extraction
    ops
    transforms
    utils

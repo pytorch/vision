@@ -1,5 +1,7 @@
 #include "inception.h"
 
+#include "modelsimpl.h"
+
 namespace vision {
 namespace models {
 
@@ -297,6 +299,8 @@ InceptionV3Impl::InceptionV3Impl(
   register_module("Mixed_7b", Mixed_7b);
   register_module("Mixed_7c", Mixed_7c);
   register_module("fc", fc);
+
+  modelsimpl::deprecation_warning();
 }
 
 InceptionV3Output InceptionV3Impl::forward(torch::Tensor x) {
