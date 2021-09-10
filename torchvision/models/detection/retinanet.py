@@ -153,9 +153,6 @@ class RetinaNetRegressionHead(nn.Module):
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
     """
-    __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-    }
 
     def __init__(self, in_channels, num_anchors):
         super().__init__()
@@ -309,10 +306,6 @@ class RetinaNet(nn.Module):
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
-    __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-        'proposal_matcher': det_utils.Matcher,
-    }
 
     def __init__(self, backbone, num_classes,
                  # transform parameters

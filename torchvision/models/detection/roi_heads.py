@@ -483,11 +483,6 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
 
 
 class RoIHeads(nn.Module):
-    __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-        'proposal_matcher': det_utils.Matcher,
-        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
-    }
 
     def __init__(self,
                  box_roi_pool,

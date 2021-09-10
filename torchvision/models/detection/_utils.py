@@ -2,13 +2,13 @@ import math
 import torch
 
 from collections import OrderedDict
-from torch import Tensor
+from torch import Tensor, nn
 from typing import List, Tuple
 
 from torchvision.ops.misc import FrozenBatchNorm2d
 
 
-class BalancedPositiveNegativeSampler(object):
+class BalancedPositiveNegativeSampler(nn.Module):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
@@ -20,10 +20,11 @@ class BalancedPositiveNegativeSampler(object):
             batch_size_per_image (int): number of elements to be selected per image
             positive_fraction (float): percentace of positive elements per batch
         """
+        super().__init__()
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def __call__(self, matched_idxs):
+    def forward(self, matched_idxs):
         # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
         Args:
@@ -126,7 +127,7 @@ def encode_boxes(reference_boxes, proposals, weights):
     return targets
 
 
-class BoxCoder(object):
+class BoxCoder(nn.Module):
     """
     This class encodes and decodes a set of bounding boxes into
     the representation used for training the regressors.
@@ -139,6 +140,7 @@ class BoxCoder(object):
             weights (4-element tuple)
             bbox_xform_clip (float)
         """
+        super().__init__()
         self.weights = weights
         self.bbox_xform_clip = bbox_xform_clip
 
@@ -228,7 +230,7 @@ class BoxCoder(object):
         return pred_boxes
 
 
-class Matcher(object):
+class Matcher(nn.Module):
     """
     This class assigns to each predicted "element" (e.g., a box) a ground-truth
     element. Each predicted element will have exactly zero or one matches; each
@@ -266,6 +268,7 @@ class Matcher(object):
                 for predictions that have only low-quality match candidates. See
                 set_low_quality_matches_ for more details.
         """
+        super().__init__()
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
         assert low_threshold <= high_threshold
@@ -273,7 +276,10 @@ class Matcher(object):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def __call__(self, match_quality_matrix):
+    def forward(self, match_quality_matrix):
+        return self._forward_impl(match_quality_matrix)
+
+    def _forward_impl(self, match_quality_matrix):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -354,8 +360,8 @@ class SSDMatcher(Matcher):
     def __init__(self, threshold):
         super().__init__(threshold, threshold, allow_low_quality_matches=False)
 
-    def __call__(self, match_quality_matrix):
-        matches = super().__call__(match_quality_matrix)
+    def forward(self, match_quality_matrix):
+        matches = self._forward_impl(match_quality_matrix)
 
         # For each gt, find the prediction with which it has the highest quality
         _, highest_quality_pred_foreach_gt = match_quality_matrix.max(dim=1)

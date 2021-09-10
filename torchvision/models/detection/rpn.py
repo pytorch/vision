@@ -126,9 +126,6 @@ class RegionProposalNetwork(torch.nn.Module):
 
     """
     __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-        'proposal_matcher': det_utils.Matcher,
-        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
         'pre_nms_top_n': Dict[str, int],
         'post_nms_top_n': Dict[str, int],
     }

@@ -159,10 +159,6 @@ class SSD(nn.Module):
             proposals used during the training of the classification head. It is used to estimate the negative to
             positive ratio.
     """
-    __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-        'proposal_matcher': det_utils.Matcher,
-    }
 
     def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator,
                  size: Tuple[int, int], num_classes: int,
