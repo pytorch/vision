@@ -29,7 +29,7 @@ commands:
 #         command: |
 #           set -ex
 #           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-#           if [[ "$BRANCH" != "master" ]]; then
+#           if [[ "$BRANCH" != "main" ]]; then
 #             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
 #             git checkout "merged/$CIRCLE_BRANCH"
 #           fi
@@ -241,7 +241,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --editable .
+            pip install --user --progress-bar off .
             pip install pytest
             python test/test_hub.py
 
@@ -254,7 +254,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --editable .
+            pip install --user --progress-bar off .
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
@@ -936,7 +936,7 @@ jobs:
           command: |
             set -ex
             tag=${CIRCLE_TAG:1:5}
-            VERSION=${tag:-master}
+            VERSION=${tag:-main}
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
             pushd docs
@@ -982,7 +982,7 @@ jobs:
             # https://circleci.com/docs/2.0/configuration-reference/#checkout
             set -ex
             tag=${CIRCLE_TAG:1:5}
-            target=${tag:-master}
+            target=${tag:-main}
             ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
 
 
@@ -1029,7 +1029,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
     jobs:
       - smoke_test_docker_image_build:
           context: org-member
