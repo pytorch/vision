@@ -7,10 +7,9 @@ from pathlib import Path
 import pytest
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, __version__ as PILLOW_VERSION
 import torchvision.transforms.functional as F
-from common_utils import get_tmp_dir, needs_cuda
-from _assert_utils import assert_equal
+from common_utils import needs_cuda, assert_equal
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
@@ -21,7 +20,9 @@ FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
+INTERLACED_PNG = os.path.join(IMAGE_ROOT, "interlaced_png")
 IS_WINDOWS = sys.platform in ('win32', 'cygwin')
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 
 
 def _get_safe_image_name(name):
@@ -141,7 +142,15 @@ def test_decode_png(img_path, pil_mode, mode):
     img_lpng = decode_image(data, mode=mode)
 
     tol = 0 if pil_mode is None else 1
-    assert img_lpng.allclose(img_pil, atol=tol)
+
+    if PILLOW_VERSION >= (8, 3) and pil_mode == "LA":
+        # Avoid checking the transparency channel until
+        # https://github.com/python-pillow/Pillow/issues/5593#issuecomment-878244910
+        # is fixed.
+        # TODO: remove once fix is released in PIL. Should be > 8.3.1.
+        img_lpng, img_pil = img_lpng[0], img_pil[0]
+
+    torch.testing.assert_close(img_lpng, img_pil, atol=tol, rtol=0)
 
 
 def test_decode_png_errors():
@@ -188,74 +197,69 @@ def test_encode_png_errors():
     pytest.param(png_path, id=_get_safe_image_name(png_path))
     for png_path in get_images(IMAGE_DIR, ".png")
 ])
-def test_write_png(img_path):
-    with get_tmp_dir() as d:
-        pil_image = Image.open(img_path)
-        img_pil = torch.from_numpy(np.array(pil_image))
-        img_pil = img_pil.permute(2, 0, 1)
+def test_write_png(img_path, tmpdir):
+    pil_image = Image.open(img_path)
+    img_pil = torch.from_numpy(np.array(pil_image))
+    img_pil = img_pil.permute(2, 0, 1)
 
-        filename, _ = os.path.splitext(os.path.basename(img_path))
-        torch_png = os.path.join(d, '{0}_torch.png'.format(filename))
-        write_png(img_pil, torch_png, compression_level=6)
-        saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
-        saved_image = saved_image.permute(2, 0, 1)
+    filename, _ = os.path.splitext(os.path.basename(img_path))
+    torch_png = os.path.join(tmpdir, '{0}_torch.png'.format(filename))
+    write_png(img_pil, torch_png, compression_level=6)
+    saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
+    saved_image = saved_image.permute(2, 0, 1)
 
-        assert_equal(img_pil, saved_image)
+    assert_equal(img_pil, saved_image)
 
 
-def test_read_file():
-    with get_tmp_dir() as d:
-        fname, content = 'test1.bin', b'TorchVision\211\n'
-        fpath = os.path.join(d, fname)
-        with open(fpath, 'wb') as f:
-            f.write(content)
+def test_read_file(tmpdir):
+    fname, content = 'test1.bin', b'TorchVision\211\n'
+    fpath = os.path.join(tmpdir, fname)
+    with open(fpath, 'wb') as f:
+        f.write(content)
 
-        data = read_file(fpath)
-        expected = torch.tensor(list(content), dtype=torch.uint8)
-        os.unlink(fpath)
-        assert_equal(data, expected)
+    data = read_file(fpath)
+    expected = torch.tensor(list(content), dtype=torch.uint8)
+    os.unlink(fpath)
+    assert_equal(data, expected)
 
     with pytest.raises(RuntimeError, match="No such file or directory: 'tst'"):
         read_file('tst')
 
 
-def test_read_file_non_ascii():
-    with get_tmp_dir() as d:
-        fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
-        fpath = os.path.join(d, fname)
-        with open(fpath, 'wb') as f:
-            f.write(content)
+def test_read_file_non_ascii(tmpdir):
+    fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
+    fpath = os.path.join(tmpdir, fname)
+    with open(fpath, 'wb') as f:
+        f.write(content)
 
-        data = read_file(fpath)
-        expected = torch.tensor(list(content), dtype=torch.uint8)
-        os.unlink(fpath)
-        assert_equal(data, expected)
-
-
-def test_write_file():
-    with get_tmp_dir() as d:
-        fname, content = 'test1.bin', b'TorchVision\211\n'
-        fpath = os.path.join(d, fname)
-        content_tensor = torch.tensor(list(content), dtype=torch.uint8)
-        write_file(fpath, content_tensor)
-
-        with open(fpath, 'rb') as f:
-            saved_content = f.read()
-        os.unlink(fpath)
-        assert content == saved_content
+    data = read_file(fpath)
+    expected = torch.tensor(list(content), dtype=torch.uint8)
+    os.unlink(fpath)
+    assert_equal(data, expected)
 
 
-def test_write_file_non_ascii():
-    with get_tmp_dir() as d:
-        fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
-        fpath = os.path.join(d, fname)
-        content_tensor = torch.tensor(list(content), dtype=torch.uint8)
-        write_file(fpath, content_tensor)
+def test_write_file(tmpdir):
+    fname, content = 'test1.bin', b'TorchVision\211\n'
+    fpath = os.path.join(tmpdir, fname)
+    content_tensor = torch.tensor(list(content), dtype=torch.uint8)
+    write_file(fpath, content_tensor)
 
-        with open(fpath, 'rb') as f:
-            saved_content = f.read()
-        os.unlink(fpath)
-        assert content == saved_content
+    with open(fpath, 'rb') as f:
+        saved_content = f.read()
+    os.unlink(fpath)
+    assert content == saved_content
+
+
+def test_write_file_non_ascii(tmpdir):
+    fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
+    fpath = os.path.join(tmpdir, fname)
+    content_tensor = torch.tensor(list(content), dtype=torch.uint8)
+    write_file(fpath, content_tensor)
+
+    with open(fpath, 'rb') as f:
+        saved_content = f.read()
+    os.unlink(fpath)
+    assert content == saved_content
 
 
 @pytest.mark.parametrize('shape', [
@@ -263,15 +267,15 @@ def test_write_file_non_ascii():
     (60, 60),
     (105, 105),
 ])
-def test_read_1_bit_png(shape):
-    with get_tmp_dir() as root:
-        image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
-        img = Image.fromarray(pixels)
-        img.save(image_path)
-        img1 = read_image(image_path)
-        img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
-        assert_equal(img1, img2, check_stride=False)
+def test_read_1_bit_png(shape, tmpdir):
+    np_rng = np.random.RandomState(0)
+    image_path = os.path.join(tmpdir, f'test_{shape}.png')
+    pixels = np_rng.rand(*shape) > 0.5
+    img = Image.fromarray(pixels)
+    img.save(image_path)
+    img1 = read_image(image_path)
+    img2 = normalize_dimensions(torch.as_tensor(pixels * 255, dtype=torch.uint8))
+    assert_equal(img1, img2)
 
 
 @pytest.mark.parametrize('shape', [
@@ -283,15 +287,24 @@ def test_read_1_bit_png(shape):
     ImageReadMode.UNCHANGED,
     ImageReadMode.GRAY,
 ])
-def test_read_1_bit_png_consistency(shape, mode):
-    with get_tmp_dir() as root:
-        image_path = os.path.join(root, f'test_{shape}.png')
-        pixels = np.random.rand(*shape) > 0.5
-        img = Image.fromarray(pixels)
-        img.save(image_path)
-        img1 = read_image(image_path, mode)
-        img2 = read_image(image_path, mode)
-        assert_equal(img1, img2)
+def test_read_1_bit_png_consistency(shape, mode, tmpdir):
+    np_rng = np.random.RandomState(0)
+    image_path = os.path.join(tmpdir, f'test_{shape}.png')
+    pixels = np_rng.rand(*shape) > 0.5
+    img = Image.fromarray(pixels)
+    img.save(image_path)
+    img1 = read_image(image_path, mode)
+    img2 = read_image(image_path, mode)
+    assert_equal(img1, img2)
+
+
+def test_read_interlaced_png():
+    imgs = list(get_images(INTERLACED_PNG, ".png"))
+    with Image.open(imgs[0]) as im1, Image.open(imgs[1]) as im2:
+        assert not (im1.info.get("interlace") is im2.info.get("interlace"))
+    img1 = read_image(imgs[0])
+    img2 = read_image(imgs[1])
+    assert_equal(img1, img2)
 
 
 @needs_cuda
@@ -318,7 +331,8 @@ def test_decode_jpeg_cuda(mode, img_path, scripted):
 @pytest.mark.parametrize('cuda_device', ('cuda', 'cuda:0', torch.device('cuda')))
 def test_decode_jpeg_cuda_device_param(cuda_device):
     """Make sure we can pass a string or a torch.device as device param"""
-    data = read_file(next(get_images(IMAGE_ROOT, ".jpg")))
+    path = next(path for path in get_images(IMAGE_ROOT, ".jpg") if 'cmyk' not in path)
+    data = read_file(path)
     decode_jpeg(data, device=cuda_device)
 
 
@@ -406,28 +420,27 @@ def test_encode_jpeg_reference(img_path):
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
 ])
-def test_write_jpeg_reference(img_path):
+def test_write_jpeg_reference(img_path, tmpdir):
     # FIXME: Remove this eventually, see test_encode_jpeg_reference
-    with get_tmp_dir() as d:
-        data = read_file(img_path)
-        img = decode_jpeg(data)
+    data = read_file(img_path)
+    img = decode_jpeg(data)
 
-        basedir = os.path.dirname(img_path)
-        filename, _ = os.path.splitext(os.path.basename(img_path))
-        torch_jpeg = os.path.join(
-            d, '{0}_torch.jpg'.format(filename))
-        pil_jpeg = os.path.join(
-            basedir, 'jpeg_write', '{0}_pil.jpg'.format(filename))
+    basedir = os.path.dirname(img_path)
+    filename, _ = os.path.splitext(os.path.basename(img_path))
+    torch_jpeg = os.path.join(
+        tmpdir, '{0}_torch.jpg'.format(filename))
+    pil_jpeg = os.path.join(
+        basedir, 'jpeg_write', '{0}_pil.jpg'.format(filename))
 
-        write_jpeg(img, torch_jpeg, quality=75)
+    write_jpeg(img, torch_jpeg, quality=75)
 
-        with open(torch_jpeg, 'rb') as f:
-            torch_bytes = f.read()
+    with open(torch_jpeg, 'rb') as f:
+        torch_bytes = f.read()
 
-        with open(pil_jpeg, 'rb') as f:
-            pil_bytes = f.read()
+    with open(pil_jpeg, 'rb') as f:
+        pil_bytes = f.read()
 
-        assert_equal(torch_bytes, pil_bytes)
+    assert_equal(torch_bytes, pil_bytes)
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason=(
@@ -460,25 +473,24 @@ def test_encode_jpeg(img_path):
     pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path))
     for jpeg_path in get_images(ENCODE_JPEG, ".jpg")
 ])
-def test_write_jpeg(img_path):
-    with get_tmp_dir() as d:
-        d = Path(d)
-        img = read_image(img_path)
-        pil_img = F.to_pil_image(img)
+def test_write_jpeg(img_path, tmpdir):
+    tmpdir = Path(tmpdir)
+    img = read_image(img_path)
+    pil_img = F.to_pil_image(img)
 
-        torch_jpeg = str(d / 'torch.jpg')
-        pil_jpeg = str(d / 'pil.jpg')
+    torch_jpeg = str(tmpdir / 'torch.jpg')
+    pil_jpeg = str(tmpdir / 'pil.jpg')
 
-        write_jpeg(img, torch_jpeg, quality=75)
-        pil_img.save(pil_jpeg, quality=75)
+    write_jpeg(img, torch_jpeg, quality=75)
+    pil_img.save(pil_jpeg, quality=75)
 
-        with open(torch_jpeg, 'rb') as f:
-            torch_bytes = f.read()
+    with open(torch_jpeg, 'rb') as f:
+        torch_bytes = f.read()
 
-        with open(pil_jpeg, 'rb') as f:
-            pil_bytes = f.read()
+    with open(pil_jpeg, 'rb') as f:
+        pil_bytes = f.read()
 
-        assert_equal(torch_bytes, pil_bytes)
+    assert_equal(torch_bytes, pil_bytes)
 
 
 if __name__ == "__main__":

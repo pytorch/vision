@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import sys
 from setuptools import setup, find_packages
 from pkg_resources import parse_version, get_distribution, DistributionNotFound
@@ -67,7 +68,8 @@ requirements = [
     pytorch_dep,
 ]
 
-pillow_ver = ' >= 5.3.0'
+# Excluding 8.3.0 because of https://github.com/pytorch/vision/issues/4146
+pillow_ver = ' >= 5.3.0, !=8.3.0'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
@@ -145,7 +147,9 @@ def get_extensions():
     )
 
     is_rocm_pytorch = False
-    if torch.__version__ >= '1.5':
+    TORCH_MAJOR = int(torch.__version__.split('.')[0])
+    TORCH_MINOR = int(torch.__version__.split('.')[1])
+    if TORCH_MAJOR > 1 or (TORCH_MAJOR == 1 and TORCH_MINOR >= 5):
         from torch.utils.cpp_extension import ROCM_HOME
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
@@ -349,10 +353,10 @@ def get_extensions():
     has_ffmpeg = ffmpeg_exe is not None
     if has_ffmpeg:
         try:
-            ffmpeg_version = subprocess.run(
-                'ffmpeg -version | head -n1', shell=True,
-                stdout=subprocess.PIPE).stdout.decode('utf-8')
-            ffmpeg_version = ffmpeg_version.split('version')[-1].split()[0]
+            # this splits on both dots and spaces as the output format differs across versions / platforms
+            ffmpeg_version_str = str(subprocess.check_output(["ffmpeg", "-version"]))
+            ffmpeg_version = re.split(r"ffmpeg version |\.| |-", ffmpeg_version_str)[1:3]
+            ffmpeg_version = ".".join(ffmpeg_version)
             if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
                 print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
                 has_ffmpeg = False

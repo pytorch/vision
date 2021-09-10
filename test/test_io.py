@@ -9,8 +9,7 @@ from torchvision import get_video_backend
 import warnings
 from urllib.error import URLError
 
-from common_utils import get_tmp_dir
-from _assert_utils import assert_equal
+from common_utils import assert_equal
 
 
 try:
@@ -256,37 +255,36 @@ class TestVideo:
                 assert_equal(video, data)
 
     @pytest.mark.skipif(sys.platform == 'win32', reason='temporarily disabled on Windows')
-    def test_write_video_with_audio(self):
+    def test_write_video_with_audio(self, tmpdir):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
 
-        with get_tmp_dir() as tmpdir:
-            out_f_name = os.path.join(tmpdir, "testing.mp4")
-            io.video.write_video(
-                out_f_name,
-                video_tensor,
-                round(info["video_fps"]),
-                video_codec="libx264rgb",
-                options={'crf': '0'},
-                audio_array=audio_tensor,
-                audio_fps=info["audio_fps"],
-                audio_codec="aac",
-            )
+        out_f_name = os.path.join(tmpdir, "testing.mp4")
+        io.video.write_video(
+            out_f_name,
+            video_tensor,
+            round(info["video_fps"]),
+            video_codec="libx264rgb",
+            options={'crf': '0'},
+            audio_array=audio_tensor,
+            audio_fps=info["audio_fps"],
+            audio_codec="aac",
+        )
 
-            out_video_tensor, out_audio_tensor, out_info = io.read_video(
-                out_f_name, pts_unit="sec"
-            )
+        out_video_tensor, out_audio_tensor, out_info = io.read_video(
+            out_f_name, pts_unit="sec"
+        )
 
-            assert info["video_fps"] == out_info["video_fps"]
-            assert_equal(video_tensor, out_video_tensor)
+        assert info["video_fps"] == out_info["video_fps"]
+        assert_equal(video_tensor, out_video_tensor)
 
-            audio_stream = av.open(f_name).streams.audio[0]
-            out_audio_stream = av.open(out_f_name).streams.audio[0]
+        audio_stream = av.open(f_name).streams.audio[0]
+        out_audio_stream = av.open(out_f_name).streams.audio[0]
 
-            assert info["audio_fps"] == out_info["audio_fps"]
-            assert audio_stream.rate == out_audio_stream.rate
-            assert pytest.approx(out_audio_stream.frames, rel=0.0, abs=1) == audio_stream.frames
-            assert audio_stream.frame_size == out_audio_stream.frame_size
+        assert info["audio_fps"] == out_info["audio_fps"]
+        assert audio_stream.rate == out_audio_stream.rate
+        assert pytest.approx(out_audio_stream.frames, rel=0.0, abs=1) == audio_stream.frames
+        assert audio_stream.frame_size == out_audio_stream.frame_size
 
     # TODO add tests for audio
 

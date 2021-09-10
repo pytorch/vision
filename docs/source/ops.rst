@@ -23,6 +23,7 @@ torchvision.ops
 .. autofunction:: ps_roi_pool
 .. autofunction:: deform_conv2d
 .. autofunction:: sigmoid_focal_loss
+.. autofunction:: stochastic_depth
 
 .. autoclass:: RoIAlign
 .. autoclass:: PSRoIAlign
@@ -31,3 +32,4 @@ torchvision.ops
 .. autoclass:: DeformConv2d
 .. autoclass:: MultiScaleRoIAlign
 .. autoclass:: FeaturePyramidNetwork
+.. autoclass:: StochasticDepth

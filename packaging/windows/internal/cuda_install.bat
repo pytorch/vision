@@ -27,6 +27,7 @@ if %CUDA_VER% EQU 102 goto cuda102
 if %CUDA_VER% EQU 110 goto cuda110
 if %CUDA_VER% EQU 111 goto cuda111
 if %CUDA_VER% EQU 112 goto cuda112
+if %CUDA_VER% EQU 113 goto cuda113
 
 echo CUDA %CUDA_VERSION_STR% is not supported
 exit /b 1
@@ -158,6 +159,26 @@ if not exist "%SRC_DIR%\temp_build\cudnn-11.2-windows-x64-v8.1.0.77.zip" (
     curl -k -L http://s3.amazonaws.com/ossci-windows/cudnn-11.2-windows-x64-v8.1.0.77.zip --output "%SRC_DIR%\temp_build\cudnn-11.2-windows-x64-v8.1.0.77.zip"
     if errorlevel 1 exit /b 1
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-11.2-windows-x64-v8.1.0.77.zip"
+)
+
+goto cuda_common
+
+:cuda113
+
+set CUDA_INSTALL_EXE=cuda_11.3.0_465.89_win10.exe
+if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
+    curl -k -L "https://ossci-windows.s3.amazonaws.com/%CUDA_INSTALL_EXE%" --output "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
+    if errorlevel 1 exit /b 1
+    set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
+    set "ARGS=thrust_11.3 nvcc_11.3 cuobjdump_11.3 nvprune_11.3 nvprof_11.3 cupti_11.3 cublas_11.3 cublas_dev_11.3 cudart_11.3 cufft_11.3 cufft_dev_11.3 curand_11.3 curand_dev_11.3 cusolver_11.3 cusolver_dev_11.3 cusparse_11.3 cusparse_dev_11.3 npp_11.3 npp_dev_11.3 nvrtc_11.3 nvrtc_dev_11.3 nvml_dev_11.3"
+
+)
+
+set CUDNN_INSTALL_ZIP=cudnn-11.3-windows-x64-v8.2.0.53.zip
+if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
+    curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
+    if errorlevel 1 exit /b 1
+    set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
 )
 
 goto cuda_common
