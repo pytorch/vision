@@ -36,8 +36,8 @@ inline bool double_compare(double a, double b) {
 
 inline void deprecation_warning() {
   TORCH_WARN_ONCE(
-      "The vision::models namespace has been deprecated since v0.11 "
-      "and it will be removed from v0.12. Use Torch Script instead: "
+      "The vision::models namespace is not actively maintained, use at "
+      "your own discretion. We recommend using Torch Script instead: "
       "https://pytorch.org/tutorials/advanced/cpp_export.html");
 }
 
