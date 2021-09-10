@@ -45,14 +45,6 @@ commands:
               our_upload_channel=test
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
-  install_cuda_compatible_cmath:
-    description: "Install CUDA compatible cmath"
-    steps:
-      - run:
-          name: _HACK_ Install CUDA compatible cmath
-          no_output_timeout: 1m
-          command: |
-              powershell .circleci/scripts/vs_install_cmath.ps1
 
   brew_update:
     description: "Update Homebrew and install base formulae"
@@ -300,7 +292,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Build conda packages
           no_output_timeout: 20m
@@ -332,7 +323,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Build wheel packages
           command: |
@@ -712,7 +702,6 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -754,7 +743,6 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -884,7 +872,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -898,7 +885,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
