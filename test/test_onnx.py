@@ -397,10 +397,6 @@ class TestONNXExporter:
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
     def test_paste_mask_in_image(self):
-        # disable profiling
-        torch._C._jit_set_profiling_executor(False)
-        torch._C._jit_set_profiling_mode(False)
-
         masks = torch.rand(10, 1, 26, 26)
         boxes = torch.rand(10, 4)
         boxes[:, 2:] += torch.rand(10, 2)
@@ -452,10 +448,6 @@ class TestONNXExporter:
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
     # (since jit_trace witll call _heatmaps_to_keypoints).
     def test_heatmaps_to_keypoints(self):
-        # disable profiling
-        torch._C._jit_set_profiling_executor(False)
-        torch._C._jit_set_profiling_mode(False)
-
         maps = torch.rand(10, 1, 26, 26)
         rois = torch.rand(10, 4)
         from torchvision.models.detection.roi_heads import heatmaps_to_keypoints
