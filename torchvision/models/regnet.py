@@ -1,11 +1,18 @@
 from torch import nn, Tenspr
+from torchvision.models.mobilenetv2 import _make_divisible
+
+
+model_urls = {
+}
+
 
 class RegNetParams:
     pass
 
+
 class SqueezeExcitation(nn.Module):
     """
-    Squeeze and excitation layer from 
+    Squeeze and excitation layer from
     `"Squeeze-and-Excitation Networks" <https://arxiv.org/pdf/1709.01507>`_.
     """
 
@@ -42,8 +49,20 @@ class SqueezeExcitation(nn.Module):
         x_scaled = x * x_excited
         return x_scaled
 
+
 class RegNet(nn.Module):
     pass
 
+
+def _regnet(arch: str, pretrained: bool, progress: bool, **kwargs: Any) -> RegNet:
+    model = RegNet()
+    if pretrained:
+        if arch not in model_urls:
+            raise ValueError(f"No checkpoint is available for model type {arch}")
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        model.load_state_dict(state_dict)
+    return model
+
+
 def regnet_y_400mf(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> RegNet:
-    pass
+    return _regnet("regnet_y_400mf", pretrained, progress, **kwargs)
