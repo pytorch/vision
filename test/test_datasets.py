@@ -1813,7 +1813,7 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         "funneled": "lfw_funneled",
         "deepfunneled": "lfw-deepfunneled"
     }
-    _split = {'10fold': '', 'train': 'DevTrain', 'test': 'DevTest'}
+    _file_id = {'10fold': '', 'train': 'DevTrain', 'test': 'DevTest'}
 
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "lfw-py"
@@ -1839,7 +1839,7 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
                 names.append(f"{name}\t{no}\n")
                 datasets_utils.create_image_folder(idir, name, lambda n: f"{name}_{n+1:04d}.jpg", no, 250)
                 num_examples += no
-        with open(pathlib.Path(root) / f"people{self._split[split]}.txt", "w") as f:
+        with open(pathlib.Path(root) / f"people{self._file_id[split]}.txt", "w") as f:
             f.writelines(flines)
         with open(pathlib.Path(root) / "lfw-names.txt", "w") as f:
             f.writelines(sorted(names))
@@ -1864,7 +1864,7 @@ class LFWPairsTestCase(LFWPeopleTestCase):
         for _ in range(n):
             self._inject_pairs(idir, num_pairs, True)
             self._inject_pairs(idir, num_pairs, False)
-            with open(pathlib.Path(root) / f"pairs{self._split[split]}.txt", "w") as f:
+            with open(pathlib.Path(root) / f"pairs{self._file_id[split]}.txt", "w") as f:
                 f.writelines(self.flines)
 
         return num_pairs * 2 * n

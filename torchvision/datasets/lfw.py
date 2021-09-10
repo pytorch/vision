@@ -97,10 +97,10 @@ class LFWPeople(_LFW):
     Args:
         root (string): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
-        split (string, optional): The image split to use. Can be one of ``train`` (default), ``test``,
-            ``10fold``.
+        split (string, optional): The image split to use. Can be one of ``train``, ``test``,
+            ``10fold`` (default).
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
-            ``deepfunneled``. Defaults to ``original``.
+            ``deepfunneled``. Defaults to ``funneled``.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
@@ -114,7 +114,7 @@ class LFWPeople(_LFW):
     def __init__(
         self,
         root: str,
-        split: str = "train",
+        split: str = "10fold",
         image_set: str = "funneled",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -184,7 +184,7 @@ class LFWPairs(_LFW):
         split (string, optional): The image split to use. Can be one of ``train``, ``test``,
             ``10fold``. Defaults to ``10fold``.
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
-            ``deepfunneled``. Defaults to ``original``.
+            ``deepfunneled``. Defaults to ``funneled``.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
