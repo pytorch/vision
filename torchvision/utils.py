@@ -303,14 +303,15 @@ def draw_segmentation_masks(
 
 @torch.no_grad()
 def draw_keypoints(
-    image: torch.Tensor,
-    keypoints: torch.Tensor,
-    labels: Optional[List[str]] = None,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
-    radius: int = 2,
-    connect: bool = False,
-    font: Optional[str] = None,
-    font_size: int = 10
+        image: torch.Tensor,
+        keypoints: torch.Tensor,
+        labels: Optional[List[str]] = None,
+        colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+        radius: int = 2,
+        width: int = 3,
+        connectivity: Optional[Tuple[Tuple[int, int]]] = None,
+        font: Optional[str] = None,
+        font_size: int = 10
 ) -> torch.Tensor:
 
     """
@@ -319,14 +320,16 @@ def draw_keypoints(
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
-        keypoints (Tensor): Tensor of shape (num_keypoints, K, 3) the K keypoints location for each of the N instances,
-            in the format [x, y, visibility], where visibility=0 means that the keypoint is not visible.
+        keypoints (Tensor): Tensor of shape (num_instances, K, 3) the K keypoints location for each of the N instances,
+            in the format [x, y, visibility], where `visibility=0` means that the keypoint is not visible.
         labels (List[str]): List containing the labels for each Keypoint.
         colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
             or a single color for all the keypoints.
             The colors can be represented as `str` or `Tuple[int, int, int]`.
         radius (int): Integer denoting radius of keypoint.
-        connect (bool): If True. It connects all the visible keypints.
+        width (int): Integer denoting width of line connecting keypoints.
+        connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
+            each tuple contains pair of keypoints to be connected.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
@@ -352,13 +355,30 @@ def draw_keypoints(
 
     img_kpts = keypoints.to(torch.int64).tolist()
 
-    for i, kpt_inst in enumerate(img_kpts):
+    for kpt_inst in img_kpts:
         for kpt in kpt_inst:
             x1 = kpt[0] - radius
             x2 = kpt[0] + radius
             y1 = kpt[1] - radius
             y2 = kpt[1] + radius
-            draw.ellipse([x1, y1, x2, y2], fill="red", outline=None, width=0)
+
+            if isinstance(colors, str) or isinstance(colors, tuple):
+                draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
+
+    for kpt_inst in img_kpts:
+        for connection in connectivity:
+            start_pt_x = kpt_inst[connection[0]][0]
+            start_pt_y = kpt_inst[connection[0]][1]
+
+            end_pt_x = kpt_inst[connection[1]][0]
+            end_pt_y = kpt_inst[connection[1]][1]
+
+            draw.line(
+                (
+                    (start_pt_x, start_pt_y), (end_pt_x, end_pt_y)
+                ),
+                width=width,
+            )
 
     # txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
