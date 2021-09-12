@@ -11,35 +11,31 @@ import warnings
 from urllib.error import URLError
 
 import torchvision.datasets.utils as utils
-from common_utils import get_tmp_dir
 
 
 class TestDatasetUtils:
-    def test_download_url(self):
-        with get_tmp_dir() as temp_dir:
-            url = "http://github.com/pytorch/vision/archive/master.zip"
-            try:
-                utils.download_url(url, temp_dir)
-                assert len(os.listdir(temp_dir)) != 0
-            except URLError:
-                pytest.skip(f"could not download test file '{url}'")
+    def test_download_url(self, tmpdir):
+        url = "http://github.com/pytorch/vision/archive/master.zip"
+        try:
+            utils.download_url(url, tmpdir)
+            assert len(os.listdir(tmpdir)) != 0
+        except URLError:
+            pytest.skip(f"could not download test file '{url}'")
 
-    def test_download_url_retry_http(self):
-        with get_tmp_dir() as temp_dir:
-            url = "https://github.com/pytorch/vision/archive/master.zip"
-            try:
-                utils.download_url(url, temp_dir)
-                assert len(os.listdir(temp_dir)) != 0
-            except URLError:
-                pytest.skip(f"could not download test file '{url}'")
+    def test_download_url_retry_http(self, tmpdir):
+        url = "https://github.com/pytorch/vision/archive/master.zip"
+        try:
+            utils.download_url(url, tmpdir)
+            assert len(os.listdir(tmpdir)) != 0
+        except URLError:
+            pytest.skip(f"could not download test file '{url}'")
 
-    def test_download_url_dont_exist(self):
-        with get_tmp_dir() as temp_dir:
-            url = "http://github.com/pytorch/vision/archive/this_doesnt_exist.zip"
-            with pytest.raises(URLError):
-                utils.download_url(url, temp_dir)
+    def test_download_url_dont_exist(self, tmpdir):
+        url = "http://github.com/pytorch/vision/archive/this_doesnt_exist.zip"
+        with pytest.raises(URLError):
+            utils.download_url(url, tmpdir)
 
-    def test_download_url_dispatch_download_from_google_drive(self, mocker):
+    def test_download_url_dispatch_download_from_google_drive(self, mocker, tmpdir):
         url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
 
         id = "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45"
@@ -47,10 +43,9 @@ class TestDatasetUtils:
         md5 = "md5"
 
         mocked = mocker.patch('torchvision.datasets.utils.download_file_from_google_drive')
-        with get_tmp_dir() as root:
-            utils.download_url(url, root, filename, md5)
+        utils.download_url(url, tmpdir, filename, md5)
 
-        mocked.assert_called_once_with(id, root, filename, md5)
+        mocked.assert_called_once_with(id, tmpdir, filename, md5)
 
 
 if __name__ == '__main__':
