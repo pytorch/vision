@@ -168,9 +168,9 @@ on the output of such models, you may refer to :ref:`instance_seg_output`.
     Downloading: "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth" to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
     [{'boxes': tensor([[215.9767, 171.1661, 402.0078, 378.7391],
             [344.6341, 172.6735, 357.6114, 220.1435],
-            [153.1306, 185.5568, 172.9223, 254.7014]], grad_fn=<StackBackward>), 'labels': tensor([18,  1,  1]), 'scores': tensor([0.9989, 0.0701, 0.0611], grad_fn=<IndexBackward>)}, {'boxes': tensor([[ 23.5963, 132.4332, 449.9359, 493.0222],
+            [153.1306, 185.5568, 172.9223, 254.7014]], grad_fn=<StackBackward0>), 'labels': tensor([18,  1,  1]), 'scores': tensor([0.9989, 0.0701, 0.0611], grad_fn=<IndexBackward0>)}, {'boxes': tensor([[ 23.5963, 132.4332, 449.9359, 493.0222],
             [225.8183, 124.6292, 467.2861, 492.2621],
-            [ 18.5249, 135.4171, 420.9786, 479.2226]], grad_fn=<StackBackward>), 'labels': tensor([18, 18, 17]), 'scores': tensor([0.9980, 0.0879, 0.0671], grad_fn=<IndexBackward>)}]
+            [ 18.5249, 135.4171, 420.9786, 479.2226]], grad_fn=<StackBackward0>), 'labels': tensor([18, 18, 17]), 'scores': tensor([0.9980, 0.0879, 0.0671], grad_fn=<IndexBackward0>)}]
 
 
 
@@ -526,7 +526,7 @@ use the normalized batch.
     Downloading: "https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth" to /root/.cache/torch/hub/checkpoints/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth
     [{'boxes': tensor([[219.7444, 168.1722, 400.7379, 384.0263],
             [343.9716, 171.2287, 358.3447, 222.6263],
-            [301.0303, 192.6917, 313.8879, 232.3154]], grad_fn=<StackBackward>), 'labels': tensor([18,  1,  1]), 'scores': tensor([0.9987, 0.7187, 0.6525], grad_fn=<IndexBackward>), 'masks': tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
+            [301.0303, 192.6917, 313.8879, 232.3154]], grad_fn=<StackBackward0>), 'labels': tensor([18,  1,  1]), 'scores': tensor([0.9987, 0.7187, 0.6525], grad_fn=<IndexBackward0>), 'masks': tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
               [0., 0., 0.,  ..., 0., 0., 0.],
               [0., 0., 0.,  ..., 0., 0., 0.],
               ...,
@@ -551,7 +551,7 @@ use the normalized batch.
               [0., 0., 0.,  ..., 0., 0., 0.],
               [0., 0., 0.,  ..., 0., 0., 0.],
               [0., 0., 0.,  ..., 0., 0., 0.]]]], grad_fn=<UnsqueezeBackward0>)}, {'boxes': tensor([[ 44.6767, 137.9018, 446.5324, 487.3429],
-            [  0.0000, 288.0053, 489.9293, 490.2352]], grad_fn=<StackBackward>), 'labels': tensor([18, 15]), 'scores': tensor([0.9978, 0.0697], grad_fn=<IndexBackward>), 'masks': tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
+            [  0.0000, 288.0053, 489.9293, 490.2352]], grad_fn=<StackBackward0>), 'labels': tensor([18, 15]), 'scores': tensor([0.9978, 0.0697], grad_fn=<IndexBackward0>), 'masks': tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
               [0., 0., 0.,  ..., 0., 0., 0.],
               [0., 0., 0.,  ..., 0., 0., 0.],
               ...,
@@ -729,7 +729,7 @@ relevant masks:
 
  .. code-block:: none
 
-    tensor([0.9987, 0.7187, 0.6525], grad_fn=<IndexBackward>)
+    tensor([0.9987, 0.7187, 0.6525], grad_fn=<IndexBackward0>)
 
 
 
@@ -779,7 +779,7 @@ instance with class 15 (which corresponds to 'bench') was not selected.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  11.750 seconds)
+   **Total running time of the script:** ( 0 minutes  12.553 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:
