@@ -49,6 +49,8 @@ def _av_available() -> bool:
 _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 10
 
+RE_DIVX = re.compile(br"DivX\d+(?:Build|b)\d+(\w)")
+
 
 def write_video(
     filename: str,
@@ -175,11 +177,9 @@ def _read_from_stream(
             # can't use regex directly because of some weird characters sometimes...
             pos = extradata.find(b"DivX")
             d = extradata[pos:]
-            o = re.search(br"DivX(\d+)Build(\d+)(\w)", d)
-            if o is None:
-                o = re.search(br"DivX(\d+)b(\d+)(\w)", d)
+            o = RE_DIVX.search(d)
             if o is not None:
-                should_buffer = o.group(3) == b"p"
+                should_buffer = o.group(1) == b"p"
     seek_offset = start_offset
     # some files don't seek to the right location, so better be safe here
     seek_offset = max(seek_offset - 1, 0)
