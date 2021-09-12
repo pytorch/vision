@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 
 import PIL
 import PIL.Image
+import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
@@ -416,7 +417,11 @@ class DatasetTestCase(unittest.TestCase):
                 continue
 
             defaults.append(
-                {kwarg: default for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)}
+                {
+                    kwarg: default
+                    for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
+                    if not kwarg.startswith("_")
+                }
             )
 
             if not argspec.varkw:
@@ -515,18 +520,18 @@ class DatasetTestCase(unittest.TestCase):
             yield mocks
 
     def test_not_found_or_corrupted(self):
-        with self.assertRaises((FileNotFoundError, RuntimeError)):
+        with pytest.raises((FileNotFoundError, RuntimeError)):
             with self.create_dataset(inject_fake_data=False):
                 pass
 
     def test_smoke(self):
         with self.create_dataset() as (dataset, _):
-            self.assertIsInstance(dataset, torchvision.datasets.VisionDataset)
+            assert isinstance(dataset, torchvision.datasets.VisionDataset)
 
     @test_all_configs
     def test_str_smoke(self, config):
         with self.create_dataset(config) as (dataset, _):
-            self.assertIsInstance(str(dataset), str)
+            assert isinstance(str(dataset), str)
 
     @test_all_configs
     def test_feature_types(self, config):
@@ -536,23 +541,21 @@ class DatasetTestCase(unittest.TestCase):
             if len(self.FEATURE_TYPES) > 1:
                 actual = len(example)
                 expected = len(self.FEATURE_TYPES)
-                self.assertEqual(
-                    actual,
-                    expected,
-                    f"The number of the returned features does not match the the number of elements in FEATURE_TYPES: "
-                    f"{actual} != {expected}",
-                )
+                assert (
+                    actual == expected
+                ), "The number of the returned features does not match the the number of elements in FEATURE_TYPES: "
+                f"{actual} != {expected}"
             else:
                 example = (example,)
 
             for idx, (feature, expected_feature_type) in enumerate(zip(example, self.FEATURE_TYPES)):
                 with self.subTest(idx=idx):
-                    self.assertIsInstance(feature, expected_feature_type)
+                    assert isinstance(feature, expected_feature_type)
 
     @test_all_configs
     def test_num_examples(self, config):
         with self.create_dataset(config) as (dataset, info):
-            self.assertEqual(len(dataset), info["num_examples"])
+            assert len(dataset) == info["num_examples"]
 
     @test_all_configs
     def test_transforms(self, config):
@@ -637,7 +640,7 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
-        args_without_default = argspec.args[1:-len(argspec.defaults)]
+        args_without_default = argspec.args[1:(-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
         @functools.wraps(inject_fake_data)

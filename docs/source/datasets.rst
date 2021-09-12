@@ -122,6 +122,12 @@ ImageNet
 .. note ::
     This requires `scipy` to be installed
 
+iNaturalist
+~~~~~~~~~~~
+
+.. autoclass:: INaturalist
+  :members: __getitem__, category_name
+
 Kinetics-400
 ~~~~~~~~~~~~
 
@@ -256,5 +262,9 @@ Base classes for custom datasets
 
 
 .. autoclass:: ImageFolder
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VisionDataset
   :members: __getitem__
   :special-members:

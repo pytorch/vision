@@ -83,7 +83,7 @@ class ToTensor:
         Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
         transforming target image masks. See the `references`_ for implementing the transforms for image masks.
 
-    .. _references: https://github.com/pytorch/vision/tree/master/references/segmentation
+    .. _references: https://github.com/pytorch/vision/tree/main/references/segmentation
     """
 
     def __call__(self, pic):
@@ -233,7 +233,8 @@ class Resize(torch.nn.Module):
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
         and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
         in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types.
+        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
+        closer.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
@@ -257,10 +258,17 @@ class Resize(torch.nn.Module):
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
+            closer.
+
+            .. warning::
+                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
 
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
@@ -278,6 +286,7 @@ class Resize(torch.nn.Module):
             interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def forward(self, img):
         """
@@ -287,12 +296,12 @@ class Resize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation, self.max_size)
+        return F.resize(img, self.size, self.interpolation, self.max_size, self.antialias)
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2})'.format(
-            self.size, interpolate_str, self.max_size)
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2}, antialias={3})'.format(
+            self.size, interpolate_str, self.max_size, self.antialias)
 
 
 class Scale(Resize):
@@ -566,7 +575,7 @@ class RandomCrop(torch.nn.Module):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = F._get_image_size(img)
+        w, h = F.get_image_size(img)
         th, tw = output_size
 
         if h + 1 < th or w + 1 < tw:
@@ -604,7 +613,7 @@ class RandomCrop(torch.nn.Module):
         if self.padding is not None:
             img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
-        width, height = F._get_image_size(img)
+        width, height = F.get_image_size(img)
         # pad the width if needed
         if self.pad_if_needed and width < self.size[1]:
             padding = [self.size[1] - width, 0]
@@ -697,7 +706,6 @@ class RandomPerspective(torch.nn.Module):
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
     def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
@@ -734,12 +742,12 @@ class RandomPerspective(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
 
         if torch.rand(1) < self.p:
-            width, height = F._get_image_size(img)
+            width, height = F.get_image_size(img)
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
         return img
@@ -850,7 +858,7 @@ class RandomResizedCrop(torch.nn.Module):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
             sized crop.
         """
-        width, height = F._get_image_size(img)
+        width, height = F.get_image_size(img)
         area = height * width
 
         log_ratio = torch.log(torch.tensor(ratio))
@@ -1209,7 +1217,6 @@ class RandomRotation(torch.nn.Module):
             Default is the center of the image.
         fill (sequence or number): Pixel fill value for the area outside the rotated
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
 
@@ -1273,7 +1280,7 @@ class RandomRotation(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
@@ -1320,7 +1327,6 @@ class RandomAffine(torch.nn.Module):
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
@@ -1433,11 +1439,11 @@ class RandomAffine(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
 
-        img_size = F._get_image_size(img)
+        img_size = F.get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
 
@@ -1523,7 +1529,7 @@ class RandomGrayscale(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly grayscaled image.
         """
-        num_output_channels = F._get_image_num_channels(img)
+        num_output_channels = F.get_image_num_channels(img)
         if torch.rand(1) < self.p:
             return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img

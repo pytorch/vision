@@ -7,6 +7,15 @@ different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection and video classification.
 
+.. note ::
+    Backward compatibility is guaranteed for loading a serialized 
+    ``state_dict`` to the model created using old PyTorch version. 
+    On the contrary, loading entire saved models or serialized 
+    ``ScriptModules`` (seralized using older versions of PyTorch) 
+    may not preserve the historic behaviour. Refer to the following 
+    `documentation 
+    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
+
 
 Classification
 ==============
@@ -27,6 +36,7 @@ architectures for image classification:
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
+-  `EfficientNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -47,6 +57,14 @@ You can construct a model with random weights by calling its constructor:
     resnext50_32x4d = models.resnext50_32x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
+    efficientnet_b0 = models.efficientnet_b0()
+    efficientnet_b1 = models.efficientnet_b1()
+    efficientnet_b2 = models.efficientnet_b2()
+    efficientnet_b3 = models.efficientnet_b3()
+    efficientnet_b4 = models.efficientnet_b4()
+    efficientnet_b5 = models.efficientnet_b5()
+    efficientnet_b6 = models.efficientnet_b6()
+    efficientnet_b7 = models.efficientnet_b7()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -68,6 +86,14 @@ These can be constructed by passing ``pretrained=True``:
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
     wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
     mnasnet = models.mnasnet1_0(pretrained=True)
+    efficientnet_b0 = models.efficientnet_b0(pretrained=True)
+    efficientnet_b1 = models.efficientnet_b1(pretrained=True)
+    efficientnet_b2 = models.efficientnet_b2(pretrained=True)
+    efficientnet_b3 = models.efficientnet_b3(pretrained=True)
+    efficientnet_b4 = models.efficientnet_b4(pretrained=True)
+    efficientnet_b5 = models.efficientnet_b5(pretrained=True)
+    efficientnet_b6 = models.efficientnet_b6(pretrained=True)
+    efficientnet_b7 = models.efficientnet_b7(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -113,7 +139,10 @@ Unfortunately, the concrete `subset` that was used is lost. For more
 information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
 or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
-ImageNet 1-crop error rates (224x224)
+The sizes of the EfficientNet models depend on the variant. For the exact input sizes
+`check here <https://github.com/pytorch/vision/blob/d2bfd639e46e1c5dc3c177f889dc7750c8d137c7/references/classification/train.py#L92-L93>`_
+
+ImageNet 1-crop error rates
 
 ================================  =============   =============
 Model                             Acc@1           Acc@5
@@ -151,6 +180,14 @@ Wide ResNet-50-2                  78.468          94.086
 Wide ResNet-101-2                 78.848          94.284
 MNASNet 1.0                       73.456          91.510
 MNASNet 0.5                       67.734          87.490
+EfficientNet-B0                   77.692          93.532
+EfficientNet-B1                   78.642          94.186
+EfficientNet-B2                   80.608          95.310
+EfficientNet-B3                   82.008          96.054
+EfficientNet-B4                   83.384          96.594
+EfficientNet-B5                   83.444          96.628
+EfficientNet-B6                   84.008          96.916
+EfficientNet-B7                   84.122          96.908
 ================================  =============   =============
 
 
@@ -166,6 +203,7 @@ MNASNet 0.5                       67.734          87.490
 .. _MobileNetV3: https://arxiv.org/abs/1905.02244
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
 .. _MNASNet: https://arxiv.org/abs/1807.11626
+.. _EfficientNet: https://arxiv.org/abs/1905.11946
 
 .. currentmodule:: torchvision.models
 
@@ -267,6 +305,18 @@ MNASNet
 .. autofunction:: mnasnet1_0
 .. autofunction:: mnasnet1_3
 
+EfficientNet
+------------
+
+.. autofunction:: efficientnet_b0
+.. autofunction:: efficientnet_b1
+.. autofunction:: efficientnet_b2
+.. autofunction:: efficientnet_b3
+.. autofunction:: efficientnet_b4
+.. autofunction:: efficientnet_b5
+.. autofunction:: efficientnet_b6
+.. autofunction:: efficientnet_b7
+
 Quantized Models
 ----------------
 
@@ -329,6 +379,8 @@ The images have to be loaded in to a range of ``[0, 1]`` and then normalized usi
 ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
 They have been trained on images resized such that their minimum size is 520.
 
+For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
+
 The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
 present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
 ``references/segmentation/coco_utils.py``. The classes that the pre-trained model outputs are the following,
@@ -374,6 +426,7 @@ LR-ASPP
 
 .. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
 
+.. _object_det_inst_seg_pers_keypoint_det:
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
@@ -385,6 +438,7 @@ architectures for detection:
 - `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
 - `RetinaNet <https://arxiv.org/abs/1708.02002>`_
 - `SSD <https://arxiv.org/abs/1512.02325>`_
+- `SSDlite <https://arxiv.org/abs/1801.04381>`_
 
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
@@ -392,7 +446,8 @@ in torchvision.
 
 The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
 The models internally resize the images but the behaviour varies depending
-on the model. Check the constructor of the models for more information.
+on the model. Check the constructor of the models for more information. The
+output format of such models is illustrated in :ref:`instance_seg_output`.
 
 
 For object detection and instance segmentation, the pre-trained
@@ -426,7 +481,8 @@ Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
-SSD VGG16                               25.1     -         -
+SSD300 VGG16                            25.1     -         -
+SSDlite320 MobileNetV3-Large            21.3     -         -
 Mask R-CNN ResNet-50 FPN                37.9     34.6      -
 ======================================  =======  ========  ===========
 
@@ -470,9 +526,9 @@ Runtime characteristics
 The implementations of the models for object detection, instance segmentation
 and keypoint detection are efficient.
 
-In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
-report the results. During training, we use a batch size of 2 per GPU, and
-during testing a batch size of 1 is used.
+In the following table, we use 8 GPUs to report the results. During training,
+we use a batch size of 2 per GPU for all models except SSD which uses 4
+and SSDlite which uses 24. During testing a batch size  of 1 is used.
 
 For test time, we report the time for the model evaluation and postprocessing
 (including mask pasting in image), but not the time for computing the
@@ -485,7 +541,8 @@ Faster R-CNN ResNet-50 FPN              0.2288               0.0590             
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
-SSD VGG16                               0.2093               0.0744              1.5
+SSD300 VGG16                            0.2093               0.0744              1.5
+SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
 Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
 ======================================  ===================  ==================  ===========
@@ -500,15 +557,21 @@ Faster R-CNN
 
 
 RetinaNet
-------------
+---------
 
 .. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
 
 
 SSD
-------------
+---
 
 .. autofunction:: torchvision.models.detection.ssd300_vgg16
+
+
+SSDlite
+-------
+
+.. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
 
 
 Mask R-CNN

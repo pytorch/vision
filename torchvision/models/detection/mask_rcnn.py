@@ -5,7 +5,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
 from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
@@ -271,6 +271,8 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
     """
     Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.
 
+    Reference: `"Mask R-CNN" <https://arxiv.org/abs/1703.06870>`_.
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
@@ -289,15 +291,17 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
-    follows:
+    follows, where ``N`` is the number of detected instances:
 
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
-        - labels (``Int64Tensor[N]``): the predicted labels for each image
-        - scores (``Tensor[N]``): the scores or each prediction
+        - labels (``Int64Tensor[N]``): the predicted labels for each instance
+        - scores (``Tensor[N]``): the scores or each instance
         - masks (``UInt8Tensor[N, 1, H, W]``): the predicted masks for each instance, in ``0-1`` range. In order to
           obtain the final segmentation masks, the soft masks can be thresholded, generally
           with a value of 0.5 (``mask >= 0.5``)
+
+    For more details on the output and on how to plot the masks, you may refer to :ref:`instance_seg_output`.
 
     Mask R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 

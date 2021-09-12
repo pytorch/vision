@@ -73,9 +73,13 @@ def get_args_parser(add_help=True):
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
+    parser.add_argument('--lr-scheduler', default="multisteplr", help='the lr scheduler (default: multisteplr)')
+    parser.add_argument('--lr-step-size', default=8, type=int,
+                        help='decrease lr every step-size epochs (multisteplr scheduler only)')
+    parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int,
+                        help='decrease lr every step-size epochs (multisteplr scheduler only)')
+    parser.add_argument('--lr-gamma', default=0.1, type=float,
+                        help='decrease lr by a factor of lr-gamma (multisteplr scheduler only)')
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
@@ -85,6 +89,12 @@ def get_args_parser(add_help=True):
     parser.add_argument('--trainable-backbone-layers', default=None, type=int,
                         help='number of trainable layers of backbone')
     parser.add_argument('--data-augmentation', default="hflip", help='data augmentation policy (default: hflip)')
+    parser.add_argument(
+        "--sync-bn",
+        dest="sync_bn",
+        help="Use sync batch norm",
+        action="store_true",
+    )
     parser.add_argument(
         "--test-only",
         dest="test_only",
@@ -156,6 +166,8 @@ def main(args):
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
                                                               **kwargs)
     model.to(device)
+    if args.distributed and args.sync_bn:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model_without_ddp = model
     if args.distributed:
@@ -166,8 +178,14 @@ def main(args):
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    args.lr_scheduler = args.lr_scheduler.lower()
+    if args.lr_scheduler == 'multisteplr':
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
+    elif args.lr_scheduler == 'cosineannealinglr':
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    else:
+        raise RuntimeError("Invalid lr scheduler '{}'. Only MultiStepLR and CosineAnnealingLR "
+                           "are supported.".format(args.lr_scheduler))
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -188,13 +206,19 @@ def main(args):
         train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
         lr_scheduler.step()
         if args.output_dir:
-            utils.save_on_master({
+            checkpoint = {
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args,
-                'epoch': epoch},
+                'epoch': epoch
+            }
+            utils.save_on_master(
+                checkpoint,
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+            utils.save_on_master(
+                checkpoint,
+                os.path.join(args.output_dir, 'checkpoint.pth'))
 
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)

@@ -11,7 +11,7 @@ from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 from .. import vgg
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
 
 __all__ = ['SSD', 'ssd300_vgg16']
@@ -126,11 +126,12 @@ class SSD(nn.Module):
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
-    follows:
+    follows, where ``N`` is the number of detections:
+
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
-        - labels (Int64Tensor[N]): the predicted labels for each image
-        - scores (Tensor[N]): the scores for each prediction
+        - labels (Int64Tensor[N]): the predicted labels for each detection
+        - scores (Tensor[N]): the scores for each detection
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
@@ -140,7 +141,7 @@ class SSD(nn.Module):
             set of feature maps.
         size (Tuple[int, int]): the width and height to which images will be rescaled before feeding them
             to the backbone.
-        num_classes (int): number of output classes of the model (excluding the background).
+        num_classes (int): number of output classes of the model (including the background).
         image_mean (Tuple[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
@@ -410,7 +411,7 @@ class SSD(nn.Module):
 
 
 class SSDFeatureExtractorVGG(nn.Module):
-    def __init__(self, backbone: nn.Module, highres: bool, rescaling: bool):
+    def __init__(self, backbone: nn.Module, highres: bool):
         super().__init__()
 
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
@@ -476,13 +477,8 @@ class SSDFeatureExtractorVGG(nn.Module):
             fc,
         ))
         self.extra = extra
-        self.rescaling = rescaling
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        # Undo the 0-1 scaling of toTensor. Necessary for some backbones.
-        if self.rescaling:
-            x *= 255
-
         # L2 regularization + Rescaling of 1st block's feature map
         x = self.features(x)
         rescaled = self.scale_weight.view(1, -1, 1, 1) * F.normalize(x)
@@ -496,8 +492,7 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int,
-                   rescaling: bool):
+def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
     if backbone_name in backbone_urls:
         # Use custom backbones more appropriate for SSD
         arch = backbone_name.split('_')[0]
@@ -515,25 +510,51 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
 
     # find the index of the layer from which we wont freeze
     assert 0 <= trainable_layers <= num_stages
-    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+    freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDFeatureExtractorVGG(backbone, highres, rescaling)
+    return SSDFeatureExtractorVGG(backbone, highres)
 
 
 def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
                  pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
-    """
-    Constructs an SSD model with a VGG16 backbone. See `SSD` for more details.
+    """Constructs an SSD model with input size 300x300 and a VGG16 backbone.
+
+    Reference: `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
+
+    The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
+    image, and should be in 0-1 range. Different images can have different sizes but they will be resized
+    to a fixed size before passing it to the backbone.
+
+    The behavior of the model changes depending if it is in training or evaluation mode.
+
+    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
+    containing:
+
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
+          ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
+        - labels (Int64Tensor[N]): the class label for each ground-truth box
+
+    The model returns a Dict[Tensor] during training, containing the classification and regression
+    losses.
+
+    During inference, the model requires only the input tensors, and returns the post-processed
+    predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
+    follows, where ``N`` is the number of detections:
+
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
+          ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
+        - labels (Int64Tensor[N]): the predicted labels for each detection
+        - scores (Tensor[N]): the scores for each detection
 
     Example:
 
         >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
         >>> model.eval()
-        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> x = [torch.rand(3, 300, 300), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
@@ -544,6 +565,9 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    if "size" in kwargs:
+        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5)
 
@@ -551,12 +575,18 @@ def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: i
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers, True)
+    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
     anchor_generator = DefaultBoxGenerator([[2], [2, 3], [2, 3], [2, 3], [2], [2]],
                                            scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05],
                                            steps=[8, 16, 32, 64, 100, 300])
-    model = SSD(backbone, anchor_generator, (300, 300), num_classes,
-                image_mean=[0.48235, 0.45882, 0.40784], image_std=[1., 1., 1.], **kwargs)
+
+    defaults = {
+        # Rescale the input in a way compatible to the backbone
+        "image_mean": [0.48235, 0.45882, 0.40784],
+        "image_std": [1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0],  # undo the 0-1 scaling of toTensor
+    }
+    kwargs = {**defaults, **kwargs}
+    model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
     if pretrained:
         weights_name = 'ssd300_vgg16_coco'
         if model_urls.get(weights_name, None) is None:

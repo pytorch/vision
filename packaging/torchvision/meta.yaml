@@ -50,7 +50,6 @@ test:
   requires:
     - pytest
     - scipy
-    - av >=8.0.1
     - jpeg
     - ca-certificates
 

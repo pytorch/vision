@@ -4,7 +4,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
 from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
@@ -278,6 +278,8 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 
+    Reference: `"Mask R-CNN" <https://arxiv.org/abs/1703.06870>`_.
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
@@ -297,13 +299,15 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
-    follows:
+    follows, where ``N`` is the number of detected instances:
 
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
-        - labels (``Int64Tensor[N]``): the predicted labels for each image
-        - scores (``Tensor[N]``): the scores or each prediction
+        - labels (``Int64Tensor[N]``): the predicted labels for each instance
+        - scores (``Tensor[N]``): the scores or each instance
         - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
+
+    For more details on the output, you may refer to :ref:`instance_seg_output`.
 
     Keypoint R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 

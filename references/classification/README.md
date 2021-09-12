@@ -23,7 +23,8 @@ Since `AlexNet` and the original `VGG` architectures do not include batch
 normalization, the default initial learning rate `--lr 0.1` is to high.
 
 ```
-python main.py --model $MODEL --lr 1e-2
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --model $MODEL --lr 1e-2
 ```
 
 Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg13`, `vgg16` or `vgg19`. Note
@@ -39,12 +40,17 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 
 ### ResNext-101 32x8d
 
-On 8 nodes, each with 8 GPUs (for a total of 64 GPUS)
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --model resnext101_32x8d --epochs 100
 ```
 
+Note that the above command corresponds to a single node with 8 GPUs. If you use
+a different number of GPUs and/or a different batch size, then the learning rate
+should be scaled accordingly. For example, the pretrained model provided by
+`torchvision` was trained on 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+with `--batch_size 16` and `--lr 0.4`, instead of the current defaults
+which are respectively batch_size=32 and lr=0.1
 
 ### MobileNetV2
 ```
@@ -66,6 +72,12 @@ Here `$MODEL` is one of `mobilenet_v3_large` or `mobilenet_v3_small`.
 Then we averaged the parameters of the last 3 checkpoints that improved the Acc@1. See [#3182](https://github.com/pytorch/vision/pull/3182) 
 and [#3354](https://github.com/pytorch/vision/pull/3354) for details.
 
+
+### EfficientNet
+
+The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](https://github.com/rwightman/pytorch-image-models/blob/01cb46a9a50e3ba4be167965b5764e9702f09b30/timm/models/efficientnet.py#L95-L108).
+
+The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTorch repo](https://github.com/lukemelas/EfficientNet-PyTorch/blob/1039e009545d9329ea026c9f7541341439712b96/efficientnet_pytorch/utils.py#L562-L564).
 
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).

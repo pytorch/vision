@@ -58,22 +58,34 @@ pil_modes_mapping = {
 _is_pil_image = F_pil._is_pil_image
 
 
-def _get_image_size(img: Tensor) -> List[int]:
-    """Returns image size as [w, h]
+def get_image_size(img: Tensor) -> List[int]:
+    """Returns the size of an image as [width, height].
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        List[int]: The image size.
     """
     if isinstance(img, torch.Tensor):
-        return F_t._get_image_size(img)
+        return F_t.get_image_size(img)
 
-    return F_pil._get_image_size(img)
+    return F_pil.get_image_size(img)
 
 
-def _get_image_num_channels(img: Tensor) -> int:
-    """Returns number of image channels
+def get_image_num_channels(img: Tensor) -> int:
+    """Returns the number of channels of an image.
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        int: The number of channels.
     """
     if isinstance(img, torch.Tensor):
-        return F_t._get_image_num_channels(img)
+        return F_t.get_image_num_channels(img)
 
-    return F_pil._get_image_num_channels(img)
+    return F_pil.get_image_num_channels(img)
 
 
 @torch.jit.unused
@@ -124,17 +136,13 @@ def to_tensor(pic):
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    if pic.mode == 'I':
-        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
-    elif pic.mode == 'I;16':
-        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
-    elif pic.mode == 'F':
-        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
-    elif pic.mode == '1':
-        img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
-    else:
-        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+    mode_to_nptype = {'I': np.int32, 'I;16': np.int16, 'F': np.float32}
+    img = torch.from_numpy(
+        np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True)
+    )
 
+    if pic.mode == '1':
+        img = 255 * img
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
@@ -341,7 +349,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
 
 def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-           max_size: Optional[int] = None) -> Tensor:
+           max_size: Optional[int] = None, antialias: Optional[bool] = None) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -350,7 +358,8 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
         and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
         in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types.
+        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
+        closer.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -375,6 +384,13 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
+            closer.
+
+            .. warning::
+                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -391,10 +407,14 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
+        if antialias is not None and not antialias:
+            warnings.warn(
+                "Anti-alias option is always applied for PIL Image input. Argument antialias is ignored."
+            )
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
-    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size)
+    return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
 
 
 def scale(*args, **kwargs):
@@ -453,7 +473,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given image at specified location and output size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then cropped.
 
     Args:
         img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
@@ -491,7 +512,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
 
-    image_width, image_height = _get_image_size(img)
+    image_width, image_height = get_image_size(img)
     crop_height, crop_width = output_size
 
     if crop_width > image_width or crop_height > image_height:
@@ -502,7 +523,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
             (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
         ]
         img = pad(img, padding_ltrb, fill=0)  # PIL uses fill value 0
-        image_width, image_height = _get_image_size(img)
+        image_width, image_height = get_image_size(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
@@ -584,9 +605,9 @@ def _get_perspective_coeffs(
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.lstsq(b_matrix, a_matrix)[0]
+    res = torch.linalg.lstsq(a_matrix, b_matrix, driver='gels').solution
 
-    output: List[float] = res.squeeze(1).tolist()
+    output: List[float] = res.tolist()
     return output
 
 
@@ -687,7 +708,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-    image_width, image_height = _get_image_size(img)
+    image_width, image_height = get_image_size(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -984,7 +1005,7 @@ def rotate(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = _get_image_size(img)
+        img_size = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
 
@@ -1085,7 +1106,7 @@ def affine(
     if len(shear) != 2:
         raise ValueError("Shear should be a sequence containing two values. Got {}".format(shear))
 
-    img_size = _get_image_size(img)
+    img_size = get_image_size(img)
     if not isinstance(img, torch.Tensor):
         # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset

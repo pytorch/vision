@@ -9,9 +9,14 @@ torchvision/version.py
 */**/**/*.pyc
 */**/*~
 *~
+
 docs/build
+# sphinx-gallery
 docs/source/auto_examples/
 docs/source/gen_modules/
+# pytorch-sphinx-theme gets installed here
+docs/src
+
 .coverage
 htmlcov
 .*.swp
@@ -28,3 +33,10 @@ gen.yml
 *.orig
 *-checkpoint.ipynb
 *.venv
+
+## Xcode User settings
+xcuserdata/
+
+# direnv
+.direnv
+.envrc

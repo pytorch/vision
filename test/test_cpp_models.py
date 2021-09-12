@@ -45,7 +45,7 @@ def read_image2():
 
 @unittest.skipIf(
     sys.platform == "darwin" or True,
-    "C++ models are broken on OS X at the moment, and there's a BC breakage on master; "
+    "C++ models are broken on OS X at the moment, and there's a BC breakage on main; "
     "see https://github.com/pytorch/vision/issues/1191")
 class Tester(unittest.TestCase):
     pretrained = False

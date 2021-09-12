@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Optional, Tuple, List, Callable, Any
 
 __all__ = ['GoogLeNet', 'googlenet', "GoogLeNetOutputs", "_GoogLeNetOutputs"]
@@ -26,6 +26,7 @@ _GoogLeNetOutputs = GoogLeNetOutputs
 def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "GoogLeNet":
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    The required minimum input size of the model is 15x15.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -123,12 +124,7 @@ class GoogLeNet(nn.Module):
     def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                import scipy.stats as stats
-                X = stats.truncnorm(-2, 2, scale=0.01)
-                values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
-                values = values.view(m.weight.size())
-                with torch.no_grad():
-                    m.weight.copy_(values)
+                torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=0.01, a=-2, b=2)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)

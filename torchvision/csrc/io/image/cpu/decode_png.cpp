@@ -55,6 +55,7 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
 
   png_uint_32 width, height;
   int bit_depth, color_type;
+  int interlace_type;
   auto retval = png_get_IHDR(
       png_ptr,
       info_ptr,
@@ -62,7 +63,7 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
       &height,
       &bit_depth,
       &color_type,
-      nullptr,
+      &interlace_type,
       nullptr,
       nullptr);
 
@@ -71,7 +72,22 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
+  if (bit_depth > 8) {
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+    TORCH_CHECK(false, "At most 8-bit PNG images are supported currently.")
+  }
+
   int channels = png_get_channels(png_ptr, info_ptr);
+
+  if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+    png_set_expand_gray_1_2_4_to_8(png_ptr);
+
+  int number_of_passes;
+  if (interlace_type == PNG_INTERLACE_ADAM7) {
+    number_of_passes = png_set_interlace_handling(png_ptr);
+  } else {
+    number_of_passes = 1;
+  }
 
   if (mode != IMAGE_READ_MODE_UNCHANGED) {
     // TODO: consider supporting PNG_INFO_tRNS
@@ -155,10 +171,12 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
   auto tensor =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.accessor<uint8_t, 3>().data();
-  auto bytes = png_get_rowbytes(png_ptr, info_ptr);
-  for (png_uint_32 i = 0; i < height; ++i) {
-    png_read_row(png_ptr, ptr, nullptr);
-    ptr += bytes;
+  for (int pass = 0; pass < number_of_passes; pass++) {
+    for (png_uint_32 i = 0; i < height; ++i) {
+      png_read_row(png_ptr, ptr, nullptr);
+      ptr += width * channels;
+    }
+    ptr = tensor.accessor<uint8_t, 3>().data();
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});

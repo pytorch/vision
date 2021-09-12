@@ -3,6 +3,7 @@ import os
 import os.path
 import numpy as np
 import pickle
+import torch
 from typing import Any, Callable, Optional, Tuple
 
 from .vision import VisionDataset

@@ -34,6 +34,7 @@ architectures, and common image transformations for computer vision.
    datasets
    io
    models
+   feature_extraction
    ops
    transforms
    utils
@@ -58,3 +59,9 @@ architectures, and common image transformations for computer vision.
    TorchElastic <https://pytorch.org/elastic/>
    TorchServe <https://pytorch.org/serve>
    PyTorch on XLA Devices <http://pytorch.org/xla/>
+
+
+Indices
+-------
+
+* :ref:`genindex`
