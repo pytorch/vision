@@ -165,6 +165,9 @@ def _read_from_stream(
     should_buffer = True
     max_buffer_size = 5
     if stream.type == "video":
+        if not stream.codec_context:
+            raise RuntimeError("There was an error reading the video stream. "
+                               + "Probably a missing codec.")
         # DivX-style packed B-frames can have out-of-order pts (2 frames in a single pkt)
         # so need to buffer some extra frames to sort everything
         # properly
