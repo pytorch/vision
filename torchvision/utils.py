@@ -305,11 +305,11 @@ def draw_segmentation_masks(
 def draw_keypoints(
         image: torch.Tensor,
         keypoints: torch.Tensor,
+        connectivity: Optional[Tuple[Tuple[int, int]]] = None,
         labels: Optional[List[str]] = None,
         colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
         radius: int = 2,
         width: int = 3,
-        connectivity: Optional[Tuple[Tuple[int, int]]] = None,
         font: Optional[str] = None,
         font_size: int = 10
 ) -> torch.Tensor:
@@ -365,20 +365,20 @@ def draw_keypoints(
             if isinstance(colors, str) or isinstance(colors, tuple):
                 draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
 
-    for kpt_inst in img_kpts:
-        for connection in connectivity:
-            start_pt_x = kpt_inst[connection[0]][0]
-            start_pt_y = kpt_inst[connection[0]][1]
+        if connectivity:
+            for connection in connectivity:
+                start_pt_x = kpt_inst[connection[0]][0]
+                start_pt_y = kpt_inst[connection[0]][1]
 
-            end_pt_x = kpt_inst[connection[1]][0]
-            end_pt_y = kpt_inst[connection[1]][1]
+                end_pt_x = kpt_inst[connection[1]][0]
+                end_pt_y = kpt_inst[connection[1]][1]
 
-            draw.line(
-                (
-                    (start_pt_x, start_pt_y), (end_pt_x, end_pt_y)
-                ),
-                width=width,
-            )
+                draw.line(
+                    (
+                        (start_pt_x, start_pt_y), (end_pt_x, end_pt_y)
+                    ),
+                    width=width,
+                )
 
     # txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
