@@ -7,6 +7,15 @@ different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection and video classification.
 
+.. note ::
+    Backward compatibility is guaranteed for loading a serialized 
+    ``state_dict`` to the model created using old PyTorch version. 
+    On the contrary, loading entire saved models or serialized 
+    ``ScriptModules`` (seralized using older versions of PyTorch) 
+    may not preserve the historic behaviour. Refer to the following 
+    `documentation 
+    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
+
 
 Classification
 ==============
@@ -27,6 +36,7 @@ architectures for image classification:
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
+-  `EfficientNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -47,6 +57,14 @@ You can construct a model with random weights by calling its constructor:
     resnext50_32x4d = models.resnext50_32x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
+    efficientnet_b0 = models.efficientnet_b0()
+    efficientnet_b1 = models.efficientnet_b1()
+    efficientnet_b2 = models.efficientnet_b2()
+    efficientnet_b3 = models.efficientnet_b3()
+    efficientnet_b4 = models.efficientnet_b4()
+    efficientnet_b5 = models.efficientnet_b5()
+    efficientnet_b6 = models.efficientnet_b6()
+    efficientnet_b7 = models.efficientnet_b7()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -68,6 +86,14 @@ These can be constructed by passing ``pretrained=True``:
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
     wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
     mnasnet = models.mnasnet1_0(pretrained=True)
+    efficientnet_b0 = models.efficientnet_b0(pretrained=True)
+    efficientnet_b1 = models.efficientnet_b1(pretrained=True)
+    efficientnet_b2 = models.efficientnet_b2(pretrained=True)
+    efficientnet_b3 = models.efficientnet_b3(pretrained=True)
+    efficientnet_b4 = models.efficientnet_b4(pretrained=True)
+    efficientnet_b5 = models.efficientnet_b5(pretrained=True)
+    efficientnet_b6 = models.efficientnet_b6(pretrained=True)
+    efficientnet_b7 = models.efficientnet_b7(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -113,7 +139,10 @@ Unfortunately, the concrete `subset` that was used is lost. For more
 information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
 or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
-ImageNet 1-crop error rates (224x224)
+The sizes of the EfficientNet models depend on the variant. For the exact input sizes
+`check here <https://github.com/pytorch/vision/blob/d2bfd639e46e1c5dc3c177f889dc7750c8d137c7/references/classification/train.py#L92-L93>`_
+
+ImageNet 1-crop error rates
 
 ================================  =============   =============
 Model                             Acc@1           Acc@5
@@ -151,6 +180,14 @@ Wide ResNet-50-2                  78.468          94.086
 Wide ResNet-101-2                 78.848          94.284
 MNASNet 1.0                       73.456          91.510
 MNASNet 0.5                       67.734          87.490
+EfficientNet-B0                   77.692          93.532
+EfficientNet-B1                   78.642          94.186
+EfficientNet-B2                   80.608          95.310
+EfficientNet-B3                   82.008          96.054
+EfficientNet-B4                   83.384          96.594
+EfficientNet-B5                   83.444          96.628
+EfficientNet-B6                   84.008          96.916
+EfficientNet-B7                   84.122          96.908
 ================================  =============   =============
 
 
@@ -166,6 +203,7 @@ MNASNet 0.5                       67.734          87.490
 .. _MobileNetV3: https://arxiv.org/abs/1905.02244
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
 .. _MNASNet: https://arxiv.org/abs/1807.11626
+.. _EfficientNet: https://arxiv.org/abs/1905.11946
 
 .. currentmodule:: torchvision.models
 
@@ -266,6 +304,18 @@ MNASNet
 .. autofunction:: mnasnet0_75
 .. autofunction:: mnasnet1_0
 .. autofunction:: mnasnet1_3
+
+EfficientNet
+------------
+
+.. autofunction:: efficientnet_b0
+.. autofunction:: efficientnet_b1
+.. autofunction:: efficientnet_b2
+.. autofunction:: efficientnet_b3
+.. autofunction:: efficientnet_b4
+.. autofunction:: efficientnet_b5
+.. autofunction:: efficientnet_b6
+.. autofunction:: efficientnet_b7
 
 Quantized Models
 ----------------

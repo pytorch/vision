@@ -1,5 +1,10 @@
 from torch import nn
+from torch import Tensor
+
 from ..._internally_replaced_utils import load_state_dict_from_url
+
+from typing import Any
+
 from torchvision.models.mobilenetv2 import InvertedResidual, ConvBNReLU, MobileNetV2, model_urls
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from .utils import _replace_relu, quantize_model
@@ -14,24 +19,24 @@ quant_model_urls = {
 
 
 class QuantizableInvertedResidual(InvertedResidual):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return self.skip_add.add(x, self.conv(x))
         else:
             return self.conv(x)
 
-    def fuse_model(self):
+    def fuse_model(self) -> None:
         for idx in range(len(self.conv)):
             if type(self.conv[idx]) == nn.Conv2d:
                 fuse_modules(self.conv, [str(idx), str(idx + 1)], inplace=True)
 
 
 class QuantizableMobileNetV2(MobileNetV2):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         MobileNet V2 main class
 
@@ -42,13 +47,13 @@ class QuantizableMobileNetV2(MobileNetV2):
         self.quant = QuantStub()
         self.dequant = DeQuantStub()
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
         x = self._forward_impl(x)
         x = self.dequant(x)
         return x
 
-    def fuse_model(self):
+    def fuse_model(self) -> None:
         for m in self.modules():
             if type(m) == ConvBNReLU:
                 fuse_modules(m, ['0', '1', '2'], inplace=True)
@@ -56,7 +61,12 @@ class QuantizableMobileNetV2(MobileNetV2):
                 m.fuse_model()
 
 
-def mobilenet_v2(pretrained=False, progress=True, quantize=False, **kwargs):
+def mobilenet_v2(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableMobileNetV2:
     """
     Constructs a MobileNetV2 architecture from
     `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
