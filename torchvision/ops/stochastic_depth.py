@@ -1,4 +1,5 @@
 import torch
+import torch.fx
 from torch import nn, Tensor
 
 
@@ -22,18 +23,22 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     """
     if p < 0.0 or p > 1.0:
         raise ValueError("drop probability has to be between 0 and 1, but got {}".format(p))
+    if mode not in ["batch", "row"]:
+        raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
     if not training or p == 0.0:
         return input
 
     survival_rate = 1.0 - p
-    if mode not in ["batch", "row"]:
-        raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
-    size = [1] * input.ndim
     if mode == "row":
-        size[0] = input.shape[0]
+        size = [input.shape[0]] + [1] * (input.ndim - 1)
+    else:
+        size = [1] * input.ndim
     noise = torch.empty(size, dtype=input.dtype, device=input.device)
     noise = noise.bernoulli_(survival_rate).div_(survival_rate)
     return input * noise
+
+
+torch.fx.wrap('stochastic_depth')
 
 
 class StochasticDepth(nn.Module):

@@ -77,7 +77,6 @@ class MNIST(VisionDataset):
     ) -> None:
         super(MNIST, self).__init__(root, transform=transform,
                                     target_transform=target_transform)
-        torch._C._log_api_usage_once(f"torchvision.datasets.{self.__class__.__name__}")
         self.train = train  # training set or test set
 
         if self._check_legacy_exist():
