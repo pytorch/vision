@@ -151,4 +151,3 @@ For post training quant, device is set to CPU. For training, the device is set t
 ```
 python train_quantization.py --device='cpu' --test-only --backend='<backend>' --model='<model_name>'
 ```
-
