@@ -184,8 +184,9 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off flake8 typing
-            flake8 --config=setup.cfg .
+            pip install --user --progress-bar off pre-commit
+            pre-commit install-hooks
+      - run: pre-commit run --all-files
 
   python_type_check:
     docker:
