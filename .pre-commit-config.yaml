@@ -1,4 +1,8 @@
 repos:
+  - repo: https://github.com/omnilib/ufmt
+    rev: 1.3.0
+    hooks:
+      - id: ufmt
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
