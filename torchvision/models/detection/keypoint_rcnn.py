@@ -313,6 +313,8 @@ def keypointrcnn_resnet50_fpn(
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 
+    Reference: `"Mask R-CNN" <https://arxiv.org/abs/1703.06870>`_.
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 

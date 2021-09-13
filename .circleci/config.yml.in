@@ -29,7 +29,7 @@ commands:
 #         command: |
 #           set -ex
 #           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-#           if [[ "$BRANCH" != "master" ]]; then
+#           if [[ "$BRANCH" != "main" ]]; then
 #             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
 #             git checkout "merged/$CIRCLE_BRANCH"
 #           fi
@@ -45,14 +45,6 @@ commands:
               our_upload_channel=test
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
-  install_cuda_compatible_cmath:
-    description: "Install CUDA compatible cmath"
-    steps:
-      - run:
-          name: _HACK_ Install CUDA compatible cmath
-          no_output_timeout: 1m
-          command: |
-              powershell .circleci/scripts/vs_install_cmath.ps1
 
   brew_update:
     description: "Update Homebrew and install base formulae"
@@ -192,8 +184,9 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off flake8 typing
-            flake8 --config=setup.cfg .
+            pip install --user --progress-bar off pre-commit
+            pre-commit install-hooks
+      - run: pre-commit run --all-files
 
   python_type_check:
     docker:
@@ -300,7 +293,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Build conda packages
           no_output_timeout: 20m
@@ -332,7 +324,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Build wheel packages
           command: |
@@ -712,7 +703,6 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -754,7 +744,6 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -884,7 +873,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -898,7 +886,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -936,7 +923,7 @@ jobs:
           command: |
             set -ex
             tag=${CIRCLE_TAG:1:5}
-            VERSION=${tag:-master}
+            VERSION=${tag:-main}
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
             pushd docs
@@ -982,7 +969,7 @@ jobs:
             # https://circleci.com/docs/2.0/configuration-reference/#checkout
             set -ex
             tag=${CIRCLE_TAG:1:5}
-            target=${tag:-master}
+            target=${tag:-main}
             ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
 
 
@@ -1029,7 +1016,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
     jobs:
       - smoke_test_docker_image_build:
           context: org-member

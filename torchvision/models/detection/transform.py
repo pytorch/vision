@@ -3,7 +3,7 @@ import torch
 import torchvision
 
 from torch import nn, Tensor
-from typing import List, Tuple, Dict, Optional, Union
+from typing import List, Tuple, Dict, Optional
 
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
@@ -11,14 +11,12 @@ from .roi_heads import paste_masks_in_image
 
 @torch.jit.unused
 def _get_shape_onnx(image: Tensor) -> Tensor:
-
     from torch.onnx import operators
     return operators.shape_as_tensor(image)[-2:]
 
 
 @torch.jit.unused
 def _fake_cast_onnx(v: Tensor) -> float:
-
     # ONNX requires a tensor but here we fake its type for JIT.
     return v  # type: ignore
 
@@ -74,15 +72,8 @@ class GeneralizedRCNNTransform(nn.Module):
     It returns a ImageList for the inputs, and a List[Dict[Tensor]] for the targets
     """
 
-    def __init__(
-        self,
-        min_size: Union[int, Tuple[int], List[int]],
-        max_size: int,
-        image_mean: Tuple[float, ...],
-        image_std: Tuple[float, ...],
-        size_divisible: int = 32,
-        fixed_size: Optional[Tuple[int, int]] = None,
-    ) -> None:
+    def __init__(self, min_size: int, max_size: int, image_mean: List[float], image_std: List[float],
+                 size_divisible: int = 32, fixed_size: Optional[Tuple[int, int]] = None):
         super(GeneralizedRCNNTransform, self).__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)
@@ -93,12 +84,10 @@ class GeneralizedRCNNTransform(nn.Module):
         self.size_divisible = size_divisible
         self.fixed_size = fixed_size
 
-    def forward(
-        self,
-        images: List[Tensor],
-        targets: Optional[List[Dict[str, Tensor]]] = None,
-    ) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]:
-
+    def forward(self,
+                images: List[Tensor],
+                targets: Optional[List[Dict[str, Tensor]]] = None
+                ) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]:
         images = [img for img in images]
         if targets is not None:
             # make a copy of targets to avoid modifying it in-place
@@ -135,10 +124,7 @@ class GeneralizedRCNNTransform(nn.Module):
         image_list = ImageList(batched_images, image_sizes_list)
         return image_list, targets
 
-    def normalize(
-        self,
-        image: Tensor,
-    ) -> Tensor:
+    def normalize(self, image: Tensor) -> Tensor:
         if not image.is_floating_point():
             raise TypeError(
                 f"Expected input images to be of floating type (in range [0, 1]), "
@@ -149,11 +135,7 @@ class GeneralizedRCNNTransform(nn.Module):
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
         return (image - mean[:, None, None]) / std[:, None, None]
 
-    def torch_choice(
-        self,
-        k: List[int],
-    ) -> int:
-
+    def torch_choice(self, k: List[int]) -> int:
         """
         Implements `random.choice` via torch ops so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
@@ -192,12 +174,7 @@ class GeneralizedRCNNTransform(nn.Module):
     # _onnx_batch_images() is an implementation of
     # batch_images() that is supported by ONNX tracing.
     @torch.jit.unused
-    def _onnx_batch_images(
-        self,
-        images: List[Tensor],
-        size_divisible: int = 32
-    ):
-
+    def _onnx_batch_images(self, images: List[Tensor], size_divisible: int = 32) -> Tensor:
         max_size = []
         for i in range(images[0].dim()):
             max_size_i = torch.max(torch.stack([img.shape[i] for img in images]).to(torch.float32)).to(torch.int64)
@@ -218,23 +195,14 @@ class GeneralizedRCNNTransform(nn.Module):
 
         return torch.stack(padded_imgs)
 
-    def max_by_axis(
-        self,
-        the_list: List[List[int]]
-    ) -> List[int]:
-
+    def max_by_axis(self, the_list: List[List[int]]) -> List[int]:
         maxes = the_list[0]
         for sublist in the_list[1:]:
             for index, item in enumerate(sublist):
                 maxes[index] = max(maxes[index], item)
         return maxes
 
-    def batch_images(
-        self,
-        images: List[Tensor],
-        size_divisible: int = 32,
-    ) -> Tensor:
-
+    def batch_images(self, images: List[Tensor], size_divisible: int = 32) -> Tensor:
         if torchvision._is_tracing():
             # batch_images() does not export well to ONNX
             # call _onnx_batch_images() instead
@@ -253,13 +221,11 @@ class GeneralizedRCNNTransform(nn.Module):
 
         return batched_imgs
 
-    def postprocess(
-        self,
-        result: List[Dict[str, Tensor]],
-        image_shapes: List[Tuple[int, int]],
-        original_image_sizes: List[Tuple[int, int]],
-    ) -> List[Dict[str, Tensor]]:
-
+    def postprocess(self,
+                    result: List[Dict[str, Tensor]],
+                    image_shapes: List[Tuple[int, int]],
+                    original_image_sizes: List[Tuple[int, int]]
+                    ) -> List[Dict[str, Tensor]]:
         if self.training:
             return result
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
@@ -286,12 +252,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return format_string
 
 
-def resize_keypoints(
-    keypoints: Tensor,
-    original_size: Tuple[int, int],
-    new_size: Tuple[int, int],
-) -> Tensor:
-
+def resize_keypoints(keypoints: Tensor, original_size: List[int], new_size: List[int]) -> Tensor:
     ratios = [
         torch.tensor(s, dtype=torch.float32, device=keypoints.device) /
         torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
@@ -309,12 +270,7 @@ def resize_keypoints(
     return resized_data
 
 
-def resize_boxes(
-    boxes: Tensor,
-    original_size: Tuple[int, int],
-    new_size: Tuple[int, int],
-) -> Tensor:
-
+def resize_boxes(boxes: Tensor, original_size: List[int], new_size: List[int]) -> Tensor:
     ratios = [
         torch.tensor(s, dtype=torch.float32, device=boxes.device) /
         torch.tensor(s_orig, dtype=torch.float32, device=boxes.device)
