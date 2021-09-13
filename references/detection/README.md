@@ -79,4 +79,3 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco_kp --model keypointrcnn_resnet50_fpn --epochs 46\
     --lr-steps 36 43 --aspect-ratio-group-factor 3
 ```
-
