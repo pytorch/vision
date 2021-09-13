@@ -764,7 +764,8 @@ def test_random_mixupcutmix_with_invalid_data():
         t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, ), dtype=torch.int32))
 
 
-def test_random_mixupcutmix_with_real_data():
+@pytest.mark.parametrize('device', cpu_and_gpu())
+def test_random_mixupcutmix_with_real_data(device):
     torch.manual_seed(12)
 
     # Build dummy dataset
@@ -773,7 +774,8 @@ def test_random_mixupcutmix_with_real_data():
         fullpath = (os.path.dirname(os.path.abspath(__file__)), 'assets') + test_file
         img = read_image(get_file_path_2(*fullpath))
         images.append(F.resize(img, [224, 224]))
-    dataset = TensorDataset(torch.stack(images).to(torch.float32), torch.tensor([0, 1]))
+    dataset = TensorDataset(torch.stack(images).to(device=device, dtype=torch.float32),
+                            torch.tensor([0, 1], device=device))
 
     # Use mixup in the collate
     mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0)

@@ -4,6 +4,7 @@ import time
 
 import torch
 import torch.utils.data
+from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 from torchvision.transforms.functional import InterpolationMode
@@ -170,7 +171,7 @@ def main(args):
     if args.mixup_alpha > 0.0 or args.cutmix_alpha > 0.0:
         mixupcutmix = torchvision.transforms.RandomMixupCutmix(len(dataset.classes), mixup_alpha=args.mixup_alpha,
                                                                cutmix_alpha=args.cutmix_alpha)
-        collate_fn = lambda batch: mixupcutmix(*torch.utils.data._utils.collate.default_collate(batch))  # noqa: E731
+        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
         sampler=train_sampler, num_workers=args.workers, pin_memory=True,
