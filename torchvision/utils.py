@@ -322,14 +322,14 @@ def draw_keypoints(
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
         keypoints (Tensor): Tensor of shape (num_instances, K, 3) the K keypoints location for each of the N instances,
             in the format [x, y, visibility], where `visibility=0` means that the keypoint is not visible.
+        connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
+            each tuple contains pair of keypoints to be connected.
         labels (List[str]): List containing the labels for each Keypoint.
         colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
             or a single color for all the keypoints.
             The colors can be represented as `str` or `Tuple[int, int, int]`.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
-        connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
-            each tuple contains pair of keypoints to be connected.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
