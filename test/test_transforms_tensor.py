@@ -792,5 +792,5 @@ def test_random_mixupcutmix_with_real_data(device, transform, expected):
 
     torch.testing.assert_close(
         torch.stack(stats).mean(dim=0),
-        torch.tensor(expected)
+        torch.tensor(expected, device=device)
     )
