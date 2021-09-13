@@ -146,6 +146,8 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
   register_module("stage4", stage4);
   register_module("conv2", conv5);
   register_module("fc", fc);
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor ShuffleNetV2Impl::forward(torch::Tensor x) {
