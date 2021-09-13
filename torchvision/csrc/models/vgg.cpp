@@ -69,6 +69,8 @@ VGGImpl::VGGImpl(
 
   if (initialize_weights)
     _initialize_weights();
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor VGGImpl::forward(torch::Tensor x) {
