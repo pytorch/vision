@@ -2,6 +2,7 @@ import os
 import torch
 from torch._utils_internal import get_file_path_2
 from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data.dataloader import default_collate
 from torchvision import transforms as T
 from torchvision.io import read_image
 from torchvision.transforms import functional as F
@@ -721,21 +722,16 @@ def test_gaussian_blur(device, meth_kwargs):
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('alphas', [
-    {"mixup_alpha": 1.0, "cutmix_alpha": 1.0, 'cutmix_p': 1.0},
-    {"mixup_alpha": 1.0, "cutmix_alpha": 1.0, 'cutmix_p': 0.0},
-    {"mixup_alpha": 1.0, "cutmix_alpha": 1.0, 'p': 0.0},
-    {"mixup_alpha": 0.0, "cutmix_alpha": 1.0},
-    {"mixup_alpha": 1.0, "cutmix_alpha": 0.0},
-])
+@pytest.mark.parametrize('tranform', [T.RandomMixup, T.RandomCutmix])
+@pytest.mark.parametrize('p', [0.0, 1.0])
 @pytest.mark.parametrize('inplace', [True, False])
-def test_random_mixupcutmix(device, alphas, inplace):
+def test_random_mixupcutmix(device, tranform, p, inplace):
     batch_size = 32
     num_classes = 10
     batch = torch.rand(batch_size, 3, 44, 56, device=device)
     targets = torch.randint(num_classes, (batch_size, ), device=device, dtype=torch.int64)
 
-    fn = T.RandomMixupCutmix(num_classes, inplace=inplace, **alphas)
+    fn = tranform(num_classes, p=p, inplace=inplace)
     scripted_fn = torch.jit.script(fn)
 
     seed = torch.seed()
@@ -749,13 +745,14 @@ def test_random_mixupcutmix(device, alphas, inplace):
     fn.__repr__()
 
 
-def test_random_mixupcutmix_with_invalid_data():
+@pytest.mark.parametrize('tranform', [T.RandomMixup, T.RandomCutmix])
+def test_random_mixupcutmix_with_invalid_data(tranform):
     with pytest.raises(AssertionError, match="Please provide a valid positive value for the num_classes."):
-        T.RandomMixupCutmix(0)
-    with pytest.raises(AssertionError, match="Both alpha params can't be zero."):
-        T.RandomMixupCutmix(10, mixup_alpha=0.0, cutmix_alpha=0.0)
+        tranform(0)
+    with pytest.raises(AssertionError, match="Alpha param can't be zero."):
+        tranform(10, alpha=0.0)
 
-    t = T.RandomMixupCutmix(10)
+    t = tranform(10)
     with pytest.raises(ValueError, match="Batch ndim should be 4."):
         t(torch.rand(3, 60, 60), torch.randint(10, (1, )))
     with pytest.raises(ValueError, match="Target ndim should be 1."):
@@ -765,7 +762,11 @@ def test_random_mixupcutmix_with_invalid_data():
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-def test_random_mixupcutmix_with_real_data(device):
+@pytest.mark.parametrize('transform, expected', [
+    (T.RandomMixup, [60.77401351928711, 0.5151033997535706]),
+    (T.RandomCutmix, [70.13909912109375, 0.525851309299469])
+])
+def test_random_mixupcutmix_with_real_data(device, transform, expected):
     torch.manual_seed(12)
 
     # Build dummy dataset
@@ -778,17 +779,16 @@ def test_random_mixupcutmix_with_real_data(device):
                             torch.tensor([0, 1], device=device))
 
     # Use mixup in the collate
-    mixup = T.RandomMixupCutmix(2, cutmix_alpha=1.0, mixup_alpha=1.0)
-    dataloader = DataLoader(dataset, batch_size=2,
-                            collate_fn=lambda batch: mixup(*(torch.stack(x) for x in zip(*batch))))
+    trans = transform(2)
+    dataloader = DataLoader(dataset, batch_size=2, collate_fn=lambda batch: trans(*default_collate(batch)))
 
     # Test against known statistics about the produced images
     stats = []
     for _ in range(25):
         for b, t in dataloader:
-            stats.append(torch.stack([b.mean(), b.std(), t.std()]))
+            stats.append(torch.stack([b.std(), t.std()]))
 
     torch.testing.assert_close(
         torch.stack(stats).mean(dim=0),
-        torch.tensor([46.9443473815918, 64.79092407226562, 0.459820032119751])
+        torch.tensor(expected)
     )
