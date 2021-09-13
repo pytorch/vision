@@ -158,6 +158,8 @@ MNASNetImpl::MNASNetImpl(double alpha, int64_t num_classes, double dropout) {
   register_module("classifier", classifier);
 
   _initialize_weights();
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor MNASNetImpl::forward(torch::Tensor x) {
