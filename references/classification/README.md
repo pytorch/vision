@@ -40,12 +40,17 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 
 ### ResNext-101 32x8d
 
-On 8 nodes, each with 8 GPUs (for a total of 64 GPUS)
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --model resnext101_32x8d --epochs 100
 ```
 
+Note that the above command corresponds to a single node with 8 GPUs. If you use
+a different number of GPUs and/or a different batch size, then the learning rate
+should be scaled accordingly. For example, the pretrained model provided by
+`torchvision` was trained on 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+with `--batch_size 16` and `--lr 0.4`, instead of the current defaults
+which are respectively batch_size=32 and lr=0.1
 
 ### MobileNetV2
 ```
@@ -146,4 +151,3 @@ For post training quant, device is set to CPU. For training, the device is set t
 ```
 python train_quantization.py --device='cpu' --test-only --backend='<backend>' --model='<model_name>'
 ```
-
