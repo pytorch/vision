@@ -757,7 +757,9 @@ def test_random_mixupcutmix_with_invalid_data(tranform):
         t(torch.rand(3, 60, 60), torch.randint(10, (1, )))
     with pytest.raises(ValueError, match="Target ndim should be 1."):
         t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, 1)))
-    with pytest.raises(ValueError, match="Target dtype should be torch.int64."):
+    with pytest.raises(TypeError, match="Batch dtype should be a float tensor."):
+        t(torch.randint(256, (32, 3, 60, 60), dtype=torch.uint8), torch.randint(10, (32, )))
+    with pytest.raises(TypeError, match="Target dtype should be torch.int64."):
         t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, ), dtype=torch.int32))
 
 
