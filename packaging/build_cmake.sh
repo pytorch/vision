@@ -36,7 +36,7 @@ else
   MKL_CONSTRAINT=''
 fi
 
-conda install -yq \pytorch=1.10.0.dev20210911 $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
+conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
