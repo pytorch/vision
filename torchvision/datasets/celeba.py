@@ -99,7 +99,10 @@ class CelebA(VisionDataset):
 
         mask = slice(None) if split_ is None else (splits.data == split_).squeeze()
 
-        self.filename = splits.index
+        if mask == slice(None):  # if split == "all"
+            self.filename = splits.index
+        else:
+            self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]
         self.identity = identity.data[mask]
         self.bbox = bbox.data[mask]
         self.landmarks_align = landmarks_align.data[mask]
