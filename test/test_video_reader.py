@@ -112,8 +112,8 @@ DecoderResult = collections.namedtuple(
     "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
 )
 
-"""av_seek_frame is imprecise so seek to a timestamp earlier by a margin
-The unit of margin is second"""
+# av_seek_frame is imprecise so seek to a timestamp earlier by a margin
+# The unit of margin is second
 seek_frame_margin = 0.25
 
 

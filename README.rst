@@ -106,9 +106,9 @@ otherwise, add the include and library paths in the environment variables ``TORC
 .. _libjpeg: http://ijg.org/
 .. _libjpeg-turbo: https://libjpeg-turbo.org/
 
-C++ API
-=======
-TorchVision also offers a C++ API that contains C++ equivalent of python models.
+Using the models on C++
+=======================
+TorchVision provides an example project for how to use the models on C++ using JIT Script.
 
 Installation From source:
 
