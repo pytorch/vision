@@ -9639,7 +9639,6 @@ code span, kbd span, pre span, samp span {
 
 pre {
   padding: 1.125rem;
-  background-color: #f3f4f7;
 }
 pre code {
   font-size: 0.875rem;
@@ -10408,11 +10407,10 @@ h1 {
 span.pre {
   color: #6c6c6d;
   background-color: #f3f4f7;
-  padding: 2px 6px;
+  padding: 2px 0px;
 }
 
 pre {
-  background-color: #f3f4f7;
   padding: 1.375rem;
 }
 
@@ -10592,7 +10590,6 @@ article.pytorch-article .function dt em, article.pytorch-article .attribute dt e
   font-size: 87.5%;
 }
 article.pytorch-article .function dt a, article.pytorch-article .attribute dt a, article.pytorch-article .class .attribute dt a, article.pytorch-article .class dt a {
-  position: absolute;
   right: 30px;
   padding-right: 0;
   top: 50%;
@@ -10618,6 +10615,8 @@ article.pytorch-article .function dt > code, article.pytorch-article .attribute 
   box-decoration-break: clone;
 }
 article.pytorch-article .function .viewcode-link, article.pytorch-article .attribute .viewcode-link, article.pytorch-article .class .viewcode-link {
+  padding-left: 0.6rem;
+  position: absolute;
   font-size: 0.875rem;
   color: #979797;
   letter-spacing: 0;
@@ -10788,29 +10787,6 @@ article.pytorch-article .attention table,
 article.pytorch-article .error table {
   margin: 0 2rem;
   width: auto;
-}
-article.pytorch-article .note .pre,
-article.pytorch-article .note pre,
-article.pytorch-article .warning .pre,
-article.pytorch-article .warning pre,
-article.pytorch-article .tip .pre,
-article.pytorch-article .tip pre,
-article.pytorch-article .seealso .pre,
-article.pytorch-article .seealso pre,
-article.pytorch-article .hint .pre,
-article.pytorch-article .hint pre,
-article.pytorch-article .important .pre,
-article.pytorch-article .important pre,
-article.pytorch-article .caution .pre,
-article.pytorch-article .caution pre,
-article.pytorch-article .danger .pre,
-article.pytorch-article .danger pre,
-article.pytorch-article .attention .pre,
-article.pytorch-article .attention pre,
-article.pytorch-article .error .pre,
-article.pytorch-article .error pre {
-  background: #ffffff;
-  outline: 1px solid #e9e9e9;
 }
 article.pytorch-article .note :not(dt) > code,
 article.pytorch-article .warning :not(dt) > code,
@@ -12072,6 +12048,10 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
 }
 .pytorch-right-menu .pytorch-side-scroll ul li {
   position: relative;
+}
+
+#pytorch-right-menu .side-scroll-highlight {
+  color: #ee4c2c;
 }
 
 .header-container {

@@ -10,6 +10,7 @@ Example gallery
 Below is a gallery of examples
 
 
+
 .. raw:: html
 
     <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;...">
