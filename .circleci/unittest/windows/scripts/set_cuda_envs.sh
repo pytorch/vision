@@ -11,10 +11,9 @@ fi
 
 # It's a log to see if CU_VERSION exists, if not, we use environment CUDA_VERSION directly
 # in unittest_windows_gpu, there's no CU_VERSION, but CUDA_VERSION.
-echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION $CU_VERSION"
+echo "Using CUDA $CUDA_VERSION, CU_VERSION is $CU_VERSION now"
 
-# In case the environment variable is like 11.2.1 (MAJOR.MINOR.UPDATE), so [:2] is used ensure the version number is MAJOR.MINOR 
-version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
+version=$CUDA_VERSION
 
 # set cuda envs
 export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
