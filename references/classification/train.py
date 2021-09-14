@@ -195,7 +195,24 @@ def main(args):
                                           opt_level=args.apex_opt_level
                                           )
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    args.lr_scheduler = args.lr_scheduler.lower()
+    if args.lr_scheduler == 'steplr':
+        main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    elif args.lr_scheduler == 'cosineannealinglr':
+        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    else:
+        raise RuntimeError("Invalid lr scheduler '{}'. Only StepLR and CosineAnnealingLR "
+                           "are supported.".format(args.lr_scheduler))
+
+    if args.lr_warmup_epochs > 0:
+        lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
+                                                            total_iters=args.lr_warmup_epochs), main_lr_scheduler],
+            milestones=[args.lr_warmup_epochs]
+        )
+    else:
+        lr_scheduler = main_lr_scheduler
 
     model_without_ddp = model
     if args.distributed:
@@ -272,6 +289,9 @@ def get_args_parser(add_help=True):
     parser.add_argument('--label-smoothing', default=0.0, type=float,
                         help='label smoothing (default: 0.0)',
                         dest='label_smoothing')
+    parser.add_argument('--lr-scheduler', default="steplr", help='the lr scheduler (default: steplr)')
+    parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
+    parser.add_argument('--lr-warmup-decay', default=0.01, type=int, help='the decay for lr')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
