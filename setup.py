@@ -359,8 +359,8 @@ def get_extensions():
             ffmpeg_version_str = str(subprocess.check_output(["ffmpeg", "-version"]))
             ffmpeg_version = re.split(r"ffmpeg version |\.| |-", ffmpeg_version_str)[1:3]
             ffmpeg_version = ".".join(ffmpeg_version)
-            if StrictVersion(ffmpeg_version) < StrictVersion('4.3'):
-                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.3.')
+            if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
+                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
                 has_ffmpeg = False
         except (subprocess.CalledProcessError, IndexError, ValueError):
             print('Error fetching ffmpeg version, ignoring ffmpeg.')
