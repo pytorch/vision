@@ -1,9 +1,7 @@
 import json
-import tempfile
 
 import numpy as np
 import copy
-import time
 import torch
 import torch._six
 
