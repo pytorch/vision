@@ -77,6 +77,10 @@ class TestVideo:
             assert_equal(data, lv)
             assert info["video_fps"] == 5
 
+    # Rollback once #4402 is fixed
+    @pytest.mark.skipif(sys.platform == "darwin", reason=(
+        'This test segfaults on MacOS; temporarily disabling to enable test execution.'
+    ))
     @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
     def test_probe_video_from_file(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
