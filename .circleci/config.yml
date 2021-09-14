@@ -109,11 +109,11 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: "0.10.0"
+      default: "0.10.1"
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
-      default: "1.9.0"
+      default: "1.9.1"
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
