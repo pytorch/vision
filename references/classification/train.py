@@ -199,7 +199,8 @@ def main(args):
     if args.lr_scheduler == 'steplr':
         main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     elif args.lr_scheduler == 'cosineannealinglr':
-        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                                       T_max=args.epochs - args.lr_warmup_epochs)
     else:
         raise RuntimeError("Invalid lr scheduler '{}'. Only StepLR and CosineAnnealingLR "
                            "are supported.".format(args.lr_scheduler))
