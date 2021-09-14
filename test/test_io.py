@@ -63,6 +63,10 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
     os.unlink(f.name)
 
 
+# Rollback once #4402 is fixed
+@pytest.mark.skipif(sys.platform == "darwin", reason=(
+    'These tests segfault on MacOS; temporarily disabling.'
+))
 @pytest.mark.skipif(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
                     reason="video_reader backend not available")
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
@@ -77,10 +81,6 @@ class TestVideo:
             assert_equal(data, lv)
             assert info["video_fps"] == 5
 
-    # Rollback once #4402 is fixed
-    @pytest.mark.skipif(sys.platform == "darwin", reason=(
-        'This test segfaults on MacOS; temporarily disabling to enable test execution.'
-    ))
     @pytest.mark.skipif(not io._HAS_VIDEO_OPT, reason="video_reader backend is not chosen")
     def test_probe_video_from_file(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
