@@ -2,6 +2,7 @@ import collections
 import itertools
 import math
 import os
+import sys
 import pytest
 from pytest import approx
 from fractions import Fraction
@@ -269,6 +270,10 @@ def _get_video_tensor(video_dir, video_file):
     return full_path, video_tensor
 
 
+# Rollback once #4402 is fixed
+@pytest.mark.skipif(sys.platform == "darwin", reason=(
+    'These tests segfault on MacOS; temporarily disabling.'
+))
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 @pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
 class TestVideoReader:
