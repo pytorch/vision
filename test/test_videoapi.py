@@ -1,5 +1,6 @@
 import collections
 import os
+import sys
 import pytest
 from pytest import approx
 import urllib
@@ -64,6 +65,10 @@ test_videos = {
 }
 
 
+# Rollback once #4402 is fixed
+@pytest.mark.skipif(sys.platform == "darwin", reason=(
+    'These tests segfault on MacOS; temporarily disabling.'
+))
 @pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
 @PY39_SKIP
 class TestVideoApi:
