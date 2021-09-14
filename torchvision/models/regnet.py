@@ -4,7 +4,7 @@ import torch
 
 from collections import OrderedDict
 from enum import Enum, auto
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 from torch import nn, Tensor
 from torchvision.models.mobilenetv2 import _make_divisible
 
@@ -131,7 +131,7 @@ class RegNetParams:
     @staticmethod
     def _adjust_widths_groups_compatibilty(
             stage_widths: List[int], bottleneck_ratios: List[float],
-            group_widths: List[int]) -> Tuple(List[int], List[int]):
+            group_widths: List[int]) -> Tuple[List[int], List[int]]:
         """
         Adjusts the compatibility of widths and groups,
         depending on the bottleneck ratio.
