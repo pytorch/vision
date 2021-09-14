@@ -1,4 +1,4 @@
-#include "../nms.h"
+#include "../../nms.h"
 
 #include <ATen/autocast_mode.h>
 #include <torch/types.h>

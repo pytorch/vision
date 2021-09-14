@@ -1,4 +1,4 @@
-#include "../ps_roi_align.h"
+#include "../../ps_roi_align.h"
 
 #include <ATen/autocast_mode.h>
 #include <torch/types.h>
@@ -15,10 +15,10 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_autocast(
     int64_t pooled_height,
     int64_t pooled_width,
     int64_t sampling_ratio) {
-  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::AutocastCPU);
   auto result = ps_roi_align(
-      at::autocast::cached_cast(at::kFloat, input),
-      at::autocast::cached_cast(at::kFloat, rois),
+      at::autocast::cached_cast(at::kFloat, input, c10::DeviceType::CPU),
+      at::autocast::cached_cast(at::kFloat, rois, c10::DeviceType::CPU),
       spatial_scale,
       pooled_height,
       pooled_width,
@@ -31,7 +31,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_autocast(
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+TORCH_LIBRARY_IMPL(torchvision, AutocastCPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::ps_roi_align"),
       TORCH_FN(ps_roi_align_autocast));

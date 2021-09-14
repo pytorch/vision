@@ -133,9 +133,10 @@ def get_extensions():
         os.path.join(extensions_dir, "ops", "*.cpp")
     )
     source_cpu = (
-        glob.glob(os.path.join(extensions_dir, "ops", "autograd", "*.cpp"))
-        + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
-        + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
+        glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'autocast', 'cpu', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'quantized', 'cpu', '*.cpp'))
     )
 
     is_rocm_pytorch = False
@@ -163,7 +164,7 @@ def get_extensions():
     else:
         source_cuda = glob.glob(os.path.join(extensions_dir, "ops", "cuda", "*.cu"))
 
-    source_cuda += glob.glob(os.path.join(extensions_dir, "ops", "autocast", "*.cpp"))
+    source_cuda += glob.glob(os.path.join(extensions_dir, 'ops', 'autocast', 'cuda', '*.cpp'))
 
     sources = main_file + source_cpu
     extension = CppExtension
