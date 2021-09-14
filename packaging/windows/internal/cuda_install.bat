@@ -177,12 +177,12 @@ goto cuda_common
 :cuda_common
 
 if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
-    curl -k -L https://ossci-windows.s3.us-east-1.amazonaws.com/builder/NvToolsExt.7z --output "%SRC_DIR%\temp_build\NvToolsExt.7z"
+    curl -k -L https://www.dropbox.com/s/9mcolalfdj4n979/NvToolsExt.7z?dl=1 --output "%SRC_DIR%\temp_build\NvToolsExt.7z"
     if errorlevel 1 exit /b 1
 )
 
 if not exist "%SRC_DIR%\temp_build\gpu_driver_dlls.zip" (
-    curl -k -L "https://ossci-windows.s3.us-east-1.amazonaws.com/builder/additional_dlls.zip" --output "%SRC_DIR%\temp_build\gpu_driver_dlls.zip"
+    curl -k -L "https://drive.google.com/u/0/uc?id=1injUyo3lnarMgWyRcXqKg4UGnN0ysmuq&export=download" --output "%SRC_DIR%\temp_build\gpu_driver_dlls.zip"
     if errorlevel 1 exit /b 1
 )
 
