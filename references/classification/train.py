@@ -71,8 +71,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix='
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
-    print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
+    print(f'{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}')
     return metric_logger.acc1.global_avg
 
 
@@ -324,8 +323,8 @@ def get_args_parser(add_help=True):
         '--model-ema', action='store_true',
         help='enable tracking Exponential Moving Average of model parameters')
     parser.add_argument(
-        '--model-ema-decay', type=float, default=0.99,
-        help='decay factor for Exponential Moving Average of model parameters(default: 0.99)')
+        '--model-ema-decay', type=float, default=0.9,
+        help='decay factor for Exponential Moving Average of model parameters(default: 0.9)')
 
     return parser
 
