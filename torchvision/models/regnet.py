@@ -51,6 +51,7 @@ class RegNetParams:
         se_ratio: float = 0.25,
         bn_epsilon: float = 1e-05,
         bn_momentum: bool = 0.1,
+        num_classes: int = 1000,
     ) -> None:
         if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
             raise ValueError("Invalid RegNet settings")
@@ -68,6 +69,7 @@ class RegNetParams:
         self.se_ratio = se_ratio if use_se else None
         self.bn_epsilon = bn_epsilon
         self.bn_momentum = bn_momentum
+        self.num_classes = num_classes
 
     def get_expanded_params(self):
         """
@@ -578,13 +580,20 @@ class RegNet(nn.Module):
 
         self.trunk_output = nn.Sequential(OrderedDict(blocks))
 
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(in_features=current_width, out_features=params.num_classes)
+
         # Init weights and good to go
         self._init_weights()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
         x = self.trunk_output(x)
-   
+
+        x = self.avgpool(x)
+        x = x.flatten(start_dim=1)
+        x = self.fc(x)
+
         return x
 
     def _init_weights(self) -> None:
