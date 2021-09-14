@@ -10,6 +10,7 @@ if [[ ${#CU_VERSION} -eq 5 ]]; then
 fi
 
 # It's a log to see if CU_VERSION exists, if not, we use environment CUDA_VERSION directly
+# in unittest_windows_gpu, there's no CU_VERSION, but CUDA_VERSION.
 echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION $CU_VERSION"
 
 # In case the environment variable is like 11.2.1 (MAJOR.MINOR.UPDATE), so [:2] is used ensure the version number is MAJOR.MINOR 
