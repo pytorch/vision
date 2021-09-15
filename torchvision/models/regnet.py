@@ -4,148 +4,17 @@ import torch
 
 from collections import OrderedDict
 from enum import Enum, auto
-from typing import Any, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 from torch import nn, Tensor
+
+from .._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models.mobilenetv2 import _make_divisible
 
 
 model_urls = {
+    # TODO(kazhang): add pretrained weights
+    "regnet_y_400m": "",
 }
-
-
-# The different possible blocks
-class BlockType(Enum):
-    VANILLA_BLOCK = auto()
-    RES_BASIC_BLOCK = auto()
-    RES_BOTTLENECK_BLOCK = auto()
-    RES_BOTTLENECK_LINEAR_BLOCK = auto()
-
-
-# The different possible Stems
-class StemType(Enum):
-    RES_STEM_CIFAR = auto()
-    RES_STEM_IN = auto()
-    SIMPLE_STEM_IN = auto()
-
-
-# The different possible activations
-class ActivationType(Enum):
-    RELU = auto()
-    SILU = auto()
-
-
-class RegNetParams:
-    def __init__(
-        self,
-        depth: int,
-        w_0: int,
-        w_a: float,
-        w_m: float,
-        group_width: int,
-        bottleneck_multiplier: float = 1.0,
-        stem_type: StemType = StemType.SIMPLE_STEM_IN,
-        stem_width: int = 32,
-        block_type: BlockType = BlockType.RES_BOTTLENECK_BLOCK,
-        activation: ActivationType = ActivationType.RELU,
-        use_se: bool = True,
-        se_ratio: float = 0.25,
-        bn_epsilon: float = 1e-05,
-        bn_momentum: bool = 0.1,
-        num_classes: int = 1000,
-    ) -> None:
-        if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
-            raise ValueError("Invalid RegNet settings")
-        self.depth = depth
-        self.w_0 = w_0
-        self.w_a = w_a
-        self.w_m = w_m
-        self.group_width = group_width
-        self.bottleneck_multiplier = bottleneck_multiplier
-        self.stem_type = stem_type
-        self.block_type = block_type
-        self.activation = activation
-        self.stem_width = stem_width
-        self.use_se = use_se
-        self.se_ratio = se_ratio if use_se else None
-        self.bn_epsilon = bn_epsilon
-        self.bn_momentum = bn_momentum
-        self.num_classes = num_classes
-
-    def get_expanded_params(self):
-        """
-        Programatically compute all the per-block settings,
-        given the RegNet parameters.
-
-        The first step is to compute the quantized linear block parameters,
-        in log space. Key parameters are:
-        - `w_a` is the width progression slope
-        - `w_0` is the initial width
-        - `w_m` is the width stepping in the log space
-
-        In other terms
-        `log(block_width) = log(w_0) + w_m * block_capacity`,
-        with `bock_capacity` ramping up following the w_0 and w_a params.
-        This block width is finally quantized to multiples of 8.
-
-        The second step is to compute the parameters per stage,
-        taking into account the skip connection and the final 1x1 convolutions.
-        We use the fact that the output width is constant within a stage.
-        """
-
-        QUANT = 8
-        STRIDE = 2
-
-        # Compute the block widths. Each stage has one unique block width
-        widths_cont = np.arange(self.depth) * self.w_a + self.w_0
-        block_capacity = np.round(np.log(widths_cont / self.w_0) / np.log(self.w_m))
-        block_widths = (
-            np.round(np.divide(self.w_0 * np.power(self.w_m, block_capacity), QUANT))
-            * QUANT
-        )
-        num_stages = len(np.unique(block_widths))
-        block_widths = block_widths.astype(int).tolist()
-
-        # Convert to per stage parameters
-        split_helper = zip(
-            block_widths + [0],
-            [0] + block_widths,
-            block_widths + [0],
-            [0] + block_widths,
-        )
-        splits = [w != wp or r != rp for w, wp, r, rp in split_helper]
-
-        stage_widths = [w for w, t in zip(block_widths, splits[:-1]) if t]
-        stage_depths = np.diff([d for d, t in enumerate(splits) if t]).tolist()
-
-        strides = [STRIDE] * num_stages
-        bottleneck_multipliers = [self.bottleneck_multiplier] * num_stages
-        group_widths = [self.group_width] * num_stages
-
-        # Adjust the compatibility of stage widths and group widths
-        stage_widths, group_widths = self._adjust_widths_groups_compatibilty(
-            stage_widths, bottleneck_multipliers, group_widths
-        )
-
-        return zip(
-            stage_widths, strides, stage_depths, group_widths, bottleneck_multipliers
-        )
-
-    @staticmethod
-    def _adjust_widths_groups_compatibilty(
-            stage_widths: List[int], bottleneck_ratios: List[float],
-            group_widths: List[int]) -> Tuple[List[int], List[int]]:
-        """
-        Adjusts the compatibility of widths and groups,
-        depending on the bottleneck ratio.
-        """
-        # Compute all widths for the current settings
-        widths = [int(w * b) for w, b in zip(stage_widths, bottleneck_ratios)]
-        group_widths_min = [min(g, w_bot) for g, w_bot in zip(group_widths, widths)]
-
-        # Compute the adjusted widths so that stage and group widths fit
-        ws_bot = [_make_divisible(w_bot, g) for w_bot, g in zip(widths, group_widths_min)]
-        stage_widths = [int(w_bot / b) for w_bot, b in zip(ws_bot, bottleneck_ratios)]
-        return stage_widths, group_widths_min
 
 
 class _SqueezeExcitation(nn.Module):
@@ -483,11 +352,13 @@ class AnyStage(nn.Sequential):
         width_out: int,
         stride: int,
         depth: int,
-        block_constructor: nn.Module,
+        block_constructor: Callable[..., nn.Module],
+        bn_epsilon: float,
+        bn_momentum: float,
         activation: nn.Module,
         group_width: int,
         bottleneck_multiplier: float,
-        params: "AnyNetParams",
+        se_ratio: Optional[float] = None,
         stage_index: int = 0,
     ) -> None:
         super().__init__()
@@ -498,51 +369,146 @@ class AnyStage(nn.Sequential):
                 width_in if i == 0 else width_out,
                 width_out,
                 stride if i == 0 else 1,
-                params.bn_epsilon,
-                params.bn_momentum,
+                bn_epsilon,
+                bn_momentum,
                 activation,
                 group_width,
                 bottleneck_multiplier,
-                params.se_ratio,
+                se_ratio,
             )
 
             self.stage_depth += block.depth
             self.add_module(f"block{stage_index}-{i}", block)
 
 
+class RegNetParams:
+    def __init__(
+        self,
+        depth: int,
+        w_0: int,
+        w_a: float,
+        w_m: float,
+        group_width: int,
+        bottleneck_multiplier: float = 1.0,
+        stem_type: Callable[..., nn.Module] = SimpleStemIN,
+        stem_width: int = 32,
+        block_type: Callable[..., nn.Module] = ResBottleneckBlock,
+        activation: Callable[..., nn.Module] = nn.ReLU,
+        use_se: bool = True,
+        se_ratio: float = 0.25,
+        bn_epsilon: float = 1e-05,
+        bn_momentum: float = 0.1,
+        num_classes: int = 1000,
+    ) -> None:
+        if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
+            raise ValueError("Invalid RegNet settings")
+        self.depth = depth
+        self.w_0 = w_0
+        self.w_a = w_a
+        self.w_m = w_m
+        self.group_width = group_width
+        self.bottleneck_multiplier = bottleneck_multiplier
+        self.stem_type = stem_type
+        self.block_type = block_type
+        self.activation = activation
+        self.stem_width = stem_width
+        self.use_se = use_se
+        self.se_ratio = se_ratio if use_se else None
+        self.bn_epsilon = bn_epsilon
+        self.bn_momentum = bn_momentum
+        self.num_classes = num_classes
+
+    def get_expanded_params(self):
+        """
+        Programatically compute all the per-block settings,
+        given the RegNet parameters.
+
+        The first step is to compute the quantized linear block parameters,
+        in log space. Key parameters are:
+        - `w_a` is the width progression slope
+        - `w_0` is the initial width
+        - `w_m` is the width stepping in the log space
+
+        In other terms
+        `log(block_width) = log(w_0) + w_m * block_capacity`,
+        with `bock_capacity` ramping up following the w_0 and w_a params.
+        This block width is finally quantized to multiples of 8.
+
+        The second step is to compute the parameters per stage,
+        taking into account the skip connection and the final 1x1 convolutions.
+        We use the fact that the output width is constant within a stage.
+        """
+
+        QUANT = 8
+        STRIDE = 2
+
+        # Compute the block widths. Each stage has one unique block width
+        widths_cont = np.arange(self.depth) * self.w_a + self.w_0
+        block_capacity = np.round(np.log(widths_cont / self.w_0) / np.log(self.w_m))
+        block_widths = (
+            np.round(np.divide(self.w_0 * np.power(self.w_m, block_capacity), QUANT))
+            * QUANT
+        )
+        num_stages = len(np.unique(block_widths))
+        block_widths = block_widths.astype(int).tolist()
+
+        # Convert to per stage parameters
+        split_helper = zip(
+            block_widths + [0],
+            [0] + block_widths,
+            block_widths + [0],
+            [0] + block_widths,
+        )
+        splits = [w != wp or r != rp for w, wp, r, rp in split_helper]
+
+        stage_widths = [w for w, t in zip(block_widths, splits[:-1]) if t]
+        stage_depths = np.diff([d for d, t in enumerate(splits) if t]).tolist()
+
+        strides = [STRIDE] * num_stages
+        bottleneck_multipliers = [self.bottleneck_multiplier] * num_stages
+        group_widths = [self.group_width] * num_stages
+
+        # Adjust the compatibility of stage widths and group widths
+        stage_widths, group_widths = self._adjust_widths_groups_compatibilty(
+            stage_widths, bottleneck_multipliers, group_widths
+        )
+
+        return zip(
+            stage_widths, strides, stage_depths, group_widths, bottleneck_multipliers
+        )
+
+    @staticmethod
+    def _adjust_widths_groups_compatibilty(
+            stage_widths: List[int], bottleneck_ratios: List[float],
+            group_widths: List[int]) -> Tuple[List[int], List[int]]:
+        """
+        Adjusts the compatibility of widths and groups,
+        depending on the bottleneck ratio.
+        """
+        # Compute all widths for the current settings
+        widths = [int(w * b) for w, b in zip(stage_widths, bottleneck_ratios)]
+        group_widths_min = [min(g, w_bot) for g, w_bot in zip(group_widths, widths)]
+
+        # Compute the adjusted widths so that stage and group widths fit
+        ws_bot = [_make_divisible(w_bot, g) for w_bot, g in zip(widths, group_widths_min)]
+        stage_widths = [int(w_bot / b) for w_bot, b in zip(ws_bot, bottleneck_ratios)]
+        return stage_widths, group_widths_min
+
+
 class RegNet(nn.Module):
     def __init__(self, params: RegNetParams) -> None:
         super().__init__()
 
-        if params.activation == ActivationType.SILU and torch.__version__ < "1.7":
-            raise ValueError("SiLU activation is only supported since PyTorch 1.7")
-
-        silu = None if torch.__version__ < "1.7" else nn.SiLU()
-        activation = {
-            ActivationType.RELU: nn.ReLU(inplace=True),
-            ActivationType.SILU: silu,
-        }[params.activation]
+        activation = params.activation(inplace=True)
 
         # Ad hoc stem
-        self.stem = {
-            StemType.RES_STEM_CIFAR: ResStemCifar,
-            StemType.RES_STEM_IN: ResStemIN,
-            StemType.SIMPLE_STEM_IN: SimpleStemIN,
-        }[params.stem_type](
+        self.stem = params.stem_type(
             3,  # width_in
             params.stem_width,
             params.bn_epsilon,
             params.bn_momentum,
             activation,
         )
-
-        # Instantiate all the AnyNet blocks in the trunk
-        block_fun = {
-            BlockType.VANILLA_BLOCK: VanillaBlock,
-            BlockType.RES_BASIC_BLOCK: ResBasicBlock,
-            BlockType.RES_BOTTLENECK_BLOCK: ResBottleneckBlock,
-            BlockType.RES_BOTTLENECK_LINEAR_BLOCK: ResBottleneckLinearBlock,
-        }[params.block_type]
 
         current_width = params.stem_width
 
@@ -564,11 +530,13 @@ class RegNet(nn.Module):
                         width_out,
                         stride,
                         depth,
-                        block_fun,
+                        params.block_type,
+                        params.bn_epsilon,
+                        params.bn_momentum,
                         activation,
                         group_width,
                         bottleneck_multiplier,
-                        params,
+                        params.se_ratio,
                         stage_index=i + 1,
                     ),
                 )
