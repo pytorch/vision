@@ -2016,7 +2016,7 @@ class RandomMixup(torch.nn.Module):
             target = target.clone()
 
         if target.ndim == 1:
-           target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
 
         if torch.rand(1).item() >= self.p:
             return batch, target
