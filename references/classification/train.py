@@ -4,11 +4,13 @@ import time
 
 import torch
 import torch.utils.data
+from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 from torchvision.transforms.functional import InterpolationMode
 
 import presets
+import transforms
 import utils
 
 try:
@@ -164,10 +166,21 @@ def main(args):
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
+
+    collate_fn = None
+    num_classes = len(dataset.classes)
+    mixup_transforms = []
+    if args.mixup_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+    if args.cutmix_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
+    if mixup_transforms:
+        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
-
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True,
+        collate_fn=collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
@@ -290,6 +303,8 @@ def get_args_parser(add_help=True):
     parser.add_argument('--label-smoothing', default=0.0, type=float,
                         help='label smoothing (default: 0.0)',
                         dest='label_smoothing')
+    parser.add_argument('--mixup-alpha', default=0.0, type=float, help='mixup alpha (default: 0.0)')
+    parser.add_argument('--cutmix-alpha', default=0.0, type=float, help='cutmix alpha (default: 0.0)')
     parser.add_argument('--lr-scheduler', default="steplr", help='the lr scheduler (default: steplr)')
     parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
     parser.add_argument('--lr-warmup-decay', default=0.01, type=int, help='the decay for lr')

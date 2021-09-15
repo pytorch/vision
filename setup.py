@@ -351,6 +351,8 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    if sys.platform != 'linux':
+        has_ffmpeg = False
     if has_ffmpeg:
         try:
             # this splits on both dots and spaces as the output format differs across versions / platforms
@@ -360,7 +362,7 @@ def get_extensions():
             if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
                 print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
                 has_ffmpeg = False
-        except (IndexError, ValueError):
+        except (subprocess.CalledProcessError, IndexError, ValueError):
             print('Error fetching ffmpeg version, ignoring ffmpeg.')
             has_ffmpeg = False
 
