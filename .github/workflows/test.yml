@@ -1,0 +1,32 @@
+name: tests
+
+on:
+  pull_request:
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install torch nightly build
+        run: pip install --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+
+      - name: Install torchvision
+        run: python setup.py install
+
+      - name: Install tests requirements
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest -vrA test/prototype
