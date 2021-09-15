@@ -22,7 +22,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert", "RandomPosterize",
-           "RandomSolarize", "RandomAdjustSharpness", "RandomAutocontrast", "RandomEqualize", 'RandomMixup',
+           "RandomSolarize", "RandomAdjustSharpness", "RandomAutocontrast", "RandomEqualize", "RandomMixup",
            "RandomCutmix"]
 
 
@@ -2013,9 +2013,11 @@ class RandomMixup(torch.nn.Module):
 
         if not self.inplace:
             batch = batch.clone()
-            # target = target.clone()
+            target = target.clone()
 
-        target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+        if target.ndim == 1:
+           target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+
         if torch.rand(1).item() >= self.p:
             return batch, target
 
@@ -2089,9 +2091,11 @@ class RandomCutmix(torch.nn.Module):
 
         if not self.inplace:
             batch = batch.clone()
-            # target = target.clone()
+            target = target.clone()
 
-        target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+        if target.ndim == 1:
+            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+
         if torch.rand(1).item() >= self.p:
             return batch, target
 
