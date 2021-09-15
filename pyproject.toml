@@ -5,17 +5,20 @@ categories = [
     "standard_library",
     "third_party",
     "pytorch",
+    "pytorch_derivatives",
     "first_party",
-    "local_test_utils",
 ]
+
+# This flag is needed to group torchvision into 'pytorch_derivatives' rather than 'first_party'
+first_party_detection = false
 
 [tool.usort.known]
 
 pytorch = ["torch"]
-first_party = ["torchvision"]
+pytorch_derivatives = ["torchvision"]
 # These are local utilities in our test/ folder. Since that folder is not a Python package, i.e. test/__init__.py is
 # missing, usort mistakes these modules as third party packages.
-local_test_utils = [
+first_party = [
     "_utils_internal",
     "common_utils",
     "dataset_utils",
