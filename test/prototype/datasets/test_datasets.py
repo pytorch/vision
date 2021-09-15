@@ -18,7 +18,7 @@ _loaders = []
 _datasets = []
 for name in torchvision.prototype.datasets.list():
     loader = functools.partial(dataset_mocks.load, name)
-    _loaders.append(loader)
+    _loaders.append(pytest.param(loader, id=name))
 
     info = torchvision.prototype.datasets.info(name)
     for combination in itertools.product(*info.options.values()):
