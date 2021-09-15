@@ -10,6 +10,7 @@ import torchvision
 from torchvision.transforms.functional import InterpolationMode
 
 import presets
+import transforms
 import utils
 
 try:
@@ -170,9 +171,9 @@ def main(args):
     num_classes = len(dataset.classes)
     mixup_transforms = []
     if args.mixup_alpha > 0.0:
-        mixup_transforms.append(torchvision.transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
     if args.cutmix_alpha > 0.0:
-        mixup_transforms.append(torchvision.transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
+        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
     if mixup_transforms:
         mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
         collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731

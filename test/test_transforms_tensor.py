@@ -1,10 +1,6 @@
 import os
 import torch
-from torch._utils_internal import get_file_path_2
-from torch.utils.data import TensorDataset, DataLoader
-from torch.utils.data.dataloader import default_collate
 from torchvision import transforms as T
-from torchvision.io import read_image
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
 
@@ -718,79 +714,4 @@ def test_gaussian_blur(device, meth_kwargs):
     _test_class_op(
         T.GaussianBlur, meth_kwargs=meth_kwargs,
         test_exact_match=False, device=device, agg_method="max", tol=tol
-    )
-
-
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('tranform', [T.RandomMixup, T.RandomCutmix])
-@pytest.mark.parametrize('p', [0.0, 1.0])
-@pytest.mark.parametrize('inplace', [True, False])
-def test_random_mixupcutmix(device, tranform, p, inplace):
-    batch_size = 32
-    num_classes = 10
-    batch = torch.rand(batch_size, 3, 44, 56, device=device)
-    targets = torch.randint(num_classes, (batch_size, ), device=device, dtype=torch.int64)
-
-    fn = tranform(num_classes, p=p, inplace=inplace)
-    scripted_fn = torch.jit.script(fn)
-
-    seed = torch.seed()
-    output = fn(batch.clone(), targets.clone())
-
-    torch.manual_seed(seed)
-    output_scripted = scripted_fn(batch.clone(), targets.clone())
-    assert_equal(output[0], output_scripted[0])
-    assert_equal(output[1], output_scripted[1])
-
-    fn.__repr__()
-
-
-@pytest.mark.parametrize('tranform', [T.RandomMixup, T.RandomCutmix])
-def test_random_mixupcutmix_with_invalid_data(tranform):
-    with pytest.raises(AssertionError, match="Please provide a valid positive value for the num_classes."):
-        tranform(0)
-    with pytest.raises(AssertionError, match="Alpha param can't be zero."):
-        tranform(10, alpha=0.0)
-
-    t = tranform(10)
-    with pytest.raises(ValueError, match="Batch ndim should be 4."):
-        t(torch.rand(3, 60, 60), torch.randint(10, (1, )))
-    with pytest.raises(ValueError, match="Target ndim should be 1."):
-        t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, 1)))
-    with pytest.raises(TypeError, match="Batch dtype should be a float tensor."):
-        t(torch.randint(256, (32, 3, 60, 60), dtype=torch.uint8), torch.randint(10, (32, )))
-    with pytest.raises(TypeError, match="Target dtype should be torch.int64."):
-        t(torch.rand(32, 3, 60, 60), torch.randint(10, (32, ), dtype=torch.int32))
-
-
-@pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('transform, expected', [
-    (T.RandomMixup, [60.77401351928711, 0.5151033997535706]),
-    (T.RandomCutmix, [70.13909912109375, 0.525851309299469])
-])
-def test_random_mixupcutmix_with_real_data(device, transform, expected):
-    torch.manual_seed(12)
-
-    # Build dummy dataset
-    images = []
-    for test_file in [("encode_jpeg", "grace_hopper_517x606.jpg"), ("fakedata", "logos", "rgb_pytorch.png")]:
-        fullpath = (os.path.dirname(os.path.abspath(__file__)), 'assets') + test_file
-        img = read_image(get_file_path_2(*fullpath))
-        images.append(F.resize(img, [224, 224]))
-    dataset = TensorDataset(torch.stack(images).to(device=device, dtype=torch.float32),
-                            torch.tensor([0, 1], device=device))
-
-    # Use mixup in the collate
-    trans = transform(2)
-    dataloader = DataLoader(dataset, batch_size=2, collate_fn=lambda batch: trans(*default_collate(batch)))
-
-    # Test against known statistics about the produced images
-    stats = []
-    for _ in range(25):
-        for b, t in dataloader:
-            stats.append(torch.stack([b.std(), t.std()]))
-
-    torch.testing.assert_close(
-        torch.stack(stats).mean(dim=0),
-        torch.tensor(expected, device=device)
     )
