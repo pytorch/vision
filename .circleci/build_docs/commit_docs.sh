@@ -6,7 +6,7 @@ set -ex
 if [ "$2" == "" ]; then
     echo call as "$0" "<src>" "<target branch>"
     echo where src is the root of the built documentation git checkout and
-    echo branch should be "master" or "1.7" or so
+    echo branch should be "main" or "1.7" or so
     exit 1
 fi
 
@@ -20,7 +20,7 @@ git checkout gh-pages
 mkdir -p ./"${target}"
 rm -rf ./"${target}"/*
 cp -r "${src}/docs/build/html/"* ./"$target"
-if [ "${target}" == "master" ]; then
+if [ "${target}" == "main" ]; then
     mkdir -p ./_static
     rm -rf ./_static/*
     cp -r "${src}/docs/build/html/_static/"* ./_static
