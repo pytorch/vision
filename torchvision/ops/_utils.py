@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import List
+from typing import List, Union
 
 
 def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
@@ -24,7 +24,7 @@ def convert_boxes_to_roi_format(boxes: List[Tensor]) -> Tensor:
     return rois
 
 
-def check_roi_boxes_shape(boxes: Tensor):
+def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
     if isinstance(boxes, (list, tuple)):
         for _tensor in boxes:
             assert _tensor.size(1) == 4, \
