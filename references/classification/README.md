@@ -79,6 +79,13 @@ The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](ht
 
 The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTorch repo](https://github.com/lukemelas/EfficientNet-PyTorch/blob/1039e009545d9329ea026c9f7541341439712b96/efficientnet_pytorch/utils.py#L562-L564).
 
+
+### RegNet
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --model regnet_y_400mf --epochs 100
+```
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).
 

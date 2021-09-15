@@ -37,6 +37,7 @@ architectures for image classification:
 -  `Wide ResNet`_
 -  `MNASNet`_
 -  `EfficientNet`_
+-  `RegNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -65,6 +66,20 @@ You can construct a model with random weights by calling its constructor:
     efficientnet_b5 = models.efficientnet_b5()
     efficientnet_b6 = models.efficientnet_b6()
     efficientnet_b7 = models.efficientnet_b7()
+    regnet_y_400mf = models.regnet_y_400mf()
+    regnet_y_800mf = models.regnet_y_800mf()
+    regnet_y_1_6gf = models.regnet_y_1_6gf()
+    regnet_y_3_2gf = models.regnet_y_3_2gf()
+    regnet_y_8gf = models.regnet_y_8gf()
+    regnet_y_16gf = models.regnet_y_16gf()
+    regnet_y_32gf = models.regnet_y_32gf()
+    regnet_x_400mf = models.regnet_x_400mf()
+    regnet_x_800mf = models.regnet_x_800mf()
+    regnet_x_1_6gf = models.regnet_x_1_6gf()
+    regnet_x_3_2gf = models.regnet_x_3_2gf()
+    regnet_x_8gf = models.regnet_x_8gf()
+    regnet_x_16gf = models.regnet_x_16gf()
+    regnet_x_32gf = models.regnet_x_32gf()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -94,6 +109,20 @@ These can be constructed by passing ``pretrained=True``:
     efficientnet_b5 = models.efficientnet_b5(pretrained=True)
     efficientnet_b6 = models.efficientnet_b6(pretrained=True)
     efficientnet_b7 = models.efficientnet_b7(pretrained=True)
+    regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
+    regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
+    regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
+    regnet_y_3_2gf = models.regnet_y_3_2gf(pretrained=True)
+    regnet_y_8gf = models.regnet_y_8gf(pretrained=True)
+    regnet_y_16gf = models.regnet_y_16gf(pretrained=True)
+    regnet_y_32gf = models.regnet_y_32gf(pretrained=True)
+    regnet_x_400mf = models.regnet_x_400mf(pretrained=True)
+    regnet_x_800mf = models.regnet_x_800mf(pretrained=True)
+    regnet_x_1_6gf = models.regnet_x_1_6gf(pretrained=True)
+    regnet_x_3_2gf = models.regnet_x_3_2gf(pretrained=True)
+    regnet_x_8gf = models.regnet_x_8gf(pretrained=True)
+    regnet_x_16gf = models.regnet_x_16gf(pretrained=True)
+    regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -204,6 +233,7 @@ EfficientNet-B7                   84.122          96.908
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
 .. _MNASNet: https://arxiv.org/abs/1807.11626
 .. _EfficientNet: https://arxiv.org/abs/1905.11946
+.. _RegNet: https://arxiv.org/abs/2003.13678
 
 .. currentmodule:: torchvision.models
 
@@ -316,6 +346,24 @@ EfficientNet
 .. autofunction:: efficientnet_b5
 .. autofunction:: efficientnet_b6
 .. autofunction:: efficientnet_b7
+
+EfficientNet
+------------
+
+.. autofunction:: regnet_y_400mf
+.. autofunction:: regnet_y_800mf
+.. autofunction:: regnet_y_1_6gf
+.. autofunction:: regnet_y_3_2gf
+.. autofunction:: regnet_y_8gf
+.. autofunction:: regnet_y_16gf
+.. autofunction:: regnet_y_32gf
+.. autofunction:: regnet_x_400mf
+.. autofunction:: regnet_x_800mf
+.. autofunction:: regnet_x_1_6gf
+.. autofunction:: regnet_x_3_2gf
+.. autofunction:: regnet_x_8gf
+.. autofunction:: regnet_x_16gf
+.. autofunction:: regnet_x_32gf
 
 Quantized Models
 ----------------
