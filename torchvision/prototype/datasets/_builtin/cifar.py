@@ -10,7 +10,7 @@ import PIL.Image
 
 import torch
 from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import Demultiplexer, Filter, Mapper, TarArchiveReader, Zipper
+from torch.utils.data.datapipes.iter import Demultiplexer, Filter, Mapper, TarArchiveReader, Zipper, FileLoader
 
 from torchvision.prototype.datasets.datapipes import MappingIterator, SequenceIterator
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource
@@ -58,6 +58,7 @@ class _CifarBase(Dataset):
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
+        archive_dp = FileLoader(archive_dp)
         archive_dp = TarArchiveReader(archive_dp)
         archive_dp = Filter(archive_dp, functools.partial(self._is_data_file, config=config))
         archive_dp = Mapper(archive_dp, self._unpickle)
