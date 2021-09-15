@@ -122,6 +122,33 @@ class NodePathTracer(LeafModuleAwareTracer):
                 # Only append '.' if we are deeper than the top level module
                 node_qualname += '.'
             node_qualname += str(node)
+            # For functions, torch.fx will use a _index iterator on repeated
+            # names globally. Here we want to make sure the iterator is only
+            # applied when scoped within a common parent node. So we need to 
+            # undo the convention of torch.fx and apply ours as we did with
+            # modules
+            # TODO before final PR: check if I want to restric this to only
+            # if node.op == 'call_function'
+            if re.match(rf'[^\.]+(_[0-9]+)?$', node_qualname):
+                node_qualname = node_qualname.rsplit('_', 1)[0]
+            # TODO before final PF: reuse instead of duplicate this code from
+            # above
+            for existing_qualname in reversed(self.node_to_qualname.values()):
+                # Check to see if existing_qualname is of the form
+                # {node_qualname} or {node_qualname}_{int}
+                if re.match(rf'{node_qualname}(_[0-9]+)?$',
+                            existing_qualname) is not None:
+                    postfix = existing_qualname.replace(node_qualname, '')
+                    if len(postfix):
+                        # Existing_qualname is of the form {node_qualname}_{int}
+                        next_index = int(postfix[1:]) + 1
+                    else:
+                        # existing_qualname is of the form {node_qualname}
+                        next_index = 1
+                    node_qualname += f'_{next_index}'
+                    break
+                pass
+
         return node_qualname
 
 
