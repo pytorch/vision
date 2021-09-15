@@ -20,7 +20,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install torch nightly build
-        run: pip install --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+        run: |
+          pip install numpy
+          pip install --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 
       - name: Install torchvision
         run: python setup.py install
