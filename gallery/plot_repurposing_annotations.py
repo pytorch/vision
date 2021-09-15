@@ -16,7 +16,6 @@ import numpy as np
 import torch
 import torchvision.transforms as T
 
-
 plt.rcParams["savefig.bbox"] = 'tight'
 orig_img = Image.open(Path('assets') / 'astronaut.jpg')
 # if you change the seed, make sure that the randomly-applied transforms
@@ -47,6 +46,7 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
             axs[row_idx, 0].set(ylabel=row_title[row_idx])
 
     plt.tight_layout()
+
 
 ####################################
 # Masks
