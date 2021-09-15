@@ -54,14 +54,14 @@ class RandomMixup(torch.nn.Module):
             target = target.clone()
 
         if target.ndim == 1:
-            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=batch.dtype)
 
         if torch.rand(1).item() >= self.p:
             return batch, target
 
         # It's faster to roll the batch by one instead of shuffling it to create image pairs
         batch_rolled = batch.roll(1, 0)
-        target_rolled = target.roll(1)
+        target_rolled = target.roll(1, 0)
 
         # Implemented as on mixup paper, page 3.
         lambda_param = float(torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha]))[0])
@@ -132,14 +132,14 @@ class RandomCutmix(torch.nn.Module):
             target = target.clone()
 
         if target.ndim == 1:
-            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=torch.float32)
+            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=batch.dtype)
 
         if torch.rand(1).item() >= self.p:
             return batch, target
 
         # It's faster to roll the batch by one instead of shuffling it to create image pairs
         batch_rolled = batch.roll(1, 0)
-        target_rolled = target.roll(1)
+        target_rolled = target.roll(1, 0)
 
         # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
         lambda_param = float(torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha]))[0])
