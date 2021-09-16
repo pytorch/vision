@@ -1226,7 +1226,6 @@ class TestVideoReader:
         with pytest.raises(RuntimeError):
             io.read_video('foo.mp4')
 
-    @PY39_SKIP
     def test_audio_present_pts(self):
         """Test if audio frames are returned with pts unit."""
         backends = ['video_reader', 'pyav']
@@ -1243,7 +1242,6 @@ class TestVideoReader:
                         full_path, start_offset, end_offset, pts_unit='pts')
                     assert all([dimension > 0 for dimension in audio.shape[:2]])
 
-    @PY39_SKIP
     def test_audio_present_sec(self):
         """Test if audio frames are returned with sec unit."""
         backends = ['video_reader', 'pyav']
