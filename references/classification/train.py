@@ -4,11 +4,13 @@ import time
 
 import torch
 import torch.utils.data
+from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 from torchvision.transforms.functional import InterpolationMode
 
 import presets
+import transforms
 import utils
 
 try:
@@ -71,8 +73,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix='
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
-    print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
+    print(f'{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}')
     return metric_logger.acc1.global_avg
 
 
@@ -165,10 +166,21 @@ def main(args):
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
+
+    collate_fn = None
+    num_classes = len(dataset.classes)
+    mixup_transforms = []
+    if args.mixup_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+    if args.cutmix_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
+    if mixup_transforms:
+        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
-
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True,
+        collate_fn=collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
@@ -273,6 +285,8 @@ def get_args_parser(add_help=True):
     parser.add_argument('--label-smoothing', default=0.0, type=float,
                         help='label smoothing (default: 0.0)',
                         dest='label_smoothing')
+    parser.add_argument('--mixup-alpha', default=0.0, type=float, help='mixup alpha (default: 0.0)')
+    parser.add_argument('--cutmix-alpha', default=0.0, type=float, help='cutmix alpha (default: 0.0)')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
@@ -324,8 +338,8 @@ def get_args_parser(add_help=True):
         '--model-ema', action='store_true',
         help='enable tracking Exponential Moving Average of model parameters')
     parser.add_argument(
-        '--model-ema-decay', type=float, default=0.99,
-        help='decay factor for Exponential Moving Average of model parameters(default: 0.99)')
+        '--model-ema-decay', type=float, default=0.9,
+        help='decay factor for Exponential Moving Average of model parameters(default: 0.9)')
 
     return parser
 
