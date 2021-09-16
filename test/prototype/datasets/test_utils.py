@@ -122,42 +122,43 @@ class TestDatasetInfo:
     def valid_options():
         return dict(split=("train", "test"), foo=("bar", "baz"))
 
-    def test_no_valid_options(self):
-        info = utils.DatasetInfo("name")
+    @staticmethod
+    @pytest.fixture
+    def info(make_minimal_dataset_info, valid_options):
+        return make_minimal_dataset_info(valid_options=valid_options)
+
+    def test_no_valid_options(self, make_minimal_dataset_info):
+        info = make_minimal_dataset_info()
         assert info.default_config.split == "train"
 
-    def test_valid_options_no_split(self):
-        info = utils.DatasetInfo("name", valid_options=dict(option=("argument",)))
+    def test_valid_options_no_split(self, make_minimal_dataset_info):
+        info = make_minimal_dataset_info(valid_options=dict(option=("argument",)))
         assert info.default_config.split == "train"
 
-    def test_valid_options_no_train(self):
+    def test_valid_options_no_train(self, make_minimal_dataset_info):
         with pytest.raises(ValueError):
-            utils.DatasetInfo("name", valid_options=dict(split=("test",)))
+            make_minimal_dataset_info(valid_options=dict(split=("test",)))
 
-    def test_default_config(self, valid_options):
+    def test_default_config(self, make_minimal_dataset_info, valid_options):
         default_config = utils.DatasetConfig(
             {key: values[0] for key, values in valid_options.items()}
         )
 
         assert (
-            utils.DatasetInfo("name", valid_options=valid_options).default_config
+            make_minimal_dataset_info(valid_options=valid_options).default_config
             == default_config
         )
 
-    def test_make_config_unknown_option(self, valid_options):
-        info = utils.DatasetInfo("name", valid_options=valid_options)
-
+    def test_make_config_unknown_option(self, info):
         with pytest.raises(ValueError):
             info.make_config(unknown_option=None)
 
-    def test_make_config_invalid_argument(self, valid_options):
-        info = utils.DatasetInfo("name", valid_options=valid_options)
-
+    def test_make_config_invalid_argument(self, info):
         with pytest.raises(ValueError):
             info.make_config(split="unknown_split")
 
-    def test_repr(self, valid_options):
-        output = repr(utils.DatasetInfo("name", valid_options=valid_options))
+    def test_repr(self, make_minimal_dataset_info, valid_options):
+        output = repr(make_minimal_dataset_info(valid_options=valid_options))
 
         assert isinstance(output, str)
         assert "DatasetInfo" in output
@@ -165,9 +166,9 @@ class TestDatasetInfo:
             assert f"{key}={value}" in output
 
     @pytest.mark.parametrize("optional_info", ("citation", "homepage", "license"))
-    def test_repr_optional_info(self, optional_info):
+    def test_repr_optional_info(self, make_minimal_dataset_info, optional_info):
         sentinel = "sentinel"
-        info = utils.DatasetInfo("name", **{optional_info: sentinel})
+        info = make_minimal_dataset_info(**{optional_info: sentinel})
 
         assert f"{optional_info}={sentinel}" in repr(info)
 
@@ -183,6 +184,7 @@ class TestDataset:
                 dict(
                     info=utils.DatasetInfo(
                         name,
+                        categories=[],
                         valid_options=valid_options or dict(split=("train", "test")),
                     ),
                     resources=mocker.Mock(return_value=[])

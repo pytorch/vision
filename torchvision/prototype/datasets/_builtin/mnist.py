@@ -23,8 +23,10 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    image_buffer_from_array,
 )
+from torchvision.prototype.datasets.utils._internal import image_buffer_from_array
+
+__all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
 prod = functools.partial(functools.reduce, operator.mul)
 
@@ -132,6 +134,7 @@ class MNIST(_MNISTBase):
     def info(self):
         return DatasetInfo(
             "mnist",
+            categories=10,
             homepage="http://yann.lecun.com/exdb/mnist",
             valid_options=dict(
                 split=("train", "test"),
@@ -163,6 +166,18 @@ class FashionMNIST(MNIST):
     def info(self):
         return DatasetInfo(
             "fashionmnist",
+            categories=[
+                "T-shirt/top",
+                "Trouser",
+                "Pullover",
+                "Dress",
+                "Coat",
+                "Sandal",
+                "Shirt",
+                "Sneaker",
+                "Bag",
+                "Ankle boot",
+            ],
             homepage="https://github.com/zalandoresearch/fashion-mnist",
             valid_options=dict(
                 split=("train", "test"),
@@ -183,6 +198,7 @@ class KMNIST(MNIST):
     def info(self):
         return DatasetInfo(
             "kmnist",
+            categories=["o", "ki", "su", "tsu", "na", "ha", "ma", "ya", "re", "wo"],
             homepage="http://codh.rois.ac.jp/kmnist/index.html.en",
             valid_options=dict(
                 split=("train", "test"),
@@ -198,11 +214,16 @@ class KMNIST(MNIST):
     }
 
 
+import string
+
+
 class EMNIST(_MNISTBase):
     @property
     def info(self):
         return DatasetInfo(
             "emnist",
+            # FIXME: shift the labels at runtime to always produce this
+            categories=list(string.digits + string.ascii_letters),
             homepage="https://www.westernsydney.edu.au/icns/reproducible_research/publication_support_materials/emnist",
             valid_options=dict(
                 split=("train", "test"),
@@ -276,6 +297,7 @@ class QMNIST(_MNISTBase):
     def info(self):
         return DatasetInfo(
             "qmnist",
+            categories=10,
             homepage="https://github.com/facebookresearch/qmnist",
             valid_options=dict(
                 split=("train", "test", "test10k", "test50k", "nist"),
