@@ -15,7 +15,6 @@ from torch.utils.data.datapipes.iter import (
     Mapper,
     TarArchiveReader,
     Zipper,
-    FileLoader,
 )
 
 from torchvision.prototype.datasets.datapipes import MappingIterator, SequenceIterator
@@ -71,7 +70,6 @@ class _CifarBase(Dataset):
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = FileLoader(archive_dp)
         archive_dp = TarArchiveReader(archive_dp)
         archive_dp = Filter(
             archive_dp, functools.partial(self._is_data_file, config=config)

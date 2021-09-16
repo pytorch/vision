@@ -28,7 +28,7 @@ jobs:
         run: python setup.py install
 
       - name: Install tests requirements
-        run: pip install pytest
+        run: pip install pytest pytest-mock
 
       - name: Run tests
         run: pytest test/prototype

@@ -23,7 +23,7 @@ class LocalResource:
         self.sha256 = sha256 or compute_sha256(self.path)
 
     def to_datapipe(self) -> IterDataPipe:
-        return IterableWrapper((str(self.path),))
+        return FileLoader(IterableWrapper((str(self.path),)))
 
 
 class OnlineResource:
@@ -34,7 +34,7 @@ class OnlineResource:
 
     def to_datapipe(self, root: Union[str, pathlib.Path]) -> IterDataPipe:
         # FIXME
-        return IterableWrapper((str(pathlib.Path(root) / self.file_name),))
+        return FileLoader(IterableWrapper((str(pathlib.Path(root) / self.file_name),)))
 
 
 # TODO: add support for mirrors

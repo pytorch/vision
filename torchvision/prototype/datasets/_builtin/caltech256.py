@@ -59,7 +59,6 @@ class Caltech256(Dataset):
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp = FileLoader(dp)
         dp = TarArchiveReader(dp)
         return Mapper(
             dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder)
