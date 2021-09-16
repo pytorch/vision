@@ -10,7 +10,7 @@ import numpy as np
 
 import torch
 from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import Demultiplexer, Mapper, ZipArchiveReader, Zipper, FileLoader
+from torch.utils.data.datapipes.iter import Demultiplexer, Mapper, ZipArchiveReader, Zipper
 
 from torchvision.prototype.datasets.datapipes import Decompressor, Slicer
 from torchvision.prototype.datasets.utils import (
@@ -148,7 +148,7 @@ class MNIST(_MNISTBase):
         config: DatasetConfig,
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
-        return super()._make_datapipe([FileLoader(dp) for dp in resource_dps], config=config, decoder=decoder)
+        return super()._make_datapipe(resource_dps, config=config, decoder=decoder)
 
 
 class FashionMNIST(MNIST):
@@ -239,7 +239,6 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = FileLoader(archive_dp)
         archive_dp = ZipArchiveReader(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
@@ -300,7 +299,7 @@ class QMNIST(_MNISTBase):
         config: DatasetConfig,
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
-        dp = super()._make_datapipe([FileLoader(dp) for dp in resource_dps], config=config, decoder=decoder)
+        dp = super()._make_datapipe(resource_dps, config=config, decoder=decoder)
         dp = Mapper(dp, self._split_label)
         if config.split not in ("test10k", "test50k"):
             return dp
