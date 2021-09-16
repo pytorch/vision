@@ -239,6 +239,7 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
+        archive_dp = FileLoader(archive_dp)
         archive_dp = ZipArchiveReader(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
