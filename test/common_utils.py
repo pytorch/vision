@@ -20,9 +20,7 @@ from torchvision import io
 import numpy as np
 from PIL import Image
 
-IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
-PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
-PY39_SKIP = pytest.mark.skipif(IS_PY39, reason=PY39_SEGFAULT_SKIP_MSG)
+
 IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
