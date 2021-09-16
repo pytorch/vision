@@ -12,8 +12,6 @@ from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler
 import presets
 import utils
 
-from scheduler import WarmupMultiStepLR
-
 try:
     from apex import amp
 except ImportError:
@@ -202,11 +200,29 @@ def main(args):
 
     # convert scheduler to be per iteration, not per epoch, for warmup that lasts
     # between different epochs
-    warmup_iters = args.lr_warmup_epochs * len(data_loader)
-    lr_milestones = [len(data_loader) * m for m in args.lr_milestones]
-    lr_scheduler = WarmupMultiStepLR(
-        optimizer, milestones=lr_milestones, gamma=args.lr_gamma,
-        warmup_iters=warmup_iters, warmup_factor=1e-5)
+    iters_per_epoch = len(data_loader)
+    lr_milestones = [iters_per_epoch * (m - args.lr_warmup_epochs) for m in args.lr_milestones]
+    main_lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=lr_milestones, gamma=args.lr_gamma)
+
+    if args.lr_warmup_epochs > 0:
+        warmup_iters = iters_per_epoch * args.lr_warmup_epochs
+        if args.lr_warmup_method == 'linear':
+            warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=args.lr_warmup_decay,
+                                                                    total_iters=warmup_iters)
+        elif args.lr_warmup_method == 'constant':
+            warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
+                                                                      total_iters=warmup_iters)
+        else:
+            raise RuntimeError("Invalid warmup lr method '{}'. Only linear and constant "
+                               "are supported.".format(args.lr_warmup_method))
+
+        lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[warmup_lr_scheduler, main_lr_scheduler],
+            milestones=[warmup_iters]
+        )
+    else:
+        lr_scheduler = main_lr_scheduler
 
     model_without_ddp = model
     if args.distributed:
@@ -277,7 +293,9 @@ def parse_args():
                         dest='weight_decay')
     parser.add_argument('--lr-milestones', nargs='+', default=[20, 30, 40], type=int, help='decrease lr on milestones')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
-    parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='number of warmup epochs')
+    parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='the number of epochs to warmup (default: 10)')
+    parser.add_argument('--lr-warmup-method', default="linear", type=str, help='the warmup method (default: linear)')
+    parser.add_argument('--lr-warmup-decay', default=0.001, type=int, help='the decay for lr')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
