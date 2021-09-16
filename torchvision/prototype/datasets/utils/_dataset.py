@@ -14,7 +14,7 @@ from ._resource import OnlineResource
 __all__ = ["DatasetConfig", "DatasetInfo", "Dataset"]
 
 
-def make_repr(name: str, items:Iterable[Tuple[str, Any]]):
+def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
     def to_str(sep: str) -> str:
         return sep.join([f"{key}={value}" for key, value in items])
 
@@ -53,7 +53,7 @@ class DatasetConfig(Mapping):
         except KeyError as error:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'") from error
 
-    def __setitem__(self, key: Any, value:Any) -> NoReturn:
+    def __setitem__(self, key: Any, value: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __setattr__(self, key: Any, value: Any) -> NoReturn:
@@ -114,10 +114,10 @@ class DatasetInfo:
 
     def __repr__(self) -> str:
         items = [("name", self.name)]
-        for key in ("citation", "homepage", "licencse"):
+        for key in ("citation", "homepage", "license"):
             value = getattr(self, key)
             if value is not None:
-                items.extend((key, value))
+                items.append((key, value))
         items.extend(sorted(self.options.items()))
         return make_repr(type(self).__name__, items)
 
