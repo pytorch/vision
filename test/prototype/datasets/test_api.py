@@ -3,7 +3,7 @@ from torch.utils.data.datapipes.iter import IterableWrapper
 from torchvision.prototype import datasets
 from torchvision.prototype.datasets import _api
 from torchvision.prototype.datasets import _builtin
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig
+from torchvision.prototype.datasets.utils import Dataset, DatasetConfig
 
 
 @pytest.fixture
@@ -14,9 +14,9 @@ def patch_datasets(monkeypatch):
 
 
 @pytest.fixture
-def dataset(mocker):
-    info = DatasetInfo(
-        "name", valid_options=dict(split=("train", "test"), foo=("bar", "baz"))
+def dataset(mocker, make_minimal_dataset_info):
+    info = make_minimal_dataset_info(
+        valid_options=dict(split=("train", "test"), foo=("bar", "baz"))
     )
 
     class DatasetMock(Dataset):

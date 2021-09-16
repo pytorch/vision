@@ -100,12 +100,21 @@ class DatasetInfo:
         self,
         name: str,
         *,
+        categories: Union[int, Sequence[str], str, pathlib.Path],
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
         valid_options: Optional[Dict[str, Sequence[Any]]] = None,
     ) -> None:
         self.name = name.lower()
+
+        if isinstance(categories, int):
+            categories = [str(label) for label in range(categories)]
+        elif isinstance(categories, (str, pathlib.Path)):
+            with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
+                categories = fh.readlines()
+        self.categories = categories
+
         self.citation = citation
         self.homepage = homepage
         self.license = license

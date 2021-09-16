@@ -2,8 +2,9 @@ import abc
 import functools
 import io
 import os.path
+import pathlib
 import pickle
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -24,6 +25,11 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
 )
+from torchvision.prototype.datasets.utils._internal import create_categories_file
+
+__all__ = ["Cifar10", "Cifar100"]
+
+HERE = pathlib.Path(__file__).parent
 
 
 class _CifarBase(Dataset):
@@ -96,12 +102,25 @@ class _CifarBase(Dataset):
         dp = Zipper(images_dp, labels_dp)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
+    def generate_categories_file(
+        self, root: Union[str, pathlib.Path], *, file_name: str, categories_key: str
+    ) -> None:
+        dp = self.resources(self.default_config)[0].to_datapipe(
+            pathlib.Path(root) / self.name
+        )
+        dp = TarArchiveReader(dp)
+        dp = Filter(dp, lambda data: os.path.basename(data[0]) == file_name)
+        dp = Mapper(dp, self._unpickle)
+        categories = next(iter(dp))[categories_key]
+        create_categories_file(HERE, self.name, categories)
+
 
 class Cifar10(_CifarBase):
     @property
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar10",
+            categories=HERE / "cifar10.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
 
@@ -129,12 +148,24 @@ class Cifar10(_CifarBase):
         else:
             return None
 
+    def generate_categories_file(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        file_name: str = "batches.meta",
+        categories_key: str = "label_names",
+    ) -> None:
+        super().generate_categories_file(
+            root, file_name=file_name, categories_key=categories_key
+        )
+
 
 class Cifar100(_CifarBase):
     @property
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar100",
+            categories=HERE / "cifar100.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(
                 split=("train", "test"),
@@ -164,3 +195,22 @@ class Cifar100(_CifarBase):
             return 1
         else:
             return None
+
+    def generate_categories_file(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        file_name: str = "meta",
+        categories_key: str = "fine_label_names",
+    ) -> None:
+        super().generate_categories_file(
+            root, file_name=file_name, categories_key=categories_key
+        )
+
+
+if __name__ == "__main__":
+    from torchvision.prototype.datasets import home
+
+    root = home()
+    for cls in (Cifar10, Cifar100):
+        cls().generate_categories_file(root)

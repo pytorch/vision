@@ -7,7 +7,6 @@ from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import (
     Mapper,
     TarArchiveReader,
-    FileLoader,
 )
 
 from torchvision.prototype.datasets.utils import (
@@ -16,6 +15,11 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
 )
+from torchvision.prototype.datasets.utils._internal import create_categories_file
+
+__all__ = ["Caltech256"]
+
+HERE = pathlib.Path(__file__).parent
 
 
 class Caltech256(Dataset):
@@ -23,6 +27,7 @@ class Caltech256(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
+            categories=HERE / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
 
@@ -63,3 +68,18 @@ class Caltech256(Dataset):
         return Mapper(
             dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder)
         )
+
+    def generate_categories_file(self, root):
+        dp = self.resources(self.default_config)[0].to_datapipe(
+            pathlib.Path(root) / self.name
+        )
+        dp = TarArchiveReader(dp)
+        dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
+        categories = [name.split(".")[1] for name in sorted(dir_names)]
+        create_categories_file(HERE, self.name, categories)
+
+
+if __name__ == "__main__":
+    from torchvision.prototype.datasets import home
+
+    Caltech256().generate_categories_file(home())

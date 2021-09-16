@@ -33,8 +33,9 @@ class OnlineResource:
         self.file_name = file_name
 
     def to_datapipe(self, root: Union[str, pathlib.Path]) -> IterDataPipe:
+        path = (pathlib.Path(root) / self.file_name).expanduser().resolve()
         # FIXME
-        return FileLoader(IterableWrapper((str(pathlib.Path(root) / self.file_name),)))
+        return FileLoader(IterableWrapper((str(path),)))
 
 
 # TODO: add support for mirrors
