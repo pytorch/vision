@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-echo $CUDA_VERSION
-
-if [ "${CUDA_VERSION}" == "cpu" ] ; then
+if [[ -z "${CUDA_VERSION}" || "${CUDA_VERSION}" == "cpu" ]] ; then
     exit 0
 fi
 
