@@ -361,8 +361,8 @@ def get_extensions():
     if has_ffmpeg:
         try:
             # This is to check if ffmpeg is installed properly.
-            _ = subprocess.check_output(["ffmpeg", "-version"])
-        except (subprocess.CalledProcessError, IndexError, ValueError):
+            subprocess.check_output(["ffmpeg", "-version"])
+        except subprocess.CalledProcessError:
             print('Error fetching ffmpeg version, ignoring ffmpeg.')
             has_ffmpeg = False
 
