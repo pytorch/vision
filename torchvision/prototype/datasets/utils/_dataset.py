@@ -4,11 +4,26 @@ import os
 import pathlib
 import textwrap
 from collections import Mapping
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, NoReturn, Iterable, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    NoReturn,
+    Iterable,
+    Tuple,
+)
 
 import torch
 from torch.utils.data import IterDataPipe
 
+from torchvision.prototype.datasets.utils._internal import (
+    add_suggestion,
+    sequence_to_str,
+)
 from ._resource import OnlineResource
 
 __all__ = ["DatasetConfig", "DatasetInfo", "Dataset"]
@@ -51,7 +66,9 @@ class DatasetConfig(Mapping):
         try:
             return self[name]
         except KeyError as error:
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'") from error
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            ) from error
 
     def __setitem__(self, key: Any, value: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
@@ -86,29 +103,52 @@ class DatasetInfo:
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
-        options: Optional[Dict[str, Sequence[Any]]] = None,
+        valid_options: Optional[Dict[str, Sequence[Any]]] = None,
     ) -> None:
         self.name = name.lower()
         self.citation = citation
         self.homepage = homepage
         self.license = license
-        if options is None:
-            options = dict(split=("train",))
-        self.options = options
+
+        valid_split = dict(split=("train",))
+        if valid_options is None:
+            valid_options = valid_split
+        elif "split" not in valid_options:
+            valid_options.update(valid_split)
+        elif "train" not in valid_options["split"]:
+            raise ValueError(
+                f"'train' has to be a valid argument for option 'split', "
+                f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
+            )
+        self._valid_options = valid_options
 
     @property
     def default_config(self) -> DatasetConfig:
-        return DatasetConfig({name: valid_args[0] for name, valid_args in self.options.items()})
+        return DatasetConfig(
+            {name: valid_args[0] for name, valid_args in self._valid_options.items()}
+        )
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():
-            if name not in self.options:
-                raise ValueError
+            if name not in self._valid_options:
+                raise ValueError(
+                    add_suggestion(
+                        f"Unknown option '{name}' of dataset {self.name}.",
+                        word=name,
+                        possibilities=sorted(self._valid_options.keys()),
+                    )
+                )
 
-            valid_args = self.options[name]
+            valid_args = self._valid_options[name]
 
             if arg not in valid_args:
-                raise ValueError
+                raise ValueError(
+                    add_suggestion(
+                        f"Invalid argument '{arg}' for option '{name}' of dataset {self.name}.",
+                        word=arg,
+                        possibilities=valid_args,
+                    )
+                )
 
         return DatasetConfig(self.default_config, **options)
 
@@ -118,7 +158,7 @@ class DatasetInfo:
             value = getattr(self, key)
             if value is not None:
                 items.append((key, value))
-        items.extend(sorted(self.options.items()))
+        items.extend(sorted(self._valid_options.items()))
         return make_repr(type(self).__name__, items)
 
 
@@ -127,6 +167,14 @@ class Dataset(abc.ABC):
     @abc.abstractmethod
     def info(self) -> DatasetInfo:
         pass
+
+    @property
+    def name(self) -> str:
+        return self.info.name
+
+    @property
+    def default_config(self) -> DatasetConfig:
+        return self.info.default_config
 
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -152,5 +200,7 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
-        resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
+        resource_dps = [
+            resource.to_datapipe(root) for resource in self.resources(config)
+        ]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)

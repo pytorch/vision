@@ -10,7 +10,7 @@ from torch.utils.data import IterDataPipe
 
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo
-
+from torchvision.prototype.datasets.utils._internal import add_suggestion
 from . import _builtin
 
 __all__ = ["home", "register", "list", "info", "load"]
@@ -37,11 +37,16 @@ DATASETS: Dict[str, Dataset] = {}
 
 
 def register(dataset: Dataset) -> None:
-    DATASETS[dataset.info.name] = dataset
+    DATASETS[dataset.name] = dataset
 
 
 for name, obj in _builtin.__dict__.items():
-    if not name.startswith("_") and isinstance(obj, type) and issubclass(obj, Dataset) and obj is not Dataset:
+    if (
+        not name.startswith("_")
+        and isinstance(obj, type)
+        and issubclass(obj, Dataset)
+        and obj is not Dataset
+    ):
         register(obj())
 
 
@@ -54,13 +59,16 @@ def find(name: str) -> Dataset:
     try:
         return DATASETS[name]
     except KeyError as error:
-        msg = f"Unknown dataset '{name}'."
-        close_matches = difflib.get_close_matches(name, DATASETS.keys(), n=1)
-        if close_matches:
-            hint = f"Did you mean '{close_matches[0]}'?"
-        else:
-            hint = "You can use torchvision.datasets.list() to get a list of all available datasets."
-        raise ValueError(f"{msg} {hint}") from error
+        raise ValueError(
+            add_suggestion(
+                f"Unknown dataset '{name}'.",
+                word=name,
+                possibilities=DATASETS.keys(),
+                alternative_hint=lambda _: (
+                    "You can use torchvision.datasets.list() to get a list of all available datasets."
+                ),
+            )
+        ) from error
 
 
 def info(name: str) -> DatasetInfo:

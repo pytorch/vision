@@ -7,18 +7,30 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import PIL.Image
-
 import torch
 from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import Demultiplexer, Filter, Mapper, TarArchiveReader, Zipper
+from torch.utils.data.datapipes.iter import (
+    Demultiplexer,
+    Filter,
+    Mapper,
+    TarArchiveReader,
+    Zipper,
+)
 
 from torchvision.prototype.datasets.datapipes import MappingIterator, SequenceIterator
-from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    DatasetConfig,
+    DatasetInfo,
+    HttpResource,
+)
 
 
 class _CifarBase(Dataset):
     @abc.abstractmethod
-    def _is_data_file(self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig) -> Optional[int]:
+    def _is_data_file(
+        self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig
+    ) -> Optional[int]:
         pass
 
     @abc.abstractmethod
@@ -59,7 +71,9 @@ class _CifarBase(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         archive_dp = TarArchiveReader(archive_dp)
-        archive_dp = Filter(archive_dp, functools.partial(self._is_data_file, config=config))
+        archive_dp = Filter(
+            archive_dp, functools.partial(self._is_data_file, config=config)
+        )
         archive_dp = Mapper(archive_dp, self._unpickle)
         archive_dp = MappingIterator(archive_dp)
         images_dp, labels_dp = Demultiplexer(
@@ -99,7 +113,9 @@ class Cifar10(_CifarBase):
             )
         ]
 
-    def _is_data_file(self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig) -> bool:
+    def _is_data_file(
+        self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig
+    ) -> bool:
         path, _ = data
         name = os.path.basename(path)
         return name.startswith("data" if config.split == "train" else "test")
@@ -120,7 +136,7 @@ class Cifar100(_CifarBase):
         return DatasetInfo(
             "cifar100",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
-            options=dict(
+            valid_options=dict(
                 split=("train", "test"),
             ),
         )
@@ -133,7 +149,9 @@ class Cifar100(_CifarBase):
             )
         ]
 
-    def _is_data_file(self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig) -> bool:
+    def _is_data_file(
+        self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig
+    ) -> bool:
         path, _ = data
         name = os.path.basename(path)
         return name == config.split

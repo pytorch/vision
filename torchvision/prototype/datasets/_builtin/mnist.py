@@ -7,10 +7,14 @@ import os.path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
-
 import torch
 from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import Demultiplexer, Mapper, ZipArchiveReader, Zipper
+from torch.utils.data.datapipes.iter import (
+    Demultiplexer,
+    Mapper,
+    ZipArchiveReader,
+    Zipper,
+)
 
 from torchvision.prototype.datasets.datapipes import Decompressor, Slicer
 from torchvision.prototype.datasets.utils import (
@@ -59,7 +63,9 @@ class MNISTFileReader(IterDataPipe):
                 chunk = file.read(chunk_size)
                 sample = np.frombuffer(chunk, dtype=in_dtype).astype(out_dtype)
                 if len(shape) > 1:
-                    path, buffer = image_buffer_from_array(sample.reshape(shape), format=self.format)
+                    path, buffer = image_buffer_from_array(
+                        sample.reshape(shape), format=self.format
+                    )
                 else:
                     path = "tmp"
                     buffer = io.BytesIO(sample.tobytes())
@@ -71,11 +77,16 @@ class _MNISTBase(Dataset):
     _URL_BASE: str
 
     @abc.abstractmethod
-    def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(
+        self, config: DatasetConfig
+    ) -> Tuple[Tuple[str, str], Tuple[str, str]]:
         pass
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        (images_file, images_sha256), (labels_file, labels_sha256) = self._files_and_checksums(config)
+        (images_file, images_sha256), (
+            labels_file,
+            labels_sha256,
+        ) = self._files_and_checksums(config)
 
         images = HttpResource(f"{self._URL_BASE}/{images_file}", sha256=images_sha256)
         labels = HttpResource(f"{self._URL_BASE}/{labels_file}", sha256=labels_sha256)
@@ -122,7 +133,7 @@ class MNIST(_MNISTBase):
         return DatasetInfo(
             "mnist",
             homepage="http://yann.lecun.com/exdb/mnist",
-            options=dict(
+            valid_options=dict(
                 split=("train", "test"),
             ),
         )
@@ -135,20 +146,16 @@ class MNIST(_MNISTBase):
         "t10k-labels-idx1-ubyte.gz": "f7ae60f92e00ec6debd23a6088c31dbd2371eca3ffa0defaefb259924204aec6",
     }
 
-    def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(
+        self, config: DatasetConfig
+    ) -> Tuple[Tuple[str, str], Tuple[str, str]]:
         prefix = "train" if config.split == "train" else "t10k"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
-        return (images_file, self._CHECKSUMS[images_file]), (labels_file, self._CHECKSUMS[labels_file])
-
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
-        return super()._make_datapipe(resource_dps, config=config, decoder=decoder)
+        return (images_file, self._CHECKSUMS[images_file]), (
+            labels_file,
+            self._CHECKSUMS[labels_file],
+        )
 
 
 class FashionMNIST(MNIST):
@@ -157,7 +164,7 @@ class FashionMNIST(MNIST):
         return DatasetInfo(
             "fashionmnist",
             homepage="https://github.com/zalandoresearch/fashion-mnist",
-            options=dict(
+            valid_options=dict(
                 split=("train", "test"),
             ),
         )
@@ -177,7 +184,7 @@ class KMNIST(MNIST):
         return DatasetInfo(
             "kmnist",
             homepage="http://codh.rois.ac.jp/kmnist/index.html.en",
-            options=dict(
+            valid_options=dict(
                 split=("train", "test"),
             ),
         )
@@ -197,15 +204,24 @@ class EMNIST(_MNISTBase):
         return DatasetInfo(
             "emnist",
             homepage="https://www.westernsydney.edu.au/icns/reproducible_research/publication_support_materials/emnist",
-            options=dict(
+            valid_options=dict(
                 split=("train", "test"),
-                image_set=("mnist", "byclass", "bymerge", "balanced", "digits", "letters"),
+                image_set=(
+                    "mnist",
+                    "byclass",
+                    "bymerge",
+                    "balanced",
+                    "digits",
+                    "letters",
+                ),
             ),
         )
 
     _URL_BASE = "https://rds.westernsydney.edu.au/Institutes/MARCS/BENS/EMNIST"
 
-    def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(
+        self, config: DatasetConfig
+    ) -> Tuple[Tuple[str, str], Tuple[str, str]]:
         prefix = f"emnist-{config.image_set}-{config.split}"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
@@ -220,7 +236,9 @@ class EMNIST(_MNISTBase):
             )
         ]
 
-    def _classify_archive(self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig) -> Optional[int]:
+    def _classify_archive(
+        self, data: Tuple[str, io.BufferedIOBase], *, config: DatasetConfig
+    ) -> Optional[int]:
         path, _ = data
         name = os.path.basename(path)
         (images_file, _), (labels_file, _) = self._files_and_checksums(config)
@@ -248,7 +266,9 @@ class EMNIST(_MNISTBase):
             # FIXME: use buffer_size = None as soon as it is supported
             buffer_size=1_000_000,
         )
-        return super()._make_datapipe([images_dp, labels_dp], config=config, decoder=decoder)
+        return super()._make_datapipe(
+            [images_dp, labels_dp], config=config, decoder=decoder
+        )
 
 
 class QMNIST(_MNISTBase):
@@ -257,7 +277,7 @@ class QMNIST(_MNISTBase):
         return DatasetInfo(
             "qmnist",
             homepage="https://github.com/facebookresearch/qmnist",
-            options=dict(
+            valid_options=dict(
                 split=("train", "test", "test10k", "test50k", "nist"),
             ),
         )
@@ -272,24 +292,47 @@ class QMNIST(_MNISTBase):
         "xnist-labels-idx2-int.xz": "db042968723ec2b7aed5f1beac25d2b6e983b9286d4f4bf725f1086e5ae55c4f",
     }
 
-    def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
-        prefix = "xnist" if config.split == "nist" else f"qmnist-{'train' if config.split== 'train' else 'test'}"
+    def _files_and_checksums(
+        self, config: DatasetConfig
+    ) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+        prefix = (
+            "xnist"
+            if config.split == "nist"
+            else f"qmnist-{'train' if config.split== 'train' else 'test'}"
+        )
         suffix = "xz" if config.split == "nist" else "gz"
         images_file = f"{prefix}-images-idx3-ubyte.{suffix}"
         labels_file = f"{prefix}-labels-idx2-int.{suffix}"
-        return (images_file, self._CHECKSUMS[images_file]), (labels_file, self._CHECKSUMS[labels_file])
+        return (images_file, self._CHECKSUMS[images_file]), (
+            labels_file,
+            self._CHECKSUMS[labels_file],
+        )
 
     def _split_label(self, sample: Dict[str, Any]) -> Dict[str, Any]:
         parts = [part.squeeze(0) for part in sample.pop("label").split(1)]
         sample.update(
             dict(
                 zip(
-                    ("label", "nist_hsf_series", "nist_writer_id", "digit_index", "nist_label", "global_digit_index"),
+                    (
+                        "label",
+                        "nist_hsf_series",
+                        "nist_writer_id",
+                        "digit_index",
+                        "nist_label",
+                        "global_digit_index",
+                    ),
                     parts[:6],
                 )
             )
         )
-        sample.update(dict(zip(("duplicate", "unused"), [value.to(torch.bool) for value in parts[6:]])))
+        sample.update(
+            dict(
+                zip(
+                    ("duplicate", "unused"),
+                    [value.to(torch.bool) for value in parts[6:]],
+                )
+            )
+        )
         return sample
 
     def _make_datapipe(

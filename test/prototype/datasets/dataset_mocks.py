@@ -10,16 +10,14 @@ import shutil
 import tarfile
 import tempfile
 import warnings
-from typing import Any, Dict, List, Tuple
 import zipfile
+from typing import Any, Dict, List, Tuple
 
 import pytest
-
 import torch
+import torchvision.datasets
 from torch.testing import make_tensor
 from torch.utils.data import IterDataPipe
-
-import torchvision.datasets
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, LocalResource
 
 __all__ = ["load"]
@@ -29,7 +27,9 @@ class DatasetMocks:
     def __init__(self):
         self._fakedata_fns = {}
         self._tmp_dir = pathlib.Path(tempfile.mkdtemp())
-        self._cache: Dict[Tuple[str, DatasetConfig], Tuple[List[LocalResource], Dict[str, Any]]] = {}
+        self._cache: Dict[
+            Tuple[str, DatasetConfig], Tuple[List[LocalResource], Dict[str, Any]]
+        ] = {}
 
     def register_fakedata(self, fakedata_fn):
         @functools.wraps(fakedata_fn)
@@ -44,7 +44,9 @@ class DatasetMocks:
         self._fakedata_fns[fakedata_fn.__name__] = wrapper
         return wrapper
 
-    def _get(self, dataset: Dataset, config: DatasetConfig) -> Tuple[List[LocalResource], Dict[str, Any]]:
+    def _get(
+        self, dataset: Dataset, config: DatasetConfig
+    ) -> Tuple[List[LocalResource], Dict[str, Any]]:
         name = dataset.info.name
         resources_and_fakedata_info = self._cache.get((name, config))
         if resources_and_fakedata_info:
@@ -79,12 +81,16 @@ class DatasetMocks:
         self._cache[(name, config)] = resources, fakedata_info
         return resources, fakedata_info
 
-    def load(self, name: str, decoder=None, **options: Any) -> Tuple[IterDataPipe, Dict[str, Any]]:
+    def load(
+        self, name: str, decoder=None, **options: Any
+    ) -> Tuple[IterDataPipe, Dict[str, Any]]:
         dataset = torchvision.prototype.datasets._api.find(name)
         config = dataset.info.make_config(**options)
         resources, fakedata_info = self._get(dataset, config)
         datapipe = dataset._make_datapipe(
-            [resource.to_datapipe() for resource in resources], config=config, decoder=decoder
+            [resource.to_datapipe() for resource in resources],
+            config=config,
+            decoder=decoder,
         )
         return datapipe, fakedata_info
 
@@ -143,7 +149,9 @@ def make_tar(root, name, *files_or_dirs, remove=True, compression=None):
         root,
         name,
         *files_or_dirs,
-        opener=lambda archive: tarfile.open(archive, f"w:{compression}" if compression else "w"),
+        opener=lambda archive: tarfile.open(
+            archive, f"w:{compression}" if compression else "w"
+        ),
         adder=lambda fh, file, relative_file: fh.add(file, arcname=relative_file),
         remove=remove,
     )
@@ -205,10 +213,18 @@ class MNISTFakedata:
             compressor = gzip.open
 
         cls._create_binary_file(
-            root, images_file, shape=(num_samples, *image_size), dtype=image_dtype, compressor=compressor
+            root,
+            images_file,
+            shape=(num_samples, *image_size),
+            dtype=image_dtype,
+            compressor=compressor,
         )
         cls._create_binary_file(
-            root, labels_file, shape=(num_samples, *label_size), dtype=label_dtype, compressor=compressor
+            root,
+            labels_file,
+            shape=(num_samples, *label_size),
+            dtype=label_dtype,
+            compressor=compressor,
         )
 
 
@@ -218,7 +234,9 @@ def mnist(root, config):
     num_samples = 2 if train else 1
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
     labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
-    MNISTFakedata.generate(root, num_samples=num_samples, images_file=images_file, labels_file=labels_file)
+    MNISTFakedata.generate(
+        root, num_samples=num_samples, images_file=images_file, labels_file=labels_file
+    )
     return num_samples
 
 
@@ -228,7 +246,9 @@ def fashionmnist(root, config):
     num_samples = 2 if train else 1
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
     labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
-    MNISTFakedata.generate(root, num_samples=num_samples, images_file=images_file, labels_file=labels_file)
+    MNISTFakedata.generate(
+        root, num_samples=num_samples, images_file=images_file, labels_file=labels_file
+    )
     return num_samples
 
 
@@ -238,7 +258,9 @@ def kmnist(root, config):
     num_samples = 2 if train else 1
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
     labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
-    MNISTFakedata.generate(root, num_samples=num_samples, images_file=images_file, labels_file=labels_file)
+    MNISTFakedata.generate(
+        root, num_samples=num_samples, images_file=images_file, labels_file=labels_file
+    )
     return num_samples
 
 
@@ -253,7 +275,12 @@ def emnist(root, config):
         images_file = f"emnist-{image_set}-{split}-images-idx3-ubyte.gz"
         labels_file = f"emnist-{image_set}-{split}-labels-idx1-ubyte.gz"
         file_names.update({images_file, labels_file})
-        MNISTFakedata.generate(root, num_samples=num_samples, images_file=images_file, labels_file=labels_file)
+        MNISTFakedata.generate(
+            root,
+            num_samples=num_samples,
+            images_file=images_file,
+            labels_file=labels_file,
+        )
 
     make_zip(root, "emnist-gzip.zip", *file_names)
 
@@ -300,20 +327,37 @@ class CIFARFakedata:
     @classmethod
     def _create_batch_file(cls, root, name, *, num_samples, num_categories, labels_key):
         content = {
-            "data": make_tensor((num_samples, cls.NUM_PIXELS), device="cpu", dtype=torch.uint8).numpy(),
+            "data": make_tensor(
+                (num_samples, cls.NUM_PIXELS), device="cpu", dtype=torch.uint8
+            ).numpy(),
             labels_key: torch.randint(0, num_categories, size=(num_samples,)).tolist(),
         }
         with open(pathlib.Path(root) / name, "wb") as fh:
             pickle.dump(content, fh)
 
     @classmethod
-    def generate(cls, root, name, *, folder, train_files, test_files, num_samples_per_file, num_categories, labels_key):
+    def generate(
+        cls,
+        root,
+        name,
+        *,
+        folder,
+        train_files,
+        test_files,
+        num_samples_per_file,
+        num_categories,
+        labels_key,
+    ):
         folder = root / folder
         folder.mkdir()
         files = (*train_files, *test_files)
         for file in files:
             cls._create_batch_file(
-                folder, file, num_samples=num_samples_per_file, num_categories=num_categories, labels_key=labels_key
+                folder,
+                file,
+                num_samples=num_samples_per_file,
+                num_categories=num_categories,
+                labels_key=labels_key,
             )
 
         make_tar(root, name, folder, compression="gz")
