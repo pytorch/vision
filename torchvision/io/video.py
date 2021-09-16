@@ -90,7 +90,7 @@ def write_video(
         stream.width = video_array.shape[2]
         stream.height = video_array.shape[1]
         stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
-        stream.options = options or {}
+        stream._valid_options = options or {}
 
         if audio_array is not None:
             audio_format_dtypes = {
@@ -106,7 +106,7 @@ def write_video(
                 'u8p': 'u1',
             }
             a_stream = container.add_stream(audio_codec, rate=audio_fps)
-            a_stream.options = audio_options or {}
+            a_stream._valid_options = audio_options or {}
 
             num_channels = audio_array.shape[0]
             audio_layout = "stereo" if num_channels > 1 else "mono"

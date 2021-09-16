@@ -3,15 +3,12 @@ import io
 import itertools
 from collections import OrderedDict
 
-import pytest
-
-import torch
-from torch.utils.data import IterDataPipe
-
-import torchvision.datasets
-from torchvision.prototype.datasets.decoder import pil
-
 import dataset_mocks
+import pytest
+import torch
+import torchvision.datasets
+from torch.utils.data import IterDataPipe
+from torchvision.prototype.datasets.decoder import pil
 
 
 _loaders = []
@@ -21,8 +18,8 @@ for name in torchvision.prototype.datasets.list():
     _loaders.append(pytest.param(loader, id=name))
 
     info = torchvision.prototype.datasets.info(name)
-    for combination in itertools.product(*info.options.values()):
-        options = OrderedDict(sorted(zip(info.options.keys(), combination)))
+    for combination in itertools.product(*info._valid_options.values()):
+        options = OrderedDict(sorted(zip(info._valid_options.keys(), combination)))
         _datasets.append(
             pytest.param(
                 *loader(**options),
@@ -63,9 +60,15 @@ class TestCommon:
     @loaders
     def test_decoding(self, loader):
         dataset, _ = loader(decoder=pil)
-        undecoded_features = {key for key, value in next(iter(dataset)).items() if isinstance(value, io.IOBase)}
+        undecoded_features = {
+            key
+            for key, value in next(iter(dataset)).items()
+            if isinstance(value, io.IOBase)
+        }
         if undecoded_features:
-            raise AssertionError(f"The values of key(s) {', '.join(sorted(undecoded_features))} were not decoded.")
+            raise AssertionError(
+                f"The values of key(s) {', '.join(sorted(undecoded_features))} were not decoded."
+            )
 
 
 class TestQMNIST:

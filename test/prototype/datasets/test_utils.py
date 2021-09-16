@@ -1,6 +1,5 @@
-from torchvision.prototype.datasets import utils
-
 import pytest
+from torchvision.prototype.datasets import utils
 
 
 class TestDatasetConfig:
@@ -120,20 +119,49 @@ class TestDatasetConfig:
 class TestDatasetInfo:
     @staticmethod
     @pytest.fixture
-    def options():
+    def valid_options():
         return dict(split=("train", "test"), foo=("bar", "baz"))
 
-    def test_default_config(self, options):
-        default_config = utils.DatasetConfig({key: values[0] for key, values in options.items()})
+    def test_no_valid_options(self):
+        info = utils.DatasetInfo("name")
+        assert info.default_config.split == "train"
 
-        assert utils.DatasetInfo("name", options=options).default_config == default_config
+    def test_valid_options_no_split(self):
+        info = utils.DatasetInfo("name", valid_options=dict(option=("argument",)))
+        assert info.default_config.split == "train"
 
-    def test_repr(self, options):
-        output = repr(utils.DatasetInfo("name", options=options))
+    def test_valid_options_no_train(self):
+        with pytest.raises(ValueError):
+            utils.DatasetInfo("name", valid_options=dict(split=("test",)))
+
+    def test_default_config(self, valid_options):
+        default_config = utils.DatasetConfig(
+            {key: values[0] for key, values in valid_options.items()}
+        )
+
+        assert (
+            utils.DatasetInfo("name", valid_options=valid_options).default_config
+            == default_config
+        )
+
+    def test_make_config_unknown_option(self, valid_options):
+        info = utils.DatasetInfo("name", valid_options=valid_options)
+
+        with pytest.raises(ValueError):
+            info.make_config(unknown_option=None)
+
+    def test_make_config_invalid_argument(self, valid_options):
+        info = utils.DatasetInfo("name", valid_options=valid_options)
+
+        with pytest.raises(ValueError):
+            info.make_config(split="unknown_split")
+
+    def test_repr(self, valid_options):
+        output = repr(utils.DatasetInfo("name", valid_options=valid_options))
 
         assert isinstance(output, str)
         assert "DatasetInfo" in output
-        for key, value in options.items():
+        for key, value in valid_options.items():
             assert f"{key}={value}" in output
 
     @pytest.mark.parametrize("optional_info", ("citation", "homepage", "license"))
@@ -142,3 +170,85 @@ class TestDatasetInfo:
         info = utils.DatasetInfo("name", **{optional_info: sentinel})
 
         assert f"{optional_info}={sentinel}" in repr(info)
+
+
+class TestDataset:
+    @staticmethod
+    @pytest.fixture
+    def make_dataset(mocker):
+        def make(name="name", valid_options=None, resources=None):
+            cls = type(
+                "DatasetMock",
+                (utils.Dataset,),
+                dict(
+                    info=utils.DatasetInfo(
+                        name,
+                        valid_options=valid_options or dict(split=("train", "test")),
+                    ),
+                    resources=mocker.Mock(return_value=[])
+                    if resources is None
+                    else lambda self, config: resources,
+                    _make_datapipe=mocker.Mock(),
+                ),
+            )
+            return cls()
+
+        return make
+
+    def test_name(self, make_dataset):
+        name = "sentinel"
+        dataset = make_dataset(name=name)
+
+        assert dataset.name == name
+
+    def test_default_config(self, make_dataset):
+        sentinel = "sentinel"
+        valid_options = dict(split=(sentinel, "train"))
+        dataset = make_dataset(valid_options=valid_options)
+
+        assert dataset.default_config == utils.DatasetConfig(split=sentinel)
+
+    def test_to_datapipe_config(self, make_dataset):
+        dataset = make_dataset()
+        config = utils.DatasetConfig(split="test")
+
+        dataset.to_datapipe("", config=config)
+
+        dataset.resources.assert_called_with(config)
+
+        (_, call_kwargs) = dataset._make_datapipe.call_args
+        assert call_kwargs["config"] == config
+
+    def test_to_datapipe_default_config(self, make_dataset):
+        dataset = make_dataset()
+        config = dataset.default_config
+
+        dataset.to_datapipe("")
+
+        dataset.resources.assert_called_with(config)
+
+        (_, call_kwargs) = dataset._make_datapipe.call_args
+        assert call_kwargs["config"] == config
+
+    def test_resources(self, mocker, make_dataset):
+        resource_mock = mocker.Mock(spec=["to_datapipe"])
+        sentinel = object()
+        resource_mock.to_datapipe.return_value = sentinel
+        dataset = make_dataset(resources=[resource_mock])
+
+        root = "root"
+        dataset.to_datapipe(root)
+
+        resource_mock.to_datapipe.assert_called_with(root)
+
+        (call_args, _) = dataset._make_datapipe.call_args
+        assert call_args[0][0] is sentinel
+
+    def test_decoder(self, make_dataset):
+        dataset = make_dataset()
+
+        sentinel = object()
+        dataset.to_datapipe("", decoder=sentinel)
+
+        (_, call_kwargs) = dataset._make_datapipe.call_args
+        assert call_kwargs["decoder"] is sentinel

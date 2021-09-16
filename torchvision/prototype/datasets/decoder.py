@@ -2,7 +2,6 @@ import io
 
 import numpy as np
 import PIL.Image
-
 import torch
 
 __all__ = ["pil"]

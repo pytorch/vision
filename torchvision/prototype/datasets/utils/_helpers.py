@@ -11,7 +11,9 @@ def read_mat(file: io.BufferedIOBase, **kwargs: Any) -> Any:
     try:
         import scipy.io as sio
     except ImportError as error:
-        raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
+        raise ModuleNotFoundError(
+            "Package `scipy` is required to be installed to read .mat files."
+        ) from error
 
     return sio.loadmat(file, **kwargs)
 
