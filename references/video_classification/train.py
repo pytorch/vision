@@ -206,6 +206,7 @@ def main(args):
 
     if args.lr_warmup_epochs > 0:
         warmup_iters = iters_per_epoch * args.lr_warmup_epochs
+        args.lr_warmup_method = args.lr_warmup_method.lower()
         if args.lr_warmup_method == 'linear':
             warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=args.lr_warmup_decay,
                                                                     total_iters=warmup_iters)
