@@ -764,6 +764,9 @@ jobs:
             - conda
             - env
       - run:
+          name: Install CUDA
+          command: packaging/windows/internal/cuda_install.bat
+      - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
       - run:
