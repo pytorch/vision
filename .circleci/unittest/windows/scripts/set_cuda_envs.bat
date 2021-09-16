@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [ "${CU_VERSION:-}" == "cpu" ] ; then
+    exit 0
+fi
+
 version=$CUDA_VERSION
 
 # set cuda envs
