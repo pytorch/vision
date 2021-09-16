@@ -351,7 +351,12 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
-    if sys.platform != 'linux':
+    # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
+    # FIXME: causes crash. See the following GitHub issues for more details.
+    # FIXME: https://github.com/pytorch/pytorch/issues/65000
+    # FIXME: https://github.com/pytorch/vision/issues/3367
+    if sys.platform != 'linux' or (
+            sys.version_info.major == 3 and sys.version_info.minor == 9):
         has_ffmpeg = False
     if has_ffmpeg:
         try:
