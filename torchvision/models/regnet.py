@@ -8,7 +8,6 @@ import math
 import torch
 
 from collections import OrderedDict
-from enum import Enum, auto
 from typing import Any, Callable, List, Optional, Tuple
 from torch import nn, Tensor
 
@@ -83,7 +82,6 @@ class BasicTransform(nn.Sequential):
         )
 
         self.final_bn = nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum)
-        self.depth = 2
 
 
 class ResStemCifar(nn.Sequential):
@@ -103,7 +101,6 @@ class ResStemCifar(nn.Sequential):
             nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
             activation,
         )
-        self.depth = 2
 
 
 class ResStemIN(nn.Sequential):
@@ -124,7 +121,6 @@ class ResStemIN(nn.Sequential):
             activation,
             nn.MaxPool2d(3, stride=2, padding=1),
         )
-        self.depth = 3
 
 
 class SimpleStemIN(nn.Sequential):
@@ -144,7 +140,6 @@ class SimpleStemIN(nn.Sequential):
             nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
             activation,
         )
-        self.depth = 2
 
 
 class VanillaBlock(nn.Sequential):
@@ -174,8 +169,6 @@ class VanillaBlock(nn.Sequential):
             activation,
         )
 
-        self.depth = 2
-
 
 class ResBasicBlock(nn.Module):
     """Residual basic block: x + F(x), F = basic transform."""
@@ -202,10 +195,6 @@ class ResBasicBlock(nn.Module):
             width_in, width_out, stride, bn_epsilon, bn_momentum, activation
         )
         self.activation = activation
-
-        # The projection and transform happen in parallel,
-        # and ReLU is not counted with respect to depth
-        self.depth = self.f.depth
 
     def forward(self, x: Tensor) -> Tensor:
         if self.proj_block:
@@ -260,7 +249,6 @@ class BottleneckTransform(nn.Sequential):
 
         self.c = nn.Conv2d(w_b, width_out, 1, stride=1, padding=0, bias=False)
         self.final_bn = nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum)
-        self.depth = 3 if not se_ratio else 4
 
 
 class ResBottleneckBlock(nn.Module):
@@ -302,7 +290,6 @@ class ResBottleneckBlock(nn.Module):
 
         # The projection and transform happen in parallel,
         # and activation is not counted with respect to depth
-        self.depth = self.f.depth
 
     def forward(self, x: Tensor) -> Tensor:
         if self.proj_block:
@@ -341,8 +328,6 @@ class ResBottleneckLinearBlock(nn.Module):
             se_ratio,
         )
 
-        self.depth = self.f.depth
-
     def forward(self, x: Tensor) -> Tensor:
         return x + self.f(x) if self.has_skip else self.f(x)
 
@@ -366,7 +351,6 @@ class AnyStage(nn.Sequential):
         stage_index: int = 0,
     ) -> None:
         super().__init__()
-        self.stage_depth = 0
 
         for i in range(depth):
             block = block_constructor(
@@ -381,7 +365,6 @@ class AnyStage(nn.Sequential):
                 se_ratio,
             )
 
-            self.stage_depth += block.depth
             self.add_module(f"block{stage_index}-{i}", block)
 
 
@@ -516,8 +499,6 @@ class RegNet(nn.Module):
 
         current_width = params.stem_width
 
-        self.trunk_depth = 0
-
         blocks = []
         for i, (
             width_out,
@@ -545,8 +526,6 @@ class RegNet(nn.Module):
                     ),
                 )
             )
-
-            self.trunk_depth += blocks[-1][1].stage_depth
 
             current_width = width_out
 
@@ -695,7 +674,6 @@ def regnet_x_400mf(pretrained: bool = False, progress: bool = True, **kwargs: An
     """
     params = RegNetParams(depth=22, w_0=24, w_a=24.48, w_m=2.54,
                           group_width=16, use_se=False, **kwargs)
-
     return _regnet("regnet_x_400mf", params, pretrained, progress, **kwargs)
 
 
