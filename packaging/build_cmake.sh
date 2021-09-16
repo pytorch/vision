@@ -45,10 +45,6 @@ else
     yum install -y libpng-devel libjpeg-turbo-devel
 fi
 
-if [[ "$OSTYPE" == "msys" ]]; then
-    source .circleci/unittest/windows/scripts/set_cuda_envs.sh
-fi
-
 mkdir cpp_build
 pushd cpp_build
 
