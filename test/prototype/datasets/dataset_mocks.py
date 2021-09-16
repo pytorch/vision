@@ -13,6 +13,7 @@ import warnings
 import zipfile
 from typing import Any, Dict, List, Tuple
 
+import PIL.Image
 import pytest
 import torch
 import torchvision.datasets
@@ -137,8 +138,8 @@ def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     if remove:
         for file in files:
             os.remove(file)
-        for folder in dirs:
-            os.rmdir(folder)
+        for dir in dirs:
+            shutil.rmtree(dir, ignore_errors=True)
 
     return archive
 
@@ -166,6 +167,92 @@ def make_zip(root, name, *files_or_dirs, remove=True):
         adder=lambda fh, file, relative_file: fh.write(file, arcname=relative_file),
         remove=remove,
     )
+
+
+def create_image_or_video_tensor(size):
+    r"""Create a random uint8 tensor.
+
+    Args:
+        size (Sequence[int]): Size of the tensor.
+    """
+    return torch.randint(0, 256, size, dtype=torch.uint8)
+
+
+def create_image_file(root, name, size=10, **kwargs: Any) -> pathlib.Path:
+    """Create an image file from random data.
+
+    Args:
+        root (Union[str, pathlib.Path]): Root directory the image file will be placed in.
+        name (Union[str, pathlib.Path]): Name of the image file.
+        size (Union[Sequence[int], int]): Size of the image that represents the ``(num_channels, height, width)``. If
+            scalar, the value is used for the height and width. If not provided, three channels are assumed.
+        kwargs (Any): Additional parameters passed to :meth:`PIL.Image.Image.save`.
+
+    Returns:
+        pathlib.Path: Path to the created image file.
+    """
+    if isinstance(size, int):
+        size = (size, size)
+    if len(size) == 2:
+        size = (3, *size)
+    if len(size) != 3:
+        raise ValueError(
+            f"The 'size' argument should either be an int or a sequence of length 2 or 3. Got {len(size)} instead"
+        )
+
+    image = create_image_or_video_tensor(size)
+    file = pathlib.Path(root) / name
+
+    # torch (num_channels x height x width) -> PIL (width x height x num_channels)
+    image = image.permute(2, 1, 0)
+    # For grayscale images PIL doesn't use a channel dimension
+    if image.shape[2] == 1:
+        image = torch.squeeze(image, 2)
+    PIL.Image.fromarray(image.numpy()).save(file, **kwargs)
+    return file
+
+
+def create_image_folder(
+    root, name, file_name_fn, num_examples, size=None, **kwargs
+) -> List[pathlib.Path]:
+    """Create a folder of random images.
+
+    Args:
+        root (Union[str, pathlib.Path]): Root directory the image folder will be placed in.
+        name (Union[str, pathlib.Path]): Name of the image folder.
+        file_name_fn (Callable[[int], str]): Should return a file name if called with the file index.
+        num_examples (int): Number of images to create.
+        size (Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]]): Size of the images. If
+            callable, will be called with the index of the corresponding file. If omitted, a random height and width
+            between 3 and 10 pixels is selected on a per-image basis.
+        kwargs (Any): Additional parameters passed to :func:`create_image_file`.
+
+    Returns:
+        List[pathlib.Path]: Paths to all created image files.
+
+    .. seealso::
+
+        - :func:`create_image_file`
+    """
+    if size is None:
+
+        def size(idx: int) -> Tuple[int, int, int]:
+            num_channels = 3
+            height, width = torch.randint(3, 11, size=(2,), dtype=torch.int).tolist()
+            return (num_channels, height, width)
+
+    root = pathlib.Path(root) / name
+    os.makedirs(root, exist_ok=True)
+
+    return [
+        create_image_file(
+            root,
+            file_name_fn(idx),
+            size=size(idx) if callable(size) else size,
+            **kwargs,
+        )
+        for idx in range(num_examples)
+    ]
 
 
 class MNISTFakedata:
@@ -410,3 +497,22 @@ def cifar100(root, config):
     )
 
     return num_samples
+
+
+@dataset_mocks.register_fakedata
+def caltech256(root, config):
+    dir = root / "256_ObjectCategories"
+    categories = ((1, "ak47"), (127, "laptop-101"), (257, "clutter"))
+    num_images_per_category = 2
+
+    for idx, category in categories:
+        create_image_folder(
+            dir,
+            name=f"{idx:03d}.{category}",
+            file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
+            num_examples=num_images_per_category,
+        )
+
+    make_tar(root, f"{dir.name}.tar", dir)
+
+    return num_images_per_category * len(categories)
