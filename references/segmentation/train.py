@@ -133,9 +133,21 @@ def main(args):
         params_to_optimize,
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+    iters_per_epoch = len(data_loader)
+    main_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
-        lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
+        lambda x: (1 - x / (iters_per_epoch * (args.epochs - args.lr_warmup_epochs))) ** 0.9)
+
+    if args.lr_warmup_epochs > 0:
+        warmup_iters = iters_per_epoch * args.lr_warmup_epochs
+        lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=args.lr_warmup_decay,
+                                                          total_iters=warmup_iters), main_lr_scheduler],
+            milestones=[warmup_iters]
+        )
+    else:
+        lr_scheduler = main_lr_scheduler
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -197,6 +209,8 @@ def get_args_parser(add_help=True):
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
+    parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
+    parser.add_argument('--lr-warmup-decay', default=0.01, type=int, help='the decay for lr')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
