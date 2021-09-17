@@ -73,5 +73,5 @@ def add_suggestion(
 def create_categories_file(
     root: Union[str, pathlib.Path], name: str, categories: Sequence[str]
 ) -> None:
-    with open(root / f"{name}.categories", "w") as fh:
+    with open(pathlib.Path(root) / f"{name}.categories", "w") as fh:
         fh.write("\n".join(categories) + "\n")

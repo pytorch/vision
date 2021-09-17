@@ -14,6 +14,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetConfig,
     DatasetInfo,
     HttpResource,
+    OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import create_categories_file
 
@@ -31,7 +32,7 @@ class Caltech256(Dataset):
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
 
-    def resources(self, config: DatasetConfig) -> List[HttpResource]:
+    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [
             HttpResource(
                 "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
@@ -51,10 +52,9 @@ class Caltech256(Dataset):
         label_str, category = dir_name.split(".")
         label = torch.tensor(int(label_str))
 
-        if decoder:
-            image = decoder(path, image)
+        decoded_image = decoder(path, image) if decoder else image
 
-        return dict(label=label, category=category, image=image)
+        return dict(label=label, category=category, image=decoded_image)
 
     def _make_datapipe(
         self,

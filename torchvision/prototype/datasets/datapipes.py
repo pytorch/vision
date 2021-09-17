@@ -66,7 +66,7 @@ class Decompressor(IterDataPipe):
             yield path, decompressor(file)
 
 
-class Enumerator(IterDataPipe[T]):
+class Enumerator(IterDataPipe[Tuple[int, T]]):
     def __init__(self, datapipe: IterDataPipe[T], *, start: int = 0) -> None:
         self.datapipe = datapipe
         if not isinstance(start, int) or start < 0:
@@ -111,4 +111,4 @@ class MappingIterator(IterDataPipe):
 
     def __iter__(self) -> Iterator[Tuple]:
         for mapping in self.datapipe:
-            yield from iter(mapping.values() if self.drop_key else mapping.items())
+            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]

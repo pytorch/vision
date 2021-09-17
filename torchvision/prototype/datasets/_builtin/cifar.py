@@ -24,6 +24,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetConfig,
     DatasetInfo,
     HttpResource,
+    OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import create_categories_file
 
@@ -43,7 +44,7 @@ class _CifarBase(Dataset):
     def _split_data_file(self, data: Tuple[str, Any]) -> Optional[int]:
         pass
 
-    def _unpickle(self, data: Tuple[str, io.BufferedIOBase]) -> Dict[str, Any]:
+    def _unpickle(self, data: Tuple[str, io.BytesIO]) -> Dict[str, Any]:
         _, file = data
         return pickle.load(file, encoding="latin1")
 
@@ -85,7 +86,7 @@ class _CifarBase(Dataset):
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,
-            self._split_data_file,
+            self._split_data_file,  # type: ignore[arg-type]
             drop_none=True,
             # FIXME
             buffer_size=1_000_000,
@@ -99,7 +100,7 @@ class _CifarBase(Dataset):
         labels_dp = SequenceIterator(labels_dp)
         labels_dp = Mapper(labels_dp, self._parse_label)
 
-        dp = Zipper(images_dp, labels_dp)
+        dp: IterDataPipe = Zipper(images_dp, labels_dp)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
     def generate_categories_file(
@@ -124,7 +125,7 @@ class Cifar10(_CifarBase):
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
 
-    def resources(self, config: DatasetConfig) -> List[HttpResource]:
+    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [
             HttpResource(
                 "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz",
@@ -172,7 +173,7 @@ class Cifar100(_CifarBase):
             ),
         )
 
-    def resources(self, config: DatasetConfig) -> List[HttpResource]:
+    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [
             HttpResource(
                 "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz",
@@ -212,5 +213,5 @@ if __name__ == "__main__":
     from torchvision.prototype.datasets import home
 
     root = home()
-    for cls in (Cifar10, Cifar100):
-        cls().generate_categories_file(root)
+    Cifar10().generate_categories_file(root)
+    Cifar100().generate_categories_file(root)

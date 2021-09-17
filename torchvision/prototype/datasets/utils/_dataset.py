@@ -74,13 +74,13 @@ class DatasetConfig(Mapping):
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __setattr__(self, key: Any, value: Any) -> NoReturn:
-        self[key] = value
+        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __delitem__(self, key: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __delattr__(self, item: Any) -> NoReturn:
-        del self[item]
+        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __hash__(self) -> int:
         return self.__dict__["__final_hash__"]
@@ -104,7 +104,7 @@ class DatasetInfo:
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
-        valid_options: Optional[Dict[str, Sequence[Any]]] = None,
+        valid_options: Optional[Dict[str, Sequence]] = None,
     ) -> None:
         self.name = name.lower()
 
@@ -119,7 +119,7 @@ class DatasetInfo:
         self.homepage = homepage
         self.license = license
 
-        valid_split = dict(split=("train",))
+        valid_split: Dict[str, Sequence] = dict(split=["train"])
         if valid_options is None:
             valid_options = valid_split
         elif "split" not in valid_options:
@@ -129,7 +129,7 @@ class DatasetInfo:
                 f"'train' has to be a valid argument for option 'split', "
                 f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
             )
-        self._valid_options = valid_options
+        self._valid_options: Dict[str, Sequence] = valid_options
 
     @property
     def default_config(self) -> DatasetConfig:
@@ -167,7 +167,12 @@ class DatasetInfo:
             value = getattr(self, key)
             if value is not None:
                 items.append((key, value))
-        items.extend(sorted(self._valid_options.items()))
+        items.extend(
+            sorted(
+                (key, sequence_to_str(value))
+                for key, value in self._valid_options.items()
+            )
+        )
         return make_repr(type(self).__name__, items)
 
 

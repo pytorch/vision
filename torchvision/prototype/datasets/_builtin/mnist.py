@@ -97,18 +97,16 @@ class _MNISTBase(Dataset):
 
     def _collate_and_decode(
         self,
-        data: Tuple[Tuple[str, io.BytesIO], Tuple[str, io.BytesIO]],
+        data: Tuple[Tuple[str, str, io.BytesIO], Tuple[str, str, io.BytesIO]],
         *,
         decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
     ):
         (image_path, _, image), (_, label_dtype, label) = data
 
-        if decoder:
-            image = decoder(image_path, image)
+        decoded_image = decoder(image_path, image) if decoder else image
+        decoded_label = torch.from_numpy(np.frombuffer(label.read(), dtype=label_dtype))
 
-        label = torch.from_numpy(np.frombuffer(label.read(), dtype=label_dtype))
-
-        return dict(image=image, label=label)
+        return dict(image=decoded_image, label=decoded_label)
 
     def _make_datapipe(
         self,
@@ -125,7 +123,7 @@ class _MNISTBase(Dataset):
         labels_dp = Decompressor(labels_dp)
         labels_dp = MNISTFileReader(labels_dp, format=self._FORMAT)
 
-        dp = Zipper(images_dp, labels_dp)
+        dp: IterDataPipe = Zipper(images_dp, labels_dp)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
 
@@ -282,7 +280,7 @@ class EMNIST(_MNISTBase):
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,
-            functools.partial(self._classify_archive, config=config),
+            functools.partial(self._classify_archive, config=config),  # type: ignore[arg-type]
             drop_none=True,
             # FIXME: use buffer_size = None as soon as it is supported
             buffer_size=1_000_000,
@@ -369,6 +367,8 @@ class QMNIST(_MNISTBase):
         if config.split not in ("test10k", "test50k"):
             return dp
 
+        start: Optional[int]
+        stop: Optional[int]
         if config.split == "test10k":
             start = 0
             stop = 10000
