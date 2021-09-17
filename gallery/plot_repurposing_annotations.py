@@ -14,7 +14,7 @@ import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 import torch
-import torchvision.ops.boxes
+from torchvision.ops.boxes import masks_to_boxes
 
 ASSETS_DIRECTORY = "../test/assets"
 
@@ -52,7 +52,7 @@ with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
 
     masks = torch.tensor(frames)
 
-bounding_boxes = torchvision.ops.boxes.masks_to_boxes(masks)
+bounding_boxes = masks_to_boxes(masks)
 
 figure = matplotlib.pyplot.figure()
 
