@@ -7,13 +7,16 @@ The following example illustrates the operations available in :ref:`the torchvis
 object localization annotations for different tasks (e.g. transforming masks used by instance and panoptic
 segmentation methods into bounding boxes used by object detection methods).
 """
+import os.path
 
+import PIL.Image
 import matplotlib.patches
 import matplotlib.pyplot
-import skimage.draw
-import skimage.measure
+import numpy
 import torch
 import torchvision.ops.boxes
+
+ASSETS_DIRECTORY = "../test/assets"
 
 matplotlib.pyplot.rcParams["savefig.bbox"] = "tight"
 
@@ -39,16 +42,15 @@ matplotlib.pyplot.rcParams["savefig.bbox"] = "tight"
 # For example, the masks to bounding_boxes operation can be used to transform masks into bounding boxes that can be
 # used in methods like Faster RCNN and YOLO.
 
-image, labels = skimage.draw.random_shapes((224, 224), 8, min_size=32, multichannel=False)
+with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
+    frames = numpy.zeros((image.n_frames, image.height, image.width), int)
 
-labeled_image = skimage.measure.label(image, background=255)
+    for index in range(image.n_frames):
+        image.seek(index)
 
-labeled_image = torch.tensor(labeled_image)
+        frames[index] = numpy.array(image)
 
-masks = torch.zeros((len(labels), *labeled_image.shape))
-
-for index in torch.unique(labeled_image):
-    masks[index - 1] = torch.where(labeled_image == index, index, 0)
+    masks = torch.tensor(frames)
 
 bounding_boxes = torchvision.ops.boxes.masks_to_boxes(masks)
 
@@ -56,6 +58,8 @@ figure = matplotlib.pyplot.figure()
 
 a = figure.add_subplot(121)
 b = figure.add_subplot(122)
+
+labeled_image = torch.sum(masks, 0)
 
 a.imshow(labeled_image)
 b.imshow(labeled_image)
