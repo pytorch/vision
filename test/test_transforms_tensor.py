@@ -9,7 +9,7 @@ import pytest
 
 from typing import Sequence
 
-from common_utils import (
+from test.common_utils import (
     get_tmp_dir,
     int_dtypes,
     float_dtypes,

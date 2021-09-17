@@ -7,7 +7,7 @@ from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 
 import pytest
-from common_utils import assert_equal
+from test.common_utils import assert_equal
 
 
 class TestModelsDetectionNegativeSamples:

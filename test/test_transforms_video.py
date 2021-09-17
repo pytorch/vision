@@ -4,7 +4,7 @@ import pytest
 import random
 import numpy as np
 import warnings
-from common_utils import assert_equal
+from test.common_utils import assert_equal
 
 try:
     from scipy import stats

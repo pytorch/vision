@@ -9,7 +9,7 @@ from torchvision import get_video_backend
 import warnings
 from urllib.error import URLError
 
-from common_utils import assert_equal
+from test.common_utils import assert_equal
 
 
 try:

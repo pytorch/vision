@@ -1,6 +1,6 @@
 import unittest
 from torchvision import set_video_backend
-import test_io
+from test import test_io
 
 
 # Disabling the video backend switching temporarily

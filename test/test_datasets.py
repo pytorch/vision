@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 import PIL
-import datasets_utils
+from test import datasets_utils
 import numpy as np
 import pytest
 import torch

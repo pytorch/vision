@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from PIL import Image, __version__ as PILLOW_VERSION
 import torchvision.transforms.functional as F
-from common_utils import needs_cuda, assert_equal
+from test.common_utils import needs_cuda, assert_equal
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,

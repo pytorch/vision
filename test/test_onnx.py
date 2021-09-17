@@ -1,4 +1,4 @@
-from common_utils import set_rng_seed, assert_equal
+from test.common_utils import set_rng_seed, assert_equal
 import io
 import pytest
 import torch

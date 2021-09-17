@@ -12,7 +12,7 @@ from torchvision.models._utils import IntermediateLayerGetter
 
 import pytest
 
-from common_utils import set_rng_seed
+from test.common_utils import set_rng_seed
 
 
 def get_available_models():

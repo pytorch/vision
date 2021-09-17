@@ -4,7 +4,7 @@ from torchvision.models.detection import _utils
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 import pytest
 from torchvision.models.detection import backbone_utils
-from common_utils import assert_equal
+from test.common_utils import assert_equal
 
 
 class TestModelsDetectionUtils:
