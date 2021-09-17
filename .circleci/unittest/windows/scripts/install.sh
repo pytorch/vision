@@ -12,24 +12,13 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
 conda activate ./env
 
-echo "${CU_VERSION}"
-echo "${CUDA_VERSION}"
+echo CU_VERSON is "${CU_VERSION}"
+echo CUDA_VERSION is "${CUDA_VERSION}"
 
-if [ "${CU_VERSION:-}" == "cpu" ] ; then
+if [[ -z "${CUDA_VERSION}" || "${CUDA_VERSION}" == "cpu" ]] ; then
     cudatoolkit="cpuonly"
 else
-    # CUDA_VERSION derived from CU_VERSION only if CU_VERSION is defined like cu101
-    # Else, CUDA_VERSION will be a strange value
-    if [[ ${#CU_VERSION} -eq 5 ]]; then
-        CUDA_VERSION="${CU_VERSION:2:2}.${CU_VERSION:4:1}"
-    fi
-    
-    echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION $CU_VERSION"
-    # unit test workflow logic is a little strange
-    # In unittest_windows_cpu, CU_VERSION is cpu, but CU_VERSION is empty in unittest_windows_gpu.
-    # In fact, the $CUDA_VERSION is defined as enviornment variable in unittest_windows_gpu
-    version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
-    cudatoolkit="cudatoolkit=${version}"
+    cudatoolkit="cudatoolkit=${CUDA_VERSION}"
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
@@ -56,4 +45,3 @@ source "$this_dir/set_cuda_envs.sh"
 
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
-
