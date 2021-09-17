@@ -15,6 +15,7 @@ import skimage.measure
 import torch
 import torchvision.ops.boxes
 
+matplotlib.pyplot.rcParams["savefig.bbox"] = "tight"
 
 ####################################
 # Masks
@@ -49,7 +50,7 @@ masks = torch.zeros((len(labels), *labeled_image.shape))
 for index in torch.unique(labeled_image):
     masks[index - 1] = torch.where(labeled_image == index, index, 0)
 
-bounding_boxes = torchvision.ops.boxes.masks_to_boxes(torch.tensor(masks))
+bounding_boxes = torchvision.ops.boxes.masks_to_boxes(masks)
 
 figure = matplotlib.pyplot.figure()
 
@@ -65,3 +66,6 @@ for bounding_box in bounding_boxes:
     rectangle = matplotlib.patches.Rectangle((x0, y0), x1 - x0, y1 - y0, linewidth=1, edgecolor="r", facecolor="none")
 
     b.add_patch(rectangle)
+
+a.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+b.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])

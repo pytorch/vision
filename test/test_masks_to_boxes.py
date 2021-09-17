@@ -4,15 +4,14 @@ import PIL.Image
 import numpy
 import torch
 
-import torchvision.ops
-import torchvision.ops.boxes
+from torchvision.ops import masks_to_boxes
 
 ASSETS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
 
 def test_masks_to_boxes():
     with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
-        frames = numpy.zeros((image.n_frames, image.height, image.width), numpy.int)
+        frames = numpy.zeros((image.n_frames, image.height, image.width), int)
 
         for index in range(image.n_frames):
             image.seek(index)
@@ -23,12 +22,13 @@ def test_masks_to_boxes():
 
     expected = torch.tensor(
         [[127, 2, 165, 40],
-         [4, 100, 88, 184],
-         [168, 189, 294, 300],
-         [556, 272, 700, 416],
-         [800, 560, 990, 725],
-         [294, 828, 594, 1092],
-         [756, 1036, 1064, 1491]]
+         [2, 50, 44, 92],
+         [56, 63, 98, 100],
+         [139, 68, 175, 104],
+         [160, 112, 198, 145],
+         [49, 138, 99, 182],
+         [108, 148, 152, 213]],
+        dtype=torch.int32
     )
 
-    torch.testing.assert_close(torchvision.ops.boxes.masks_to_boxes(masks), expected)
+    torch.testing.assert_close(masks_to_boxes(masks), expected)
