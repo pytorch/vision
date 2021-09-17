@@ -47,7 +47,7 @@ else
 fi
 
 if [[ "$OSTYPE" == "msys" ]]; then
-    source .circleci/unittest/windows/scripts/set_cuda_envs.bat
+    source .circleci/unittest/windows/scripts/set_cuda_envs.sh
 fi
 
 mkdir cpp_build
