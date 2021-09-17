@@ -38,15 +38,13 @@ import torchvision.ops.boxes
 # For example, the masks to bounding_boxes operation can be used to transform masks into bounding boxes that can be
 # used in methods like Faster RCNN and YOLO.
 
-image, labels = skimage.draw.random_shapes((512, 256), 4, min_size=32, multichannel=False)
+image, labels = skimage.draw.random_shapes((224, 224), 8, min_size=32, multichannel=False)
 
 labeled_image = skimage.measure.label(image, background=255)
 
-labeled_image = skimage.img_as_ubyte(labeled_image)
-
 labeled_image = torch.tensor(labeled_image)
 
-masks = torch.zeros((len(labels), *labeled_image.shape), dtype=torch.int)
+masks = torch.zeros((len(labels), *labeled_image.shape))
 
 for index in torch.unique(labeled_image):
     masks[index - 1] = torch.where(labeled_image == index, index, 0)
@@ -61,9 +59,9 @@ b = figure.add_subplot(122)
 a.imshow(labeled_image)
 b.imshow(labeled_image)
 
-for bounding_box in bounding_boxes.tolist():
+for bounding_box in bounding_boxes:
     x0, y0, x1, y1 = bounding_box
 
-    rectangle = matplotlib.patches.Rectangle((x0, y0), x1 - x0, y1 - y0, linewidth=1, edgecolor='r', facecolor='none')
+    rectangle = matplotlib.patches.Rectangle((x0, y0), x1 - x0, y1 - y0, linewidth=1, edgecolor="r", facecolor="none")
 
     b.add_patch(rectangle)
