@@ -1,38 +1,24 @@
-import collections.abc
 import io
 from typing import Callable
+from typing import Dict, Any
 
 import numpy as np
 import PIL.Image
 import torch
-from torch.utils.data import IterDataPipe, functional_datapipe
 
-__all__ = ["pil"]
+__all__ = ["decode_sample", "pil"]
 
 
-@functional_datapipe("decode_sample")
-class SampleDecoder(IterDataPipe):
-    def __init__(
-        self,
-        datapipe: IterDataPipe,
-        fn: Callable[[io.IOBase], torch.Tensor],
-        *features: str,
-    ) -> None:
-        self.datapipe = datapipe
-        self.fn = fn
-        self.features = features
+def decode_sample(
+    decoder: Callable[[io.IOBase], torch.Tensor], *features: str
+) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+    def map(sample: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            feature: decoder(value) if feature in features else value
+            for feature, value in sample.items()
+        }
 
-    def __iter__(self):
-        for sample in self.datapipe:
-            yield {
-                feature: self.fn(value) if feature in self.features else value
-                for feature, value in sample.items()
-            }
-
-    def __len__(self) -> int:
-        if isinstance(self.datapipe, collections.abc.Sized):
-            return len(self.datapipe)
-        raise TypeError(f"{type(self).__name__} instance doesn't have valid length")
+    return map
 
 
 def pil(file: io.IOBase, mode="RGB") -> torch.Tensor:
