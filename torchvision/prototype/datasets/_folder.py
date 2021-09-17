@@ -7,6 +7,9 @@ from typing import Union, Tuple, List, Dict, Any
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import FileLister, Concater, FileLoader, Mapper
 
+from torchvision.prototype.datasets.datapipes import RandomPicker
+
+
 __all__ = ["from_image_folder"]
 
 
@@ -26,7 +29,7 @@ def _collate(
 
 
 def from_image_folder(
-    root: Union[str, pathlib.Path],
+    root: Union[str, pathlib.Path], *, pseudo_shuffle: bool = True
 ) -> Tuple[IterDataPipe, List[str]]:
     root = pathlib.Path(root).expanduser().resolve()
     categories = sorted({item.name for item in os.scandir(root) if item.is_dir})
@@ -41,4 +44,4 @@ def from_image_folder(
             fn_kwargs=dict(label=label, category=category),
         )
         category_dps.append(category_dp)
-    return Concater(*category_dps), categories
+    return (RandomPicker if pseudo_shuffle else Concater)(*category_dps), categories

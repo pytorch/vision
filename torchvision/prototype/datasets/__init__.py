@@ -1,3 +1,3 @@
-from . import decoder
+from . import datapipes, decoder
 
 from ._folder import *
