@@ -14,7 +14,7 @@ import torchvision.transforms.functional as F
 import torchvision.transforms as T
 from torchvision.transforms import InterpolationMode
 
-from test.common_utils import (
+from .common_utils import (
     cpu_and_gpu,
     needs_cuda,
     _create_data,

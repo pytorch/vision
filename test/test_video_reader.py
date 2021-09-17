@@ -12,7 +12,7 @@ import torchvision.io as io
 from numpy.random import randint
 from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
-from test.common_utils import assert_equal
+from .common_utils import assert_equal
 
 
 try:

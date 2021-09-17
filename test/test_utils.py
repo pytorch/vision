@@ -9,7 +9,7 @@ import torchvision.utils as utils
 from io import BytesIO
 import torchvision.transforms.functional as F
 from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
-from test.common_utils import assert_equal
+from .common_utils import assert_equal
 
 
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))

@@ -13,7 +13,7 @@ from torchvision.datasets.samplers import (
 from torchvision.datasets.video_utils import VideoClips, unfold
 from torchvision import get_video_backend
 
-from test.common_utils import get_list_of_videos, assert_equal
+from .common_utils import get_list_of_videos, assert_equal
 
 
 @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")

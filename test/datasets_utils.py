@@ -19,7 +19,7 @@ import torch
 import torchvision.datasets
 import torchvision.io
 
-from test.common_utils import get_tmp_dir, disable_console_output
+from .common_utils import get_tmp_dir, disable_console_output
 
 
 __all__ = [
