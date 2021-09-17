@@ -35,5 +35,4 @@ if [ $PYTHON_VERSION == "3.6" ]; then
 fi
 
 printf "* Installing torchvision\n"
-"$this_dir/set_cuda_envs.sh"
 "$this_dir/vc_env_helper.bat" python setup.py develop
