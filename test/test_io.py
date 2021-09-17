@@ -287,7 +287,3 @@ class TestVideo:
         assert audio_stream.frame_size == out_audio_stream.frame_size
 
     # TODO add tests for audio
-
-
-if __name__ == '__main__':
-    pytest.main(__file__)

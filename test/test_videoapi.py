@@ -186,7 +186,3 @@ class TestVideoApi:
 
         assert metadata["subtitles"]["duration"] is not None
         os.remove(video_path)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

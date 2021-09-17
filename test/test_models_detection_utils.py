@@ -67,7 +67,3 @@ class TestModelsDetectionUtils:
         targets = [{'boxes': torch.rand(3, 4)}]
         with pytest.raises(TypeError):
             out = transform(image, targets)  # noqa: F841
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

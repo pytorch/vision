@@ -668,7 +668,3 @@ def test_quantized_classification_model(model_name):
     except Exception as e:
         tb = traceback.format_exc()
         raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

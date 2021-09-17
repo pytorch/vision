@@ -151,7 +151,3 @@ class TestModelsDetectionNegativeSamples:
         loss_dict = model(images, targets)
 
         assert_equal(loss_dict["bbox_regression"], torch.tensor(0.))
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

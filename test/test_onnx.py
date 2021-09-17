@@ -495,7 +495,3 @@ class TestONNXExporter:
                        output_names=["output"],
                        dynamic_axes={"input_images": {0: 'batch_size'}, "output": {0: 'batch_size'}},
                        tolerate_small_mismatch=True)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

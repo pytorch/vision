@@ -90,7 +90,3 @@ class TestDatasetsSamplers:
         indices = torch.tensor(list(iter(distributed_sampler_rank1)))
         assert len(distributed_sampler_rank1) == 6
         assert_equal(indices, torch.tensor([5, 7, 9, 0, 2, 4]))
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

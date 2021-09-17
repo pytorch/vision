@@ -177,7 +177,3 @@ class TestVideoTransforms():
         assert p_value > 0.0001
 
         transforms.RandomHorizontalFlipVideo().__repr__()
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

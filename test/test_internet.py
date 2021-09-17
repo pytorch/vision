@@ -46,7 +46,3 @@ class TestDatasetUtils:
         utils.download_url(url, tmpdir, filename, md5)
 
         mocked.assert_called_once_with(id, tmpdir, filename, md5)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

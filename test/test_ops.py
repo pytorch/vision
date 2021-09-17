@@ -1026,7 +1026,3 @@ class TestStochasticDepth:
 
         p_value = stats.binom_test(counts, num_samples, p=p)
         assert p_value > 0.0001
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

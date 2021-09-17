@@ -211,7 +211,3 @@ class TestDatasetsUtils:
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

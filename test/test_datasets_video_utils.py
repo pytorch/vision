@@ -107,7 +107,3 @@ class TestVideo:
                                                              orig_fps, new_fps)
         assert len(clips) == 0
         assert len(idxs) == 0
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

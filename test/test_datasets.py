@@ -1881,7 +1881,3 @@ class LFWPairsTestCase(LFWPeopleTestCase):
 
             datasets_utils.create_image_folder(root, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
             datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
-
-
-if __name__ == "__main__":
-    unittest.main()

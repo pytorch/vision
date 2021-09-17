@@ -1257,7 +1257,3 @@ class TestVideoReader:
                     _, audio, _ = io.read_video(
                         full_path, start_offset, end_offset, pts_unit='sec')
                     assert all([dimension > 0 for dimension in audio.shape[:2]])
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

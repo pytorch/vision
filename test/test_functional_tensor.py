@@ -1227,7 +1227,3 @@ def test_ten_crop(device):
     s_tuple_transformed_batches = script_ten_crop(batch_tensors, [10, 11])
     for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
         assert_equal(transformed_batch, s_transformed_batch)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])

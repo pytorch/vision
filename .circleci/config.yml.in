@@ -236,7 +236,7 @@ jobs:
             # need to install torchvision dependencies due to transitive imports
             pip install --user --progress-bar off .
             pip install pytest
-            python test/test_hub.py
+            pytest test/test_hub.py
 
   torch_onnx_test:
     docker:
@@ -251,7 +251,7 @@ jobs:
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
-            python test/test_onnx.py
+            pytest test/test_onnx.py
 
   binary_linux_wheel:
     <<: *binary_common

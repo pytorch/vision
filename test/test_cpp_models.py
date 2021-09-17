@@ -146,7 +146,3 @@ class Tester(unittest.TestCase):
     def test_inception_v3(self):
         self.image = read_image2()
         process_model(models.inception_v3(self.pretrained), self.image, _C_tests.forward_inceptionv3, 'Inceptionv3')
-
-
-if __name__ == '__main__':
-    unittest.main()

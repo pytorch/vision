@@ -48,7 +48,3 @@ class TestHub:
     def test_list_entrypoints(self):
         entry_lists = hub.list('pytorch/vision', force_reload=True)
         assert 'resnet18' in entry_lists
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])

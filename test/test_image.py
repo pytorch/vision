@@ -491,7 +491,3 @@ def test_write_jpeg(img_path, tmpdir):
         pil_bytes = f.read()
 
     assert_equal(torch_bytes, pil_bytes)
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])

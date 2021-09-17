@@ -2116,7 +2116,3 @@ def test_random_affine():
     with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
         t = transforms.RandomAffine(10, interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])
