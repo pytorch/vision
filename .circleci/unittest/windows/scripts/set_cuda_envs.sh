@@ -14,6 +14,7 @@ if [ "${CU_VERSION:-}" != "cpu" ] ; then
     export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
     export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
     export CUDA_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
+    export NVTOOLSEXT_PATH="C:\Program Files\NVIDIA Corporation\NvToolsExt\bin\x64"
 
     if  [ ! -d "$CUDA_PATH" ]
     then

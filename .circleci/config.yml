@@ -775,11 +775,11 @@ jobs:
             - conda
             - env
       - run:
-          name: Update Driver
-          command: packaging/windows/internal/driver_update.bat
-      - run:
           name: CUDA INSTALL
           command: packaging/windows/internal/cuda_install.bat
+      - run:
+          name: Update Driver
+          command: packaging/windows/internal/driver_update.bat
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
