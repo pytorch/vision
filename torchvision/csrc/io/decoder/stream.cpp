@@ -72,6 +72,7 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
       codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
       codecCtx_->thread_type = FF_THREAD_SLICE;
     }
+  }
 
     // print codec type and number of threads
     LOG(INFO) << "Codec " << codecCtx_->codec->long_name
