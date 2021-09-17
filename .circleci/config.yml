@@ -775,9 +775,11 @@ jobs:
             - conda
             - env
       - run:
+          name: Update Driver
+          command: packaging/windows/internal/driver_update.bat
+      - run:
           name: CUDA INSTALL
           command: packaging/windows/internal/cuda_install.bat
-          no_output_timeout: 20m
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh

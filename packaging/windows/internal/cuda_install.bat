@@ -140,6 +140,10 @@ if not exist "%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip" (
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-11.1-windows-x64-v8.0.5.39.zip"
 )
 
+@REM There is no downloadable driver for Tesla on CUDA 11.1 yet. We will use
+@REM the driver inside CUDA
+if "%JOB_EXECUTOR%" == "windows-with-nvidia-gpu" set "ARGS=%ARGS% Display.Driver"
+
 goto cuda_common
 
 :cuda112
@@ -185,10 +189,6 @@ if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
     curl -k -L https://ossci-windows.s3.amazonaws.com/NvToolsExt.7z --output "%SRC_DIR%\temp_build\NvToolsExt.7z"
     if errorlevel 1 exit /b 1
 )
-
-@REM There is no downloadable driver for Tesla on CUDA 11.1 yet. We will use
-@REM the driver inside CUDA
-set "ARGS=%ARGS% Display.Driver"
 
 echo Installing CUDA toolkit...
 7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
