@@ -777,6 +777,7 @@ jobs:
       - run:
           name: CUDA INSTALL
           command: packaging/windows/internal/cuda_install.bat
+          no_output_timeout: 20m
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
@@ -908,6 +909,7 @@ jobs:
             source packaging/windows/internal/vc_install_helper.sh
             packaging/windows/internal/cuda_install.bat
             packaging/build_cmake.sh
+          no_output_timeout: 20m
 
   build_docs:
     <<: *binary_common
