@@ -45,10 +45,10 @@ labeled_image = skimage.measure.label(image, background=255)
 
 labeled_image = skimage.img_as_ubyte(labeled_image)
 
-masks = numpy.zeros((len(labels), *labeled_image.shape), numpy.ubyte)
+masks = torch.zeros((len(labels), *labeled_image.shape), dtype=torch.int)
 
 for index in numpy.unique(labeled_image):
-    masks[index - 1] = numpy.where(labeled_image == index, index, 0)
+    masks[index - 1] = torch.where(labeled_image == index, index, 0)
 
 bounding_boxes = torchvision.ops.boxes.masks_to_boxes(torch.tensor(masks))
 
