@@ -8,11 +8,12 @@ import math
 import torch
 
 from collections import OrderedDict
+from functools import partial
 from typing import Any, Callable, List, Optional, Tuple
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv2 import _make_divisible
+from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
 
 model_urls = {
     # TODO(kazhang): add pretrained weights
@@ -68,39 +69,17 @@ class BasicTransform(nn.Sequential):
         width_in: int,
         width_out: int,
         stride: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
     ) -> None:
-        super().__init__()
-
-        self.a = nn.Sequential(
-            nn.Conv2d(width_in, width_out, 3, stride=stride, padding=1, bias=False),
-            nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-            nn.Conv2d(width_out, width_out, 3, stride=1, padding=1, bias=False),
-        )
-
-        self.final_bn = nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum)
-
-
-class ResStemCifar(nn.Sequential):
-    """ResNet stem for CIFAR: 3x3, BN, ReLU."""
-
-    def __init__(
-        self,
-        width_in: int,
-        width_out: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
-    ) -> None:
-        super().__init__()
-        self.stem = nn.Sequential(
-            nn.Conv2d(width_in, width_out, 3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-        )
+        super().__init__(OrderedDict(
+            a=nn.Sequential(
+                ConvBNActivation(width_in, width_out, kernel_size=3, stride=stride,
+                                 norm_layer=norm_layer, activation_layer=activation_layer),
+                nn.Conv2d(width_out, width_out, 3, stride=1, padding=1, bias=False),
+            ),
+            final_bn=norm_layer(width_out),
+        ))
 
 
 class ResStemIN(nn.Sequential):
@@ -110,36 +89,28 @@ class ResStemIN(nn.Sequential):
         self,
         width_in: int,
         width_out: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
     ) -> None:
-        super().__init__()
-        self.stem = nn.Sequential(
-            nn.Conv2d(width_in, width_out, 7, stride=2, padding=3, bias=False),
-            nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
+        super().__init__(
+            ConvBNActivation(width_in, width_out, kernel_size=7, stride=2,
+                             norm_layer=norm_layer, activation_layer=activation_layer),
             nn.MaxPool2d(3, stride=2, padding=1),
         )
 
 
-class SimpleStemIN(nn.Sequential):
+class SimpleStemIN(ConvBNActivation):
     """Simple stem for ImageNet: 3x3, BN, ReLU."""
 
     def __init__(
         self,
         width_in: int,
         width_out: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
     ) -> None:
-        super().__init__()
-        self.stem = nn.Sequential(
-            nn.Conv2d(width_in, width_out, 3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-        )
+        super().__init__(width_in, width_out, kernel_size=3, stride=2,
+                         norm_layer=norm_layer, activation_layer=activation_layer)
 
 
 class VanillaBlock(nn.Sequential):
@@ -150,24 +121,17 @@ class VanillaBlock(nn.Sequential):
         width_in: int,
         width_out: int,
         stride: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         *args,
         **kwargs,
     ) -> None:
-        super().__init__()
-        self.a = nn.Sequential(
-            nn.Conv2d(width_in, width_out, 3, stride=stride, padding=1, bias=False),
-            nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-        )
-
-        self.b = nn.Sequential(
-            nn.Conv2d(width_out, width_out, 3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-        )
+        super().__init__(OrderedDict(
+            a=ConvBNActivation(width_in, width_out, kernel_size=3, stride=stride,
+                               norm_layer=norm_layer, activation_layer=activation_layer),
+            b=ConvBNActivation(width_out, width_out, kernel_size=3, stride=1,
+                               norm_layer=norm_layer, activation_layer=activation_layer),
+        ))
 
 
 class ResBasicBlock(nn.Module):
@@ -178,9 +142,8 @@ class ResBasicBlock(nn.Module):
         width_in: int,
         width_out: int,
         stride: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         *args,
         **kwargs,
     ) -> None:
@@ -190,11 +153,11 @@ class ResBasicBlock(nn.Module):
             self.proj = nn.Conv2d(
                 width_in, width_out, 1, stride=stride, padding=0, bias=False
             )
-            self.bn = nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum)
+            self.bn = norm_layer(width_out)
         self.f = BasicTransform(
-            width_in, width_out, stride, bn_epsilon, bn_momentum, activation
+            width_in, width_out, stride, norm_layer, activation_layer
         )
-        self.activation = activation
+        self.activation = activation_layer(inplace=True)
 
     def forward(self, x: Tensor) -> Tensor:
         if self.proj_block:
@@ -213,42 +176,35 @@ class BottleneckTransform(nn.Sequential):
         width_in: int,
         width_out: int,
         stride: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         group_width: int,
         bottleneck_multiplier: float,
         se_ratio: Optional[float],
     ) -> None:
-        super().__init__()
+        layers = OrderedDict()
         w_b = int(round(width_out * bottleneck_multiplier))
         g = w_b // group_width
 
-        self.a = nn.Sequential(
-            nn.Conv2d(width_in, w_b, 1, stride=1, padding=0, bias=False),
-            nn.BatchNorm2d(w_b, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-        )
-
-        self.b = nn.Sequential(
-            nn.Conv2d(w_b, w_b, 3, stride=stride, padding=1, groups=g, bias=False),
-            nn.BatchNorm2d(w_b, eps=bn_epsilon, momentum=bn_momentum),
-            activation,
-        )
+        layers["a"] = ConvBNActivation(width_in, w_b, kernel_size=1, stride=1,
+                                       norm_layer=norm_layer, activation_layer=activation_layer)
+        layers["b"] = ConvBNActivation(w_b, w_b, kernel_size=3, stride=stride, groups=g,
+                                       norm_layer=norm_layer, activation_layer=activation_layer)
 
         if se_ratio:
             # The SE reduction ratio is defined with respect to the
             # beginning of the block
             width_se_out = int(round(se_ratio * width_in))
-            self.se = _SqueezeExcitation(
+            layers["se"] = _SqueezeExcitation(
                 in_channels=w_b,
                 reduction_ratio=None,
                 reduced_channels=width_se_out,
-                activation=activation,
+                activation=activation_layer(inplace=True),
             )
 
-        self.c = nn.Conv2d(w_b, width_out, 1, stride=1, padding=0, bias=False)
-        self.final_bn = nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum)
+        layers["c"] = nn.Conv2d(w_b, width_out, 1, stride=1, padding=0, bias=False)
+        layers["final_bn"] = norm_layer(width_out)
+        super().__init__(layers)
 
 
 class ResBottleneckBlock(nn.Module):
@@ -259,9 +215,8 @@ class ResBottleneckBlock(nn.Module):
         width_in: int,
         width_out: int,
         stride: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         group_width: int = 1,
         bottleneck_multiplier: float = 1.0,
         se_ratio: Optional[float] = None,
@@ -274,19 +229,18 @@ class ResBottleneckBlock(nn.Module):
             self.proj = nn.Conv2d(
                 width_in, width_out, 1, stride=stride, padding=0, bias=False
             )
-            self.bn = nn.BatchNorm2d(width_out, eps=bn_epsilon, momentum=bn_momentum)
+            self.bn = norm_layer(width_out)
         self.f = BottleneckTransform(
             width_in,
             width_out,
             stride,
-            bn_epsilon,
-            bn_momentum,
-            activation,
+            norm_layer,
+            activation_layer,
             group_width,
             bottleneck_multiplier,
             se_ratio,
         )
-        self.activation = activation
+        self.activation = activation_layer(inplace=True)
 
         # The projection and transform happen in parallel,
         # and activation is not counted with respect to depth
@@ -307,9 +261,8 @@ class ResBottleneckLinearBlock(nn.Module):
         width_in: int,
         width_out: int,
         stride: int,
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         group_width: int = 1,
         bottleneck_multiplier: float = 4.0,
         se_ratio: Optional[float] = None,
@@ -320,9 +273,8 @@ class ResBottleneckLinearBlock(nn.Module):
             width_in,
             width_out,
             stride,
-            bn_epsilon,
-            bn_momentum,
-            activation,
+            norm_layer,
+            activation_layer,
             group_width,
             bottleneck_multiplier,
             se_ratio,
@@ -342,9 +294,8 @@ class AnyStage(nn.Sequential):
         stride: int,
         depth: int,
         block_constructor: Callable[..., nn.Module],
-        bn_epsilon: float,
-        bn_momentum: float,
-        activation: nn.Module,
+        norm_layer: Callable[..., nn.Module],
+        activation_layer: Callable[..., nn.Module],
         group_width: int,
         bottleneck_multiplier: float,
         se_ratio: Optional[float] = None,
@@ -357,9 +308,8 @@ class AnyStage(nn.Sequential):
                 width_in if i == 0 else width_out,
                 width_out,
                 stride if i == 0 else 1,
-                bn_epsilon,
-                bn_momentum,
-                activation,
+                norm_layer,
+                activation_layer,
                 group_width,
                 bottleneck_multiplier,
                 se_ratio,
@@ -398,11 +348,10 @@ class RegNetParams:
         self.stem_type = stem_type
         self.block_type = block_type
         self.activation = activation
+        self.norm_layer = partial(nn.BatchNorm2d, eps=bn_epsilon, momentum=bn_momentum)
         self.stem_width = stem_width
         self.use_se = use_se
         self.se_ratio = se_ratio if use_se else None
-        self.bn_epsilon = bn_epsilon
-        self.bn_momentum = bn_momentum
         self.num_classes = num_classes
 
     def get_expanded_params(self):
@@ -486,15 +435,12 @@ class RegNet(nn.Module):
     def __init__(self, params: RegNetParams) -> None:
         super().__init__()
 
-        activation = params.activation(inplace=True)
-
         # Ad hoc stem
         self.stem = params.stem_type(
             3,  # width_in
             params.stem_width,
-            params.bn_epsilon,
-            params.bn_momentum,
-            activation,
+            params.norm_layer,
+            params.activation,
         )
 
         current_width = params.stem_width
@@ -516,9 +462,8 @@ class RegNet(nn.Module):
                         stride,
                         depth,
                         params.block_type,
-                        params.bn_epsilon,
-                        params.bn_momentum,
-                        activation,
+                        params.norm_layer,
+                        params.activation,
                         group_width,
                         bottleneck_multiplier,
                         params.se_ratio,
