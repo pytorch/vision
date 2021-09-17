@@ -7,7 +7,7 @@ dependencies:
   - pytest-mock
   - pip
   - libpng
-  - jpeg ==9c
+  - jpeg
   - ca-certificates
   - pip:
     - future
