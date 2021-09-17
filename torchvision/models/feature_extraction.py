@@ -97,57 +97,38 @@ class NodePathTracer(LeafModuleAwareTracer):
     def _get_node_qualname(
             self, module_qualname: str, node: fx.node.Node) -> str:
         node_qualname = module_qualname
-        if node.op == 'call_module':
-            # Node terminates in a leaf module so the module_qualname is a
-            # complete description of the node
-            for existing_qualname in reversed(self.node_to_qualname.values()):
-                # Check to see if existing_qualname is of the form
-                # {node_qualname} or {node_qualname}_{int}
-                if re.match(rf'{node_qualname}(_[0-9]+)?$',
-                            existing_qualname) is not None:
-                    postfix = existing_qualname.replace(node_qualname, '')
-                    if len(postfix):
-                        # Existing_qualname is of the form {node_qualname}_{int}
-                        next_index = int(postfix[1:]) + 1
-                    else:
-                        # existing_qualname is of the form {node_qualname}
-                        next_index = 1
-                    node_qualname += f'_{next_index}'
-                    break
-                pass
-        else:
-            # Node terminates in non- leaf module so the node name needs to be
-            # appended
+
+        if node.op != 'call_module':
+            # In this case module_qualname from torch.fx doesn't go all the
+            # way to the leaf function/op so we need to append it
             if len(node_qualname) > 0:
                 # Only append '.' if we are deeper than the top level module
                 node_qualname += '.'
             node_qualname += str(node)
-            # For functions, torch.fx will use a _index iterator on repeated
-            # names globally. Here we want to make sure the iterator is only
-            # applied when scoped within a common parent node. So we need to 
-            # undo the convention of torch.fx and apply ours as we did with
-            # modules
-            # TODO before final PR: check if I want to restric this to only
-            # if node.op == 'call_function'
-            if re.match(rf'[^\.]+(_[0-9]+)?$', node_qualname):
-                node_qualname = node_qualname.rsplit('_', 1)[0]
-            # TODO before final PF: reuse instead of duplicate this code from
-            # above
-            for existing_qualname in reversed(self.node_to_qualname.values()):
-                # Check to see if existing_qualname is of the form
-                # {node_qualname} or {node_qualname}_{int}
-                if re.match(rf'{node_qualname}(_[0-9]+)?$',
-                            existing_qualname) is not None:
-                    postfix = existing_qualname.replace(node_qualname, '')
-                    if len(postfix):
-                        # Existing_qualname is of the form {node_qualname}_{int}
-                        next_index = int(postfix[1:]) + 1
-                    else:
-                        # existing_qualname is of the form {node_qualname}
-                        next_index = 1
-                    node_qualname += f'_{next_index}'
-                    break
-                pass
+
+        # Now we need to add an _{index} postfix on any repeated node names
+        # For modules we do this from scratch
+        # But for anything else, torch.fx already has a globally scoped
+        # _{index} postfix. But we want it locally (relative to direct parent)
+        # scoped. So first we need to undo the torch.fx postfix
+        if re.match(r'.+_[0-9]+$', node_qualname) is not None:
+            node_qualname = node_qualname.rsplit('_', 1)[0]
+
+        # ... and now we add on our own postfix
+        for existing_qualname in reversed(self.node_to_qualname.values()):
+            # Check to see if existing_qualname is of the form
+            # {node_qualname} or {node_qualname}_{int}
+            if re.match(rf'{node_qualname}(_[0-9]+)?$',
+                        existing_qualname) is not None:
+                postfix = existing_qualname.replace(node_qualname, '')
+                if len(postfix):
+                    # existing_qualname is of the form {node_qualname}_{int}
+                    next_index = int(postfix[1:]) + 1
+                else:
+                    # existing_qualname is of the form {node_qualname}
+                    next_index = 1
+                node_qualname += f'_{next_index}'
+                break
 
         return node_qualname
 
