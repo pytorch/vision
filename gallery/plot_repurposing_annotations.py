@@ -10,7 +10,6 @@ segmentation methods into bounding boxes used by object detection methods).
 
 import matplotlib.patches
 import matplotlib.pyplot
-import numpy
 import skimage.draw
 import skimage.measure
 import torch
