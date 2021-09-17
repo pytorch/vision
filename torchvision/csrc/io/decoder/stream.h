@@ -71,6 +71,11 @@ class Stream {
   // estimated next frame pts for flushing the last frame
   int64_t nextPts_{0};
   double fps_{30.};
+  
+  // this is a dumb conservative limit; ideally we'd use
+  // int max_threads = at::get_num_threads(); but this would cause
+  // fb sync to fail as it would add dependency to ATen to the decoder API
+  const int max_threads = 12;
 };
 
 } // namespace ffmpeg

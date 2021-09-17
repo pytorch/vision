@@ -52,10 +52,7 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     return AVERROR(ENOMEM);
   }
   // multithreading heuristics
-  // this is a dumb conservative limit; ideally we'd use 
-  // int max_threads = at::get_num_threads(); but this would cause 
-  // fb sync to fail as it would add dependency to ATen to the decoder API
-  int max_threads = 12;
+  
   if (num_threads > max_threads) {
     num_threads = max_threads;
   }
