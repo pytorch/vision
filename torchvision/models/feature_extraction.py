@@ -179,19 +179,23 @@ def get_graph_node_names(
     names are available for feature extraction. There are two reasons that
     node names can't easily be read directly from the code for a model:
 
-        1. Not all submodules are traced through. Modules from `torch.nn` all
+        1. Not all submodules are traced through. Modules from ``torch.nn`` all
            fall within this category.
         2. Nodes representing the repeated application of the same operation
-           or leaf module get a `_{counter}` postfix.
+           or leaf module get a ``_{counter}`` postfix.
 
     The model is traced twice: once in train mode, and once in eval mode. Both
-    sets of nodes are returned.
+    sets of node names are returned.
+
+    For more details on the node naming conventions used here, please see the
+    :ref:`relevant subheading <about-node-names>` in the
+    `documentation <https://pytorch.org/vision/stable/feature_extraction.html>`_.
 
     Args:
         model (nn.Module): model for which we'd like to print node names
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
-            `NodePathTracer` (they are eventually passed onto
-            `torch.fx.Tracer`).
+            ``NodePathTracer`` (they are eventually passed onto
+            `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -297,58 +301,55 @@ def create_feature_extractor(
     the model via FX to return the desired nodes as outputs. All unused nodes
     are removed, together with their corresponding parameters.
 
-    A note on node specification: For the purposes of this feature extraction
-    utility, a node name is specified as a `.` seperated path walking the
-    hierarchy from top level module down to leaf operation or leaf module. For
-    instance `blocks.5.3.bn1`. The keys of the `return_nodes` argument should
-    point to either a node's name, or some truncated version of it. For
-    example, one could provide `blocks.5` as a key, and the last node with
-    that prefix will be selected. :func:`get_graph_node_names` is a useful
-    helper function for getting a list of node names of a model.
+    Desired output nodes must be specified as a ``.`` seperated
+    path walking the module hierarchy from top level module down to leaf
+    operation or leaf module. For more details on the node naming conventions
+    used here, please see the :ref:`relevant subheading <about-node-names>`
+    in the `documentation <https://pytorch.org/vision/stable/feature_extraction.html>`_.
 
     Not all models will be FX traceable, although with some massaging they can
     be made to cooperate. Here's a (not exhaustive) list of tips:
 
         - If you don't need to trace through a particular, problematic
           sub-module, turn it into a "leaf module" by passing a list of
-          `leaf_modules` as one of the `tracer_kwargs` (see example below). It
-          will not be traced through, but rather, the resulting graph will
+          ``leaf_modules`` as one of the ``tracer_kwargs`` (see example below).
+          It will not be traced through, but rather, the resulting graph will
           hold a reference to that module's forward method.
         - Likewise, you may turn functions into leaf functions by passing a
-          list of `autowrap_functions` as one of the `tracer_kwargs` (see
+          list of ``autowrap_functions`` as one of the ``tracer_kwargs`` (see
           example below).
         - Some inbuilt Python functions can be problematic. For instance,
-          `int` will raise an error during tracing. You may wrap them in your
-          own function and then pass that in `autowrap_functions` as one of
-          the `tracer_kwargs`.
+          ``int`` will raise an error during tracing. You may wrap them in your
+          own function and then pass that in ``autowrap_functions`` as one of
+          the ``tracer_kwargs``.
 
     For further information on FX see the
     `torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_.
 
     Args:
         model (nn.Module): model on which we will extract the features
-        return_nodes (list or dict, optional): either a `List` or a `Dict`
+        return_nodes (list or dict, optional): either a ``List`` or a ``Dict``
             containing the names (or partial names - see note above)
             of the nodes for which the activations will be returned. If it is
-            a `Dict`, the keys are the node names, and the values
+            a ``Dict``, the keys are the node names, and the values
             are the user-specified keys for the graph module's returned
-            dictionary. If it is a `List`, it is treated as a `Dict` mapping
+            dictionary. If it is a ``List``, it is treated as a ``Dict`` mapping
             node specification strings directly to output names. In the case
-            that `train_return_nodes` and `eval_return_nodes` are specified,
+            that ``train_return_nodes`` and ``eval_return_nodes`` are specified,
             this should not be specified.
         train_return_nodes (list or dict, optional): similar to
-            `return_nodes`. This can be used if the return nodes
+            ``return_nodes``. This can be used if the return nodes
             for train mode are different than those from eval mode.
-            If this is specified, `eval_return_nodes` must also be specified,
-            and `return_nodes` should not be specified.
+            If this is specified, ``eval_return_nodes`` must also be specified,
+            and ``return_nodes`` should not be specified.
         eval_return_nodes (list or dict, optional): similar to
-            `return_nodes`. This can be used if the return nodes
+            ``return_nodes``. This can be used if the return nodes
             for train mode are different than those from eval mode.
-            If this is specified, `train_return_nodes` must also be specified,
+            If this is specified, ``train_return_nodes`` must also be specified,
             and `return_nodes` should not be specified.
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
-            `NodePathTracer` (which passes them onto it's parent class
-            `torch.fx.Tracer`).
+            ``NodePathTracer`` (which passes them onto it's parent class
+            `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
