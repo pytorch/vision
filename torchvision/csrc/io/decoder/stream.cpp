@@ -58,9 +58,6 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
   }
 
   if (num_threads > 0) {
-    if (num_threads > 1) {
-      codecCtx_->active_thread_type = 1;
-    }
     // if user defined, respect that
     codecCtx_->thread_count = num_threads;
 
@@ -81,7 +78,6 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     } else {
       // otherwise default to multithreading
       codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
-      codecCtx_->active_thread_type = 1;
     }
   }
 
