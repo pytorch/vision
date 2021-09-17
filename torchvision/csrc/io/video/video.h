@@ -16,7 +16,7 @@ struct Video : torch::CustomClassHolder {
   // global video metadata
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
       streamsMetadata;
-int64_t numThreads_{0};
+  int64_t numThreads_{0};
 
  public:
   Video(std::string videoPath, std::string stream, int64_t numThreads);
