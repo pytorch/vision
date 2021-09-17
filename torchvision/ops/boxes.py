@@ -314,20 +314,18 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
         Tensor[N, 4]: bounding boxes
     """
     if masks.numel() == 0:
-        return torch.zeros((0, 4), device=masks.device)
+        return torch.zeros((0, 4))
 
-    h, w = masks.shape[-2:]
+    n = masks.shape[0]
 
-    y = torch.arange(0, h, dtype=torch.float)
-    x = torch.arange(0, w, dtype=torch.float)
-    y, x = torch.meshgrid(y, x)
+    bounding_boxes = torch.zeros((n, 4), dtype=torch.int)
 
-    x_mask = masks * x.unsqueeze(0)
-    x_max = x_mask.flatten(1).max(-1)[0]
-    x_min = x_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
+    for index, mask in enumerate(masks):
+        y, x = torch.where(masks[index] != 0)
 
-    y_mask = masks * y.unsqueeze(0)
-    y_max = y_mask.flatten(1).max(-1)[0]
-    y_min = y_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
+        bounding_boxes[index, 0] = torch.min(x)
+        bounding_boxes[index, 1] = torch.min(y)
+        bounding_boxes[index, 2] = torch.max(x)
+        bounding_boxes[index, 3] = torch.max(y)
 
-    return torch.stack([x_min, y_min, x_max, y_max], 1)
+    return bounding_boxes

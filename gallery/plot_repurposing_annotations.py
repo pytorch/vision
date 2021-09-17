@@ -8,44 +8,13 @@ object localization annotations for different tasks (e.g. transforming masks use
 segmentation methods into bounding boxes used by object detection methods).
 """
 
-from PIL import Image
-from pathlib import Path
-import matplotlib.pyplot as plt
-import numpy as np
-
+import matplotlib.patches
+import matplotlib.pyplot
+import numpy
+import skimage.draw
+import skimage.measure
 import torch
-import torchvision.transforms as T
-
-plt.rcParams["savefig.bbox"] = 'tight'
-orig_img = Image.open(Path('assets') / 'astronaut.jpg')
-# if you change the seed, make sure that the randomly-applied transforms
-# properly show that the image can be both transformed and *not* transformed!
-torch.manual_seed(0)
-
-
-def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
-    if not isinstance(imgs[0], list):
-        # Make a 2d grid even if there's just 1 row
-        imgs = [imgs]
-
-    num_rows = len(imgs)
-    num_cols = len(imgs[0]) + with_orig
-    fig, axs = plt.subplots(nrows=num_rows, ncols=num_cols, squeeze=False)
-    for row_idx, row in enumerate(imgs):
-        row = [orig_img] + row if with_orig else row
-        for col_idx, img in enumerate(row):
-            ax = axs[row_idx, col_idx]
-            ax.imshow(np.asarray(img), **imshow_kwargs)
-            ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-
-    if with_orig:
-        axs[0, 0].set(title='Original image')
-        axs[0, 0].title.set_size(8)
-    if row_title is not None:
-        for row_idx in range(num_rows):
-            axs[row_idx, 0].set(ylabel=row_title[row_idx])
-
-    plt.tight_layout()
+import torchvision.ops.boxes
 
 
 ####################################
@@ -69,5 +38,31 @@ def plot(imgs, with_orig=True, row_title=None, **imshow_kwargs):
 # ~~~~~~~~~~~~~~~~~~~~~~~
 # For example, the masks to bounding_boxes operation can be used to transform masks into bounding boxes that can be
 # used in methods like Faster RCNN and YOLO.
-padded_imgs = [T.Pad(padding=padding)(orig_img) for padding in (3, 10, 30, 50)]
-plot(padded_imgs)
+
+image, labels = skimage.draw.random_shapes((512, 256), 4, min_size=32, multichannel=False)
+
+labeled_image = skimage.measure.label(image, background=255)
+
+labeled_image = skimage.img_as_ubyte(labeled_image)
+
+masks = numpy.zeros((len(labels), *labeled_image.shape), numpy.ubyte)
+
+for index in numpy.unique(labeled_image):
+    masks[index - 1] = numpy.where(labeled_image == index, index, 0)
+
+bounding_boxes = torchvision.ops.boxes.masks_to_boxes(torch.tensor(masks))
+
+figure = matplotlib.pyplot.figure()
+
+a = figure.add_subplot(121)
+b = figure.add_subplot(122)
+
+a.imshow(labeled_image)
+b.imshow(labeled_image)
+
+for bounding_box in bounding_boxes.tolist():
+    x0, y0, x1, y1 = bounding_box
+
+    rectangle = matplotlib.patches.Rectangle((x0, y0), x1 - x0, y1 - y0, linewidth=1, edgecolor='r', facecolor='none')
+
+    b.add_patch(rectangle)
