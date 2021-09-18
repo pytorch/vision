@@ -193,6 +193,8 @@ pushd "%SRC_DIR%\temp_build\cuda"
 start /wait setup.exe -s %ARGS%
 popd
 
+echo Installing VS integration...
+rem It's for VS 2019
 if "%CUDA_VER_MAJOR%" == "10" (
     xcopy /Y "%SRC_DIR%\temp_build\cuda\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\*.*" "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\BuildCustomizations"
 )
