@@ -12,7 +12,7 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
 conda activate ./env
 
-if [[ -z "${CUDA_VERSION}" || "${CUDA_VERSION}" == "cpu" ]] ; then
+if [ "${CU_VERSION:-}" == cpu ] ; then
     cudatoolkit="cpuonly"
 else
     if [[ ${#CU_VERSION} -eq 4 ]]; then
@@ -23,7 +23,6 @@ else
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
     cudatoolkit="cudatoolkit=${version}"
-    cudatoolkit="cudatoolkit=${CUDA_VERSION}"
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
