@@ -48,5 +48,3 @@ if [[ "$version" != "cpu" ]]; then
     nvcc --version
     env | grep CUDA
 fi
-
-
