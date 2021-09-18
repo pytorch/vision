@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 
-if [[ -z "${CUDA_VERSION}" || "${CUDA_VERSION}" == "cpu" ]] ; then
-    exit 0
+echo CU_VERSION is "${CU_VERSION}"
+echo CUDA_VERSION is "${CUDA_VERSION}"
+
+#rem in unit test workflow, we get CUDA_VERSION, for example 11.1
+version="cpu"
+if [[ ! -z "${CUDA_VERSION}" ]] ; then
+    version="$CUDA_VERSION"
+else
+    if [[ ${#CU_VERSION} -eq 5 ]]; then
+        version="${CU_VERSION:2:2}.${CU_VERSION:4:1}"
+    fi
 fi
 
-version=$CUDA_VERSION
+if [[ "$version" == "cpu" ]]; then
+    exit 0
+fi
 
 # set cuda envs
 export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
