@@ -3,6 +3,9 @@ repos:
     rev: 1.3.0
     hooks:
       - id: ufmt
+        additional_dependencies:
+          - black == 21.9b0
+          - usort == 0.6.4
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
