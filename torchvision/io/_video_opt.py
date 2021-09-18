@@ -3,7 +3,7 @@ import math
 import os
 import warnings
 from fractions import Fraction
-from typing import List, Tuple, Dict, Any, Optional, Type, cast
+from typing import List, Tuple, Dict, Any, Optional, Type, cast, Union
 
 import numpy as np
 import torch
