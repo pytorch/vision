@@ -18,7 +18,7 @@ first_party = ["torchvision"]
 local_test_utils = [
     "_utils_internal",
     "common_utils",
-    "dataset_utils",
+    "datasets_utils",
 ]
 
 [tool.black]
