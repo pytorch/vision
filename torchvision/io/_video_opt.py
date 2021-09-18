@@ -24,8 +24,8 @@ default_timebase = Fraction(0, 1)
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
 class Timebase(object):
-    __annotations__: Dict[str, Type] = {"numerator": int, "denominator": int}
-    __slots__: List[str] = ["numerator", "denominator"]
+    __annotations__ = {"numerator": int, "denominator": int}
+    __slots__ = ["numerator", "denominator"]
 
     def __init__(
         self,
@@ -37,7 +37,7 @@ class Timebase(object):
 
 
 class VideoMetaData(object):
-    __annotations__: Dict[str, Type] = {
+    __annotations__ = {
         "has_video": bool,
         "video_timebase": Timebase,
         "video_duration": float,
@@ -534,7 +534,7 @@ def _read_video(
 def _read_video_timestamps(
     filename: str,
     pts_unit: str = "pts"
-) -> Tuple[Union[List[int], List[Fraction]], Optional[float]]::
+) -> Tuple[Union[List[int], List[Fraction]], Optional[float]]:
     if pts_unit == "pts":
         warnings.warn(
             "The pts_unit 'pts' gives wrong results and will be removed in a "
