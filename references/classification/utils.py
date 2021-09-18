@@ -172,12 +172,25 @@ class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
                    decay * avg_model_param + (1 - decay) * model_param)
         super().__init__(model, device, ema_avg)
 
+    def update_parameters(self, model):
+        for p_swa, p_model in zip(self.module.state_dict().values(), model.state_dict().values()):
+            device = p_swa.device
+            p_model_ = p_model.detach().to(device)
+            if self.n_averaged == 0:
+                p_swa.detach().copy_(p_model_)
+            else:
+                p_swa.detach().copy_(self.avg_fn(p_swa.detach(), p_model_,
+                                     self.n_averaged.to(device)))
+            self.n_averaged += 1
+
 
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
         maxk = max(topk)
         batch_size = target.size(0)
+        if target.ndim == 2:
+            target = target.max(dim=1)[1]
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
