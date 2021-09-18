@@ -47,7 +47,6 @@ if [[ "$version" != "cpu" ]]; then
     which nvcc
     nvcc --version
     env | grep CUDA
-    which nvcc
 fi
 
 
