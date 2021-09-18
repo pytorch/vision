@@ -83,7 +83,7 @@ class ToTensor:
         Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
         transforming target image masks. See the `references`_ for implementing the transforms for image masks.
 
-    .. _references: https://github.com/pytorch/vision/tree/master/references/segmentation
+    .. _references: https://github.com/pytorch/vision/tree/main/references/segmentation
     """
 
     def __call__(self, pic):
@@ -515,9 +515,20 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list. This transform does not support torchscript.
     """
-    def __call__(self, img):
-        t = random.choice(self.transforms)
-        return t(img)
+    def __init__(self, transforms, p=None):
+        super().__init__(transforms)
+        if p is not None and not isinstance(p, Sequence):
+            raise TypeError("Argument transforms should be a sequence")
+        self.p = p
+
+    def __call__(self, *args):
+        t = random.choices(self.transforms, weights=self.p)[0]
+        return t(*args)
+
+    def __repr__(self):
+        format_string = super().__repr__()
+        format_string += '(p={0})'.format(self.p)
+        return format_string
 
 
 class RandomCrop(torch.nn.Module):
@@ -575,7 +586,7 @@ class RandomCrop(torch.nn.Module):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = F._get_image_size(img)
+        w, h = F.get_image_size(img)
         th, tw = output_size
 
         if h + 1 < th or w + 1 < tw:
@@ -613,7 +624,7 @@ class RandomCrop(torch.nn.Module):
         if self.padding is not None:
             img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
-        width, height = F._get_image_size(img)
+        width, height = F.get_image_size(img)
         # pad the width if needed
         if self.pad_if_needed and width < self.size[1]:
             padding = [self.size[1] - width, 0]
@@ -742,12 +753,12 @@ class RandomPerspective(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
 
         if torch.rand(1) < self.p:
-            width, height = F._get_image_size(img)
+            width, height = F.get_image_size(img)
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
         return img
@@ -858,7 +869,7 @@ class RandomResizedCrop(torch.nn.Module):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
             sized crop.
         """
-        width, height = F._get_image_size(img)
+        width, height = F.get_image_size(img)
         area = height * width
 
         log_ratio = torch.log(torch.tensor(ratio))
@@ -1280,7 +1291,7 @@ class RandomRotation(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
@@ -1439,11 +1450,11 @@ class RandomAffine(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
 
-        img_size = F._get_image_size(img)
+        img_size = F.get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
 
@@ -1529,7 +1540,7 @@ class RandomGrayscale(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly grayscaled image.
         """
-        num_output_channels = F._get_image_num_channels(img)
+        num_output_channels = F.get_image_num_channels(img)
         if torch.rand(1) < self.p:
             return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img

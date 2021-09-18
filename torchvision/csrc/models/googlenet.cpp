@@ -1,5 +1,7 @@
 #include "googlenet.h"
 
+#include "modelsimpl.h"
+
 namespace vision {
 namespace models {
 
@@ -143,6 +145,8 @@ GoogLeNetImpl::GoogLeNetImpl(
 
   if (init_weights)
     _initialize_weights();
+
+  modelsimpl::deprecation_warning();
 }
 
 void GoogLeNetImpl::_initialize_weights() {
