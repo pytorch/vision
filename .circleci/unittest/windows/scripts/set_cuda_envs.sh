@@ -17,6 +17,7 @@ if [[ "$version" == "cpu" ]]; then
     exit 0
 fi
 
+
 # set cuda envs
 export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/bin:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${version}/libnvvp:$PATH"
 export CUDA_PATH_V${version/./_}="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${version}"
@@ -45,3 +46,4 @@ done
 which nvcc
 nvcc --version
 env | grep CUDA
+which nvcc
