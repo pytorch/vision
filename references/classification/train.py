@@ -319,7 +319,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
     parser.add_argument('--lr-warmup-method', default="constant", type=str,
                         help='the warmup method (default: constant)')
-    parser.add_argument('--lr-warmup-decay', default=0.01, type=int, help='the decay for lr')
+    parser.add_argument('--lr-warmup-decay', default=0.01, type=float, help='the decay for lr')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
