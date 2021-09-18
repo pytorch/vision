@@ -20,6 +20,6 @@ for /F "delims=" %%i in ('wmic path win32_VideoController get name') do (
 endlocal & set NVIDIA_GPU_EXISTS=%NVIDIA_GPU_EXISTS%
 
 if "%NVIDIA_GPU_EXISTS%" == "0" (
-    echo "Skip CUDA tests for machines without a Nvidia GPU card"
-    goto end
+    echo "CUDA Driver installation Failed"
+    exit /b 1
 )
