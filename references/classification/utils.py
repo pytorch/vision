@@ -197,9 +197,9 @@ def bn_reinitialization(model: torch.nn.Module, gamma: float = 1.0, beta: float 
         beta (float): The beta initial value.
     """
     for module in model.modules():
-        if isinstance(module, torch.nn._BatchNorm):
-            module.weight.fill_(gamma)
-            module.bias.fill_(beta)
+        if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
+            torch.nn.init.constant_(module.weight, gamma)
+            torch.nn.init.constant_(module.bias, beta)
 
 
 def accuracy(output, target, topk=(1,)):
