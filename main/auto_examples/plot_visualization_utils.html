@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+7bb5b95 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+d59f730 ) &#x25BC</a>
     </div>
     
 
@@ -406,6 +406,8 @@ on the output of such models, you may refer to <a class="reference internal" hre
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth&quot; to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
+/root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1632035153099/work/aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
 [{&#39;boxes&#39;: tensor([[215.9767, 171.1661, 402.0078, 378.7391],
         [344.6341, 172.6735, 357.6114, 220.1435],
         [153.1306, 185.5568, 172.9223, 254.7014]], grad_fn=&lt;StackBackward0&gt;), &#39;labels&#39;: tensor([18,  1,  1]), &#39;scores&#39;: tensor([0.9989, 0.0701, 0.0611], grad_fn=&lt;IndexBackward0&gt;)}, {&#39;boxes&#39;: tensor([[ 23.5963, 132.4332, 449.9359, 493.0222],
@@ -754,7 +756,7 @@ here, and also plot the masks of the second dog.</p>
 <p>The two ‘people’ masks in the first image where not selected because they have
 a lower score than the score threshold. Similarly in the second image, the
 instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  12.553 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  10.061 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-visualization-utils-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/1031091ece7f376de0a2c941f5c11f30/plot_visualization_utils.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_visualization_utils.py</span></code></a></p>
