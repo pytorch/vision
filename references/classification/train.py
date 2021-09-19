@@ -188,15 +188,20 @@ def main(args):
     print("Creating model")
     model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
     model.to(device)
+
+    if not args.pretrained and args.zero_gamma_bn:
+        utils.bn_reinitialization(model, gamma=0.0)
+
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     opt_name = args.opt.lower()
-    if opt_name == 'sgd':
+    if opt_name.startswith("sgd"):
         optimizer = torch.optim.SGD(
-            model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+            model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
+            nesterov="nesterov" in opt_name)
     elif opt_name == 'rmsprop':
         optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr, momentum=args.momentum,
                                         weight_decay=args.weight_decay, eps=0.0316, alpha=0.9)
@@ -337,6 +342,12 @@ def get_args_parser(add_help=True):
         "--sync-bn",
         dest="sync_bn",
         help="Use sync batch norm",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--zero-gamma-bn",
+        dest="zero_gamma_bn",
+        help="Initialize the gamma of batch norm with zero",
         action="store_true",
     )
     parser.add_argument(
