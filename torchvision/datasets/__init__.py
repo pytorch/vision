@@ -26,6 +26,7 @@ from .ucf101 import UCF101
 from .places365 import Places365
 from .kitti import Kitti
 from .inaturalist import INaturalist
+from .lfw import LFWPeople, LFWPairs
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -36,5 +37,5 @@ __all__ = ('LSUN', 'LSUNClass',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'WIDERFace', 'SBDataset',
            'VisionDataset', 'USPS', 'Kinetics400', "Kinetics", 'HMDB51', 'UCF101',
-           'Places365', 'Kitti', "INaturalist"
+           'Places365', 'Kitti', "INaturalist", "LFWPeople", "LFWPairs"
            )
