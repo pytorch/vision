@@ -184,24 +184,6 @@ class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
             self.n_averaged += 1
 
 
-def bn_reinitialization(model: torch.nn.Module, gamma: float = 1.0, beta: float = 0.0):
-    """
-    This method overwrites the default gamma and beta initial values for BatchNorm layers.
-    It can be used to perform Zero gamma initialization as described at
-    `"Bag of Tricks for Image Classification with Convolutional Neural Networks"
-    <https://arxiv.org/abs/1812.01187>`_.
-
-    Args:
-        model (nn.Module): The model on which we perform the BatchNorm re-initialization.
-        gamma (float): The gamma initial value.
-        beta (float): The beta initial value.
-    """
-    for module in model.modules():
-        if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
-            torch.nn.init.constant_(module.weight, gamma)
-            torch.nn.init.constant_(module.bias, beta)
-
-
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():

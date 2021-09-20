@@ -189,9 +189,6 @@ def main(args):
     model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
     model.to(device)
 
-    if not args.pretrained and args.zero_gamma_bn:
-        utils.bn_reinitialization(model, gamma=0.0)
-
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
@@ -342,12 +339,6 @@ def get_args_parser(add_help=True):
         "--sync-bn",
         dest="sync_bn",
         help="Use sync batch norm",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--zero-gamma-bn",
-        dest="zero_gamma_bn",
-        help="Initialize the gamma of batch norm with zero",
         action="store_true",
     )
     parser.add_argument(
