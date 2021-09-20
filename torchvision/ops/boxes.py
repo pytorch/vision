@@ -318,7 +318,7 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
 
     n = masks.shape[0]
 
-    bounding_boxes = torch.zeros((n, 4), dtype=torch.int)
+    bounding_boxes = torch.zeros((n, 4), device=masks.device, dtype=torch.int)
 
     for index, mask in enumerate(masks):
         y, x = torch.where(masks[index] != 0)
