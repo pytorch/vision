@@ -14,7 +14,7 @@ import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 import torch
-from torchvision.ops.boxes import masks_to_boxes
+from torchvision.ops import masks_to_boxes
 
 ASSETS_DIRECTORY = "../test/assets"
 
