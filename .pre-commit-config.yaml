@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/omnilib/ufmt
-    rev: 1.3.0
+    rev: v1.3.0
     hooks:
       - id: ufmt
         additional_dependencies:
