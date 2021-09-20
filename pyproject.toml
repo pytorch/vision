@@ -15,8 +15,9 @@ categories = [
 [tool.usort.known]
 
 pytorch_core = ["torch"]
+first_party = ["torchvision"]
 
-local__utils = [
+local_utils = [
     "_utils_internal",
     "coco_utils",
     "common_utils",
