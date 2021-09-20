@@ -36,14 +36,12 @@ class SqueezeExcitation(nn.Module):
         self,
         input_channels: int,
         squeeze_channels: int,
-        activation: Optional[Callable[..., nn.Module]] = None,
+        activation: Callable[..., nn.Module] = nn.ReLU,
     ) -> None:
         super().__init__()
         self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
         self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
-        if activation is None:
-            activation = nn.SiLU
-        self.activation = activation(inplace=True)
+        self.activation = activation()
 
     def _scale(self, input: Tensor) -> Tensor:
         scale = F.adaptive_avg_pool2d(input, 1)
