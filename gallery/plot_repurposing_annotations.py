@@ -38,7 +38,7 @@ matplotlib.pyplot.rcParams["savefig.bbox"] = "tight"
 # localization tasks.
 #
 # Masks to bounding boxes
-# ~~~~~~~~~~~~~~~~~~~~~~~
+# ----------------------------------------
 # For example, the masks to bounding_boxes operation can be used to transform masks into bounding boxes that can be
 # used in methods like Faster RCNN and YOLO.
 
