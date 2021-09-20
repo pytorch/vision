@@ -82,8 +82,7 @@ The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTo
 
 ### RegNet
 ```
-python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
-    --model regnet_y_400mf --epochs 100
+torchrun --nproc_per_node=8 train.py --model regnet_y_400mf --epochs 100 --batch-size 128
 ```
 
 ## Mixed precision training
