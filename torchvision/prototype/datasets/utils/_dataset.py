@@ -112,8 +112,8 @@ class DatasetInfo:
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
             with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
-                categories = fh.readlines()
-        self.categories = categories
+                categories = [line.strip() for line in fh]
+        self.categories = tuple(categories)
 
         self.citation = citation
         self.homepage = homepage
@@ -189,6 +189,10 @@ class Dataset(abc.ABC):
     @property
     def default_config(self) -> DatasetConfig:
         return self.info.default_config
+
+    @property
+    def categories(self) -> Tuple[str, ...]:
+        return self.info.categories
 
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
