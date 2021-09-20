@@ -3,7 +3,6 @@
 # https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/regnet.py
 
 
-import numpy as np
 import math
 import torch
 
@@ -326,14 +325,14 @@ class BlockParams:
         STRIDE = 2
 
         # Compute the block widths. Each stage has one unique block width
-        widths_cont = np.arange(self.depth) * self.w_a + self.w_0
-        block_capacity = np.round(np.log(widths_cont / self.w_0) / np.log(self.w_m))
+        widths_cont = torch.arange(self.depth) * self.w_a + self.w_0
+        block_capacity = torch.round(torch.log(widths_cont / self.w_0) / math.log(self.w_m))
         block_widths = (
-            np.round(np.divide(self.w_0 * np.power(self.w_m, block_capacity), QUANT))
+            torch.round(torch.divide(self.w_0 * torch.pow(self.w_m, block_capacity), QUANT))
             * QUANT
-        )
-        num_stages = len(np.unique(block_widths))
-        block_widths = block_widths.astype(int).tolist()
+        ).int()
+        num_stages = len(torch.unique(block_widths))
+        block_widths = block_widths.tolist()
 
         # Convert to per stage parameters
         split_helper = zip(
@@ -345,7 +344,7 @@ class BlockParams:
         splits = [w != wp or r != rp for w, wp, r, rp in split_helper]
 
         stage_widths = [w for w, t in zip(block_widths, splits[:-1]) if t]
-        stage_depths = np.diff([d for d, t in enumerate(splits) if t]).tolist()
+        stage_depths = torch.diff(torch.Tensor([d for d, t in enumerate(splits) if t])).int().tolist()
 
         strides = [STRIDE] * num_stages
         bottleneck_multipliers = [self.bottleneck_multiplier] * num_stages
@@ -445,7 +444,7 @@ class RegNet(nn.Module):
         self.fc = nn.Linear(in_features=current_width, out_features=num_classes)
 
         # Init weights and good to go
-        self._init_weights()
+        self.reset_parameters()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
@@ -457,19 +456,19 @@ class RegNet(nn.Module):
 
         return x
 
-    def _init_weights(self) -> None:
+    def reset_parameters(self) -> None:
         # Performs ResNet-style weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 # Note that there is no bias due to BN
                 fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(mean=0.0, std=math.sqrt(2.0 / fan_out))
+                nn.init.normal_(m.weight, mean=0.0, std=math.sqrt(2.0 / fan_out))
             elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1.0)
-                m.bias.data.zero_()
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
             elif isinstance(m, nn.Linear):
-                m.weight.data.normal_(mean=0.0, std=0.01)
-                m.bias.data.zero_()
+                nn.init.normal_(m.weight, mean=0.0, std=0.01)
+                nn.init.zeros_(m.bias)
 
 
 def _regnet(arch: str, block_params: BlockParams, pretrained: bool, progress: bool, **kwargs: Any) -> RegNet:
