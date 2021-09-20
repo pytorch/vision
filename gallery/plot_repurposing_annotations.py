@@ -22,7 +22,7 @@ matplotlib.pyplot.rcParams["savefig.bbox"] = "tight"
 
 ####################################
 # Masks
-# --------------------------------------
+# -----
 # In tasks like instance and panoptic segmentation, masks are commonly defined, and are defined by this package,
 # as a multi-dimensional array (e.g. a NumPy array or a PyTorch tensor) with the following shape:
 #
