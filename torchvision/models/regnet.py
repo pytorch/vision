@@ -14,51 +14,12 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
+from torchvision.models.efficientnet import SqueezeExcitation
 
 model_urls = {
     # TODO(kazhang): add pretrained weights
     "regnet_y_400m": "",
 }
-
-
-class _SqueezeExcitation(nn.Module):
-    """
-    Squeeze and excitation layer from
-    `"Squeeze-and-Excitation Networks" <https://arxiv.org/pdf/1709.01507>`_.
-    """
-
-    def __init__(
-        self,
-        in_channels: int,
-        reduction_ratio: Optional[int] = 16,
-        reduced_channels: Optional[int] = None,
-        activation: Optional[nn.Module] = None,
-    ) -> None:
-        super().__init__()
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-
-        # Either reduction_ratio is defined, or out_channels is defined,
-        # neither both nor none of them
-        assert bool(reduction_ratio) != bool(reduced_channels)
-
-        if activation is None:
-            activation = nn.ReLU()
-
-        reduced_channels = (
-            in_channels // reduction_ratio if reduced_channels is None else reduced_channels
-        )
-        self.excitation = nn.Sequential(
-            nn.Conv2d(in_channels, reduced_channels, kernel_size=1, stride=1, bias=True),
-            activation,
-            nn.Conv2d(reduced_channels, in_channels, kernel_size=1, stride=1, bias=True),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        x_squeezed = self.avgpool(x)
-        x_excited = self.excitation(x_squeezed)
-        x_scaled = x * x_excited
-        return x_scaled
 
 
 class BasicTransform(nn.Sequential):
@@ -195,11 +156,10 @@ class BottleneckTransform(nn.Sequential):
             # The SE reduction ratio is defined with respect to the
             # beginning of the block
             width_se_out = int(round(se_ratio * width_in))
-            layers["se"] = _SqueezeExcitation(
-                in_channels=w_b,
-                reduction_ratio=None,
-                reduced_channels=width_se_out,
-                activation=activation_layer(inplace=True),
+            layers["se"] = SqueezeExcitation(
+                input_channels=w_b,
+                squeeze_channels=width_se_out,
+                activation=activation_layer,
             )
 
         layers["c"] = nn.Conv2d(w_b, width_out, 1, stride=1, padding=0, bias=False)
