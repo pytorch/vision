@@ -4,21 +4,31 @@ categories = [
     "future",
     "standard_library",
     "third_party",
-    "pytorch",
+    # PyTorch core needs to imported before any other PyTorch derivative, because it does some magic in the background.
+    "pytorch_core",
     "first_party",
-    "local_test_utils",
+    # This category are contains local utility modules from our references/ and test/ folder. usort mistakes them for
+    # third party packages if we don't specify them manually.
+    "local_utils",
 ]
 
 [tool.usort.known]
 
-pytorch = ["torch"]
-first_party = ["torchvision"]
-# These are local utilities in our test/ folder. Since that folder is not a Python package, i.e. test/__init__.py is
-# missing, usort mistakes these modules as third party packages.
-local_test_utils = [
+pytorch_core = ["torch"]
+
+local__utils = [
     "_utils_internal",
+    "coco_utils",
     "common_utils",
     "datasets_utils",
+    "engine",
+    "group_by_aspect_ratio",
+    "loss",
+    "model",
+    "presets",
+    "sampler",
+    "scheduler",
+    "utils",
 ]
 
 [tool.black]
