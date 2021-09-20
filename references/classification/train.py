@@ -186,7 +186,7 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
+    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
     model.to(device)
 
     if not args.pretrained and args.zero_gamma_bn:
