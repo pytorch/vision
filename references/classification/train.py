@@ -230,8 +230,8 @@ def main(args):
             warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
                                                                       total_iters=args.lr_warmup_epochs)
         else:
-            raise RuntimeError("Invalid warmup lr method '{}'. Only linear and constant "
-                               "are supported.".format(args.lr_warmup_method))
+            raise RuntimeError(f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant "
+                               "are supported.")
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
             optimizer,
             schedulers=[warmup_lr_scheduler, main_lr_scheduler],
