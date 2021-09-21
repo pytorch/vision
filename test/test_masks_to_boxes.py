@@ -11,14 +11,14 @@ ASSETS_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ass
 
 def test_masks_to_boxes():
     with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
-        frames = numpy.zeros((image.n_frames, image.height, image.width), int)
+        masks = torch.zeros((image.n_frames, image.height, image.width), dtype=torch.int)
 
         for index in range(image.n_frames):
             image.seek(index)
 
-            frames[index] = numpy.array(image)
+            frame = numpy.array(image)
 
-        masks = torch.tensor(frames)
+            masks[index] = torch.tensor(frame)
 
     expected = torch.tensor(
         [[127, 2, 165, 40],
