@@ -77,7 +77,7 @@ class TestDatasetsUtils:
 
     def test_get_google_drive_file_id(self):
         url = "https://drive.google.com/file/d/1GO-BHUYRuvzr1Gtp2_fqXRsr9TIeYbhV/view"
-        expected = "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45"
+        expected = "1GO-BHUYRuvzr1Gtp2_fqXRsr9TIeYbhV"
 
         actual = utils._get_google_drive_file_id(url)
         assert actual == expected
