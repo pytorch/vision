@@ -9,7 +9,6 @@ import torchvision
 from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 from torchvision.datasets.utils import download_url
 
-from common_utils import PY39_SKIP
 
 try:
     import av
@@ -65,7 +64,6 @@ test_videos = {
 
 
 @pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
-@PY39_SKIP
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     def test_frame_reading(self):

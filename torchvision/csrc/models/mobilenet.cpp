@@ -146,6 +146,8 @@ MobileNetV2Impl::MobileNetV2Impl(
       torch::nn::init::zeros_(M->bias);
     }
   }
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor MobileNetV2Impl::forward(at::Tensor x) {

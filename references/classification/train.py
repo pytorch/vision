@@ -4,11 +4,13 @@ import time
 
 import torch
 import torch.utils.data
+from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 from torchvision.transforms.functional import InterpolationMode
 
 import presets
+import transforms
 import utils
 
 try:
@@ -17,7 +19,8 @@ except ImportError:
     amp = None
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq, apex=False):
+def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch,
+                    print_freq, apex=False, model_ema=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
@@ -45,11 +48,14 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
         metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
 
+    if model_ema:
+        model_ema.update_parameters(model)
 
-def evaluate(model, criterion, data_loader, device, print_freq=100):
+
+def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=''):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
-    header = 'Test:'
+    header = f'Test: {log_suffix}'
     with torch.no_grad():
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
             image = image.to(device, non_blocking=True)
@@ -67,8 +73,7 @@ def evaluate(model, criterion, data_loader, device, print_freq=100):
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
-    print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
+    print(f'{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}')
     return metric_logger.acc1.global_avg
 
 
@@ -161,10 +166,21 @@ def main(args):
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
+
+    collate_fn = None
+    num_classes = len(dataset.classes)
+    mixup_transforms = []
+    if args.mixup_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+    if args.cutmix_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
+    if mixup_transforms:
+        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
-
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True,
+        collate_fn=collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
@@ -175,7 +191,7 @@ def main(args):
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     opt_name = args.opt.lower()
     if opt_name == 'sgd':
@@ -192,12 +208,34 @@ def main(args):
                                           opt_level=args.apex_opt_level
                                           )
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    args.lr_scheduler = args.lr_scheduler.lower()
+    if args.lr_scheduler == 'steplr':
+        main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    elif args.lr_scheduler == 'cosineannealinglr':
+        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                                       T_max=args.epochs - args.lr_warmup_epochs)
+    else:
+        raise RuntimeError("Invalid lr scheduler '{}'. Only StepLR and CosineAnnealingLR "
+                           "are supported.".format(args.lr_scheduler))
+
+    if args.lr_warmup_epochs > 0:
+        lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
+                                                            total_iters=args.lr_warmup_epochs), main_lr_scheduler],
+            milestones=[args.lr_warmup_epochs]
+        )
+    else:
+        lr_scheduler = main_lr_scheduler
 
     model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
+
+    model_ema = None
+    if args.model_ema:
+        model_ema = utils.ExponentialMovingAverage(model_without_ddp, device=device, decay=args.model_ema_decay)
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -205,6 +243,8 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
+        if model_ema:
+            model_ema.load_state_dict(checkpoint['model_ema'])
 
     if args.test_only:
         evaluate(model, criterion, data_loader_test, device=device)
@@ -215,9 +255,11 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.apex)
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.apex, model_ema)
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
+        if model_ema:
+            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix='EMA')
         if args.output_dir:
             checkpoint = {
                 'model': model_without_ddp.state_dict(),
@@ -225,6 +267,8 @@ def main(args):
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'epoch': epoch,
                 'args': args}
+            if model_ema:
+                checkpoint['model_ema'] = model_ema.state_dict()
             utils.save_on_master(
                 checkpoint,
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
@@ -256,6 +300,14 @@ def get_args_parser(add_help=True):
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
+    parser.add_argument('--label-smoothing', default=0.0, type=float,
+                        help='label smoothing (default: 0.0)',
+                        dest='label_smoothing')
+    parser.add_argument('--mixup-alpha', default=0.0, type=float, help='mixup alpha (default: 0.0)')
+    parser.add_argument('--cutmix-alpha', default=0.0, type=float, help='cutmix alpha (default: 0.0)')
+    parser.add_argument('--lr-scheduler', default="steplr", help='the lr scheduler (default: steplr)')
+    parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
+    parser.add_argument('--lr-warmup-decay', default=0.01, type=int, help='the decay for lr')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
@@ -303,6 +355,12 @@ def get_args_parser(add_help=True):
     parser.add_argument('--world-size', default=1, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    parser.add_argument(
+        '--model-ema', action='store_true',
+        help='enable tracking Exponential Moving Average of model parameters')
+    parser.add_argument(
+        '--model-ema-decay', type=float, default=0.9,
+        help='decay factor for Exponential Moving Average of model parameters(default: 0.9)')
 
     return parser
 

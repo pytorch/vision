@@ -83,7 +83,7 @@ class ToTensor:
         Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
         transforming target image masks. See the `references`_ for implementing the transforms for image masks.
 
-    .. _references: https://github.com/pytorch/vision/tree/master/references/segmentation
+    .. _references: https://github.com/pytorch/vision/tree/main/references/segmentation
     """
 
     def __call__(self, pic):
@@ -515,9 +515,20 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list. This transform does not support torchscript.
     """
-    def __call__(self, img):
-        t = random.choice(self.transforms)
-        return t(img)
+    def __init__(self, transforms, p=None):
+        super().__init__(transforms)
+        if p is not None and not isinstance(p, Sequence):
+            raise TypeError("Argument transforms should be a sequence")
+        self.p = p
+
+    def __call__(self, *args):
+        t = random.choices(self.transforms, weights=self.p)[0]
+        return t(*args)
+
+    def __repr__(self):
+        format_string = super().__repr__()
+        format_string += '(p={0})'.format(self.p)
+        return format_string
 
 
 class RandomCrop(torch.nn.Module):
