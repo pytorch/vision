@@ -46,8 +46,9 @@ def from_data_folder(
 ) -> Tuple[IterDataPipe, List[str]]:
     root = pathlib.Path(root).expanduser().resolve()
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
-    masks = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
-    dp = Concater(*[FileLister(str(root / category), recursive=True, masks=masks) for category in categories])
+    masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
+    category_dps = [FileLister(str(root / category), recursive=True, masks=masks) for category in categories]
+    dp: IterDataPipe = Concater(*category_dps)
     if shuffler:
         dp = shuffler(dp)
     dp = FileLoader(dp)
