@@ -304,7 +304,7 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     Compute the bounding boxes around the provided masks
 
     Returns a [N, 4] tensor.  Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
-    ``0 <= x1 < x2`` and ``0 <= y1 < y2.
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
         masks (Tensor[N, H, W]): masks to transform where N is the number of
