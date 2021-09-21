@@ -76,8 +76,8 @@ class TestDatasetsUtils:
         assert not utils.check_integrity(nonexisting_fpath)
 
     def test_get_google_drive_file_id(self):
-        url = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
-        expected = "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45"
+        url = "https://drive.google.com/file/d/1GO-BHUYRuvzr1Gtp2_fqXRsr9TIeYbhV/view"
+        expected = "1GO-BHUYRuvzr1Gtp2_fqXRsr9TIeYbhV"
 
         actual = utils._get_google_drive_file_id(url)
         assert actual == expected
