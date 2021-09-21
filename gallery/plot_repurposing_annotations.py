@@ -3,9 +3,9 @@
 Repurposing annotations
 =======================
 
-The following example illustrates the operations available in :ref:`the torchvision.ops module <ops>` for repurposing
-object localization annotations for different tasks (e.g. transforming masks used by instance and panoptic
-segmentation methods into bounding boxes used by object detection methods).
+The following example illustrates the operations available in the torchvision.ops module for repurposing object
+localization annotations for different tasks (e.g. transforming masks used by instance and panoptic segmentation
+methods into bounding boxes used by object detection methods).
 """
 import os.path
 
