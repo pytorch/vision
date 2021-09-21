@@ -73,6 +73,20 @@ class SimpleStemIN(ConvBNActivation):
                          norm_layer=norm_layer, activation_layer=activation_layer)
 
 
+def _make_stem(
+    stem_width: int,
+    norm_layer: Callable[..., nn.Module],
+    activation: Callable[..., nn.Module],
+    stem_type: Callable[..., nn.Module] = SimpleStemIN,
+) -> nn.Module:
+    return stem_type(
+        3,  # width_in
+        stem_width,
+        norm_layer,
+        activation,
+    )
+
+
 class VanillaBlock(nn.Sequential):
     """Vanilla block: [3x3 conv, BN, Relu] x2."""
 
@@ -201,9 +215,6 @@ class ResBottleneckBlock(nn.Module):
         )
         self.activation = activation_layer(inplace=True)
 
-        # The projection and transform happen in parallel,
-        # and activation is not counted with respect to depth
-
     def forward(self, x: Tensor) -> Tensor:
         if self.proj_block:
             x = self.bn(self.proj(x)) + self.f(x)
@@ -288,6 +299,7 @@ class BlockParams:
         bottleneck_multiplier: float = 1.0,
         use_se: bool = True,
         se_ratio: float = 0.25,
+        **kwargs: Any,
     ) -> None:
         if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
             raise ValueError("Invalid RegNet settings")
@@ -377,83 +389,79 @@ class BlockParams:
         return stage_widths, group_widths_min
 
 
+def _make_blocks(
+    stem_width: int,
+    params: BlockParams,
+    norm_layer: Callable[..., nn.Module],
+    activation: Callable[..., nn.Module],
+    block_type: Callable[..., nn.Module] = ResBottleneckBlock,
+) -> Tuple[nn.Sequential, int]:
+    current_width = stem_width
+
+    blocks = []
+    for i, (
+        width_out,
+        stride,
+        depth,
+        group_width,
+        bottleneck_multiplier,
+    ) in enumerate(params.get_expanded_params()):
+        blocks.append(
+            (
+                f"block{i+1}",
+                AnyStage(
+                    current_width,
+                    width_out,
+                    stride,
+                    depth,
+                    block_type,
+                    norm_layer,
+                    activation,
+                    group_width,
+                    bottleneck_multiplier,
+                    params.se_ratio,
+                    stage_index=i + 1,
+                ),
+            )
+        )
+
+        current_width = width_out
+    return (nn.Sequential(OrderedDict(blocks)), current_width)
+
+
+class Classifier(nn.Module):
+    def __init__(self, in_channels: int, num_classes: int = 1000) -> None:
+        super().__init__()
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(in_features=in_channels, out_features=num_classes)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.avgpool(x)
+        x = x.flatten(start_dim=1)
+        x = self.fc(x)
+        return x
+
+
 class RegNet(nn.Module):
     def __init__(
         self,
-        block_params: BlockParams,
-        num_classes: int = 1000,
-        stem_width: int = 32,
-        stem_type: Optional[Callable[..., nn.Module]] = None,
-        block_type: Optional[Callable[..., nn.Module]] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None,
-        activation: Optional[Callable[..., nn.Module]] = None,
+        stem: nn.Module,
+        blocks: nn.Module,
+        classifier: nn.Module,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-
-        if stem_type is None:
-            stem_type = SimpleStemIN
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        if block_type is None:
-            block_type = ResBottleneckBlock
-        if activation is None:
-            activation = nn.ReLU
-
-        # Ad hoc stem
-        self.stem = stem_type(
-            3,  # width_in
-            stem_width,
-            norm_layer,
-            activation,
-        )
-
-        current_width = stem_width
-
-        blocks = []
-        for i, (
-            width_out,
-            stride,
-            depth,
-            group_width,
-            bottleneck_multiplier,
-        ) in enumerate(block_params.get_expanded_params()):
-            blocks.append(
-                (
-                    f"block{i+1}",
-                    AnyStage(
-                        current_width,
-                        width_out,
-                        stride,
-                        depth,
-                        block_type,
-                        norm_layer,
-                        activation,
-                        group_width,
-                        bottleneck_multiplier,
-                        block_params.se_ratio,
-                        stage_index=i + 1,
-                    ),
-                )
-            )
-
-            current_width = width_out
-
-        self.trunk_output = nn.Sequential(OrderedDict(blocks))
-
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(in_features=current_width, out_features=num_classes)
+        self.stem = stem
+        self.blocks = blocks
+        self.classifier = classifier
 
         # Init weights and good to go
         self.reset_parameters()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
-        x = self.trunk_output(x)
-
-        x = self.avgpool(x)
-        x = x.flatten(start_dim=1)
-        x = self.fc(x)
-
+        x = self.blocks(x)
+        x = self.classifier(x)
         return x
 
     def reset_parameters(self) -> None:
@@ -472,7 +480,15 @@ class RegNet(nn.Module):
 
 
 def _regnet(arch: str, block_params: BlockParams, pretrained: bool, progress: bool, **kwargs: Any) -> RegNet:
-    model = RegNet(block_params, norm_layer=partial(nn.BatchNorm2d, eps=1e-05, momentum=0.1), **kwargs)
+    norm_layer = kwargs["norm_layer"] if "norm_layer" in kwargs else partial(nn.BatchNorm2d, eps=1e-05, momentum=0.1)
+    activation = kwargs["activation"] if "activation" in kwargs else nn.ReLU
+    num_classes = kwargs["num_classes"] if "num_classes" in kwargs else 1000
+
+    stem_width = 32
+    stem = _make_stem(stem_width, norm_layer=norm_layer, activation=activation)
+    blocks, out_channels = _make_blocks(stem_width, params=block_params, norm_layer=norm_layer, activation=activation)
+    classifier = Classifier(out_channels, num_classes)
+    model = RegNet(stem, blocks, classifier)
     if pretrained:
         if arch not in model_urls:
             raise ValueError(f"No checkpoint is available for model type {arch}")
