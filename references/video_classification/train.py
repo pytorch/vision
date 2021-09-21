@@ -296,7 +296,7 @@ def parse_args():
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='the number of epochs to warmup (default: 10)')
     parser.add_argument('--lr-warmup-method', default="linear", type=str, help='the warmup method (default: linear)')
-    parser.add_argument('--lr-warmup-decay', default=0.001, type=int, help='the decay for lr')
+    parser.add_argument('--lr-warmup-decay', default=0.001, type=float, help='the decay for lr')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
