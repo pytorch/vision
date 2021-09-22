@@ -245,13 +245,13 @@ class MaskRCNNHeads(nn.Sequential):
     def __init__(
         self,
         in_channels: int,
-        layers: Tuple[int, ...],
+        layers: List[int],
         dilation: int
     ) -> None:
         """
         Args:
             in_channels (int): number of input channels
-            layers (tuple): feature dimensions of each FCN layer
+            layers (list): feature dimensions of each FCN layer
             dilation (int): dilation rate of kernel
         """
         d = OrderedDict()
