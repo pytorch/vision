@@ -4,7 +4,7 @@ import warnings
 
 from collections import OrderedDict
 from torch import nn, Tensor
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
@@ -188,7 +188,15 @@ class SSD(nn.Module):
 
         if head is None:
             if hasattr(backbone, 'out_channels'):
-                out_channels = backbone.out_channels
+                # Other models use int as out_channel, we need compatibility.
+                # Also out_channels needs a runtime cast to int for mypy.
+                out_channels_calc = cast(int, backbone.out_channels)
+                if isinstance(out_channels_calc, int):
+                    out_channels = [out_channels_calc]
+                elif isinstance(out_channels_calc, list):
+                    out_channels = out_channels_calc
+                else:
+                    raise ValueError("Backbone should have out_channels either int or List[int] ")
             else:
                 out_channels = det_utils.retrieve_out_channels(backbone, size)
 
