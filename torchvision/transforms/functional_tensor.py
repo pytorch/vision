@@ -736,7 +736,7 @@ def rotate(
     matrix: List[float],
     interpolation: str = "nearest",
     expand: bool = False,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[float, List[float]]] = 0,
 ) -> Tensor:
 
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
