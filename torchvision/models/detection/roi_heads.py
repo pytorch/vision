@@ -461,11 +461,10 @@ def _onnx_paste_masks_in_image_loop(masks, boxes, im_h, im_w):
     return res_append
 
 
-def paste_masks_in_image(masks, boxes, img_shape, padding=1):
-    # type: (Tensor, Tensor, Tuple[int, int], int) -> Tensor
+def paste_masks_in_image(masks: Tensor, boxes: Tensor, img_shape: List[int], padding: int = 1) -> Tensor:
     masks, scale = expand_masks(masks, padding=padding)
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64)
-    im_h, im_w = img_shape
+    im_h, im_w = img_shape[0], img_shape[1]
 
     if torchvision._is_tracing():
         return _onnx_paste_masks_in_image_loop(masks, boxes,
