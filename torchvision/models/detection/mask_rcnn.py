@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from torch import nn
-from typing import Optional, Tuple, Any, List
+from typing import Optional, Tuple, Any, List, cast
 
 from torchvision.ops import MultiScaleRoIAlign
 
@@ -197,7 +197,7 @@ class MaskRCNN(FasterRCNN):
             if mask_predictor is not None:
                 raise ValueError("num_classes should be None when mask_predictor is specified")
 
-        out_channels = backbone.out_channels
+        out_channels = cast(int, backbone.out_channels)
 
         if mask_roi_pool is None:
             mask_roi_pool = MultiScaleRoIAlign(

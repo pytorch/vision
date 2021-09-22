@@ -4,7 +4,7 @@ import warnings
 
 import torch
 from torch import nn, Tensor
-from typing import Dict, List, Tuple, Optional, Any, Union
+from typing import Dict, List, Tuple, Optional, Any, Union, cast
 
 from ._utils import overwrite_eps
 from ..._internally_replaced_utils import load_state_dict_from_url
@@ -392,7 +392,8 @@ class RetinaNet(nn.Module):
         self.anchor_generator = anchor_generator
 
         if head is None:
-            head = RetinaNetHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
+            out_channels = cast(int, backbone.out_channels)
+            head = RetinaNetHead(out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
         self.head = head
 
         if proposal_matcher is None:
