@@ -16,8 +16,8 @@ def sum_of_model_parameters(model):
 SUM_OF_PRETRAINED_RESNET18_PARAMS = -12703.9931640625
 
 
-@pytest.mark.skipif('torchvision' in sys.modules,
-                    reason='TestHub must start without torchvision imported')
+# @pytest.mark.skipif('torchvision' in sys.modules,
+#                     reason='TestHub must start without torchvision imported')
 class TestHub:
     # Only run this check ONCE before all tests start.
     # - If torchvision is imported before all tests start, e.g. we might find _C.so
@@ -42,8 +42,8 @@ class TestHub:
             pretrained=True,
             progress=False)
         assert sum_of_model_parameters(hub_model).item() == pytest.approx(SUM_OF_PRETRAINED_RESNET18_PARAMS)
-        assert os.path.exists(temp_dir + '/pytorch_vision_master')
-        shutil.rmtree(temp_dir + '/pytorch_vision_master')
+        assert os.path.exists(temp_dir + '/pytorch_vision_main')
+        shutil.rmtree(temp_dir + '/pytorch_vision_main')
 
     def test_list_entrypoints(self):
         entry_lists = hub.list('pytorch/vision', force_reload=True)
