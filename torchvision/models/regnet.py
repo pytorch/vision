@@ -332,7 +332,7 @@ class RegNet(nn.Module):
         self.fc = nn.Linear(in_features=current_width, out_features=num_classes)
 
         # Init weights and good to go
-        self.reset_parameters()
+        self._reset_parameters()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
@@ -344,7 +344,7 @@ class RegNet(nn.Module):
 
         return x
 
-    def reset_parameters(self) -> None:
+    def _reset_parameters(self) -> None:
         # Performs ResNet-style weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
