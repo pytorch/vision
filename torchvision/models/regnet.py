@@ -21,44 +21,6 @@ model_urls = {
 }
 
 
-class BasicTransform(nn.Sequential):
-    """Basic transformation: [3x3 conv, BN, Relu] x2."""
-
-    def __init__(
-        self,
-        width_in: int,
-        width_out: int,
-        stride: int,
-        norm_layer: Callable[..., nn.Module],
-        activation_layer: Callable[..., nn.Module],
-    ) -> None:
-        super().__init__(OrderedDict(
-            a=nn.Sequential(
-                ConvBNActivation(width_in, width_out, kernel_size=3, stride=stride,
-                                 norm_layer=norm_layer, activation_layer=activation_layer),
-                nn.Conv2d(width_out, width_out, 3, stride=1, padding=1, bias=False),
-            ),
-            final_bn=norm_layer(width_out),
-        ))
-
-
-class ResStemIN(nn.Sequential):
-    """ResNet stem for ImageNet: 7x7, BN, ReLU, MaxPool."""
-
-    def __init__(
-        self,
-        width_in: int,
-        width_out: int,
-        norm_layer: Callable[..., nn.Module],
-        activation_layer: Callable[..., nn.Module],
-    ) -> None:
-        super().__init__(
-            ConvBNActivation(width_in, width_out, kernel_size=7, stride=2,
-                             norm_layer=norm_layer, activation_layer=activation_layer),
-            nn.MaxPool2d(3, stride=2, padding=1),
-        )
-
-
 class SimpleStemIN(ConvBNActivation):
     """Simple stem for ImageNet: 3x3, BN, ReLU."""
 
@@ -71,61 +33,6 @@ class SimpleStemIN(ConvBNActivation):
     ) -> None:
         super().__init__(width_in, width_out, kernel_size=3, stride=2,
                          norm_layer=norm_layer, activation_layer=activation_layer)
-
-
-class VanillaBlock(nn.Sequential):
-    """Vanilla block: [3x3 conv, BN, Relu] x2."""
-
-    def __init__(
-        self,
-        width_in: int,
-        width_out: int,
-        stride: int,
-        norm_layer: Callable[..., nn.Module],
-        activation_layer: Callable[..., nn.Module],
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__(OrderedDict(
-            a=ConvBNActivation(width_in, width_out, kernel_size=3, stride=stride,
-                               norm_layer=norm_layer, activation_layer=activation_layer),
-            b=ConvBNActivation(width_out, width_out, kernel_size=3, stride=1,
-                               norm_layer=norm_layer, activation_layer=activation_layer),
-        ))
-
-
-class ResBasicBlock(nn.Module):
-    """Residual basic block: x + F(x), F = basic transform."""
-
-    def __init__(
-        self,
-        width_in: int,
-        width_out: int,
-        stride: int,
-        norm_layer: Callable[..., nn.Module],
-        activation_layer: Callable[..., nn.Module],
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__()
-        self.proj_block = (width_in != width_out) or (stride != 1)
-        if self.proj_block:
-            self.proj = nn.Conv2d(
-                width_in, width_out, 1, stride=stride, padding=0, bias=False
-            )
-            self.bn = norm_layer(width_out)
-        self.f = BasicTransform(
-            width_in, width_out, stride, norm_layer, activation_layer
-        )
-        self.activation = activation_layer(inplace=True)
-
-    def forward(self, x: Tensor) -> Tensor:
-        if self.proj_block:
-            x = self.bn(self.proj(x)) + self.f(x)
-        else:
-            x = x + self.f(x)
-
-        return self.activation(x)
 
 
 class BottleneckTransform(nn.Sequential):
@@ -201,46 +108,12 @@ class ResBottleneckBlock(nn.Module):
         )
         self.activation = activation_layer(inplace=True)
 
-        # The projection and transform happen in parallel,
-        # and activation is not counted with respect to depth
-
     def forward(self, x: Tensor) -> Tensor:
         if self.proj_block:
             x = self.bn(self.proj(x)) + self.f(x)
         else:
             x = x + self.f(x)
         return self.activation(x)
-
-
-class ResBottleneckLinearBlock(nn.Module):
-    """Residual linear bottleneck block: x + F(x), F = bottleneck transform."""
-
-    def __init__(
-        self,
-        width_in: int,
-        width_out: int,
-        stride: int,
-        norm_layer: Callable[..., nn.Module],
-        activation_layer: Callable[..., nn.Module],
-        group_width: int = 1,
-        bottleneck_multiplier: float = 4.0,
-        se_ratio: Optional[float] = None,
-    ) -> None:
-        super().__init__()
-        self.has_skip = (width_in == width_out) and (stride == 1)
-        self.f = BottleneckTransform(
-            width_in,
-            width_out,
-            stride,
-            norm_layer,
-            activation_layer,
-            group_width,
-            bottleneck_multiplier,
-            se_ratio,
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        return x + self.f(x) if self.has_skip else self.f(x)
 
 
 class AnyStage(nn.Sequential):
@@ -288,6 +161,7 @@ class BlockParams:
         bottleneck_multiplier: float = 1.0,
         use_se: bool = True,
         se_ratio: float = 0.25,
+        **kwargs: Any,
     ) -> None:
         if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
             raise ValueError("Invalid RegNet settings")
