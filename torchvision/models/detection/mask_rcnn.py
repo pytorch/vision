@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from torch import nn
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, List
 
 from torchvision.ops import MultiScaleRoIAlign
 
@@ -158,8 +158,8 @@ class MaskRCNN(FasterRCNN):
         # transform parameters
         min_size: int = 800,
         max_size: int = 1333,
-        image_mean: Optional[Tuple[float, ...]] = None,
-        image_std: Optional[Tuple[float, ...]] = None,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
         # RPN parameters
         rpn_anchor_generator: Optional[AnchorGenerator] = None,
         rpn_head: Optional[nn.Module] = None,

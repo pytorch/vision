@@ -18,13 +18,18 @@ def _get_shape_onnx(image: Tensor) -> Tensor:
 @torch.jit.unused
 def _fake_cast_onnx(v: Tensor) -> float:
     # ONNX requires a tensor but here we fake its type for JIT.
+    # cast is no-op at runtime and it's there only to help mypy.
     return cast(float, v)
 
 
-def _resize_image_and_masks(image: Tensor, self_min_size: float, self_max_size: float,
-                            target: Optional[Dict[str, Tensor]] = None,
-                            fixed_size: Optional[Tuple[int, int]] = None,
-                            ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+def _resize_image_and_masks(
+        image: Tensor,
+        self_min_size: float,
+        self_max_size: float,
+        target: Optional[Dict[str, Tensor]] = None,
+        fixed_size: Optional[Tuple[int, int]] = None,
+) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+
     if torchvision._is_tracing():
         im_shape = _get_shape_onnx(image)
     else:
@@ -72,8 +77,16 @@ class GeneralizedRCNNTransform(nn.Module):
     It returns a ImageList for the inputs, and a List[Dict[Tensor]] for the targets
     """
 
-    def __init__(self, min_size: int, max_size: int, image_mean: List[float], image_std: List[float],
-                 size_divisible: int = 32, fixed_size: Optional[Tuple[int, int]] = None):
+    def __init__(
+            self,
+            min_size: int,
+            max_size: int,
+            image_mean: List[float],
+            image_std: List[float],
+            size_divisible: int = 32,
+            fixed_size: Optional[Tuple[int, int]] = None
+    ) -> None:
+
         super(GeneralizedRCNNTransform, self).__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)
@@ -162,12 +175,12 @@ class GeneralizedRCNNTransform(nn.Module):
             return image, target
 
         bbox = target["boxes"]
-        bbox = resize_boxes(bbox, (h, w), tuple(image.shape[-2:]))
+        bbox = resize_boxes(bbox, [h, w], list(image.shape[-2:]))
         target["boxes"] = bbox
 
         if "keypoints" in target:
             keypoints = target["keypoints"]
-            keypoints = resize_keypoints(keypoints, (h, w), tuple(image.shape[-2:]))
+            keypoints = resize_keypoints(keypoints, [h, w], list(image.shape[-2:]))
             target["keypoints"] = keypoints
         return image, target
 
@@ -224,8 +237,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def postprocess(self,
                     result: List[Dict[str, Tensor]],
-                    image_shapes: List[Tuple[int, int]],
-                    original_image_sizes: List[Tuple[int, int]]
+                    image_shapes: List[List[int]],
+                    original_image_sizes: List[List[int]]
                     ) -> List[Dict[str, Tensor]]:
         if self.training:
             return result

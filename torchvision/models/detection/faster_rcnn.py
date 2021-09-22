@@ -1,6 +1,6 @@
 from torch import nn
 import torch.nn.functional as F
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, cast, List
 
 from torchvision.ops import MultiScaleRoIAlign
 
@@ -56,10 +56,10 @@ class FasterRCNN(GeneralizedRCNN):
             If box_predictor is specified, num_classes should be None.
         min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
         max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
-        image_mean (Tuple[float, float, float]): mean values used for input normalization.
+        image_mean (List[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
-        image_std (Tuple[float, float, float]): std values used for input normalization.
+        image_std (List[float, float, float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
         rpn_anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
             maps.
@@ -149,8 +149,8 @@ class FasterRCNN(GeneralizedRCNN):
         # transform parameters
         min_size: int = 800,
         max_size: int = 1333,
-        image_mean: Optional[Tuple[float, ...]] = None,
-        image_std: Optional[Tuple[float, ...]] = None,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
         # RPN parameters
         rpn_anchor_generator: Optional[AnchorGenerator] = None,
         rpn_head: Optional[nn.Module] = None,
@@ -195,7 +195,7 @@ class FasterRCNN(GeneralizedRCNN):
                 raise ValueError("num_classes should not be None when box_predictor "
                                  "is not specified")
 
-        out_channels = backbone.out_channels
+        out_channels = cast(int, backbone.out_channels)
 
         if rpn_anchor_generator is None:
             anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
@@ -246,9 +246,9 @@ class FasterRCNN(GeneralizedRCNN):
             box_score_thresh, box_nms_thresh, box_detections_per_img)
 
         if image_mean is None:
-            image_mean = (0.485, 0.456, 0.406)
+            image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
-            image_std = (0.229, 0.224, 0.225)
+            image_std = [0.229, 0.224, 0.225]
         transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
 
         super(FasterRCNN, self).__init__(backbone, rpn, roi_heads, transform)

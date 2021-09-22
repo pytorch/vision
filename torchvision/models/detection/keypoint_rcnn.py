@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, List, cast
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
@@ -57,10 +57,10 @@ class KeypointRCNN(FasterRCNN):
             If box_predictor is specified, num_classes should be None.
         min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
         max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
-        image_mean (Tuple[float, float, float]): mean values used for input normalization.
+        image_mean (List[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
-        image_std (Tuple[float, float, float]): std values used for input normalization.
+        image_std (List[float, float, float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
         rpn_anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
             maps.
@@ -160,8 +160,8 @@ class KeypointRCNN(FasterRCNN):
         # transform parameters
         min_size: Optional[Tuple[int, ...]] = None,
         max_size: int = 1333,
-        image_mean: Optional[Tuple[float, ...]] = None,
-        image_std: Optional[Tuple[float, ...]] = None,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
         # RPN parameters
         rpn_anchor_generator: Optional[AnchorGenerator] = None,
         rpn_head: Optional[nn.Module] = None,
@@ -202,7 +202,7 @@ class KeypointRCNN(FasterRCNN):
             if keypoint_predictor is not None:
                 raise ValueError("num_classes should be None when keypoint_predictor is specified")
 
-        out_channels = backbone.out_channels
+        out_channels = cast(int, backbone.out_channels)
 
         if keypoint_roi_pool is None:
             keypoint_roi_pool = MultiScaleRoIAlign(

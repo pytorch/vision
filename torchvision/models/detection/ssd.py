@@ -142,10 +142,10 @@ class SSD(nn.Module):
         size (Tuple[int, int]): the width and height to which images will be rescaled before feeding them
             to the backbone.
         num_classes (int): number of output classes of the model (including the background).
-        image_mean (Tuple[float, float, float]): mean values used for input normalization.
+        image_mean (List[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
-        image_std (Tuple[float, float, float]): std values used for input normalization.
+        image_std (List[float, float, float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
         head (nn.Module, optional): Module run on top of the backbone features. Defaults to a module containing
             a classification and regression module.
@@ -164,23 +164,26 @@ class SSD(nn.Module):
         'proposal_matcher': det_utils.Matcher,
     }
 
-    def __init__(self, backbone: nn.Module, anchor_generator: DefaultBoxGenerator,
-                 size: Tuple[int, int], num_classes: int,
-                 image_mean: Optional[Tuple[float, ...]] = None,
-                 image_std: Optional[Tuple[float, ...]] = None,
-                 head: Optional[nn.Module] = None,
-                 score_thresh: float = 0.01,
-                 nms_thresh: float = 0.45,
-                 detections_per_img: int = 200,
-                 iou_thresh: float = 0.5,
-                 topk_candidates: int = 400,
-                 positive_fraction: float = 0.25):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        anchor_generator: DefaultBoxGenerator,
+        size: Tuple[int, int],
+        num_classes: int,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
+        head: Optional[nn.Module] = None,
+        score_thresh: float = 0.01,
+        nms_thresh: float = 0.45,
+        detections_per_img: int = 200,
+        iou_thresh: float = 0.5,
+        topk_candidates: int = 400,
+        positive_fraction: float = 0.25
+    ) -> None:
+
         super().__init__()
-
         self.backbone = backbone
-
         self.anchor_generator = anchor_generator
-
         self.box_coder = det_utils.BoxCoder(weights=(10., 10., 5., 5.))
 
         if head is None:
@@ -198,9 +201,9 @@ class SSD(nn.Module):
         self.proposal_matcher = det_utils.SSDMatcher(iou_thresh)
 
         if image_mean is None:
-            image_mean = (0.485, 0.456, 0.406)
+            image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
-            image_std = (0.229, 0.224, 0.225)
+            image_std = [0.229, 0.224, 0.225]
         self.transform = GeneralizedRCNNTransform(min(size), max(size), image_mean, image_std,
                                                   size_divisible=1, fixed_size=size)
 
@@ -214,8 +217,12 @@ class SSD(nn.Module):
         self._has_warned = False
 
     @torch.jit.unused
-    def eager_outputs(self, losses: Dict[str, Tensor],
-                      detections: List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    def eager_outputs(
+        self,
+        losses: Dict[str, Tensor],
+        detections: List[Dict[str, Tensor]]
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+
         if self.training:
             return losses
 
@@ -493,7 +500,14 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
+def _vgg_extractor(
+        backbone_name: str,
+        highres: bool,
+        progress: bool,
+        pretrained: bool,
+        trainable_layers: int
+) -> SSDFeatureExtractorVGG:
+
     if backbone_name in backbone_urls:
         # Use custom backbones more appropriate for SSD
         arch = backbone_name.split('_')[0]
@@ -520,8 +534,14 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
-def ssd300_vgg16(pretrained: bool = False, progress: bool = True, num_classes: int = 91,
-                 pretrained_backbone: bool = True, trainable_backbone_layers: Optional[int] = None, **kwargs: Any):
+def ssd300_vgg16(
+        pretrained: bool = False,
+        progress: bool = True,
+        num_classes: int = 91,
+        pretrained_backbone: bool = True,
+        trainable_backbone_layers: Optional[int] = None,
+        **kwargs: Any
+) -> SSD:
     """Constructs an SSD model with input size 300x300 and a VGG16 backbone.
 
     Reference: `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.

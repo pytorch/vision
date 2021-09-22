@@ -131,10 +131,10 @@ class RegionProposalNetwork(torch.nn.Module):
             for computing the loss
         positive_fraction (float): proportion of positive anchors in a mini-batch during training
             of the RPN
-        pre_nms_top_n (Dict[int]): number of proposals to keep before applying NMS. It should
+        pre_nms_top_n (Dict[str, int]): number of proposals to keep before applying NMS. It should
             contain two fields: training and testing, to allow for different values depending
             on training or evaluation
-        post_nms_top_n (Dict[int]): number of proposals to keep after applying NMS. It should
+        post_nms_top_n (Dict[str, int]): number of proposals to keep after applying NMS. It should
             contain two fields: training and testing, to allow for different values depending
             on training or evaluation
         nms_thresh (float): NMS threshold used for postprocessing the RPN proposals.
@@ -184,12 +184,12 @@ class RegionProposalNetwork(torch.nn.Module):
         self.score_thresh = score_thresh
         self.min_size = 1e-3
 
-    def pre_nms_top_n(self):
+    def pre_nms_top_n(self) -> int:
         if self.training:
             return self._pre_nms_top_n['training']
         return self._pre_nms_top_n['testing']
 
-    def post_nms_top_n(self):
+    def post_nms_top_n(self) -> int:
         if self.training:
             return self._post_nms_top_n['training']
         return self._post_nms_top_n['testing']
@@ -374,7 +374,7 @@ class RegionProposalNetwork(torch.nn.Module):
         Returns:
             boxes (List[Tensor]): the predicted boxes from the RPN, one Tensor per
                 image.
-            losses (Dict[Tensor]): the losses for the model during training. During
+            losses (Dict[str, Tensor]): the losses for the model during training. During
                 testing, it is an empty dict.
         """
         # RPN uses all feature maps that are available
