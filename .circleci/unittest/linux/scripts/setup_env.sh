@@ -36,10 +36,6 @@ conda activate "${env_dir}"
 
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
-FFMPEG_PIN="=4.2"
-if [[ "${PYTHON_VERSION}" = "3.9" ]]; then
-    FFMPEG_PIN=">=4.2"
-fi
 
-conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
+conda install -y -c conda-forge ffmpeg
 conda env update --file "${this_dir}/environment.yml" --prune
