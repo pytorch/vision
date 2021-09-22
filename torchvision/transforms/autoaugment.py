@@ -66,7 +66,7 @@ class AutoAugment(torch.nn.Module):
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
     to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "RGB".
 
     Args:
         policy (AutoAugmentPolicy): Desired policy enum defined by
@@ -250,7 +250,7 @@ class RandAugment(torch.nn.Module):
     <https://arxiv.org/abs/1909.13719>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
     to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "RGB".
 
     Args:
         num_ops (int): Number of augmentation transformations to apply sequentially.
@@ -334,7 +334,7 @@ class TrivialAugmentWide(torch.nn.Module):
     `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
     to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    If img is PIL Image, it is expected to be in mode "RGB".
 
     Args:
         num_magnitude_bins (int): The number of different magnitude values.
