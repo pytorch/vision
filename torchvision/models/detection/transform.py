@@ -3,7 +3,7 @@ import torch
 import torchvision
 
 from torch import nn, Tensor
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, cast
 
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
@@ -18,7 +18,7 @@ def _get_shape_onnx(image: Tensor) -> Tensor:
 @torch.jit.unused
 def _fake_cast_onnx(v: Tensor) -> float:
     # ONNX requires a tensor but here we fake its type for JIT.
-    return v  # type: ignore
+    return cast(float, v)
 
 
 def _resize_image_and_masks(image: Tensor, self_min_size: float, self_max_size: float,

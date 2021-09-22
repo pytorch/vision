@@ -206,7 +206,7 @@ class MaskRCNN(FasterRCNN):
                 sampling_ratio=2)
 
         if mask_head is None:
-            mask_layers = (56, 256, 256, 256)
+            mask_layers = (256, 256, 256, 256)
             mask_dilation = 1
             mask_head = MaskRCNNHeads(out_channels, mask_layers, mask_dilation)
 
