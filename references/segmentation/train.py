@@ -220,7 +220,7 @@ def get_args_parser(add_help=True):
                         dest='weight_decay')
     parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
     parser.add_argument('--lr-warmup-method', default="linear", type=str, help='the warmup method (default: linear)')
-    parser.add_argument('--lr-warmup-decay', default=0.01, type=int, help='the decay for lr')
+    parser.add_argument('--lr-warmup-decay', default=0.01, type=float, help='the decay for lr')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
