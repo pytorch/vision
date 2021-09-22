@@ -153,28 +153,32 @@ class AnyStage(nn.Sequential):
 class BlockParams:
     def __init__(
         self,
+        depths: List[int],
+        widths: List[int],
+        group_widths: List[int],
+        bottleneck_multipliers: List[int],
+        strides: List[int],
+        se_ratio: Optional[float] = None,
+    ) -> None:
+        self.depths = depths
+        self.widths = widths
+        self.group_widths = group_widths
+        self.bottleneck_multipliers = bottleneck_multipliers
+        self.strides = strides
+        self.se_ratio = se_ratio
+
+    @classmethod
+    def from_init_params(
+        cls,
         depth: int,
         w_0: int,
         w_a: float,
         w_m: float,
         group_width: int,
         bottleneck_multiplier: float = 1.0,
-        use_se: bool = True,
-        se_ratio: float = 0.25,
+        se_ratio: Optional[float] = None,
         **kwargs: Any,
-    ) -> None:
-        if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
-            raise ValueError("Invalid RegNet settings")
-        self.depth = depth
-        self.w_0 = w_0
-        self.w_a = w_a
-        self.w_m = w_m
-        self.group_width = group_width
-        self.bottleneck_multiplier = bottleneck_multiplier
-        self.use_se = use_se
-        self.se_ratio = se_ratio if use_se else None
-
-    def get_expanded_params(self):
+    ) -> "BlockParams":
         """
         Programatically compute all the per-block settings,
         given the RegNet parameters.
@@ -198,11 +202,13 @@ class BlockParams:
         QUANT = 8
         STRIDE = 2
 
+        if w_a < 0 or w_0 <= 0 or w_m <= 1 or w_0 % 8 != 0:
+            raise ValueError("Invalid RegNet settings")
         # Compute the block widths. Each stage has one unique block width
-        widths_cont = torch.arange(self.depth) * self.w_a + self.w_0
-        block_capacity = torch.round(torch.log(widths_cont / self.w_0) / math.log(self.w_m))
+        widths_cont = torch.arange(depth) * w_a + w_0
+        block_capacity = torch.round(torch.log(widths_cont / w_0) / math.log(w_m))
         block_widths = (
-            torch.round(torch.divide(self.w_0 * torch.pow(self.w_m, block_capacity), QUANT))
+            torch.round(torch.divide(w_0 * torch.pow(w_m, block_capacity), QUANT))
             * QUANT
         ).int()
         num_stages = len(torch.unique(block_widths))
@@ -221,16 +227,26 @@ class BlockParams:
         stage_depths = torch.diff(torch.Tensor([d for d, t in enumerate(splits) if t])).int().tolist()
 
         strides = [STRIDE] * num_stages
-        bottleneck_multipliers = [self.bottleneck_multiplier] * num_stages
-        group_widths = [self.group_width] * num_stages
+        bottleneck_multipliers = [bottleneck_multiplier] * num_stages
+        group_widths = [group_width] * num_stages
 
         # Adjust the compatibility of stage widths and group widths
-        stage_widths, group_widths = self._adjust_widths_groups_compatibilty(
+        stage_widths, group_widths = cls._adjust_widths_groups_compatibilty(
             stage_widths, bottleneck_multipliers, group_widths
         )
 
+        return cls(
+            depths=stage_depths,
+            widths=stage_widths,
+            group_widths=group_widths,
+            bottleneck_multipliers=bottleneck_multipliers,
+            strides=strides,
+            se_ratio=se_ratio,
+        )
+
+    def _get_expanded_params(self):
         return zip(
-            stage_widths, strides, stage_depths, group_widths, bottleneck_multipliers
+            self.widths, self.strides, self.depths, self.group_widths, self.bottleneck_multipliers
         )
 
     @staticmethod
@@ -290,7 +306,7 @@ class RegNet(nn.Module):
             depth,
             group_width,
             bottleneck_multiplier,
-        ) in enumerate(block_params.get_expanded_params()):
+        ) in enumerate(block_params._get_expanded_params()):
             blocks.append(
                 (
                     f"block{i+1}",
@@ -364,7 +380,8 @@ def regnet_y_400mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=16, w_0=48, w_a=27.89, w_m=2.09, group_width=8, **kwargs)
+    params = BlockParams.from_init_params(depth=16, w_0=48, w_a=27.89, w_m=2.09,
+                                          group_width=8, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_400mf", params, pretrained, progress, **kwargs)
 
 
@@ -377,7 +394,8 @@ def regnet_y_800mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=14, w_0=56, w_a=38.84, w_m=2.4, group_width=16, **kwargs)
+    params = BlockParams.from_init_params(depth=14, w_0=56, w_a=38.84, w_m=2.4,
+                                          group_width=16, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_800mf", params, pretrained, progress, **kwargs)
 
 
@@ -390,7 +408,8 @@ def regnet_y_1_6gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=27, w_0=48, w_a=20.71, w_m=2.65, group_width=24, **kwargs)
+    params = BlockParams.from_init_params(depth=27, w_0=48, w_a=20.71, w_m=2.65,
+                                          group_width=24, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_1_6gf", params, pretrained, progress, **kwargs)
 
 
@@ -403,7 +422,8 @@ def regnet_y_3_2gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=21, w_0=80, w_a=42.63, w_m=2.66, group_width=24, **kwargs)
+    params = BlockParams.from_init_params(depth=21, w_0=80, w_a=42.63, w_m=2.66,
+                                          group_width=24, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_3_2gf", params, pretrained, progress, **kwargs)
 
 
@@ -416,7 +436,8 @@ def regnet_y_8gf(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=17, w_0=192, w_a=76.82, w_m=2.19, group_width=56, **kwargs)
+    params = BlockParams.from_init_params(depth=17, w_0=192, w_a=76.82, w_m=2.19,
+                                          group_width=56, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_8gf", params, pretrained, progress, **kwargs)
 
 
@@ -429,7 +450,8 @@ def regnet_y_16gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=18, w_0=200, w_a=106.23, w_m=2.48, group_width=112, **kwargs)
+    params = BlockParams.from_init_params(depth=18, w_0=200, w_a=106.23, w_m=2.48,
+                                          group_width=112, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_16gf", params, pretrained, progress, **kwargs)
 
 
@@ -442,7 +464,8 @@ def regnet_y_32gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=20, w_0=232, w_a=115.89, w_m=2.53, group_width=232, **kwargs)
+    params = BlockParams.from_init_params(depth=20, w_0=232, w_a=115.89, w_m=2.53,
+                                          group_width=232, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_32gf", params, pretrained, progress, **kwargs)
 
 
@@ -455,8 +478,8 @@ def regnet_x_400mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=22, w_0=24, w_a=24.48, w_m=2.54,
-                         group_width=16, use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=22, w_0=24, w_a=24.48, w_m=2.54,
+                                          group_width=16, **kwargs)
     return _regnet("regnet_x_400mf", params, pretrained, progress, **kwargs)
 
 
@@ -469,8 +492,8 @@ def regnet_x_800mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=16, w_0=56, w_a=35.73, w_m=2.28, group_width=16,
-                         use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=16, w_0=56, w_a=35.73, w_m=2.28,
+                                          group_width=16, **kwargs)
     return _regnet("regnet_x_800mf", params, pretrained, progress, **kwargs)
 
 
@@ -483,8 +506,8 @@ def regnet_x_1_6gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=18, w_0=80, w_a=34.01, w_m=2.25, group_width=24,
-                         use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=18, w_0=80, w_a=34.01, w_m=2.25,
+                                          group_width=24, **kwargs)
     return _regnet("regnet_x_1_6gf", params, pretrained, progress, **kwargs)
 
 
@@ -497,8 +520,8 @@ def regnet_x_3_2gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=25, w_0=88, w_a=26.31, w_m=2.25, group_width=48,
-                         use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=25, w_0=88, w_a=26.31, w_m=2.25,
+                                          group_width=48, **kwargs)
     return _regnet("regnet_x_3_2gf", params, pretrained, progress, **kwargs)
 
 
@@ -511,8 +534,8 @@ def regnet_x_8gf(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=23, w_0=80, w_a=49.56, w_m=2.88, group_width=120,
-                         use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=23, w_0=80, w_a=49.56, w_m=2.88,
+                                          group_width=120, **kwargs)
     return _regnet("regnet_x_8gf", params, pretrained, progress, **kwargs)
 
 
@@ -525,8 +548,8 @@ def regnet_x_16gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=22, w_0=216, w_a=55.59, w_m=2.1, group_width=128,
-                         use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=22, w_0=216, w_a=55.59, w_m=2.1,
+                                          group_width=128, **kwargs)
     return _regnet("regnet_x_16gf", params, pretrained, progress, **kwargs)
 
 
@@ -539,8 +562,8 @@ def regnet_x_32gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams(depth=23, w_0=320, w_a=69.86, w_m=2.0, group_width=168,
-                         use_se=False, **kwargs)
+    params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0,
+                                          group_width=168, **kwargs)
     return _regnet("regnet_x_32gf", params, pretrained, progress, **kwargs)
 
 # TODO(kazhang): Add RegNetZ_500MF and RegNetZ_4GF
