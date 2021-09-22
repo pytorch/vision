@@ -53,7 +53,7 @@ def from_data_folder(
     root = pathlib.Path(root).expanduser().resolve()
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
-    dp = FileLister(str(root), recursive=recursive, masks=masks)
+    dp: IterDataPipe = FileLister(str(root), recursive=recursive, masks=masks)
     dp = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
     if shuffler:
         dp = shuffler(dp)
