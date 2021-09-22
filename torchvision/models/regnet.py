@@ -49,7 +49,7 @@ class BottleneckTransform(nn.Sequential):
         bottleneck_multiplier: float,
         se_ratio: Optional[float],
     ) -> None:
-        layers = OrderedDict()
+        layers: OrderedDict[str, nn.Module] = OrderedDict()
         w_b = int(round(width_out * bottleneck_multiplier))
         g = w_b // group_width
 
@@ -154,7 +154,7 @@ class BlockParams:
         depths: List[int],
         widths: List[int],
         group_widths: List[int],
-        bottleneck_multipliers: List[int],
+        bottleneck_multipliers: List[float],
         strides: List[int],
         se_ratio: Optional[float] = None,
     ) -> None:
@@ -208,9 +208,8 @@ class BlockParams:
         block_widths = (
             torch.round(torch.divide(w_0 * torch.pow(w_m, block_capacity), QUANT))
             * QUANT
-        ).int()
-        num_stages = len(torch.unique(block_widths))
-        block_widths = block_widths.tolist()
+        ).int().tolist()
+        num_stages = len(set(block_widths))
 
         # Convert to per stage parameters
         split_helper = zip(
@@ -222,7 +221,7 @@ class BlockParams:
         splits = [w != wp or r != rp for w, wp, r, rp in split_helper]
 
         stage_widths = [w for w, t in zip(block_widths, splits[:-1]) if t]
-        stage_depths = torch.diff(torch.Tensor([d for d, t in enumerate(splits) if t])).int().tolist()
+        stage_depths = torch.diff(torch.tensor([d for d, t in enumerate(splits) if t])).int().tolist()
 
         strides = [STRIDE] * num_stages
         bottleneck_multipliers = [bottleneck_multiplier] * num_stages
