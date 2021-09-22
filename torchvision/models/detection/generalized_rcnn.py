@@ -37,7 +37,6 @@ class GeneralizedRCNN(nn.Module):
         # used only on torchscript mode
         self._has_warned = False
 
-    @torch.jit.unused
     def eager_outputs(
         self,
         losses: Dict[str, Tensor],

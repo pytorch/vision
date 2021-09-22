@@ -4,7 +4,7 @@ import warnings
 
 from collections import OrderedDict
 from torch import nn, Tensor
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast, Union
 
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
@@ -224,12 +224,11 @@ class SSD(nn.Module):
         # used only on torchscript mode
         self._has_warned = False
 
-    @torch.jit.unused
     def eager_outputs(
         self,
         losses: Dict[str, Tensor],
         detections: List[Dict[str, Tensor]]
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    ) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
 
         if self.training:
             return losses

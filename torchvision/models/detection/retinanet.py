@@ -4,7 +4,7 @@ import warnings
 
 import torch
 from torch import nn, Tensor
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Union
 
 from ._utils import overwrite_eps
 from ..._internally_replaced_utils import load_state_dict_from_url
@@ -419,12 +419,11 @@ class RetinaNet(nn.Module):
         # used only on torchscript mode
         self._has_warned = False
 
-    @torch.jit.unused
     def eager_outputs(
         self,
         losses: Dict[str, Tensor],
         detections: List[Dict[str, Tensor]],
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    ) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
 
         if self.training:
             return losses
