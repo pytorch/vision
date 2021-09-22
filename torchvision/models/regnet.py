@@ -68,8 +68,8 @@ class BottleneckTransform(nn.Sequential):
                 activation=activation_layer,
             )
 
-        layers["c"] = nn.Conv2d(w_b, width_out, 1, stride=1, padding=0, bias=False)
-        layers["final_bn"] = norm_layer(width_out)
+        layers["c"] = ConvBNActivation(w_b, width_out, kernel_size=1, stride=1,
+                                       norm_layer=norm_layer, activation_layer=nn.Identity)
         super().__init__(layers)
 
 
@@ -92,10 +92,8 @@ class ResBottleneckBlock(nn.Module):
         # Use skip connection with projection if shape changes
         self.proj_block = (width_in != width_out) or (stride != 1)
         if self.proj_block:
-            self.proj = nn.Conv2d(
-                width_in, width_out, 1, stride=stride, padding=0, bias=False
-            )
-            self.bn = norm_layer(width_out)
+            self.proj = ConvBNActivation(width_in, width_out, kernel_size=1,
+                                         stride=stride, norm_layer=norm_layer, activation_layer=nn.Identity)
         self.f = BottleneckTransform(
             width_in,
             width_out,
@@ -110,7 +108,7 @@ class ResBottleneckBlock(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         if self.proj_block:
-            x = self.bn(self.proj(x)) + self.f(x)
+            x = self.proj(x) + self.f(x)
         else:
             x = x + self.f(x)
         return self.activation(x)
