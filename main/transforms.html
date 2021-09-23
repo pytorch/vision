@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+c45bf93 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+ed29f2a ) &#x25BC</a>
     </div>
     
 
@@ -1802,8 +1802,8 @@ Available policies are IMAGENET, CIFAR10 and SVHN.</p>
 <dd><p>AutoAugment data augmentation method based on
 <a class="reference external" href="https://arxiv.org/pdf/1805.09501.pdf">“AutoAugment: Learning Augmentation Strategies from Data”</a>.
 If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-to have […, 1 or 3, H, W] shape, where … means an arbitrary number of leading dimensions.
-If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “RGB”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1853,8 +1853,8 @@ image. If given a number, the value is used for all bands respectively.</p></li>
 <dd><p>RandAugment data augmentation method based on
 <a class="reference external" href="https://arxiv.org/abs/1909.13719">“RandAugment: Practical automated data augmentation with a reduced search space”</a>.
 If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-to have […, 1 or 3, H, W] shape, where … means an arbitrary number of leading dimensions.
-If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “RGB”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1894,8 +1894,8 @@ image. If given a number, the value is used for all bands respectively.</p></li>
 <dd><p>Dataset-independent data-augmentation with TrivialAugment Wide, as described in
 <cite>“TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation” &lt;https://arxiv.org/abs/2103.10158&gt;</cite>.
 If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-to have […, 1 or 3, H, W] shape, where … means an arbitrary number of leading dimensions.
-If img is PIL Image, it is expected to be in mode “L” or “RGB”.</p>
+to have […, 3, H, W] shape, where … means an arbitrary number of leading dimensions.
+If img is PIL Image, it is expected to be in mode “RGB”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
