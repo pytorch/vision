@@ -1006,6 +1006,7 @@ class TestMasksToBoxes:
     def test_masks_box(self):
         def masks_box_check(masks, expected, tolerance=1e-4):
             out = ops.masks_to_boxes(masks)
+            assert out.dtype == torch.float
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int type boxes.
@@ -1025,12 +1026,7 @@ class TestMasksToBoxes:
 
         image = _get_image()
         expected = torch.tensor([[127, 2, 165, 40], [2, 50, 44, 92], [56, 63, 98, 100], [139, 68, 175, 104],
-                                 [160, 112, 198, 145], [49, 138, 99, 182], [108, 148, 152, 213]])
-
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            masks = torch.zeros((image.n_frames, image.height, image.width), dtype=dtype)
-            masks = _create_masks(image, masks)
-            masks_box_check(masks, expected)
+                                 [160, 112, 198, 145], [49, 138, 99, 182], [108, 148, 152, 213]], dtype=torch.float)
 
         image2 = _get_image()
         for dtype in [torch.float16, torch.float32, torch.float64]:
