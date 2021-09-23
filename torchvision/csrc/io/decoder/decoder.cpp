@@ -447,7 +447,7 @@ bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
           it->format,
           params_.loggingUuid);
       CHECK(stream);
-      if (stream->openCodec(metadata) < 0) {
+      if (stream->openCodec(metadata, params_.numThreads) < 0) {
         LOG(ERROR) << "uuid=" << params_.loggingUuid
                    << " open codec failed, stream_idx=" << i;
         return false;
