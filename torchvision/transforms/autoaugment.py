@@ -65,8 +65,8 @@ class AutoAugment(torch.nn.Module):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "RGB".
 
     Args:
         policy (AutoAugmentPolicy): Desired policy enum defined by
@@ -249,8 +249,8 @@ class RandAugment(torch.nn.Module):
     `"RandAugment: Practical automated data augmentation with a reduced search space"
     <https://arxiv.org/abs/1909.13719>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "RGB".
 
     Args:
         num_ops (int): Number of augmentation transformations to apply sequentially.
@@ -333,8 +333,8 @@ class TrivialAugmentWide(torch.nn.Module):
     r"""Dataset-independent data-augmentation with TrivialAugment Wide, as described in
     `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "RGB".
 
     Args:
         num_magnitude_bins (int): The number of different magnitude values.
