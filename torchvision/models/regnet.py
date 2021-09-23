@@ -15,6 +15,13 @@ from .._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
 from torchvision.models.efficientnet import SqueezeExcitation
 
+
+__all__ = ["RegNet", "regnet_y_400mf", "regnet_y_800mf", "regnet_y_1_6gf",
+           "regnet_y_3_2gf", "regnet_y_8gf", "regnet_y_16gf", "regnet_y_32gf",
+           "regnet_x_400mf", "regnet_x_800mf", "regnet_x_1_6gf", "regnet_x_3_2gf",
+           "regnet_x_8gf", "regnet_x_16gf", "regnet_x_32gf"]
+
+
 model_urls = {
     # TODO(kazhang): add pretrained weights
     "regnet_y_400m": "",
@@ -90,8 +97,9 @@ class ResBottleneckBlock(nn.Module):
         super().__init__()
 
         # Use skip connection with projection if shape changes
-        self.proj_block = (width_in != width_out) or (stride != 1)
-        if self.proj_block:
+        self.proj = None
+        should_proj = (width_in != width_out) or (stride != 1)
+        if should_proj:
             self.proj = ConvBNActivation(width_in, width_out, kernel_size=1,
                                          stride=stride, norm_layer=norm_layer, activation_layer=nn.Identity)
         self.f = BottleneckTransform(
@@ -107,7 +115,7 @@ class ResBottleneckBlock(nn.Module):
         self.activation = activation_layer(inplace=True)
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.proj_block:
+        if self.proj is not None:
             x = self.proj(x) + self.f(x)
         else:
             x = x + self.f(x)
