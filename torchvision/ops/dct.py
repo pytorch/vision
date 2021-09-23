@@ -1,6 +1,7 @@
 import typing
 
 import torch
+import torch.fft
 
 
 def dct(
@@ -46,7 +47,7 @@ def dct(
 
 
 def _dct_type_1(x: torch.Tensor) -> torch.Tensor:
-    raise NotImplementedError
+    return torch.real(torch.fft.rfft(torch.cat([x, torch.flip(x, [-1])[..., 1:-1:1]], -1)))
 
 
 def _dct_type_2(x: torch.Tensor, norm: typing.Optional[str] = None) -> torch.Tensor:
