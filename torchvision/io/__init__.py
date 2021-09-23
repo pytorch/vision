@@ -130,7 +130,7 @@ class VideoReader:
     def __iter__(self) -> Iterator['VideoReader']:
         return self
 
-    def seek(self, time_s: float, keyframes_only: bool=False):
+    def seek(self, time_s: float, keyframes_only: bool = False):
         """Seek within current stream.
 
         Args:

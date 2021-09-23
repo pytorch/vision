@@ -187,6 +187,7 @@ class TestVideoApi:
         assert metadata["subtitles"]["duration"] is not None
         os.remove(video_path)
 
+
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     def test_keyframe_reading(self):
         for test_video, config in test_videos.items():
