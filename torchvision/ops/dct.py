@@ -1,3 +1,4 @@
+import math
 import typing
 
 import torch
@@ -55,7 +56,23 @@ def _dct_type_2(x: torch.Tensor, norm: typing.Optional[str] = None) -> torch.Ten
 
 
 def _dct_type_3(x: torch.Tensor, norm: typing.Optional[str] = None) -> torch.Tensor:
-    raise NotImplementedError
+    dimension = x.shape[-1]
+
+    if norm == "ortho":
+        raise NotImplementedError
+    else:
+        x *= float(dimension)
+
+    zero = torch.tensor(0.0, dtype=x.dtype)
+
+    dimensions = torch.tensor(range(dimension), dtype=x.dtype)
+
+    a = torch.exp(torch.complex(zero, dimensions * math.pi * 0.5 / float(dimension)))
+    b = torch.complex(x, zero)
+
+    y = torch.fft.irfft(2.0 * a * b, 2 * dimension)
+
+    return y[..., :dimension]
 
 
 def _dct_type_4(x: torch.Tensor, axis: int = -1, norm: typing.Optional[str] = None) -> torch.Tensor:
