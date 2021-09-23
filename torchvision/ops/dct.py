@@ -52,7 +52,18 @@ def _dct_type_1(x: torch.Tensor) -> torch.Tensor:
 
 
 def _dct_type_2(x: torch.Tensor, norm: typing.Optional[str] = None) -> torch.Tensor:
-    raise NotImplementedError
+    y = torch.fft.rfft(x, 2 * x.shape[-1])[..., :x.shape[-1]] * 2.0
+
+    imag = -torch.tensor(range(x.shape[-1]), dtype=x.dtype) * math.pi * 0.5 / float(x.shape[-1])
+
+    y *= torch.exp(torch.complex(torch.tensor(0.0, dtype=x.dtype), imag))
+
+    y = torch.real(y)
+
+    if norm == "ortho":
+        raise NotImplementedError
+
+    return y
 
 
 def _dct_type_3(x: torch.Tensor, norm: typing.Optional[str] = None) -> torch.Tensor:
