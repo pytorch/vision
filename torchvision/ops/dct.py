@@ -87,7 +87,12 @@ def _dct_type_3(x: torch.Tensor, norm: typing.Optional[str] = None) -> torch.Ten
 
 
 def _dct_type_4(x: torch.Tensor, axis: int = -1, norm: typing.Optional[str] = None) -> torch.Tensor:
-    raise NotImplementedError
+    y = dct(x, type=2, n=2 * x.shape[-1], axis=axis, norm=None)[..., 1::2]
+
+    if norm == "ortho":
+        raise NotImplementedError
+
+    return y
 
 
 def _pad(x: torch.Tensor, n: int) -> torch.Tensor:
