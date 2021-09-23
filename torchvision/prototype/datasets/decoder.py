@@ -1,12 +1,12 @@
 import io
 
-import numpy as np
 import PIL.Image
 import torch
+
+from torchvision.transforms.functional import pil_to_tensor
 
 __all__ = ["pil"]
 
 
 def pil(file: io.IOBase, mode="RGB") -> torch.Tensor:
-    image = PIL.Image.open(file).convert(mode.upper())
-    return torch.from_numpy(np.array(image, copy=True)).permute((2, 0, 1))
+    return pil_to_tensor(PIL.Image.open(file).convert(mode.upper()))

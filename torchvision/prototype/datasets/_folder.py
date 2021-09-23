@@ -14,9 +14,6 @@ from torchvision.prototype.datasets.decoder import pil
 
 __all__ = ["from_data_folder", "from_image_folder"]
 
-# pseudo-infinite buffer size until a true infinite buffer is supported
-INFINITE = 1_000_000_000
-
 
 def _is_not_top_level_file(path: str, *, root: pathlib.Path) -> bool:
     rel_path = pathlib.Path(path).relative_to(root)
@@ -45,7 +42,7 @@ def _collate_and_decode_data(
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = lambda dp: Shuffler(dp, buffer_size=INFINITE),
+    shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = None,
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
