@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 from torch.nn import functional as F
 from torch import nn, Tensor
@@ -31,7 +30,7 @@ class RPNHead(nn.Module):
     """
     Adds a simple RPN Head with classification and regression heads
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
     """
@@ -105,7 +104,7 @@ class RegionProposalNetwork(torch.nn.Module):
     """
     Implements Region Proposal Network (RPN).
 
-    Arguments:
+    Args:
         anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
             maps.
         head (nn.Module): module that computes the objectness and regression deltas
@@ -141,7 +140,7 @@ class RegionProposalNetwork(torch.nn.Module):
                  fg_iou_thresh, bg_iou_thresh,
                  batch_size_per_image, positive_fraction,
                  #
-                 pre_nms_top_n, post_nms_top_n, nms_thresh):
+                 pre_nms_top_n, post_nms_top_n, nms_thresh, score_thresh=0.0):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
@@ -163,6 +162,7 @@ class RegionProposalNetwork(torch.nn.Module):
         self._pre_nms_top_n = pre_nms_top_n
         self._post_nms_top_n = post_nms_top_n
         self.nms_thresh = nms_thresh
+        self.score_thresh = score_thresh
         self.min_size = 1e-3
 
     def pre_nms_top_n(self):
@@ -251,17 +251,29 @@ class RegionProposalNetwork(torch.nn.Module):
         levels = levels[batch_idx, top_n_idx]
         proposals = proposals[batch_idx, top_n_idx]
 
+        objectness_prob = torch.sigmoid(objectness)
+
         final_boxes = []
         final_scores = []
-        for boxes, scores, lvl, img_shape in zip(proposals, objectness, levels, image_shapes):
+        for boxes, scores, lvl, img_shape in zip(proposals, objectness_prob, levels, image_shapes):
             boxes = box_ops.clip_boxes_to_image(boxes, img_shape)
+
+            # remove small boxes
             keep = box_ops.remove_small_boxes(boxes, self.min_size)
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
+            # remove low scoring boxes
+            # use >= for Backwards compatibility
+            keep = torch.where(scores >= self.score_thresh)[0]
+            boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
+
             # non-maximum suppression, independently done per level
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh)
+
             # keep only topk scoring predictions
             keep = keep[:self.post_nms_top_n()]
             boxes, scores = boxes[keep], scores[keep]
+
             final_boxes.append(boxes)
             final_scores.append(scores)
         return final_boxes, final_scores
@@ -269,7 +281,7 @@ class RegionProposalNetwork(torch.nn.Module):
     def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
         # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
         """
-        Arguments:
+        Args:
             objectness (Tensor)
             pred_bbox_deltas (Tensor)
             labels (List[Tensor])
@@ -291,11 +303,11 @@ class RegionProposalNetwork(torch.nn.Module):
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)
 
-        box_loss = det_utils.smooth_l1_loss(
+        box_loss = F.smooth_l1_loss(
             pred_bbox_deltas[sampled_pos_inds],
             regression_targets[sampled_pos_inds],
             beta=1 / 9,
-            size_average=False,
+            reduction='sum',
         ) / (sampled_inds.numel())
 
         objectness_loss = F.binary_cross_entropy_with_logits(
@@ -311,7 +323,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 ):
         # type: (...) -> Tuple[List[Tensor], Dict[str, Tensor]]
         """
-        Arguments:
+        Args:
             images (ImageList): images for which we want to compute the predictions
             features (OrderedDict[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list

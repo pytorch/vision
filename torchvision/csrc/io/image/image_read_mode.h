@@ -1,9 +1,17 @@
 #pragma once
 
+#include <stdint.h>
+
+namespace vision {
+namespace image {
+
 /* Should be kept in-sync with Python ImageReadMode enum */
 using ImageReadMode = int64_t;
-#define IMAGE_READ_MODE_UNCHANGED 0
-#define IMAGE_READ_MODE_GRAY 1
-#define IMAGE_READ_MODE_GRAY_ALPHA 2
-#define IMAGE_READ_MODE_RGB 3
-#define IMAGE_READ_MODE_RGB_ALPHA 4
+const ImageReadMode IMAGE_READ_MODE_UNCHANGED = 0;
+const ImageReadMode IMAGE_READ_MODE_GRAY = 1;
+const ImageReadMode IMAGE_READ_MODE_GRAY_ALPHA = 2;
+const ImageReadMode IMAGE_READ_MODE_RGB = 3;
+const ImageReadMode IMAGE_READ_MODE_RGB_ALPHA = 4;
+
+} // namespace image
+} // namespace vision

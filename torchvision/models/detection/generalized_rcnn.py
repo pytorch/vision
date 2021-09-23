@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 """
 Implements the Generalized R-CNN framework
 """
@@ -14,7 +13,7 @@ class GeneralizedRCNN(nn.Module):
     """
     Main class for Generalized R-CNN.
 
-    Arguments:
+    Args:
         backbone (nn.Module):
         rpn (nn.Module):
         roi_heads (nn.Module): takes the features + the proposals from the RPN and computes
@@ -43,7 +42,7 @@ class GeneralizedRCNN(nn.Module):
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
-        Arguments:
+        Args:
             images (list[Tensor]): images to be processed
             targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
 
@@ -106,6 +105,6 @@ class GeneralizedRCNN(nn.Module):
             if not self._has_warned:
                 warnings.warn("RCNN always returns a (Losses, Detections) tuple in scripting")
                 self._has_warned = True
-            return (losses, detections)
+            return losses, detections
         else:
             return self.eager_outputs(losses, detections)

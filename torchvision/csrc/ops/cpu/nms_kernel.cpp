@@ -109,7 +109,7 @@ at::Tensor nms_kernel(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("nms", nms_kernel);
+  m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(nms_kernel));
 }
 
 } // namespace ops

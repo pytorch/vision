@@ -1,123 +1,16 @@
 #include <ATen/ATen.h>
 #include <torch/library.h>
 
+#include "./roi_align_common.h"
+
 namespace vision {
 namespace ops {
 
 namespace {
 
-// implementation taken from Caffe2
-template <typename T>
-struct PreCalc {
-  int pos1;
-  int pos2;
-  int pos3;
-  int pos4;
-  T w1;
-  T w2;
-  T w3;
-  T w4;
-};
-
-template <typename T>
-void pre_calc_for_bilinear_interpolate(
-    int height,
-    int width,
-    int pooled_height,
-    int pooled_width,
-    int iy_upper,
-    int ix_upper,
-    T roi_start_h,
-    T roi_start_w,
-    T bin_size_h,
-    T bin_size_w,
-    int roi_bin_grid_h,
-    int roi_bin_grid_w,
-    std::vector<PreCalc<T>>& pre_calc) {
-  int pre_calc_index = 0;
-  for (int ph = 0; ph < pooled_height; ph++) {
-    for (int pw = 0; pw < pooled_width; pw++) {
-      for (int iy = 0; iy < iy_upper; iy++) {
-        const T yy = roi_start_h + ph * bin_size_h +
-            static_cast<T>(iy + .5f) * bin_size_h /
-                static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
-        for (int ix = 0; ix < ix_upper; ix++) {
-          const T xx = roi_start_w + pw * bin_size_w +
-              static_cast<T>(ix + .5f) * bin_size_w /
-                  static_cast<T>(roi_bin_grid_w);
-
-          T x = xx;
-          T y = yy;
-          // deal with: inverse elements are out of feature map boundary
-          if (y < -1.0 || y > height || x < -1.0 || x > width) {
-            // empty
-            PreCalc<T> pc;
-            pc.pos1 = 0;
-            pc.pos2 = 0;
-            pc.pos3 = 0;
-            pc.pos4 = 0;
-            pc.w1 = 0;
-            pc.w2 = 0;
-            pc.w3 = 0;
-            pc.w4 = 0;
-            pre_calc[pre_calc_index] = pc;
-            pre_calc_index += 1;
-            continue;
-          }
-
-          if (y <= 0) {
-            y = 0;
-          }
-          if (x <= 0) {
-            x = 0;
-          }
-
-          int y_low = (int)y;
-          int x_low = (int)x;
-          int y_high;
-          int x_high;
-
-          if (y_low >= height - 1) {
-            y_high = y_low = height - 1;
-            y = (T)y_low;
-          } else {
-            y_high = y_low + 1;
-          }
-
-          if (x_low >= width - 1) {
-            x_high = x_low = width - 1;
-            x = (T)x_low;
-          } else {
-            x_high = x_low + 1;
-          }
-
-          T ly = y - y_low;
-          T lx = x - x_low;
-          T hy = 1. - ly, hx = 1. - lx;
-          T w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
-
-          // save weights and indeces
-          PreCalc<T> pc;
-          pc.pos1 = y_low * width + x_low;
-          pc.pos2 = y_low * width + x_high;
-          pc.pos3 = y_high * width + x_low;
-          pc.pos4 = y_high * width + x_high;
-          pc.w1 = w1;
-          pc.w2 = w2;
-          pc.w3 = w3;
-          pc.w4 = w4;
-          pre_calc[pre_calc_index] = pc;
-
-          pre_calc_index += 1;
-        }
-      }
-    }
-  }
-}
-
 template <typename T>
 void roi_align_forward_kernel_impl(
-    int nthreads,
+    int n_rois,
     const T* input,
     const T& spatial_scale,
     int channels,
@@ -129,7 +22,6 @@ void roi_align_forward_kernel_impl(
     bool aligned,
     const T* rois,
     T* output) {
-  int n_rois = nthreads / channels / pooled_width / pooled_height;
   // (n, c, ph, pw) is an element in the pooled output
   // can be parallelized using omp
   // #pragma omp parallel for num_threads(32)
@@ -168,17 +60,15 @@ void roi_align_forward_kernel_impl(
     // When the grid is empty, output zeros.
     const T count = std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
 
-    // we want to precalculate indeces and weights shared by all chanels,
-    // this is the key point of optimiation
-    std::vector<PreCalc<T>> pre_calc(
+    // we want to precalculate indices and weights shared by all chanels,
+    // this is the key point of optimization
+    std::vector<detail::PreCalc<T>> pre_calc(
         roi_bin_grid_h * roi_bin_grid_w * pooled_width * pooled_height);
-    pre_calc_for_bilinear_interpolate(
+    detail::pre_calc_for_bilinear_interpolate(
         height,
         width,
         pooled_height,
         pooled_width,
-        roi_bin_grid_h,
-        roi_bin_grid_w,
         roi_start_h,
         roi_start_w,
         bin_size_h,
@@ -200,7 +90,7 @@ void roi_align_forward_kernel_impl(
           T output_val = 0.;
           for (int iy = 0; iy < roi_bin_grid_h; iy++) {
             for (int ix = 0; ix < roi_bin_grid_w; ix++) {
-              PreCalc<T> pc = pre_calc[pre_calc_index];
+              detail::PreCalc<T> pc = pre_calc[pre_calc_index];
               output_val += pc.w1 * offset_input[pc.pos1] +
                   pc.w2 * offset_input[pc.pos2] +
                   pc.w3 * offset_input[pc.pos3] + pc.w4 * offset_input[pc.pos4];
@@ -208,7 +98,7 @@ void roi_align_forward_kernel_impl(
               pre_calc_index += 1;
             }
           }
-          output_val /= count;
+          output_val /= count; // Average pooling
 
           output[index] = output_val;
         } // for pw
@@ -414,8 +304,6 @@ at::Tensor roi_align_forward_kernel(
   at::Tensor output = at::zeros(
       {num_rois, channels, pooled_height, pooled_width}, input.options());
 
-  auto output_size = num_rois * pooled_height * pooled_width * channels;
-
   if (output.numel() == 0)
     return output;
 
@@ -423,7 +311,7 @@ at::Tensor roi_align_forward_kernel(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "roi_align_forward_kernel", [&] {
         roi_align_forward_kernel_impl<scalar_t>(
-            output_size,
+            num_rois,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
@@ -500,8 +388,12 @@ at::Tensor roi_align_backward_kernel(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("roi_align", roi_align_forward_kernel);
-  m.impl("_roi_align_backward", roi_align_backward_kernel);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::roi_align"),
+      TORCH_FN(roi_align_forward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_roi_align_backward"),
+      TORCH_FN(roi_align_backward_kernel));
 }
 
 } // namespace ops

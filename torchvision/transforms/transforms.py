@@ -83,7 +83,7 @@ class ToTensor:
         Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
         transforming target image masks. See the `references`_ for implementing the transforms for image masks.
 
-    .. _references: https://github.com/pytorch/vision/tree/master/references/segmentation
+    .. _references: https://github.com/pytorch/vision/tree/main/references/segmentation
     """
 
     def __call__(self, pic):
@@ -122,6 +122,7 @@ class PILToTensor:
 
 class ConvertImageDtype(torch.nn.Module):
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+    This function does not support PIL Image.
 
     Args:
         dtype (torch.dtype): Desired data type of the output
@@ -187,6 +188,7 @@ class ToPILImage:
 
 class Normalize(torch.nn.Module):
     """Normalize a tensor image with mean and standard deviation.
+    This transform does not support PIL Image.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
     channels, this transform will normalize each channel of the input
     ``torch.*Tensor`` i.e.,
@@ -224,8 +226,15 @@ class Normalize(torch.nn.Module):
 
 class Resize(torch.nn.Module):
     """Resize the input image to the given size.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    .. warning::
+        The output image might be different depending on its type: when downsampling, the interpolation of PIL images
+        and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
+        in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
+        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
+        closer.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
@@ -233,23 +242,40 @@ class Resize(torch.nn.Module):
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
             (size * height / width, size).
-            In torchscript mode padding as single int is not supported, use a tuple or
-            list of length 1: ``[size, ]``.
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
             ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        max_size (int, optional): The maximum allowed for the longer edge of
+            the resized image: if the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``, then
+            the image is resized again so that the longer edge is equal to
+            ``max_size``. As a result, ``size`` might be overruled, i.e the
+            smaller edge may be shorter than ``size``. This is only supported
+            if ``size`` is an int (or a sequence of length 1 in torchscript
+            mode).
+        antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
+            closer.
+
+            .. warning::
+                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
 
     """
 
-    def __init__(self, size, interpolation=InterpolationMode.BILINEAR):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR, max_size=None, antialias=None):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
         if isinstance(size, Sequence) and len(size) not in (1, 2):
             raise ValueError("If size is a sequence, it should have 1 or 2 values")
         self.size = size
+        self.max_size = max_size
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -260,6 +286,7 @@ class Resize(torch.nn.Module):
             interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
+        self.antialias = antialias
 
     def forward(self, img):
         """
@@ -269,11 +296,12 @@ class Resize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation)
+        return F.resize(img, self.size, self.interpolation, self.max_size, self.antialias)
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2}, antialias={3})'.format(
+            self.size, interpolate_str, self.max_size, self.antialias)
 
 
 class Scale(Resize):
@@ -288,13 +316,14 @@ class Scale(Resize):
 
 class CenterCrop(torch.nn.Module):
     """Crops the given image at the center.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then center cropped.
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
     """
 
     def __init__(self, size):
@@ -317,35 +346,40 @@ class CenterCrop(torch.nn.Module):
 
 class Pad(torch.nn.Module):
     """Pad the given image on all sides with the given "pad" value.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
+    at most 3 leading dimensions for mode edge,
+    and an arbitrary number of leading dimensions for mode constant
 
     Args:
-        padding (int or tuple or list): Padding on each border. If a single int is provided this
-            is used to pad all borders. If tuple of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+        padding (int or sequence): Padding on each border. If a single int is provided this
+            is used to pad all borders. If sequence of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a tuple or
-            list of length 1: ``[padding, ]``.
-        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant
+            This value is only used when the padding_mode is constant.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant. Mode symmetric is not yet supported for Tensor inputs.
+            Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
 
-            - edge: pads with the last value at the edge of the image
+            - edge: pads with the last value at the edge of the image.
+              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
-            - reflect: pads with reflection of image without repeating the last value on the edge
+            - reflect: pads with reflection of image without repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+              will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-                For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
-                will result in [3, 2, 1, 2, 3, 4, 3, 2]
-
-            - symmetric: pads with reflection of image repeating the last value on the edge
-
-                For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                will result in [2, 1, 1, 2, 3, 4, 4, 3]
+            - symmetric: pads with reflection of image repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+              will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
     def __init__(self, padding, fill=0, padding_mode="constant"):
@@ -405,7 +439,7 @@ class RandomTransforms:
     """Base class for a list of transformations with randomness
 
     Args:
-        transforms (list or tuple): list of transformations
+        transforms (sequence): list of transformations
     """
 
     def __init__(self, transforms):
@@ -441,7 +475,7 @@ class RandomApply(torch.nn.Module):
         `lambda` functions or ``PIL.Image``.
 
     Args:
-        transforms (list or tuple or torch.nn.Module): list of transformations
+        transforms (sequence or torch.nn.Module): list of transformations
         p (float): probability
     """
 
@@ -481,51 +515,64 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list. This transform does not support torchscript.
     """
-    def __call__(self, img):
-        t = random.choice(self.transforms)
-        return t(img)
+    def __init__(self, transforms, p=None):
+        super().__init__(transforms)
+        if p is not None and not isinstance(p, Sequence):
+            raise TypeError("Argument transforms should be a sequence")
+        self.p = p
+
+    def __call__(self, *args):
+        t = random.choices(self.transforms, weights=self.p)[0]
+        return t(*args)
+
+    def __repr__(self):
+        format_string = super().__repr__()
+        format_string += '(p={0})'.format(self.p)
+        return format_string
 
 
 class RandomCrop(torch.nn.Module):
     """Crop the given image at a random location.
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions,
+    but if non-constant padding is used, the input is expected to have at most 2 leading dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         padding (int or sequence, optional): Optional padding on each border
             of the image. Default is None. If a single int is provided this
-            is used to pad all borders. If tuple of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            is used to pad all borders. If sequence of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a tuple or
-            list of length 1: ``[padding, ]``.
+
+            .. note::
+                In torchscript mode padding as single int is not supported, use a sequence of
+                length 1: ``[padding, ]``.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant
-        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-            Mode symmetric is not yet supported for Tensor inputs.
+            This value is only used when the padding_mode is constant.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
 
-             - constant: pads with a constant value, this value is specified with fill
+            - constant: pads with a constant value, this value is specified with fill
 
-             - edge: pads with the last value on the edge of the image
+            - edge: pads with the last value at the edge of the image.
+              If input a 5D torch Tensor, the last 3 dimensions will be padded instead of the last 2
 
-             - reflect: pads with reflection of image (without repeating the last value on the edge)
+            - reflect: pads with reflection of image without repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+              will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-                padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
-                will result in [3, 2, 1, 2, 3, 4, 3, 2]
-
-             - symmetric: pads with reflection of image (repeating the last value on the edge)
-
-                padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                will result in [2, 1, 1, 2, 3, 4, 4, 3]
-
+            - symmetric: pads with reflection of image repeating the last value on the edge.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+              will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
     @staticmethod
@@ -539,7 +586,7 @@ class RandomCrop(torch.nn.Module):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = F._get_image_size(img)
+        w, h = F.get_image_size(img)
         th, tw = output_size
 
         if h + 1 < th or w + 1 < tw:
@@ -577,7 +624,7 @@ class RandomCrop(torch.nn.Module):
         if self.padding is not None:
             img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
-        width, height = F._get_image_size(img)
+        width, height = F.get_image_size(img)
         # pad the width if needed
         if self.pad_if_needed and width < self.size[1]:
             padding = [self.size[1] - width, 0]
@@ -597,7 +644,7 @@ class RandomCrop(torch.nn.Module):
 
 class RandomHorizontalFlip(torch.nn.Module):
     """Horizontally flip the given image randomly with a given probability.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
@@ -627,7 +674,7 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 class RandomVerticalFlip(torch.nn.Module):
     """Vertically flip the given image randomly with a given probability.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
@@ -657,7 +704,7 @@ class RandomVerticalFlip(torch.nn.Module):
 
 class RandomPerspective(torch.nn.Module):
     """Performs a random perspective transformation of the given image with a given probability.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
@@ -668,10 +715,8 @@ class RandomPerspective(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
     """
 
     def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
@@ -688,6 +733,12 @@ class RandomPerspective(torch.nn.Module):
 
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
         self.fill = fill
 
     def forward(self, img):
@@ -702,12 +753,12 @@ class RandomPerspective(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
 
         if torch.rand(1) < self.p:
-            width, height = F._get_image_size(img)
+            width, height = F.get_image_size(img)
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
         return img
@@ -752,21 +803,26 @@ class RandomPerspective(torch.nn.Module):
 
 
 class RandomResizedCrop(torch.nn.Module):
-    """Crop the given image to random size and aspect ratio.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    """Crop a random portion of image and resize it to a given size.
+
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
-    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
-    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
-    is finally resized to given size.
-    This is popularly used to train the Inception networks.
+    A crop of the original image is made: the crop has a random area (H * W)
+    and a random aspect ratio. This crop is finally resized to the given
+    size. This is popularly used to train the Inception networks.
 
     Args:
-        size (int or sequence): expected output size of each edge. If size is an
+        size (int or sequence): expected output size of the crop, for each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
-        scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
-        ratio (tuple of float): aspect ratio range of the cropped image before resizing.
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+        scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,
+            before resizing. The scale is defined with respect to the area of the original image.
+        ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
+            resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
@@ -811,14 +867,14 @@ class RandomResizedCrop(torch.nn.Module):
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
-                sized crop.
+            sized crop.
         """
-        width, height = F._get_image_size(img)
+        width, height = F.get_image_size(img)
         area = height * width
 
+        log_ratio = torch.log(torch.tensor(ratio))
         for _ in range(10):
             target_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
-            log_ratio = torch.log(torch.tensor(ratio))
             aspect_ratio = torch.exp(
                 torch.empty(1).uniform_(log_ratio[0], log_ratio[1])
             ).item()
@@ -878,7 +934,7 @@ class RandomSizedCrop(RandomResizedCrop):
 
 class FiveCrop(torch.nn.Module):
     """Crop the given image into four corners and the central crop.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
@@ -890,7 +946,7 @@ class FiveCrop(torch.nn.Module):
     Args:
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
-            If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
 
     Example:
          >>> transform = Compose([
@@ -925,7 +981,7 @@ class FiveCrop(torch.nn.Module):
 class TenCrop(torch.nn.Module):
     """Crop the given image into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
@@ -937,7 +993,7 @@ class TenCrop(torch.nn.Module):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Example:
@@ -974,6 +1030,7 @@ class TenCrop(torch.nn.Module):
 class LinearTransformation(torch.nn.Module):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
+    This transform does not support PIL Image.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
     subtract mean_vector from it which is then followed by computing the dot
     product with the transformation matrix and then reshaping the tensor to its
@@ -1040,6 +1097,9 @@ class LinearTransformation(torch.nn.Module):
 
 class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast, saturation and hue of an image.
+    If the image is torch Tensor, it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
@@ -1076,7 +1136,7 @@ class ColorJitter(torch.nn.Module):
             if not bound[0] <= value[0] <= value[1] <= bound[1]:
                 raise ValueError("{} values should be between {}".format(name, bound))
         else:
-            raise TypeError("{} should be a single number or a list/tuple with lenght 2.".format(name))
+            raise TypeError("{} should be a single number or a list/tuple with length 2.".format(name))
 
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
@@ -1149,11 +1209,11 @@ class ColorJitter(torch.nn.Module):
 
 class RandomRotation(torch.nn.Module):
     """Rotate the image by angle.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        degrees (sequence or float or int): Range of degrees to select from.
+        degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
         interpolation (InterpolationMode): Desired interpolation enum defined by
@@ -1164,21 +1224,19 @@ class RandomRotation(torch.nn.Module):
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
+        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
-            image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
-            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
+        fill (sequence or number): Pixel fill value for the area outside the rotated
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
     def __init__(
-        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
+        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=0, resample=None
     ):
         super().__init__()
         if resample is not None:
@@ -1204,6 +1262,12 @@ class RandomRotation(torch.nn.Module):
 
         self.resample = self.interpolation = interpolation
         self.expand = expand
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
         self.fill = fill
 
     @staticmethod
@@ -1227,7 +1291,7 @@ class RandomRotation(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
@@ -1249,11 +1313,11 @@ class RandomRotation(torch.nn.Module):
 
 class RandomAffine(torch.nn.Module):
     """Random affine transformation of the image keeping center invariant.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        degrees (sequence or float or int): Range of degrees to select from.
+        degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees). Set to 0 to deactivate rotations.
         translate (tuple, optional): tuple of maximum absolute fraction for horizontal
@@ -1262,24 +1326,22 @@ class RandomAffine(torch.nn.Module):
             randomly sampled in the range -img_height * b < dy < img_height * b. Will not translate by default.
         scale (tuple, optional): scaling factor interval, e.g (a, b), then scale is
             randomly sampled from the range a <= scale <= b. Will keep original scale by default.
-        shear (sequence or float or int, optional): Range of degrees to select from.
+        shear (sequence or number, optional): Range of degrees to select from.
             If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
-            will be applied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
-            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
+            will be applied. Else if shear is a sequence of 2 values a shear parallel to the x axis in the
+            range (shear[0], shear[1]) will be applied. Else if shear is a sequence of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
-            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
-        fillcolor (sequence or int or float, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:fill: instead.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
+        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
+            Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            Please use the ``interpolation`` parameter instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1332,6 +1394,12 @@ class RandomAffine(torch.nn.Module):
             self.shear = shear
 
         self.resample = self.interpolation = interpolation
+
+        if fill is None:
+            fill = 0
+        elif not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+
         self.fillcolor = self.fill = fill
 
     @staticmethod
@@ -1382,11 +1450,11 @@ class RandomAffine(torch.nn.Module):
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F._get_image_num_channels(img)
+                fill = [float(fill)] * F.get_image_num_channels(img)
             else:
                 fill = [float(f) for f in fill]
 
-        img_size = F._get_image_size(img)
+        img_size = F.get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
 
@@ -1412,17 +1480,17 @@ class RandomAffine(torch.nn.Module):
 
 class Grayscale(torch.nn.Module):
     """Convert image to grayscale.
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         num_output_channels (int): (1 or 3) number of channels desired for output image
 
     Returns:
         PIL Image: Grayscale version of the input.
-         - If ``num_output_channels == 1`` : returned image is single channel
-         - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
+
+        - If ``num_output_channels == 1`` : returned image is single channel
+        - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
 
     """
 
@@ -1446,9 +1514,8 @@ class Grayscale(torch.nn.Module):
 
 class RandomGrayscale(torch.nn.Module):
     """Randomly convert image to grayscale with a probability of p (default 0.1).
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         p (float): probability that image should be converted to grayscale.
@@ -1473,7 +1540,7 @@ class RandomGrayscale(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly grayscaled image.
         """
-        num_output_channels = F._get_image_num_channels(img)
+        num_output_channels = F.get_image_num_channels(img)
         if torch.rand(1) < self.p:
             return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img
@@ -1483,7 +1550,8 @@ class RandomGrayscale(torch.nn.Module):
 
 
 class RandomErasing(torch.nn.Module):
-    """ Randomly selects a rectangle region in an image and erases its pixels.
+    """ Randomly selects a rectangle region in an torch Tensor image and erases its pixels.
+    This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
     Args:
@@ -1539,8 +1607,8 @@ class RandomErasing(torch.nn.Module):
 
         Args:
             img (Tensor): Tensor image to be erased.
-            scale (tuple or list): range of proportion of erased area against input image.
-            ratio (tuple or list): range of aspect ratio of erased area.
+            scale (sequence): range of proportion of erased area against input image.
+            ratio (sequence): range of aspect ratio of erased area.
             value (list, optional): erasing value. If None, it is interpreted as "random"
                 (erasing each pixel with random values). If ``len(value)`` is 1, it is interpreted as a number,
                 i.e. ``value[0]``.
@@ -1551,9 +1619,12 @@ class RandomErasing(torch.nn.Module):
         img_c, img_h, img_w = img.shape[-3], img.shape[-2], img.shape[-1]
         area = img_h * img_w
 
+        log_ratio = torch.log(torch.tensor(ratio))
         for _ in range(10):
             erase_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
-            aspect_ratio = torch.empty(1).uniform_(ratio[0], ratio[1]).item()
+            aspect_ratio = torch.exp(
+                torch.empty(1).uniform_(log_ratio[0], log_ratio[1])
+            ).item()
 
             h = int(round(math.sqrt(erase_area * aspect_ratio)))
             w = int(round(math.sqrt(erase_area / aspect_ratio)))
@@ -1602,12 +1673,19 @@ class RandomErasing(torch.nn.Module):
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
 
+    def __repr__(self):
+        s = '(p={}, '.format(self.p)
+        s += 'scale={}, '.format(self.scale)
+        s += 'ratio={}, '.format(self.ratio)
+        s += 'value={}, '.format(self.value)
+        s += 'inplace={})'.format(self.inplace)
+        return self.__class__.__name__ + s
+
 
 class GaussianBlur(torch.nn.Module):
     """Blurs image with randomly chosen Gaussian blur.
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., C, H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         kernel_size (int or sequence): Size of the Gaussian kernel.
@@ -1704,9 +1782,9 @@ def _setup_angle(x, name, req_sizes=(2, )):
 
 class RandomInvert(torch.nn.Module):
     """Inverts the colors of the given image randomly with a given probability.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions.
+    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         p (float): probability of the image being color inverted. Default value is 0.5
@@ -1734,9 +1812,9 @@ class RandomInvert(torch.nn.Module):
 
 class RandomPosterize(torch.nn.Module):
     """Posterize the image randomly with a given probability by reducing the
-    number of bits for each color channel. The image can be a PIL Image or a torch
-    Tensor, in which case it is expected to have [..., H, W] shape, where ... means
-    an arbitrary number of leading dimensions.
+    number of bits for each color channel. If the image is torch Tensor, it should be of type torch.uint8,
+    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         bits (int): number of bits to keep for each channel (0-8)
@@ -1766,9 +1844,9 @@ class RandomPosterize(torch.nn.Module):
 
 class RandomSolarize(torch.nn.Module):
     """Solarize the image randomly with a given probability by inverting all pixel
-    values above a threshold. The image can be a PIL Image or a torch Tensor, in
-    which case it is expected to have [..., H, W] shape, where ... means an arbitrary
-    number of leading dimensions.
+    values above a threshold. If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         threshold (float): all pixels equal or above this value are inverted.
@@ -1797,9 +1875,8 @@ class RandomSolarize(torch.nn.Module):
 
 
 class RandomAdjustSharpness(torch.nn.Module):
-    """Adjust the sharpness of the image randomly with a given probability. The image
-    can be a PIL Image or a torch Tensor, in which case it is expected to have [..., H, W]
-    shape, where ... means an arbitrary number of leading dimensions.
+    """Adjust the sharpness of the image randomly with a given probability. If the image is torch Tensor,
+    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         sharpness_factor (float):  How much to adjust the sharpness. Can be
@@ -1831,9 +1908,9 @@ class RandomAdjustSharpness(torch.nn.Module):
 
 class RandomAutocontrast(torch.nn.Module):
     """Autocontrast the pixels of the given image randomly with a given probability.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions.
+    If the image is torch Tensor, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         p (float): probability of the image being autocontrasted. Default value is 0.5
@@ -1861,9 +1938,9 @@ class RandomAutocontrast(torch.nn.Module):
 
 class RandomEqualize(torch.nn.Module):
     """Equalize the histogram of the given image randomly with a given probability.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions.
+    If the image is torch Tensor, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
     Args:
         p (float): probability of the image being equalized. Default value is 0.5

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Any
 
 
@@ -8,7 +8,7 @@ __all__ = ['AlexNet', 'alexnet']
 
 
 model_urls = {
-    'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
+    'alexnet': 'https://download.pytorch.org/models/alexnet-owt-7be5be79.pth',
 }
 
 
@@ -53,6 +53,7 @@ class AlexNet(nn.Module):
 def alexnet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> AlexNet:
     r"""AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
+    The required minimum input size of the model is 63x63.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

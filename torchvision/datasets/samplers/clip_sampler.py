@@ -111,7 +111,7 @@ class UniformClipSampler(Sampler):
     When number of unique clips in the video is fewer than num_video_clips_per_video,
     repeat the clips until `num_video_clips_per_video` clips are collected
 
-    Arguments:
+    Args:
         video_clips (VideoClips): video clips to sample from
         num_clips_per_video (int): number of clips to be sampled per video
     """
@@ -151,7 +151,7 @@ class RandomClipSampler(Sampler):
     """
     Samples at most `max_video_clips_per_video` clips for each video randomly
 
-    Arguments:
+    Args:
         video_clips (VideoClips): video clips to sample from
         max_clips_per_video (int): maximum number of clips to be sampled per video
     """

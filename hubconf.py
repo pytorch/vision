@@ -11,10 +11,13 @@ from torchvision.models.squeezenet import squeezenet1_0, squeezenet1_1
 from torchvision.models.vgg import vgg11, vgg13, vgg16, vgg19, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from torchvision.models.googlenet import googlenet
 from torchvision.models.shufflenetv2 import shufflenet_v2_x0_5, shufflenet_v2_x1_0
-from torchvision.models.mobilenet import mobilenet_v2
+from torchvision.models.mobilenetv2 import mobilenet_v2
+from torchvision.models.mobilenetv3 import mobilenet_v3_large, mobilenet_v3_small
 from torchvision.models.mnasnet import mnasnet0_5, mnasnet0_75, mnasnet1_0, \
     mnasnet1_3
+from torchvision.models.efficientnet import efficientnet_b0, efficientnet_b1, efficientnet_b2, \
+    efficientnet_b3, efficientnet_b4, efficientnet_b5, efficientnet_b6, efficientnet_b7
 
 # segmentation
 from torchvision.models.segmentation import fcn_resnet50, fcn_resnet101, \
-    deeplabv3_resnet50, deeplabv3_resnet101
+    deeplabv3_resnet50, deeplabv3_resnet101, deeplabv3_mobilenet_v3_large, lraspp_mobilenet_v3_large

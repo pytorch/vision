@@ -1,8 +1,8 @@
-import glob
 import os
+from typing import Any, Dict, List, Tuple, Optional, Callable
+from torch import Tensor
 
-from .utils import list_dir
-from .folder import make_dataset
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -14,7 +14,9 @@ class UCF101(VisionDataset):
     UCF101 is an action recognition video dataset.
     This dataset consider every video as a collection of video clips of fixed size, specified
     by ``frames_per_clip``, where the step in frames between each clip is given by
-    ``step_between_clips``.
+    ``step_between_clips``. The dataset itself can be downloaded from the dataset website;
+    annotations that ``annotation_path`` should be pointing to can be downloaded from `here
+    <https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip>`.
 
     To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``
     and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two
@@ -26,7 +28,8 @@ class UCF101(VisionDataset):
 
     Args:
         root (string): Root directory of the UCF101 Dataset.
-        annotation_path (str): path to the folder containing the split files
+        annotation_path (str): path to the folder containing the split files;
+            see docstring above for download instructions of these files
         frames_per_clip (int): number of frames in a clip.
         step_between_clips (int, optional): number of frames between each clip.
         fold (int, optional): which fold to use. Should be between 1 and 3.
@@ -36,16 +39,31 @@ class UCF101(VisionDataset):
             and returns a transformed version.
 
     Returns:
-        video (Tensor[T, H, W, C]): the `T` video frames
-        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        label (int): class of the video clip
+        tuple: A 3-tuple with the following entries:
+
+            - video (Tensor[T, H, W, C]): the `T` video frames
+            -  audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+               and `L` is the number of points
+            - label (int): class of the video clip
     """
 
-    def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
-                 frame_rate=None, fold=1, train=True, transform=None,
-                 _precomputed_metadata=None, num_workers=1, _video_width=0,
-                 _video_height=0, _video_min_dimension=0, _audio_samples=0):
+    def __init__(
+        self,
+        root: str,
+        annotation_path: str,
+        frames_per_clip: int,
+        step_between_clips: int = 1,
+        frame_rate: Optional[int] = None,
+        fold: int = 1,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        num_workers: int = 1,
+        _video_width: int = 0,
+        _video_height: int = 0,
+        _video_min_dimension: int = 0,
+        _audio_samples: int = 0
+    ) -> None:
         super(UCF101, self).__init__(root)
         if not 1 <= fold <= 3:
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
@@ -54,10 +72,8 @@ class UCF101(VisionDataset):
         self.fold = fold
         self.train = train
 
-        classes = list(sorted(list_dir(root)))
-        class_to_idx = {classes[i]: i for i in range(len(classes))}
+        self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
-        self.classes = classes
         video_list = [x[0] for x in self.samples]
         video_clips = VideoClips(
             video_list,
@@ -80,27 +96,26 @@ class UCF101(VisionDataset):
         self.transform = transform
 
     @property
-    def metadata(self):
+    def metadata(self) -> Dict[str, Any]:
         return self.full_video_clips.metadata
 
-    def _select_fold(self, video_list, annotation_path, fold, train):
+    def _select_fold(self, video_list: List[str], annotation_path: str, fold: int, train: bool) -> List[int]:
         name = "train" if train else "test"
         name = "{}list{:02d}.txt".format(name, fold)
         f = os.path.join(annotation_path, name)
-        selected_files = []
+        selected_files = set()
         with open(f, "r") as fid:
             data = fid.readlines()
-            data = [x.strip().split(" ") for x in data]
-            data = [os.path.join(self.root, x[0]) for x in data]
-            selected_files.extend(data)
-        selected_files = set(selected_files)
+            data = [x.strip().split(" ")[0] for x in data]
+            data = [os.path.join(self.root, x) for x in data]
+            selected_files.update(data)
         indices = [i for i in range(len(video_list)) if video_list[i] in selected_files]
         return indices
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[self.indices[video_idx]][1]
 

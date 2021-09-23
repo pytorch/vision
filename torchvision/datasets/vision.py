@@ -5,6 +5,23 @@ from typing import Any, Callable, List, Optional, Tuple
 
 
 class VisionDataset(data.Dataset):
+    """
+    Base Class For making datasets which are compatible with torchvision.
+    It is necessary to override the ``__getitem__`` and ``__len__`` method.
+
+    Args:
+        root (string): Root directory of dataset.
+        transforms (callable, optional): A function/transforms that takes in
+            an image and a label and returns the transformed versions of both.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+
+    .. note::
+
+        :attr:`transforms` and the combination of :attr:`transform` and :attr:`target_transform` are mutually exclusive.
+    """
     _repr_indent = 4
 
     def __init__(
@@ -14,6 +31,7 @@ class VisionDataset(data.Dataset):
             transform: Optional[Callable] = None,
             target_transform: Optional[Callable] = None,
     ) -> None:
+        torch._C._log_api_usage_once(f"torchvision.datasets.{self.__class__.__name__}")
         if isinstance(root, torch._six.string_classes):
             root = os.path.expanduser(root)
         self.root = root
@@ -33,6 +51,13 @@ class VisionDataset(data.Dataset):
         self.transforms = transforms
 
     def __getitem__(self, index: int) -> Any:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            (Any): Sample and meta data, optionally transformed by the respective transforms.
+        """
         raise NotImplementedError
 
     def __len__(self) -> int:

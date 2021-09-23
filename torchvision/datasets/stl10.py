@@ -18,7 +18,7 @@ class STL10(VisionDataset):
             Accordingly dataset is selected.
         folds (int, optional): One of {0-9} or None.
             For training, loads one of the 10 pre-defined folds of 1k samples for the
-             standard evaluation procedure. If no value is passed, loads the 5k samples.
+            standard evaluation procedure. If no value is passed, loads the 5k samples.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -26,7 +26,6 @@ class STL10(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-
     """
     base_folder = 'stl10_binary'
     url = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
@@ -68,7 +67,7 @@ class STL10(VisionDataset):
                 'You can use download=True to download it')
 
         # now load the picked numpy arrays
-        self.labels: np.ndarray
+        self.labels: Optional[np.ndarray]
         if self.split == 'train':
             self.data, self.labels = self.__loadfile(
                 self.train_list[0][0], self.train_list[1][0])
@@ -182,5 +181,7 @@ class STL10(VisionDataset):
             self.root, self.base_folder, self.folds_list_file)
         with open(path_to_folds, 'r') as f:
             str_idx = f.read().splitlines()[folds]
-            list_idx = np.fromstring(str_idx, dtype=np.uint8, sep=' ')
-            self.data, self.labels = self.data[list_idx, :, :, :], self.labels[list_idx]
+            list_idx = np.fromstring(str_idx, dtype=np.int64, sep=' ')
+            self.data = self.data[list_idx, :, :, :]
+            if self.labels is not None:
+                self.labels = self.labels[list_idx]

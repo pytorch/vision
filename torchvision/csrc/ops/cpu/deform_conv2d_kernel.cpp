@@ -634,44 +634,50 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
   input = input.reshape(
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
-  grad_offset = grad_offset.reshape({batch_sz / n_parallel_imgs,
-                                     n_parallel_imgs,
-                                     n_offset_grps * 2 * weight_h * weight_w,
-                                     out_h,
-                                     out_w});
-  offset = offset.reshape({batch_sz / n_parallel_imgs,
-                           n_parallel_imgs,
-                           n_offset_grps * 2 * weight_h * weight_w,
-                           out_h,
-                           out_w});
+  grad_offset = grad_offset.reshape(
+      {batch_sz / n_parallel_imgs,
+       n_parallel_imgs,
+       n_offset_grps * 2 * weight_h * weight_w,
+       out_h,
+       out_w});
+  offset = offset.reshape(
+      {batch_sz / n_parallel_imgs,
+       n_parallel_imgs,
+       n_offset_grps * 2 * weight_h * weight_w,
+       out_h,
+       out_w});
 
   if (use_mask) {
-    grad_mask = grad_mask.reshape({batch_sz / n_parallel_imgs,
-                                   n_parallel_imgs,
-                                   n_offset_grps * weight_h * weight_w,
-                                   out_h,
-                                   out_w});
-    mask = mask.reshape({batch_sz / n_parallel_imgs,
-                         n_parallel_imgs,
-                         n_offset_grps * weight_h * weight_w,
-                         out_h,
-                         out_w});
+    grad_mask = grad_mask.reshape(
+        {batch_sz / n_parallel_imgs,
+         n_parallel_imgs,
+         n_offset_grps * weight_h * weight_w,
+         out_h,
+         out_w});
+    mask = mask.reshape(
+        {batch_sz / n_parallel_imgs,
+         n_parallel_imgs,
+         n_offset_grps * weight_h * weight_w,
+         out_h,
+         out_w});
   }
 
   grad_out = grad_out
-                 .reshape({batch_sz / n_parallel_imgs,
-                           n_parallel_imgs,
-                           n_weight_grps,
-                           n_out_channels / n_weight_grps,
-                           out_h,
-                           out_w})
+                 .reshape(
+                     {batch_sz / n_parallel_imgs,
+                      n_parallel_imgs,
+                      n_weight_grps,
+                      n_out_channels / n_weight_grps,
+                      out_h,
+                      out_w})
                  .permute({0, 2, 3, 1, 4, 5});
 
-  weight = weight.reshape({n_weight_grps,
-                           weight.size(0) / n_weight_grps,
-                           weight.size(1),
-                           weight.size(2),
-                           weight.size(3)});
+  weight = weight.reshape(
+      {n_weight_grps,
+       weight.size(0) / n_weight_grps,
+       weight.size(1),
+       weight.size(2),
+       weight.size(3)});
 
   columns = columns.view(
       {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
@@ -775,37 +781,41 @@ at::Tensor backward_gradient_parameters(
   }
 
   at::Tensor grad_out_buf = grad_out
-                                .reshape({batch_sz / n_parallel_imgs,
-                                          n_parallel_imgs,
-                                          n_weight_grps,
-                                          n_out_channels / n_weight_grps,
-                                          out_h,
-                                          out_w})
+                                .reshape(
+                                    {batch_sz / n_parallel_imgs,
+                                     n_parallel_imgs,
+                                     n_weight_grps,
+                                     n_out_channels / n_weight_grps,
+                                     out_h,
+                                     out_w})
                                 .permute({0, 2, 3, 1, 4, 5})
                                 .contiguous();
 
   input = input.reshape(
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
-  offset = offset.reshape({batch_sz / n_parallel_imgs,
-                           n_parallel_imgs,
-                           n_offset_grps * 2 * weight_h * weight_w,
-                           out_h,
-                           out_w});
+  offset = offset.reshape(
+      {batch_sz / n_parallel_imgs,
+       n_parallel_imgs,
+       n_offset_grps * 2 * weight_h * weight_w,
+       out_h,
+       out_w});
 
   if (use_mask) {
-    mask = mask.reshape({batch_sz / n_parallel_imgs,
-                         n_parallel_imgs,
-                         n_offset_grps * weight_h * weight_w,
-                         out_h,
-                         out_w});
+    mask = mask.reshape(
+        {batch_sz / n_parallel_imgs,
+         n_parallel_imgs,
+         n_offset_grps * weight_h * weight_w,
+         out_h,
+         out_w});
   }
 
-  grad_weight = grad_weight.view({n_weight_grps,
-                                  grad_weight.size(0) / n_weight_grps,
-                                  grad_weight.size(1),
-                                  grad_weight.size(2),
-                                  grad_weight.size(3)});
+  grad_weight = grad_weight.view(
+      {n_weight_grps,
+       grad_weight.size(0) / n_weight_grps,
+       grad_weight.size(1),
+       grad_weight.size(2),
+       grad_weight.size(3)});
 
   auto columns = at::empty(
       {n_weight_grps,
@@ -846,10 +856,11 @@ at::Tensor backward_gradient_parameters(
     }
   }
 
-  grad_weight = grad_weight.view({grad_weight.size(0) * grad_weight.size(1),
-                                  grad_weight.size(2),
-                                  grad_weight.size(3),
-                                  grad_weight.size(4)});
+  grad_weight = grad_weight.view(
+      {grad_weight.size(0) * grad_weight.size(1),
+       grad_weight.size(2),
+       grad_weight.size(3),
+       grad_weight.size(4)});
   return grad_weight;
 }
 
@@ -976,26 +987,29 @@ at::Tensor deform_conv2d_forward_kernel(
   }
 
   // Separate batches into blocks
-  out = out.view({batch_sz / n_parallel_imgs,
-                  n_parallel_imgs,
-                  out_channels,
-                  out_h,
-                  out_w});
+  out = out.view(
+      {batch_sz / n_parallel_imgs,
+       n_parallel_imgs,
+       out_channels,
+       out_h,
+       out_w});
   input_c = input_c.view(
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
-  offset_c = offset_c.view({batch_sz / n_parallel_imgs,
-                            n_parallel_imgs,
-                            n_offset_grps * 2 * weight_h * weight_w,
-                            out_h,
-                            out_w});
+  offset_c = offset_c.view(
+      {batch_sz / n_parallel_imgs,
+       n_parallel_imgs,
+       n_offset_grps * 2 * weight_h * weight_w,
+       out_h,
+       out_w});
 
   if (use_mask) {
-    mask_c = mask_c.view({batch_sz / n_parallel_imgs,
-                          n_parallel_imgs,
-                          n_offset_grps * weight_h * weight_w,
-                          out_h,
-                          out_w});
+    mask_c = mask_c.view(
+        {batch_sz / n_parallel_imgs,
+         n_parallel_imgs,
+         n_offset_grps * weight_h * weight_w,
+         out_h,
+         out_w});
   }
 
   at::Tensor out_buf = at::zeros(
@@ -1006,16 +1020,18 @@ at::Tensor deform_conv2d_forward_kernel(
       out.options());
 
   // Separate channels into convolution groups
-  out_buf = out_buf.view({out_buf.size(0),
-                          n_weight_grps,
-                          out_buf.size(1) / n_weight_grps,
-                          out_buf.size(2),
-                          out_buf.size(3)});
-  weight_c = weight_c.view({n_weight_grps,
-                            weight_c.size(0) / n_weight_grps,
-                            weight_c.size(1),
-                            weight_c.size(2),
-                            weight_c.size(3)});
+  out_buf = out_buf.view(
+      {out_buf.size(0),
+       n_weight_grps,
+       out_buf.size(1) / n_weight_grps,
+       out_buf.size(2),
+       out_buf.size(3)});
+  weight_c = weight_c.view(
+      {n_weight_grps,
+       weight_c.size(0) / n_weight_grps,
+       weight_c.size(1),
+       weight_c.size(2),
+       weight_c.size(3)});
 
   // Sample points and perform convolution
   auto columns = at::zeros(
@@ -1056,11 +1072,12 @@ at::Tensor deform_conv2d_forward_kernel(
         columns.view({columns.size(0) * columns.size(1), columns.size(2)});
   }
 
-  out_buf = out_buf.view({batch_sz / n_parallel_imgs,
-                          out_channels,
-                          n_parallel_imgs,
-                          out_h,
-                          out_w});
+  out_buf = out_buf.view(
+      {batch_sz / n_parallel_imgs,
+       out_channels,
+       n_parallel_imgs,
+       out_h,
+       out_w});
   out_buf.transpose_(1, 2);
   out.copy_(out_buf);
   out = out.view({batch_sz, out_channels, out_h, out_w});
@@ -1143,8 +1160,12 @@ deform_conv2d_backward_kernel(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("deform_conv2d", deform_conv2d_forward_kernel);
-  m.impl("_deform_conv2d_backward", deform_conv2d_backward_kernel);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
+      TORCH_FN(deform_conv2d_forward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_deform_conv2d_backward"),
+      TORCH_FN(deform_conv2d_backward_kernel));
 }
 
 } // namespace ops

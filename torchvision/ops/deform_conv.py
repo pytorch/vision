@@ -27,25 +27,22 @@ def deform_conv2d(
     `Deformable Convolutional Networks
     <https://arxiv.org/abs/1703.06211>`__ if :attr:`mask` is ``None``.
 
-    Arguments:
+    Args:
         input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-        offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-            out_height, out_width]): offsets to be applied for each position in the
-            convolution kernel.
-        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]):
-            convolution weights, split into groups of size (in_channels // groups)
+        offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width, out_height, out_width]):
+            offsets to be applied for each position in the convolution kernel.
+        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]): convolution weights,
+            split into groups of size (in_channels // groups)
         bias (Tensor[out_channels]): optional bias of shape (out_channels,). Default: None
         stride (int or Tuple[int, int]): distance between convolution centers. Default: 1
         padding (int or Tuple[int, int]): height/width of padding of zeroes around
             each image. Default: 0
         dilation (int or Tuple[int, int]): the spacing between kernel elements. Default: 1
-        mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
-            out_height, out_width]): masks to be applied for each position in the
-            convolution kernel. Default: None
+        mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width, out_height, out_width]):
+            masks to be applied for each position in the convolution kernel. Default: None
 
     Returns:
-        output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution
-
+        Tensor[batch_sz, out_channels, out_h, out_w]: result of convolution
 
     Examples::
         >>> input = torch.rand(4, 3, 10, 10)
@@ -105,7 +102,7 @@ def deform_conv2d(
 
 class DeformConv2d(nn.Module):
     """
-    See deform_conv2d
+    See :func:`deform_conv2d`.
     """
 
     def __init__(
@@ -152,9 +149,9 @@ class DeformConv2d(nn.Module):
             bound = 1 / math.sqrt(fan_in)
             init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, input: Tensor, offset: Tensor, mask: Tensor = None) -> Tensor:
+    def forward(self, input: Tensor, offset: Tensor, mask: Optional[Tensor] = None) -> Tensor:
         """
-        Arguments:
+        Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
             offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
                 out_height, out_width]): offsets to be applied for each position in the

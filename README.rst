@@ -1,17 +1,11 @@
 torchvision
 ===========
 
-.. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
-    :target: https://travis-ci.org/pytorch/vision
-
-.. image:: https://codecov.io/gh/pytorch/vision/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/pytorch/vision
-
 .. image:: https://pepy.tech/badge/torchvision
     :target: https://pepy.tech/project/torchvision
 
 .. image:: https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v
-    :target: https://pytorch.org/docs/stable/torchvision/index.html
+    :target: https://pytorch.org/vision/stable/index.html
 
 
 The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
@@ -27,19 +21,25 @@ supported Python versions.
 +--------------------------+--------------------------+---------------------------------+
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
-| ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
+| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.7.1``                | ``0.8.2``                | ``>=3.6``                       |
+| ``1.9.0``                | ``0.10.0``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.7.0``                | ``0.8.1``                | ``>=3.6``                       |
+| ``1.8.1``                | ``0.9.1``                | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.7.0``                | ``0.8.0``                | ``>=3.6``                       |
+| ``1.8.0``                | ``0.9.0``                | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
+| ``1.7.1``                | ``0.8.2``                | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.5.1``                | ``0.6.1``                | ``>=3.5``                       |
+| ``1.7.0``                | ``0.8.1``                | ``>=3.6``, ``<=3.8``            |
 +--------------------------+--------------------------+---------------------------------+
-| ``1.5.0``                | ``0.6.0``                | ``>=3.5``                       |
+| ``1.7.0``                | ``0.8.0``                | ``>=3.6``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.6.0``                | ``0.7.0``                | ``>=3.6``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.1``                | ``0.6.1``                | ``>=3.5``, ``<=3.8``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.0``                | ``0.6.0``                | ``>=3.5``, ``<=3.8``            |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.4.0``                | ``0.5.0``                | ``==2.7``, ``>=3.5``, ``<=3.8`` |
 +--------------------------+--------------------------+---------------------------------+
@@ -74,6 +74,10 @@ From source:
     # or, for OSX
     # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
 
+
+In case building TorchVision from source fails, install the nightly version of PyTorch following
+the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation>`_ and retry the install.
+
 By default, GPU support is built if CUDA is found and ``torch.cuda.is_available()`` is true.
 It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
 which is useful when building a docker image.
@@ -102,9 +106,9 @@ otherwise, add the include and library paths in the environment variables ``TORC
 .. _libjpeg: http://ijg.org/
 .. _libjpeg-turbo: https://libjpeg-turbo.org/
 
-C++ API
-=======
-TorchVision also offers a C++ API that contains C++ equivalent of python models.
+Using the models on C++
+=======================
+TorchVision provides an example project for how to use the models on C++ using JIT Script.
 
 Installation From source:
 
@@ -136,7 +140,7 @@ In order to get the torchvision operators registered with torch (eg. for the JIT
 
 Documentation
 =============
-You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
+You can find the API documentation on the pytorch website: https://pytorch.org/vision/stable/index.html
 
 Contributing
 ============

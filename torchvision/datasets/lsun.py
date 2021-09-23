@@ -55,8 +55,10 @@ class LSUNClass(VisionDataset):
 
 
 class LSUN(VisionDataset):
-    """
-    `LSUN <https://www.yf.io/p/lsun>`_ dataset.
+    """`LSUN <https://www.yf.io/p/lsun>`_ dataset.
+
+    You will need to install the ``lmdb`` package to use this dataset: run
+    ``pip install lmdb``
 
     Args:
         root (string): Root directory for the database files.
@@ -83,7 +85,7 @@ class LSUN(VisionDataset):
         self.dbs = []
         for c in self.classes:
             self.dbs.append(LSUNClass(
-                root=root + '/' + c + '_lmdb',
+                root=os.path.join(root, f"{c}_lmdb"),
                 transform=transform))
 
         self.indices = []

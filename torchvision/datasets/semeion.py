@@ -8,7 +8,8 @@ from .utils import download_url, check_integrity
 
 
 class SEMEION(VisionDataset):
-    """`SEMEION <http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>`_ Dataset.
+    r"""`SEMEION <http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>`_ Dataset.
+
     Args:
         root (string): Root directory of dataset where directory
             ``semeion.py`` exists.
@@ -19,6 +20,7 @@ class SEMEION(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+
     """
     url = "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data"
     filename = "semeion.data"
@@ -41,8 +43,6 @@ class SEMEION(VisionDataset):
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
 
-        self.data = []
-        self.labels = []
         fp = os.path.join(self.root, self.filename)
         data = np.loadtxt(fp)
         # convert value to 8 bit unsigned integer
@@ -55,6 +55,7 @@ class SEMEION(VisionDataset):
         """
         Args:
             index (int): Index
+
         Returns:
             tuple: (image, target) where target is index of the target class.
         """

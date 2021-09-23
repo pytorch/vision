@@ -26,7 +26,7 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     ctx->saved_data["aligned"] = aligned;
     ctx->saved_data["input_shape"] = input.sizes();
     ctx->save_for_backward({rois});
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result = roi_align(
         input,
         rois,
@@ -57,13 +57,14 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         input_shape[3],
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
-    return {grad_in,
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable()};
+    return {
+        grad_in,
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable()};
   }
 };
 
@@ -84,7 +85,7 @@ class ROIAlignBackwardFunction
       int64_t width,
       int64_t sampling_ratio,
       bool aligned) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result = detail::_roi_align_backward(
         grad,
         rois,
@@ -154,8 +155,12 @@ at::Tensor roi_align_backward_autograd(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("roi_align", roi_align_autograd);
-  m.impl("_roi_align_backward", roi_align_backward_autograd);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::roi_align"),
+      TORCH_FN(roi_align_autograd));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_roi_align_backward"),
+      TORCH_FN(roi_align_backward_autograd));
 }
 
 } // namespace ops

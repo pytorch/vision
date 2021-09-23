@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from torch import Tensor
 from typing import Any, List, Tuple
 
@@ -257,6 +257,7 @@ def _densenet(
 def densenet121(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
+    The required minimum input size of the model is 29x29.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -271,6 +272,7 @@ def densenet121(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 def densenet161(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
+    The required minimum input size of the model is 29x29.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -285,6 +287,7 @@ def densenet161(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 def densenet169(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
+    The required minimum input size of the model is 29x29.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -299,6 +302,7 @@ def densenet169(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 def densenet201(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
+    The required minimum input size of the model is 29x29.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Callable, Any, Optional, Tuple, List
 
 
@@ -12,7 +12,7 @@ __all__ = ['Inception3', 'inception_v3', 'InceptionOutputs', '_InceptionOutputs'
 
 model_urls = {
     # Inception v3 ported from TensorFlow
-    'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
+    'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth',
 }
 
 InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
@@ -26,6 +26,7 @@ _InceptionOutputs = InceptionOutputs
 def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "Inception3":
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
+    The required minimum input size of the model is 75x75.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
@@ -119,13 +120,8 @@ class Inception3(nn.Module):
         if init_weights:
             for m in self.modules():
                 if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                    import scipy.stats as stats
-                    stddev = m.stddev if hasattr(m, 'stddev') else 0.1
-                    X = stats.truncnorm(-2, 2, scale=stddev)
-                    values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
-                    values = values.view(m.weight.size())
-                    with torch.no_grad():
-                        m.weight.copy_(values)
+                    stddev = float(m.stddev) if hasattr(m, 'stddev') else 0.1  # type: ignore
+                    torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=stddev, a=-2, b=2)
                 elif isinstance(m, nn.BatchNorm2d):
                     nn.init.constant_(m.weight, 1)
                     nn.init.constant_(m.bias, 0)

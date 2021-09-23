@@ -1,3 +1,5 @@
+from collections import namedtuple
+import csv
 from functools import partial
 import torch
 import os
@@ -5,6 +7,8 @@ import PIL
 from typing import Any, Callable, List, Optional, Union, Tuple
 from .vision import VisionDataset
 from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
+
+CSV = namedtuple("CSV", ["header", "index", "data"])
 
 
 class CelebA(VisionDataset):
@@ -17,12 +21,15 @@ class CelebA(VisionDataset):
         target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,
             or ``landmarks``. Can also be a list to output a tuple with all specified target types.
             The targets represent:
-                ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
-                ``identity`` (int): label for each person (data points with the same identity are the same person)
-                ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
-                ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
-                    righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
+
+                - ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
+                - ``identity`` (int): label for each person (data points with the same identity are the same person)
+                - ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
+                - ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
+                  righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
+
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
+
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
@@ -37,9 +44,9 @@ class CelebA(VisionDataset):
     # dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available
     # right now.
     file_list = [
-        # File ID                         MD5 Hash                            Filename
+        # File ID                                      MD5 Hash                            Filename
         ("0B7EVK8r0v71pZjFTYXZWM3FlRnM", "00d2c5bc6d35e252742224ab0c1e8fcb", "img_align_celeba.zip"),
-        # ("0B7EVK8r0v71pbWNEUjJKdDQ3dGc", "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_align_celeba_png.7z"),
+        # ("0B7EVK8r0v71pbWNEUjJKdDQ3dGc","b6cd7e93bc7a96c2dc33f819aa3ac651", "img_align_celeba_png.7z"),
         # ("0B7EVK8r0v71peklHb0pGdDl6R28", "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_celeba.7z"),
         ("0B7EVK8r0v71pblRyaVFSWGxPY0U", "75e246fa4810816ffd6ee81facbd244c", "list_attr_celeba.txt"),
         ("1_ee_0u7vcNLOfNLegJRHmolfH5ICW-XS", "32bd1bd63d3c78cd57e08160ec5ed1e2", "identity_CelebA.txt"),
@@ -58,7 +65,6 @@ class CelebA(VisionDataset):
             target_transform: Optional[Callable] = None,
             download: bool = False,
     ) -> None:
-        import pandas
         super(CelebA, self).__init__(root, transform=transform,
                                      target_transform=target_transform)
         self.split = split
@@ -85,23 +91,46 @@ class CelebA(VisionDataset):
         }
         split_ = split_map[verify_str_arg(split.lower(), "split",
                                           ("train", "valid", "test", "all"))]
+        splits = self._load_csv("list_eval_partition.txt")
+        identity = self._load_csv("identity_CelebA.txt")
+        bbox = self._load_csv("list_bbox_celeba.txt", header=1)
+        landmarks_align = self._load_csv("list_landmarks_align_celeba.txt", header=1)
+        attr = self._load_csv("list_attr_celeba.txt", header=1)
+
+        mask = slice(None) if split_ is None else (splits.data == split_).squeeze()
+
+        if mask == slice(None):  # if split == "all"
+            self.filename = splits.index
+        else:
+            self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]
+        self.identity = identity.data[mask]
+        self.bbox = bbox.data[mask]
+        self.landmarks_align = landmarks_align.data[mask]
+        self.attr = attr.data[mask]
+        # map from {-1, 1} to {0, 1}
+        self.attr = torch.div(self.attr + 1, 2, rounding_mode='floor')
+        self.attr_names = attr.header
+
+    def _load_csv(
+        self,
+        filename: str,
+        header: Optional[int] = None,
+    ) -> CSV:
+        data, indices, headers = [], [], []
 
         fn = partial(os.path.join, self.root, self.base_folder)
-        splits = pandas.read_csv(fn("list_eval_partition.txt"), delim_whitespace=True, header=None, index_col=0)
-        identity = pandas.read_csv(fn("identity_CelebA.txt"), delim_whitespace=True, header=None, index_col=0)
-        bbox = pandas.read_csv(fn("list_bbox_celeba.txt"), delim_whitespace=True, header=1, index_col=0)
-        landmarks_align = pandas.read_csv(fn("list_landmarks_align_celeba.txt"), delim_whitespace=True, header=1)
-        attr = pandas.read_csv(fn("list_attr_celeba.txt"), delim_whitespace=True, header=1)
+        with open(fn(filename)) as csv_file:
+            data = list(csv.reader(csv_file, delimiter=' ', skipinitialspace=True))
 
-        mask = slice(None) if split_ is None else (splits[1] == split_)
+        if header is not None:
+            headers = data[header]
+            data = data[header + 1:]
 
-        self.filename = splits[mask].index.values
-        self.identity = torch.as_tensor(identity[mask].values)
-        self.bbox = torch.as_tensor(bbox[mask].values)
-        self.landmarks_align = torch.as_tensor(landmarks_align[mask].values)
-        self.attr = torch.as_tensor(attr[mask].values)
-        self.attr = (self.attr + 1) // 2  # map from {-1, 1} to {0, 1}
-        self.attr_names = list(attr.columns)
+        indices = [row[0] for row in data]
+        data = [row[1:] for row in data]
+        data_int = [list(map(int, i)) for i in data]
+
+        return CSV(headers, indices, torch.tensor(data_int))
 
     def _check_integrity(self) -> bool:
         for (_, md5, filename) in self.file_list:

@@ -7,13 +7,10 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
-from torchvision import transforms as T
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
+import presets
 import utils
-
-from scheduler import WarmupMultiStepLR
-from transforms import ConvertBHWCtoBCHW, ConvertBCHWtoCBHW
 
 try:
     from apex import amp
@@ -112,21 +109,11 @@ def main(args):
     print("Loading data")
     traindir = os.path.join(args.data_path, args.train_dir)
     valdir = os.path.join(args.data_path, args.val_dir)
-    normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
-                            std=[0.22803, 0.22145, 0.216989])
 
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    transform_train = torchvision.transforms.Compose([
-        ConvertBHWCtoBCHW(),
-        T.ConvertImageDtype(torch.float32),
-        T.Resize((128, 171)),
-        T.RandomHorizontalFlip(),
-        normalize,
-        T.RandomCrop((112, 112)),
-        ConvertBCHWtoCBHW()
-    ])
+    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print("Loading dataset_train from {}".format(cache_path))
@@ -154,14 +141,7 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    transform_test = torchvision.transforms.Compose([
-        ConvertBHWCtoBCHW(),
-        T.ConvertImageDtype(torch.float32),
-        T.Resize((128, 171)),
-        normalize,
-        T.CenterCrop((112, 112)),
-        ConvertBCHWtoCBHW()
-    ])
+    transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print("Loading dataset_test from {}".format(cache_path))
@@ -220,11 +200,30 @@ def main(args):
 
     # convert scheduler to be per iteration, not per epoch, for warmup that lasts
     # between different epochs
-    warmup_iters = args.lr_warmup_epochs * len(data_loader)
-    lr_milestones = [len(data_loader) * m for m in args.lr_milestones]
-    lr_scheduler = WarmupMultiStepLR(
-        optimizer, milestones=lr_milestones, gamma=args.lr_gamma,
-        warmup_iters=warmup_iters, warmup_factor=1e-5)
+    iters_per_epoch = len(data_loader)
+    lr_milestones = [iters_per_epoch * (m - args.lr_warmup_epochs) for m in args.lr_milestones]
+    main_lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=lr_milestones, gamma=args.lr_gamma)
+
+    if args.lr_warmup_epochs > 0:
+        warmup_iters = iters_per_epoch * args.lr_warmup_epochs
+        args.lr_warmup_method = args.lr_warmup_method.lower()
+        if args.lr_warmup_method == 'linear':
+            warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=args.lr_warmup_decay,
+                                                                    total_iters=warmup_iters)
+        elif args.lr_warmup_method == 'constant':
+            warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
+                                                                      total_iters=warmup_iters)
+        else:
+            raise RuntimeError("Invalid warmup lr method '{}'. Only linear and constant "
+                               "are supported.".format(args.lr_warmup_method))
+
+        lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[warmup_lr_scheduler, main_lr_scheduler],
+            milestones=[warmup_iters]
+        )
+    else:
+        lr_scheduler = main_lr_scheduler
 
     model_without_ddp = model
     if args.distributed:
@@ -286,7 +285,7 @@ def parse_args():
     parser.add_argument('--epochs', default=45, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=10, type=int, metavar='N',
-                        help='number of data loading workers (default: 16)')
+                        help='number of data loading workers (default: 10)')
     parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
@@ -295,7 +294,9 @@ def parse_args():
                         dest='weight_decay')
     parser.add_argument('--lr-milestones', nargs='+', default=[20, 30, 40], type=int, help='decrease lr on milestones')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
-    parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='number of warmup epochs')
+    parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='the number of epochs to warmup (default: 10)')
+    parser.add_argument('--lr-warmup-method', default="linear", type=str, help='the warmup method (default: linear)')
+    parser.add_argument('--lr-warmup-decay', default=0.001, type=float, help='the decay for lr')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')

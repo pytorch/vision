@@ -10,7 +10,8 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - jpeg
-    - ffmpeg =4.2  # [not win]
+    # NOTE: The only ffmpeg version that we build is actually 4.2
+    - ffmpeg >=4.2  # [not win]
 
   host:
     - python
@@ -21,11 +22,11 @@ requirements:
 
   run:
     - python
+    - defaults::numpy >=1.11
     - libpng
-    - ffmpeg =4.2  # [not win]
+    - ffmpeg >=4.2  # [not win]
     - jpeg
-    - pillow >=4.1.1
-    - numpy >=1.11
+    - pillow >=5.3.0
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
@@ -35,8 +36,8 @@ build:
   script_env:
     - CUDA_HOME
     - FORCE_CUDA
-    - NVCC_FLAGS
     - BUILD_VERSION
+    - TORCH_CUDA_ARCH_LIST
   features:
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
@@ -50,9 +51,8 @@ test:
   requires:
     - pytest
     - scipy
-    - av =8.0.1
+    - jpeg
     - ca-certificates
-    {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
 
 
 about:

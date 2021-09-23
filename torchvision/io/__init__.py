@@ -1,4 +1,5 @@
 import torch
+from typing import Any, Dict, Iterator
 
 from ._video_opt import (
     Timebase,
@@ -17,6 +18,7 @@ from .video import (
     write_video,
 )
 from .image import (
+    ImageReadMode,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -32,13 +34,13 @@ from .image import (
 
 if _HAS_VIDEO_OPT:
 
-    def _has_video_opt():
+    def _has_video_opt() -> bool:
         return True
 
 
 else:
 
-    def _has_video_opt():
+    def _has_video_opt() -> bool:
         return False
 
 
@@ -51,28 +53,33 @@ class VideoReader:
     Example:
         The following examples creates a :mod:`VideoReader` object, seeks into 2s
         point, and returns a single frame::
-                import torchvision
-                video_path = "path_to_a_test_video"
 
-                reader = torchvision.io.VideoReader(video_path, "video")
-                reader.seek(2.0)
-                frame = next(reader)
+            import torchvision
+            video_path = "path_to_a_test_video"
+            reader = torchvision.io.VideoReader(video_path, "video")
+            reader.seek(2.0)
+            frame = next(reader)
 
         :mod:`VideoReader` implements the iterable API, which makes it suitable to
         using it in conjunction with :mod:`itertools` for more advanced reading.
         As such, we can use a :mod:`VideoReader` instance inside for loops::
+
             reader.seek(2)
             for frame in reader:
                 frames.append(frame['data'])
             # additionally, `seek` implements a fluent API, so we can do
             for frame in reader.seek(2):
                 frames.append(frame['data'])
+
         With :mod:`itertools`, we can read all frames between 2 and 5 seconds with the
         following code::
+
             for frame in itertools.takewhile(lambda x: x['pts'] <= 5, reader.seek(2)):
                 frames.append(frame['data'])
+
         and similarly, reading 10 frames after the 2s timestamp can be achieved
         as follows::
+
             for frame in itertools.islice(reader.seek(2), 10):
                 frames.append(frame['data'])
 
@@ -93,7 +100,7 @@ class VideoReader:
             Currently available options include ``['video', 'audio']``
     """
 
-    def __init__(self, path, stream="video"):
+    def __init__(self, path: str, stream: str = "video") -> None:
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -103,7 +110,7 @@ class VideoReader:
             )
         self._c = torch.classes.torchvision.Video(path, stream)
 
-    def __next__(self):
+    def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
         Frames are encoded as a dict with mandatory
         data and pts fields, where data is a tensor, and pts is a
@@ -120,7 +127,7 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator['VideoReader']:
         return self
 
     def seek(self, time_s: float, keyframes_only: bool=False):
@@ -139,7 +146,7 @@ class VideoReader:
         self._c.seek(time_s, keyframes_only)
         return self
 
-    def get_metadata(self):
+    def get_metadata(self) -> Dict[str, Any]:
         """Returns video metadata
 
         Returns:
@@ -147,7 +154,7 @@ class VideoReader:
         """
         return self._c.get_metadata()
 
-    def set_current_stream(self, stream: str):
+    def set_current_stream(self, stream: str) -> bool:
         """Set current stream.
         Explicitly define the stream we are operating on.
 
@@ -182,6 +189,7 @@ __all__ = [
     "_read_video_meta_data",
     "VideoMetaData",
     "Timebase",
+    "ImageReadMode",
     "decode_image",
     "decode_jpeg",
     "decode_png",

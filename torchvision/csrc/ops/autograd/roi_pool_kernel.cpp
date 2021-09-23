@@ -21,7 +21,7 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["input_shape"] = input.sizes();
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result =
         roi_pool(input, rois, spatial_scale, pooled_height, pooled_width);
 
@@ -53,11 +53,12 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
         input_shape[2],
         input_shape[3]);
 
-    return {grad_in,
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable(),
-            torch::autograd::Variable()};
+    return {
+        grad_in,
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable()};
   }
 };
 
@@ -77,7 +78,7 @@ class ROIPoolBackwardFunction
       int64_t channels,
       int64_t height,
       int64_t width) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto grad_in = detail::_roi_pool_backward(
         grad,
         rois,
@@ -139,8 +140,12 @@ at::Tensor roi_pool_backward_autograd(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("roi_pool", roi_pool_autograd);
-  m.impl("_roi_pool_backward", roi_pool_backward_autograd);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::roi_pool"),
+      TORCH_FN(roi_pool_autograd));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
+      TORCH_FN(roi_pool_backward_autograd));
 }
 
 } // namespace ops

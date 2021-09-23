@@ -4,7 +4,7 @@ torchvision.datasets
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.
 Hence, they can all be passed to a :class:`torch.utils.data.DataLoader`
-which can load multiple samples parallelly using ``torch.multiprocessing`` workers.
+which can load multiple samples in parallel using ``torch.multiprocessing`` workers.
 For example: ::
 
     imagenet_data = torchvision.datasets.ImageNet('path/to/imagenet_root/')
@@ -13,16 +13,22 @@ For example: ::
                                               shuffle=True,
                                               num_workers=args.nThreads)
 
-The following datasets are available:
-
-.. contents:: Datasets
-    :local:
+.. currentmodule:: torchvision.datasets
 
 All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
+You can also create your own datasets using the provided :ref:`base classes <base_classes_datasets>`.
 
+Caltech
+~~~~~~~
 
-.. currentmodule:: torchvision.datasets
+.. autoclass:: Caltech101
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Caltech256
+  :members: __getitem__
+  :special-members:
 
 CelebA
 ~~~~~~
@@ -74,13 +80,6 @@ Detection
   :members: __getitem__
   :special-members:
 
-DatasetFolder
-~~~~~~~~~~~~~
-
-.. autoclass:: DatasetFolder
-  :members: __getitem__
-  :special-members:
-
 
 EMNIST
 ~~~~~~
@@ -115,13 +114,6 @@ HMDB51
   :members: __getitem__
   :special-members:
 
-ImageFolder
-~~~~~~~~~~~
-
-.. autoclass:: ImageFolder
-  :members: __getitem__
-  :special-members:
-
 ImageNet
 ~~~~~~~~~~~
 
@@ -130,6 +122,12 @@ ImageNet
 .. note ::
     This requires `scipy` to be installed
 
+iNaturalist
+~~~~~~~~~~~
+
+.. autoclass:: INaturalist
+  :members: __getitem__, category_name
+
 Kinetics-400
 ~~~~~~~~~~~~
 
@@ -137,10 +135,28 @@ Kinetics-400
   :members: __getitem__
   :special-members:
 
+KITTI
+~~~~~~~~~
+
+.. autoclass:: Kitti
+  :members: __getitem__
+  :special-members:
+
 KMNIST
 ~~~~~~~~~~~~~
 
 .. autoclass:: KMNIST
+
+LFW
+~~~~~
+
+.. autoclass:: LFWPeople
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: LFWPairs
+  :members: __getitem__
+  :special-members:
 
 LSUN
 ~~~~
@@ -155,7 +171,7 @@ MNIST
 .. autoclass:: MNIST
 
 Omniglot
-~~~~~~
+~~~~~~~~
 
 .. autoclass:: Omniglot
 
@@ -189,6 +205,13 @@ SBU
 ~~~
 
 .. autoclass:: SBU
+  :members: __getitem__
+  :special-members:
+
+SEMEION
+~~~~~~~
+
+.. autoclass:: SEMEION
   :members: __getitem__
   :special-members:
 
@@ -231,3 +254,28 @@ VOC
   :members: __getitem__
   :special-members:
 
+WIDERFace
+~~~~~~~~~
+
+.. autoclass:: WIDERFace
+  :members: __getitem__
+  :special-members:
+
+
+.. _base_classes_datasets:
+
+Base classes for custom datasets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: DatasetFolder
+  :members: __getitem__, find_classes, make_dataset
+  :special-members:
+
+
+.. autoclass:: ImageFolder
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VisionDataset
+  :members: __getitem__
+  :special-members:

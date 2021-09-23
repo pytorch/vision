@@ -7,6 +7,15 @@ different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection and video classification.
 
+.. note ::
+    Backward compatibility is guaranteed for loading a serialized 
+    ``state_dict`` to the model created using old PyTorch version. 
+    On the contrary, loading entire saved models or serialized 
+    ``ScriptModules`` (seralized using older versions of PyTorch) 
+    may not preserve the historic behaviour. Refer to the following 
+    `documentation 
+    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
+
 
 Classification
 ==============
@@ -22,10 +31,12 @@ architectures for image classification:
 -  `Inception`_ v3
 -  `GoogLeNet`_
 -  `ShuffleNet`_ v2
--  `MobileNet`_ v2
+-  `MobileNetV2`_
+-  `MobileNetV3`_
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
+-  `EfficientNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -40,10 +51,20 @@ You can construct a model with random weights by calling its constructor:
     inception = models.inception_v3()
     googlenet = models.googlenet()
     shufflenet = models.shufflenet_v2_x1_0()
-    mobilenet = models.mobilenet_v2()
+    mobilenet_v2 = models.mobilenet_v2()
+    mobilenet_v3_large = models.mobilenet_v3_large()
+    mobilenet_v3_small = models.mobilenet_v3_small()
     resnext50_32x4d = models.resnext50_32x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
+    efficientnet_b0 = models.efficientnet_b0()
+    efficientnet_b1 = models.efficientnet_b1()
+    efficientnet_b2 = models.efficientnet_b2()
+    efficientnet_b3 = models.efficientnet_b3()
+    efficientnet_b4 = models.efficientnet_b4()
+    efficientnet_b5 = models.efficientnet_b5()
+    efficientnet_b6 = models.efficientnet_b6()
+    efficientnet_b7 = models.efficientnet_b7()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -59,10 +80,20 @@ These can be constructed by passing ``pretrained=True``:
     inception = models.inception_v3(pretrained=True)
     googlenet = models.googlenet(pretrained=True)
     shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
-    mobilenet = models.mobilenet_v2(pretrained=True)
+    mobilenet_v2 = models.mobilenet_v2(pretrained=True)
+    mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
+    mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
     wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
     mnasnet = models.mnasnet1_0(pretrained=True)
+    efficientnet_b0 = models.efficientnet_b0(pretrained=True)
+    efficientnet_b1 = models.efficientnet_b1(pretrained=True)
+    efficientnet_b2 = models.efficientnet_b2(pretrained=True)
+    efficientnet_b3 = models.efficientnet_b3(pretrained=True)
+    efficientnet_b4 = models.efficientnet_b4(pretrained=True)
+    efficientnet_b5 = models.efficientnet_b5(pretrained=True)
+    efficientnet_b6 = models.efficientnet_b6(pretrained=True)
+    efficientnet_b7 = models.efficientnet_b7(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -108,40 +139,55 @@ Unfortunately, the concrete `subset` that was used is lost. For more
 information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
 or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
-ImageNet 1-crop error rates (224x224)
+The sizes of the EfficientNet models depend on the variant. For the exact input sizes
+`check here <https://github.com/pytorch/vision/blob/d2bfd639e46e1c5dc3c177f889dc7750c8d137c7/references/classification/train.py#L92-L93>`_
+
+ImageNet 1-crop error rates
 
 ================================  =============   =============
-Network                           Top-1 error     Top-5 error
+Model                             Acc@1           Acc@5
 ================================  =============   =============
-AlexNet                           43.45           20.91
-VGG-11                            30.98           11.37
-VGG-13                            30.07           10.75
-VGG-16                            28.41           9.62
-VGG-19                            27.62           9.12
-VGG-11 with batch normalization   29.62           10.19
-VGG-13 with batch normalization   28.45           9.63
-VGG-16 with batch normalization   26.63           8.50
-VGG-19 with batch normalization   25.76           8.15
-ResNet-18                         30.24           10.92
-ResNet-34                         26.70           8.58
-ResNet-50                         23.85           7.13
-ResNet-101                        22.63           6.44
-ResNet-152                        21.69           5.94
-SqueezeNet 1.0                    41.90           19.58
-SqueezeNet 1.1                    41.81           19.38
-Densenet-121                      25.35           7.83
-Densenet-169                      24.00           7.00
-Densenet-201                      22.80           6.43
-Densenet-161                      22.35           6.20
-Inception v3                      22.55           6.44
-GoogleNet                         30.22           10.47
-ShuffleNet V2                     30.64           11.68
-MobileNet V2                      28.12           9.71
-ResNeXt-50-32x4d                  22.38           6.30
-ResNeXt-101-32x8d                 20.69           5.47
-Wide ResNet-50-2                  21.49           5.91
-Wide ResNet-101-2                 21.16           5.72
-MNASNet 1.0                       26.49           8.456
+AlexNet                           56.522          79.066
+VGG-11                            69.020          88.628
+VGG-13                            69.928          89.246
+VGG-16                            71.592          90.382
+VGG-19                            72.376          90.876
+VGG-11 with batch normalization   70.370          89.810
+VGG-13 with batch normalization   71.586          90.374
+VGG-16 with batch normalization   73.360          91.516
+VGG-19 with batch normalization   74.218          91.842
+ResNet-18                         69.758          89.078
+ResNet-34                         73.314          91.420
+ResNet-50                         76.130          92.862
+ResNet-101                        77.374          93.546
+ResNet-152                        78.312          94.046
+SqueezeNet 1.0                    58.092          80.420
+SqueezeNet 1.1                    58.178          80.624
+Densenet-121                      74.434          91.972
+Densenet-169                      75.600          92.806
+Densenet-201                      76.896          93.370
+Densenet-161                      77.138          93.560
+Inception v3                      77.294          93.450
+GoogleNet                         69.778          89.530
+ShuffleNet V2 x1.0                69.362          88.316
+ShuffleNet V2 x0.5                60.552          81.746
+MobileNet V2                      71.878          90.286
+MobileNet V3 Large                74.042          91.340
+MobileNet V3 Small                67.668          87.402
+ResNeXt-50-32x4d                  77.618          93.698
+ResNeXt-101-32x8d                 79.312          94.526
+Wide ResNet-50-2                  78.468          94.086
+Wide ResNet-101-2                 78.848          94.284
+MNASNet 1.0                       73.456          91.510
+MNASNet 0.5                       67.734          87.490
+EfficientNet-B0                   77.692          93.532
+EfficientNet-B1                   78.642          94.186
+EfficientNet-B2                   80.608          95.310
+EfficientNet-B3                   82.008          96.054
+EfficientNet-B4                   83.384          96.594
+EfficientNet-B5                   83.444          96.628
+EfficientNet-B6                   84.008          96.916
+EfficientNet-B7                   84.122          96.908
 ================================  =============   =============
 
 
@@ -153,9 +199,11 @@ MNASNet 1.0                       26.49           8.456
 .. _Inception: https://arxiv.org/abs/1512.00567
 .. _GoogLeNet: https://arxiv.org/abs/1409.4842
 .. _ShuffleNet: https://arxiv.org/abs/1807.11164
-.. _MobileNet: https://arxiv.org/abs/1801.04381
+.. _MobileNetV2: https://arxiv.org/abs/1801.04381
+.. _MobileNetV3: https://arxiv.org/abs/1905.02244
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
 .. _MNASNet: https://arxiv.org/abs/1807.11626
+.. _EfficientNet: https://arxiv.org/abs/1905.11946
 
 .. currentmodule:: torchvision.models
 
@@ -231,6 +279,12 @@ MobileNet v2
 
 .. autofunction:: mobilenet_v2
 
+MobileNet v3
+-------------
+
+.. autofunction:: mobilenet_v3_large
+.. autofunction:: mobilenet_v3_small
+
 ResNext
 -------
 
@@ -251,6 +305,64 @@ MNASNet
 .. autofunction:: mnasnet1_0
 .. autofunction:: mnasnet1_3
 
+EfficientNet
+------------
+
+.. autofunction:: efficientnet_b0
+.. autofunction:: efficientnet_b1
+.. autofunction:: efficientnet_b2
+.. autofunction:: efficientnet_b3
+.. autofunction:: efficientnet_b4
+.. autofunction:: efficientnet_b5
+.. autofunction:: efficientnet_b6
+.. autofunction:: efficientnet_b7
+
+Quantized Models
+----------------
+
+The following architectures provide support for INT8 quantized models. You can get
+a model with random weights by calling its constructor:
+
+.. code:: python
+
+    import torchvision.models as models
+    googlenet = models.quantization.googlenet()
+    inception_v3 = models.quantization.inception_v3()
+    mobilenet_v2 = models.quantization.mobilenet_v2()
+    mobilenet_v3_large = models.quantization.mobilenet_v3_large()
+    resnet18 = models.quantization.resnet18()
+    resnet50 = models.quantization.resnet50()
+    resnext101_32x8d = models.quantization.resnext101_32x8d()
+    shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
+    shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
+    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
+    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
+
+Obtaining a pre-trained quantized model can be done with a few lines of code:
+
+.. code:: python
+
+    import torchvision.models as models
+    model = models.quantization.mobilenet_v2(pretrained=True, quantize=True)
+    model.eval()
+    # run the model with quantized inputs and weights
+    out = model(torch.rand(1, 3, 224, 224))
+
+We provide pre-trained quantized weights for the following models:
+
+================================  =============  =============
+Model                             Acc@1          Acc@5
+================================  =============  =============
+MobileNet V2                      71.658         90.150
+MobileNet V3 Large                73.004         90.858
+ShuffleNet V2                     68.360         87.582
+ResNet 18                         69.494         88.882
+ResNet 50                         75.920         92.814
+ResNext 101 32x8d                 78.986         94.480
+Inception V3                      77.176         93.354
+GoogleNet                         69.826         89.404
+================================  =============  =============
+
 
 Semantic Segmentation
 =====================
@@ -259,12 +371,15 @@ The models subpackage contains definitions for the following model
 architectures for semantic segmentation:
 
 - `FCN ResNet50, ResNet101 <https://arxiv.org/abs/1411.4038>`_
-- `DeepLabV3 ResNet50, ResNet101 <https://arxiv.org/abs/1706.05587>`_
+- `DeepLabV3 ResNet50, ResNet101, MobileNetV3-Large <https://arxiv.org/abs/1706.05587>`_
+- `LR-ASPP MobileNetV3-Large <https://arxiv.org/abs/1905.02244>`_
 
 As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
 ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
 They have been trained on images resized such that their minimum size is 520.
+
+For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
 
 The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
 present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
@@ -286,6 +401,8 @@ FCN ResNet50                      60.5           91.4
 FCN ResNet101                     63.7           91.9
 DeepLabV3 ResNet50                66.4           92.4
 DeepLabV3 ResNet101               67.4           92.4
+DeepLabV3 MobileNetV3-Large       60.3           91.2
+LR-ASPP MobileNetV3-Large         57.9           91.2
 ================================  =============  ====================
 
 
@@ -301,7 +418,15 @@ DeepLabV3
 
 .. autofunction:: torchvision.models.segmentation.deeplabv3_resnet50
 .. autofunction:: torchvision.models.segmentation.deeplabv3_resnet101
+.. autofunction:: torchvision.models.segmentation.deeplabv3_mobilenet_v3_large
 
+
+LR-ASPP
+-------
+
+.. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
+
+.. _object_det_inst_seg_pers_keypoint_det:
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
@@ -309,17 +434,20 @@ Object Detection, Instance Segmentation and Person Keypoint Detection
 The models subpackage contains definitions for the following model
 architectures for detection:
 
-- `Faster R-CNN ResNet-50 FPN <https://arxiv.org/abs/1506.01497>`_
-- `Mask R-CNN ResNet-50 FPN <https://arxiv.org/abs/1703.06870>`_
+- `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
+- `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
+- `RetinaNet <https://arxiv.org/abs/1708.02002>`_
+- `SSD <https://arxiv.org/abs/1512.02325>`_
+- `SSDlite <https://arxiv.org/abs/1801.04381>`_
 
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
 in torchvision.
 
 The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
-The models internally resize the images so that they have a minimum size
-of ``800``. This option can be changed by passing the option ``min_size``
-to the constructor of the models.
+The models internally resize the images but the behaviour varies depending
+on the model. Check the constructor of the models for more information. The
+output format of such models is illustrated in :ref:`instance_seg_output`.
 
 
 For object detection and instance segmentation, the pre-trained
@@ -346,13 +474,17 @@ models return the predictions of the following classes:
 Here are the summary of the accuracies for the models trained on
 the instances set of COCO train2017 and evaluated on COCO val2017.
 
-================================  =======  ========  ===========
-Network                           box AP   mask AP   keypoint AP
-================================  =======  ========  ===========
-Faster R-CNN ResNet-50 FPN        37.0     -         -
-RetinaNet ResNet-50 FPN           36.4     -         -
-Mask R-CNN ResNet-50 FPN          37.9     34.6      -
-================================  =======  ========  ===========
+======================================  =======  ========  ===========
+Network                                 box AP   mask AP   keypoint AP
+======================================  =======  ========  ===========
+Faster R-CNN ResNet-50 FPN              37.0     -         -
+Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
+Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
+RetinaNet ResNet-50 FPN                 36.4     -         -
+SSD300 VGG16                            25.1     -         -
+SSDlite320 MobileNetV3-Large            21.3     -         -
+Mask R-CNN ResNet-50 FPN                37.9     34.6      -
+======================================  =======  ========  ===========
 
 For person keypoint detection, the accuracies for the pre-trained
 models are as follows
@@ -394,34 +526,52 @@ Runtime characteristics
 The implementations of the models for object detection, instance segmentation
 and keypoint detection are efficient.
 
-In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
-report the results. During training, we use a batch size of 2 per GPU, and
-during testing a batch size of 1 is used.
+In the following table, we use 8 GPUs to report the results. During training,
+we use a batch size of 2 per GPU for all models except SSD which uses 4
+and SSDlite which uses 24. During testing a batch size  of 1 is used.
 
 For test time, we report the time for the model evaluation and postprocessing
 (including mask pasting in image), but not the time for computing the
 precision-recall.
 
-==============================  ===================  ==================  ===========
-Network                         train time (s / it)  test time (s / it)  memory (GB)
-==============================  ===================  ==================  ===========
-Faster R-CNN ResNet-50 FPN      0.2288               0.0590              5.2
-RetinaNet ResNet-50 FPN         0.2514               0.0939              4.1
-Mask R-CNN ResNet-50 FPN        0.2728               0.0903              5.4
-Keypoint R-CNN ResNet-50 FPN    0.3789               0.1242              6.8
-==============================  ===================  ==================  ===========
+======================================  ===================  ==================  ===========
+Network                                 train time (s / it)  test time (s / it)  memory (GB)
+======================================  ===================  ==================  ===========
+Faster R-CNN ResNet-50 FPN              0.2288               0.0590              5.2
+Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
+Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
+RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
+SSD300 VGG16                            0.2093               0.0744              1.5
+SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
+Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
+Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
+======================================  ===================  ==================  ===========
 
 
 Faster R-CNN
 ------------
 
 .. autofunction:: torchvision.models.detection.fasterrcnn_resnet50_fpn
+.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
+.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
 
 
 RetinaNet
-------------
+---------
 
 .. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
+
+
+SSD
+---
+
+.. autofunction:: torchvision.models.detection.ssd300_vgg16
+
+
+SSDlite
+-------
+
+.. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
 
 
 Mask R-CNN

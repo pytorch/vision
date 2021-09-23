@@ -1,6 +1,8 @@
 #include "vision.h"
 
+#ifndef MOBILE
 #include <Python.h>
+#endif
 #include <torch/library.h>
 
 #ifdef WITH_CUDA

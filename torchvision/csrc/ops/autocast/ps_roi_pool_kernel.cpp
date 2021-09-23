@@ -30,7 +30,9 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool_autocast(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("ps_roi_pool", ps_roi_pool_autocast);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::ps_roi_pool"),
+      TORCH_FN(ps_roi_pool_autocast));
 }
 
 } // namespace ops

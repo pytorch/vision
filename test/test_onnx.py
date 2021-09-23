@@ -1,31 +1,28 @@
+from common_utils import set_rng_seed, assert_equal
 import io
+import pytest
 import torch
 from torchvision import ops
 from torchvision import models
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
-from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
+from typing import List, Tuple
 
-# onnxruntime requires python 3.5 or above
-try:
-    import onnxruntime
-except ImportError:
-    onnxruntime = None
-
-import unittest
 from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
+# In environments without onnxruntime we prefer to
+# invoke all tests in the repo and have this one skipped rather than fail.
+onnxruntime = pytest.importorskip("onnxruntime")
 
-@unittest.skipIf(onnxruntime is None, 'ONNX Runtime unavailable')
-class ONNXExporterTester(unittest.TestCase):
+
+class TestONNXExporter:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         torch.manual_seed(123)
 
     def run_model(self, model, inputs_list, tolerate_small_mismatch=False, do_constant_folding=True, dynamic_axes=None,
@@ -76,20 +73,34 @@ class ONNXExporterTester(unittest.TestCase):
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
                 if tolerate_small_mismatch:
-                    self.assertIn("(0.00%)", str(error), str(error))
+                    assert "(0.00%)" in str(error), str(error)
                 else:
                     raise
 
     def test_nms(self):
-        boxes = torch.rand(5, 4)
-        boxes[:, 2:] += torch.rand(5, 2)
-        scores = torch.randn(5)
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
 
         class Module(torch.nn.Module):
             def forward(self, boxes, scores):
                 return ops.nms(boxes, scores, 0.5)
 
         self.run_model(Module(), [(boxes, scores)])
+
+    def test_batched_nms(self):
+        num_boxes = 100
+        boxes = torch.rand(num_boxes, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.randn(num_boxes)
+        idxs = torch.randint(0, 5, size=(num_boxes,))
+
+        class Module(torch.nn.Module):
+            def forward(self, boxes, scores, idxs):
+                return ops.batched_nms(boxes, scores, idxs, 0.5)
+
+        self.run_model(Module(), [(boxes, scores, idxs)])
 
     def test_clip_boxes_to_image(self):
         boxes = torch.randn(5, 4) * 500
@@ -110,6 +121,11 @@ class ONNXExporterTester(unittest.TestCase):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, -1)
         self.run_model(model, [(x, single_roi)])
 
     def test_roi_align_aligned(self):
@@ -133,7 +149,12 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
         self.run_model(model, [(x, single_roi)])
 
-    @unittest.skip  # Issue in exporting ROIAlign with aligned = True for malformed boxes
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((2, 2), 2.5, -1, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+    @pytest.mark.skip(reason="Issue in exporting ROIAlign with aligned = True for malformed boxes")
     def test_roi_align_malformed_boxes(self):
         x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
@@ -197,12 +218,14 @@ class ONNXExporterTester(unittest.TestCase):
         rpn_pre_nms_top_n = dict(training=2000, testing=1000)
         rpn_post_nms_top_n = dict(training=2000, testing=1000)
         rpn_nms_thresh = 0.7
+        rpn_score_thresh = 0.0
 
         rpn = RegionProposalNetwork(
             rpn_anchor_generator, rpn_head,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
-            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
+            score_thresh=rpn_score_thresh)
         return rpn
 
     def _init_test_roi_heads_faster_rcnn(self):
@@ -255,6 +278,8 @@ class ONNXExporterTester(unittest.TestCase):
         return features
 
     def test_rpn(self):
+        set_rng_seed(0)
+
         class RPNModule(torch.nn.Module):
             def __init__(self_module):
                 super(RPNModule, self_module).__init__()
@@ -336,32 +361,20 @@ class ONNXExporterTester(unittest.TestCase):
                        dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3], "input3": [0, 1, 2, 3],
                                      "input4": [0, 1, 2, 3], "input5": [0, 1, 2, 3], "input6": [0, 1, 2, 3]})
 
-    def get_image_from_url(self, url, size=None):
-        import requests
+    def get_image(self, rel_path: str, size: Tuple[int, int]) -> torch.Tensor:
+        import os
         from PIL import Image
-        from io import BytesIO
         from torchvision import transforms
 
-        data = requests.get(url)
-        image = Image.open(BytesIO(data.content)).convert("RGB")
+        data_dir = os.path.join(os.path.dirname(__file__), "assets")
+        path = os.path.join(data_dir, *rel_path.split("/"))
+        image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
 
-        if size is None:
-            size = (300, 200)
-        image = image.resize(size, Image.BILINEAR)
+        return transforms.ToTensor()(image)
 
-        to_tensor = transforms.ToTensor()
-        return to_tensor(image)
-
-    def get_test_images(self):
-        image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
-        image = self.get_image_from_url(url=image_url, size=(100, 320))
-
-        image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
-        image2 = self.get_image_from_url(url=image_url2, size=(250, 380))
-
-        images = [image]
-        test_images = [image2]
-        return images, test_images
+    def get_test_images(self) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+        return ([self.get_image("encode_jpeg/grace_hopper_517x606.jpg", (100, 320))],
+                [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))])
 
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
@@ -384,10 +397,6 @@ class ONNXExporterTester(unittest.TestCase):
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
     def test_paste_mask_in_image(self):
-        # disable profiling
-        torch._C._jit_set_profiling_executor(False)
-        torch._C._jit_set_profiling_mode(False)
-
         masks = torch.rand(10, 1, 26, 26)
         boxes = torch.rand(10, 4)
         boxes[:, 2:] += torch.rand(10, 2)
@@ -427,7 +436,6 @@ class ONNXExporterTester(unittest.TestCase):
                        dynamic_axes={"images_tensors": [0, 1, 2], "boxes": [0, 1], "labels": [0],
                                      "scores": [0], "masks": [0, 1, 2]},
                        tolerate_small_mismatch=True)
-        # TODO: enable this test once dynamic model export is fixed
         # Test exported model for an image with no detections on other images
         self.run_model(model, [(dummy_image,), (images,)],
                        input_names=["images_tensors"],
@@ -439,12 +447,7 @@ class ONNXExporterTester(unittest.TestCase):
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
     # (since jit_trace witll call _heatmaps_to_keypoints).
-    # @unittest.skip("Disable test until Resize bug fixed in ORT")
     def test_heatmaps_to_keypoints(self):
-        # disable profiling
-        torch._C._jit_set_profiling_executor(False)
-        torch._C._jit_set_profiling_mode(False)
-
         maps = torch.rand(10, 1, 26, 26)
         rois = torch.rand(10, 4)
         from torchvision.models.detection.roi_heads import heatmaps_to_keypoints
@@ -452,8 +455,8 @@ class ONNXExporterTester(unittest.TestCase):
         jit_trace = torch.jit.trace(heatmaps_to_keypoints, (maps, rois))
         out_trace = jit_trace(maps, rois)
 
-        assert torch.all(out[0].eq(out_trace[0]))
-        assert torch.all(out[1].eq(out_trace[1]))
+        assert_equal(out[0], out_trace[0])
+        assert_equal(out[1], out_trace[1])
 
         maps2 = torch.rand(20, 2, 21, 21)
         rois2 = torch.rand(20, 4)
@@ -461,8 +464,8 @@ class ONNXExporterTester(unittest.TestCase):
         out2 = heatmaps_to_keypoints(maps2, rois2)
         out_trace2 = jit_trace(maps2, rois2)
 
-        assert torch.all(out2[0].eq(out_trace2[0]))
-        assert torch.all(out2[1].eq(out_trace2[1]))
+        assert_equal(out2[0], out_trace2[0])
+        assert_equal(out2[1], out_trace2[1])
 
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
@@ -495,4 +498,4 @@ class ONNXExporterTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])

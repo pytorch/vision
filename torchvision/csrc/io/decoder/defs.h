@@ -204,6 +204,9 @@ struct DecoderParameters {
   size_t cacheTimeoutMs{1000}; // timeout on bytes writing
   bool enforceCacheSize{false}; // drop output frames if cache is full
   bool mergeAudioMessages{false}; // combine collocated audio messages together
+
+  std::string tlsCertFile;
+  std::string tlsKeyFile;
 };
 
 struct DecoderHeader {

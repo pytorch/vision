@@ -18,7 +18,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     """
     Computes the loss for Faster R-CNN.
 
-    Arguments:
+    Args:
         class_logits (Tensor)
         box_regression (Tensor)
         labels (list[BoxList])
@@ -42,11 +42,11 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     N, num_classes = class_logits.shape
     box_regression = box_regression.reshape(N, box_regression.size(-1) // 4, 4)
 
-    box_loss = det_utils.smooth_l1_loss(
+    box_loss = F.smooth_l1_loss(
         box_regression[sampled_pos_inds_subset, labels_pos],
         regression_targets[sampled_pos_inds_subset],
         beta=1 / 9,
-        size_average=False,
+        reduction='sum',
     )
     box_loss = box_loss / labels.numel()
 
@@ -61,7 +61,7 @@ def maskrcnn_inference(x, labels):
     probability (which are of fixed size and directly output
     by the CNN) and return the masks in the mask field of the BoxList.
 
-    Arguments:
+    Args:
         x (Tensor): the mask logits
         labels (list[BoxList]): bounding boxes that are used as
             reference, one for ech image
@@ -101,7 +101,7 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
 def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     """
-    Arguments:
+    Args:
         proposals (list[BoxList])
         mask_logits (Tensor)
         targets (list[BoxList])
@@ -190,7 +190,7 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
 
     xy_preds_i_0 = x + offset_x_i.to(dtype=torch.float32)
     xy_preds_i_1 = y + offset_y_i.to(dtype=torch.float32)
-    xy_preds_i_2 = torch.ones((xy_preds_i_1.shape), dtype=torch.float32)
+    xy_preds_i_2 = torch.ones(xy_preds_i_1.shape, dtype=torch.float32)
     xy_preds_i = torch.stack([xy_preds_i_0.to(dtype=torch.float32),
                               xy_preds_i_1.to(dtype=torch.float32),
                               xy_preds_i_2.to(dtype=torch.float32)], 0)
@@ -266,7 +266,7 @@ def heatmaps_to_keypoints(maps, rois):
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
         x_int = pos % w
-        y_int = (pos - x_int) // w
+        y_int = torch.div(pos - x_int, w, rounding_mode='floor')
         # assert (roi_map_probs[k, y_int, x_int] ==
         #         roi_map_probs[k, :, :].max())
         x = (x_int.float() + 0.5) * width_correction
@@ -274,7 +274,7 @@ def heatmaps_to_keypoints(maps, rois):
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
-        end_scores[i, :] = roi_map[torch.arange(num_keypoints), y_int, x_int]
+        end_scores[i, :] = roi_map[torch.arange(num_keypoints, device=roi_map.device), y_int, x_int]
 
     return xy_preds.permute(0, 2, 1), end_scores
 
@@ -727,7 +727,7 @@ class RoIHeads(nn.Module):
                 ):
         # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
-        Arguments:
+        Args:
             features (List[Tensor])
             proposals (List[Tensor[N, 4]])
             image_shapes (List[Tuple[H, W]])
@@ -795,7 +795,6 @@ class RoIHeads(nn.Module):
                 mask_features = self.mask_head(mask_features)
                 mask_logits = self.mask_predictor(mask_features)
             else:
-                mask_logits = torch.tensor(0)
                 raise Exception("Expected mask_roi_pool to be not None")
 
             loss_mask = {}

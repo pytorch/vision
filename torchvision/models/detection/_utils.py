@@ -1,6 +1,7 @@
 import math
-
 import torch
+
+from collections import OrderedDict
 from torch import Tensor
 from typing import List, Tuple
 
@@ -15,7 +16,7 @@ class BalancedPositiveNegativeSampler(object):
     def __init__(self, batch_size_per_image, positive_fraction):
         # type: (int, float) -> None
         """
-        Arguments:
+        Args:
             batch_size_per_image (int): number of elements to be selected per image
             positive_fraction (float): percentace of positive elements per batch
         """
@@ -25,7 +26,7 @@ class BalancedPositiveNegativeSampler(object):
     def __call__(self, matched_idxs):
         # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
-        Arguments:
+        Args:
             matched idxs: list of tensors containing -1, 0 or positive values.
                 Each tensor corresponds to a specific image.
                 -1 values are ignored, 0 are considered as negatives and > 0 as
@@ -83,9 +84,10 @@ def encode_boxes(reference_boxes, proposals, weights):
     Encode a set of proposals with respect to some
     reference boxes
 
-    Arguments:
+    Args:
         reference_boxes (Tensor): reference boxes
         proposals (Tensor): boxes to be encoded
+        weights (Tensor[4]): the weights for ``(x, y, w, h)``
     """
 
     # perform some unpacking to make it JIT-fusion friendly
@@ -133,7 +135,7 @@ class BoxCoder(object):
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
         # type: (Tuple[float, float, float, float], float) -> None
         """
-        Arguments:
+        Args:
             weights (4-element tuple)
             bbox_xform_clip (float)
         """
@@ -153,7 +155,7 @@ class BoxCoder(object):
         Encode a set of proposals with respect to some
         reference boxes
 
-        Arguments:
+        Args:
             reference_boxes (Tensor): reference boxes
             proposals (Tensor): boxes to be encoded
         """
@@ -173,17 +175,21 @@ class BoxCoder(object):
         box_sum = 0
         for val in boxes_per_image:
             box_sum += val
+        if box_sum > 0:
+            rel_codes = rel_codes.reshape(box_sum, -1)
         pred_boxes = self.decode_single(
-            rel_codes.reshape(box_sum, -1), concat_boxes
+            rel_codes, concat_boxes
         )
-        return pred_boxes.reshape(box_sum, -1, 4)
+        if box_sum > 0:
+            pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
+        return pred_boxes
 
     def decode_single(self, rel_codes, boxes):
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
 
-        Arguments:
+        Args:
             rel_codes (Tensor): encoded boxes
             boxes (Tensor): reference boxes.
         """
@@ -210,10 +216,14 @@ class BoxCoder(object):
         pred_w = torch.exp(dw) * widths[:, None]
         pred_h = torch.exp(dh) * heights[:, None]
 
-        pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
-        pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
-        pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
-        pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
+        # Distance from center to box's corner.
+        c_to_c_h = torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
+        c_to_c_w = torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
+
+        pred_boxes1 = pred_ctr_x - c_to_c_w
+        pred_boxes2 = pred_ctr_y - c_to_c_h
+        pred_boxes3 = pred_ctr_x + c_to_c_w
+        pred_boxes4 = pred_ctr_y + c_to_c_h
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 
@@ -339,17 +349,21 @@ class Matcher(object):
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
 
 
-def smooth_l1_loss(input, target, beta: float = 1. / 9, size_average: bool = True):
-    """
-    very similar to the smooth_l1_loss from pytorch, but with
-    the extra beta parameter
-    """
-    n = torch.abs(input - target)
-    cond = n < beta
-    loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
-    if size_average:
-        return loss.mean()
-    return loss.sum()
+class SSDMatcher(Matcher):
+
+    def __init__(self, threshold):
+        super().__init__(threshold, threshold, allow_low_quality_matches=False)
+
+    def __call__(self, match_quality_matrix):
+        matches = super().__call__(match_quality_matrix)
+
+        # For each gt, find the prediction with which it has the highest quality
+        _, highest_quality_pred_foreach_gt = match_quality_matrix.max(dim=1)
+        matches[highest_quality_pred_foreach_gt] = torch.arange(highest_quality_pred_foreach_gt.size(0),
+                                                                dtype=torch.int64,
+                                                                device=highest_quality_pred_foreach_gt.device)
+
+        return matches
 
 
 def overwrite_eps(model, eps):
@@ -361,10 +375,40 @@ def overwrite_eps(model, eps):
     only when the pretrained weights are loaded to maintain compatibility
     with previous versions.
 
-    Arguments:
+    Args:
         model (nn.Module): The model on which we perform the overwrite.
         eps (float): The new value of eps.
     """
     for module in model.modules():
         if isinstance(module, FrozenBatchNorm2d):
             module.eps = eps
+
+
+def retrieve_out_channels(model, size):
+    """
+    This method retrieves the number of output channels of a specific model.
+
+    Args:
+        model (nn.Module): The model for which we estimate the out_channels.
+            It should return a single Tensor or an OrderedDict[Tensor].
+        size (Tuple[int, int]): The size (wxh) of the input.
+
+    Returns:
+        out_channels (List[int]): A list of the output channels of the model.
+    """
+    in_training = model.training
+    model.eval()
+
+    with torch.no_grad():
+        # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
+        device = next(model.parameters()).device
+        tmp_img = torch.zeros((1, 3, size[1], size[0]), device=device)
+        features = model(tmp_img)
+        if isinstance(features, torch.Tensor):
+            features = OrderedDict([('0', features)])
+        out_channels = [x.size(1) for x in features.values()]
+
+    if in_training:
+        model.train()
+
+    return out_channels

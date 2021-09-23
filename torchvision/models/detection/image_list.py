@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 from torch import Tensor
 from typing import List, Tuple
@@ -14,7 +13,7 @@ class ImageList(object):
 
     def __init__(self, tensors: Tensor, image_sizes: List[Tuple[int, int]]):
         """
-        Arguments:
+        Args:
             tensors (tensor)
             image_sizes (list[tuple[int, int]])
         """

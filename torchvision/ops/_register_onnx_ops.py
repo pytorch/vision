@@ -8,7 +8,8 @@ _onnx_opset_version = 11
 def _register_custom_op():
     from torch.onnx.symbolic_helper import parse_args, scalar_type_to_onnx, scalar_type_to_pytorch_type, \
         cast_pytorch_to_onnx
-    from torch.onnx.symbolic_opset9 import select, unsqueeze, squeeze, _cast_Long, reshape
+    from torch.onnx.symbolic_opset9 import _cast_Long
+    from torch.onnx.symbolic_opset11 import select, squeeze, unsqueeze
 
     @parse_args('v', 'v', 'f')
     def symbolic_multi_label_nms(g, boxes, scores, iou_threshold):
@@ -29,6 +30,12 @@ def _register_custom_op():
                           " ONNX forces ROIs to be 1x1 or larger.")
             scale = torch.tensor(0.5 / spatial_scale).to(dtype=torch.float)
             rois = g.op("Sub", rois, scale)
+
+        # ONNX doesn't support negative sampling_ratio
+        if sampling_ratio < 0:
+            warnings.warn("ONNX doesn't support negative sampling ratio,"
+                          "therefore is is set to 0 in order to be exported.")
+            sampling_ratio = 0
         return g.op('RoiAlign', input, rois, batch_indices, spatial_scale_f=spatial_scale,
                     output_height_i=pooled_height, output_width_i=pooled_width, sampling_ratio_i=sampling_ratio)
 

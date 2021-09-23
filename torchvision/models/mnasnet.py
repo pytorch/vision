@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch import Tensor
 import torch.nn as nn
-from .utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 from typing import Any, Dict, List
 
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
@@ -93,11 +93,11 @@ def _get_depths(alpha: float) -> List[int]:
 class MNASNet(torch.nn.Module):
     """ MNASNet, as described in https://arxiv.org/pdf/1807.11626.pdf. This
     implements the B1 variant of the model.
-    >>> model = MNASNet(1000, 1.0)
+    >>> model = MNASNet(1.0, num_classes=1000)
     >>> x = torch.rand(1, 3, 224, 224)
     >>> y = model(x)
     >>> y.dim()
-    1
+    2
     >>> y.nelement()
     1000
     """

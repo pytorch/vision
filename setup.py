@@ -1,17 +1,18 @@
 import os
 import io
+import re
 import sys
 from setuptools import setup, find_packages
 from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
+from distutils.version import StrictVersion
 import glob
 import shutil
 
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
-from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -29,11 +30,13 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.9.0a0'
+cwd = os.path.dirname(os.path.abspath(__file__))
+
+version_txt = os.path.join(cwd, 'version.txt')
+with open(version_txt, 'r') as f:
+    version = f.readline().strip()
 sha = 'Unknown'
 package_name = 'torchvision'
-
-cwd = os.path.dirname(os.path.abspath(__file__))
 
 try:
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
@@ -65,7 +68,8 @@ requirements = [
     pytorch_dep,
 ]
 
-pillow_ver = ' >= 4.1.1'
+# Excluding 8.3.0 because of https://github.com/pytorch/vision/issues/4146
+pillow_ver = ' >= 5.3.0, !=8.3.0'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
@@ -136,15 +140,21 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp')) + glob.glob(os.path.join(extensions_dir, 'ops',
                                                                                           '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) + glob.glob(
-        os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp'))
+    source_cpu = (
+        glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp')) +
+        glob.glob(os.path.join(extensions_dir, 'ops', 'quantized', 'cpu', '*.cpp'))
+    )
 
     is_rocm_pytorch = False
-    if torch.__version__ >= '1.5':
+    TORCH_MAJOR = int(torch.__version__.split('.')[0])
+    TORCH_MINOR = int(torch.__version__.split('.')[1])
+    if TORCH_MAJOR > 1 or (TORCH_MAJOR == 1 and TORCH_MINOR >= 5):
         from torch.utils.cpp_extension import ROCM_HOME
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
+        from torch.utils.hipify import hipify_python
         hipify_python.hipify(
             project_directory=this_dir,
             output_directory=this_dir,
@@ -179,9 +189,7 @@ def get_extensions():
 
     define_macros = []
 
-    extra_compile_args = {
-        'cxx': []
-    }
+    extra_compile_args = {'cxx': []}
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
@@ -196,13 +204,12 @@ def get_extensions():
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
-        extra_compile_args['nvcc'] = nvcc_flags
+        extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
+
         extra_compile_args['cxx'].append('/MP')
-    elif sys.platform == 'linux':
-        extra_compile_args['cxx'].append('-fopenmp')
 
     debug_mode = os.getenv('DEBUG', '0') == '1'
     if debug_mode:
@@ -225,7 +232,7 @@ def get_extensions():
     ext_modules = [
         extension(
             'torchvision._C',
-            sources,
+            sorted(sources),
             include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
@@ -313,8 +320,23 @@ def get_extensions():
             image_library += [jpeg_lib]
             image_include += [jpeg_include]
 
+    # Locating nvjpeg
+    # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
+    nvjpeg_found = (
+        extension is CUDAExtension and
+        CUDA_HOME is not None and
+        os.path.exists(os.path.join(CUDA_HOME, 'include', 'nvjpeg.h'))
+    )
+
+    print('NVJPEG found: {0}'.format(nvjpeg_found))
+    image_macros += [('NVJPEG_FOUND', str(int(nvjpeg_found)))]
+    if nvjpeg_found:
+        print('Building torchvision with NVJPEG image support')
+        image_link_flags.append('nvjpeg')
+
     image_path = os.path.join(extensions_dir, 'io', 'image')
-    image_src = glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+    image_src = (glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
+                 + glob.glob(os.path.join(image_path, 'cuda', '*.cpp')))
 
     if png_found or jpeg_found:
         ext_modules.append(extension(
@@ -329,6 +351,21 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
+    # FIXME: causes crash. See the following GitHub issues for more details.
+    # FIXME: https://github.com/pytorch/pytorch/issues/65000
+    # FIXME: https://github.com/pytorch/vision/issues/3367
+    if sys.platform != 'linux' or (
+            sys.version_info.major == 3 and sys.version_info.minor == 9):
+        has_ffmpeg = False
+    if has_ffmpeg:
+        try:
+            # This is to check if ffmpeg is installed properly.
+            subprocess.check_output(["ffmpeg", "-version"])
+        except subprocess.CalledProcessError:
+            print('Error fetching ffmpeg version, ignoring ffmpeg.')
+            has_ffmpeg = False
+
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
@@ -372,8 +409,7 @@ def get_extensions():
                 library_found |= len(glob.glob(full_path)) > 0
 
             if not library_found:
-                print('{0} header files were not found, disabling ffmpeg '
-                      'support')
+                print(f'{library} header files were not found, disabling ffmpeg support')
                 has_ffmpeg = False
 
     if has_ffmpeg:

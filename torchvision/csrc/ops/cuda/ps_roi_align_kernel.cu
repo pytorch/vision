@@ -440,8 +440,12 @@ at::Tensor ps_roi_align_backward_kernel(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl("ps_roi_align", ps_roi_align_forward_kernel);
-  m.impl("_ps_roi_align_backward", ps_roi_align_backward_kernel);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::ps_roi_align"),
+      TORCH_FN(ps_roi_align_forward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_ps_roi_align_backward"),
+      TORCH_FN(ps_roi_align_backward_kernel));
 }
 
 } // namespace ops

@@ -7,13 +7,13 @@ namespace ffmpeg {
 
 namespace {
 bool operator==(const AudioFormat& x, const AVFrame& y) {
-  return x.samples == y.sample_rate && x.channels == y.channels &&
-      x.format == y.format;
+  return x.samples == static_cast<size_t>(y.sample_rate) &&
+      x.channels == static_cast<size_t>(y.channels) && x.format == y.format;
 }
 
 bool operator==(const AudioFormat& x, const AVCodecContext& y) {
-  return x.samples == y.sample_rate && x.channels == y.channels &&
-      x.format == y.sample_fmt;
+  return x.samples == static_cast<size_t>(y.sample_rate) &&
+      x.channels == static_cast<size_t>(y.channels) && x.format == y.sample_fmt;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVFrame& y) {
@@ -68,6 +68,7 @@ int AudioStream::initFormat() {
       : -1;
 }
 
+// copies audio sample bytes via swr_convert call in audio_sampler.cpp
 int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
   if (!sampler_) {
     sampler_ = std::make_unique<AudioSampler>(codecCtx_);
@@ -95,6 +96,8 @@ int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
             << ", channels: " << format_.format.audio.channels
             << ", format: " << format_.format.audio.format;
   }
+  // calls to a sampler that converts the audio samples and copies them to the
+  // out buffer via ffmpeg::swr_convert
   return sampler_->sample(flush ? nullptr : frame_, out);
 }
 

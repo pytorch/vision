@@ -62,7 +62,7 @@ T bilinear_interpolate(
 
 template <typename T>
 void ps_roi_align_forward_kernel_impl(
-    int nthreads,
+    int num_rois,
     const T* input,
     const T spatial_scale,
     int channels,
@@ -75,7 +75,6 @@ void ps_roi_align_forward_kernel_impl(
     int channels_out,
     T* output,
     int* channel_mapping) {
-  int num_rois = nthreads / channels_out / pooled_width / pooled_height;
   for (int n = 0; n < num_rois; n++) {
     // [start, end) interval for spatial sampling
     const T* offset_rois = rois + n * 5;
@@ -335,8 +334,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_kernel(
   auto channel_mapping =
       at::zeros(output.sizes(), input.options().dtype(at::kInt));
 
-  auto output_size = output.numel();
-  if (output_size == 0) {
+  if (output.numel() == 0) {
     return std::make_tuple(output, channel_mapping);
   }
 
@@ -344,7 +342,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_kernel(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "ps_roi_align_forward_kernel", [&] {
         ps_roi_align_forward_kernel_impl<scalar_t>(
-            output_size,
+            num_rois,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
@@ -422,8 +420,12 @@ at::Tensor ps_roi_align_backward_kernel(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("ps_roi_align", ps_roi_align_forward_kernel);
-  m.impl("_ps_roi_align_backward", ps_roi_align_backward_kernel);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::ps_roi_align"),
+      TORCH_FN(ps_roi_align_forward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_ps_roi_align_backward"),
+      TORCH_FN(ps_roi_align_backward_kernel));
 }
 
 } // namespace ops
