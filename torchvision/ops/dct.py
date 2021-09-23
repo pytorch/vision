@@ -90,7 +90,7 @@ def _dct_type_4(x: torch.Tensor, axis: int = -1, norm: typing.Optional[str] = No
     y = dct(x, type=2, n=2 * x.shape[-1], axis=axis, norm=None)[..., 1::2]
 
     if norm == "ortho":
-        raise NotImplementedError
+        y *= math.sqrt(0.5) * torch.rsqrt(torch.tensor(x.shape[-1], dtype=x.dtype))
 
     return y
 
