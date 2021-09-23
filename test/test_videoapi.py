@@ -187,6 +187,44 @@ class TestVideoApi:
         assert metadata["subtitles"]["duration"] is not None
         os.remove(video_path)
 
+    @pytest.mark.skipif(av is None, reason="PyAV unavailable")
+    def test_keyframe_reading(self):
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+
+            av_reader = av.open(full_path)
+            # reduce streams to only keyframes
+            av_stream = av_reader.streams.video[0]
+            av_stream.codec_context.skip_frame = "NONKEY"
+
+            av_keyframes = []
+            vr_keyframes = []
+            if av_reader.streams.video:
+
+                # get all keyframes using pyav. Then, seek randomly into video reader
+                # and assert that all the returned values are in AV_KEYFRAMES
+
+                for av_frame in av_reader.decode(av_stream):
+                    av_keyframes.append(float(av_frame.pts * av_frame.time_base))
+
+            if len(av_keyframes) > 1:
+                video_reader = VideoReader(full_path, "video")
+                for i in range(1, len(av_keyframes)):
+                    seek_val = (av_keyframes[i] + av_keyframes[i - 1]) / 2
+                    data = next(video_reader.seek(seek_val, True))
+                    vr_keyframes.append(data["pts"])
+
+                data = next(video_reader.seek(config.duration, True))
+                vr_keyframes.append(data["pts"])
+
+                self.assertTrue(len(av_keyframes) == len(vr_keyframes))
+                # NOTE: this video gets different keyframe with different
+                # loaders (0.333 pyav, 0.666 for us)
+                if test_video != "TrumanShow_wave_f_nm_np1_fr_med_26.avi":
+                    for i in range(len(av_keyframes)):
+                        self.assertAlmostEqual(
+                            av_keyframes[i], vr_keyframes[i], delta=0.001
+                        )
 
 if __name__ == '__main__':
     pytest.main([__file__])
