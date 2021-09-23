@@ -45,7 +45,8 @@ def info(name: str) -> DatasetInfo:
 def load(
     name: str,
     *,
-    decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]] = pil,
+    shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = None,
+    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = pil,
     split: str = "train",
     **options: Any,
 ) -> IterDataPipe[Dict[str, Any]]:
@@ -54,4 +55,4 @@ def load(
     config = dataset.info.make_config(split=split, **options)
     root = home() / name
 
-    return dataset.to_datapipe(root, config=config, decoder=decoder)
+    return dataset.to_datapipe(root, config=config, shuffler=shuffler, decoder=decoder)

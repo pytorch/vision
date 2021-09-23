@@ -198,7 +198,8 @@ class Dataset(abc.ABC):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]],
+        shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
@@ -207,7 +208,8 @@ class Dataset(abc.ABC):
         root: Union[str, pathlib.Path],
         *,
         config: Optional[DatasetConfig] = None,
-        decoder: Optional[Callable[[str, io.BufferedIOBase], torch.Tensor]] = None,
+        shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = None,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
             config = self.info.default_config
@@ -215,4 +217,4 @@ class Dataset(abc.ABC):
         resource_dps = [
             resource.to_datapipe(root) for resource in self.resources(config)
         ]
-        return self._make_datapipe(resource_dps, config=config, decoder=decoder)
+        return self._make_datapipe(resource_dps, config=config, shuffler=shuffler, decoder=decoder)
