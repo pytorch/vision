@@ -98,7 +98,7 @@ class VideoReader:
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
             Currently available options include ``['video', 'audio']``
-        
+
         num_threads (int, optional): number of threads used by the codec to decode video.
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
