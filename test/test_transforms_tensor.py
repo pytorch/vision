@@ -485,7 +485,7 @@ def test_to_grayscale(device, Klass, meth_kwargs):
     tol = 1.0 + 1e-10
     _test_class_op(
         Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=tol, agg_method="max",
+        tol=tol, agg_method="max"
     )
 
 
