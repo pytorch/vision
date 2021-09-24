@@ -89,7 +89,7 @@ def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_matc
         scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
 
 
-def _test_op(func, method, device, channels, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     _test_functional_op(func, device, channels, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
     _test_class_op(method, device, channels, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
@@ -165,58 +165,56 @@ class TestColorJitter:
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('m', ["constant", "edge", "reflect", "symmetric"])
 @pytest.mark.parametrize('mul', [1, -1])
-@pytest.mark.parametrize('channels', [1, 3])
-def test_pad(m, mul, device, channels):
+def test_pad(m, mul, device):
     fill = 127 if m == "constant" else 0
 
     # Test functional.pad (PIL and Tensor) with padding as single int
     _test_functional_op(
         F.pad, fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m},
-        device=device, channels=channels
+        device=device
     )
     # Test functional.pad and transforms.Pad with padding as [int, ]
     fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
     _test_op(
-        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs, channels=channels
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
     # Test functional.pad and transforms.Pad with padding as list
     fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
     _test_op(
-        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs, channels=channels
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
     # Test functional.pad and transforms.Pad with padding as tuple
     fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
     _test_op(
-        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs, channels=channels
+        F.pad, T.Pad, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('channels', [1, 3])
-def test_crop(device, channels):
+def test_crop(device):
     fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
     # Test transforms.RandomCrop with size and padding as tuple
     meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
     _test_op(
-        F.crop, T.RandomCrop, device=device, channels=channels,
+        F.crop, T.RandomCrop, device=device,
         fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
 
     # Test transforms.functional.crop including outside the image area
     fn_kwargs = {"top": -2, "left": 3, "height": 4, "width": 5}  # top
-    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device, channels=channels)
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
 
     fn_kwargs = {"top": 1, "left": -3, "height": 4, "width": 5}  # left
-    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device, channels=channels)
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
 
     fn_kwargs = {"top": 7, "left": 3, "height": 4, "width": 5}  # bottom
-    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device, channels=channels)
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
 
     fn_kwargs = {"top": 3, "left": 8, "height": 4, "width": 5}  # right
-    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device, channels=channels)
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
 
     fn_kwargs = {"top": -3, "left": -3, "height": 15, "width": 15}  # all
-    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device, channels=channels)
+    _test_functional_op(F.crop, fn_kwargs=fn_kwargs, device=device)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -228,27 +226,25 @@ def test_crop(device, channels):
     {"padding_mode": "reflect"}
 ])
 @pytest.mark.parametrize('size', [5, [5, ], [6, 6]])
-@pytest.mark.parametrize('channels', [1, 3])
-def test_crop_pad(size, padding_config, device, channels):
+def test_crop_pad(size, padding_config, device):
     config = dict(padding_config)
     config["size"] = size
-    _test_class_op(T.RandomCrop, device, channels, config)
+    _test_class_op(T.RandomCrop, device, meth_kwargs=config)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-@pytest.mark.parametrize('channels', [1, 3])
-def test_center_crop(device, tmpdir, channels):
+def test_center_crop(device, tmpdir):
     fn_kwargs = {"output_size": (4, 5)}
     meth_kwargs = {"size": (4, 5), }
     _test_op(
         F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
-        meth_kwargs=meth_kwargs, channels=channels
+        meth_kwargs=meth_kwargs
     )
     fn_kwargs = {"output_size": (5,)}
     meth_kwargs = {"size": (5,)}
     _test_op(
         F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs,
-        meth_kwargs=meth_kwargs, channels=channels
+        meth_kwargs=meth_kwargs
     )
     tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=device)
     # Test torchscript of transforms.CenterCrop with size as int
