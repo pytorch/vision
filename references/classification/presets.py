@@ -1,3 +1,4 @@
+import torch
 from torchvision.transforms import autoaugment, transforms
 from torchvision.transforms.functional import InterpolationMode
 
@@ -18,7 +19,7 @@ class ClassificationPresetTrain:
                 trans.append(autoaugment.AutoAugment(policy=aa_policy))
         trans.extend([
             transforms.PILToTensor(),
-            transforms.ConvertImageDtype(),
+            transforms.ConvertImageDtype(torch.float),
             transforms.Normalize(mean=mean, std=std),
         ])
         if random_erase_prob > 0:
@@ -38,7 +39,7 @@ class ClassificationPresetEval:
             transforms.Resize(resize_size, interpolation=interpolation),
             transforms.CenterCrop(crop_size),
             transforms.PILToTensor(),
-            transforms.ConvertImageDtype(),
+            transforms.ConvertImageDtype(torch.float),
             transforms.Normalize(mean=mean, std=std),
         ])
 
