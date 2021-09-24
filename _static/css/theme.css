@@ -11751,6 +11751,22 @@ article.pytorch-article .tutorials-callout-container .btn.callout-button a {
   color: #262626;
 }
 
+.pytorch-left-menu-search :focus::-webkit-input-placeholder {
+  color: transparent;
+}
+.pytorch-left-menu-search :focus::-moz-placeholder {
+  color: transparent;
+}
+.pytorch-left-menu-search :focus:-ms-input-placeholder {
+  color: transparent;
+}
+.pytorch-left-menu-search :focus::-ms-input-placeholder {
+  color: transparent;
+}
+.pytorch-left-menu-search :focus::placeholder {
+  color: transparent;
+}
+
 .pytorch-left-menu-search input[type=text] {
   border-radius: 0;
   padding: 0.5rem 0.75rem;
