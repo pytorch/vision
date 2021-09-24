@@ -217,14 +217,12 @@ class TestVideoApi:
                 data = next(video_reader.seek(config.duration, True))
                 vr_keyframes.append(data["pts"])
 
-                self.assertTrue(len(av_keyframes) == len(vr_keyframes))
+                assert len(av_keyframes) == len(vr_keyframes)
                 # NOTE: this video gets different keyframe with different
                 # loaders (0.333 pyav, 0.666 for us)
                 if test_video != "TrumanShow_wave_f_nm_np1_fr_med_26.avi":
                     for i in range(len(av_keyframes)):
-                        self.assertAlmostEqual(
-                            av_keyframes[i], vr_keyframes[i], delta=0.001
-                        )
+                        assert av_keyframes[i] == approx(vr_keyframes[i], rel=0.001)
 
 
 if __name__ == '__main__':
