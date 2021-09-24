@@ -196,8 +196,7 @@ def test_crop(device):
     # Test transforms.RandomCrop with size and padding as tuple
     meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
     _test_op(
-        F.crop, T.RandomCrop, device=device,
-        fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        F.crop, T.RandomCrop, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
     )
 
     # Test transforms.functional.crop including outside the image area
@@ -486,7 +485,7 @@ def test_to_grayscale(device, Klass, meth_kwargs):
     tol = 1.0 + 1e-10
     _test_class_op(
         Klass, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-        tol=tol, agg_method="max", channels=3,
+        tol=tol, agg_method="max",
     )
 
 
