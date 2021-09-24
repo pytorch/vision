@@ -1027,10 +1027,10 @@ class TestMasksToBoxes:
         expected = torch.tensor([[127, 2, 165, 40], [2, 50, 44, 92], [56, 63, 98, 100], [139, 68, 175, 104],
                                  [160, 112, 198, 145], [49, 138, 99, 182], [108, 148, 152, 213]], dtype=torch.float)
 
-        image2 = _get_image()
+        image = _get_image()
         for dtype in [torch.float16, torch.float32, torch.float64]:
-            masks = torch.zeros((image2.n_frames, image2.height, image2.width), dtype=dtype)
-            masks = _create_masks(image2, masks)
+            masks = torch.zeros((image.n_frames, image.height, image.width), dtype=dtype)
+            masks = _create_masks(image, masks)
             masks_box_check(masks, expected)
 
 
