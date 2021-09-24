@@ -187,7 +187,6 @@ class TestVideoApi:
         assert metadata["subtitles"]["duration"] is not None
         os.remove(video_path)
 
-
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     def test_keyframe_reading(self):
         for test_video, config in test_videos.items():
@@ -226,6 +225,7 @@ class TestVideoApi:
                         self.assertAlmostEqual(
                             av_keyframes[i], vr_keyframes[i], delta=0.001
                         )
+
 
 if __name__ == '__main__':
     pytest.main([__file__])
