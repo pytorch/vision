@@ -641,12 +641,14 @@ def test_interpolate_antialias_backward(device, dt, size, interpolation):
     assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
 
-def check_functional_vs_PIL_vs_scripted(fn, fn_pil, fn_t, config, device, dtype, tol=2.0 + 1e-10, agg_method="max"):
+def check_functional_vs_PIL_vs_scripted(
+    fn, fn_pil, fn_t, config, device, dtype, channels=3, tol=2.0 + 1e-10, agg_method="max"
+):
 
     script_fn = torch.jit.script(fn)
     torch.manual_seed(15)
-    tensor, pil_img = _create_data(26, 34, device=device)
-    batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
+    tensor, pil_img = _create_data(26, 34, channels=channels, device=device)
+    batch_tensors = _create_data_batch(16, 18, num_samples=4, channels=channels, device=device)
 
     if dtype is not None:
         tensor = F.convert_image_dtype(tensor, dtype)
@@ -798,14 +800,16 @@ def test_equalize(device):
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"contrast_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]])
-def test_adjust_contrast(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_contrast(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_contrast,
         F_pil.adjust_contrast,
         F_t.adjust_contrast,
         config,
         device,
-        dtype
+        dtype,
+        channels=channels
     )
 
 
