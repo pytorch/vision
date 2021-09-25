@@ -1099,7 +1099,7 @@ class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast, saturation and hue of an image.
     If the image is torch Tensor, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+    If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
