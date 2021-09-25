@@ -571,7 +571,7 @@ def _assert_grid_transform_inputs(
     img: Tensor,
     matrix: Optional[List[float]],
     interpolation: str,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]],
+    fill: Optional[Union[float, List[float]]],
     supported_interpolation_modes: List[str],
     coeffs: Optional[List[float]] = None,
 ) -> None:
@@ -637,7 +637,7 @@ def _apply_grid_transform(
     img: Tensor,
     grid: Tensor,
     mode: str,
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]],
+    fill: Optional[Union[float, List[float]]],
 ) -> Tensor:
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype, ])
@@ -696,7 +696,7 @@ def affine(
     img: Tensor,
     matrix: List[float],
     interpolation: str = "nearest",
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[float, List[float]]] = 0.0,
 ) -> Tensor:
 
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
@@ -739,7 +739,7 @@ def rotate(
     matrix: List[float],
     interpolation: str = "nearest",
     expand: bool = False,
-    fill: Optional[Union[float, List[float]]] = 0,
+    fill: Optional[Union[float, List[float]]] = 0.0,
 ) -> Tensor:
 
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
@@ -790,7 +790,7 @@ def perspective(
     img: Tensor,
     perspective_coeffs: List[float],
     interpolation: str = "bilinear",
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[float, List[float]]] = 0.0,
 ) -> Tensor:
     if not (isinstance(img, torch.Tensor)):
         raise TypeError('Input img should be Tensor.')
