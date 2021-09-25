@@ -1482,9 +1482,13 @@ def test_five_crop(single_dim):
 
 @pytest.mark.parametrize('policy', transforms.AutoAugmentPolicy)
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
-def test_autoaugment(policy, fill):
+@pytest.mark.parametrize('grayscale', [True, False])
+def test_autoaugment(policy, fill, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
+    if grayscale:
+        img = img.convert('L')
+        fill = (fill[0], ) if isinstance(fill, tuple) else fill
     transform = transforms.AutoAugment(policy=policy, fill=fill)
     for _ in range(100):
         img = transform(img)
@@ -1494,9 +1498,13 @@ def test_autoaugment(policy, fill):
 @pytest.mark.parametrize('num_ops', [1, 2, 3])
 @pytest.mark.parametrize('magnitude', [7, 9, 11])
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
-def test_randaugment(num_ops, magnitude, fill):
+@pytest.mark.parametrize('grayscale', [True, False])
+def test_randaugment(num_ops, magnitude, fill, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
+    if grayscale:
+        img = img.convert('L')
+        fill = (fill[0], ) if isinstance(fill, tuple) else fill
     transform = transforms.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
     for _ in range(100):
         img = transform(img)
@@ -1505,9 +1513,13 @@ def test_randaugment(num_ops, magnitude, fill):
 
 @pytest.mark.parametrize('fill', [None, 85, (128, 128, 128)])
 @pytest.mark.parametrize('num_magnitude_bins', [10, 13, 30])
-def test_trivialaugmentwide(fill, num_magnitude_bins):
+@pytest.mark.parametrize('grayscale', [True, False])
+def test_trivialaugmentwide(fill, num_magnitude_bins, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
+    if grayscale:
+        img = img.convert('L')
+        fill = (fill[0], ) if isinstance(fill, tuple) else fill
     transform = transforms.TrivialAugmentWide(fill=fill, num_magnitude_bins=num_magnitude_bins)
     for _ in range(100):
         img = transform(img)
