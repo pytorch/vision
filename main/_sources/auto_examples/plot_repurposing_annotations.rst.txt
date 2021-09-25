@@ -112,9 +112,10 @@ used in methods like Faster RCNN and YOLO.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_repurposing_annotations_001.png
-    :alt: plot repurposing annotations
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_repurposing_annotations_001.png
+   :alt: plot repurposing annotations
+   :srcset: /auto_examples/images/sphx_glr_plot_repurposing_annotations_001.png
+   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -131,7 +132,7 @@ used in methods like Faster RCNN and YOLO.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.156 seconds)
+   **Total running time of the script:** ( 0 minutes  0.175 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_repurposing_annotations.py:
