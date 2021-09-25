@@ -128,7 +128,12 @@ def needs_cuda(test_func):
 def _create_data(height=3, width=3, channels=3, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
     tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-    pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+    data = tensor.permute(1, 2, 0).contiguous().cpu().numpy()
+    mode = "RGB"
+    if channels == 1:
+        mode = "L"
+        data = data[..., 0]
+    pil_img = Image.fromarray(data, mode=mode)
     return tensor, pil_img
 
 
