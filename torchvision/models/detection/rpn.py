@@ -8,7 +8,7 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 from .image_list import ImageList
 
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, cast
 
 # Import AnchorGenerator to keep compatibility.
 from .anchor_utils import AnchorGenerator
@@ -21,6 +21,10 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob: Tensor, orig_pre_nms_top_n: int)
     pre_nms_top_n = torch.min(torch.cat(
         (torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype),
          num_anchors), 0))
+
+    # For mypy we cast at runtime
+    cast(int, num_anchors)
+    cast(int, pre_nms_top_n)
 
     return num_anchors, pre_nms_top_n
 
@@ -110,9 +114,9 @@ def concat_box_prediction_layers(
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened, dim=1).flatten(0, -2)
-    box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
-    return box_cls, box_regression
+    box_cls_concated = torch.cat(box_cls_flattened, dim=1).flatten(0, -2)
+    box_regression_concated = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
+    return box_cls_concated, box_regression_concated
 
 
 class RegionProposalNetwork(torch.nn.Module):

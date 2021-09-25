@@ -142,10 +142,10 @@ class SSD(nn.Module):
         size (Tuple[int, int]): the width and height to which images will be rescaled before feeding them
             to the backbone.
         num_classes (int): number of output classes of the model (including the background).
-        image_mean (List[float, float, float]): mean values used for input normalization.
+        image_mean (List[float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
-        image_std (List[float, float, float]): std values used for input normalization.
+        image_std (List[float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
         head (nn.Module, optional): Module run on top of the backbone features. Defaults to a module containing
             a classification and regression module.
@@ -165,20 +165,20 @@ class SSD(nn.Module):
     }
 
     def __init__(
-        self,
-        backbone: nn.Module,
-        anchor_generator: DefaultBoxGenerator,
-        size: Tuple[int, int],
-        num_classes: int,
-        image_mean: Optional[List[float]] = None,
-        image_std: Optional[List[float]] = None,
-        head: Optional[nn.Module] = None,
-        score_thresh: float = 0.01,
-        nms_thresh: float = 0.45,
-        detections_per_img: int = 200,
-        iou_thresh: float = 0.5,
-        topk_candidates: int = 400,
-        positive_fraction: float = 0.25
+            self,
+            backbone: nn.Module,
+            anchor_generator: DefaultBoxGenerator,
+            size: Tuple[int, int],
+            num_classes: int,
+            image_mean: Optional[List[float]] = None,
+            image_std: Optional[List[float]] = None,
+            head: Optional[nn.Module] = None,
+            score_thresh: float = 0.01,
+            nms_thresh: float = 0.45,
+            detections_per_img: int = 200,
+            iou_thresh: float = 0.5,
+            topk_candidates: int = 400,
+            positive_fraction: float = 0.25
     ) -> None:
 
         super().__init__()
@@ -225,9 +225,9 @@ class SSD(nn.Module):
         self._has_warned = False
 
     def eager_outputs(
-        self,
-        losses: Dict[str, Tensor],
-        detections: List[Dict[str, Tensor]]
+            self,
+            losses: Dict[str, Tensor],
+            detections: List[Dict[str, Tensor]]
     ) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
 
         if self.training:
@@ -263,7 +263,7 @@ class SSD(nn.Module):
             ))
 
             # Estimate ground truth for class targets
-            gt_classes_target = torch.zeros((cls_logits_per_image.size(0), ), dtype=targets_per_image['labels'].dtype,
+            gt_classes_target = torch.zeros((cls_logits_per_image.size(0),), dtype=targets_per_image['labels'].dtype,
                                             device=targets_per_image['labels'].device)
             gt_classes_target[foreground_idxs_per_image] = \
                 targets_per_image['labels'][foreground_matched_idxs_per_image]
@@ -296,8 +296,12 @@ class SSD(nn.Module):
             'classification': (cls_loss[foreground_idxs].sum() + cls_loss[background_idxs].sum()) / N,
         }
 
-    def forward(self, images: List[Tensor],
-                targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    def forward(
+            self,
+            images: List[Tensor],
+            targets: Optional[List[Dict[str, Tensor]]] = None
+    ) -> Union[Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]], Dict[str, Tensor], List[Dict[str, Tensor]]]:
+
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
 
@@ -308,8 +312,7 @@ class SSD(nn.Module):
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError("Expected target boxes to be a tensor"
-                                         "of shape [N, 4], got {:}.".format(
-                                             boxes.shape))
+                                         "of shape [N, 4], got {:}.".format(boxes.shape))
                 else:
                     raise ValueError("Expected target boxes to be of type "
                                      "Tensor, got {:}.".format(type(boxes)))
@@ -514,7 +517,6 @@ def _vgg_extractor(
         pretrained: bool,
         trainable_layers: int
 ) -> SSDFeatureExtractorVGG:
-
     if backbone_name in backbone_urls:
         # Use custom backbones more appropriate for SSD
         arch = backbone_name.split('_')[0]

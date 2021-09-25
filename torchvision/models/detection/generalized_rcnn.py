@@ -52,7 +52,7 @@ class GeneralizedRCNN(nn.Module):
         self,
         images: List[Tensor],
         targets: Optional[List[Dict[str, Tensor]]] = None,
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+    ) -> Union[Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]], Dict[str, Tensor], List[Dict[str, Tensor]]]:
 
         """
         Args:
