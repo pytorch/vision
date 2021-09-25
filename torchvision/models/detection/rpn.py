@@ -23,10 +23,8 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob: Tensor, orig_pre_nms_top_n: int)
          num_anchors), 0))
 
     # For mypy we cast at runtime
-    cast(int, num_anchors)
-    cast(int, pre_nms_top_n)
 
-    return num_anchors, pre_nms_top_n
+    return cast(int, num_anchors), cast(int, pre_nms_top_n)
 
 
 class RPNHead(nn.Module):

@@ -92,7 +92,7 @@ class RetinaNetClassificationHead(nn.Module):
     ) -> None:
         super().__init__()
 
-        conv = []
+        conv = nn.ModuleList()
         for _ in range(4):
             conv.append(nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1))
             conv.append(nn.ReLU())
@@ -189,7 +189,7 @@ class RetinaNetRegressionHead(nn.Module):
     ) -> None:
         super().__init__()
 
-        conv = []
+        conv = nn.ModuleList()
         for _ in range(4):
             conv.append(nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1))
             conv.append(nn.ReLU())
@@ -497,18 +497,19 @@ class RetinaNet(nn.Module):
                 image_scores.append(scores_per_level)
                 image_labels.append(labels_per_level)
 
-            image_boxes = torch.cat(image_boxes, dim=0)
-            image_scores = torch.cat(image_scores, dim=0)
-            image_labels = torch.cat(image_labels, dim=0)
+            image_boxes_concated = torch.cat(image_boxes, dim=0)
+            image_scores_concated = torch.cat(image_scores, dim=0)
+            image_labels_concated = torch.cat(image_labels, dim=0)
 
             # non-maximum suppression
-            keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
+            keep = box_ops.batched_nms(image_boxes_concated, image_scores_concated,
+                                       image_labels_concated, self.nms_thresh)
             keep = keep[:self.detections_per_img]
 
             detections.append({
-                'boxes': image_boxes[keep],
-                'scores': image_scores[keep],
-                'labels': image_labels[keep],
+                'boxes': image_boxes_concated[keep],
+                'scores': image_scores_concated[keep],
+                'labels': image_labels_concated[keep],
             })
 
         return detections

@@ -249,7 +249,8 @@ class KeypointRCNNHeads(nn.Sequential):
         in_channels: int,
         layers: Tuple[int, ...],
     ) -> None:
-        d = []
+
+        d = nn.ModuleList()
         next_feature = in_channels
         for out_channels in layers:
             d.append(nn.Conv2d(next_feature, out_channels, 3, stride=1, padding=1))
