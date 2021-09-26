@@ -7,19 +7,18 @@ The following example illustrates the operations available in the torchvision.op
 localization annotations for different tasks (e.g. transforming masks used by instance and panoptic segmentation
 methods into bounding boxes used by object detection methods).
 """
-import os
 
-from PIL import Image
-import matplotlib.patches
-import matplotlib.pyplot as plt
+
+import os
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
-from torchvision.ops import masks_to_boxes
 
-ASSETS_DIRECTORY = "../assets"
 
-matplotlib.pyplot.rcParams["savefig.bbox"] = "tight"
+ASSETS_DIRECTORY = "assets"
+
+plt.rcParams["savefig.bbox"] = "tight"
 
 
 def show(imgs):
@@ -49,55 +48,53 @@ def show(imgs):
 #
 # A nice property of masks is that they can be easily repurposed to be used in methods to solve a variety of object
 # localization tasks.
-#
+
+####################################
 # Converting Segmentation Masks to bounding boxes
 # -----------------------------------------------
 # For example, the masks to bounding_boxes operation can be used to transform masks into bounding boxes that can be
 # used as input to detection models such as FasterRCNN and RetinaNet.
 
+
+from torchvision.io import read_image
+from torchvision.ops import masks_to_boxes
+
+img_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054.png")
+mask_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054_mask.png")
+img = read_image(img_path)
+mask = read_image(mask_path)
+mask = F.convert_image_dtype(mask, dtype=torch.float)
+obj_ids = torch.unique(mask)
+obj_ids = obj_ids[1:]
+masks = mask == obj_ids[:, None, None]
+
+####################################
 # Let's visualize an image and segmentation masks. We will use the plotting utilities provided by torchvision.utils
 # to visualize. The images are taken from PenFudan Dataset.
-#
 
-with PIL.Image.open(os.path.join(ASSETS_DIRECTORY, "masks.tiff")) as image:
-    masks = torch.zeros((image.n_frames, image.height, image.width), dtype=torch.int)
 
-    for index in range(image.n_frames):
-        image.seek(index)
+from torchvision.utils import draw_segmentation_masks, draw_bounding_boxes
 
-        frame = np.array(image)
+drawn_masks = []
+for mask in masks:
+    drawn_masks.append(draw_segmentation_masks(img, mask, alpha=0.8, colors="blue"))
 
-        masks[index] = torch.tensor(frame)
+show(drawn_masks)
 
+####################################
 # We will use the masks_to_boxes from the torchvision.ops module
 # It returns the boxes in (xmin, ymin, xmax, ymax) format.
 
-bounding_boxes = masks_to_boxes(masks)
+boxes = masks_to_boxes(masks)
 
+####################################
 # These can be visualized very easily with draw_bounding_boxes utility
 # provided in torchvision.utils.
 
-figure = matplotlib.pyplot.figure()
+drawn_boxes = draw_bounding_boxes(img, boxes, colors="red")
+show(drawn_boxes)
 
-a = figure.add_subplot(121)
-b = figure.add_subplot(122)
-
-labeled_image = torch.sum(masks, 0)
-
-a.imshow(labeled_image)
-b.imshow(labeled_image)
-
-for bounding_box in bounding_boxes:
-    x0, y0, x1, y1 = bounding_box
-
-    rectangle = matplotlib.patches.Rectangle((x0, y0), x1 - x0, y1 - y0, linewidth=1, edgecolor="r", facecolor="none")
-
-    b.add_patch(rectangle)
-
-a.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-b.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-
-
+####################################
 # Converting Segmentation Dataset to Detection Dataset
 # ----------------------------------------------------
 #
