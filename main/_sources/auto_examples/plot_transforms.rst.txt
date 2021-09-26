@@ -96,9 +96,10 @@ fills image borders with some pixel values.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_001.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_001.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_001.png
+   :class: sphx-glr-single-img
 
 
 
@@ -122,9 +123,10 @@ resizes an image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_002.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_002.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_002.png
+   :class: sphx-glr-single-img
 
 
 
@@ -148,9 +150,10 @@ crops the given image at the center.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_003.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_003.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_003.png
+   :class: sphx-glr-single-img
 
 
 
@@ -174,9 +177,10 @@ crops the given image into four corners and the central crop.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_004.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_004.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_004.png
+   :class: sphx-glr-single-img
 
 
 
@@ -200,9 +204,10 @@ converts an image to grayscale
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_005.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_005.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_005.png
+   :class: sphx-glr-single-img
 
 
 
@@ -231,9 +236,10 @@ randomly changes the brightness, saturation, and other properties of an image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_006.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_006.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_006.png
+   :class: sphx-glr-single-img
 
 
 
@@ -258,9 +264,10 @@ performs gaussian blur transform on an image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_007.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_007.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_007.png
+   :class: sphx-glr-single-img
 
 
 
@@ -285,9 +292,10 @@ performs random perspective transform on an image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_008.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_008.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_008.png
+   :class: sphx-glr-single-img
 
 
 
@@ -312,9 +320,10 @@ rotates an image with random angle.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_009.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_009.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_009.png
+   :class: sphx-glr-single-img
 
 
 
@@ -339,9 +348,10 @@ performs random affine transform on an image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_010.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_010.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_010.png
+   :class: sphx-glr-single-img
 
 
 
@@ -366,9 +376,10 @@ crops an image at a random location.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_011.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_011.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_011.png
+   :class: sphx-glr-single-img
 
 
 
@@ -394,9 +405,10 @@ size.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_012.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_012.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_012.png
+   :class: sphx-glr-single-img
 
 
 
@@ -421,9 +433,10 @@ randomly inverts the colors of the given image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_013.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_013.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_013.png
+   :class: sphx-glr-single-img
 
 
 
@@ -449,9 +462,10 @@ of each color channel.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_014.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_014.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_014.png
+   :class: sphx-glr-single-img
 
 
 
@@ -477,9 +491,10 @@ the threshold.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_015.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_015.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_015.png
+   :class: sphx-glr-single-img
 
 
 
@@ -504,9 +519,10 @@ randomly adjusts the sharpness of the given image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_016.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_016.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_016.png
+   :class: sphx-glr-single-img
 
 
 
@@ -531,9 +547,10 @@ randomly applies autocontrast to the given image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_017.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_017.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_017.png
+   :class: sphx-glr-single-img
 
 
 
@@ -558,9 +575,10 @@ randomly equalizes the histogram of the given image.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_018.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_018.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_018.png
+   :class: sphx-glr-single-img
 
 
 
@@ -590,9 +608,10 @@ See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policie
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_019.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_019.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_019.png
+   :class: sphx-glr-single-img
 
 
 
@@ -615,9 +634,10 @@ The :class:`~torchvision.transforms.RandAugment` transform automatically augment
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_020.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_020.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_020.png
+   :class: sphx-glr-single-img
 
 
 
@@ -640,9 +660,10 @@ The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically 
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_021.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_021.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_021.png
+   :class: sphx-glr-single-img
 
 
 
@@ -674,9 +695,10 @@ performs horizontal flip of an image, with a given probability.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_022.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_022.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_022.png
+   :class: sphx-glr-single-img
 
 
 
@@ -701,9 +723,10 @@ performs vertical flip of an image, with a given probability.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_023.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_023.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_023.png
+   :class: sphx-glr-single-img
 
 
 
@@ -726,9 +749,10 @@ randomly applies a list of transforms, with a given probability.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_transforms_024.png
-    :alt: Original image
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_024.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_024.png
+   :class: sphx-glr-single-img
 
 
 
@@ -737,7 +761,7 @@ randomly applies a list of transforms, with a given probability.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.256 seconds)
+   **Total running time of the script:** ( 0 minutes  9.077 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:

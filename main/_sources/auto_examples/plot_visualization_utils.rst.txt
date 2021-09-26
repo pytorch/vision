@@ -85,9 +85,10 @@ image of dtype ``uint8`` as input.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_001.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_001.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_001.png
+   :class: sphx-glr-single-img
 
 
 
@@ -118,9 +119,10 @@ The boxes are in ``(xmin, ymin, xmax, ymax)`` format.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_002.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_002.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_002.png
+   :class: sphx-glr-single-img
 
 
 
@@ -166,7 +168,7 @@ on the output of such models, you may refer to :ref:`instance_seg_output`.
  .. code-block:: none
 
     Downloading: "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth" to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-    /root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1632035153099/work/aten/src/ATen/native/TensorShape.cpp:2157.)
+    /root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1632553644723/work/aten/src/ATen/native/TensorShape.cpp:2157.)
       return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
     [{'boxes': tensor([[215.9767, 171.1661, 402.0078, 378.7391],
             [344.6341, 172.6735, 357.6114, 220.1435],
@@ -197,9 +199,10 @@ score greater than a given threshold.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_003.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_003.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_003.png
+   :class: sphx-glr-single-img
 
 
 
@@ -296,9 +299,10 @@ boat class:
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_004.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_004.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_004.png
+   :class: sphx-glr-single-img
 
 
 
@@ -328,9 +332,10 @@ masks to be boolean masks, but our masks above contain probabilities in ``[0,
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_005.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_005.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_005.png
+   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -375,9 +380,10 @@ original images:
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_006.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_006.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_006.png
+   :class: sphx-glr-single-img
 
 
 
@@ -412,9 +418,10 @@ single image, and then we'll generalize to the batch
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_007.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_007.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_007.png
+   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -465,9 +472,10 @@ but involves a bit more juggling with the dimensions.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_008.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_008.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_008.png
+   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -692,9 +700,10 @@ those masks into boolean values is to threshold them with the 0.5 probability
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_009.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_009.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_009.png
+   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -764,9 +773,10 @@ here, and also plot the masks of the second dog.
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_visualization_utils_010.png
-    :alt: plot visualization utils
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_visualization_utils_010.png
+   :alt: plot visualization utils
+   :srcset: /auto_examples/images/sphx_glr_plot_visualization_utils_010.png
+   :class: sphx-glr-single-img
 
 
 
@@ -781,7 +791,7 @@ instance with class 15 (which corresponds to 'bench') was not selected.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  10.061 seconds)
+   **Total running time of the script:** ( 0 minutes  12.024 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:

@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+82b3732 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+9fb13fb ) &#x25BC</a>
     </div>
     
 
@@ -365,8 +365,7 @@ image of dtype <code class="docutils literal notranslate"><span class="pre">uint
 <span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">grid</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_001.png" />
-</div>
+<img src="../_images/sphx_glr_plot_visualization_utils_001.png" srcset="../_images/sphx_glr_plot_visualization_utils_001.png" alt="plot visualization utils" class = "sphx-glr-single-img"/></div>
 <div class="section" id="visualizing-bounding-boxes">
 <h2>Visualizing bounding boxes<a class="headerlink" href="#visualizing-bounding-boxes" title="Permalink to this headline">¶</a></h2>
 <p>We can use <a class="reference internal" href="../utils.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a> to draw boxes on an
@@ -381,8 +380,7 @@ The boxes are in <code class="docutils literal notranslate"><span class="pre">(x
 <span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">result</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_002.png" />
-<p>Naturally, we can also plot bounding boxes produced by torchvision detection
+<img src="../_images/sphx_glr_plot_visualization_utils_002.png" srcset="../_images/sphx_glr_plot_visualization_utils_002.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>Naturally, we can also plot bounding boxes produced by torchvision detection
 models.  Here is demo with a Faster R-CNN model loaded from
 <a class="reference internal" href="../models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a>
 model. You can also try using a RetinaNet with
@@ -406,7 +404,7 @@ on the output of such models, you may refer to <a class="reference internal" hre
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth&quot; to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-/root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1632035153099/work/aten/src/ATen/native/TensorShape.cpp:2157.)
+/root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1632553644723/work/aten/src/ATen/native/TensorShape.cpp:2157.)
   return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
 [{&#39;boxes&#39;: tensor([[215.9767, 171.1661, 402.0078, 378.7391],
         [344.6341, 172.6735, 357.6114, 220.1435],
@@ -425,8 +423,7 @@ score greater than a given threshold.</p>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_boxes</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_003.png" />
-</div>
+<img src="../_images/sphx_glr_plot_visualization_utils_003.png" srcset="../_images/sphx_glr_plot_visualization_utils_003.png" alt="plot visualization utils" class = "sphx-glr-single-img"/></div>
 <div class="section" id="visualizing-segmentation-masks">
 <h2>Visualizing segmentation masks<a class="headerlink" href="#visualizing-segmentation-masks" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> function can be used to
@@ -484,8 +481,7 @@ boat class:</p>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog_and_boat_masks</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_004.png" />
-<p>As expected, the model is confident about the dog class, but not so much for
+<img src="../_images/sphx_glr_plot_visualization_utils_004.png" srcset="../_images/sphx_glr_plot_visualization_utils_004.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>As expected, the model is confident about the dog class, but not so much for
 the boat class.</p>
 <p>The <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> function can be used to
 plots those masks on top of the original image. This function expects the
@@ -497,8 +493,7 @@ masks to be boolean masks, but our masks above contain probabilities in <code cl
 <span class="n">show</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">boolean_dog_masks</span></a><span class="p">])</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_005.png" />
-<p class="sphx-glr-script-out">Out:</p>
+<img src="../_images/sphx_glr_plot_visualization_utils_005.png" srcset="../_images/sphx_glr_plot_visualization_utils_005.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([2, 500, 500]), dtype = torch.bool
 </pre></div>
 </div>
@@ -523,8 +518,7 @@ original images:</p>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_006.png" />
-<p>We can plot more than one mask per image! Remember that the model returned as
+<img src="../_images/sphx_glr_plot_visualization_utils_006.png" srcset="../_images/sphx_glr_plot_visualization_utils_006.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>We can plot more than one mask per image! Remember that the model returned as
 many masks as there are classes. Let’s ask the same query as above, but this
 time for <em>all</em> classes, not just the dog class: “For each pixel and each class
 C, is class C the most most likely class?”</p>
@@ -542,8 +536,7 @@ single image, and then we’ll generalize to the batch</p>
 <span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog_with_all_masks</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_007.png" />
-<p class="sphx-glr-script-out">Out:</p>
+<img src="../_images/sphx_glr_plot_visualization_utils_007.png" srcset="../_images/sphx_glr_plot_visualization_utils_007.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>dog1_masks shape = torch.Size([21, 500, 500]), dtype = torch.float32
 dog1_all_classes_masks = torch.Size([21, 500, 500]), dtype = torch.bool
 </pre></div>
@@ -571,8 +564,7 @@ but involves a bit more juggling with the dimensions.</p>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_008.png" />
-<p class="sphx-glr-script-out">Out:</p>
+<img src="../_images/sphx_glr_plot_visualization_utils_008.png" srcset="../_images/sphx_glr_plot_visualization_utils_008.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([21, 2, 500, 500]), dtype = torch.bool
 </pre></div>
 </div>
@@ -719,8 +711,7 @@ those masks into boolean values is to threshold them with the 0.5 probability
 <span class="n">show</span><span class="p">(</span><span class="n">draw_segmentation_masks</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_int</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_bool_masks</span></a><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">))</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_009.png" />
-<p class="sphx-glr-script-out">Out:</p>
+<img src="../_images/sphx_glr_plot_visualization_utils_009.png" srcset="../_images/sphx_glr_plot_visualization_utils_009.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([3, 1, 500, 500]), dtype = torch.bool
 </pre></div>
 </div>
@@ -752,11 +743,10 @@ here, and also plot the masks of the second dog.</p>
 <span class="n">show</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dogs_with_masks</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="plot visualization utils" class="sphx-glr-single-img" src="../_images/sphx_glr_plot_visualization_utils_010.png" />
-<p>The two ‘people’ masks in the first image where not selected because they have
+<img src="../_images/sphx_glr_plot_visualization_utils_010.png" srcset="../_images/sphx_glr_plot_visualization_utils_010.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>The two ‘people’ masks in the first image where not selected because they have
 a lower score than the score threshold. Similarly in the second image, the
 instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  10.061 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  12.024 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-visualization-utils-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/1031091ece7f376de0a2c941f5c11f30/plot_visualization_utils.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_visualization_utils.py</span></code></a></p>

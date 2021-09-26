@@ -92,9 +92,10 @@ directly load it as a tensor
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_001.png
-    :alt: plot scripted tensor transforms
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_001.png
+   :alt: plot scripted tensor transforms
+   :srcset: /auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_001.png
+   :class: sphx-glr-single-img
 
 
 
@@ -132,9 +133,10 @@ Using tensor images, we can run the transforms on GPUs if cuda is available!
 
 
 
-.. image:: /auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_002.png
-    :alt: plot scripted tensor transforms
-    :class: sphx-glr-single-img
+.. image-sg:: /auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_002.png
+   :alt: plot scripted tensor transforms
+   :srcset: /auto_examples/images/sphx_glr_plot_scripted_tensor_transforms_002.png
+   :class: sphx-glr-single-img
 
 
 
@@ -279,7 +281,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.735 seconds)
+   **Total running time of the script:** ( 0 minutes  2.261 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_scripted_tensor_transforms.py:
