@@ -26,6 +26,7 @@ else
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
+# conda-forge channel is required for cudatoolkit 11.1 on Windows, see https://github.com/pytorch/vision/issues/4458
 conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
 
 if [ $PYTHON_VERSION == "3.6" ]; then
