@@ -844,7 +844,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         img (PIL Image or Tensor): Image to be adjusted.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-            If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+            If img is PIL Image mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
