@@ -1,8 +1,9 @@
 import torch
 from torch import nn, Tensor
 from ..._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv3 import InvertedResidual, InvertedResidualConfig, ConvBNActivation, MobileNetV3,\
-    SqueezeExcitation, model_urls, _mobilenet_v3_conf
+from ..efficientnet import SqueezeExcitation as SElayer
+from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, ConvBNActivation, MobileNetV3,\
+    model_urls, _mobilenet_v3_conf
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from typing import Any, List, Optional
 from .utils import _replace_relu
@@ -16,7 +17,7 @@ quant_model_urls = {
 }
 
 
-class QuantizableSqueezeExcitation(SqueezeExcitation):
+class QuantizableSqueezeExcitation(SElayer):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.skip_mul = nn.quantized.FloatFunctional()
@@ -25,7 +26,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         return self.skip_mul.mul(self._scale(input), input)
 
     def fuse_model(self) -> None:
-        fuse_modules(self, ['fc1', 'relu'], inplace=True)
+        fuse_modules(self, ['fc1', 'activation'], inplace=True)
 
 
 class QuantizableInvertedResidual(InvertedResidual):

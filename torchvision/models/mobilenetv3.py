@@ -1,13 +1,13 @@
+import warnings
 import torch
 
 from functools import partial
 from torch import nn, Tensor
-from torch.nn import functional as F
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.efficientnet import SqueezeExcitation as SElayer
-from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
+from .efficientnet import SqueezeExcitation as SElayer
+from .mobilenetv2 import _make_divisible, ConvBNActivation
 
 
 __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
@@ -20,10 +20,14 @@ model_urls = {
 
 
 class SqueezeExcitation(SElayer):
+    """DEPRECATED
+    """
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
-        super().__init__(input_channels, squeeze_channels, activation=nn.ReLU, scale_activation=nn.Hardsigmoid)
+        super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
         self.relu = self.activation
+        warnings.warn(
+            "This SqueezeExcitation class is deprecated and will be removed in future versions.", FutureWarning)
 
 
 class InvertedResidualConfig:
@@ -47,7 +51,7 @@ class InvertedResidualConfig:
 class InvertedResidual(nn.Module):
     # Implemented as described at section 5 of MobileNetV3 paper
     def __init__(self, cnf: InvertedResidualConfig, norm_layer: Callable[..., nn.Module],
-                 se_layer: Callable[..., nn.Module] = SqueezeExcitation):
+                 se_layer: Callable[..., nn.Module] = partial(SElayer, scale_activation=nn.Hardsigmoid)):
         super().__init__()
         if not (1 <= cnf.stride <= 2):
             raise ValueError('illegal stride value')
@@ -68,7 +72,8 @@ class InvertedResidual(nn.Module):
                                        stride=stride, dilation=cnf.dilation, groups=cnf.expanded_channels,
                                        norm_layer=norm_layer, activation_layer=activation_layer))
         if cnf.use_se:
-            layers.append(se_layer(cnf.expanded_channels))
+            squeeze_channels = _make_divisible(cnf.expanded_channels // 4, 8)
+            layers.append(se_layer(cnf.expanded_channels, squeeze_channels))
 
         # project
         layers.append(ConvBNActivation(cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
