@@ -26,6 +26,12 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
+def get_grayscale_test_image(img, fill=None):
+    img = img.convert('L')
+    fill = (fill[0], ) if isinstance(fill, tuple) else fill
+    return img, fill
+
+
 class TestConvertImageDtype:
     @pytest.mark.parametrize('input_dtype, output_dtype', cycle_over(float_dtypes()))
     def test_float_to_float(self, input_dtype, output_dtype):
@@ -1487,8 +1493,7 @@ def test_autoaugment(policy, fill, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
     if grayscale:
-        img = img.convert('L')
-        fill = (fill[0], ) if isinstance(fill, tuple) else fill
+        img, fill = get_grayscale_test_image(img, fill)
     transform = transforms.AutoAugment(policy=policy, fill=fill)
     for _ in range(100):
         img = transform(img)
@@ -1503,8 +1508,7 @@ def test_randaugment(num_ops, magnitude, fill, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
     if grayscale:
-        img = img.convert('L')
-        fill = (fill[0], ) if isinstance(fill, tuple) else fill
+        img, fill = get_grayscale_test_image(img, fill)
     transform = transforms.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
     for _ in range(100):
         img = transform(img)
@@ -1518,8 +1522,7 @@ def test_trivialaugmentwide(fill, num_magnitude_bins, grayscale):
     random.seed(42)
     img = Image.open(GRACE_HOPPER)
     if grayscale:
-        img = img.convert('L')
-        fill = (fill[0], ) if isinstance(fill, tuple) else fill
+        img, fill = get_grayscale_test_image(img, fill)
     transform = transforms.TrivialAugmentWide(fill=fill, num_magnitude_bins=num_magnitude_bins)
     for _ in range(100):
         img = transform(img)
