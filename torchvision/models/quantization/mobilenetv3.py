@@ -19,6 +19,7 @@ quant_model_urls = {
 
 class QuantizableSqueezeExcitation(SElayer):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs["scale_activation"] = nn.Hardswish
         super().__init__(*args, **kwargs)
         self.skip_mul = nn.quantized.FloatFunctional()
 
@@ -80,11 +81,12 @@ def _load_weights(
     model: QuantizableMobileNetV3,
     model_url: Optional[str],
     progress: bool,
+    strict: bool
 ) -> None:
     if model_url is None:
         raise ValueError("No checkpoint is available for {}".format(arch))
     state_dict = load_state_dict_from_url(model_url, progress=progress)
-    model.load_state_dict(state_dict)
+    model.load_state_dict(state_dict, strict=strict)
 
 
 def _mobilenet_v3_model(
@@ -108,13 +110,13 @@ def _mobilenet_v3_model(
         torch.quantization.prepare_qat(model, inplace=True)
 
         if pretrained:
-            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress)
+            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress, False)
 
         torch.quantization.convert(model, inplace=True)
         model.eval()
     else:
         if pretrained:
-            _load_weights(arch, model, model_urls.get(arch, None), progress)
+            _load_weights(arch, model, model_urls.get(arch, None), progress, True)
 
     return model
 

@@ -26,6 +26,7 @@ class SqueezeExcitation(SElayer):
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
         super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
         self.relu = self.activation
+        delattr(self, 'activation')
         warnings.warn(
             "This SqueezeExcitation class is deprecated and will be removed in future versions.", FutureWarning)
 
