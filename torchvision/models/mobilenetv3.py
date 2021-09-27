@@ -6,6 +6,7 @@ from torch.nn import functional as F
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from torchvision.models.efficientnet import SqueezeExcitation as SElayer
 from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
 
 
@@ -18,25 +19,11 @@ model_urls = {
 }
 
 
-class SqueezeExcitation(nn.Module):
-    # Implemented as described at Figure 4 of the MobileNetV3 paper
+class SqueezeExcitation(SElayer):
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
-        super().__init__()
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
-        self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
-        self.relu = nn.ReLU(inplace=True)
-        self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
-
-    def _scale(self, input: Tensor, inplace: bool) -> Tensor:
-        scale = F.adaptive_avg_pool2d(input, 1)
-        scale = self.fc1(scale)
-        scale = self.relu(scale)
-        scale = self.fc2(scale)
-        return F.hardsigmoid(scale, inplace=inplace)
-
-    def forward(self, input: Tensor) -> Tensor:
-        scale = self._scale(input, True)
-        return scale * input
+        super().__init__(input_channels, squeeze_channels, activation=nn.ReLU, scale_activation=nn.Hardsigmoid)
+        self.relu = self.activation
 
 
 class InvertedResidualConfig:
