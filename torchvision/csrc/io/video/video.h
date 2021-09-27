@@ -22,7 +22,7 @@ struct Video : torch::CustomClassHolder {
   std::tuple<std::string, int64_t> getCurrentStream() const;
   c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
-  void Seek(double ts);
+  void Seek(double ts, bool fastSeek);
   bool setCurrentStream(std::string stream);
   std::tuple<torch::Tensor, double> Next();
 
@@ -38,6 +38,7 @@ struct Video : torch::CustomClassHolder {
       int64_t getPtsOnly,
       std::string stream,
       long stream_id,
+      bool fastSeek,
       bool all_streams,
       double seekFrameMarginUs); // this needs to be improved
 

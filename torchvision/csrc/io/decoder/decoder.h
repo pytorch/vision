@@ -72,7 +72,8 @@ class Decoder : public MediaDecoder {
       Stream* stream,
       AVPacket* packet,
       bool* gotFrame,
-      bool* hasMsg);
+      bool* hasMsg,
+      bool fastSeek = false);
   void flushStreams();
   void cleanUp();
 

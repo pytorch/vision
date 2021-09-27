@@ -98,6 +98,7 @@ void Video::_getDecoderParams(
     int64_t getPtsOnly,
     std::string stream,
     long stream_id = -1,
+    bool fastSeek = true,
     bool all_streams = false,
     double seekFrameMarginUs = 10) {
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
@@ -105,6 +106,7 @@ void Video::_getDecoderParams(
   params.timeoutMs = decoderTimeoutMs;
   params.startOffset = videoStartUs;
   params.seekAccuracy = seekFrameMarginUs;
+  params.fastSeek = fastSeek;
   params.headerOnly = false;
 
   params.preventStaleness = false; // not sure what this is about
@@ -161,6 +163,7 @@ Video::Video(std::string videoPath, std::string stream) {
       0, // headerOnly
       std::get<0>(current_stream), // stream info - remove that
       long(-1), // stream_id parsed from info above change to -2
+      false, // fastseek: we're using the default param here
       true // read all streams
   );
 
@@ -241,6 +244,7 @@ bool Video::setCurrentStream(std::string stream = "video") {
       std::get<0>(current_stream), // stream
       long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
+      false, // fastseek param set to 0 false by default (changed in seek)
       false // read all streams
   );
 
@@ -257,7 +261,7 @@ c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>> Video::
   return streamsMetadata;
 }
 
-void Video::Seek(double ts) {
+void Video::Seek(double ts, bool fastSeek = false) {
   // initialize the class variables used for seeking and retrurn
   _getDecoderParams(
       ts, // video start
@@ -265,6 +269,7 @@ void Video::Seek(double ts) {
       std::get<0>(current_stream), // stream
       long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
+      fastSeek, // fastseek
       false // read all streams
   );
 

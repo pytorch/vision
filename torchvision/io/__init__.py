@@ -130,11 +130,12 @@ class VideoReader:
     def __iter__(self) -> Iterator['VideoReader']:
         return self
 
-    def seek(self, time_s: float) -> 'VideoReader':
+    def seek(self, time_s: float, keyframes_only: bool = False):
         """Seek within current stream.
 
         Args:
             time_s (float): seek time in seconds
+            keyframes_only (bool): allow to seek only to keyframes
 
         .. note::
             Current implementation is the so-called precise seek. This
@@ -142,7 +143,7 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        self._c.seek(time_s)
+        self._c.seek(time_s, keyframes_only)
         return self
 
     def get_metadata(self) -> Dict[str, Any]:
