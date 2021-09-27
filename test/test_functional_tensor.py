@@ -641,12 +641,14 @@ def test_interpolate_antialias_backward(device, dt, size, interpolation):
     assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
 
-def check_functional_vs_PIL_vs_scripted(fn, fn_pil, fn_t, config, device, dtype, tol=2.0 + 1e-10, agg_method="max"):
+def check_functional_vs_PIL_vs_scripted(
+    fn, fn_pil, fn_t, config, device, dtype, channels=3, tol=2.0 + 1e-10, agg_method="max"
+):
 
     script_fn = torch.jit.script(fn)
     torch.manual_seed(15)
-    tensor, pil_img = _create_data(26, 34, device=device)
-    batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
+    tensor, pil_img = _create_data(26, 34, channels=channels, device=device)
+    batch_tensors = _create_data_batch(16, 18, num_samples=4, channels=channels, device=device)
 
     if dtype is not None:
         tensor = F.convert_image_dtype(tensor, dtype)
@@ -679,7 +681,8 @@ def check_functional_vs_PIL_vs_scripted(fn, fn_pil, fn_t, config, device, dtype,
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"brightness_factor": f} for f in (0.1, 0.5, 1.0, 1.34, 2.5)])
-def test_adjust_brightness(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_brightness(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_brightness,
         F_pil.adjust_brightness,
@@ -687,12 +690,14 @@ def test_adjust_brightness(device, dtype, config):
         config,
         device,
         dtype,
+        channels,
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
-def test_invert(device, dtype):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_invert(device, dtype, channels):
     check_functional_vs_PIL_vs_scripted(
         F.invert,
         F_pil.invert,
@@ -700,6 +705,7 @@ def test_invert(device, dtype):
         {},
         device,
         dtype,
+        channels,
         tol=1.0,
         agg_method="max"
     )
@@ -707,7 +713,8 @@ def test_invert(device, dtype):
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('config', [{"bits": bits} for bits in range(0, 8)])
-def test_posterize(device, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_posterize(device, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.posterize,
         F_pil.posterize,
@@ -715,6 +722,7 @@ def test_posterize(device, config):
         config,
         device,
         dtype=None,
+        channels=channels,
         tol=1.0,
         agg_method="max",
     )
@@ -722,7 +730,8 @@ def test_posterize(device, config):
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('config', [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255]])
-def test_solarize1(device, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_solarize1(device, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.solarize,
         F_pil.solarize,
@@ -730,6 +739,7 @@ def test_solarize1(device, config):
         config,
         device,
         dtype=None,
+        channels=channels,
         tol=1.0,
         agg_method="max",
     )
@@ -738,7 +748,8 @@ def test_solarize1(device, config):
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0]])
-def test_solarize2(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_solarize2(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.solarize,
         lambda img, threshold: F_pil.solarize(img, 255 * threshold),
@@ -746,6 +757,7 @@ def test_solarize2(device, dtype, config):
         config,
         device,
         dtype,
+        channels,
         tol=1.0,
         agg_method="max",
     )
@@ -754,7 +766,8 @@ def test_solarize2(device, dtype, config):
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]])
-def test_adjust_sharpness(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_sharpness(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_sharpness,
         F_pil.adjust_sharpness,
@@ -762,12 +775,14 @@ def test_adjust_sharpness(device, dtype, config):
         config,
         device,
         dtype,
+        channels,
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
-def test_autocontrast(device, dtype):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_autocontrast(device, dtype, channels):
     check_functional_vs_PIL_vs_scripted(
         F.autocontrast,
         F_pil.autocontrast,
@@ -775,13 +790,15 @@ def test_autocontrast(device, dtype):
         {},
         device,
         dtype,
+        channels,
         tol=1.0,
         agg_method="max"
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
-def test_equalize(device):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_equalize(device, channels):
     torch.use_deterministic_algorithms(False)
     check_functional_vs_PIL_vs_scripted(
         F.equalize,
@@ -790,6 +807,7 @@ def test_equalize(device):
         {},
         device,
         dtype=None,
+        channels=channels,
         tol=1.0,
         agg_method="max",
     )
@@ -798,35 +816,40 @@ def test_equalize(device):
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"contrast_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]])
-def test_adjust_contrast(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_contrast(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_contrast,
         F_pil.adjust_contrast,
         F_t.adjust_contrast,
         config,
         device,
-        dtype
+        dtype,
+        channels
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.5, 2.0]])
-def test_adjust_saturation(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_saturation(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_saturation,
         F_pil.adjust_saturation,
         F_t.adjust_saturation,
         config,
         device,
-        dtype
+        dtype,
+        channels
     )
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"hue_factor": f} for f in [-0.45, -0.25, 0.0, 0.25, 0.45]])
-def test_adjust_hue(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_hue(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_hue,
         F_pil.adjust_hue,
@@ -834,6 +857,7 @@ def test_adjust_hue(device, dtype, config):
         config,
         device,
         dtype,
+        channels,
         tol=16.1,
         agg_method="max"
     )
@@ -842,7 +866,8 @@ def test_adjust_hue(device, dtype, config):
 @pytest.mark.parametrize('device', cpu_and_gpu())
 @pytest.mark.parametrize('dtype', (None, torch.float32, torch.float64))
 @pytest.mark.parametrize('config', [{"gamma": g1, "gain": g2} for g1, g2 in zip([0.8, 1.0, 1.2], [0.7, 1.0, 1.3])])
-def test_adjust_gamma(device, dtype, config):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_adjust_gamma(device, dtype, config, channels):
     check_functional_vs_PIL_vs_scripted(
         F.adjust_gamma,
         F_pil.adjust_gamma,
@@ -850,6 +875,7 @@ def test_adjust_gamma(device, dtype, config):
         config,
         device,
         dtype,
+        channels,
     )
 
 
@@ -930,8 +956,7 @@ def test_resized_crop(device, mode):
     (F_t.hflip, ()), (F_t.crop, (1, 2, 4, 5)),
     (F_t.adjust_brightness, (0., )), (F_t.adjust_contrast, (1., )),
     (F_t.adjust_hue, (-0.5, )), (F_t.adjust_saturation, (2., )),
-    (F_t.center_crop, ([10, 11], )), (F_t.five_crop, ([10, 11], )),
-    (F_t.ten_crop, ([10, 11], )), (F_t.pad, ([2, ], 2, "constant")),
+    (F_t.pad, ([2, ], 2, "constant")),
     (F_t.resize, ([10, 11], )), (F_t.perspective, ([0.2, ])),
     (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
     (F_t.invert, ()), (F_t.posterize, (0, )),

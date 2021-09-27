@@ -515,9 +515,20 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list. This transform does not support torchscript.
     """
-    def __call__(self, img):
-        t = random.choice(self.transforms)
-        return t(img)
+    def __init__(self, transforms, p=None):
+        super().__init__(transforms)
+        if p is not None and not isinstance(p, Sequence):
+            raise TypeError("Argument transforms should be a sequence")
+        self.p = p
+
+    def __call__(self, *args):
+        t = random.choices(self.transforms, weights=self.p)[0]
+        return t(*args)
+
+    def __repr__(self):
+        format_string = super().__repr__()
+        format_string += '(p={0})'.format(self.p)
+        return format_string
 
 
 class RandomCrop(torch.nn.Module):
@@ -1087,8 +1098,8 @@ class LinearTransformation(torch.nn.Module):
 class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast, saturation and hue of an image.
     If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.

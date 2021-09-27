@@ -512,7 +512,7 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         return dict(num_examples=num_images_per_split[config["split"]], attr_names=attr_names)
 
     def _create_split_txt(self, root):
-        num_images_per_split = dict(train=3, valid=2, test=1)
+        num_images_per_split = dict(train=4, valid=3, test=2)
 
         data = [
             [self._SPLIT_TO_IDX[split]] for split, num_images in num_images_per_split.items() for _ in range(num_images)
@@ -594,6 +594,17 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
     def test_attr_names(self):
         with self.create_dataset() as (dataset, info):
             assert tuple(dataset.attr_names) == info["attr_names"]
+
+    def test_images_names_split(self):
+        with self.create_dataset(split='all') as (dataset, _):
+            all_imgs_names = set(dataset.filename)
+
+        merged_imgs_names = set()
+        for split in ["train", "valid", "test"]:
+            with self.create_dataset(split=split) as (dataset, _):
+                merged_imgs_names.update(dataset.filename)
+
+        assert merged_imgs_names == all_imgs_names
 
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1788,6 +1799,88 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
                 assert dataset.category_name("kingdom", item[0]) == "Akingdom"
                 assert dataset.category_name("phylum", item[1]) == f"{i // 3}phylum"
                 assert item[6] == i // 3
+
+
+class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
+    DATASET_CLASS = datasets.LFWPeople
+    FEATURE_TYPES = (PIL.Image.Image, int)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=('10fold', 'train', 'test'),
+        image_set=('original', 'funneled', 'deepfunneled')
+    )
+    _IMAGES_DIR = {
+        "original": "lfw",
+        "funneled": "lfw_funneled",
+        "deepfunneled": "lfw-deepfunneled"
+    }
+    _file_id = {'10fold': '', 'train': 'DevTrain', 'test': 'DevTest'}
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir) / "lfw-py"
+        os.makedirs(tmpdir, exist_ok=True)
+        return dict(
+            num_examples=self._create_images_dir(tmpdir, self._IMAGES_DIR[config["image_set"]], config["split"]),
+            split=config["split"]
+        )
+
+    def _create_images_dir(self, root, idir, split):
+        idir = os.path.join(root, idir)
+        os.makedirs(idir, exist_ok=True)
+        n, flines = (10, ["10\n"]) if split == "10fold" else (1, [])
+        num_examples = 0
+        names = []
+        for _ in range(n):
+            num_people = random.randint(2, 5)
+            flines.append(f"{num_people}\n")
+            for i in range(num_people):
+                name = self._create_random_id()
+                no = random.randint(1, 10)
+                flines.append(f"{name}\t{no}\n")
+                names.append(f"{name}\t{no}\n")
+                datasets_utils.create_image_folder(idir, name, lambda n: f"{name}_{n+1:04d}.jpg", no, 250)
+                num_examples += no
+        with open(pathlib.Path(root) / f"people{self._file_id[split]}.txt", "w") as f:
+            f.writelines(flines)
+        with open(pathlib.Path(root) / "lfw-names.txt", "w") as f:
+            f.writelines(sorted(names))
+
+        return num_examples
+
+    def _create_random_id(self):
+        part1 = datasets_utils.create_random_string(random.randint(5, 7))
+        part2 = datasets_utils.create_random_string(random.randint(4, 7))
+        return f"{part1}_{part2}"
+
+
+class LFWPairsTestCase(LFWPeopleTestCase):
+    DATASET_CLASS = datasets.LFWPairs
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, int)
+
+    def _create_images_dir(self, root, idir, split):
+        idir = os.path.join(root, idir)
+        os.makedirs(idir, exist_ok=True)
+        num_pairs = 7  # effectively 7*2*n = 14*n
+        n, self.flines = (10, [f"10\t{num_pairs}"]) if split == "10fold" else (1, [str(num_pairs)])
+        for _ in range(n):
+            self._inject_pairs(idir, num_pairs, True)
+            self._inject_pairs(idir, num_pairs, False)
+            with open(pathlib.Path(root) / f"pairs{self._file_id[split]}.txt", "w") as f:
+                f.writelines(self.flines)
+
+        return num_pairs * 2 * n
+
+    def _inject_pairs(self, root, num_pairs, same):
+        for i in range(num_pairs):
+            name1 = self._create_random_id()
+            name2 = name1 if same else self._create_random_id()
+            no1, no2 = random.randint(1, 100), random.randint(1, 100)
+            if same:
+                self.flines.append(f"\n{name1}\t{no1}\t{no2}")
+            else:
+                self.flines.append(f"\n{name1}\t{no1}\t{name2}\t{no2}")
+
+            datasets_utils.create_image_folder(root, name1, lambda _: f"{name1}_{no1:04d}.jpg", 1, 250)
+            datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
 
 
 if __name__ == "__main__":

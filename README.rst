@@ -110,19 +110,19 @@ Video Backend
 =============
 Torchvision currently supports the following video backends:
 
-* pyav (default)
+* pyav (default) - Pythonic binding for ffmpeg libraries. 
 
-* video_reader - This needs ffmpeg=4.2 to be installed and torchvision to be built from source. There shouldn't be any conflicting version of ffmpeg installed.
+* video_reader - This needs ffmpeg to be installed and torchvision to be built from source. There shouldn't be any conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
 
 .. code:: bash
 
-     conda install -c conda-forge ffmpeg=4.2
+     conda install -c conda-forge ffmpeg
      python setup.py install
 
 
-C++ API
-=======
-TorchVision also offers a C++ API that contains C++ equivalent of python models.
+Using the models on C++
+=======================
+TorchVision provides an example project for how to use the models on C++ using JIT Script.
 
 Installation From source:
 
