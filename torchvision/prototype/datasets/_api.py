@@ -17,7 +17,8 @@ def register(dataset: Dataset) -> None:
     DATASETS[dataset.name] = dataset
 
 
-def list() -> List[str]:
+# This is exposed as 'list', but we avoid that here to not shadow the built-in 'list'
+def _list() -> List[str]:
     return sorted(DATASETS.keys())
 
 
