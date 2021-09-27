@@ -42,7 +42,6 @@ def _collate_and_decode_data(
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = None,
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
@@ -52,8 +51,7 @@ def from_data_folder(
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
     dp: IterDataPipe = FileLister(str(root), recursive=recursive, masks=masks)
     dp = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
-    if shuffler:
-        dp = shuffler(dp)
+    dp = Shuffler(dp)
     dp = FileLoader(dp)
     return (
         Mapper(dp, _collate_and_decode_data, fn_kwargs=dict(root=root, categories=categories, decoder=decoder)),
