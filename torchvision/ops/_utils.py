@@ -1,6 +1,6 @@
 import torch
-from torch import Tensor
-from typing import List, Union
+from torch import nn, Tensor
+from typing import List, Optional, Tuple, Union
 
 
 def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
@@ -34,3 +34,27 @@ def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
     else:
         assert False, 'boxes is expected to be a Tensor[L, 5] or a List[Tensor[K, 4]]'
     return
+
+
+def split_normalization_params(model: nn.Module,
+                               norm_classes: Optional[List[type]] = None) -> Tuple[List[Tensor], List[Tensor]]:
+    # Adapted from https://github.com/facebookresearch/ClassyVision/blob/659d7f78/classy_vision/generic/util.py#L501
+    if not norm_classes:
+        norm_classes = [nn.modules.batchnorm._BatchNorm, nn.LayerNorm, nn.GroupNorm]
+
+    for t in norm_classes:
+        if not issubclass(t, nn.Module):
+            raise ValueError(f"Class {t} is not a subclass of nn.Module.")
+
+    classes = tuple(norm_classes)
+
+    norm_params = []
+    other_params = []
+    for module in model.modules():
+        if next(module.children(), None):
+            other_params.extend(p for p in module.parameters(recurse=False) if p.requires_grad)
+        elif isinstance(module, classes):
+            norm_params.extend(p for p in module.parameters() if p.requires_grad)
+        else:
+            other_params.extend(p for p in module.parameters() if p.requires_grad)
+    return norm_params, other_params

@@ -9,10 +9,10 @@ import os
 from PIL import Image
 import torch
 from functools import lru_cache
-from torch import Tensor
+from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
-from torchvision import ops
+from torchvision import models, ops
 from typing import Tuple
 
 
@@ -1060,6 +1060,16 @@ class TestStochasticDepth:
 
         p_value = stats.binom_test(counts, num_samples, p=p)
         assert p_value > 0.0001
+
+
+class TestUtils:
+    @pytest.mark.parametrize('norm_layer', [None, nn.BatchNorm2d, nn.LayerNorm])
+    def test_split_normalization_params(self, norm_layer):
+        model = models.mobilenet_v3_large(norm_layer=norm_layer)
+        params = ops._utils.split_normalization_params(model, None if norm_layer is None else [norm_layer])
+
+        assert len(params[0]) == 92
+        assert len(params[1]) == 82
 
 
 if __name__ == '__main__':

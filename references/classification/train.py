@@ -19,22 +19,21 @@ except ImportError:
     amp = None
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch,
-                    print_freq, args, apex=False, model_ema=None):
+def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
     metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value}'))
 
     header = 'Epoch: [{}]'.format(epoch)
-    for i, (image, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
         output = model(image)
         loss = criterion(output, target)
 
         optimizer.zero_grad()
-        if apex:
+        if args.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
         else:
@@ -197,16 +196,22 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
+    if args.norm_weight_decay is None:
+        parameters = model.parameters()
+    else:
+        param_groups = torchvision.ops._utils.split_normalization_params(model)
+        wd_groups = [args.norm_weight_decay, args.weight_decay]
+        parameters = [{"params": p, "weight_decay": w} for p, w in zip(param_groups, wd_groups) if p]
+
     opt_name = args.opt.lower()
     if opt_name.startswith("sgd"):
-        optimizer = torch.optim.SGD(
-            model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
-            nesterov="nesterov" in opt_name)
+        optimizer = torch.optim.SGD(parameters, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
+                                    nesterov="nesterov" in opt_name)
     elif opt_name == 'rmsprop':
-        optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr, momentum=args.momentum,
-                                        weight_decay=args.weight_decay, eps=0.0316, alpha=0.9)
+        optimizer = torch.optim.RMSprop(parameters, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
+                                        eps=0.0316, alpha=0.9)
     elif opt_name == 'adamw':
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = torch.optim.AdamW(parameters, lr=args.lr, weight_decay=args.weight_decay)
     else:
         raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD, RMSprop and AdamW are supported.")
 
@@ -281,7 +286,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.apex, model_ema)
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema)
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
@@ -326,6 +331,8 @@ def get_args_parser(add_help=True):
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
+    parser.add_argument('--norm-weight-decay', default=None, type=float,
+                        help='weight decay for Normalization layers (default: None, same value as --wd)')
     parser.add_argument('--label-smoothing', default=0.0, type=float,
                         help='label smoothing (default: 0.0)',
                         dest='label_smoothing')
