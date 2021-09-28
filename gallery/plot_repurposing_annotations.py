@@ -1,10 +1,12 @@
 """
-=======================
-Repurposing annotations
-=======================
+=====================================
+Repurposing masks into bounding boxes
+=====================================
 
-The following example illustrates the operations available in the torchvision.ops module for repurposing object
-localization annotations for different tasks (e.g. transforming masks used by instance and panoptic segmentation
+The following example illustrates the operations available in the
+`torchvision.ops <https://pytorch.org/vision/stable/ops.html>`_ module for repurposing
+segmentation masks into object localization annotations for different tasks
+(e.g. transforming masks used by instance and panoptic segmentation
 methods into bounding boxes used by object detection methods).
 """
 
@@ -14,7 +16,6 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-import torchvision.models.detection
 import torchvision.transforms.functional as F
 
 
@@ -57,22 +58,23 @@ def show(imgs):
 # For example, the :func:`~torchvision.ops.masks_to_boxes` operation can be used to
 # transform masks into bounding boxes that can be
 # used as input to detection models such as FasterRCNN and RetinaNet.
-# We will take images and masks from the PenFudan Dataset.
+# We will take images and masks from the `PenFudan Dataset <https://www.cis.upenn.edu/~jshi/ped_html/>`_.
 
 
 from torchvision.io import read_image
-from torchvision.ops import masks_to_boxes
 
 img_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054.png")
 mask_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054_mask.png")
 img = read_image(img_path)
 mask = read_image(mask_path)
-mask = F.convert_image_dtype(mask, dtype=torch.float)
+
+# You can use floating point masks as well
+# mask = F.convert_image_dtype(mask, dtype=torch.float)
 
 #########################
 # Here the masks are represented as a PNG Image, with floating point values.
-# Each pixel is encoded as different colors, with 0 being background
-# Notice that that dimensions of image and mask match.
+# Each pixel is encoded as different colors, with 0 being background.
+# Notice that the spatial dimensions of image and mask match.
 
 print(mask.size())
 print(img.size())
@@ -90,16 +92,16 @@ obj_ids = obj_ids[1:]
 masks = mask == obj_ids[:, None, None]
 
 ########################
-# Now the masks are boolean tensor.
-# The first dimension in this case 3. Signifies number of instance, that is 3 people in the image.
-# The other two dimensions are height and width, which match the dimensions of the image.
-# The boolean tensors represent if the pixel belong to the segmentation mask of the image.
+# Now the masks are a boolean tensor.
+# The first dimension in this case 3. Which signifies the number of instances, that there are 3 people in the image.
+# The other two dimensions are height and width, which are equal to the dimensions of the image.
+# For each instance, the boolean tensors represent if the particular pixel belong to the segmentation mask of the image.
 
 print(masks.size())
 print(masks)
 
 ####################################
-# Let's visualize an image and it's corresponding segmentation masks.
+# Let us visualize an image and plot its corresponding segmentation masks.
 # We will use the :func:`~torchvision.utils.draw_segmentation_masks` to draw the segmentation masks.
 
 from torchvision.utils import draw_segmentation_masks
@@ -115,6 +117,8 @@ show(drawn_masks)
 # We will use the :func:`~torchvision.ops.masks_to_boxes` from the torchvision.ops module
 # It returns the boxes in ``(xmin, ymin, xmax, ymax)`` format.
 
+from torchvision.ops import masks_to_boxes
+
 boxes = masks_to_boxes(masks)
 print(boxes.size())
 print(boxes)
@@ -122,9 +126,10 @@ print(boxes)
 ####################################
 # As the shape denotes, there are 3 boxes and in ``(xmin, ymin, xmax, ymax)`` format.
 # These can be visualized very easily with :func:`~torchvision.utils.draw_bounding_boxes` utility
-# provided in torchvision.utils.
+# provided in `torchvision.utils <https://pytorch.org/vision/stable/utils.html>`_.
 
 from torchvision.utils import draw_bounding_boxes
+
 drawn_boxes = draw_bounding_boxes(img, boxes, colors="red")
 show(drawn_boxes)
 
@@ -133,7 +138,9 @@ show(drawn_boxes)
 # Here is demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 
-model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
+from torchvision.models.detection import fasterrcnn_resnet50_fpn
+
+model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
 print(img.size())
 
 img = F.convert_image_dtype(img, torch.float)
@@ -150,7 +157,8 @@ detection_outputs = model(img.unsqueeze(0), [target])
 # With this utility it becomes very simple to convert a segmentation dataset to a detection dataset.
 # With this we can now use a segmentation dataset to train a detection model.
 # One can similarly convert panoptic dataset to detection dataset.
-# You can use the below code for Dataset creation in PenFudan Detection Tutorial
+# You can use the below code for Dataset creation in
+# `PenFudan Detection Tutorial <https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html>`_.
 
 class SegmentationToDetectionDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms):
