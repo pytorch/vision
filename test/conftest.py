@@ -80,3 +80,15 @@ def pytest_sessionfinish(session, exitstatus):
     # To avoid this, we transform this 5 into a 0 to make testpilot happy.
     if exitstatus == 5:
         session.exitstatus = 0
+
+
+@pytest.fixture(autouse=True)
+def prevent_leaking_rng():
+    # prevent each test from leaking the rng to all other test when they call torch.manual_seed()
+    rng_state = torch.get_rng_state()
+    if torch.cuda.is_available():
+        cuda_rng_state = torch.cuda.get_rng_state()
+    yield
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state(cuda_rng_state)
+    torch.set_rng_state(rng_state)
