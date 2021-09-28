@@ -181,7 +181,7 @@ class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
             else:
                 p_swa.detach().copy_(self.avg_fn(p_swa.detach(), p_model_,
                                      self.n_averaged.to(device)))
-            self.n_averaged += 1
+        self.n_averaged += 1
 
 
 def accuracy(output, target, topk=(1,)):
