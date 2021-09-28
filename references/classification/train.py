@@ -27,7 +27,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch,
     metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value}'))
 
     header = 'Epoch: [{}]'.format(epoch)
-    for image, target in metric_logger.log_every(data_loader, print_freq, header):
+    for i, (image, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
         output = model(image)
@@ -48,8 +48,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch,
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
         metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
 
-    if model_ema:
-        model_ema.update_parameters(model)
+        if model_ema and i % model_ema.update_steps == 0:
+            model_ema.update_parameters(model)
 
 
 def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=''):
@@ -248,6 +248,7 @@ def main(args):
     model_ema = None
     if args.model_ema:
         model_ema = utils.ExponentialMovingAverage(model_without_ddp, device=device, decay=args.model_ema_decay)
+        model_ema.update_steps = args.model_ema_steps
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -373,8 +374,11 @@ def get_args_parser(add_help=True):
         '--model-ema', action='store_true',
         help='enable tracking Exponential Moving Average of model parameters')
     parser.add_argument(
+        '--model-ema-steps', type=float, default=32,
+        help='the number of iterations that controls how often to update the EMA model (default: 32)')
+    parser.add_argument(
         '--model-ema-decay', type=float, default=0.9,
-        help='decay factor for Exponential Moving Average of model parameters(default: 0.9)')
+        help='decay factor for Exponential Moving Average of model parameters (default: 0.9)')
 
     return parser
 
