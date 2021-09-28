@@ -10,6 +10,7 @@ from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
 
 from torchvision.prototype.datasets.decoder import pil
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 
 __all__ = ["from_data_folder", "from_image_folder"]
@@ -51,7 +52,7 @@ def from_data_folder(
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
     dp: IterDataPipe = FileLister(str(root), recursive=recursive, masks=masks)
     dp = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
-    dp = Shuffler(dp)
+    dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
     dp = FileLoader(dp)
     return (
         Mapper(dp, _collate_and_decode_data, fn_kwargs=dict(root=root, categories=categories, decoder=decoder)),
