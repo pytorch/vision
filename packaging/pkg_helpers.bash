@@ -235,7 +235,7 @@ setup_pip_pytorch_version() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
     # Install latest prerelease version of torch, per our nightlies, consistent
     # with the requested cuda version
-    pip_install --pre torch -f "https://download.pytorch.org/whl/nightly/${WHEEL_DIR}torch_nightly.html"
+    pip_install --pre torch -f "https://download.pytorch.org/whl/test/${WHEEL_DIR}torch_test.html"
     if [[ "$CUDA_VERSION" == "cpu" ]]; then
       # CUDA and CPU are ABI compatible on the CPU-only parts, so strip
       # in this case
@@ -256,8 +256,8 @@ setup_pip_pytorch_version() {
 # You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch-nightly -c pytorch"
-    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c pytorch-test -c pytorch"
+    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-test]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                cuver_2 = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \

@@ -199,7 +199,7 @@ jobs:
             sudo apt install -y libturbojpeg-dev
             pip install --user --progress-bar off mypy
             pip install --user --progress-bar off types-requests
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/test/cpu/torch_test.html
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
 
@@ -232,7 +232,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/test/cpu/torch_test.html
             # need to install torchvision dependencies due to transitive imports
             pip install --user --progress-bar off .
             pip install pytest
@@ -245,7 +245,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/test/cpu/torch_test.html
             # need to install torchvision dependencies due to transitive imports
             pip install --user --progress-bar off .
             pip install --user onnx
@@ -511,7 +511,7 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            conda install -v -y -c pytorch-nightly pytorch
+            conda install -v -y -c pytorch-test pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
           name: smoke test
@@ -530,7 +530,7 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/test/torch_test.html
       - run:
           name: smoke test
           command: |
@@ -575,7 +575,7 @@ jobs:
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
             conda install Pillow>=5.3.0
-            conda install -v -y -c pytorch-nightly pytorch
+            conda install -v -y -c pytorch-test pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
           name: smoke test
@@ -599,7 +599,7 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/test/torch_test.html
       - run:
           name: smoke test
           command: |
