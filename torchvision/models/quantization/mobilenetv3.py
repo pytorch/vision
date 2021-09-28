@@ -81,7 +81,7 @@ def _load_weights(
     model: QuantizableMobileNetV3,
     model_url: Optional[str],
     progress: bool,
-    strict: bool
+    strict: bool = True
 ) -> None:
     if model_url is None:
         raise ValueError("No checkpoint is available for {}".format(arch))
@@ -110,13 +110,13 @@ def _mobilenet_v3_model(
         torch.quantization.prepare_qat(model, inplace=True)
 
         if pretrained:
-            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress, False)
+            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress, strict=False)
 
         torch.quantization.convert(model, inplace=True)
         model.eval()
     else:
         if pretrained:
-            _load_weights(arch, model, model_urls.get(arch, None), progress, True)
+            _load_weights(arch, model, model_urls.get(arch, None), progress)
 
     return model
 
