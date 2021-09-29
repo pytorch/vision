@@ -21,7 +21,7 @@ class QuantizableSqueezeExcitation(SElayer):
     _version = 2
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        kwargs["scale_activation"] = nn.Hardswish
+        kwargs["scale_activation"] = nn.Hardsigmoid
         super().__init__(*args, **kwargs)
         self.skip_mul = nn.quantized.FloatFunctional()
 
@@ -49,8 +49,6 @@ class QuantizableSqueezeExcitation(SElayer):
                 "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),
                 "scale_activation.activation_post_process.fake_quant_enabled": torch.tensor([1]),
                 "scale_activation.activation_post_process.observer_enabled": torch.tensor([1]),
-                "scale_activation.activation_post_process.activation_post_process.min_val": torch.tensor(float('inf')),
-                "scale_activation.activation_post_process.activation_post_process.max_val": torch.tensor(-float('inf')),
             }
             for k, v in default_state_dict.items():
                 full_key = prefix + k
