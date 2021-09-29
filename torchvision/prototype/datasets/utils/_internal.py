@@ -4,9 +4,13 @@ from typing import Collection, Sequence, Callable
 
 
 __all__ = [
+    "INFINITE_BUFFER_SIZE",
     "sequence_to_str",
     "add_suggestion",
 ]
+
+# pseudo-infinite until a true infinite buffer is supported by all datapipes
+INFINITE_BUFFER_SIZE = 1_000_000_000
 
 
 def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
