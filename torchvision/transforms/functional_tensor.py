@@ -169,10 +169,13 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     _assert_image_tensor(img)
 
-    _assert_channels(img, [3])
-
+    _assert_channels(img, [3, 1])
+    c = get_image_num_channels(img)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
+    if c == 3:
+        mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
+    else:
+        mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
 
     return _blend(img, mean, contrast_factor)
 
@@ -212,7 +215,10 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     _assert_image_tensor(img)
 
-    _assert_channels(img, [3])
+    _assert_channels(img, [1, 3])
+
+    if get_image_num_channels(img) == 1:  # Match PIL behaviour
+        return img
 
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 

@@ -739,7 +739,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.2"
+      CUDA_VERSION: "11.1"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -763,6 +763,12 @@ jobs:
           paths:
             - conda
             - env
+      - run:
+          name: Install CUDA
+          command: packaging/windows/internal/cuda_install.bat
+      - run:
+          name: Update CUDA driver
+          command: packaging/windows/internal/driver_update.bat
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
@@ -835,7 +841,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-1604-cuda-10.2:202012-01
-    resource_class: gpu.small
+    resource_class: gpu.nvidia.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
       PYTORCH_VERSION: << parameters.pytorch_version >>

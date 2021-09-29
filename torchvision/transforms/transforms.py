@@ -35,7 +35,8 @@ class Compose:
     Example:
         >>> transforms.Compose([
         >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
+        >>>     transforms.PILToTensor(),
+        >>>     transforms.ConvertImageDtype(torch.float),
         >>> ])
 
     .. note::
@@ -1098,8 +1099,8 @@ class LinearTransformation(torch.nn.Module):
 class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast, saturation and hue of an image.
     If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
@@ -1570,7 +1571,8 @@ class RandomErasing(torch.nn.Module):
     Example:
         >>> transform = transforms.Compose([
         >>>   transforms.RandomHorizontalFlip(),
-        >>>   transforms.ToTensor(),
+        >>>   transforms.PILToTensor(),
+        >>>   transforms.ConvertImageDtype(torch.float),
         >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         >>>   transforms.RandomErasing(),
         >>> ])
