@@ -1,3 +1,4 @@
+import warnings
 import torch
 
 from functools import partial
@@ -8,6 +9,7 @@ from typing import Any, Callable, List, Optional, Sequence
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation
 from ._utils import _make_divisible
+from .efficientnet import SqueezeExcitation as SElayer
 
 
 __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
@@ -19,25 +21,16 @@ model_urls = {
 }
 
 
-class SqueezeExcitation(nn.Module):
-    # Implemented as described at Figure 4 of the MobileNetV3 paper
+class SqueezeExcitation(SElayer):
+    """DEPRECATED
+    """
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
-        super().__init__()
         squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
-        self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
-        self.relu = nn.ReLU(inplace=True)
-        self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
-
-    def _scale(self, input: Tensor, inplace: bool) -> Tensor:
-        scale = F.adaptive_avg_pool2d(input, 1)
-        scale = self.fc1(scale)
-        scale = self.relu(scale)
-        scale = self.fc2(scale)
-        return F.hardsigmoid(scale, inplace=inplace)
-
-    def forward(self, input: Tensor) -> Tensor:
-        scale = self._scale(input, True)
-        return scale * input
+        super().__init__(input_channels, squeeze_channels, scale_activation=nn.Hardsigmoid)
+        self.relu = self.activation
+        delattr(self, 'activation')
+        warnings.warn(
+            "This SqueezeExcitation class is deprecated and will be removed in future versions.", FutureWarning)
 
 
 class InvertedResidualConfig:
@@ -61,7 +54,7 @@ class InvertedResidualConfig:
 class InvertedResidual(nn.Module):
     # Implemented as described at section 5 of MobileNetV3 paper
     def __init__(self, cnf: InvertedResidualConfig, norm_layer: Callable[..., nn.Module],
-                 se_layer: Callable[..., nn.Module] = SqueezeExcitation):
+                 se_layer: Callable[..., nn.Module] = partial(SElayer, scale_activation=nn.Hardsigmoid)):
         super().__init__()
         if not (1 <= cnf.stride <= 2):
             raise ValueError('illegal stride value')
@@ -82,7 +75,8 @@ class InvertedResidual(nn.Module):
                                          stride=stride, dilation=cnf.dilation, groups=cnf.expanded_channels,
                                          norm_layer=norm_layer, activation_layer=activation_layer))
         if cnf.use_se:
-            layers.append(se_layer(cnf.expanded_channels))
+            squeeze_channels = _make_divisible(cnf.expanded_channels // 4, 8)
+            layers.append(se_layer(cnf.expanded_channels, squeeze_channels))
 
         # project
         layers.append(ConvNormActivation(cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,

@@ -1,5 +1,7 @@
 from common_utils import IN_CIRCLE_CI, CIRCLECI_GPU_NO_CUDA_MSG, IN_FBCODE, IN_RE_WORKER, CUDA_NOT_AVAILABLE_MSG
 import torch
+import numpy as np
+import random
 import pytest
 
 
@@ -80,3 +82,26 @@ def pytest_sessionfinish(session, exitstatus):
     # To avoid this, we transform this 5 into a 0 to make testpilot happy.
     if exitstatus == 5:
         session.exitstatus = 0
+
+
+@pytest.fixture(autouse=True)
+def prevent_leaking_rng():
+    # Prevent each test from leaking the rng to all other test when they call
+    # torch.manual_seed() or random.seed() or np.random.seed().
+    # Note: the numpy rngs should never leak anyway, as we never use
+    # np.random.seed() and instead rely on np.random.RandomState instances (see
+    # issue #4247). We still do it for extra precaution.
+
+    torch_rng_state = torch.get_rng_state()
+    builtin_rng_state = random.getstate()
+    nunmpy_rng_state = np.random.get_state()
+    if torch.cuda.is_available():
+        cuda_rng_state = torch.cuda.get_rng_state()
+
+    yield
+
+    torch.set_rng_state(torch_rng_state)
+    random.setstate(builtin_rng_state)
+    np.random.set_state(nunmpy_rng_state)
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state(cuda_rng_state)
