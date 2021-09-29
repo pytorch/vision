@@ -1,4 +1,5 @@
 import torch
+import warnings
 
 from functools import partial
 from torch import nn
@@ -18,8 +19,20 @@ model_urls = {
 
 
 # necessary for backwards compatibility
-ConvBNReLU = partial(ConvNormActivation, activation_layer=nn.ReLU6)
-ConvBNActivation = ConvBNReLU
+class _DeprecatedConvBNAct(ConvNormActivation):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "The ConvBNReLU/ConvBNActivation classes are deprecated and will be removed in future versions. "
+            "Use torchvision.ops.misc.ConvNormActivation instead.", FutureWarning)
+        if kwargs.get("norm_layer", None) is None:
+            kwargs["norm_layer"] = nn.BatchNorm2d
+        if kwargs.get("activation_layer", None) is None:
+            kwargs["activation_layer"] = nn.ReLU6
+        super().__init__(*args, **kwargs)
+
+
+ConvBNReLU = _DeprecatedConvBNAct
+ConvBNActivation = _DeprecatedConvBNAct
 
 
 class InvertedResidual(nn.Module):
