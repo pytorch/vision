@@ -29,8 +29,7 @@ if [[ "$version" != "cpu" ]]; then
         exit 1
     fi
 
-    if [ ! -f "${CUDA_PATH}\include\nvjpeg.h" ]
-    then
+    if [ ! -f "${CUDA_PATH}\include\nvjpeg.h" ]; then
         echo "nvjpeg does not exist"
         exit 1
     fi
