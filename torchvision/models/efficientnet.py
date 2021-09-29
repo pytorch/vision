@@ -8,9 +8,10 @@ from torch.nn import functional as F
 from typing import Any, Callable, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ._utils import _make_divisible
 from torchvision.ops import StochasticDepth
 
-from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
+from torchvision.models.mobilenetv2 import ConvBNActivation
 
 
 __all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b1", "efficientnet_b2", "efficientnet_b3",

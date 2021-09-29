@@ -6,7 +6,8 @@ from torch.nn import functional as F
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
+from ._utils import _make_divisible
+from torchvision.models.mobilenetv2 import ConvBNActivation
 
 
 __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
