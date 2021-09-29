@@ -98,7 +98,7 @@ class DatasetInfo:
         self,
         name: str,
         *,
-        categories: Union[int, Sequence[str], str, pathlib.Path],
+        categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
@@ -106,7 +106,9 @@ class DatasetInfo:
     ) -> None:
         self.name = name.lower()
 
-        if isinstance(categories, int):
+        if categories is None:
+            categories = []
+        elif isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
             with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
@@ -198,7 +200,6 @@ class Dataset(abc.ABC):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]],
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
@@ -208,7 +209,6 @@ class Dataset(abc.ABC):
         root: Union[str, pathlib.Path],
         *,
         config: Optional[DatasetConfig] = None,
-        shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = None,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
@@ -217,4 +217,4 @@ class Dataset(abc.ABC):
         resource_dps = [
             resource.to_datapipe(root) for resource in self.resources(config)
         ]
-        return self._make_datapipe(resource_dps, config=config, shuffler=shuffler, decoder=decoder)
+        return self._make_datapipe(resource_dps, config=config, decoder=decoder)
