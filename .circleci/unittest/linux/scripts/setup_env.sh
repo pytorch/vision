@@ -44,7 +44,4 @@ fi
 conda install -y -c pytorch "ffmpeg${FFMPEG_PIN}"
 conda env update --file "${this_dir}/environment.yml" --prune
 
-PYTORCH_VERSION_TMP=PYTORCH_VERSION
-unset PYTORCH_VERSION
-pip install git+https://github.com/pytorch/data.git
-PYTORCH_VERSION=PYTORCH_VERSION_TMP
+pip install git+https://github.com/pytorch/data.git@main
