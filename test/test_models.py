@@ -1,7 +1,7 @@
 import os
 import io
 import sys
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from common_utils import map_nested_tensor_object, set_rng_seed, cpu_and_gpu, needs_cuda
 from _utils_internal import get_relative_path
 from collections import OrderedDict
 import functools
@@ -101,10 +101,8 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
             return imported
 
         m_import = get_export_import_copy(m)
-        with freeze_rng_state():
-            results = m(*args)
-        with freeze_rng_state():
-            results_from_imported = m_import(*args)
+        results = m(*args)
+        results_from_imported = m_import(*args)
         tol = 3e-4
         try:
             torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
@@ -129,13 +127,11 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
     sm = torch.jit.script(nn_module)
 
-    with freeze_rng_state():
-        eager_out = nn_module(*args)
+    eager_out = nn_module(*args)
 
-    with freeze_rng_state():
-        script_out = sm(*args)
-        if unwrapper:
-            script_out = unwrapper(script_out)
+    script_out = sm(*args)
+    if unwrapper:
+        script_out = unwrapper(script_out)
 
     torch.testing.assert_close(eager_out, script_out, atol=1e-4, rtol=1e-4)
     assert_export_import_module(sm, args)
