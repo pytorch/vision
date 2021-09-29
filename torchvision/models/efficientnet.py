@@ -4,11 +4,10 @@ import torch
 
 from functools import partial
 from torch import nn, Tensor
-from torch.nn import functional as F
 from typing import Any, Callable, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation
+from ..ops.misc import ConvNormActivation, SqueezeExcitation
 from ._utils import _make_divisible
 from torchvision.ops import StochasticDepth
 
@@ -29,32 +28,6 @@ model_urls = {
     "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
     "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
 }
-
-
-class SqueezeExcitation(nn.Module):
-    def __init__(
-        self,
-        input_channels: int,
-        squeeze_channels: int,
-        activation: Callable[..., nn.Module] = nn.ReLU,
-        scale_activation: Callable[..., nn.Module] = nn.Sigmoid,
-    ) -> None:
-        super().__init__()
-        self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
-        self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
-        self.activation = activation()
-        self.scale_activation = scale_activation()
-
-    def _scale(self, input: Tensor) -> Tensor:
-        scale = F.adaptive_avg_pool2d(input, 1)
-        scale = self.fc1(scale)
-        scale = self.activation(scale)
-        scale = self.fc2(scale)
-        return self.scale_activation(scale)
-
-    def forward(self, input: Tensor) -> Tensor:
-        scale = self._scale(input)
-        return scale * input
 
 
 class MBConvConfig:

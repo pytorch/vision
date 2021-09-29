@@ -1,8 +1,7 @@
 import torch
 from torch import nn, Tensor
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation
-from ..efficientnet import SqueezeExcitation as SElayer
+from ...ops.misc import ConvNormActivation, SqueezeExcitation
 from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3,\
     model_urls, _mobilenet_v3_conf
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
@@ -18,7 +17,7 @@ quant_model_urls = {
 }
 
 
-class QuantizableSqueezeExcitation(SElayer):
+class QuantizableSqueezeExcitation(SqueezeExcitation):
     _version = 2
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

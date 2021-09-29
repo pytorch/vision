@@ -3,13 +3,11 @@ import torch
 
 from functools import partial
 from torch import nn, Tensor
-from torch.nn import functional as F
 from typing import Any, Callable, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation
+from ..ops.misc import ConvNormActivation, SqueezeExcitation as SElayer
 from ._utils import _make_divisible
-from .efficientnet import SqueezeExcitation as SElayer
 
 
 __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
@@ -30,7 +28,8 @@ class SqueezeExcitation(SElayer):
         self.relu = self.activation
         delattr(self, 'activation')
         warnings.warn(
-            "This SqueezeExcitation class is deprecated and will be removed in future versions.", FutureWarning)
+            "This SqueezeExcitation class is deprecated and will be removed in future versions."
+            "Use torchvision.ops.misc.SqueezeExcitation instead.", FutureWarning)
 
 
 class InvertedResidualConfig:
