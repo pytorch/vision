@@ -67,7 +67,6 @@ def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_matc
     f = method(**meth_kwargs)
     scripted_fn = torch.jit.script(f)
 
-    torch.manual_seed(12)
     tensor, pil_img = _create_data(26, 34, channels, device=device)
     # set seed to reproduce the same transformation for tensor and PIL image
     torch.manual_seed(12)
@@ -715,6 +714,7 @@ def test_random_apply(device):
 @pytest.mark.parametrize('channels', [1, 3])
 def test_gaussian_blur(device, channels, meth_kwargs):
     tol = 1.0 + 1e-10
+    torch.manual_seed(12)
     _test_class_op(
         T.GaussianBlur, meth_kwargs=meth_kwargs, channels=channels,
         test_exact_match=False, device=device, agg_method="max", tol=tol
