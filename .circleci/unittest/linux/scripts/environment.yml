@@ -14,4 +14,3 @@ dependencies:
     - pillow >=5.3.0, !=8.3.0
     - scipy
     - av
-    - git+https://github.com/pytorch/data.git

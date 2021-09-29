@@ -37,3 +37,4 @@ conda activate "${env_dir}"
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 conda env update --file "${this_dir}/environment.yml" --prune
+pip install git+https://github.com/pytorch/data.git

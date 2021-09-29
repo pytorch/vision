@@ -15,4 +15,3 @@ dependencies:
     - scipy
     - av
     - dataclasses
-    - git+https://github.com/pytorch/data.git
