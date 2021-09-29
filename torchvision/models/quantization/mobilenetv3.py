@@ -18,6 +18,8 @@ quant_model_urls = {
 
 
 class QuantizableSqueezeExcitation(SElayer):
+    _version = 2
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs["scale_activation"] = nn.Hardswish
         super().__init__(*args, **kwargs)
@@ -28,6 +30,42 @@ class QuantizableSqueezeExcitation(SElayer):
 
     def fuse_model(self) -> None:
         fuse_modules(self, ['fc1', 'activation'], inplace=True)
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        version = local_metadata.get("version", None)
+
+        if version is None or version < 2:
+            default_state_dict = {
+                "scale_activation.activation_post_process.scale": torch.tensor([1.]),
+                "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),
+                "scale_activation.activation_post_process.fake_quant_enabled": torch.tensor([1]),
+                "scale_activation.activation_post_process.observer_enabled": torch.tensor([1]),
+                "scale_activation.activation_post_process.activation_post_process.min_val": torch.tensor(float('inf')),
+                "scale_activation.activation_post_process.activation_post_process.max_val": torch.tensor(-float('inf')),
+            }
+            for k, v in default_state_dict.items():
+                full_key = prefix + k
+                if full_key not in state_dict:
+                    state_dict[full_key] = v
+
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
 
 
 class QuantizableInvertedResidual(InvertedResidual):
@@ -80,13 +118,12 @@ def _load_weights(
     arch: str,
     model: QuantizableMobileNetV3,
     model_url: Optional[str],
-    progress: bool,
-    strict: bool = True
+    progress: bool
 ) -> None:
     if model_url is None:
         raise ValueError("No checkpoint is available for {}".format(arch))
     state_dict = load_state_dict_from_url(model_url, progress=progress)
-    model.load_state_dict(state_dict, strict=strict)
+    model.load_state_dict(state_dict)
 
 
 def _mobilenet_v3_model(
@@ -110,7 +147,7 @@ def _mobilenet_v3_model(
         torch.quantization.prepare_qat(model, inplace=True)
 
         if pretrained:
-            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress, strict=False)
+            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress)
 
         torch.quantization.convert(model, inplace=True)
         model.eval()
