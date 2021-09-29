@@ -67,6 +67,7 @@ def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_matc
     f = method(**meth_kwargs)
     scripted_fn = torch.jit.script(f)
 
+    torch.manual_seed(12)
     tensor, pil_img = _create_data(26, 34, channels, device=device)
     # set seed to reproduce the same transformation for tensor and PIL image
     torch.manual_seed(12)
