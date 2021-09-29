@@ -8,13 +8,23 @@ from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo
 from torchvision.prototype.datasets.utils._internal import add_suggestion
-
+from . import _builtin
 
 DATASETS: Dict[str, Dataset] = {}
 
 
 def register(dataset: Dataset) -> None:
     DATASETS[dataset.name] = dataset
+
+
+for name, obj in _builtin.__dict__.items():
+    if (
+        not name.startswith("_")
+        and isinstance(obj, type)
+        and issubclass(obj, Dataset)
+        and obj is not Dataset
+    ):
+        register(obj())
 
 
 # This is exposed as 'list', but we avoid that here to not shadow the built-in 'list'
