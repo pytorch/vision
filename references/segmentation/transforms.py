@@ -1,5 +1,6 @@
 import random
 
+import numpy as np
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
@@ -76,7 +77,7 @@ class CenterCrop(object):
 class PILToTensor:
     def __call__(self, image, target):
         image = F.pil_to_tensor(image)
-        target = torch.as_tensor(target, dtype=torch.int64)
+        target = torch.as_tensor(np.array(target), dtype=torch.int64)
         return image, target
 
 
