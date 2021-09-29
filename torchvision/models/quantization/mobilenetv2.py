@@ -5,9 +5,10 @@ from ..._internally_replaced_utils import load_state_dict_from_url
 
 from typing import Any
 
-from torchvision.models.mobilenetv2 import InvertedResidual, ConvBNReLU, MobileNetV2, model_urls
+from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from .utils import _replace_relu, quantize_model
+from ...ops.misc import ConvNormActivation
 
 
 __all__ = ['QuantizableMobileNetV2', 'mobilenet_v2']
@@ -55,7 +56,7 @@ class QuantizableMobileNetV2(MobileNetV2):
 
     def fuse_model(self) -> None:
         for m in self.modules():
-            if type(m) == ConvBNReLU:
+            if type(m) == ConvNormActivation:
                 fuse_modules(m, ['0', '1', '2'], inplace=True)
             if type(m) == QuantizableInvertedResidual:
                 m.fuse_model()

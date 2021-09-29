@@ -1,7 +1,8 @@
 import torch
 from torch import nn, Tensor
 from ..._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv3 import InvertedResidual, InvertedResidualConfig, ConvBNActivation, MobileNetV3,\
+from ...ops.misc import ConvNormActivation
+from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3,\
     SqueezeExcitation, model_urls, _mobilenet_v3_conf
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from typing import Any, List, Optional
@@ -65,7 +66,7 @@ class QuantizableMobileNetV3(MobileNetV3):
 
     def fuse_model(self) -> None:
         for m in self.modules():
-            if type(m) == ConvBNActivation:
+            if type(m) == ConvNormActivation:
                 modules_to_fuse = ['0', '1']
                 if type(m[2]) == nn.ReLU:
                     modules_to_fuse.append('2')
