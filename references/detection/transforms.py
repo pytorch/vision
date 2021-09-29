@@ -60,9 +60,13 @@ class PILToTensor(nn.Module):
 
 
 class ConvertImageDtype(nn.Module):
+    def __init__(self, dtype: torch.dtype) -> None:
+        super().__init__()
+        self.dtype = dtype
+
     def forward(self, image: Tensor,
                 target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
-        image = F.convert_image_dtype(image)
+        image = F.convert_image_dtype(image, self.dtype)
         return image, target
 
 

@@ -1,3 +1,5 @@
+import torch
+
 import transforms as T
 
 
@@ -12,7 +14,7 @@ class SegmentationPresetTrain:
         trans.extend([
             T.RandomCrop(crop_size),
             T.PILToTensor(),
-            T.ConvertImageDtype(),
+            T.ConvertImageDtype(torch.float),
             T.Normalize(mean=mean, std=std),
         ])
         self.transforms = T.Compose(trans)
@@ -26,7 +28,7 @@ class SegmentationPresetEval:
         self.transforms = T.Compose([
             T.RandomResize(base_size, base_size),
             T.PILToTensor(),
-            T.ConvertImageDtype(),
+            T.ConvertImageDtype(torch.float),
             T.Normalize(mean=mean, std=std),
         ])
 
