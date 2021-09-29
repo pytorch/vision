@@ -23,8 +23,12 @@ __all__ = ["RegNet", "regnet_y_400mf", "regnet_y_800mf", "regnet_y_1_6gf",
 
 
 model_urls = {
-    # TODO(kazhang): add pretrained weights
-    "regnet_y_400m": "",
+    "regnet_y_400mf": "https://download.pytorch.org/models/regnet_y_400mf-540e987b.pth",
+    "regnet_y_800mf": "https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth",
+    "regnet_y_8gf": "https://download.pytorch.org/models/regnet_y_8gf-49ff86b5.pth",
+    "regnet_x_400mf": "https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth",
+    "regnet_x_800mf": "https://download.pytorch.org/models/regnet_x_800mf-5cb79b7e.pth",
+    "regnet_x_8gf": "https://download.pytorch.org/models/regnet_x_8gf-4c4e575e.pth",
 }
 
 
