@@ -1311,7 +1311,8 @@ def test_random_choice():
             transforms.Resize(15),
             transforms.Resize(20),
             transforms.CenterCrop(10)
-        ]
+        ],
+        [1 / 3, 1 / 3, 1 / 3]
     )
     img = transforms.ToPILImage()(torch.rand(3, 25, 25))
     num_samples = 250
