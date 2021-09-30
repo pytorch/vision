@@ -225,8 +225,6 @@ class Cifar100(_CifarBase):
 if __name__ == "__main__":
     from torchvision.prototype.datasets import home
 
-    home("~/datasets")
-
     root = home()
     Cifar10().generate_categories_file(root)
     Cifar100().generate_categories_file(root)
