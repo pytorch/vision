@@ -69,7 +69,7 @@ def create_categories_file(
         fh.write("\n".join(categories) + "\n")
 
 
-def image_buffer_from_array(array: np.array, *, format: str = "png") -> io.BytesIO:
+def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.BytesIO:
     image = PIL.Image.fromarray(array)
     buffer = io.BytesIO()
     image.save(buffer, format=format)
