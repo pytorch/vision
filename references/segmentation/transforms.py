@@ -87,7 +87,6 @@ class ConvertImageDtype:
 
     def __call__(self, image, target):
         image = F.convert_image_dtype(image, self.dtype)
-        target = torch.as_tensor(target, dtype=torch.int64)
         return image, target
 
 
