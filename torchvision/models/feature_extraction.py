@@ -301,7 +301,7 @@ def create_feature_extractor(
     the model via FX to return the desired nodes as outputs. All unused nodes
     are removed, together with their corresponding parameters.
 
-    Desired output nodes must be specified as a ``.`` seperated
+    Desired output nodes must be specified as a ``.`` separated
     path walking the module hierarchy from top level module down to leaf
     operation or leaf module. For more details on the node naming conventions
     used here, please see the :ref:`relevant subheading <about-node-names>`
