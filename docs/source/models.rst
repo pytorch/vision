@@ -111,9 +111,14 @@ These can be constructed by passing ``pretrained=True``:
     efficientnet_b7 = models.efficientnet_b7(pretrained=True)
     regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
     regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
+    regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
+    regnet_y_3_2gf = models.regnet_y_3_2gf(pretrained=True)
     regnet_y_8gf = models.regnet_y_8gf(pretrained=True)
+    regnet_y_32gf = models.regnet_y_32gf(pretrained=True)
     regnet_x_400mf = models.regnet_x_400mf(pretrained=True)
     regnet_x_800mf = models.regnet_x_800mf(pretrained=True)
+    regnet_x_1_6gf = models.regnet_x_1_6gf(pretrained=True)
+    regnet_x_3_2gf = models.regnet_x_3_2gf(pretrained=True)
     regnet_x_8gf = models.regnet_x_8gf(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
