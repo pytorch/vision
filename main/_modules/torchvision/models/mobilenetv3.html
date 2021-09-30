@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+331e073 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+10a585e ) &#x25BC</a>
     </div>
     
 
@@ -316,15 +316,16 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.mobilenetv3</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.mobilenetv2</span> <span class="kn">import</span> <span class="n">_make_divisible</span><span class="p">,</span> <span class="n">ConvBNActivation</span>
+<span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span> <span class="k">as</span> <span class="n">SElayer</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MobileNetV3&quot;</span><span class="p">,</span> <span class="s2">&quot;mobilenet_v3_large&quot;</span><span class="p">,</span> <span class="s2">&quot;mobilenet_v3_small&quot;</span><span class="p">]</span>
@@ -336,25 +337,17 @@
 <span class="p">}</span>
 
 
-<span class="k">class</span> <span class="nc">SqueezeExcitation</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="c1"># Implemented as described at Figure 4 of the MobileNetV3 paper</span>
+<span class="k">class</span> <span class="nc">SqueezeExcitation</span><span class="p">(</span><span class="n">SElayer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;DEPRECATED</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">squeeze_channels</span> <span class="o">=</span> <span class="n">_make_divisible</span><span class="p">(</span><span class="n">input_channels</span> <span class="o">//</span> <span class="n">squeeze_factor</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">squeeze_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">squeeze_channels</span><span class="p">,</span> <span class="n">input_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adaptive_avg_pool2d</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">hardsigmoid</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scale</span> <span class="o">*</span> <span class="nb">input</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">squeeze_channels</span><span class="p">,</span> <span class="n">scale_activation</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Hardsigmoid</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span>
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;activation&#39;</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;This SqueezeExcitation class is deprecated and will be removed in future versions. &quot;</span>
+            <span class="s2">&quot;Use torchvision.ops.misc.SqueezeExcitation instead.&quot;</span><span class="p">,</span> <span class="ne">FutureWarning</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">InvertedResidualConfig</span><span class="p">:</span>
@@ -378,7 +371,7 @@
 <span class="k">class</span> <span class="nc">InvertedResidual</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="c1"># Implemented as described at section 5 of MobileNetV3 paper</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cnf</span><span class="p">:</span> <span class="n">InvertedResidualConfig</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
-                 <span class="n">se_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">SqueezeExcitation</span><span class="p">):</span>
+                 <span class="n">se_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">SElayer</span><span class="p">,</span> <span class="n">scale_activation</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Hardsigmoid</span><span class="p">)):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">stride</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;illegal stride value&#39;</span><span class="p">)</span>
@@ -390,20 +383,21 @@
 
         <span class="c1"># expand</span>
         <span class="k">if</span> <span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span> <span class="o">!=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">:</span>
-            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvBNActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                           <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">))</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                             <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">))</span>
 
         <span class="c1"># depthwise</span>
         <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">cnf</span><span class="o">.</span><span class="n">dilation</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">cnf</span><span class="o">.</span><span class="n">stride</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvBNActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
-                                       <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">dilation</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span>
-                                       <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+                                         <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">dilation</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span>
+                                         <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">cnf</span><span class="o">.</span><span class="n">use_se</span><span class="p">:</span>
-            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">se_layer</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">))</span>
+            <span class="n">squeeze_channels</span> <span class="o">=</span> <span class="n">_make_divisible</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">se_layer</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">squeeze_channels</span><span class="p">))</span>
 
         <span class="c1"># project</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvBNActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
-                                       <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                                         <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span>
@@ -455,8 +449,8 @@
 
         <span class="c1"># building first layer</span>
         <span class="n">firstconv_output_channels</span> <span class="o">=</span> <span class="n">inverted_residual_setting</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input_channels</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvBNActivation</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">firstconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
-                                       <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Hardswish</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">firstconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                                         <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Hardswish</span><span class="p">))</span>
 
         <span class="c1"># building inverted residual blocks</span>
         <span class="k">for</span> <span class="n">cnf</span> <span class="ow">in</span> <span class="n">inverted_residual_setting</span><span class="p">:</span>
@@ -465,8 +459,8 @@
         <span class="c1"># building last several layers</span>
         <span class="n">lastconv_input_channels</span> <span class="o">=</span> <span class="n">inverted_residual_setting</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span>
         <span class="n">lastconv_output_channels</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">lastconv_input_channels</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvBNActivation</span><span class="p">(</span><span class="n">lastconv_input_channels</span><span class="p">,</span> <span class="n">lastconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                       <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Hardswish</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">lastconv_input_channels</span><span class="p">,</span> <span class="n">lastconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                         <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Hardswish</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>

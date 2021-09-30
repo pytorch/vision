@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+331e073 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+10a585e ) &#x25BC</a>
     </div>
     
 
@@ -351,6 +351,7 @@ architectures for image classification:</p>
 <li><p><a class="reference internal" href="#wide-resnet">Wide ResNet</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/1807.11626">MNASNet</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/1905.11946">EfficientNet</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2003.13678">RegNet</a></p></li>
 </ul>
 <p>You can construct a model with random weights by calling its constructor:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
@@ -376,6 +377,20 @@ architectures for image classification:</p>
 <span class="n">efficientnet_b5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b5</span><span class="p">()</span>
 <span class="n">efficientnet_b6</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b6</span><span class="p">()</span>
 <span class="n">efficientnet_b7</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b7</span><span class="p">()</span>
+<span class="n">regnet_y_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_400mf</span><span class="p">()</span>
+<span class="n">regnet_y_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_800mf</span><span class="p">()</span>
+<span class="n">regnet_y_1_6gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_1_6gf</span><span class="p">()</span>
+<span class="n">regnet_y_3_2gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_3_2gf</span><span class="p">()</span>
+<span class="n">regnet_y_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_8gf</span><span class="p">()</span>
+<span class="n">regnet_y_16gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_16gf</span><span class="p">()</span>
+<span class="n">regnet_y_32gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_32gf</span><span class="p">()</span>
+<span class="n">regnet_x_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_400mf</span><span class="p">()</span>
+<span class="n">regnet_x_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_800mf</span><span class="p">()</span>
+<span class="n">regnet_x_1_6gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_1_6gf</span><span class="p">()</span>
+<span class="n">regnet_x_3_2gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_3_2gf</span><span class="p">()</span>
+<span class="n">regnet_x_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_8gf</span><span class="p">()</span>
+<span class="n">regnet_x_16gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_16gf</span><span class="p">()</span>
+<span class="n">regnet_x_32gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_32gf</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>We provide pre-trained models, using the PyTorch <a class="reference external" href="https://pytorch.org/docs/stable/model_zoo.html#module-torch.utils.model_zoo" title="(in PyTorch v1.9.1)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.utils.model_zoo</span></code></a>.
@@ -403,6 +418,12 @@ These can be constructed by passing <code class="docutils literal notranslate"><
 <span class="n">efficientnet_b5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b5</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">efficientnet_b6</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b6</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">efficientnet_b7</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b7</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">regnet_y_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_400mf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">regnet_y_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_800mf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">regnet_y_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_8gf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">regnet_x_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_400mf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">regnet_x_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_800mf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">regnet_x_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_8gf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Instancing a pre-trained model will download its weights to a cache directory.
@@ -624,6 +645,30 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <tr class="row-even"><td><p>EfficientNet-B7</p></td>
 <td><p>84.122</p></td>
 <td><p>96.908</p></td>
+</tr>
+<tr class="row-odd"><td><p>regnet_x_400mf</p></td>
+<td><p>72.834</p></td>
+<td><p>90.950</p></td>
+</tr>
+<tr class="row-even"><td><p>regnet_x_800mf</p></td>
+<td><p>75.190</p></td>
+<td><p>92.418</p></td>
+</tr>
+<tr class="row-odd"><td><p>regnet_x_8gf</p></td>
+<td><p>79.324</p></td>
+<td><p>94.694</p></td>
+</tr>
+<tr class="row-even"><td><p>regnet_y_400mf</p></td>
+<td><p>74.024</p></td>
+<td><p>91.680</p></td>
+</tr>
+<tr class="row-odd"><td><p>regnet_y_800mf</p></td>
+<td><p>76.420</p></td>
+<td><p>93.136</p></td>
+</tr>
+<tr class="row-even"><td><p>regnet_y_8gf</p></td>
+<td><p>79.966</p></td>
+<td><p>95.100</p></td>
 </tr>
 </tbody>
 </table>
@@ -1398,6 +1443,219 @@ channels, and in Wide ResNet-50-2 has 2048-1024-2048.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="id43">
+<h3>RegNet<a class="headerlink" href="#id43" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_400mf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_400mf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_400mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_400mf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_400MF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_800mf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_800mf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_800mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_800mf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_800MF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_1_6gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_1_6gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_1_6gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_1_6gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_1.6GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_3_2gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_3_2gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_3_2gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_3_2gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_3.2GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_8gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_8gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_8gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_8gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_8GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_16gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_16gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_16gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_16gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_16GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_y_32gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_y_32gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_y_32gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_y_32gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetY_32GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_400mf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_400mf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_400mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_400mf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_400MF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_800mf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_800mf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_800mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_800mf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_800MF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_1_6gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_1_6gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_1_6gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_1_6gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_1.6GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_3_2gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_3_2gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_3_2gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_3_2gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_3.2GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_8gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_8gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_8gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_8gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_8GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_16gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_16gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_16gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_16gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_16GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="torchvision.models.regnet_x_32gf">
+<code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">regnet_x_32gf</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.regnet.RegNet</span><a class="reference internal" href="_modules/torchvision/models/regnet.html#regnet_x_32gf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.regnet_x_32gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a RegNetX_32GF architecture from
+<a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, returns a model pre-trained on ImageNet</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="quantized-models">
 <h3>Quantized Models<a class="headerlink" href="#quantized-models" title="Permalink to this headline">¶</a></h3>
 <p>The following architectures provide support for INT8 quantized models. You can get
@@ -1556,7 +1814,12 @@ contains the same classes as Pascal VOC</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">fcn_resnet50</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id66">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id66" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.models.segmentation.fcn_resnet101">
@@ -1593,7 +1856,12 @@ contains the same classes as Pascal VOC</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">deeplabv3_resnet50</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id67">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id67" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 <dl class="py function">
 <dt id="torchvision.models.segmentation.deeplabv3_resnet101">
@@ -1646,7 +1914,12 @@ contains the same classes as Pascal VOC</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">lraspp_mobilenet_v3_large</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id68">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id68" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </div>
 </div>
@@ -1901,8 +2174,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id43">
-<h3>Faster R-CNN<a class="headerlink" href="#id43" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id57">
+<h3>Faster R-CNN<a class="headerlink" href="#id57" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="torchvision.models.detection.fasterrcnn_resnet50_fpn">
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.detection.</span></code><code class="sig-name descname"><span class="pre">fasterrcnn_resnet50_fpn</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable_backbone_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_resnet50_fpn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
@@ -1971,9 +2244,13 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </dd>
 </dl>
 <p>Examples using <code class="docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="The following example illustrates the operations available the ops module for repurposing segme..."><div class="figure align-default" id="id52">
+<div class="sphx-glr-thumbcontainer" tooltip="The following example illustrates the operations available the ops module for repurposing segme..."><div class="figure align-default" id="id69">
 <img alt="Repurposing masks into bounding boxes" src="_images/sphx_glr_plot_repurposing_annotations_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_repurposing_annotations.html#sphx-glr-auto-examples-plot-repurposing-annotations-py"><span class="std std-ref">Repurposing masks into bounding boxes</span></a></span><a class="headerlink" href="#id52" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_repurposing_annotations.html#sphx-glr-auto-examples-plot-repurposing-annotations-py"><span class="std std-ref">Repurposing masks into bounding boxes</span></a></span><a class="headerlink" href="#id69" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id70">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id70" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="sphx-glr-clear"></div></dd></dl>
 
@@ -2034,8 +2311,8 @@ Valid values are between 0 and 6, with 6 meaning all backbone layers are trainab
 </dd></dl>
 
 </div>
-<div class="section" id="id44">
-<h3>RetinaNet<a class="headerlink" href="#id44" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id58">
+<h3>RetinaNet<a class="headerlink" href="#id58" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="torchvision.models.detection.retinanet_resnet50_fpn">
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.detection.</span></code><code class="sig-name descname"><span class="pre">retinanet_resnet50_fpn</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable_backbone_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/retinanet.html#retinanet_resnet50_fpn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.detection.retinanet_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
@@ -2086,11 +2363,16 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">retinanet_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id71">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id71" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </div>
-<div class="section" id="id45">
-<h3>SSD<a class="headerlink" href="#id45" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id59">
+<h3>SSD<a class="headerlink" href="#id59" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="torchvision.models.detection.ssd300_vgg16">
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.detection.</span></code><code class="sig-name descname"><span class="pre">ssd300_vgg16</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_backbone</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable_backbone_layers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/ssd.html#ssd300_vgg16"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.detection.ssd300_vgg16" title="Permalink to this definition">¶</a></dt>
@@ -2141,11 +2423,16 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">ssd300_vgg16</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id72">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id72" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </div>
-<div class="section" id="id46">
-<h3>SSDlite<a class="headerlink" href="#id46" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id60">
+<h3>SSDlite<a class="headerlink" href="#id60" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="torchvision.models.detection.ssdlite320_mobilenet_v3_large">
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.detection.</span></code><code class="sig-name descname"><span class="pre">ssdlite320_mobilenet_v3_large</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_backbone</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable_backbone_layers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm_layer</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">…</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">torch.nn.modules.module.Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/ssdlite.html#ssdlite320_mobilenet_v3_large"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
@@ -2173,11 +2460,16 @@ Valid values are between 0 and 6, with 6 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">ssdlite320_mobilenet_v3_large</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id73">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id73" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </div>
-<div class="section" id="id49">
-<h3>Mask R-CNN<a class="headerlink" href="#id49" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id63">
+<h3>Mask R-CNN<a class="headerlink" href="#id63" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="torchvision.models.detection.maskrcnn_resnet50_fpn">
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.detection.</span></code><code class="sig-name descname"><span class="pre">maskrcnn_resnet50_fpn</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable_backbone_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/models/detection/mask_rcnn.html#maskrcnn_resnet50_fpn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.detection.maskrcnn_resnet50_fpn" title="Permalink to this definition">¶</a></dt>
@@ -2236,7 +2528,12 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">maskrcnn_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id74">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id74" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </div>
 <div class="section" id="keypoint-r-cnn">
@@ -2299,7 +2596,12 @@ Valid values are between 0 and 5, with 5 meaning all backbone layers are trainab
 </ul>
 </dd>
 </dl>
-</dd></dl>
+<p>Examples using <code class="docutils literal notranslate"><span class="pre">keypointrcnn_resnet50_fpn</span></code>:</p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id75">
+<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id75" title="Permalink to this image">¶</a></p>
+</div>
+</div><div class="sphx-glr-clear"></div></dd></dl>
 
 </div>
 </div>
@@ -2485,6 +2787,7 @@ images because it assumes the video is 4d.</p>
 <li><a class="reference internal" href="#wide-resnet">Wide ResNet</a></li>
 <li><a class="reference internal" href="#id31">MNASNet</a></li>
 <li><a class="reference internal" href="#id35">EfficientNet</a></li>
+<li><a class="reference internal" href="#id43">RegNet</a></li>
 <li><a class="reference internal" href="#quantized-models">Quantized Models</a></li>
 </ul>
 </li>
@@ -2496,11 +2799,11 @@ images because it assumes the video is 4d.</p>
 </li>
 <li><a class="reference internal" href="#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a><ul>
 <li><a class="reference internal" href="#runtime-characteristics">Runtime characteristics</a></li>
-<li><a class="reference internal" href="#id43">Faster R-CNN</a></li>
-<li><a class="reference internal" href="#id44">RetinaNet</a></li>
-<li><a class="reference internal" href="#id45">SSD</a></li>
-<li><a class="reference internal" href="#id46">SSDlite</a></li>
-<li><a class="reference internal" href="#id49">Mask R-CNN</a></li>
+<li><a class="reference internal" href="#id57">Faster R-CNN</a></li>
+<li><a class="reference internal" href="#id58">RetinaNet</a></li>
+<li><a class="reference internal" href="#id59">SSD</a></li>
+<li><a class="reference internal" href="#id60">SSDlite</a></li>
+<li><a class="reference internal" href="#id63">Mask R-CNN</a></li>
 <li><a class="reference internal" href="#keypoint-r-cnn">Keypoint R-CNN</a></li>
 </ul>
 </li>
