@@ -5,7 +5,7 @@ import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
 
 import numpy as np
 import torch
@@ -66,7 +66,7 @@ class MNISTFileReader(IterDataPipe):
 
             in_dtype = np.dtype(f">{dtype_type}")
             out_dtype = np.dtype(dtype_type)
-            chunk_size = (prod(shape) if shape else 1) * in_dtype.itemsize
+            chunk_size = (cast(int, prod(shape)) if shape else 1) * in_dtype.itemsize
             for _ in range(num_samples):
                 chunk = file.read(chunk_size)
                 yield np.frombuffer(chunk, dtype=in_dtype).astype(out_dtype).reshape(shape)
