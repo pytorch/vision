@@ -35,7 +35,8 @@ class Compose:
     Example:
         >>> transforms.Compose([
         >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
+        >>>     transforms.PILToTensor(),
+        >>>     transforms.ConvertImageDtype(torch.float),
         >>> ])
 
     .. note::
@@ -1570,7 +1571,8 @@ class RandomErasing(torch.nn.Module):
     Example:
         >>> transform = transforms.Compose([
         >>>   transforms.RandomHorizontalFlip(),
-        >>>   transforms.ToTensor(),
+        >>>   transforms.PILToTensor(),
+        >>>   transforms.ConvertImageDtype(torch.float),
         >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         >>>   transforms.RandomErasing(),
         >>> ])

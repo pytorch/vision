@@ -7,6 +7,7 @@ This example illustrates some of the utilities that torchvision offers for
 visualizing images, bounding boxes, and segmentation masks.
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/visualization_utils_thumbnail.png"
 
 import torch
 import numpy as np
