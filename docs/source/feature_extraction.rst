@@ -37,7 +37,7 @@ the inner workings of the symbolic tracing.
 In order to specify which nodes should be output nodes for extracted
 features, one should be familiar with the node naming convention used here
 (which differs slightly from that used in ``torch.fx``). A node name is
-specified as a ``.`` seperated path walking the module hierarchy from top level
+specified as a ``.`` separated path walking the module hierarchy from top level
 module down to leaf operation or leaf module. For instance ``"layer4.2.relu"``
 in ResNet-50 represents the output of the ReLU of the 2nd block of the 4th
 layer of the ``ResNet`` module. Here are some finer points to keep in mind:
