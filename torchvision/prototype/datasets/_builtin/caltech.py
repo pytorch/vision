@@ -68,7 +68,7 @@ class Caltech101(Dataset):
         path = pathlib.Path(data[0])
 
         category = path.parent.name
-        id = self._IMAGES_NAME_PATTERN.match(path.name).group("id")
+        id = self._IMAGES_NAME_PATTERN.match(path.name).group("id")  # type: ignore[union-attr]
 
         return category, id
 
@@ -79,7 +79,7 @@ class Caltech101(Dataset):
         if category in self._ANNS_CATEGORY_MAP:
             category = self._ANNS_CATEGORY_MAP[category]
 
-        id = self._ANNS_NAME_PATTERN.match(path.name).group("id")
+        id = self._ANNS_NAME_PATTERN.match(path.name).group("id")  # type: ignore[union-attr]
 
         return category, id
 
