@@ -15,6 +15,8 @@ from typing import (
     NoReturn,
     Iterable,
     Tuple,
+    Iterator,
+    cast,
 )
 
 import torch
@@ -27,7 +29,7 @@ from torchvision.prototype.datasets.utils._internal import (
 from ._resource import OnlineResource
 
 
-def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
+def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
     def to_str(sep: str) -> str:
         return sep.join([f"{key}={value}" for key, value in items])
 
@@ -46,7 +48,7 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
 
 
 class DatasetConfig(Mapping):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         data = dict(*args, **kwargs)
         self.__dict__["__data__"] = data
         self.__dict__["__final_hash__"] = hash(tuple(data.items()))
@@ -54,10 +56,10 @@ class DatasetConfig(Mapping):
     def __getitem__(self, name: str) -> Any:
         return self.__dict__["__data__"][name]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         return iter(self.__dict__["__data__"].keys())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__dict__["__data__"])
 
     def __getattr__(self, name: str) -> Any:
@@ -81,7 +83,7 @@ class DatasetConfig(Mapping):
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __hash__(self) -> int:
-        return self.__dict__["__final_hash__"]
+        return cast(int, self.__dict__["__final_hash__"])
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, DatasetConfig):

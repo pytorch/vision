@@ -84,7 +84,10 @@ class Caltech101(Dataset):
         return category, id
 
     def _collate_and_decode_sample(
-        self, data, *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self,
+        data: Tuple[Tuple[str, str], Tuple[str, io.IOBase], Tuple[str, io.IOBase]],
+        *,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         key, image_data, ann_data = data
         category, _ = key
@@ -119,12 +122,12 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = TarArchiveReader(images_dp)
-        images_dp = Filter(images_dp, self._is_not_background_image)
+        images_dp: IterDataPipe = Filter(images_dp, self._is_not_background_image)
         # FIXME: add this after https://github.com/pytorch/pytorch/issues/65808 is resolved
         # images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = TarArchiveReader(anns_dp)
-        anns_dp = Filter(anns_dp, self._is_ann)
+        anns_dp: IterDataPipe = Filter(anns_dp, self._is_ann)
 
         dp = KeyZipper(
             images_dp,
@@ -139,7 +142,7 @@ class Caltech101(Dataset):
     def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp = Filter(dp, self._is_not_background_image)
+        dp: IterDataPipe = Filter(dp, self._is_not_background_image)
         dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
         create_categories_file(HERE, self.name, sorted(dir_names))
 
@@ -188,7 +191,7 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)
-        dp = Filter(dp, self._is_not_rogue_file)
+        dp: IterDataPipe = Filter(dp, self._is_not_rogue_file)
         # FIXME: add this after https://github.com/pytorch/pytorch/issues/65808 is resolved
         # dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
