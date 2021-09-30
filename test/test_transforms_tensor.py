@@ -714,6 +714,7 @@ def test_random_apply(device):
 @pytest.mark.parametrize('channels', [1, 3])
 def test_gaussian_blur(device, channels, meth_kwargs):
     tol = 1.0 + 1e-10
+    torch.manual_seed(12)
     _test_class_op(
         T.GaussianBlur, meth_kwargs=meth_kwargs, channels=channels,
         test_exact_match=False, device=device, agg_method="max", tol=tol
