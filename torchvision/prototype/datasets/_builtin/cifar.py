@@ -1,7 +1,6 @@
 import abc
 import functools
 import io
-import os.path
 import pathlib
 import pickle
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TypeVar
@@ -156,10 +155,9 @@ class Cifar10(_CifarBase):
             )
         ]
 
-    def _is_data_file(self, data: Tuple[str, io.IOBase], *, config: DatasetConfig) -> bool:
-        path, _ = data
-        name = os.path.basename(path)
-        return name.startswith("data" if config.split == "train" else "test")
+    def _is_data_file(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
+        path = pathlib.Path(data[0])
+        return path.name.startswith("data" if config.split == "train" else "test")
 
     def _split_data_file(self, data: Tuple[str, Any]) -> Optional[int]:
         key, _ = data
@@ -200,9 +198,8 @@ class Cifar100(_CifarBase):
         ]
 
     def _is_data_file(self, data: Tuple[str, io.IOBase], *, config: DatasetConfig) -> bool:
-        path, _ = data
-        name = os.path.basename(path)
-        return name == config.split
+        path = pathlib.Path(data[0])
+        return path.name == config.split
 
     def _split_data_file(self, data: Tuple[str, Any]) -> Optional[int]:
         key, _ = data
