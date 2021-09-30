@@ -200,6 +200,7 @@ jobs:
             pip install --user --progress-bar off mypy
             pip install --user --progress-bar off types-requests
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            pip install --user --progress-bar off git+https://github.com/pytorch/data.git
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
 

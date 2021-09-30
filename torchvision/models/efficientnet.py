@@ -4,13 +4,12 @@ import torch
 
 from functools import partial
 from torch import nn, Tensor
-from torch.nn import functional as F
 from typing import Any, Callable, List, Optional, Sequence
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ._utils import _make_divisible
 from torchvision.ops import StochasticDepth
-
-from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
 
 
 __all__ = ["EfficientNet", "efficientnet_b0", "efficientnet_b1", "efficientnet_b2", "efficientnet_b3",
@@ -29,32 +28,6 @@ model_urls = {
     "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
     "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
 }
-
-
-class SqueezeExcitation(nn.Module):
-    def __init__(
-        self,
-        input_channels: int,
-        squeeze_channels: int,
-        activation: Callable[..., nn.Module] = nn.ReLU,
-        scale_activation: Callable[..., nn.Module] = nn.Sigmoid,
-    ) -> None:
-        super().__init__()
-        self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
-        self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
-        self.activation = activation()
-        self.scale_activation = scale_activation()
-
-    def _scale(self, input: Tensor) -> Tensor:
-        scale = F.adaptive_avg_pool2d(input, 1)
-        scale = self.fc1(scale)
-        scale = self.activation(scale)
-        scale = self.fc2(scale)
-        return self.scale_activation(scale)
-
-    def forward(self, input: Tensor) -> Tensor:
-        scale = self._scale(input)
-        return scale * input
 
 
 class MBConvConfig:
@@ -106,21 +79,21 @@ class MBConv(nn.Module):
         # expand
         expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
         if expanded_channels != cnf.input_channels:
-            layers.append(ConvBNActivation(cnf.input_channels, expanded_channels, kernel_size=1,
-                                           norm_layer=norm_layer, activation_layer=activation_layer))
+            layers.append(ConvNormActivation(cnf.input_channels, expanded_channels, kernel_size=1,
+                                             norm_layer=norm_layer, activation_layer=activation_layer))
 
         # depthwise
-        layers.append(ConvBNActivation(expanded_channels, expanded_channels, kernel_size=cnf.kernel,
-                                       stride=cnf.stride, groups=expanded_channels,
-                                       norm_layer=norm_layer, activation_layer=activation_layer))
+        layers.append(ConvNormActivation(expanded_channels, expanded_channels, kernel_size=cnf.kernel,
+                                         stride=cnf.stride, groups=expanded_channels,
+                                         norm_layer=norm_layer, activation_layer=activation_layer))
 
         # squeeze and excitation
         squeeze_channels = max(1, cnf.input_channels // 4)
         layers.append(se_layer(expanded_channels, squeeze_channels, activation=partial(nn.SiLU, inplace=True)))
 
         # project
-        layers.append(ConvBNActivation(expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
-                                       activation_layer=nn.Identity))
+        layers.append(ConvNormActivation(expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
+                                         activation_layer=None))
 
         self.block = nn.Sequential(*layers)
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
@@ -174,8 +147,8 @@ class EfficientNet(nn.Module):
 
         # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
-        layers.append(ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
-                                       activation_layer=nn.SiLU))
+        layers.append(ConvNormActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
+                                         activation_layer=nn.SiLU))
 
         # building inverted residual blocks
         total_stage_blocks = sum([cnf.num_layers for cnf in inverted_residual_setting])
@@ -202,8 +175,8 @@ class EfficientNet(nn.Module):
         # building last several layers
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = 4 * lastconv_input_channels
-        layers.append(ConvBNActivation(lastconv_input_channels, lastconv_output_channels, kernel_size=1,
-                                       norm_layer=norm_layer, activation_layer=nn.SiLU))
+        layers.append(ConvNormActivation(lastconv_input_channels, lastconv_output_channels, kernel_size=1,
+                                         norm_layer=norm_layer, activation_layer=nn.SiLU))
 
         self.features = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)

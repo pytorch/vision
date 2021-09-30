@@ -12,8 +12,8 @@ from typing import Any, Callable, List, Optional, Tuple
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv2 import ConvBNActivation, _make_divisible
-from torchvision.models.efficientnet import SqueezeExcitation
+from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ._utils import _make_divisible
 
 
 __all__ = ["RegNet", "regnet_y_400mf", "regnet_y_800mf", "regnet_y_1_6gf",
@@ -32,7 +32,7 @@ model_urls = {
 }
 
 
-class SimpleStemIN(ConvBNActivation):
+class SimpleStemIN(ConvNormActivation):
     """Simple stem for ImageNet: 3x3, BN, ReLU."""
 
     def __init__(
@@ -64,10 +64,10 @@ class BottleneckTransform(nn.Sequential):
         w_b = int(round(width_out * bottleneck_multiplier))
         g = w_b // group_width
 
-        layers["a"] = ConvBNActivation(width_in, w_b, kernel_size=1, stride=1,
-                                       norm_layer=norm_layer, activation_layer=activation_layer)
-        layers["b"] = ConvBNActivation(w_b, w_b, kernel_size=3, stride=stride, groups=g,
-                                       norm_layer=norm_layer, activation_layer=activation_layer)
+        layers["a"] = ConvNormActivation(width_in, w_b, kernel_size=1, stride=1,
+                                         norm_layer=norm_layer, activation_layer=activation_layer)
+        layers["b"] = ConvNormActivation(w_b, w_b, kernel_size=3, stride=stride, groups=g,
+                                         norm_layer=norm_layer, activation_layer=activation_layer)
 
         if se_ratio:
             # The SE reduction ratio is defined with respect to the
@@ -79,8 +79,8 @@ class BottleneckTransform(nn.Sequential):
                 activation=activation_layer,
             )
 
-        layers["c"] = ConvBNActivation(w_b, width_out, kernel_size=1, stride=1,
-                                       norm_layer=norm_layer, activation_layer=nn.Identity)
+        layers["c"] = ConvNormActivation(w_b, width_out, kernel_size=1, stride=1,
+                                         norm_layer=norm_layer, activation_layer=None)
         super().__init__(layers)
 
 
@@ -104,8 +104,8 @@ class ResBottleneckBlock(nn.Module):
         self.proj = None
         should_proj = (width_in != width_out) or (stride != 1)
         if should_proj:
-            self.proj = ConvBNActivation(width_in, width_out, kernel_size=1,
-                                         stride=stride, norm_layer=norm_layer, activation_layer=nn.Identity)
+            self.proj = ConvNormActivation(width_in, width_out, kernel_size=1,
+                                           stride=stride, norm_layer=norm_layer, activation_layer=None)
         self.f = BottleneckTransform(
             width_in,
             width_out,
