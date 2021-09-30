@@ -15,7 +15,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
 export BUILD_TYPE=conda
-setup_env 0.11.0
+setup_env 0.12.0
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
@@ -43,6 +43,10 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     conda install -yq libpng jpeg
 else
     yum install -y libpng-devel libjpeg-turbo-devel
+fi
+
+if [[ "$OSTYPE" == "msys" ]]; then
+    source .circleci/unittest/windows/scripts/set_cuda_envs.sh
 fi
 
 mkdir cpp_build

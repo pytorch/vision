@@ -20,9 +20,7 @@ from torchvision import io
 import numpy as np
 from PIL import Image
 
-IS_PY39 = sys.version_info.major == 3 and sys.version_info.minor == 9
-PY39_SEGFAULT_SKIP_MSG = "Segmentation fault with Python 3.9, see https://github.com/pytorch/vision/issues/3367"
-PY39_SKIP = pytest.mark.skipif(IS_PY39, reason=PY39_SEGFAULT_SKIP_MSG)
+
 IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
@@ -130,7 +128,12 @@ def needs_cuda(test_func):
 def _create_data(height=3, width=3, channels=3, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
     tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-    pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+    data = tensor.permute(1, 2, 0).contiguous().cpu().numpy()
+    mode = "RGB"
+    if channels == 1:
+        mode = "L"
+        data = data[..., 0]
+    pil_img = Image.fromarray(data, mode=mode)
     return tensor, pil_img
 
 
@@ -145,7 +148,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=1e-6)
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):

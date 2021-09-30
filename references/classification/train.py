@@ -4,11 +4,13 @@ import time
 
 import torch
 import torch.utils.data
+from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 from torchvision.transforms.functional import InterpolationMode
 
 import presets
+import transforms
 import utils
 
 try:
@@ -164,26 +166,39 @@ def main(args):
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
+
+    collate_fn = None
+    num_classes = len(dataset.classes)
+    mixup_transforms = []
+    if args.mixup_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+    if args.cutmix_alpha > 0.0:
+        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
+    if mixup_transforms:
+        mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
+        collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
-
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True,
+        collate_fn=collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
+    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
     model.to(device)
+
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     opt_name = args.opt.lower()
-    if opt_name == 'sgd':
+    if opt_name.startswith("sgd"):
         optimizer = torch.optim.SGD(
-            model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+            model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
+            nesterov="nesterov" in opt_name)
     elif opt_name == 'rmsprop':
         optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr, momentum=args.momentum,
                                         weight_decay=args.weight_decay, eps=0.0316, alpha=0.9)
@@ -195,7 +210,35 @@ def main(args):
                                           opt_level=args.apex_opt_level
                                           )
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    args.lr_scheduler = args.lr_scheduler.lower()
+    if args.lr_scheduler == 'steplr':
+        main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    elif args.lr_scheduler == 'cosineannealinglr':
+        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                                       T_max=args.epochs - args.lr_warmup_epochs)
+    elif args.lr_scheduler == 'exponentiallr':
+        main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
+    else:
+        raise RuntimeError("Invalid lr scheduler '{}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
+                           "are supported.".format(args.lr_scheduler))
+
+    if args.lr_warmup_epochs > 0:
+        if args.lr_warmup_method == 'linear':
+            warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=args.lr_warmup_decay,
+                                                                    total_iters=args.lr_warmup_epochs)
+        elif args.lr_warmup_method == 'constant':
+            warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
+                                                                      total_iters=args.lr_warmup_epochs)
+        else:
+            raise RuntimeError(f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant "
+                               "are supported.")
+        lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[warmup_lr_scheduler, main_lr_scheduler],
+            milestones=[args.lr_warmup_epochs]
+        )
+    else:
+        lr_scheduler = main_lr_scheduler
 
     model_without_ddp = model
     if args.distributed:
@@ -272,6 +315,13 @@ def get_args_parser(add_help=True):
     parser.add_argument('--label-smoothing', default=0.0, type=float,
                         help='label smoothing (default: 0.0)',
                         dest='label_smoothing')
+    parser.add_argument('--mixup-alpha', default=0.0, type=float, help='mixup alpha (default: 0.0)')
+    parser.add_argument('--cutmix-alpha', default=0.0, type=float, help='cutmix alpha (default: 0.0)')
+    parser.add_argument('--lr-scheduler', default="steplr", help='the lr scheduler (default: steplr)')
+    parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
+    parser.add_argument('--lr-warmup-method', default="constant", type=str,
+                        help='the warmup method (default: constant)')
+    parser.add_argument('--lr-warmup-decay', default=0.01, type=float, help='the decay for lr')
     parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
