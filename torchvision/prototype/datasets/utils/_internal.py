@@ -2,10 +2,11 @@ import collections.abc
 import difflib
 import io
 import pathlib
-from typing import Collection, Sequence, Callable, Union, Iterator, Tuple, TypeVar, Dict
+from typing import Collection, Sequence, Callable, Union, Iterator, Tuple, TypeVar, Dict, Any
 
 import numpy as np
 import PIL.Image
+
 from torch.utils.data import IterDataPipe
 
 
@@ -14,6 +15,7 @@ __all__ = [
     "sequence_to_str",
     "add_suggestion",
     "create_categories_file",
+    "read_mat",
     "image_buffer_from_array",
     "SequenceIterator",
     "MappingIterator",
@@ -67,6 +69,17 @@ def create_categories_file(
 ) -> None:
     with open(pathlib.Path(root) / f"{name}.categories", "w") as fh:
         fh.write("\n".join(categories) + "\n")
+
+
+def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
+    try:
+        import scipy.io as sio
+    except ImportError as error:
+        raise ModuleNotFoundError(
+            "Package `scipy` is required to be installed to read .mat files."
+        ) from error
+
+    return sio.loadmat(buffer, **kwargs)
 
 
 def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.BytesIO:

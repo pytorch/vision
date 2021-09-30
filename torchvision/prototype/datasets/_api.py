@@ -10,7 +10,6 @@ from torchvision.prototype.datasets.utils import Dataset, DatasetInfo
 from torchvision.prototype.datasets.utils._internal import add_suggestion
 from . import _builtin
 
-
 DATASETS: Dict[str, Dataset] = {}
 
 
