@@ -19,8 +19,8 @@ It works by following roughly these steps:
 
 1. Symbolically tracing the model to get a graphical representation of
    how it transforms the input, step by step.
-2. Setting the user-selected graph nodes as ouputs.
-3. Removing all redundant nodes (anything downstream of the ouput nodes).
+2. Setting the user-selected graph nodes as outputs.
+3. Removing all redundant nodes (anything downstream of the output nodes).
 4. Generating python code from the resulting graph and bundling that into a
    PyTorch module together with the graph itself.
 
@@ -29,6 +29,39 @@ It works by following roughly these steps:
 The `torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_
 provides a more general and detailed explanation of the above procedure and
 the inner workings of the symbolic tracing.
+
+.. _about-node-names:
+
+**About Node Names**
+
+In order to specify which nodes should be output nodes for extracted
+features, one should be familiar with the node naming convention used here
+(which differs slightly from that used in ``torch.fx``). A node name is
+specified as a ``.`` separated path walking the module hierarchy from top level
+module down to leaf operation or leaf module. For instance ``"layer4.2.relu"``
+in ResNet-50 represents the output of the ReLU of the 2nd block of the 4th
+layer of the ``ResNet`` module. Here are some finer points to keep in mind:
+
+- When specifying node names for :func:`create_feature_extractor`, you may
+  provide a truncated version of a node name as a shortcut. To see how this
+  works, try creating a ResNet-50 model and printing the node names with
+  ``train_nodes, _ = get_graph_node_names(model) print(train_nodes)`` and
+  observe that the last node pertaining to ``layer4`` is
+  ``"layer4.2.relu_2"``. One may specify ``"layer4.2.relu_2"`` as the return
+  node, or just ``"layer4"`` as this, by convention, refers to the last node
+  (in order of execution) of ``layer4``.
+- If a certain module or operation is repeated more than once, node names get
+  an additional ``_{int}`` postfix to disambiguate. For instance, maybe the
+  addition (``+``) operation is used three times in the same ``forward``
+  method. Then there would be ``"path.to.module.add"``,
+  ``"path.to.module.add_1"``, ``"path.to.module.add_2"``. The counter is
+  maintained within the scope of the direct parent. So in ResNet-50 there is
+  a ``"layer4.1.add"`` and a ``"layer4.2.add"``. Because the addition
+  operations reside in different blocks, there is no need for a postfix to
+  disambiguate.
+
+
+**An Example**
 
 Here is an example of how we might extract features for MaskRCNN:
 
@@ -80,10 +113,10 @@ Here is an example of how we might extract features for MaskRCNN:
   # Now you can build the feature extractor. This returns a module whose forward
   # method returns a dictionary like:
   # {
-  #     'layer1': ouput of layer 1,
-  #     'layer2': ouput of layer 2,
-  #     'layer3': ouput of layer 3,
-  #     'layer4': ouput of layer 4,
+  #     'layer1': output of layer 1,
+  #     'layer2': output of layer 2,
+  #     'layer3': output of layer 3,
+  #     'layer4': output of layer 4,
   # }
   create_feature_extractor(m, return_nodes=return_nodes)
 
