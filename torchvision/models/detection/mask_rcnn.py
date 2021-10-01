@@ -1,8 +1,8 @@
 from collections import OrderedDict
 
 from torch import nn
-
 from torchvision.ops import MultiScaleRoIAlign
+
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ._utils import overwrite_eps
 from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers

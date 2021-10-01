@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
-
 from torchvision.models.googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls
+
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
 

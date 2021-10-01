@@ -19,11 +19,11 @@ from typing import (
 
 import torch
 from torch.utils.data import IterDataPipe
-
 from torchvision.prototype.datasets.utils._internal import (
     add_suggestion,
     sequence_to_str,
 )
+
 from ._resource import OnlineResource
 
 

@@ -1,9 +1,9 @@
 import warnings
 
 from torch import nn
-
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
+
 from .. import mobilenet
 from .. import resnet
 from .._utils import IntermediateLayerGetter

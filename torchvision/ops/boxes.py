@@ -1,10 +1,10 @@
 from typing import Tuple
 
 import torch
-from torch import Tensor
-
 import torchvision
+from torch import Tensor
 from torchvision.extension import _assert_has_ops
+
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 
 

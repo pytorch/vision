@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.quantization import fuse_modules
-
 from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
+
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
 

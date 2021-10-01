@@ -5,8 +5,8 @@ from typing import Any, Callable, List, Optional, Sequence
 
 import torch
 from torch import nn, Tensor
-
 from torchvision.ops import StochasticDepth
+
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation, SqueezeExcitation
 from ._utils import _make_divisible

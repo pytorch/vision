@@ -6,7 +6,6 @@ from torch import nn, Tensor
 from torch.nn import init
 from torch.nn.modules.utils import _pair
 from torch.nn.parameter import Parameter
-
 from torchvision.extension import _assert_has_ops
 
 

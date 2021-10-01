@@ -1,10 +1,10 @@
 from typing import Optional, List, Dict, Tuple, Union
 
 import torch
-from torch import nn, Tensor
-
 import torchvision
+from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
+
 from .roi_align import roi_align
 
 

@@ -4,7 +4,6 @@ from typing import Optional, List, Iterator, Sized, Union, cast
 import torch
 import torch.distributed as dist
 from torch.utils.data import Sampler
-
 from torchvision.datasets.video_utils import VideoClips
 
 

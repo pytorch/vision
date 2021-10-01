@@ -1,11 +1,11 @@
 from typing import List, Optional, Dict, Tuple
 
 import torch
+import torchvision
 from torch import nn, Tensor
 from torch.nn import functional as F
-
-import torchvision
 from torchvision.ops import boxes as box_ops
+
 from . import _utils as det_utils
 
 # Import AnchorGenerator to keep compatibility.

@@ -2,9 +2,9 @@ import math
 from typing import List, Tuple, Dict, Optional
 
 import torch
+import torchvision
 from torch import nn, Tensor
 
-import torchvision
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
 

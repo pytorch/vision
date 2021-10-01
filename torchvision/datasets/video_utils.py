@@ -5,13 +5,13 @@ from fractions import Fraction
 from typing import List
 
 import torch
-
 from torchvision.io import (
     _probe_video_from_file,
     _read_video_from_file,
     read_video,
     read_video_timestamps,
 )
+
 from .utils import tqdm
 
 
