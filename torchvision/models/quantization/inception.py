@@ -9,7 +9,12 @@ from typing import Any, List
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
 from ..._internally_replaced_utils import load_state_dict_from_url
-from .utils import _replace_relu, quantize_model
+from .utils import _replace_relu, quantize_model, TORCH_VERSION
+
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+else:
+    import torch.quantization as tq
 
 
 __all__ = [
@@ -104,7 +109,7 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
         return x
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+        tq.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
 
 class QuantizableInceptionA(inception_module.InceptionA):
@@ -236,8 +241,8 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionAux
             ]
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = tq.QuantStub()
+        self.dequant = tq.DeQuantStub()
 
     def forward(self, x: Tensor) -> InceptionOutputs:
         x = self._transform_input(x)

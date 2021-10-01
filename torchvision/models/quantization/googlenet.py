@@ -9,7 +9,12 @@ from ..._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models.googlenet import (
     GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls)
 
-from .utils import _replace_relu, quantize_model
+from .utils import _replace_relu, quantize_model, TORCH_VERSION
+
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+else:
+    import torch.quantization as tq
 
 
 __all__ = ['QuantizableGoogLeNet', 'googlenet']
@@ -96,7 +101,7 @@ class QuantizableBasicConv2d(BasicConv2d):
         return x
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+        tq.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
 
 class QuantizableInception(Inception):
@@ -148,8 +153,8 @@ class QuantizableGoogLeNet(GoogLeNet):
             *args,
             **kwargs
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = tq.QuantStub()
+        self.dequant = tq.DeQuantStub()
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
         x = self._transform_input(x)

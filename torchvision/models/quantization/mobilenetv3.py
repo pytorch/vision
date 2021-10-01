@@ -4,9 +4,15 @@ from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation, SqueezeExcitation
 from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3,\
     model_urls, _mobilenet_v3_conf
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from typing import Any, List, Optional
-from .utils import _replace_relu
+from .utils import _replace_relu, TORCH_VERSION
+
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+    from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
+else:
+    import torch.quantization as tq
+    from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 
 
 __all__ = ['QuantizableMobileNetV3', 'mobilenet_v3_large']
@@ -141,13 +147,13 @@ def _mobilenet_v3_model(
         backend = 'qnnpack'
 
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig(backend)
-        torch.quantization.prepare_qat(model, inplace=True)
+        model.qconfig = tq.get_default_qat_qconfig(backend)
+        tq.prepare_qat(model, inplace=True)
 
         if pretrained:
             _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress)
 
-        torch.quantization.convert(model, inplace=True)
+        tq.convert(model, inplace=True)
         model.eval()
     else:
         if pretrained:

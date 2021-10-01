@@ -5,8 +5,15 @@ from torch import Tensor
 from typing import Any, Type, Union, List
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from torch.quantization import fuse_modules
-from .utils import _replace_relu, quantize_model
+from .utils import _replace_relu, quantize_model, TORCH_VERSION
+
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+    from torch.ao.quantization import fuse_modules
+else:
+    import torch.quantization as tq
+    from torch.quantization import fuse_modules
+
 
 __all__ = ['QuantizableResNet', 'resnet18', 'resnet50',
            'resnext101_32x8d']
@@ -45,10 +52,10 @@ class QuantizableBasicBlock(BasicBlock):
         return out
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, [['conv1', 'bn1', 'relu'],
-                                               ['conv2', 'bn2']], inplace=True)
+        tq.fuse_modules(self, [['conv1', 'bn1', 'relu'],
+                               ['conv2', 'bn2']], inplace=True)
         if self.downsample:
-            torch.quantization.fuse_modules(self.downsample, ['0', '1'], inplace=True)
+            tq.fuse_modules(self.downsample, ['0', '1'], inplace=True)
 
 
 class QuantizableBottleneck(Bottleneck):
@@ -81,7 +88,7 @@ class QuantizableBottleneck(Bottleneck):
                             ['conv2', 'bn2', 'relu2'],
                             ['conv3', 'bn3']], inplace=True)
         if self.downsample:
-            torch.quantization.fuse_modules(self.downsample, ['0', '1'], inplace=True)
+            fuse_modules(self.downsample, ['0', '1'], inplace=True)
 
 
 class QuantizableResNet(ResNet):
@@ -89,8 +96,8 @@ class QuantizableResNet(ResNet):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableResNet, self).__init__(*args, **kwargs)
 
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = tq.QuantStub()
+        self.dequant = tq.DeQuantStub()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)

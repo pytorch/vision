@@ -1,7 +1,7 @@
 import os
 import io
 import sys
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda, TORCH_VERSION
 from _utils_internal import get_relative_path
 from collections import OrderedDict
 import functools
@@ -15,6 +15,10 @@ import pytest
 import warnings
 import traceback
 
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+else:
+    import torch.quantization as tq
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
 
@@ -696,19 +700,19 @@ def test_quantized_classification_model(model_name):
         model = torchvision.models.quantization.__dict__[model_name](**kwargs)
         if eval_mode:
             model.eval()
-            model.qconfig = torch.quantization.default_qconfig
+            model.qconfig = tq.default_qconfig
         else:
             model.train()
-            model.qconfig = torch.quantization.default_qat_qconfig
+            model.qconfig = tq.default_qat_qconfig
 
         model.fuse_model()
         if eval_mode:
-            torch.quantization.prepare(model, inplace=True)
+            tq.prepare(model, inplace=True)
         else:
-            torch.quantization.prepare_qat(model, inplace=True)
+            tq.prepare_qat(model, inplace=True)
             model.eval()
 
-        torch.quantization.convert(model, inplace=True)
+        tq.convert(model, inplace=True)
 
     try:
         torch.jit.script(model)

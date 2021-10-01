@@ -7,10 +7,13 @@ import torch
 import torch.utils.data
 from torch import nn
 import torchvision
-import torch.quantization
 import utils
 from train import train_one_epoch, evaluate, load_data
 
+if utils.TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+else:
+    import torch.quantization as tq
 
 def main(args):
     if args.output_dir:
@@ -52,8 +55,8 @@ def main(args):
 
     if not (args.test_only or args.post_training_quantize):
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig(args.backend)
-        torch.quantization.prepare_qat(model, inplace=True)
+        model.qconfig = tq.get_default_qat_qconfig(args.backend)
+        tq.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -90,12 +93,12 @@ def main(args):
             pin_memory=True)
         model.eval()
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qconfig(args.backend)
-        torch.quantization.prepare(model, inplace=True)
+        model.qconfig = tq.get_default_qconfig(args.backend)
+        tq.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
         evaluate(model, criterion, data_loader_calibration, device=device, print_freq=1)
-        torch.quantization.convert(model, inplace=True)
+        tq.convert(model, inplace=True)
         if args.output_dir:
             print('Saving quantized model')
             if utils.is_main_process():
@@ -109,8 +112,8 @@ def main(args):
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
-    model.apply(torch.quantization.enable_observer)
-    model.apply(torch.quantization.enable_fake_quant)
+    model.apply(tq.enable_observer)
+    model.apply(tq.enable_fake_quant)
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
@@ -122,7 +125,7 @@ def main(args):
         with torch.no_grad():
             if epoch >= args.num_observer_update_epochs:
                 print('Disabling observer for subseq epochs, epoch = ', epoch)
-                model.apply(torch.quantization.disable_observer)
+                model.apply(tq.disable_observer)
             if epoch >= args.num_batch_norm_update_epochs:
                 print('Freezing BN for subseq epochs, epoch = ', epoch)
                 model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
@@ -132,7 +135,7 @@ def main(args):
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device('cpu'))
-            torch.quantization.convert(quantized_eval_model, inplace=True)
+            tq.convert(quantized_eval_model, inplace=True)
 
             print('Evaluate Quantized model')
             evaluate(quantized_eval_model, criterion, data_loader_test,

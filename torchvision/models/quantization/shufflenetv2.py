@@ -5,7 +5,12 @@ from typing import Any
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from torchvision.models import shufflenetv2
-from .utils import _replace_relu, quantize_model
+from .utils import _replace_relu, quantize_model, TORCH_VERSION
+
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+else:
+    import torch.quantization as tq
 
 __all__ = [
     'QuantizableShuffleNetV2', 'shufflenet_v2_x0_5', 'shufflenet_v2_x1_0',
@@ -46,8 +51,8 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
             inverted_residual=QuantizableInvertedResidual,
             **kwargs
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = tq.QuantStub()
+        self.dequant = tq.DeQuantStub()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
@@ -65,14 +70,14 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
 
         for name, m in self._modules.items():
             if name in ["conv1", "conv5"]:
-                torch.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
+                tq.fuse_modules(m, [["0", "1", "2"]], inplace=True)
         for m in self.modules():
             if type(m) == QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
-                    torch.quantization.fuse_modules(
+                    tq.fuse_modules(
                         m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True
                     )
-                torch.quantization.fuse_modules(
+                tq.fuse_modules(
                     m.branch2,
                     [["0", "1", "2"], ["3", "4"], ["5", "6", "7"]],
                     inplace=True,

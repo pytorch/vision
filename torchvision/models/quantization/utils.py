@@ -1,6 +1,14 @@
 import torch
 from torch import nn
 
+from typing import Tuple
+TORCH_VERSION: Tuple[int, ...] = tuple(int(x) for x in torch.__version__.split(".")[:2])
+
+if TORCH_VERSION >= (1, 10):
+    import torch.ao.quantization as tq
+else:
+    import torch.quantization as tq
+
 
 def _replace_relu(module: nn.Module) -> None:
     reassign = {}
@@ -24,18 +32,18 @@ def quantize_model(model: nn.Module, backend: str) -> None:
     model.eval()
     # Make sure that weight qconfig matches that of the serialized models
     if backend == 'fbgemm':
-        model.qconfig = torch.quantization.QConfig(  # type: ignore[assignment]
-            activation=torch.quantization.default_observer,
-            weight=torch.quantization.default_per_channel_weight_observer)
+        model.qconfig = tq.QConfig(  # type: ignore[assignment]
+            activation=tq.default_observer,
+            weight=tq.default_per_channel_weight_observer)
     elif backend == 'qnnpack':
-        model.qconfig = torch.quantization.QConfig(  # type: ignore[assignment]
-            activation=torch.quantization.default_observer,
-            weight=torch.quantization.default_weight_observer)
+        model.qconfig = tq.QConfig(  # type: ignore[assignment]
+            activation=tq.default_observer,
+            weight=tq.default_weight_observer)
 
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     model.fuse_model()  # type: ignore[operator]
-    torch.quantization.prepare(model, inplace=True)
+    tq.prepare(model, inplace=True)
     model(_dummy_input_data)
-    torch.quantization.convert(model, inplace=True)
+    tq.convert(model, inplace=True)
 
     return

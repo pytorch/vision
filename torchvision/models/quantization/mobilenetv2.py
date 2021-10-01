@@ -7,9 +7,13 @@ from typing import Any
 
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
-from .utils import _replace_relu, quantize_model
+from .utils import _replace_relu, quantize_model, TORCH_VERSION
 from ...ops.misc import ConvNormActivation
 
+if TORCH_VERSION >= (1, 10):
+    from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
+else:
+    from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 
 __all__ = ['QuantizableMobileNetV2', 'mobilenet_v2']
 
