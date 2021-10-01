@@ -123,7 +123,7 @@ def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[
             return getattr(path, name)
 
     def wrapper(data: Tuple[str, Any]) -> D:
-        return getter(pathlib.Path(data[0]))
+        return getter(pathlib.Path(data[0]))  # type: ignore[operator]
 
     return wrapper
 
