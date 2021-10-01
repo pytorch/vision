@@ -37,7 +37,7 @@ class NodePathTracer(LeafModuleAwareTracer):
     """
     NodePathTracer is an FX tracer that, for each operation, also records the
     name of the Node from which the operation originated. A node name here is
-    a `.` seperated path walking the hierarchy from top level module down to
+    a `.` separated path walking the hierarchy from top level module down to
     leaf operation or leaf module. The name of the top level module is not
     included as part of the node name. For example, if we trace a module whose
     forward method applies a ReLU module, the name for that node will simply
