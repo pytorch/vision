@@ -1,4 +1,6 @@
+import torch
 from torchvision.transforms import autoaugment, transforms
+from torchvision.transforms.functional import InterpolationMode
 
 
 class ClassificationPresetTrain:
@@ -8,10 +10,16 @@ class ClassificationPresetTrain:
         if hflip_prob > 0:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
-            aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
-            trans.append(autoaugment.AutoAugment(policy=aa_policy))
+            if auto_augment_policy == "ra":
+                trans.append(autoaugment.RandAugment())
+            elif auto_augment_policy == "ta_wide":
+                trans.append(autoaugment.TrivialAugmentWide())
+            else:
+                aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
+                trans.append(autoaugment.AutoAugment(policy=aa_policy))
         trans.extend([
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
             transforms.Normalize(mean=mean, std=std),
         ])
         if random_erase_prob > 0:
@@ -24,12 +32,14 @@ class ClassificationPresetTrain:
 
 
 class ClassificationPresetEval:
-    def __init__(self, crop_size, resize_size=256, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+    def __init__(self, crop_size, resize_size=256, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
+                 interpolation=InterpolationMode.BILINEAR):
 
         self.transforms = transforms.Compose([
-            transforms.Resize(resize_size),
+            transforms.Resize(resize_size, interpolation=interpolation),
             transforms.CenterCrop(crop_size),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
             transforms.Normalize(mean=mean, std=std),
         ])
 

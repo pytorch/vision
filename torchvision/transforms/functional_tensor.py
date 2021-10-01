@@ -16,13 +16,13 @@ def _assert_image_tensor(img: Tensor) -> None:
         raise TypeError("Tensor is not a torch image.")
 
 
-def _get_image_size(img: Tensor) -> List[int]:
+def get_image_size(img: Tensor) -> List[int]:
     # Returns (w, h) of tensor image
     _assert_image_tensor(img)
     return [img.shape[-1], img.shape[-2]]
 
 
-def _get_image_num_channels(img: Tensor) -> int:
+def get_image_num_channels(img: Tensor) -> int:
     if img.ndim == 2:
         return 1
     elif img.ndim > 2:
@@ -50,7 +50,7 @@ def _max_value(dtype: torch.dtype) -> float:
 
 
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
-    c = _get_image_num_channels(img)
+    c = get_image_num_channels(img)
     if c not in permitted:
         raise TypeError("Input image tensor permitted channel values are {}, but found {}".format(permitted, c))
 
@@ -122,7 +122,7 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    w, h = _get_image_size(img)
+    w, h = get_image_size(img)
     right = left + width
     bottom = top + height
 
@@ -169,10 +169,13 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     _assert_image_tensor(img)
 
-    _assert_channels(img, [3])
-
+    _assert_channels(img, [3, 1])
+    c = get_image_num_channels(img)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
+    if c == 3:
+        mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
+    else:
+        mean = torch.mean(img.to(dtype), dim=(-3, -2, -1), keepdim=True)
 
     return _blend(img, mean, contrast_factor)
 
@@ -187,7 +190,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
-    if _get_image_num_channels(img) == 1:  # Match PIL behaviour
+    if get_image_num_channels(img) == 1:  # Match PIL behaviour
         return img
 
     orig_dtype = img.dtype
@@ -212,7 +215,10 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     _assert_image_tensor(img)
 
-    _assert_channels(img, [3])
+    _assert_channels(img, [1, 3])
+
+    if get_image_num_channels(img) == 1:  # Match PIL behaviour
+        return img
 
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
@@ -513,7 +519,7 @@ def resize(
     if antialias and interpolation not in ["bilinear", "bicubic"]:
         raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
-    w, h = _get_image_size(img)
+    w, h = get_image_size(img)
 
     if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
         short, long = (w, h) if w <= h else (h, w)
@@ -586,7 +592,7 @@ def _assert_grid_transform_inputs(
         warnings.warn("Argument fill should be either int, float, tuple or list")
 
     # Check fill
-    num_channels = _get_image_num_channels(img)
+    num_channels = get_image_num_channels(img)
     if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
         msg = ("The number of elements in 'fill' cannot broadcast to match the number of "
                "channels of the image ({} != {})")

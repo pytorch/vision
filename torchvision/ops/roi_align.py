@@ -1,16 +1,17 @@
+from typing import List, Union
+
 import torch
 from torch import nn, Tensor
-
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import BroadcastingList2
-
 from torchvision.extension import _assert_has_ops
+
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
 def roi_align(
     input: Tensor,
-    boxes: Tensor,
+    boxes: Union[Tensor, List[Tensor]],
     output_size: BroadcastingList2[int],
     spatial_scale: float = 1.0,
     sampling_ratio: int = -1,

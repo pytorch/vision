@@ -351,16 +351,18 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
+    # FIXME: causes crash. See the following GitHub issues for more details.
+    # FIXME: https://github.com/pytorch/pytorch/issues/65000
+    # FIXME: https://github.com/pytorch/vision/issues/3367
+    if sys.platform != 'linux' or (
+            sys.version_info.major == 3 and sys.version_info.minor == 9):
+        has_ffmpeg = False
     if has_ffmpeg:
         try:
-            # this splits on both dots and spaces as the output format differs across versions / platforms
-            ffmpeg_version_str = str(subprocess.check_output(["ffmpeg", "-version"]))
-            ffmpeg_version = re.split(r"ffmpeg version |\.| |-", ffmpeg_version_str)[1:3]
-            ffmpeg_version = ".".join(ffmpeg_version)
-            if StrictVersion(ffmpeg_version) >= StrictVersion('4.3'):
-                print(f'ffmpeg {ffmpeg_version} not supported yet, please use ffmpeg 4.2.')
-                has_ffmpeg = False
-        except (IndexError, ValueError):
+            # This is to check if ffmpeg is installed properly.
+            subprocess.check_output(["ffmpeg", "-version"])
+        except subprocess.CalledProcessError:
             print('Error fetching ffmpeg version, ignoring ffmpeg.')
             has_ffmpeg = False
 
@@ -493,7 +495,7 @@ if __name__ == "__main__":
         # Package info
         packages=find_packages(exclude=('test',)),
         package_data={
-            package_name: ['*.dll', '*.dylib', '*.so']
+            package_name: ['*.dll', '*.dylib', '*.so', '*.categories']
         },
         zip_safe=False,
         install_requires=requirements,

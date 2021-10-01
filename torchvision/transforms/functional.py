@@ -58,22 +58,34 @@ pil_modes_mapping = {
 _is_pil_image = F_pil._is_pil_image
 
 
-def _get_image_size(img: Tensor) -> List[int]:
-    """Returns image size as [w, h]
+def get_image_size(img: Tensor) -> List[int]:
+    """Returns the size of an image as [width, height].
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        List[int]: The image size.
     """
     if isinstance(img, torch.Tensor):
-        return F_t._get_image_size(img)
+        return F_t.get_image_size(img)
 
-    return F_pil._get_image_size(img)
+    return F_pil.get_image_size(img)
 
 
-def _get_image_num_channels(img: Tensor) -> int:
-    """Returns number of image channels
+def get_image_num_channels(img: Tensor) -> int:
+    """Returns the number of channels of an image.
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        int: The number of channels.
     """
     if isinstance(img, torch.Tensor):
-        return F_t._get_image_num_channels(img)
+        return F_t.get_image_num_channels(img)
 
-    return F_pil._get_image_num_channels(img)
+    return F_pil.get_image_num_channels(img)
 
 
 @torch.jit.unused
@@ -500,7 +512,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
 
-    image_width, image_height = _get_image_size(img)
+    image_width, image_height = get_image_size(img)
     crop_height, crop_width = output_size
 
     if crop_width > image_width or crop_height > image_height:
@@ -511,7 +523,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
             (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
         ]
         img = pad(img, padding_ltrb, fill=0)  # PIL uses fill value 0
-        image_width, image_height = _get_image_size(img)
+        image_width, image_height = get_image_size(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
@@ -696,7 +708,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-    image_width, image_height = _get_image_size(img)
+    image_width, image_height = get_image_size(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -779,7 +791,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
@@ -799,7 +811,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
@@ -830,9 +842,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-            If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+            If img is PIL Image mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -993,7 +1005,7 @@ def rotate(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = _get_image_size(img)
+        img_size = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
 
@@ -1094,7 +1106,7 @@ def affine(
     if len(shear) != 2:
         raise ValueError("Shear should be a sequence containing two values. Got {}".format(shear))
 
-    img_size = _get_image_size(img)
+    img_size = get_image_size(img)
     if not isinstance(img, torch.Tensor):
         # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset

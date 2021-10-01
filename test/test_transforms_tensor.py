@@ -47,10 +47,10 @@ def _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors, 
     assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
 
-def _test_functional_op(f, device, fn_kwargs=None, test_exact_match=True, **match_kwargs):
+def _test_functional_op(f, device, channels=3, fn_kwargs=None, test_exact_match=True, **match_kwargs):
     fn_kwargs = fn_kwargs or {}
 
-    tensor, pil_img = _create_data(height=10, width=10, device=device)
+    tensor, pil_img = _create_data(height=10, width=10, channels=channels, device=device)
     transformed_tensor = f(tensor, **fn_kwargs)
     transformed_pil_img = f(pil_img, **fn_kwargs)
     if test_exact_match:
@@ -59,7 +59,7 @@ def _test_functional_op(f, device, fn_kwargs=None, test_exact_match=True, **matc
         _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
 
-def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     # TODO: change the name: it's not a method, it's a class.
     meth_kwargs = meth_kwargs or {}
 
@@ -67,7 +67,7 @@ def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **ma
     f = method(**meth_kwargs)
     scripted_fn = torch.jit.script(f)
 
-    tensor, pil_img = _create_data(26, 34, device=device)
+    tensor, pil_img = _create_data(26, 34, channels, device=device)
     # set seed to reproduce the same transformation for tensor and PIL image
     torch.manual_seed(12)
     transformed_tensor = f(tensor)
@@ -82,16 +82,16 @@ def _test_class_op(method, device, meth_kwargs=None, test_exact_match=True, **ma
     transformed_tensor_script = scripted_fn(tensor)
     assert_equal(transformed_tensor, transformed_tensor_script)
 
-    batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=device)
+    batch_tensors = _create_data_batch(height=23, width=34, channels=channels, num_samples=4, device=device)
     _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
     with get_tmp_dir() as tmp_dir:
         scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
 
 
-def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-    _test_functional_op(func, device, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
-    _test_class_op(method, device, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
+    _test_functional_op(func, device, channels, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
+    _test_class_op(method, device, channels, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -109,54 +109,56 @@ def _test_op(func, method, device, fn_kwargs=None, meth_kwargs=None, test_exact_
         (F.equalize, T.RandomEqualize, None, {})
     ]
 )
-def test_random(func, method, device, fn_kwargs, match_kwargs):
-    _test_op(func, method, device, fn_kwargs, fn_kwargs, **match_kwargs)
+@pytest.mark.parametrize('channels', [1, 3])
+def test_random(func, method, device, channels, fn_kwargs, match_kwargs):
+    _test_op(func, method, device, channels, fn_kwargs, fn_kwargs, **match_kwargs)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('channels', [1, 3])
 class TestColorJitter:
 
     @pytest.mark.parametrize('brightness', [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
-    def test_color_jitter_brightness(self, brightness, device):
+    def test_color_jitter_brightness(self, brightness, device, channels):
         tol = 1.0 + 1e-10
         meth_kwargs = {"brightness": brightness}
         _test_class_op(
             T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=tol, agg_method="max"
+            tol=tol, agg_method="max", channels=channels,
         )
 
     @pytest.mark.parametrize('contrast', [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]])
-    def test_color_jitter_contrast(self, contrast, device):
+    def test_color_jitter_contrast(self, contrast, device, channels):
         tol = 1.0 + 1e-10
         meth_kwargs = {"contrast": contrast}
         _test_class_op(
             T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=tol, agg_method="max"
+            tol=tol, agg_method="max", channels=channels
         )
 
     @pytest.mark.parametrize('saturation', [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]])
-    def test_color_jitter_saturation(self, saturation, device):
+    def test_color_jitter_saturation(self, saturation, device, channels):
         tol = 1.0 + 1e-10
         meth_kwargs = {"saturation": saturation}
         _test_class_op(
             T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=tol, agg_method="max"
+            tol=tol, agg_method="max", channels=channels
         )
 
     @pytest.mark.parametrize('hue', [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]])
-    def test_color_jitter_hue(self, hue, device):
+    def test_color_jitter_hue(self, hue, device, channels):
         meth_kwargs = {"hue": hue}
         _test_class_op(
             T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=16.1, agg_method="max"
+            tol=16.1, agg_method="max", channels=channels
         )
 
-    def test_color_jitter_all(self, device):
+    def test_color_jitter_all(self, device, channels):
         # All 4 parameters together
         meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
         _test_class_op(
             T.ColorJitter, meth_kwargs=meth_kwargs, test_exact_match=False, device=device,
-            tol=12.1, agg_method="max"
+            tol=12.1, agg_method="max", channels=channels
         )
 
 
@@ -226,7 +228,7 @@ def test_crop(device):
 def test_crop_pad(size, padding_config, device):
     config = dict(padding_config)
     config["size"] = size
-    _test_class_op(T.RandomCrop, device, config)
+    _test_class_op(T.RandomCrop, device, meth_kwargs=config)
 
 
 @pytest.mark.parametrize('device', cpu_and_gpu())
@@ -525,7 +527,6 @@ def test_autoaugment(device, policy, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
-    s_transform = None
     transform = T.AutoAugment(policy=policy, fill=fill)
     s_transform = torch.jit.script(transform)
     for _ in range(25):
@@ -533,8 +534,37 @@ def test_autoaugment(device, policy, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-def test_autoaugment_save(tmpdir):
-    transform = T.AutoAugment()
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('num_ops', [1, 2, 3])
+@pytest.mark.parametrize('magnitude', [7, 9, 11])
+@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_randaugment(device, num_ops, magnitude, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+@pytest.mark.parametrize('device', cpu_and_gpu())
+@pytest.mark.parametrize('fill', [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1])
+def test_trivialaugmentwide(device, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    transform = T.TrivialAugmentWide(fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+@pytest.mark.parametrize('augmentation', [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide])
+def test_autoaugment_save(augmentation, tmpdir):
+    transform = augmentation()
     s_transform = torch.jit.script(transform)
     s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
 
@@ -681,9 +711,11 @@ def test_random_apply(device):
     {"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
     {"kernel_size": [23], "sigma": 0.75}
 ])
-def test_gaussian_blur(device, meth_kwargs):
+@pytest.mark.parametrize('channels', [1, 3])
+def test_gaussian_blur(device, channels, meth_kwargs):
     tol = 1.0 + 1e-10
+    torch.manual_seed(12)
     _test_class_op(
-        T.GaussianBlur, meth_kwargs=meth_kwargs,
+        T.GaussianBlur, meth_kwargs=meth_kwargs, channels=channels,
         test_exact_match=False, device=device, agg_method="max", tol=tol
     )

@@ -7,6 +7,8 @@ This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/transforms_thumbnail.png"
+
 from PIL import Image
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -244,6 +246,22 @@ imgs = [
 ]
 row_title = [str(policy).split('.')[-1] for policy in policies]
 plot(imgs, row_title=row_title)
+
+####################################
+# RandAugment
+# ~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
+augmenter = T.RandAugment()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
+# TrivialAugmentWide
+# ~~~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
+augmenter = T.TrivialAugmentWide()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
 
 ####################################
 # Randomly-applied transforms
