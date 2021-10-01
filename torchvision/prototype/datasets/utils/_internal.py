@@ -2,7 +2,7 @@ import collections.abc
 import difflib
 import io
 import pathlib
-from typing import Collection, Sequence, Callable, Union, Iterator, Tuple, TypeVar, Dict, Any
+from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar, Iterator, Dict
 
 import numpy as np
 import PIL.Image
@@ -19,12 +19,14 @@ __all__ = [
     "SequenceIterator",
     "MappingIterator",
     "Enumerator",
+    "getitem",
+    "path_accessor",
+    "path_comparator",
 ]
 
 
 K = TypeVar("K")
 D = TypeVar("D")
-
 
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
 INFINITE_BUFFER_SIZE = 1_000_000_000
@@ -102,3 +104,34 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
 
     def __iter__(self) -> Iterator[Tuple[int, D]]:
         yield from enumerate(self.datapipe, self.start)
+
+
+def getitem(*items: Any) -> Callable[[Any], Any]:
+    def wrapper(obj: Any):
+        for item in items:
+            obj = obj[item]
+        return obj
+
+    return wrapper
+
+
+def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
+    if isinstance(getter, str):
+        name = getter
+
+        def getter(path: pathlib.Path) -> D:
+            return getattr(path, name)
+
+    def wrapper(data: Tuple[str, Any]) -> D:
+        return getter(pathlib.Path(data[0]))
+
+    return wrapper
+
+
+def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
+    accessor = path_accessor(getter)
+
+    def wrapper(data: Tuple[str, Any]) -> bool:
+        return accessor(data) == value
+
+    return wrapper
