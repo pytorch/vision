@@ -1,13 +1,14 @@
 import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import re
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import Mapper, TarArchiveReader, Shuffler, Demultiplexer, Filter
-
 from torchdata.datapipes.iter import KeyZipper, LineReader
+
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -23,8 +24,6 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
 )
-
-import numpy as np
 
 HERE = pathlib.Path(__file__).parent
 
@@ -54,7 +53,7 @@ class SBD(Dataset):
         )
         return [archive, extra_split]
 
-    def _classify_archive(self, data: [str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         parent, grandparent, *_ = path.parents
 
@@ -128,7 +127,11 @@ class SBD(Dataset):
         archive_dp = resource_dps[0]
         archive_dp = TarArchiveReader(archive_dp)
         split_dp, images_dp, anns_dp = Demultiplexer(
-            archive_dp, 3, self._classify_archive, buffer_size=INFINITE_BUFFER_SIZE, drop_none=True
+            archive_dp,
+            3,
+            self._classify_archive,  # type: ignore[arg-type]
+            buffer_size=INFINITE_BUFFER_SIZE,
+            drop_none=True,
         )
 
         if config.split == "train_noval":
@@ -159,7 +162,7 @@ class SBD(Dataset):
 
         pattern = re.compile(r"\s*'(?P<category>\w+)';\s*%(?P<label>\d+)")
         categories_and_labels = [
-            pattern.match(line).groups()
+            pattern.match(line).groups()  # type: ignore[union-attr]
             # the first and last line contain no information
             for line in lines[1:-1]
         ]
