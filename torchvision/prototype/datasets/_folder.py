@@ -7,13 +7,7 @@ from typing import Union, Tuple, List, Dict, Any
 
 import torch
 from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
-    FileLister,
-    FileLoader,
-    Mapper,
-    Shuffler,
-    Filter,
-)
+from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
 
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
@@ -55,19 +49,13 @@ def from_data_folder(
 ) -> Tuple[IterDataPipe, List[str]]:
     root = pathlib.Path(root).expanduser().resolve()
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
-    masks: Union[List[str], str] = (
-        [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
-    )
+    masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
     dp: IterDataPipe = FileLister(str(root), recursive=recursive, masks=masks)
     dp = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
     dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
     dp = FileLoader(dp)
     return (
-        Mapper(
-            dp,
-            _collate_and_decode_data,
-            fn_kwargs=dict(root=root, categories=categories, decoder=decoder),
-        ),
+        Mapper(dp, _collate_and_decode_data, fn_kwargs=dict(root=root, categories=categories, decoder=decoder)),
         categories,
     )
 
@@ -81,25 +69,9 @@ def from_image_folder(
     root: Union[str, pathlib.Path],
     *,
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = pil,
-    valid_extensions: Collection[str] = (
-        "jpg",
-        "jpeg",
-        "png",
-        "ppm",
-        "bmp",
-        "pgm",
-        "tif",
-        "tiff",
-        "webp",
-    ),
+    valid_extensions: Collection[str] = ("jpg", "jpeg", "png", "ppm", "bmp", "pgm", "tif", "tiff", "webp"),
     **kwargs: Any,
 ) -> Tuple[IterDataPipe, List[str]]:
-    valid_extensions = [
-        valid_extension
-        for ext in valid_extensions
-        for valid_extension in (ext.lower(), ext.upper())
-    ]
-    dp, categories = from_data_folder(
-        root, decoder=decoder, valid_extensions=valid_extensions, **kwargs
-    )
+    valid_extensions = [valid_extension for ext in valid_extensions for valid_extension in (ext.lower(), ext.upper())]
+    dp, categories = from_data_folder(root, decoder=decoder, valid_extensions=valid_extensions, **kwargs)
     return Mapper(dp, _data_to_image_key), categories
