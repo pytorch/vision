@@ -1,12 +1,16 @@
 import collections.abc
 import difflib
-from typing import Collection, Sequence, Callable
+import io
+import pathlib
+from typing import Collection, Sequence, Callable, Union, Any
 
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
     "sequence_to_str",
     "add_suggestion",
+    "create_categories_file",
+    "read_mat"
 ]
 
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
@@ -44,3 +48,21 @@ def add_suggestion(
         else alternative_hint(possibilities)
     )
     return f"{msg.strip()} {hint}"
+
+
+def create_categories_file(
+    root: Union[str, pathlib.Path], name: str, categories: Sequence[str]
+) -> None:
+    with open(pathlib.Path(root) / f"{name}.categories", "w") as fh:
+        fh.write("\n".join(categories) + "\n")
+
+
+def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
+    try:
+        import scipy.io as sio
+    except ImportError as error:
+        raise ModuleNotFoundError(
+            "Package `scipy` is required to be installed to read .mat files."
+        ) from error
+
+    return sio.loadmat(buffer, **kwargs)

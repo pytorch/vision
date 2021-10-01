@@ -112,7 +112,7 @@ class DatasetInfo:
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
             with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
-                categories = fh.readlines()
+                categories = [line.strip() for line in fh]
         self.categories = categories
 
         self.citation = citation
