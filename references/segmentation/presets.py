@@ -1,3 +1,5 @@
+import torch
+
 import transforms as T
 
 
@@ -11,7 +13,8 @@ class SegmentationPresetTrain:
             trans.append(T.RandomHorizontalFlip(hflip_prob))
         trans.extend([
             T.RandomCrop(crop_size),
-            T.ToTensor(),
+            T.PILToTensor(),
+            T.ConvertImageDtype(torch.float),
             T.Normalize(mean=mean, std=std),
         ])
         self.transforms = T.Compose(trans)
@@ -24,7 +27,8 @@ class SegmentationPresetEval:
     def __init__(self, base_size, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self.transforms = T.Compose([
             T.RandomResize(base_size, base_size),
-            T.ToTensor(),
+            T.PILToTensor(),
+            T.ConvertImageDtype(torch.float),
             T.Normalize(mean=mean, std=std),
         ])
 

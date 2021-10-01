@@ -17,6 +17,10 @@ from torchvision.models.mnasnet import mnasnet0_5, mnasnet0_75, mnasnet1_0, \
     mnasnet1_3
 from torchvision.models.efficientnet import efficientnet_b0, efficientnet_b1, efficientnet_b2, \
     efficientnet_b3, efficientnet_b4, efficientnet_b5, efficientnet_b6, efficientnet_b7
+from torchvision.models.regnet import regnet_y_400mf, regnet_y_800mf, \
+    regnet_y_1_6gf, regnet_y_3_2gf, regnet_y_8gf, regnet_y_16gf, regnet_y_32gf, \
+    regnet_x_400mf, regnet_x_800mf, regnet_x_1_6gf, regnet_x_3_2gf, regnet_x_8gf, \
+    regnet_x_16gf, regnet_x_32gf
 
 # segmentation
 from torchvision.models.segmentation import fcn_resnet50, fcn_resnet101, \

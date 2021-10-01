@@ -128,7 +128,12 @@ def needs_cuda(test_func):
 def _create_data(height=3, width=3, channels=3, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
     tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
-    pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+    data = tensor.permute(1, 2, 0).contiguous().cpu().numpy()
+    mode = "RGB"
+    if channels == 1:
+        mode = "L"
+        data = data[..., 0]
+    pil_img = Image.fromarray(data, mode=mode)
     return tensor, pil_img
 
 
@@ -143,7 +148,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=1e-6)
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
