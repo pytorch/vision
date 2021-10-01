@@ -11,8 +11,8 @@ from .ssd import SSD, SSDScoringHead
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .. import mobilenet
-from ..mobilenetv3 import ConvBNActivation
 from ..._internally_replaced_utils import load_state_dict_from_url
+from ...ops.misc import ConvNormActivation
 
 
 __all__ = ['ssdlite320_mobilenet_v3_large']
@@ -28,8 +28,8 @@ def _prediction_block(in_channels: int, out_channels: int, kernel_size: int,
                       norm_layer: Callable[..., nn.Module]) -> nn.Sequential:
     return nn.Sequential(
         # 3x3 depthwise with stride 1 and padding 1
-        ConvBNActivation(in_channels, in_channels, kernel_size=kernel_size, groups=in_channels,
-                         norm_layer=norm_layer, activation_layer=nn.ReLU6),
+        ConvNormActivation(in_channels, in_channels, kernel_size=kernel_size, groups=in_channels,
+                           norm_layer=norm_layer, activation_layer=nn.ReLU6),
 
         # 1x1 projetion to output channels
         nn.Conv2d(in_channels, out_channels, 1)
@@ -41,16 +41,16 @@ def _extra_block(in_channels: int, out_channels: int, norm_layer: Callable[..., 
     intermediate_channels = out_channels // 2
     return nn.Sequential(
         # 1x1 projection to half output channels
-        ConvBNActivation(in_channels, intermediate_channels, kernel_size=1,
-                         norm_layer=norm_layer, activation_layer=activation),
+        ConvNormActivation(in_channels, intermediate_channels, kernel_size=1,
+                           norm_layer=norm_layer, activation_layer=activation),
 
         # 3x3 depthwise with stride 2 and padding 1
-        ConvBNActivation(intermediate_channels, intermediate_channels, kernel_size=3, stride=2,
-                         groups=intermediate_channels, norm_layer=norm_layer, activation_layer=activation),
+        ConvNormActivation(intermediate_channels, intermediate_channels, kernel_size=3, stride=2,
+                           groups=intermediate_channels, norm_layer=norm_layer, activation_layer=activation),
 
         # 1x1 projetion to output channels
-        ConvBNActivation(intermediate_channels, out_channels, kernel_size=1,
-                         norm_layer=norm_layer, activation_layer=activation),
+        ConvNormActivation(intermediate_channels, out_channels, kernel_size=1,
+                           norm_layer=norm_layer, activation_layer=activation),
     )
 
 
