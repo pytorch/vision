@@ -2,7 +2,7 @@ import collections.abc
 import difflib
 import io
 import pathlib
-from typing import Collection, Sequence, Callable, Union, Any
+from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar
 
 
 __all__ = [
@@ -10,8 +10,13 @@ __all__ = [
     "sequence_to_str",
     "add_suggestion",
     "create_categories_file",
-    "read_mat"
+    "read_mat",
+    "getitem",
+    "path_accessor",
+    "path_comparator",
 ]
+
+D = TypeVar("D")
 
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
 INFINITE_BUFFER_SIZE = 1_000_000_000
@@ -66,3 +71,34 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
         ) from error
 
     return sio.loadmat(buffer, **kwargs)
+
+
+def getitem(*items: Any) -> Callable[[Any], Any]:
+    def wrapper(obj: Any):
+        for item in items:
+            obj = obj[item]
+        return obj
+
+    return wrapper
+
+
+def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
+    if isinstance(getter, str):
+        name = getter
+
+        def getter(path: pathlib.Path) -> D:
+            return getattr(path, name)
+
+    def wrapper(data: Tuple[str, Any]) -> D:
+        return getter(pathlib.Path(data[0]))  # type: ignore[operator]
+
+    return wrapper
+
+
+def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
+    accessor = path_accessor(getter)
+
+    def wrapper(data: Tuple[str, Any]) -> bool:
+        return accessor(data) == value
+
+    return wrapper
