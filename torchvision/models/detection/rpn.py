@@ -230,7 +230,7 @@ class RegionProposalNetwork(torch.nn.Module):
         # type: (Tensor, Tensor, List[Tuple[int, int]], List[int]) -> Tuple[List[Tensor], List[Tensor]]
         num_images = proposals.shape[0]
         device = proposals.device
-        # do not backprop throught objectness
+        # do not backprop through objectness
         objectness = objectness.detach()
         objectness = objectness.reshape(num_images, -1)
 
