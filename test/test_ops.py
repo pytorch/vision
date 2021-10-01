@@ -960,6 +960,14 @@ class TestBoxArea:
         expected = torch.tensor([605113.875, 600495.1875, 592247.25])
         area_check(box_tensor, expected)
 
+    def test_box_area_jit(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
+        TOLERANCE = 1e-3
+        expected = ops.box_area(box_tensor)
+        scripted_fn = torch.jit.script(ops.box_area)
+        scripted_area = scripted_fn(box_tensor)
+        torch.testing.assert_close(scripted_area, expected, rtol=0.0, atol=TOLERANCE)
+
 
 class TestBoxIou:
     def test_iou(self):
@@ -981,6 +989,14 @@ class TestBoxIou:
             expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
             iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
+    def test_iou_jit(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        TOLERANCE = 1e-3
+        expected = ops.box_iou(box_tensor, box_tensor)
+        scripted_fn = torch.jit.script(ops.box_iou)
+        scripted_iou = scripted_fn(box_tensor, box_tensor)
+        torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
+
 
 class TestGenBoxIou:
     def test_gen_iou(self):
@@ -1001,6 +1017,14 @@ class TestGenBoxIou:
                                        [279.2440, 197.9812, 1189.4746, 849.2019]], dtype=dtype)
             expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
             gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
+
+    def test_giou_jit(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        TOLERANCE = 1e-3
+        expected = ops.generalized_box_iou(box_tensor, box_tensor)
+        scripted_fn = torch.jit.script(ops.generalized_box_iou)
+        scripted_iou = scripted_fn(box_tensor, box_tensor)
+        torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
 
 
 class TestMasksToBoxes:
