@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+10a585e ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+9440887 ) &#x25BC</a>
     </div>
     
 
@@ -335,8 +335,8 @@ It works by following roughly these steps:</p>
 <ol class="arabic simple">
 <li><p>Symbolically tracing the model to get a graphical representation of
 how it transforms the input, step by step.</p></li>
-<li><p>Setting the user-selected graph nodes as ouputs.</p></li>
-<li><p>Removing all redundant nodes (anything downstream of the ouput nodes).</p></li>
+<li><p>Setting the user-selected graph nodes as outputs.</p></li>
+<li><p>Removing all redundant nodes (anything downstream of the output nodes).</p></li>
 <li><p>Generating python code from the resulting graph and bundling that into a
 PyTorch module together with the graph itself.</p></li>
 </ol>
@@ -346,6 +346,34 @@ PyTorch module together with the graph itself.</p></li>
 <p>The <a class="reference external" href="https://pytorch.org/docs/stable/fx.html">torch.fx documentation</a>
 provides a more general and detailed explanation of the above procedure and
 the inner workings of the symbolic tracing.</p>
+<p id="about-node-names"><strong>About Node Names</strong></p>
+<p>In order to specify which nodes should be output nodes for extracted
+features, one should be familiar with the node naming convention used here
+(which differs slightly from that used in <code class="docutils literal notranslate"><span class="pre">torch.fx</span></code>). A node name is
+specified as a <code class="docutils literal notranslate"><span class="pre">.</span></code> separated path walking the module hierarchy from top level
+module down to leaf operation or leaf module. For instance <code class="docutils literal notranslate"><span class="pre">&quot;layer4.2.relu&quot;</span></code>
+in ResNet-50 represents the output of the ReLU of the 2nd block of the 4th
+layer of the <code class="docutils literal notranslate"><span class="pre">ResNet</span></code> module. Here are some finer points to keep in mind:</p>
+<ul class="simple">
+<li><p>When specifying node names for <a class="reference internal" href="#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a>, you may
+provide a truncated version of a node name as a shortcut. To see how this
+works, try creating a ResNet-50 model and printing the node names with
+<code class="docutils literal notranslate"><span class="pre">train_nodes,</span> <span class="pre">_</span> <span class="pre">=</span> <span class="pre">get_graph_node_names(model)</span> <span class="pre">print(train_nodes)</span></code> and
+observe that the last node pertaining to <code class="docutils literal notranslate"><span class="pre">layer4</span></code> is
+<code class="docutils literal notranslate"><span class="pre">&quot;layer4.2.relu_2&quot;</span></code>. One may specify <code class="docutils literal notranslate"><span class="pre">&quot;layer4.2.relu_2&quot;</span></code> as the return
+node, or just <code class="docutils literal notranslate"><span class="pre">&quot;layer4&quot;</span></code> as this, by convention, refers to the last node
+(in order of execution) of <code class="docutils literal notranslate"><span class="pre">layer4</span></code>.</p></li>
+<li><p>If a certain module or operation is repeated more than once, node names get
+an additional <code class="docutils literal notranslate"><span class="pre">_{int}</span></code> postfix to disambiguate. For instance, maybe the
+addition (<code class="docutils literal notranslate"><span class="pre">+</span></code>) operation is used three times in the same <code class="docutils literal notranslate"><span class="pre">forward</span></code>
+method. Then there would be <code class="docutils literal notranslate"><span class="pre">&quot;path.to.module.add&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;path.to.module.add_1&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;path.to.module.add_2&quot;</span></code>. The counter is
+maintained within the scope of the direct parent. So in ResNet-50 there is
+a <code class="docutils literal notranslate"><span class="pre">&quot;layer4.1.add&quot;</span></code> and a <code class="docutils literal notranslate"><span class="pre">&quot;layer4.2.add&quot;</span></code>. Because the addition
+operations reside in different blocks, there is no need for a postfix to
+disambiguate.</p></li>
+</ul>
+<p><strong>An Example</strong></p>
 <p>Here is an example of how we might extract features for MaskRCNN:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span>
@@ -393,10 +421,10 @@ the inner workings of the symbolic tracing.</p>
 <span class="c1"># Now you can build the feature extractor. This returns a module whose forward</span>
 <span class="c1"># method returns a dictionary like:</span>
 <span class="c1"># {</span>
-<span class="c1">#     &#39;layer1&#39;: ouput of layer 1,</span>
-<span class="c1">#     &#39;layer2&#39;: ouput of layer 2,</span>
-<span class="c1">#     &#39;layer3&#39;: ouput of layer 3,</span>
-<span class="c1">#     &#39;layer4&#39;: ouput of layer 4,</span>
+<span class="c1">#     &#39;layer1&#39;: output of layer 1,</span>
+<span class="c1">#     &#39;layer2&#39;: output of layer 2,</span>
+<span class="c1">#     &#39;layer3&#39;: output of layer 3,</span>
+<span class="c1">#     &#39;layer4&#39;: output of layer 4,</span>
 <span class="c1"># }</span>
 <span class="n">create_feature_extractor</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">return_nodes</span><span class="o">=</span><span class="n">return_nodes</span><span class="p">)</span>
 
@@ -444,30 +472,27 @@ model as dictionary with user specified keys as strings, and the requested
 outputs as values. This is achieved by re-writing the computation graph of
 the model via FX to return the desired nodes as outputs. All unused nodes
 are removed, together with their corresponding parameters.</p>
-<p>A note on node specification: For the purposes of this feature extraction
-utility, a node name is specified as a <cite>.</cite> seperated path walking the
-hierarchy from top level module down to leaf operation or leaf module. For
-instance <cite>blocks.5.3.bn1</cite>. The keys of the <cite>return_nodes</cite> argument should
-point to either a node’s name, or some truncated version of it. For
-example, one could provide <cite>blocks.5</cite> as a key, and the last node with
-that prefix will be selected. <a class="reference internal" href="#torchvision.models.feature_extraction.get_graph_node_names" title="torchvision.models.feature_extraction.get_graph_node_names"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_graph_node_names()</span></code></a> is a useful
-helper function for getting a list of node names of a model.</p>
+<p>Desired output nodes must be specified as a <code class="docutils literal notranslate"><span class="pre">.</span></code> separated
+path walking the module hierarchy from top level module down to leaf
+operation or leaf module. For more details on the node naming conventions
+used here, please see the <a class="reference internal" href="#about-node-names"><span class="std std-ref">relevant subheading</span></a>
+in the <a class="reference external" href="https://pytorch.org/vision/stable/feature_extraction.html">documentation</a>.</p>
 <p>Not all models will be FX traceable, although with some massaging they can
 be made to cooperate. Here’s a (not exhaustive) list of tips:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>If you don’t need to trace through a particular, problematic
 sub-module, turn it into a “leaf module” by passing a list of
-<cite>leaf_modules</cite> as one of the <cite>tracer_kwargs</cite> (see example below). It
-will not be traced through, but rather, the resulting graph will
+<code class="docutils literal notranslate"><span class="pre">leaf_modules</span></code> as one of the <code class="docutils literal notranslate"><span class="pre">tracer_kwargs</span></code> (see example below).
+It will not be traced through, but rather, the resulting graph will
 hold a reference to that module’s forward method.</p></li>
 <li><p>Likewise, you may turn functions into leaf functions by passing a
-list of <cite>autowrap_functions</cite> as one of the <cite>tracer_kwargs</cite> (see
+list of <code class="docutils literal notranslate"><span class="pre">autowrap_functions</span></code> as one of the <code class="docutils literal notranslate"><span class="pre">tracer_kwargs</span></code> (see
 example below).</p></li>
 <li><p>Some inbuilt Python functions can be problematic. For instance,
-<cite>int</cite> will raise an error during tracing. You may wrap them in your
-own function and then pass that in <cite>autowrap_functions</cite> as one of
-the <cite>tracer_kwargs</cite>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">int</span></code> will raise an error during tracing. You may wrap them in your
+own function and then pass that in <code class="docutils literal notranslate"><span class="pre">autowrap_functions</span></code> as one of
+the <code class="docutils literal notranslate"><span class="pre">tracer_kwargs</span></code>.</p></li>
 </ul>
 </div></blockquote>
 <p>For further information on FX see the
@@ -476,28 +501,28 @@ the <cite>tracer_kwargs</cite>.</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> (<em>nn.Module</em>) – model on which we will extract the features</p></li>
-<li><p><strong>return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – either a <cite>List</cite> or a <cite>Dict</cite>
+<li><p><strong>return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – either a <code class="docutils literal notranslate"><span class="pre">List</span></code> or a <code class="docutils literal notranslate"><span class="pre">Dict</span></code>
 containing the names (or partial names - see note above)
 of the nodes for which the activations will be returned. If it is
-a <cite>Dict</cite>, the keys are the node names, and the values
+a <code class="docutils literal notranslate"><span class="pre">Dict</span></code>, the keys are the node names, and the values
 are the user-specified keys for the graph module’s returned
-dictionary. If it is a <cite>List</cite>, it is treated as a <cite>Dict</cite> mapping
+dictionary. If it is a <code class="docutils literal notranslate"><span class="pre">List</span></code>, it is treated as a <code class="docutils literal notranslate"><span class="pre">Dict</span></code> mapping
 node specification strings directly to output names. In the case
-that <cite>train_return_nodes</cite> and <cite>eval_return_nodes</cite> are specified,
+that <code class="docutils literal notranslate"><span class="pre">train_return_nodes</span></code> and <code class="docutils literal notranslate"><span class="pre">eval_return_nodes</span></code> are specified,
 this should not be specified.</p></li>
 <li><p><strong>train_return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – similar to
-<cite>return_nodes</cite>. This can be used if the return nodes
+<code class="docutils literal notranslate"><span class="pre">return_nodes</span></code>. This can be used if the return nodes
 for train mode are different than those from eval mode.
-If this is specified, <cite>eval_return_nodes</cite> must also be specified,
-and <cite>return_nodes</cite> should not be specified.</p></li>
+If this is specified, <code class="docutils literal notranslate"><span class="pre">eval_return_nodes</span></code> must also be specified,
+and <code class="docutils literal notranslate"><span class="pre">return_nodes</span></code> should not be specified.</p></li>
 <li><p><strong>eval_return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – similar to
-<cite>return_nodes</cite>. This can be used if the return nodes
+<code class="docutils literal notranslate"><span class="pre">return_nodes</span></code>. This can be used if the return nodes
 for train mode are different than those from eval mode.
-If this is specified, <cite>train_return_nodes</cite> must also be specified,
+If this is specified, <code class="docutils literal notranslate"><span class="pre">train_return_nodes</span></code> must also be specified,
 and <cite>return_nodes</cite> should not be specified.</p></li>
 <li><p><strong>tracer_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – a dictionary of keywork arguments for
-<cite>NodePathTracer</cite> (which passes them onto it’s parent class
-<cite>torch.fx.Tracer</cite>).</p></li>
+<code class="docutils literal notranslate"><span class="pre">NodePathTracer</span></code> (which passes them onto it’s parent class
+<a class="reference external" href="https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer">torch.fx.Tracer</a>).</p></li>
 <li><p><strong>suppress_diff_warning</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to suppress a warning
 when there are discrepancies between the train and eval version of
 the graph. Defaults to False.</p></li>
@@ -554,21 +579,25 @@ names are available for feature extraction. There are two reasons that
 node names can’t easily be read directly from the code for a model:</p>
 <blockquote>
 <div><ol class="arabic simple">
-<li><p>Not all submodules are traced through. Modules from <cite>torch.nn</cite> all
+<li><p>Not all submodules are traced through. Modules from <code class="docutils literal notranslate"><span class="pre">torch.nn</span></code> all
 fall within this category.</p></li>
 <li><p>Nodes representing the repeated application of the same operation
-or leaf module get a <cite>_{counter}</cite> postfix.</p></li>
+or leaf module get a <code class="docutils literal notranslate"><span class="pre">_{counter}</span></code> postfix.</p></li>
 </ol>
 </div></blockquote>
 <p>The model is traced twice: once in train mode, and once in eval mode. Both
-sets of nodes are returned.</p>
+sets of node names are returned.</p>
+<p>For more details on the node naming conventions used here, please see the
+<a class="reference internal" href="#about-node-names"><span class="std std-ref">relevant subheading</span></a> in the
+<a class="reference external" href="https://pytorch.org/vision/stable/feature_extraction.html">documentation</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> (<em>nn.Module</em>) – model for which we’d like to print node names</p></li>
-<li><p><strong>tracer_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – a dictionary of keywork arguments for
-<cite>NodePathTracer</cite> (they are eventually passed onto
-<cite>torch.fx.Tracer</cite>).</p></li>
+<li><p><strong>tracer_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em>, </em><em>optional</em>) – <p>a dictionary of keywork arguments for
+<code class="docutils literal notranslate"><span class="pre">NodePathTracer</span></code> (they are eventually passed onto
+<a class="reference external" href="https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer">torch.fx.Tracer</a>).</p>
+</p></li>
 <li><p><strong>suppress_diff_warning</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to suppress a warning
 when there are discrepancies between the train and eval version of
 the graph. Defaults to False.</p></li>

@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+10a585e ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+9440887 ) &#x25BC</a>
     </div>
     
 
@@ -351,8 +351,10 @@
 <span class="sd">            in the batch.</span>
 <span class="sd">        output_size (int or Tuple[int, int]): the size of the output (in bins or pixels) after the pooling</span>
 <span class="sd">            is performed, as (height, width).</span>
-<span class="sd">        spatial_scale (float): a scaling factor that maps the input coordinates to</span>
-<span class="sd">            the box coordinates. Default: 1.0</span>
+<span class="sd">        spatial_scale (float): a scaling factor that maps the box coordinates to</span>
+<span class="sd">            the input coordinates. For example, if your boxes are defined on the scale</span>
+<span class="sd">            of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of</span>
+<span class="sd">            the original image), you&#39;ll want to set this to 0.5. Default: 1.0</span>
 <span class="sd">        sampling_ratio (int): number of sampling points in the interpolation grid</span>
 <span class="sd">            used to compute the output value of each pooled output bin. If &gt; 0,</span>
 <span class="sd">            then exactly ``sampling_ratio x sampling_ratio`` sampling points per bin are used. If</span>
