@@ -2,10 +2,10 @@ from typing import List, Union
 
 import torch
 from torch import nn, Tensor
-from torch.nn.modules.utils import _pair
 from torch.jit.annotations import BroadcastingList2
-from torchvision.extension import _assert_has_ops
+from torch.nn.modules.utils import _pair
 
+from torchvision.extension import _assert_has_ops
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
@@ -44,8 +44,7 @@ def roi_pool(
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale,
-                                               output_size[0], output_size[1])
+    output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale, output_size[0], output_size[1])
     return output
 
 
@@ -53,6 +52,7 @@ class RoIPool(nn.Module):
     """
     See :func:`roi_pool`.
     """
+
     def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float):
         super(RoIPool, self).__init__()
         self.output_size = output_size
@@ -62,8 +62,8 @@ class RoIPool(nn.Module):
         return roi_pool(input, rois, self.output_size, self.spatial_scale)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + '('
-        tmpstr += 'output_size=' + str(self.output_size)
-        tmpstr += ', spatial_scale=' + str(self.spatial_scale)
-        tmpstr += ')'
+        tmpstr = self.__class__.__name__ + "("
+        tmpstr += "output_size=" + str(self.output_size)
+        tmpstr += ", spatial_scale=" + str(self.spatial_scale)
+        tmpstr += ")"
         return tmpstr

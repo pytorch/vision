@@ -1,9 +1,11 @@
 import math
-import torch
-from torch.utils.data import Sampler
-import torch.distributed as dist
-from torchvision.datasets.video_utils import VideoClips
 from typing import Optional, List, Iterator, Sized, Union, cast
+
+import torch
+import torch.distributed as dist
+from torch.utils.data import Sampler
+
+from torchvision.datasets.video_utils import VideoClips
 
 
 class DistributedSampler(Sampler):
@@ -36,12 +38,12 @@ class DistributedSampler(Sampler):
     """
 
     def __init__(
-            self,
-            dataset: Sized,
-            num_replicas: Optional[int] = None,
-            rank: Optional[int] = None,
-            shuffle: bool = False,
-            group_size: int = 1,
+        self,
+        dataset: Sized,
+        num_replicas: Optional[int] = None,
+        rank: Optional[int] = None,
+        shuffle: bool = False,
+        group_size: int = 1,
     ) -> None:
         if num_replicas is None:
             if not dist.is_available():
@@ -51,9 +53,11 @@ class DistributedSampler(Sampler):
             if not dist.is_available():
                 raise RuntimeError("Requires distributed package to be available")
             rank = dist.get_rank()
-        assert len(dataset) % group_size == 0, (
-            "dataset length must be a multiplier of group size"
-            "dataset length: %d, group size: %d" % (len(dataset), group_size)
+        assert (
+            len(dataset) % group_size == 0
+        ), "dataset length must be a multiplier of group size" "dataset length: %d, group size: %d" % (
+            len(dataset),
+            group_size,
         )
         self.dataset = dataset
         self.group_size = group_size
@@ -61,9 +65,7 @@ class DistributedSampler(Sampler):
         self.rank = rank
         self.epoch = 0
         dataset_group_length = len(dataset) // group_size
-        self.num_group_samples = int(
-            math.ceil(dataset_group_length * 1.0 / self.num_replicas)
-        )
+        self.num_group_samples = int(math.ceil(dataset_group_length * 1.0 / self.num_replicas))
         self.num_samples = self.num_group_samples * group_size
         self.total_size = self.num_samples * self.num_replicas
         self.shuffle = shuffle
@@ -79,16 +81,14 @@ class DistributedSampler(Sampler):
             indices = list(range(len(self.dataset)))
 
         # add extra samples to make it evenly divisible
-        indices += indices[:(self.total_size - len(indices))]
+        indices += indices[: (self.total_size - len(indices))]
         assert len(indices) == self.total_size
 
         total_group_size = self.total_size // self.group_size
-        indices = torch.reshape(
-            torch.LongTensor(indices), (total_group_size, self.group_size)
-        )
+        indices = torch.reshape(torch.LongTensor(indices), (total_group_size, self.group_size))
 
         # subsample
-        indices = indices[self.rank:total_group_size:self.num_replicas, :]
+        indices = indices[self.rank : total_group_size : self.num_replicas, :]
         indices = torch.reshape(indices, (-1,)).tolist()
         assert len(indices) == self.num_samples
 
@@ -115,10 +115,10 @@ class UniformClipSampler(Sampler):
         video_clips (VideoClips): video clips to sample from
         num_clips_per_video (int): number of clips to be sampled per video
     """
+
     def __init__(self, video_clips: VideoClips, num_clips_per_video: int) -> None:
         if not isinstance(video_clips, VideoClips):
-            raise TypeError("Expected video_clips to be an instance of VideoClips, "
-                            "got {}".format(type(video_clips)))
+            raise TypeError("Expected video_clips to be an instance of VideoClips, " "got {}".format(type(video_clips)))
         self.video_clips = video_clips
         self.num_clips_per_video = num_clips_per_video
 
@@ -132,19 +132,13 @@ class UniformClipSampler(Sampler):
                 # corner case where video decoding fails
                 continue
 
-            sampled = (
-                torch.linspace(s, s + length - 1, steps=self.num_clips_per_video)
-                .floor()
-                .to(torch.int64)
-            )
+            sampled = torch.linspace(s, s + length - 1, steps=self.num_clips_per_video).floor().to(torch.int64)
             s += length
             idxs.append(sampled)
         return iter(cast(List[int], torch.cat(idxs).tolist()))
 
     def __len__(self) -> int:
-        return sum(
-            self.num_clips_per_video for c in self.video_clips.clips if len(c) > 0
-        )
+        return sum(self.num_clips_per_video for c in self.video_clips.clips if len(c) > 0)
 
 
 class RandomClipSampler(Sampler):
@@ -155,10 +149,10 @@ class RandomClipSampler(Sampler):
         video_clips (VideoClips): video clips to sample from
         max_clips_per_video (int): maximum number of clips to be sampled per video
     """
+
     def __init__(self, video_clips: VideoClips, max_clips_per_video: int) -> None:
         if not isinstance(video_clips, VideoClips):
-            raise TypeError("Expected video_clips to be an instance of VideoClips, "
-                            "got {}".format(type(video_clips)))
+            raise TypeError("Expected video_clips to be an instance of VideoClips, " "got {}".format(type(video_clips)))
         self.video_clips = video_clips
         self.max_clips_per_video = max_clips_per_video
 

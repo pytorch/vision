@@ -18,12 +18,7 @@ def register(dataset: Dataset) -> None:
 
 
 for name, obj in _builtin.__dict__.items():
-    if (
-        not name.startswith("_")
-        and isinstance(obj, type)
-        and issubclass(obj, Dataset)
-        and obj is not Dataset
-    ):
+    if not name.startswith("_") and isinstance(obj, type) and issubclass(obj, Dataset) and obj is not Dataset:
         register(obj())
 
 
