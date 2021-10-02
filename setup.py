@@ -15,6 +15,9 @@ import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 
 
+IS_WINDOWS = sys.platform == 'win32'
+
+
 def read(*names, **kwargs):
     with io.open(
         os.path.join(os.path.dirname(__file__), *names),
@@ -194,6 +197,8 @@ def get_extensions():
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
+        opt_flag_cxx = '/O2' if IS_WINDOWS else '-O3'
+        opt_flag_nvcc = '-O2' if IS_WINDOWS else '-O3'
         if not is_rocm_pytorch:
             define_macros += [('WITH_CUDA', None)]
             nvcc_flags = os.getenv('NVCC_FLAGS', '')
@@ -201,12 +206,17 @@ def get_extensions():
                 nvcc_flags = []
             else:
                 nvcc_flags = nvcc_flags.split(' ')
+            nvcc_flags.append(opt_flag_nvcc)
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
-        extra_compile_args["nvcc"] = nvcc_flags
 
-    if sys.platform == 'win32':
+        extra_compile_args = {
+            'cxx': [opt_flag_cxx],
+            'nvcc': nvcc_flags,
+        }
+
+    if IS_WINDOWS:
         define_macros += [('torchvision_EXPORTS', None)]
 
         extra_compile_args['cxx'].append('/MP')
