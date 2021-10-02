@@ -204,6 +204,8 @@ class ResNet(nn.Module):
 
     def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False) -> nn.Sequential:
+        if blocks <= 0:
+            return nn.Sequential(nn.Identity())
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
