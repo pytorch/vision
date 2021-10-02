@@ -129,7 +129,7 @@ def adjust_gamma(
 def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
-    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0.,
     padding_mode: str = "constant",
 ) -> Image.Image:
 
@@ -224,7 +224,7 @@ def crop(
 @torch.jit.unused
 def resize(
     img: Image.Image,
-    size: Union[Sequence[int], int],
+    size: Union[int, List[int], Tuple[int, ...]],
     interpolation: int = Image.BILINEAR,
     max_size: Optional[int] = None,
 ) -> Image.Image:
