@@ -1,4 +1,5 @@
-from .boxes import nms, batched_nms, remove_small_boxes, clip_boxes_to_image, box_area, box_iou, generalized_box_iou
+from .boxes import nms, batched_nms, remove_small_boxes, clip_boxes_to_image, box_area, box_iou, generalized_box_iou, \
+    masks_to_boxes
 from .boxes import box_convert
 from .deform_conv import deform_conv2d, DeformConv2d
 from .roi_align import roi_align, RoIAlign

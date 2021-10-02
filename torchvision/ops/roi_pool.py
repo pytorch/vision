@@ -1,16 +1,17 @@
+from typing import List, Union
+
 import torch
 from torch import nn, Tensor
-
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import BroadcastingList2
-
 from torchvision.extension import _assert_has_ops
+
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
 def roi_pool(
     input: Tensor,
-    boxes: Tensor,
+    boxes: Union[Tensor, List[Tensor]],
     output_size: BroadcastingList2[int],
     spatial_scale: float = 1.0,
 ) -> Tensor:
@@ -29,8 +30,10 @@ def roi_pool(
             in the batch.
         output_size (int or Tuple[int, int]): the size of the output after the cropping
             is performed, as (height, width)
-        spatial_scale (float): a scaling factor that maps the input coordinates to
-            the box coordinates. Default: 1.0
+        spatial_scale (float): a scaling factor that maps the box coordinates to
+            the input coordinates. For example, if your boxes are defined on the scale
+            of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
+            the original image), you'll want to set this to 0.5. Default: 1.0
 
     Returns:
         Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.

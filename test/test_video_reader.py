@@ -12,7 +12,7 @@ import torchvision.io as io
 from numpy.random import randint
 from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
-from common_utils import PY39_SKIP, assert_equal
+from common_utils import assert_equal
 
 
 try:
@@ -112,8 +112,8 @@ DecoderResult = collections.namedtuple(
     "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
 )
 
-"""av_seek_frame is imprecise so seek to a timestamp earlier by a margin
-The unit of margin is second"""
+# av_seek_frame is imprecise so seek to a timestamp earlier by a margin
+# The unit of margin is second
 seek_frame_margin = 0.25
 
 
@@ -423,7 +423,6 @@ class TestVideoReader:
                     audio_timebase_den,
                 )
 
-    @PY39_SKIP
     def test_read_video_from_file(self):
         """
         Test the case when decoder starts with a video file to decode frames.
@@ -469,7 +468,6 @@ class TestVideoReader:
             # compare decoding results
             self.compare_decoding_result(tv_result, pyav_result, config)
 
-    @PY39_SKIP
     def test_read_video_from_file_read_single_stream_only(self):
         """
         Test the case when decoder starts with a video file to decode frames, and
@@ -770,7 +768,6 @@ class TestVideoReader:
             assert tv_result[0].size(1) == height
             assert tv_result[0].size(2) == width
 
-    @PY39_SKIP
     def test_read_video_from_file_audio_resampling(self):
         """
         Test the case when decoder starts with a video file to decode frames, and
@@ -826,7 +823,6 @@ class TestVideoReader:
                     )
                     assert aframes.size(0) == approx(int(duration * asample_rate.item()), abs=0.1 * asample_rate.item())
 
-    @PY39_SKIP
     def test_compare_read_video_from_memory_and_file(self):
         """
         Test the case when video is already in memory, and decoder reads data in memory
@@ -893,7 +889,6 @@ class TestVideoReader:
             # finally, compare results decoded from memory and file
             self.compare_decoding_result(tv_result_memory, tv_result_file)
 
-    @PY39_SKIP
     def test_read_video_from_memory(self):
         """
         Test the case when video is already in memory, and decoder reads data in memory
@@ -938,7 +933,6 @@ class TestVideoReader:
             self.check_separate_decoding_result(tv_result, config)
             self.compare_decoding_result(tv_result, pyav_result, config)
 
-    @PY39_SKIP
     def test_read_video_from_memory_get_pts_only(self):
         """
         Test the case when video is already in memory, and decoder reads data in memory.
@@ -1008,7 +1002,6 @@ class TestVideoReader:
             assert not tv_result_pts_only[5].numel()
             self.compare_decoding_result(tv_result, tv_result_pts_only)
 
-    @PY39_SKIP
     def test_read_video_in_range_from_memory(self):
         """
         Test the case when video is already in memory, and decoder reads data in memory.
@@ -1184,7 +1177,6 @@ class TestVideoReader:
             probe_result = scripted_fun(video_tensor)
             self.check_meta_result(probe_result, config)
 
-    @PY39_SKIP
     def test_read_video_from_memory_scripted(self):
         """
         Test the case when video is already in memory, and decoder reads data in memory
