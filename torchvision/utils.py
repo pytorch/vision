@@ -230,7 +230,7 @@ def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
     alpha: float = 0.8,
-    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
 
     """
@@ -242,8 +242,9 @@ def draw_segmentation_masks(
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
-        colors (list or None): List containing the colors of the masks. The colors can
-            be represented as PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+        colors: Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]: List containing the colors
+            of the masks or single color for all masks. The colors can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
             When ``masks`` has a single entry of shape (H, W), you can pass a single color instead of a list
             with one element. By default, random colors are generated for each mask.
 
