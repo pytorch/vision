@@ -303,15 +303,12 @@ def draw_segmentation_masks(
 
 @torch.no_grad()
 def draw_keypoints(
-        image: torch.Tensor,
-        keypoints: torch.Tensor,
-        connectivity: Optional[Tuple[Tuple[int, int]]] = None,
-        labels: Optional[List[str]] = None,
-        colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
-        radius: int = 2,
-        width: int = 3,
-        font: Optional[str] = None,
-        font_size: int = 10
+    image: torch.Tensor,
+    keypoints: torch.Tensor,
+    connectivity: Optional[Tuple[Tuple[int, int]]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    radius: int = 2,
+    width: int = 3,
 ) -> torch.Tensor:
 
     """
@@ -320,33 +317,31 @@ def draw_keypoints(
 
     Args:
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
-        keypoints (Tensor): Tensor of shape (num_instances, K, 3) the K keypoints location for each of the N instances,
-            in the format [x, y, visibility], where `visibility=0` means that the keypoint is not visible.
+        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
+            in the format [x, y].
         connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
             each tuple contains pair of keypoints to be connected.
-        labels (List[str]): List containing the labels for each Keypoint.
         colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
             or a single color for all the keypoints.
             The colors can be represented as `str` or `Tuple[int, int, int]`.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
-        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
-            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
-            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
-        font_size (int): The requested font size in points.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
     """
 
     if not isinstance(image, torch.Tensor):
-        raise TypeError(f"Tensor expected, got {type(image)}")
+        raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype != torch.uint8:
-        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
     elif image.size()[0] != 3:
         raise ValueError("Pass an RGB image. Other Image formats are not supported")
+
+    if keypoints.ndim != 3:
+        raise ValueError("keypoints must be of shape (num_instances, K, 2)")
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
@@ -379,8 +374,6 @@ def draw_keypoints(
                     ),
                     width=width,
                 )
-
-    # txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=out_dtype)
 
