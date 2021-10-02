@@ -289,18 +289,17 @@ def draw_segmentation_masks(
     for color in colors:
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
-        color = torch.tensor(color, dtype=out_dtype)
-        colors_.append(color)
+        colors_.append(torch.tensor(color, dtype=out_dtype))
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
-    for mask, color in zip(masks, colors_):
-        img_to_draw[:, mask] = color[:, None]
+    for mask, color_tensor in zip(masks, colors_):
+        img_to_draw[:, mask] = color_tensor[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
     return out.to(out_dtype)
 
 
-def _generate_color_palette(num_masks):
+def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-    return [tuple((i * palette) % 255) for i in range(num_masks)]
+    return [tuple(((i * palette) % 255)) for i in range(num_masks)]
