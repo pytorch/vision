@@ -17,6 +17,16 @@ PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
 boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
                      [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
+keypoints = torch.tensor(
+    [
+        [
+            [10, 10, 1.0], [5, 5, 1.0]
+        ],
+        [
+            [20, 20, 1.0], [30, 30, 1.0]
+        ]
+    ], dtype=torch.float)
+
 
 def test_make_grid_not_inplace():
     t = torch.rand(5, 3, 10, 10)
@@ -246,6 +256,65 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="It seems that you passed a tuple of colors instead of"):
         bad_colors = ('red', 'blue')  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
+
+
+def test_draw_keypoints_vanilla():
+    # Keypoints is declared on top as global variable
+    keypoints_cp = keypoints.clone()
+
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    img_cp = img.clone()
+    result = utils.draw_keypoints(img, keypoints, colors="red", connectivity=((0, 1), ))
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoint_vanilla.png")
+    if not os.path.exists(path):
+        res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+        res.save(path)
+
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+    # Check that keypoints are not modified inplace
+    assert_equal(keypoints, keypoints_cp)
+    # Check that image is not modified in place
+    assert_equal(img, img_cp)
+
+
+@pytest.mark.parametrize('colors', [
+    'red',
+    '#FF00FF',
+    (1, 34, 122)
+])
+def test_draw_keypoints_colored(colors):
+    # Keypoints is declared on top as global variable
+    keypoints_cp = keypoints.clone()
+
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    img_cp = img.clone()
+    result = utils.draw_keypoints(img, keypoints, colors=colors, connectivity=((0, 1), ))
+    assert result.size(0) == 3
+    assert_equal(keypoints, keypoints_cp)
+    assert_equal(img, img_cp)
+
+
+def test_draw_keypoints_errors():
+    h, w = 10, 10
+
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    keypoints = torch.tensor([[[10, 10, 1.0], [5, 5, 1.0]], [[20, 20, 1.0], [30, 30, 1.0]]], dtype=torch.float)
+
+    with pytest.raises(TypeError, match="The image must be a tensor"):
+        utils.draw_keypoints(image="Not A Tensor Image", keypoints=keypoints)
+    with pytest.raises(ValueError, match="The image dtype must be"):
+        img_bad_dtype = torch.full((3, h, w), 0, dtype=torch.int64)
+        utils.draw_keypoints(image=img_bad_dtype, keypoints=keypoints)
+    with pytest.raises(ValueError, match="Pass individual images, not batches"):
+        batch = torch.randint(0, 256, size=(10, 3, h, w), dtype=torch.uint8)
+        utils.draw_keypoints(image=batch, keypoints=keypoints)
+    with pytest.raises(ValueError, match="Pass an RGB image"):
+        one_channel = torch.randint(0, 256, size=(1, h, w), dtype=torch.uint8)
+        utils.draw_keypoints(image=one_channel, keypoints=keypoints)
+    with pytest.raises(ValueError, match="keypoints must be of shape"):
+        invalid_keypoints = torch.tensor([[10, 10, 10, 10], [5, 6, 7, 8]], dtype=torch.float)
+        utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
 
 
 if __name__ == "__main__":
