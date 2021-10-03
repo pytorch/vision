@@ -356,7 +356,7 @@ Here is demo with a Faster R-CNN model loaded from
 
     Downloading: "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth" to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
     torch.Size([3, 498, 533])
-    /root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1633158994833/work/aten/src/ATen/native/TensorShape.cpp:2157.)
+    /root/project/env/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1633245261939/work/aten/src/ATen/native/TensorShape.cpp:2157.)
       return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
 
 
@@ -430,7 +430,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.579 seconds)
+   **Total running time of the script:** ( 0 minutes  4.049 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_repurposing_annotations.py:
