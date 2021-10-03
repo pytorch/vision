@@ -169,6 +169,8 @@ def test_draw_invalid_boxes():
 @pytest.mark.parametrize('colors', [
     None,
     'blue',
+    '#FF00FF',
+    (1, 34, 122),
     ['red', 'blue'],
     ['#FF00FF', (1, 34, 122)],
 ])
@@ -198,7 +200,7 @@ def test_draw_segmentation_masks(colors, alpha):
     if colors is None:
         colors = utils._generate_color_palette(num_masks)
 
-    if isinstance(colors, str):
+    if isinstance(colors, str) or isinstance(colors, tuple):
         colors = [colors]
 
     # Make sure each mask draws with its own color
