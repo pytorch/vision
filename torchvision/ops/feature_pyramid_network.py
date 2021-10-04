@@ -102,12 +102,10 @@ class FeaturePyramidNetwork(nn.Module):
         num_blocks = len(self.inner_blocks)
         if idx < 0:
             idx += num_blocks
-        i = 0
         out = x
-        for module in self.inner_blocks:
+        for i, module in enumerate(self.inner_blocks):
             if i == idx:
                 out = module(x)
-            i += 1
         return out
 
     def get_result_from_layer_blocks(self, x: Tensor, idx: int) -> Tensor:
@@ -118,12 +116,10 @@ class FeaturePyramidNetwork(nn.Module):
         num_blocks = len(self.layer_blocks)
         if idx < 0:
             idx += num_blocks
-        i = 0
         out = x
-        for module in self.layer_blocks:
+        for i, module in enumerate(self.layer_blocks):
             if i == idx:
                 out = module(x)
-            i += 1
         return out
 
     def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
