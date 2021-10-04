@@ -10,7 +10,7 @@ import torch
 from PIL import Image
 from torchvision import io
 
-import __main__  # noqa
+import __main__  # noqa: 401
 
 
 IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"
