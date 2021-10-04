@@ -234,11 +234,12 @@ class Coco(Dataset):
             dp, functools.partial(self._collate_and_decode_sample, annotations=config.annotations, decoder=decoder)
         )
 
+    # TODO: change this to root / name
     def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
         config = self.default_config
         resources = self.resources(config)
 
-        dp = resources[1].load(pathlib.Path(root) / self.name)
+        dp = resources[1].load(root)
         dp = Filter(
             dp,
             functools.partial(self._filter_meta_files, split=config.split, year=config.year, annotations="instances"),
