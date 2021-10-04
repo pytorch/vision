@@ -28,9 +28,8 @@ class Compose(object):
 
 
 class RandomHorizontalFlip(T.RandomHorizontalFlip):
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if torch.rand(1) < self.p:
             image = F.hflip(image)
             if target is not None:
@@ -46,18 +45,16 @@ class RandomHorizontalFlip(T.RandomHorizontalFlip):
 
 
 class ToTensor(nn.Module):
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         image = F.pil_to_tensor(image)
         image = F.convert_image_dtype(image)
         return image, target
 
 
 class PILToTensor(nn.Module):
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         image = F.pil_to_tensor(image)
         return image, target
 
@@ -67,23 +64,15 @@ class ConvertImageDtype(nn.Module):
         super().__init__()
         self.dtype = dtype
 
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         image = F.convert_image_dtype(image, self.dtype)
         return image, target
 
 
 class RandomIoUCrop(nn.Module):
-    def __init__(
-        self,
-        min_scale: float = 0.3,
-        max_scale: float = 1.0,
-        min_aspect_ratio: float = 0.5,
-        max_aspect_ratio: float = 2.0,
-        sampler_options: Optional[List[float]] = None,
-        trials: int = 40,
-    ):
+    def __init__(self, min_scale: float = 0.3, max_scale: float = 1.0, min_aspect_ratio: float = 0.5,
+                 max_aspect_ratio: float = 2.0, sampler_options: Optional[List[float]] = None, trials: int = 40):
         super().__init__()
         # Configuration similar to https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_coco.py#L89-L174
         self.min_scale = min_scale
@@ -95,15 +84,14 @@ class RandomIoUCrop(nn.Module):
         self.options = sampler_options
         self.trials = trials
 
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if target is None:
             raise ValueError("The targets can't be None for this transform.")
 
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
-                raise ValueError("image should be 2/3 dimensional. Got {} dimensions.".format(image.ndimension()))
+                raise ValueError('image should be 2/3 dimensional. Got {} dimensions.'.format(image.ndimension()))
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
@@ -143,9 +131,8 @@ class RandomIoUCrop(nn.Module):
 
                 # check at least 1 box with jaccard limitations
                 boxes = target["boxes"][is_within_crop_area]
-                ious = torchvision.ops.boxes.box_iou(
-                    boxes, torch.tensor([[left, top, right, bottom]], dtype=boxes.dtype, device=boxes.device)
-                )
+                ious = torchvision.ops.boxes.box_iou(boxes, torch.tensor([[left, top, right, bottom]],
+                                                                         dtype=boxes.dtype, device=boxes.device))
                 if ious.max() < min_jaccard_overlap:
                     continue
 
@@ -162,15 +149,13 @@ class RandomIoUCrop(nn.Module):
 
 
 class RandomZoomOut(nn.Module):
-    def __init__(
-        self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
-    ):
+    def __init__(self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1., 4.), p: float = 0.5):
         super().__init__()
         if fill is None:
-            fill = [0.0, 0.0, 0.0]
+            fill = [0., 0., 0.]
         self.fill = fill
         self.side_range = side_range
-        if side_range[0] < 1.0 or side_range[0] > side_range[1]:
+        if side_range[0] < 1. or side_range[0] > side_range[1]:
             raise ValueError("Invalid canvas side range provided {}.".format(side_range))
         self.p = p
 
@@ -180,12 +165,11 @@ class RandomZoomOut(nn.Module):
         # We fake the type to make it work on JIT
         return tuple(int(x) for x in self.fill) if is_pil else 0
 
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
-                raise ValueError("image should be 2/3 dimensional. Got {} dimensions.".format(image.ndimension()))
+                raise ValueError('image should be 2/3 dimensional. Got {} dimensions.'.format(image.ndimension()))
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
@@ -212,9 +196,8 @@ class RandomZoomOut(nn.Module):
         image = F.pad(image, [left, top, right, bottom], fill=fill)
         if isinstance(image, torch.Tensor):
             v = torch.tensor(self.fill, device=image.device, dtype=image.dtype).view(-1, 1, 1)
-            image[..., :top, :] = image[..., :, :left] = image[..., (top + orig_h) :, :] = image[
-                ..., :, (left + orig_w) :
-            ] = v
+            image[..., :top, :] = image[..., :, :left] = image[..., (top + orig_h):, :] = \
+                image[..., :, (left + orig_w):] = v
 
         if target is not None:
             target["boxes"][:, 0::2] += left
@@ -224,14 +207,8 @@ class RandomZoomOut(nn.Module):
 
 
 class RandomPhotometricDistort(nn.Module):
-    def __init__(
-        self,
-        contrast: Tuple[float] = (0.5, 1.5),
-        saturation: Tuple[float] = (0.5, 1.5),
-        hue: Tuple[float] = (-0.05, 0.05),
-        brightness: Tuple[float] = (0.875, 1.125),
-        p: float = 0.5,
-    ):
+    def __init__(self, contrast: Tuple[float] = (0.5, 1.5), saturation: Tuple[float] = (0.5, 1.5),
+                 hue: Tuple[float] = (-0.05, 0.05), brightness: Tuple[float] = (0.875, 1.125), p: float = 0.5):
         super().__init__()
         self._brightness = T.ColorJitter(brightness=brightness)
         self._contrast = T.ColorJitter(contrast=contrast)
@@ -239,12 +216,11 @@ class RandomPhotometricDistort(nn.Module):
         self._saturation = T.ColorJitter(saturation=saturation)
         self.p = p
 
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, image: Tensor,
+                target: Optional[Dict[str, Tensor]] = None) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
-                raise ValueError("image should be 2/3 dimensional. Got {} dimensions.".format(image.ndimension()))
+                raise ValueError('image should be 2/3 dimensional. Got {} dimensions.'.format(image.ndimension()))
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 

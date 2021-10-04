@@ -1,6 +1,5 @@
 import os
 from typing import Any, Dict, List, Tuple, Optional, Callable
-
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
@@ -63,13 +62,13 @@ class UCF101(VisionDataset):
         _video_width: int = 0,
         _video_height: int = 0,
         _video_min_dimension: int = 0,
-        _audio_samples: int = 0,
+        _audio_samples: int = 0
     ) -> None:
         super(UCF101, self).__init__(root)
         if not 1 <= fold <= 3:
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
 
-        extensions = ("avi",)
+        extensions = ('avi',)
         self.fold = fold
         self.train = train
 

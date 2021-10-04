@@ -4,11 +4,11 @@
 
 
 import math
+import torch
+
 from collections import OrderedDict
 from functools import partial
 from typing import Any, Callable, List, Optional, Tuple
-
-import torch
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
@@ -16,23 +16,10 @@ from ..ops.misc import ConvNormActivation, SqueezeExcitation
 from ._utils import _make_divisible
 
 
-__all__ = [
-    "RegNet",
-    "regnet_y_400mf",
-    "regnet_y_800mf",
-    "regnet_y_1_6gf",
-    "regnet_y_3_2gf",
-    "regnet_y_8gf",
-    "regnet_y_16gf",
-    "regnet_y_32gf",
-    "regnet_x_400mf",
-    "regnet_x_800mf",
-    "regnet_x_1_6gf",
-    "regnet_x_3_2gf",
-    "regnet_x_8gf",
-    "regnet_x_16gf",
-    "regnet_x_32gf",
-]
+__all__ = ["RegNet", "regnet_y_400mf", "regnet_y_800mf", "regnet_y_1_6gf",
+           "regnet_y_3_2gf", "regnet_y_8gf", "regnet_y_16gf", "regnet_y_32gf",
+           "regnet_x_400mf", "regnet_x_800mf", "regnet_x_1_6gf", "regnet_x_3_2gf",
+           "regnet_x_8gf", "regnet_x_16gf", "regnet_x_32gf"]
 
 
 model_urls = {
@@ -55,9 +42,8 @@ class SimpleStemIN(ConvNormActivation):
         norm_layer: Callable[..., nn.Module],
         activation_layer: Callable[..., nn.Module],
     ) -> None:
-        super().__init__(
-            width_in, width_out, kernel_size=3, stride=2, norm_layer=norm_layer, activation_layer=activation_layer
-        )
+        super().__init__(width_in, width_out, kernel_size=3, stride=2,
+                         norm_layer=norm_layer, activation_layer=activation_layer)
 
 
 class BottleneckTransform(nn.Sequential):
@@ -78,12 +64,10 @@ class BottleneckTransform(nn.Sequential):
         w_b = int(round(width_out * bottleneck_multiplier))
         g = w_b // group_width
 
-        layers["a"] = ConvNormActivation(
-            width_in, w_b, kernel_size=1, stride=1, norm_layer=norm_layer, activation_layer=activation_layer
-        )
-        layers["b"] = ConvNormActivation(
-            w_b, w_b, kernel_size=3, stride=stride, groups=g, norm_layer=norm_layer, activation_layer=activation_layer
-        )
+        layers["a"] = ConvNormActivation(width_in, w_b, kernel_size=1, stride=1,
+                                         norm_layer=norm_layer, activation_layer=activation_layer)
+        layers["b"] = ConvNormActivation(w_b, w_b, kernel_size=3, stride=stride, groups=g,
+                                         norm_layer=norm_layer, activation_layer=activation_layer)
 
         if se_ratio:
             # The SE reduction ratio is defined with respect to the
@@ -95,9 +79,8 @@ class BottleneckTransform(nn.Sequential):
                 activation=activation_layer,
             )
 
-        layers["c"] = ConvNormActivation(
-            w_b, width_out, kernel_size=1, stride=1, norm_layer=norm_layer, activation_layer=None
-        )
+        layers["c"] = ConvNormActivation(w_b, width_out, kernel_size=1, stride=1,
+                                         norm_layer=norm_layer, activation_layer=None)
         super().__init__(layers)
 
 
@@ -121,9 +104,8 @@ class ResBottleneckBlock(nn.Module):
         self.proj = None
         should_proj = (width_in != width_out) or (stride != 1)
         if should_proj:
-            self.proj = ConvNormActivation(
-                width_in, width_out, kernel_size=1, stride=stride, norm_layer=norm_layer, activation_layer=None
-            )
+            self.proj = ConvNormActivation(width_in, width_out, kernel_size=1,
+                                           stride=stride, norm_layer=norm_layer, activation_layer=None)
         self.f = BottleneckTransform(
             width_in,
             width_out,
@@ -235,7 +217,10 @@ class BlockParams:
         # Compute the block widths. Each stage has one unique block width
         widths_cont = torch.arange(depth) * w_a + w_0
         block_capacity = torch.round(torch.log(widths_cont / w_0) / math.log(w_m))
-        block_widths = (torch.round(torch.divide(w_0 * torch.pow(w_m, block_capacity), QUANT)) * QUANT).int().tolist()
+        block_widths = (
+            torch.round(torch.divide(w_0 * torch.pow(w_m, block_capacity), QUANT))
+            * QUANT
+        ).int().tolist()
         num_stages = len(set(block_widths))
 
         # Convert to per stage parameters
@@ -269,12 +254,14 @@ class BlockParams:
         )
 
     def _get_expanded_params(self):
-        return zip(self.widths, self.strides, self.depths, self.group_widths, self.bottleneck_multipliers)
+        return zip(
+            self.widths, self.strides, self.depths, self.group_widths, self.bottleneck_multipliers
+        )
 
     @staticmethod
     def _adjust_widths_groups_compatibilty(
-        stage_widths: List[int], bottleneck_ratios: List[float], group_widths: List[int]
-    ) -> Tuple[List[int], List[int]]:
+            stage_widths: List[int], bottleneck_ratios: List[float],
+            group_widths: List[int]) -> Tuple[List[int], List[int]]:
         """
         Adjusts the compatibility of widths and groups,
         depending on the bottleneck ratio.
@@ -402,7 +389,8 @@ def regnet_y_400mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=16, w_0=48, w_a=27.89, w_m=2.09, group_width=8, se_ratio=0.25, **kwargs)
+    params = BlockParams.from_init_params(depth=16, w_0=48, w_a=27.89, w_m=2.09,
+                                          group_width=8, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_400mf", params, pretrained, progress, **kwargs)
 
 
@@ -415,7 +403,8 @@ def regnet_y_800mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=14, w_0=56, w_a=38.84, w_m=2.4, group_width=16, se_ratio=0.25, **kwargs)
+    params = BlockParams.from_init_params(depth=14, w_0=56, w_a=38.84, w_m=2.4,
+                                          group_width=16, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_800mf", params, pretrained, progress, **kwargs)
 
 
@@ -428,9 +417,8 @@ def regnet_y_1_6gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(
-        depth=27, w_0=48, w_a=20.71, w_m=2.65, group_width=24, se_ratio=0.25, **kwargs
-    )
+    params = BlockParams.from_init_params(depth=27, w_0=48, w_a=20.71, w_m=2.65,
+                                          group_width=24, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_1_6gf", params, pretrained, progress, **kwargs)
 
 
@@ -443,9 +431,8 @@ def regnet_y_3_2gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(
-        depth=21, w_0=80, w_a=42.63, w_m=2.66, group_width=24, se_ratio=0.25, **kwargs
-    )
+    params = BlockParams.from_init_params(depth=21, w_0=80, w_a=42.63, w_m=2.66,
+                                          group_width=24, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_3_2gf", params, pretrained, progress, **kwargs)
 
 
@@ -458,9 +445,8 @@ def regnet_y_8gf(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(
-        depth=17, w_0=192, w_a=76.82, w_m=2.19, group_width=56, se_ratio=0.25, **kwargs
-    )
+    params = BlockParams.from_init_params(depth=17, w_0=192, w_a=76.82, w_m=2.19,
+                                          group_width=56, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_8gf", params, pretrained, progress, **kwargs)
 
 
@@ -473,9 +459,8 @@ def regnet_y_16gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(
-        depth=18, w_0=200, w_a=106.23, w_m=2.48, group_width=112, se_ratio=0.25, **kwargs
-    )
+    params = BlockParams.from_init_params(depth=18, w_0=200, w_a=106.23, w_m=2.48,
+                                          group_width=112, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_16gf", params, pretrained, progress, **kwargs)
 
 
@@ -488,9 +473,8 @@ def regnet_y_32gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(
-        depth=20, w_0=232, w_a=115.89, w_m=2.53, group_width=232, se_ratio=0.25, **kwargs
-    )
+    params = BlockParams.from_init_params(depth=20, w_0=232, w_a=115.89, w_m=2.53,
+                                          group_width=232, se_ratio=0.25, **kwargs)
     return _regnet("regnet_y_32gf", params, pretrained, progress, **kwargs)
 
 
@@ -503,7 +487,8 @@ def regnet_x_400mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=22, w_0=24, w_a=24.48, w_m=2.54, group_width=16, **kwargs)
+    params = BlockParams.from_init_params(depth=22, w_0=24, w_a=24.48, w_m=2.54,
+                                          group_width=16, **kwargs)
     return _regnet("regnet_x_400mf", params, pretrained, progress, **kwargs)
 
 
@@ -516,7 +501,8 @@ def regnet_x_800mf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=16, w_0=56, w_a=35.73, w_m=2.28, group_width=16, **kwargs)
+    params = BlockParams.from_init_params(depth=16, w_0=56, w_a=35.73, w_m=2.28,
+                                          group_width=16, **kwargs)
     return _regnet("regnet_x_800mf", params, pretrained, progress, **kwargs)
 
 
@@ -529,7 +515,8 @@ def regnet_x_1_6gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=18, w_0=80, w_a=34.01, w_m=2.25, group_width=24, **kwargs)
+    params = BlockParams.from_init_params(depth=18, w_0=80, w_a=34.01, w_m=2.25,
+                                          group_width=24, **kwargs)
     return _regnet("regnet_x_1_6gf", params, pretrained, progress, **kwargs)
 
 
@@ -542,7 +529,8 @@ def regnet_x_3_2gf(pretrained: bool = False, progress: bool = True, **kwargs: An
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=25, w_0=88, w_a=26.31, w_m=2.25, group_width=48, **kwargs)
+    params = BlockParams.from_init_params(depth=25, w_0=88, w_a=26.31, w_m=2.25,
+                                          group_width=48, **kwargs)
     return _regnet("regnet_x_3_2gf", params, pretrained, progress, **kwargs)
 
 
@@ -555,7 +543,8 @@ def regnet_x_8gf(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=23, w_0=80, w_a=49.56, w_m=2.88, group_width=120, **kwargs)
+    params = BlockParams.from_init_params(depth=23, w_0=80, w_a=49.56, w_m=2.88,
+                                          group_width=120, **kwargs)
     return _regnet("regnet_x_8gf", params, pretrained, progress, **kwargs)
 
 
@@ -568,7 +557,8 @@ def regnet_x_16gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=22, w_0=216, w_a=55.59, w_m=2.1, group_width=128, **kwargs)
+    params = BlockParams.from_init_params(depth=22, w_0=216, w_a=55.59, w_m=2.1,
+                                          group_width=128, **kwargs)
     return _regnet("regnet_x_16gf", params, pretrained, progress, **kwargs)
 
 
@@ -581,8 +571,8 @@ def regnet_x_32gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0, group_width=168, **kwargs)
+    params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0,
+                                          group_width=168, **kwargs)
     return _regnet("regnet_x_32gf", params, pretrained, progress, **kwargs)
-
 
 # TODO(kazhang): Add RegNetZ_500MF and RegNetZ_4GF

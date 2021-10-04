@@ -1,42 +1,55 @@
-from typing import Any
-
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-
 from .._internally_replaced_utils import load_state_dict_from_url
+from typing import Any
 
-__all__ = ["SqueezeNet", "squeezenet1_0", "squeezenet1_1"]
+__all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
 model_urls = {
-    "squeezenet1_0": "https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth",
-    "squeezenet1_1": "https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth",
+    'squeezenet1_0': 'https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth',
+    'squeezenet1_1': 'https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth',
 }
 
 
 class Fire(nn.Module):
-    def __init__(self, inplanes: int, squeeze_planes: int, expand1x1_planes: int, expand3x3_planes: int) -> None:
+
+    def __init__(
+        self,
+        inplanes: int,
+        squeeze_planes: int,
+        expand1x1_planes: int,
+        expand3x3_planes: int
+    ) -> None:
         super(Fire, self).__init__()
         self.inplanes = inplanes
         self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
         self.squeeze_activation = nn.ReLU(inplace=True)
-        self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes, kernel_size=1)
+        self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes,
+                                   kernel_size=1)
         self.expand1x1_activation = nn.ReLU(inplace=True)
-        self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes, kernel_size=3, padding=1)
+        self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes,
+                                   kernel_size=3, padding=1)
         self.expand3x3_activation = nn.ReLU(inplace=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.squeeze_activation(self.squeeze(x))
-        return torch.cat(
-            [self.expand1x1_activation(self.expand1x1(x)), self.expand3x3_activation(self.expand3x3(x))], 1
-        )
+        return torch.cat([
+            self.expand1x1_activation(self.expand1x1(x)),
+            self.expand3x3_activation(self.expand3x3(x))
+        ], 1)
 
 
 class SqueezeNet(nn.Module):
-    def __init__(self, version: str = "1_0", num_classes: int = 1000) -> None:
+
+    def __init__(
+        self,
+        version: str = '1_0',
+        num_classes: int = 1000
+    ) -> None:
         super(SqueezeNet, self).__init__()
         self.num_classes = num_classes
-        if version == "1_0":
+        if version == '1_0':
             self.features = nn.Sequential(
                 nn.Conv2d(3, 96, kernel_size=7, stride=2),
                 nn.ReLU(inplace=True),
@@ -52,7 +65,7 @@ class SqueezeNet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
                 Fire(512, 64, 256, 256),
             )
-        elif version == "1_1":
+        elif version == '1_1':
             self.features = nn.Sequential(
                 nn.Conv2d(3, 64, kernel_size=3, stride=2),
                 nn.ReLU(inplace=True),
@@ -72,12 +85,16 @@ class SqueezeNet(nn.Module):
             # FIXME: Is this needed? SqueezeNet should only be called from the
             # FIXME: squeezenet1_x() functions
             # FIXME: This checking is not done for the other models
-            raise ValueError("Unsupported SqueezeNet version {version}:" "1_0 or 1_1 expected".format(version=version))
+            raise ValueError("Unsupported SqueezeNet version {version}:"
+                             "1_0 or 1_1 expected".format(version=version))
 
         # Final convolution is initialized differently from the rest
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5), final_conv, nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d((1, 1))
+            nn.Dropout(p=0.5),
+            final_conv,
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1))
         )
 
         for m in self.modules():
@@ -98,8 +115,9 @@ class SqueezeNet(nn.Module):
 def _squeezenet(version: str, pretrained: bool, progress: bool, **kwargs: Any) -> SqueezeNet:
     model = SqueezeNet(version, **kwargs)
     if pretrained:
-        arch = "squeezenet" + version
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        arch = 'squeezenet' + version
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -114,7 +132,7 @@ def squeezenet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _squeezenet("1_0", pretrained, progress, **kwargs)
+    return _squeezenet('1_0', pretrained, progress, **kwargs)
 
 
 def squeezenet1_1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SqueezeNet:
@@ -128,4 +146,4 @@ def squeezenet1_1(pretrained: bool = False, progress: bool = True, **kwargs: Any
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _squeezenet("1_1", pretrained, progress, **kwargs)
+    return _squeezenet('1_1', pretrained, progress, **kwargs)

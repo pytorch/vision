@@ -1,11 +1,10 @@
+from PIL import Image
 import os
 import os.path
 from typing import Any, Callable, List, Optional, Union, Tuple
 
-from PIL import Image
-
-from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
+from .utils import download_and_extract_archive, verify_str_arg
 
 
 class Caltech101(VisionDataset):
@@ -33,26 +32,28 @@ class Caltech101(VisionDataset):
     """
 
     def __init__(
-        self,
-        root: str,
-        target_type: Union[List[str], str] = "category",
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        download: bool = False,
+            self,
+            root: str,
+            target_type: Union[List[str], str] = "category",
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            download: bool = False,
     ) -> None:
-        super(Caltech101, self).__init__(
-            os.path.join(root, "caltech101"), transform=transform, target_transform=target_transform
-        )
+        super(Caltech101, self).__init__(os.path.join(root, 'caltech101'),
+                                         transform=transform,
+                                         target_transform=target_transform)
         os.makedirs(self.root, exist_ok=True)
         if not isinstance(target_type, list):
             target_type = [target_type]
-        self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation")) for t in target_type]
+        self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation"))
+                            for t in target_type]
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' You can use download=True to download it')
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "101_ObjectCategories")))
         self.categories.remove("BACKGROUND_Google")  # this is not a real class
@@ -60,12 +61,10 @@ class Caltech101(VisionDataset):
         # For some reason, the category names in "101_ObjectCategories" and
         # "Annotations" do not always match. This is a manual map between the
         # two. Defaults to using same name, since most names are fine.
-        name_map = {
-            "Faces": "Faces_2",
-            "Faces_easy": "Faces_3",
-            "Motorbikes": "Motorbikes_16",
-            "airplanes": "Airplanes_Side_2",
-        }
+        name_map = {"Faces": "Faces_2",
+                    "Faces_easy": "Faces_3",
+                    "Motorbikes": "Motorbikes_16",
+                    "airplanes": "Airplanes_Side_2"}
         self.annotation_categories = list(map(lambda x: name_map[x] if x in name_map else x, self.categories))
 
         self.index: List[int] = []
@@ -85,28 +84,20 @@ class Caltech101(VisionDataset):
         """
         import scipy.io
 
-        img = Image.open(
-            os.path.join(
-                self.root,
-                "101_ObjectCategories",
-                self.categories[self.y[index]],
-                "image_{:04d}.jpg".format(self.index[index]),
-            )
-        )
+        img = Image.open(os.path.join(self.root,
+                                      "101_ObjectCategories",
+                                      self.categories[self.y[index]],
+                                      "image_{:04d}.jpg".format(self.index[index])))
 
         target: Any = []
         for t in self.target_type:
             if t == "category":
                 target.append(self.y[index])
             elif t == "annotation":
-                data = scipy.io.loadmat(
-                    os.path.join(
-                        self.root,
-                        "Annotations",
-                        self.annotation_categories[self.y[index]],
-                        "annotation_{:04d}.mat".format(self.index[index]),
-                    )
-                )
+                data = scipy.io.loadmat(os.path.join(self.root,
+                                                     "Annotations",
+                                                     self.annotation_categories[self.y[index]],
+                                                     "annotation_{:04d}.mat".format(self.index[index])))
                 target.append(data["obj_contour"])
         target = tuple(target) if len(target) > 1 else target[0]
 
@@ -127,21 +118,19 @@ class Caltech101(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
+            print('Files already downloaded and verified')
             return
 
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             self.root,
             filename="101_ObjectCategories.tar.gz",
-            md5="b224c7392d521a49829488ab0f1120d9",
-        )
+            md5="b224c7392d521a49829488ab0f1120d9")
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
             self.root,
             filename="101_Annotations.tar",
-            md5="6f83eeb1f24d99cab4eb377263132c91",
-        )
+            md5="6f83eeb1f24d99cab4eb377263132c91")
 
     def extra_repr(self) -> str:
         return "Target type: {target_type}".format(**self.__dict__)
@@ -163,22 +152,23 @@ class Caltech256(VisionDataset):
     """
 
     def __init__(
-        self,
-        root: str,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        download: bool = False,
+            self,
+            root: str,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            download: bool = False,
     ) -> None:
-        super(Caltech256, self).__init__(
-            os.path.join(root, "caltech256"), transform=transform, target_transform=target_transform
-        )
+        super(Caltech256, self).__init__(os.path.join(root, 'caltech256'),
+                                         transform=transform,
+                                         target_transform=target_transform)
         os.makedirs(self.root, exist_ok=True)
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' You can use download=True to download it')
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "256_ObjectCategories")))
         self.index: List[int] = []
@@ -196,14 +186,10 @@ class Caltech256(VisionDataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img = Image.open(
-            os.path.join(
-                self.root,
-                "256_ObjectCategories",
-                self.categories[self.y[index]],
-                "{:03d}_{:04d}.jpg".format(self.y[index] + 1, self.index[index]),
-            )
-        )
+        img = Image.open(os.path.join(self.root,
+                                      "256_ObjectCategories",
+                                      self.categories[self.y[index]],
+                                      "{:03d}_{:04d}.jpg".format(self.y[index] + 1, self.index[index])))
 
         target = self.y[index]
 
@@ -224,12 +210,11 @@ class Caltech256(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
+            print('Files already downloaded and verified')
             return
 
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
             self.root,
             filename="256_ObjectCategories.tar",
-            md5="67b4f42ca05d46448c6bb8ecd2220f6d",
-        )
+            md5="67b4f42ca05d46448c6bb8ecd2220f6d")

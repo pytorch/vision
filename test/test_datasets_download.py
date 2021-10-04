@@ -1,17 +1,18 @@
 import contextlib
 import itertools
-import tempfile
 import time
 import unittest.mock
-import warnings
 from datetime import datetime
 from distutils import dir_util
 from os import path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
+import tempfile
+import warnings
 
 import pytest
+
 from torchvision import datasets
 from torchvision.datasets.utils import (
     download_url,

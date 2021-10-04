@@ -1,16 +1,17 @@
-import csv
-import os
 import time
+import os
 import warnings
+
+
+from os import path
+import csv
+from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from multiprocessing import Pool
-from os import path
-from typing import Any, Callable, Dict, Optional, Tuple
-
 from torch import Tensor
 
-from .folder import find_classes, make_dataset
 from .utils import download_and_extract_archive, download_url, verify_str_arg, check_integrity
+from .folder import find_classes, make_dataset
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -213,13 +214,18 @@ class Kinetics(VisionDataset):
                     start=int(row["time_start"]),
                     end=int(row["time_end"]),
                 )
-                label = row["label"].replace(" ", "_").replace("'", "").replace("(", "").replace(")", "")
+                label = (
+                    row["label"]
+                    .replace(" ", "_")
+                    .replace("'", "")
+                    .replace("(", "")
+                    .replace(")", "")
+                )
                 os.makedirs(path.join(self.split_folder, label), exist_ok=True)
                 downloaded_file = path.join(self.split_folder, f)
                 if path.isfile(downloaded_file):
                     os.replace(
-                        downloaded_file,
-                        path.join(self.split_folder, label, f),
+                        downloaded_file, path.join(self.split_folder, label, f),
                     )
 
     @property
@@ -297,12 +303,11 @@ class Kinetics400(Kinetics):
         split: Any = None,
         download: Any = None,
         num_download_workers: Any = None,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> None:
         warnings.warn(
             "Kinetics400 is deprecated and will be removed in a future release."
-            'It was replaced by Kinetics(..., num_classes="400").'
-        )
+            "It was replaced by Kinetics(..., num_classes=\"400\").")
         if any(value is not None for value in (num_classes, split, download, num_download_workers)):
             raise RuntimeError(
                 "Usage of 'num_classes', 'split', 'download', or 'num_download_workers' is not supported in "

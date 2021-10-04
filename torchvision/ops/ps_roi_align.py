@@ -1,8 +1,9 @@
 import torch
 from torch import nn, Tensor
-from torch.nn.modules.utils import _pair
-from torchvision.extension import _assert_has_ops
 
+from torch.nn.modules.utils import _pair
+
+from torchvision.extension import _assert_has_ops
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
@@ -48,9 +49,10 @@ def ps_roi_align(
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    output, _ = torch.ops.torchvision.ps_roi_align(
-        input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio
-    )
+    output, _ = torch.ops.torchvision.ps_roi_align(input, rois, spatial_scale,
+                                                   output_size[0],
+                                                   output_size[1],
+                                                   sampling_ratio)
     return output
 
 
@@ -58,7 +60,6 @@ class PSRoIAlign(nn.Module):
     """
     See :func:`ps_roi_align`.
     """
-
     def __init__(
         self,
         output_size: int,
@@ -71,12 +72,13 @@ class PSRoIAlign(nn.Module):
         self.sampling_ratio = sampling_ratio
 
     def forward(self, input: Tensor, rois: Tensor) -> Tensor:
-        return ps_roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio)
+        return ps_roi_align(input, rois, self.output_size, self.spatial_scale,
+                            self.sampling_ratio)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + "("
-        tmpstr += "output_size=" + str(self.output_size)
-        tmpstr += ", spatial_scale=" + str(self.spatial_scale)
-        tmpstr += ", sampling_ratio=" + str(self.sampling_ratio)
-        tmpstr += ")"
+        tmpstr = self.__class__.__name__ + '('
+        tmpstr += 'output_size=' + str(self.output_size)
+        tmpstr += ', spatial_scale=' + str(self.spatial_scale)
+        tmpstr += ', sampling_ratio=' + str(self.sampling_ratio)
+        tmpstr += ')'
         return tmpstr

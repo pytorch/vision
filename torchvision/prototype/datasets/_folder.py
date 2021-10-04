@@ -8,6 +8,7 @@ from typing import Union, Tuple, List, Dict, Any
 import torch
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
+
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 

@@ -1,7 +1,6 @@
 import glob
 import os
 from typing import Optional, Callable, Tuple, Dict, Any, List
-
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
@@ -50,7 +49,7 @@ class HMDB51(VisionDataset):
     data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
     splits = {
         "url": "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
-        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5",
+        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5"
     }
     TRAIN_TAG = 1
     TEST_TAG = 2
@@ -76,7 +75,7 @@ class HMDB51(VisionDataset):
         if fold not in (1, 2, 3):
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
 
-        extensions = ("avi",)
+        extensions = ('avi',)
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,

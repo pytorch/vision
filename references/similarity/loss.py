@@ -1,21 +1,21 @@
-"""
+'''
     Pytorch adaptation of https://omoindrot.github.io/triplet-loss
     https://github.com/omoindrot/tensorflow-triplet-loss
-"""
+'''
 import torch
 import torch.nn as nn
 
 
 class TripletMarginLoss(nn.Module):
-    def __init__(self, margin=1.0, p=2.0, mining="batch_all"):
+    def __init__(self, margin=1.0, p=2., mining='batch_all'):
         super(TripletMarginLoss, self).__init__()
         self.margin = margin
         self.p = p
         self.mining = mining
 
-        if mining == "batch_all":
+        if mining == 'batch_all':
             self.loss_fn = batch_all_triplet_loss
-        if mining == "batch_hard":
+        if mining == 'batch_hard':
             self.loss_fn = batch_hard_triplet_loss
 
     def forward(self, embeddings, labels):

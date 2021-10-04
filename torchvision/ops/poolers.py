@@ -1,11 +1,11 @@
-from typing import Optional, List, Dict, Tuple, Union
-
 import torch
-import torchvision
 from torch import nn, Tensor
+
+import torchvision
+from .roi_align import roi_align
 from torchvision.ops.boxes import box_area
 
-from .roi_align import roi_align
+from typing import Optional, List, Dict, Tuple, Union
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -16,17 +16,15 @@ from .roi_align import roi_align
 def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
     first_result = unmerged_results[0]
     dtype, device = first_result.dtype, first_result.device
-    res = torch.zeros(
-        (levels.size(0), first_result.size(1), first_result.size(2), first_result.size(3)), dtype=dtype, device=device
-    )
+    res = torch.zeros((levels.size(0), first_result.size(1),
+                       first_result.size(2), first_result.size(3)),
+                      dtype=dtype, device=device)
     for level in range(len(unmerged_results)):
         index = torch.where(levels == level)[0].view(-1, 1, 1, 1)
-        index = index.expand(
-            index.size(0),
-            unmerged_results[level].size(1),
-            unmerged_results[level].size(2),
-            unmerged_results[level].size(3),
-        )
+        index = index.expand(index.size(0),
+                             unmerged_results[level].size(1),
+                             unmerged_results[level].size(2),
+                             unmerged_results[level].size(3))
         res = res.scatter(0, index, unmerged_results[level])
     return res
 
@@ -118,7 +116,10 @@ class MultiScaleRoIAlign(nn.Module):
 
     """
 
-    __annotations__ = {"scales": Optional[List[float]], "map_levels": Optional[LevelMapper]}
+    __annotations__ = {
+        'scales': Optional[List[float]],
+        'map_levels': Optional[LevelMapper]
+    }
 
     def __init__(
         self,
@@ -223,11 +224,10 @@ class MultiScaleRoIAlign(nn.Module):
 
         if num_levels == 1:
             return roi_align(
-                x_filtered[0],
-                rois,
+                x_filtered[0], rois,
                 output_size=self.output_size,
                 spatial_scale=scales[0],
-                sampling_ratio=self.sampling_ratio,
+                sampling_ratio=self.sampling_ratio
             )
 
         mapper = self.map_levels
@@ -240,11 +240,7 @@ class MultiScaleRoIAlign(nn.Module):
 
         dtype, device = x_filtered[0].dtype, x_filtered[0].device
         result = torch.zeros(
-            (
-                num_rois,
-                num_channels,
-            )
-            + self.output_size,
+            (num_rois, num_channels,) + self.output_size,
             dtype=dtype,
             device=device,
         )
@@ -255,12 +251,9 @@ class MultiScaleRoIAlign(nn.Module):
             rois_per_level = rois[idx_in_level]
 
             result_idx_in_level = roi_align(
-                per_level_feature,
-                rois_per_level,
+                per_level_feature, rois_per_level,
                 output_size=self.output_size,
-                spatial_scale=scale,
-                sampling_ratio=self.sampling_ratio,
-            )
+                spatial_scale=scale, sampling_ratio=self.sampling_ratio)
 
             if torchvision._is_tracing():
                 tracing_results.append(result_idx_in_level.to(dtype))
@@ -280,7 +273,5 @@ class MultiScaleRoIAlign(nn.Module):
         return result
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(featmap_names={self.featmap_names}, "
-            f"output_size={self.output_size}, sampling_ratio={self.sampling_ratio})"
-        )
+        return (f"{self.__class__.__name__}(featmap_names={self.featmap_names}, "
+                f"output_size={self.output_size}, sampling_ratio={self.sampling_ratio})")

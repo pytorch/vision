@@ -1,8 +1,7 @@
-import random
-from collections import defaultdict
-
 import torch
 from torch.utils.data.sampler import Sampler
+from collections import defaultdict
+import random
 
 
 def create_groups(groups, k):

@@ -1,29 +1,29 @@
-import io
+from .vision import VisionDataset
+from PIL import Image
 import os
 import os.path
-import pickle
+import io
 import string
 from collections.abc import Iterable
+import pickle
 from typing import Any, Callable, cast, List, Optional, Tuple, Union
-
-from PIL import Image
-
 from .utils import verify_str_arg, iterable_to_str
-from .vision import VisionDataset
 
 
 class LSUNClass(VisionDataset):
     def __init__(
-        self, root: str, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None
+            self, root: str, transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None
     ) -> None:
         import lmdb
+        super(LSUNClass, self).__init__(root, transform=transform,
+                                        target_transform=target_transform)
 
-        super(LSUNClass, self).__init__(root, transform=transform, target_transform=target_transform)
-
-        self.env = lmdb.open(root, max_readers=1, readonly=True, lock=False, readahead=False, meminit=False)
+        self.env = lmdb.open(root, max_readers=1, readonly=True, lock=False,
+                             readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
-            self.length = txn.stat()["entries"]
-        cache_file = "_cache_" + "".join(c for c in root if c in string.ascii_letters)
+            self.length = txn.stat()['entries']
+        cache_file = '_cache_' + ''.join(c for c in root if c in string.ascii_letters)
         if os.path.isfile(cache_file):
             self.keys = pickle.load(open(cache_file, "rb"))
         else:
@@ -40,7 +40,7 @@ class LSUNClass(VisionDataset):
         buf = io.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
-        img = Image.open(buf).convert("RGB")
+        img = Image.open(buf).convert('RGB')
 
         if self.transform is not None:
             img = self.transform(img)
@@ -71,19 +71,22 @@ class LSUN(VisionDataset):
     """
 
     def __init__(
-        self,
-        root: str,
-        classes: Union[str, List[str]] = "train",
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+            self,
+            root: str,
+            classes: Union[str, List[str]] = "train",
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
     ) -> None:
-        super(LSUN, self).__init__(root, transform=transform, target_transform=target_transform)
+        super(LSUN, self).__init__(root, transform=transform,
+                                   target_transform=target_transform)
         self.classes = self._verify_classes(classes)
 
         # for each class, create an LSUNClassDataset
         self.dbs = []
         for c in self.classes:
-            self.dbs.append(LSUNClass(root=os.path.join(root, f"{c}_lmdb"), transform=transform))
+            self.dbs.append(LSUNClass(
+                root=os.path.join(root, f"{c}_lmdb"),
+                transform=transform))
 
         self.indices = []
         count = 0
@@ -94,41 +97,35 @@ class LSUN(VisionDataset):
         self.length = count
 
     def _verify_classes(self, classes: Union[str, List[str]]) -> List[str]:
-        categories = [
-            "bedroom",
-            "bridge",
-            "church_outdoor",
-            "classroom",
-            "conference_room",
-            "dining_room",
-            "kitchen",
-            "living_room",
-            "restaurant",
-            "tower",
-        ]
-        dset_opts = ["train", "val", "test"]
+        categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
+                      'conference_room', 'dining_room', 'kitchen',
+                      'living_room', 'restaurant', 'tower']
+        dset_opts = ['train', 'val', 'test']
 
         try:
             classes = cast(str, classes)
             verify_str_arg(classes, "classes", dset_opts)
-            if classes == "test":
+            if classes == 'test':
                 classes = [classes]
             else:
-                classes = [c + "_" + classes for c in categories]
+                classes = [c + '_' + classes for c in categories]
         except ValueError:
             if not isinstance(classes, Iterable):
-                msg = "Expected type str or Iterable for argument classes, " "but got type {}."
+                msg = ("Expected type str or Iterable for argument classes, "
+                       "but got type {}.")
                 raise ValueError(msg.format(type(classes)))
 
             classes = list(classes)
-            msg_fmtstr_type = "Expected type str for elements in argument classes, " "but got type {}."
+            msg_fmtstr_type = ("Expected type str for elements in argument classes, "
+                               "but got type {}.")
             for c in classes:
                 verify_str_arg(c, custom_msg=msg_fmtstr_type.format(type(c)))
-                c_short = c.split("_")
-                category, dset_opt = "_".join(c_short[:-1]), c_short[-1]
+                c_short = c.split('_')
+                category, dset_opt = '_'.join(c_short[:-1]), c_short[-1]
 
                 msg_fmtstr = "Unknown value '{}' for {}. Valid values are {{{}}}."
-                msg = msg_fmtstr.format(category, "LSUN class", iterable_to_str(categories))
+                msg = msg_fmtstr.format(category, "LSUN class",
+                                        iterable_to_str(categories))
                 verify_str_arg(category, valid_values=categories, custom_msg=msg)
 
                 msg = msg_fmtstr.format(dset_opt, "postfix", iterable_to_str(dset_opts))

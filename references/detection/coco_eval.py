@@ -5,9 +5,10 @@ from contextlib import redirect_stdout
 import numpy as np
 import pycocotools.mask as mask_util
 import torch
-import utils
-from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+from pycocotools.coco import COCO
+
+import utils
 
 
 class CocoEvaluator:
@@ -103,7 +104,8 @@ class CocoEvaluator:
             labels = prediction["labels"].tolist()
 
             rles = [
-                mask_util.encode(np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F"))[0] for mask in masks
+                mask_util.encode(np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F"))[0]
+                for mask in masks
             ]
             for rle in rles:
                 rle["counts"] = rle["counts"].decode("utf-8")
@@ -139,7 +141,7 @@ class CocoEvaluator:
                     {
                         "image_id": original_id,
                         "category_id": labels[k],
-                        "keypoints": keypoint,
+                        'keypoints': keypoint,
                         "score": scores[k],
                     }
                     for k, keypoint in enumerate(keypoints)

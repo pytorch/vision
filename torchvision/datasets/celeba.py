@@ -1,14 +1,12 @@
-import csv
-import os
 from collections import namedtuple
+import csv
 from functools import partial
-from typing import Any, Callable, List, Optional, Union, Tuple
-
-import PIL
 import torch
-
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
+import os
+import PIL
+from typing import Any, Callable, List, Optional, Union, Tuple
 from .vision import VisionDataset
+from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
 
@@ -59,15 +57,16 @@ class CelebA(VisionDataset):
     ]
 
     def __init__(
-        self,
-        root: str,
-        split: str = "train",
-        target_type: Union[List[str], str] = "attr",
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        download: bool = False,
+            self,
+            root: str,
+            split: str = "train",
+            target_type: Union[List[str], str] = "attr",
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            download: bool = False,
     ) -> None:
-        super(CelebA, self).__init__(root, transform=transform, target_transform=target_transform)
+        super(CelebA, self).__init__(root, transform=transform,
+                                     target_transform=target_transform)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -75,13 +74,14 @@ class CelebA(VisionDataset):
             self.target_type = [target_type]
 
         if not self.target_type and self.target_transform is not None:
-            raise RuntimeError("target_transform is specified but target_type is empty")
+            raise RuntimeError('target_transform is specified but target_type is empty')
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' You can use download=True to download it')
 
         split_map = {
             "train": 0,
@@ -89,7 +89,8 @@ class CelebA(VisionDataset):
             "test": 2,
             "all": None,
         }
-        split_ = split_map[verify_str_arg(split.lower(), "split", ("train", "valid", "test", "all"))]
+        split_ = split_map[verify_str_arg(split.lower(), "split",
+                                          ("train", "valid", "test", "all"))]
         splits = self._load_csv("list_eval_partition.txt")
         identity = self._load_csv("identity_CelebA.txt")
         bbox = self._load_csv("list_bbox_celeba.txt", header=1)
@@ -107,7 +108,7 @@ class CelebA(VisionDataset):
         self.landmarks_align = landmarks_align.data[mask]
         self.attr = attr.data[mask]
         # map from {-1, 1} to {0, 1}
-        self.attr = torch.div(self.attr + 1, 2, rounding_mode="floor")
+        self.attr = torch.div(self.attr + 1, 2, rounding_mode='floor')
         self.attr_names = attr.header
 
     def _load_csv(
@@ -119,11 +120,11 @@ class CelebA(VisionDataset):
 
         fn = partial(os.path.join, self.root, self.base_folder)
         with open(fn(filename)) as csv_file:
-            data = list(csv.reader(csv_file, delimiter=" ", skipinitialspace=True))
+            data = list(csv.reader(csv_file, delimiter=' ', skipinitialspace=True))
 
         if header is not None:
             headers = data[header]
-            data = data[header + 1 :]
+            data = data[header + 1:]
 
         indices = [row[0] for row in data]
         data = [row[1:] for row in data]
@@ -147,7 +148,7 @@ class CelebA(VisionDataset):
         import zipfile
 
         if self._check_integrity():
-            print("Files already downloaded and verified")
+            print('Files already downloaded and verified')
             return
 
         for (file_id, md5, filename) in self.file_list:
@@ -171,7 +172,7 @@ class CelebA(VisionDataset):
                 target.append(self.landmarks_align[index, :])
             else:
                 # TODO: refactor with utils.verify_str_arg
-                raise ValueError('Target type "{}" is not recognized.'.format(t))
+                raise ValueError("Target type \"{}\" is not recognized.".format(t))
 
         if self.transform is not None:
             X = self.transform(X)
@@ -191,4 +192,4 @@ class CelebA(VisionDataset):
 
     def extra_repr(self) -> str:
         lines = ["Target type: {target_type}", "Split: {split}"]
-        return "\n".join(lines).format(**self.__dict__)
+        return '\n'.join(lines).format(**self.__dict__)

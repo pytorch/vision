@@ -1,9 +1,8 @@
 import math
-from typing import List, Optional
-
 import torch
 from torch import nn, Tensor
 
+from typing import List, Optional
 from .image_list import ImageList
 
 
@@ -49,21 +48,15 @@ class AnchorGenerator(nn.Module):
 
         self.sizes = sizes
         self.aspect_ratios = aspect_ratios
-        self.cell_anchors = [
-            self.generate_anchors(size, aspect_ratio) for size, aspect_ratio in zip(sizes, aspect_ratios)
-        ]
+        self.cell_anchors = [self.generate_anchors(size, aspect_ratio)
+                             for size, aspect_ratio in zip(sizes, aspect_ratios)]
 
     # TODO: https://github.com/pytorch/pytorch/issues/26792
     # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
     # (scales, aspect_ratios) are usually an element of zip(self.scales, self.aspect_ratios)
     # This method assumes aspect ratio = height / width for an anchor.
-    def generate_anchors(
-        self,
-        scales: List[int],
-        aspect_ratios: List[float],
-        dtype: torch.dtype = torch.float32,
-        device: torch.device = torch.device("cpu"),
-    ):
+    def generate_anchors(self, scales: List[int], aspect_ratios: List[float], dtype: torch.dtype = torch.float32,
+                         device: torch.device = torch.device("cpu")):
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
@@ -76,7 +69,8 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype: torch.dtype, device: torch.device):
-        self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device) for cell_anchor in self.cell_anchors]
+        self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device)
+                             for cell_anchor in self.cell_anchors]
 
     def num_anchors_per_location(self):
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
@@ -89,21 +83,25 @@ class AnchorGenerator(nn.Module):
         assert cell_anchors is not None
 
         if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
-            raise ValueError(
-                "Anchors should be Tuple[Tuple[int]] because each feature "
-                "map could potentially have different sizes and aspect ratios. "
-                "There needs to be a match between the number of "
-                "feature maps passed and the number of sizes / aspect ratios specified."
-            )
+            raise ValueError("Anchors should be Tuple[Tuple[int]] because each feature "
+                             "map could potentially have different sizes and aspect ratios. "
+                             "There needs to be a match between the number of "
+                             "feature maps passed and the number of sizes / aspect ratios specified.")
 
-        for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
+        for size, stride, base_anchors in zip(
+            grid_sizes, strides, cell_anchors
+        ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
             device = base_anchors.device
 
             # For output anchor, compute [x_center, y_center, x_center, y_center]
-            shifts_x = torch.arange(0, grid_width, dtype=torch.int32, device=device) * stride_width
-            shifts_y = torch.arange(0, grid_height, dtype=torch.int32, device=device) * stride_height
+            shifts_x = torch.arange(
+                0, grid_width, dtype=torch.int32, device=device
+            ) * stride_width
+            shifts_y = torch.arange(
+                0, grid_height, dtype=torch.int32, device=device
+            ) * stride_height
             shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
@@ -111,7 +109,9 @@ class AnchorGenerator(nn.Module):
 
             # For every (base anchor, output anchor) pair,
             # offset each zero-centered base anchor by the center of the output anchor.
-            anchors.append((shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4))
+            anchors.append(
+                (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4)
+            )
 
         return anchors
 
@@ -119,13 +119,8 @@ class AnchorGenerator(nn.Module):
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
-        strides = [
-            [
-                torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
-                torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device),
-            ]
-            for g in grid_sizes
-        ]
+        strides = [[torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
+                    torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.grid_anchors(grid_sizes, strides)
         anchors: List[List[torch.Tensor]] = []
@@ -154,15 +149,8 @@ class DefaultBoxGenerator(nn.Module):
             is applied while the boxes are encoded in format ``(cx, cy, w, h)``.
     """
 
-    def __init__(
-        self,
-        aspect_ratios: List[List[int]],
-        min_ratio: float = 0.15,
-        max_ratio: float = 0.9,
-        scales: Optional[List[float]] = None,
-        steps: Optional[List[int]] = None,
-        clip: bool = True,
-    ):
+    def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
+                 scales: Optional[List[float]] = None, steps: Optional[List[int]] = None, clip: bool = True):
         super().__init__()
         if steps is not None:
             assert len(aspect_ratios) == len(steps)
@@ -184,9 +172,8 @@ class DefaultBoxGenerator(nn.Module):
 
         self._wh_pairs = self._generate_wh_pairs(num_outputs)
 
-    def _generate_wh_pairs(
-        self, num_outputs: int, dtype: torch.dtype = torch.float32, device: torch.device = torch.device("cpu")
-    ) -> List[Tensor]:
+    def _generate_wh_pairs(self, num_outputs: int, dtype: torch.dtype = torch.float32,
+                           device: torch.device = torch.device("cpu")) -> List[Tensor]:
         _wh_pairs: List[Tensor] = []
         for k in range(num_outputs):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
@@ -209,9 +196,8 @@ class DefaultBoxGenerator(nn.Module):
         return [2 + 2 * len(r) for r in self.aspect_ratios]
 
     # Default Boxes calculation based on page 6 of SSD paper
-    def _grid_default_boxes(
-        self, grid_sizes: List[List[int]], image_size: List[int], dtype: torch.dtype = torch.float32
-    ) -> Tensor:
+    def _grid_default_boxes(self, grid_sizes: List[List[int]], image_size: List[int],
+                            dtype: torch.dtype = torch.float32) -> Tensor:
         default_boxes = []
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
@@ -238,12 +224,12 @@ class DefaultBoxGenerator(nn.Module):
         return torch.cat(default_boxes, dim=0)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "aspect_ratios={aspect_ratios}"
-        s += ", clip={clip}"
-        s += ", scales={scales}"
-        s += ", steps={steps}"
-        s += ")"
+        s = self.__class__.__name__ + '('
+        s += 'aspect_ratios={aspect_ratios}'
+        s += ', clip={clip}'
+        s += ', scales={scales}'
+        s += ', steps={steps}'
+        s += ')'
         return s.format(**self.__dict__)
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
@@ -256,13 +242,8 @@ class DefaultBoxGenerator(nn.Module):
         dboxes = []
         for _ in image_list.image_sizes:
             dboxes_in_image = default_boxes
-            dboxes_in_image = torch.cat(
-                [
-                    dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
-                    dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:],
-                ],
-                -1,
-            )
+            dboxes_in_image = torch.cat([dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
+                                         dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]], -1)
             dboxes_in_image[:, 0::2] *= image_size[1]
             dboxes_in_image[:, 1::2] *= image_size[0]
             dboxes.append(dboxes_in_image)

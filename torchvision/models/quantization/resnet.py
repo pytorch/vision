@@ -1,21 +1,24 @@
-from typing import Any, Type, Union, List
-
 import torch
+from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
 import torch.nn as nn
 from torch import Tensor
-from torch.quantization import fuse_modules
-from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
+from typing import Any, Type, Union, List
 
 from ..._internally_replaced_utils import load_state_dict_from_url
+from torch.quantization import fuse_modules
 from .utils import _replace_relu, quantize_model
 
-__all__ = ["QuantizableResNet", "resnet18", "resnet50", "resnext101_32x8d"]
+__all__ = ['QuantizableResNet', 'resnet18', 'resnet50',
+           'resnext101_32x8d']
 
 
 quant_model_urls = {
-    "resnet18_fbgemm": "https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
-    "resnet50_fbgemm": "https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
-    "resnext101_32x8d_fbgemm": "https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
+    'resnet18_fbgemm':
+        'https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth',
+    'resnet50_fbgemm':
+        'https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth',
+    'resnext101_32x8d_fbgemm':
+        'https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth',
 }
 
 
@@ -42,9 +45,10 @@ class QuantizableBasicBlock(BasicBlock):
         return out
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], inplace=True)
+        torch.quantization.fuse_modules(self, [['conv1', 'bn1', 'relu'],
+                                               ['conv2', 'bn2']], inplace=True)
         if self.downsample:
-            torch.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            torch.quantization.fuse_modules(self.downsample, ['0', '1'], inplace=True)
 
 
 class QuantizableBottleneck(Bottleneck):
@@ -73,12 +77,15 @@ class QuantizableBottleneck(Bottleneck):
         return out
 
     def fuse_model(self) -> None:
-        fuse_modules(self, [["conv1", "bn1", "relu1"], ["conv2", "bn2", "relu2"], ["conv3", "bn3"]], inplace=True)
+        fuse_modules(self, [['conv1', 'bn1', 'relu1'],
+                            ['conv2', 'bn2', 'relu2'],
+                            ['conv3', 'bn3']], inplace=True)
         if self.downsample:
-            torch.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            torch.quantization.fuse_modules(self.downsample, ['0', '1'], inplace=True)
 
 
 class QuantizableResNet(ResNet):
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableResNet, self).__init__(*args, **kwargs)
 
@@ -102,7 +109,7 @@ class QuantizableResNet(ResNet):
         and the model after modification is in floating point
         """
 
-        fuse_modules(self, ["conv1", "bn1", "relu"], inplace=True)
+        fuse_modules(self, ['conv1', 'bn1', 'relu'], inplace=True)
         for m in self.modules():
             if type(m) == QuantizableBottleneck or type(m) == QuantizableBasicBlock:
                 m.fuse_model()
@@ -122,18 +129,19 @@ def _resnet(
     _replace_relu(model)
     if quantize:
         # TODO use pretrained as a string to specify the backend
-        backend = "fbgemm"
+        backend = 'fbgemm'
         quantize_model(model, backend)
     else:
         assert pretrained in [True, False]
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls[arch + "_" + backend]
+            model_url = quant_model_urls[arch + '_' + backend]
         else:
             model_url = model_urls[arch]
 
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
+        state_dict = load_state_dict_from_url(model_url,
+                                              progress=progress)
 
         model.load_state_dict(state_dict)
     return model
@@ -153,7 +161,8 @@ def resnet18(
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
     """
-    return _resnet("resnet18", QuantizableBasicBlock, [2, 2, 2, 2], pretrained, progress, quantize, **kwargs)
+    return _resnet('resnet18', QuantizableBasicBlock, [2, 2, 2, 2], pretrained, progress,
+                   quantize, **kwargs)
 
 
 def resnet50(
@@ -171,7 +180,8 @@ def resnet50(
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
     """
-    return _resnet("resnet50", QuantizableBottleneck, [3, 4, 6, 3], pretrained, progress, quantize, **kwargs)
+    return _resnet('resnet50', QuantizableBottleneck, [3, 4, 6, 3], pretrained, progress,
+                   quantize, **kwargs)
 
 
 def resnext101_32x8d(
@@ -188,6 +198,7 @@ def resnext101_32x8d(
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
     """
-    kwargs["groups"] = 32
-    kwargs["width_per_group"] = 8
-    return _resnet("resnext101_32x8d", QuantizableBottleneck, [3, 4, 23, 3], pretrained, progress, quantize, **kwargs)
+    kwargs['groups'] = 32
+    kwargs['width_per_group'] = 8
+    return _resnet('resnext101_32x8d', QuantizableBottleneck, [3, 4, 23, 3],
+                   pretrained, progress, quantize, **kwargs)

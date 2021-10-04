@@ -1,13 +1,13 @@
 import collections
 import os
+import pytest
+from pytest import approx
 import urllib
 
-import pytest
 import torch
 import torchvision
-from pytest import approx
-from torchvision.datasets.utils import download_url
 from torchvision.io import _HAS_VIDEO_OPT, VideoReader
+from torchvision.datasets.utils import download_url
 
 
 try:
@@ -36,16 +36,30 @@ def fate(name, path="."):
 
 
 test_videos = {
-    "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(duration=2.0, video_fps=30.0, audio_sample_rate=None),
+    "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(
+        duration=2.0, video_fps=30.0, audio_sample_rate=None
+    ),
     "SchoolRulesHowTheyHelpUs_wave_f_nm_np1_ba_med_0.avi": GroundTruth(
         duration=2.0, video_fps=30.0, audio_sample_rate=None
     ),
-    "TrumanShow_wave_f_nm_np1_fr_med_26.avi": GroundTruth(duration=2.0, video_fps=30.0, audio_sample_rate=None),
-    "v_SoccerJuggling_g23_c01.avi": GroundTruth(duration=8.0, video_fps=29.97, audio_sample_rate=None),
-    "v_SoccerJuggling_g24_c01.avi": GroundTruth(duration=8.0, video_fps=29.97, audio_sample_rate=None),
-    "R6llTwEh07w.mp4": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
-    "SOX5yA1l24A.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
-    "WUzgd7C1pWA.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
+    "TrumanShow_wave_f_nm_np1_fr_med_26.avi": GroundTruth(
+        duration=2.0, video_fps=30.0, audio_sample_rate=None
+    ),
+    "v_SoccerJuggling_g23_c01.avi": GroundTruth(
+        duration=8.0, video_fps=29.97, audio_sample_rate=None
+    ),
+    "v_SoccerJuggling_g24_c01.avi": GroundTruth(
+        duration=8.0, video_fps=29.97, audio_sample_rate=None
+    ),
+    "R6llTwEh07w.mp4": GroundTruth(
+        duration=10.0, video_fps=30.0, audio_sample_rate=44100
+    ),
+    "SOX5yA1l24A.mp4": GroundTruth(
+        duration=11.0, video_fps=29.97, audio_sample_rate=48000
+    ),
+    "WUzgd7C1pWA.mp4": GroundTruth(
+        duration=11.0, video_fps=29.97, audio_sample_rate=48000
+    ),
 }
 
 
@@ -65,9 +79,13 @@ class TestVideoApi:
 
                     assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
 
-                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1)
+                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(
+                        2, 0, 1
+                    )
                     vr_array = vr_frame["data"]
-                    mean_delta = torch.mean(torch.abs(av_array.float() - vr_array.float()))
+                    mean_delta = torch.mean(
+                        torch.abs(av_array.float() - vr_array.float())
+                    )
                     # on average the difference is very small and caused
                     # by decoding (around 1%)
                     # TODO: asses empirically how to set this? atm it's 1%
@@ -84,7 +102,9 @@ class TestVideoApi:
                     av_array = torch.tensor(av_frame.to_ndarray()).permute(1, 0)
                     vr_array = vr_frame["data"]
 
-                    max_delta = torch.max(torch.abs(av_array.float() - vr_array.float()))
+                    max_delta = torch.max(
+                        torch.abs(av_array.float() - vr_array.float())
+                    )
                     # we assure that there is never more than 1% difference in signal
                     assert max_delta.item() < 0.001
 
@@ -168,5 +188,5 @@ class TestVideoApi:
         os.remove(video_path)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     pytest.main([__file__])

@@ -1,13 +1,15 @@
 import unittest
 from collections import defaultdict
 
-import torchvision.transforms as transforms
-from sampler import PKSampler
 from torch.utils.data import DataLoader
 from torchvision.datasets import FakeData
+import torchvision.transforms as transforms
+
+from sampler import PKSampler
 
 
 class Tester(unittest.TestCase):
+
     def test_pksampler(self):
         p, k = 16, 4
 
@@ -17,7 +19,8 @@ class Tester(unittest.TestCase):
         self.assertRaises(AssertionError, PKSampler, targets, p, k)
 
         # Ensure p, k constraints on batch
-        dataset = FakeData(size=1000, num_classes=100, image_size=(3, 1, 1), transform=transforms.ToTensor())
+        dataset = FakeData(size=1000, num_classes=100, image_size=(3, 1, 1),
+                           transform=transforms.ToTensor())
         targets = [target.item() for _, target in dataset]
         sampler = PKSampler(targets, p, k)
         loader = DataLoader(dataset, batch_size=p * k, sampler=sampler)
@@ -35,5 +38,5 @@ class Tester(unittest.TestCase):
                 self.assertEqual(bins[b], k)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

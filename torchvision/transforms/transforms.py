@@ -17,45 +17,12 @@ from . import functional as F
 from .functional import InterpolationMode, _interpolation_modes_from_int
 
 
-__all__ = [
-    "Compose",
-    "ToTensor",
-    "PILToTensor",
-    "ConvertImageDtype",
-    "ToPILImage",
-    "Normalize",
-    "Resize",
-    "Scale",
-    "CenterCrop",
-    "Pad",
-    "Lambda",
-    "RandomApply",
-    "RandomChoice",
-    "RandomOrder",
-    "RandomCrop",
-    "RandomHorizontalFlip",
-    "RandomVerticalFlip",
-    "RandomResizedCrop",
-    "RandomSizedCrop",
-    "FiveCrop",
-    "TenCrop",
-    "LinearTransformation",
-    "ColorJitter",
-    "RandomRotation",
-    "RandomAffine",
-    "Grayscale",
-    "RandomGrayscale",
-    "RandomPerspective",
-    "RandomErasing",
-    "GaussianBlur",
-    "InterpolationMode",
-    "RandomInvert",
-    "RandomPosterize",
-    "RandomSolarize",
-    "RandomAdjustSharpness",
-    "RandomAutocontrast",
-    "RandomEqualize",
-]
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
+           "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
+           "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
+           "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert", "RandomPosterize",
+           "RandomSolarize", "RandomAdjustSharpness", "RandomAutocontrast", "RandomEqualize"]
 
 
 class Compose:
@@ -95,11 +62,11 @@ class Compose:
         return img
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "("
+        format_string = self.__class__.__name__ + '('
         for t in self.transforms:
-            format_string += "\n"
-            format_string += "    {0}".format(t)
-        format_string += "\n)"
+            format_string += '\n'
+            format_string += '    {0}'.format(t)
+        format_string += '\n)'
         return format_string
 
 
@@ -131,7 +98,7 @@ class ToTensor:
         return F.to_tensor(pic)
 
     def __repr__(self):
-        return self.__class__.__name__ + "()"
+        return self.__class__.__name__ + '()'
 
 
 class PILToTensor:
@@ -151,7 +118,7 @@ class PILToTensor:
         return F.pil_to_tensor(pic)
 
     def __repr__(self):
-        return self.__class__.__name__ + "()"
+        return self.__class__.__name__ + '()'
 
 
 class ConvertImageDtype(torch.nn.Module):
@@ -198,7 +165,6 @@ class ToPILImage:
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
-
     def __init__(self, mode=None):
         self.mode = mode
 
@@ -214,10 +180,10 @@ class ToPILImage:
         return F.to_pil_image(pic, self.mode)
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "("
+        format_string = self.__class__.__name__ + '('
         if self.mode is not None:
-            format_string += "mode={0}".format(self.mode)
-        format_string += ")"
+            format_string += 'mode={0}'.format(self.mode)
+        format_string += ')'
         return format_string
 
 
@@ -256,7 +222,7 @@ class Normalize(torch.nn.Module):
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(mean={0}, std={1})".format(self.mean, self.std)
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
 class Resize(torch.nn.Module):
@@ -335,20 +301,17 @@ class Resize(torch.nn.Module):
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + "(size={0}, interpolation={1}, max_size={2}, antialias={3})".format(
-            self.size, interpolate_str, self.max_size, self.antialias
-        )
+        return self.__class__.__name__ + '(size={0}, interpolation={1}, max_size={2}, antialias={3})'.format(
+            self.size, interpolate_str, self.max_size, self.antialias)
 
 
 class Scale(Resize):
     """
     Note: This transform is deprecated in favor of Resize.
     """
-
     def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "The use of the transforms.Scale transform is deprecated, " + "please use transforms.Resize instead."
-        )
+        warnings.warn("The use of the transforms.Scale transform is deprecated, " +
+                      "please use transforms.Resize instead.")
         super(Scale, self).__init__(*args, **kwargs)
 
 
@@ -379,7 +342,7 @@ class CenterCrop(torch.nn.Module):
         return F.center_crop(img, self.size)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(size={0})".format(self.size)
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
 class Pad(torch.nn.Module):
@@ -432,9 +395,8 @@ class Pad(torch.nn.Module):
             raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
         if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
-            raise ValueError(
-                "Padding must be an int or a 1, 2, or 4 element tuple, not a " + "{} element tuple".format(len(padding))
-            )
+            raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
+                             "{} element tuple".format(len(padding)))
 
         self.padding = padding
         self.fill = fill
@@ -451,9 +413,8 @@ class Pad(torch.nn.Module):
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(padding={0}, fill={1}, padding_mode={2})".format(
-            self.padding, self.fill, self.padding_mode
-        )
+        return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'.\
+            format(self.padding, self.fill, self.padding_mode)
 
 
 class Lambda:
@@ -472,7 +433,7 @@ class Lambda:
         return self.lambd(img)
 
     def __repr__(self):
-        return self.__class__.__name__ + "()"
+        return self.__class__.__name__ + '()'
 
 
 class RandomTransforms:
@@ -491,11 +452,11 @@ class RandomTransforms:
         raise NotImplementedError()
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "("
+        format_string = self.__class__.__name__ + '('
         for t in self.transforms:
-            format_string += "\n"
-            format_string += "    {0}".format(t)
-        format_string += "\n)"
+            format_string += '\n'
+            format_string += '    {0}'.format(t)
+        format_string += '\n)'
         return format_string
 
 
@@ -532,18 +493,18 @@ class RandomApply(torch.nn.Module):
         return img
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "("
-        format_string += "\n    p={}".format(self.p)
+        format_string = self.__class__.__name__ + '('
+        format_string += '\n    p={}'.format(self.p)
         for t in self.transforms:
-            format_string += "\n"
-            format_string += "    {0}".format(t)
-        format_string += "\n)"
+            format_string += '\n'
+            format_string += '    {0}'.format(t)
+        format_string += '\n)'
         return format_string
 
 
 class RandomOrder(RandomTransforms):
-    """Apply a list of transformations in a random order. This transform does not support torchscript."""
-
+    """Apply a list of transformations in a random order. This transform does not support torchscript.
+    """
     def __call__(self, img):
         order = list(range(len(self.transforms)))
         random.shuffle(order)
@@ -553,8 +514,8 @@ class RandomOrder(RandomTransforms):
 
 
 class RandomChoice(RandomTransforms):
-    """Apply single transformation randomly picked from a list. This transform does not support torchscript."""
-
+    """Apply single transformation randomly picked from a list. This transform does not support torchscript.
+    """
     def __init__(self, transforms, p=None):
         super().__init__(transforms)
         if p is not None and not isinstance(p, Sequence):
@@ -567,7 +528,7 @@ class RandomChoice(RandomTransforms):
 
     def __repr__(self):
         format_string = super().__repr__()
-        format_string += "(p={0})".format(self.p)
+        format_string += '(p={0})'.format(self.p)
         return format_string
 
 
@@ -630,19 +591,23 @@ class RandomCrop(torch.nn.Module):
         th, tw = output_size
 
         if h + 1 < th or w + 1 < tw:
-            raise ValueError("Required crop size {} is larger then input image size {}".format((th, tw), (h, w)))
+            raise ValueError(
+                "Required crop size {} is larger then input image size {}".format((th, tw), (h, w))
+            )
 
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = torch.randint(0, h - th + 1, size=(1,)).item()
-        j = torch.randint(0, w - tw + 1, size=(1,)).item()
+        i = torch.randint(0, h - th + 1, size=(1, )).item()
+        j = torch.randint(0, w - tw + 1, size=(1, )).item()
         return i, j, th, tw
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
         super().__init__()
 
-        self.size = tuple(_setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
+        self.size = tuple(_setup_size(
+            size, error_msg="Please provide only two dimensions (h, w) for size."
+        ))
 
         self.padding = padding
         self.pad_if_needed = pad_if_needed
@@ -705,7 +670,7 @@ class RandomHorizontalFlip(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
 class RandomVerticalFlip(torch.nn.Module):
@@ -735,7 +700,7 @@ class RandomVerticalFlip(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
 class RandomPerspective(torch.nn.Module):
@@ -815,27 +780,27 @@ class RandomPerspective(torch.nn.Module):
         half_height = height // 2
         half_width = width // 2
         topleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1, )).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1, )).item())
         ]
         topright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item()),
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1, )).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1, )).item())
         ]
         botright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1, )).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1, )).item())
         ]
         botleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item()),
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1, )).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1, )).item())
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
         return startpoints, endpoints
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
 class RandomResizedCrop(torch.nn.Module):
@@ -867,7 +832,7 @@ class RandomResizedCrop(torch.nn.Module):
 
     """
 
-    def __init__(self, size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0), interpolation=InterpolationMode.BILINEAR):
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=InterpolationMode.BILINEAR):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -891,7 +856,9 @@ class RandomResizedCrop(torch.nn.Module):
         self.ratio = ratio
 
     @staticmethod
-    def get_params(img: Tensor, scale: List[float], ratio: List[float]) -> Tuple[int, int, int, int]:
+    def get_params(
+            img: Tensor, scale: List[float], ratio: List[float]
+    ) -> Tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
@@ -909,7 +876,9 @@ class RandomResizedCrop(torch.nn.Module):
         log_ratio = torch.log(torch.tensor(ratio))
         for _ in range(10):
             target_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
-            aspect_ratio = torch.exp(torch.empty(1).uniform_(log_ratio[0], log_ratio[1])).item()
+            aspect_ratio = torch.exp(
+                torch.empty(1).uniform_(log_ratio[0], log_ratio[1])
+            ).item()
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
@@ -947,10 +916,10 @@ class RandomResizedCrop(torch.nn.Module):
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        format_string = self.__class__.__name__ + "(size={0}".format(self.size)
-        format_string += ", scale={0}".format(tuple(round(s, 4) for s in self.scale))
-        format_string += ", ratio={0}".format(tuple(round(r, 4) for r in self.ratio))
-        format_string += ", interpolation={0})".format(interpolate_str)
+        format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
+        format_string += ', scale={0}'.format(tuple(round(s, 4) for s in self.scale))
+        format_string += ', ratio={0}'.format(tuple(round(r, 4) for r in self.ratio))
+        format_string += ', interpolation={0})'.format(interpolate_str)
         return format_string
 
 
@@ -958,12 +927,9 @@ class RandomSizedCrop(RandomResizedCrop):
     """
     Note: This transform is deprecated in favor of RandomResizedCrop.
     """
-
     def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "The use of the transforms.RandomSizedCrop transform is deprecated, "
-            + "please use transforms.RandomResizedCrop instead."
-        )
+        warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
+                      "please use transforms.RandomResizedCrop instead.")
         super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
@@ -1010,7 +976,7 @@ class FiveCrop(torch.nn.Module):
         return F.five_crop(img, self.size)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(size={0})".format(self.size)
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
 class TenCrop(torch.nn.Module):
@@ -1059,7 +1025,7 @@ class TenCrop(torch.nn.Module):
         return F.ten_crop(img, self.size, self.vertical_flip)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(size={0}, vertical_flip={1})".format(self.size, self.vertical_flip)
+        return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
 class LinearTransformation(torch.nn.Module):
@@ -1084,25 +1050,17 @@ class LinearTransformation(torch.nn.Module):
     def __init__(self, transformation_matrix, mean_vector):
         super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
-            raise ValueError(
-                "transformation_matrix should be square. Got "
-                + "[{} x {}] rectangular matrix.".format(*transformation_matrix.size())
-            )
+            raise ValueError("transformation_matrix should be square. Got " +
+                             "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
 
         if mean_vector.size(0) != transformation_matrix.size(0):
-            raise ValueError(
-                "mean_vector should have the same length {}".format(mean_vector.size(0))
-                + " as any one of the dimensions of the transformation_matrix [{}]".format(
-                    tuple(transformation_matrix.size())
-                )
-            )
+            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
+                             " as any one of the dimensions of the transformation_matrix [{}]"
+                             .format(tuple(transformation_matrix.size())))
 
         if transformation_matrix.device != mean_vector.device:
-            raise ValueError(
-                "Input tensors should be on the same device. Got {} and {}".format(
-                    transformation_matrix.device, mean_vector.device
-                )
-            )
+            raise ValueError("Input tensors should be on the same device. Got {} and {}"
+                             .format(transformation_matrix.device, mean_vector.device))
 
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
@@ -1118,17 +1076,13 @@ class LinearTransformation(torch.nn.Module):
         shape = tensor.shape
         n = shape[-3] * shape[-2] * shape[-1]
         if n != self.transformation_matrix.shape[0]:
-            raise ValueError(
-                "Input tensor and transformation matrix have incompatible shape."
-                + "[{} x {} x {}] != ".format(shape[-3], shape[-2], shape[-1])
-                + "{}".format(self.transformation_matrix.shape[0])
-            )
+            raise ValueError("Input tensor and transformation matrix have incompatible shape." +
+                             "[{} x {} x {}] != ".format(shape[-3], shape[-2], shape[-1]) +
+                             "{}".format(self.transformation_matrix.shape[0]))
 
         if tensor.device.type != self.mean_vector.device.type:
-            raise ValueError(
-                "Input tensor should be on the same device as transformation matrix and mean vector. "
-                "Got {} vs {}".format(tensor.device, self.mean_vector.device)
-            )
+            raise ValueError("Input tensor should be on the same device as transformation matrix and mean vector. "
+                             "Got {} vs {}".format(tensor.device, self.mean_vector.device))
 
         flat_tensor = tensor.view(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
@@ -1136,9 +1090,9 @@ class LinearTransformation(torch.nn.Module):
         return tensor
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "(transformation_matrix="
-        format_string += str(self.transformation_matrix.tolist()) + ")"
-        format_string += ", (mean_vector=" + str(self.mean_vector.tolist()) + ")"
+        format_string = self.__class__.__name__ + '(transformation_matrix='
+        format_string += (str(self.transformation_matrix.tolist()) + ')')
+        format_string += (", (mean_vector=" + str(self.mean_vector.tolist()) + ')')
         return format_string
 
 
@@ -1165,13 +1119,14 @@ class ColorJitter(torch.nn.Module):
 
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
         super().__init__()
-        self.brightness = self._check_input(brightness, "brightness")
-        self.contrast = self._check_input(contrast, "contrast")
-        self.saturation = self._check_input(saturation, "saturation")
-        self.hue = self._check_input(hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False)
+        self.brightness = self._check_input(brightness, 'brightness')
+        self.contrast = self._check_input(contrast, 'contrast')
+        self.saturation = self._check_input(saturation, 'saturation')
+        self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
+                                     clip_first_on_zero=False)
 
     @torch.jit.unused
-    def _check_input(self, value, name, center=1, bound=(0, float("inf")), clip_first_on_zero=True):
+    def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
         if isinstance(value, numbers.Number):
             if value < 0:
                 raise ValueError("If {} is a single number, it must be non negative.".format(name))
@@ -1191,12 +1146,11 @@ class ColorJitter(torch.nn.Module):
         return value
 
     @staticmethod
-    def get_params(
-        brightness: Optional[List[float]],
-        contrast: Optional[List[float]],
-        saturation: Optional[List[float]],
-        hue: Optional[List[float]],
-    ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
+    def get_params(brightness: Optional[List[float]],
+                   contrast: Optional[List[float]],
+                   saturation: Optional[List[float]],
+                   hue: Optional[List[float]]
+                   ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
         """Get the parameters for the randomized transform to be applied on image.
 
         Args:
@@ -1230,9 +1184,8 @@ class ColorJitter(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Color jittered image.
         """
-        fn_idx, brightness_factor, contrast_factor, saturation_factor, hue_factor = self.get_params(
-            self.brightness, self.contrast, self.saturation, self.hue
-        )
+        fn_idx, brightness_factor, contrast_factor, saturation_factor, hue_factor = \
+            self.get_params(self.brightness, self.contrast, self.saturation, self.hue)
 
         for fn_id in fn_idx:
             if fn_id == 0 and brightness_factor is not None:
@@ -1247,11 +1200,11 @@ class ColorJitter(torch.nn.Module):
         return img
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "("
-        format_string += "brightness={0}".format(self.brightness)
-        format_string += ", contrast={0}".format(self.contrast)
-        format_string += ", saturation={0}".format(self.saturation)
-        format_string += ", hue={0})".format(self.hue)
+        format_string = self.__class__.__name__ + '('
+        format_string += 'brightness={0}'.format(self.brightness)
+        format_string += ', contrast={0}'.format(self.contrast)
+        format_string += ', saturation={0}'.format(self.saturation)
+        format_string += ', hue={0})'.format(self.hue)
         return format_string
 
 
@@ -1301,10 +1254,10 @@ class RandomRotation(torch.nn.Module):
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
-        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if center is not None:
-            _check_sequence_input(center, "center", req_sizes=(2,))
+            _check_sequence_input(center, "center", req_sizes=(2, ))
 
         self.center = center
 
@@ -1348,14 +1301,14 @@ class RandomRotation(torch.nn.Module):
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
-        format_string = self.__class__.__name__ + "(degrees={0}".format(self.degrees)
-        format_string += ", interpolation={0}".format(interpolate_str)
-        format_string += ", expand={0}".format(self.expand)
+        format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
+        format_string += ', interpolation={0}'.format(interpolate_str)
+        format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
-            format_string += ", center={0}".format(self.center)
+            format_string += ', center={0}'.format(self.center)
         if self.fill is not None:
-            format_string += ", fill={0}".format(self.fill)
-        format_string += ")"
+            format_string += ', fill={0}'.format(self.fill)
+        format_string += ')'
         return format_string
 
 
@@ -1396,15 +1349,8 @@ class RandomAffine(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        degrees,
-        translate=None,
-        scale=None,
-        shear=None,
-        interpolation=InterpolationMode.NEAREST,
-        fill=0,
-        fillcolor=None,
-        resample=None,
+        self, degrees, translate=None, scale=None, shear=None, interpolation=InterpolationMode.NEAREST, fill=0,
+        fillcolor=None, resample=None
     ):
         super().__init__()
         if resample is not None:
@@ -1427,17 +1373,17 @@ class RandomAffine(torch.nn.Module):
             )
             fill = fillcolor
 
-        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if translate is not None:
-            _check_sequence_input(translate, "translate", req_sizes=(2,))
+            _check_sequence_input(translate, "translate", req_sizes=(2, ))
             for t in translate:
                 if not (0.0 <= t <= 1.0):
                     raise ValueError("translation values should be between 0 and 1")
         self.translate = translate
 
         if scale is not None:
-            _check_sequence_input(scale, "scale", req_sizes=(2,))
+            _check_sequence_input(scale, "scale", req_sizes=(2, ))
             for s in scale:
                 if s <= 0:
                     raise ValueError("scale values should be positive")
@@ -1459,11 +1405,11 @@ class RandomAffine(torch.nn.Module):
 
     @staticmethod
     def get_params(
-        degrees: List[float],
-        translate: Optional[List[float]],
-        scale_ranges: Optional[List[float]],
-        shears: Optional[List[float]],
-        img_size: List[int],
+            degrees: List[float],
+            translate: Optional[List[float]],
+            scale_ranges: Optional[List[float]],
+            shears: Optional[List[float]],
+            img_size: List[int]
     ) -> Tuple[float, Tuple[int, int], float, Tuple[float, float]]:
         """Get parameters for affine transformation
 
@@ -1516,20 +1462,20 @@ class RandomAffine(torch.nn.Module):
         return F.affine(img, *ret, interpolation=self.interpolation, fill=fill)
 
     def __repr__(self):
-        s = "{name}(degrees={degrees}"
+        s = '{name}(degrees={degrees}'
         if self.translate is not None:
-            s += ", translate={translate}"
+            s += ', translate={translate}'
         if self.scale is not None:
-            s += ", scale={scale}"
+            s += ', scale={scale}'
         if self.shear is not None:
-            s += ", shear={shear}"
+            s += ', shear={shear}'
         if self.interpolation != InterpolationMode.NEAREST:
-            s += ", interpolation={interpolation}"
+            s += ', interpolation={interpolation}'
         if self.fill != 0:
-            s += ", fill={fill}"
-        s += ")"
+            s += ', fill={fill}'
+        s += ')'
         d = dict(self.__dict__)
-        d["interpolation"] = self.interpolation.value
+        d['interpolation'] = self.interpolation.value
         return s.format(name=self.__class__.__name__, **d)
 
 
@@ -1564,7 +1510,7 @@ class Grayscale(torch.nn.Module):
         return F.rgb_to_grayscale(img, num_output_channels=self.num_output_channels)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(num_output_channels={0})".format(self.num_output_channels)
+        return self.__class__.__name__ + '(num_output_channels={0})'.format(self.num_output_channels)
 
 
 class RandomGrayscale(torch.nn.Module):
@@ -1601,11 +1547,11 @@ class RandomGrayscale(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={0})".format(self.p)
+        return self.__class__.__name__ + '(p={0})'.format(self.p)
 
 
 class RandomErasing(torch.nn.Module):
-    """Randomly selects a rectangle region in an torch Tensor image and erases its pixels.
+    """ Randomly selects a rectangle region in an torch Tensor image and erases its pixels.
     This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
@@ -1657,7 +1603,7 @@ class RandomErasing(torch.nn.Module):
 
     @staticmethod
     def get_params(
-        img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float], value: Optional[List[float]] = None
+            img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float], value: Optional[List[float]] = None
     ) -> Tuple[int, int, int, int, Tensor]:
         """Get parameters for ``erase`` for a random erasing.
 
@@ -1678,7 +1624,9 @@ class RandomErasing(torch.nn.Module):
         log_ratio = torch.log(torch.tensor(ratio))
         for _ in range(10):
             erase_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
-            aspect_ratio = torch.exp(torch.empty(1).uniform_(log_ratio[0], log_ratio[1])).item()
+            aspect_ratio = torch.exp(
+                torch.empty(1).uniform_(log_ratio[0], log_ratio[1])
+            ).item()
 
             h = int(round(math.sqrt(erase_area * aspect_ratio)))
             w = int(round(math.sqrt(erase_area / aspect_ratio)))
@@ -1690,8 +1638,8 @@ class RandomErasing(torch.nn.Module):
             else:
                 v = torch.tensor(value)[:, None, None]
 
-            i = torch.randint(0, img_h - h + 1, size=(1,)).item()
-            j = torch.randint(0, img_w - w + 1, size=(1,)).item()
+            i = torch.randint(0, img_h - h + 1, size=(1, )).item()
+            j = torch.randint(0, img_w - w + 1, size=(1, )).item()
             return i, j, h, w, v
 
         # Return original image
@@ -1709,9 +1657,7 @@ class RandomErasing(torch.nn.Module):
 
             # cast self.value to script acceptable type
             if isinstance(self.value, (int, float)):
-                value = [
-                    self.value,
-                ]
+                value = [self.value, ]
             elif isinstance(self.value, str):
                 value = None
             elif isinstance(self.value, tuple):
@@ -1730,11 +1676,11 @@ class RandomErasing(torch.nn.Module):
         return img
 
     def __repr__(self):
-        s = "(p={}, ".format(self.p)
-        s += "scale={}, ".format(self.scale)
-        s += "ratio={}, ".format(self.ratio)
-        s += "value={}, ".format(self.value)
-        s += "inplace={})".format(self.inplace)
+        s = '(p={}, '.format(self.p)
+        s += 'scale={}, '.format(self.scale)
+        s += 'ratio={}, '.format(self.ratio)
+        s += 'value={}, '.format(self.value)
+        s += 'inplace={})'.format(self.inplace)
         return self.__class__.__name__ + s
 
 
@@ -1767,7 +1713,7 @@ class GaussianBlur(torch.nn.Module):
                 raise ValueError("If sigma is a single number, it must be positive.")
             sigma = (sigma, sigma)
         elif isinstance(sigma, Sequence) and len(sigma) == 2:
-            if not 0.0 < sigma[0] <= sigma[1]:
+            if not 0. < sigma[0] <= sigma[1]:
                 raise ValueError("sigma values should be positive and of the form (min, max).")
         else:
             raise ValueError("sigma should be a single number or a list/tuple with length 2.")
@@ -1799,8 +1745,8 @@ class GaussianBlur(torch.nn.Module):
         return F.gaussian_blur(img, self.kernel_size, [sigma, sigma])
 
     def __repr__(self):
-        s = "(kernel_size={}, ".format(self.kernel_size)
-        s += "sigma={})".format(self.sigma)
+        s = '(kernel_size={}, '.format(self.kernel_size)
+        s += 'sigma={})'.format(self.sigma)
         return self.__class__.__name__ + s
 
 
@@ -1825,7 +1771,7 @@ def _check_sequence_input(x, name, req_sizes):
         raise ValueError("{} should be sequence of length {}.".format(name, msg))
 
 
-def _setup_angle(x, name, req_sizes=(2,)):
+def _setup_angle(x, name, req_sizes=(2, )):
     if isinstance(x, numbers.Number):
         if x < 0:
             raise ValueError("If {} is a single number, it must be positive.".format(name))
@@ -1863,7 +1809,7 @@ class RandomInvert(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
 class RandomPosterize(torch.nn.Module):
@@ -1895,7 +1841,7 @@ class RandomPosterize(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(bits={},p={})".format(self.bits, self.p)
+        return self.__class__.__name__ + '(bits={},p={})'.format(self.bits, self.p)
 
 
 class RandomSolarize(torch.nn.Module):
@@ -1927,7 +1873,7 @@ class RandomSolarize(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(threshold={},p={})".format(self.threshold, self.p)
+        return self.__class__.__name__ + '(threshold={},p={})'.format(self.threshold, self.p)
 
 
 class RandomAdjustSharpness(torch.nn.Module):
@@ -1959,7 +1905,7 @@ class RandomAdjustSharpness(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(sharpness_factor={},p={})".format(self.sharpness_factor, self.p)
+        return self.__class__.__name__ + '(sharpness_factor={},p={})'.format(self.sharpness_factor, self.p)
 
 
 class RandomAutocontrast(torch.nn.Module):
@@ -1989,7 +1935,7 @@ class RandomAutocontrast(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
 class RandomEqualize(torch.nn.Module):
@@ -2019,4 +1965,4 @@ class RandomEqualize(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + '(p={})'.format(self.p)

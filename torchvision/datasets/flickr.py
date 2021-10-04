@@ -1,11 +1,10 @@
-import glob
-import os
 from collections import defaultdict
+from PIL import Image
 from html.parser import HTMLParser
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from PIL import Image
-
+import glob
+import os
 from .vision import VisionDataset
 
 
@@ -28,26 +27,26 @@ class Flickr8kParser(HTMLParser):
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
         self.current_tag = tag
 
-        if tag == "table":
+        if tag == 'table':
             self.in_table = True
 
     def handle_endtag(self, tag: str) -> None:
         self.current_tag = None
 
-        if tag == "table":
+        if tag == 'table':
             self.in_table = False
 
     def handle_data(self, data: str) -> None:
         if self.in_table:
-            if data == "Image Not Found":
+            if data == 'Image Not Found':
                 self.current_img = None
-            elif self.current_tag == "a":
-                img_id = data.split("/")[-2]
-                img_id = os.path.join(self.root, img_id + "_*.jpg")
+            elif self.current_tag == 'a':
+                img_id = data.split('/')[-2]
+                img_id = os.path.join(self.root, img_id + '_*.jpg')
                 img_id = glob.glob(img_id)[0]
                 self.current_img = img_id
                 self.annotations[img_id] = []
-            elif self.current_tag == "li" and self.current_img:
+            elif self.current_tag == 'li' and self.current_img:
                 img_id = self.current_img
                 self.annotations[img_id].append(data.strip())
 
@@ -65,13 +64,14 @@ class Flickr8k(VisionDataset):
     """
 
     def __init__(
-        self,
-        root: str,
-        ann_file: str,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+            self,
+            root: str,
+            ann_file: str,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
     ) -> None:
-        super(Flickr8k, self).__init__(root, transform=transform, target_transform=target_transform)
+        super(Flickr8k, self).__init__(root, transform=transform,
+                                       target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
@@ -93,7 +93,7 @@ class Flickr8k(VisionDataset):
         img_id = self.ids[index]
 
         # Image
-        img = Image.open(img_id).convert("RGB")
+        img = Image.open(img_id).convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
 
@@ -121,20 +121,21 @@ class Flickr30k(VisionDataset):
     """
 
     def __init__(
-        self,
-        root: str,
-        ann_file: str,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+            self,
+            root: str,
+            ann_file: str,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
     ) -> None:
-        super(Flickr30k, self).__init__(root, transform=transform, target_transform=target_transform)
+        super(Flickr30k, self).__init__(root, transform=transform,
+                                        target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
         self.annotations = defaultdict(list)
         with open(self.ann_file) as fh:
             for line in fh:
-                img_id, caption = line.strip().split("\t")
+                img_id, caption = line.strip().split('\t')
                 self.annotations[img_id[:-2]].append(caption)
 
         self.ids = list(sorted(self.annotations.keys()))
@@ -151,7 +152,7 @@ class Flickr30k(VisionDataset):
 
         # Image
         filename = os.path.join(self.root, img_id)
-        img = Image.open(filename).convert("RGB")
+        img = Image.open(filename).convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
 
