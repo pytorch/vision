@@ -6,7 +6,6 @@ from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
 
 from .roi_align import roi_align
-from .roi_align import roi_align
 
 
 # copying result_idx_in_level to a specific index in result[]
