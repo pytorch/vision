@@ -2,7 +2,6 @@ import io
 
 import PIL.Image
 import torch
-
 from torchvision.transforms.functional import pil_to_tensor
 
 __all__ = ["pil"]
