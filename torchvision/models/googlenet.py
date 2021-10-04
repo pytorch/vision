@@ -1,22 +1,23 @@
 import warnings
 from collections import namedtuple
+from typing import Optional, Tuple, List, Callable, Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from .._internally_replaced_utils import load_state_dict_from_url
-from typing import Optional, Tuple, List, Callable, Any
 
-__all__ = ['GoogLeNet', 'googlenet', "GoogLeNetOutputs", "_GoogLeNetOutputs"]
+from .._internally_replaced_utils import load_state_dict_from_url
+
+__all__ = ["GoogLeNet", "googlenet", "GoogLeNetOutputs", "_GoogLeNetOutputs"]
 
 model_urls = {
     # GoogLeNet ported from TensorFlow
-    'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
+    "googlenet": "https://download.pytorch.org/models/googlenet-1378be20.pth",
 }
 
-GoogLeNetOutputs = namedtuple('GoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
-GoogLeNetOutputs.__annotations__ = {'logits': Tensor, 'aux_logits2': Optional[Tensor],
-                                    'aux_logits1': Optional[Tensor]}
+GoogLeNetOutputs = namedtuple("GoogLeNetOutputs", ["logits", "aux_logits2", "aux_logits1"])
+GoogLeNetOutputs.__annotations__ = {"logits": Tensor, "aux_logits2": Optional[Tensor], "aux_logits1": Optional[Tensor]}
 
 # Script annotations failed with _GoogleNetOutputs = namedtuple ...
 # _GoogLeNetOutputs set here for backwards compat
@@ -37,19 +38,19 @@ def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
             was trained on ImageNet. Default: *False*
     """
     if pretrained:
-        if 'transform_input' not in kwargs:
-            kwargs['transform_input'] = True
-        if 'aux_logits' not in kwargs:
-            kwargs['aux_logits'] = False
-        if kwargs['aux_logits']:
-            warnings.warn('auxiliary heads in the pretrained googlenet model are NOT pretrained, '
-                          'so make sure to train them')
-        original_aux_logits = kwargs['aux_logits']
-        kwargs['aux_logits'] = True
-        kwargs['init_weights'] = False
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
+        if "aux_logits" not in kwargs:
+            kwargs["aux_logits"] = False
+        if kwargs["aux_logits"]:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, " "so make sure to train them"
+            )
+        original_aux_logits = kwargs["aux_logits"]
+        kwargs["aux_logits"] = True
+        kwargs["init_weights"] = False
         model = GoogLeNet(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls['googlenet'],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls["googlenet"], progress=progress)
         model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False
@@ -61,7 +62,7 @@ def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
 
 
 class GoogLeNet(nn.Module):
-    __constants__ = ['aux_logits', 'transform_input']
+    __constants__ = ["aux_logits", "transform_input"]
 
     def __init__(
         self,
@@ -69,15 +70,18 @@ class GoogLeNet(nn.Module):
         aux_logits: bool = True,
         transform_input: bool = False,
         init_weights: Optional[bool] = None,
-        blocks: Optional[List[Callable[..., nn.Module]]] = None
+        blocks: Optional[List[Callable[..., nn.Module]]] = None,
     ) -> None:
         super(GoogLeNet, self).__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
         if init_weights is None:
-            warnings.warn('The default weight initialization of GoogleNet will be changed in future releases of '
-                          'torchvision. If you wish to keep the old behavior (which leads to long initialization times'
-                          ' due to scipy/scipy#11299), please set init_weights=True.', FutureWarning)
+            warnings.warn(
+                "The default weight initialization of GoogleNet will be changed in future releases of "
+                "torchvision. If you wish to keep the old behavior (which leads to long initialization times"
+                " due to scipy/scipy#11299), please set init_weights=True.",
+                FutureWarning,
+            )
             init_weights = True
         assert len(blocks) == 3
         conv_block = blocks[0]
@@ -197,7 +201,7 @@ class GoogLeNet(nn.Module):
         if self.training and self.aux_logits:
             return _GoogLeNetOutputs(x, aux2, aux1)
         else:
-            return x   # type: ignore[return-value]
+            return x  # type: ignore[return-value]
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
         x = self._transform_input(x)
@@ -212,7 +216,6 @@ class GoogLeNet(nn.Module):
 
 
 class Inception(nn.Module):
-
     def __init__(
         self,
         in_channels: int,
@@ -222,7 +225,7 @@ class Inception(nn.Module):
         ch5x5red: int,
         ch5x5: int,
         pool_proj: int,
-        conv_block: Optional[Callable[..., nn.Module]] = None
+        conv_block: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super(Inception, self).__init__()
         if conv_block is None:
@@ -230,20 +233,19 @@ class Inception(nn.Module):
         self.branch1 = conv_block(in_channels, ch1x1, kernel_size=1)
 
         self.branch2 = nn.Sequential(
-            conv_block(in_channels, ch3x3red, kernel_size=1),
-            conv_block(ch3x3red, ch3x3, kernel_size=3, padding=1)
+            conv_block(in_channels, ch3x3red, kernel_size=1), conv_block(ch3x3red, ch3x3, kernel_size=3, padding=1)
         )
 
         self.branch3 = nn.Sequential(
             conv_block(in_channels, ch5x5red, kernel_size=1),
             # Here, kernel_size=3 instead of kernel_size=5 is a known bug.
             # Please see https://github.com/pytorch/vision/issues/906 for details.
-            conv_block(ch5x5red, ch5x5, kernel_size=3, padding=1)
+            conv_block(ch5x5red, ch5x5, kernel_size=3, padding=1),
         )
 
         self.branch4 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),
-            conv_block(in_channels, pool_proj, kernel_size=1)
+            conv_block(in_channels, pool_proj, kernel_size=1),
         )
 
     def _forward(self, x: Tensor) -> List[Tensor]:
@@ -261,12 +263,8 @@ class Inception(nn.Module):
 
 
 class InceptionAux(nn.Module):
-
     def __init__(
-        self,
-        in_channels: int,
-        num_classes: int,
-        conv_block: Optional[Callable[..., nn.Module]] = None
+        self, in_channels: int, num_classes: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
@@ -295,13 +293,7 @@ class InceptionAux(nn.Module):
 
 
 class BasicConv2d(nn.Module):
-
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, in_channels: int, out_channels: int, **kwargs: Any) -> None:
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
