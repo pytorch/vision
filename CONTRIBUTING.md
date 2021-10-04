@@ -75,20 +75,56 @@ If you would like to contribute a new dataset, please see [here](#New-dataset).
 
 ### Code formatting and typing
 
-Contributions should be compatible with Python 3.X versions and be compliant with PEP8. To check the codebase, please 
-either run
+#### Formatting
+
+The torchvision code is formatted by [black](https://black.readthedocs.io/en/stable/),
+and checked against pep8 compliance with [flake8](https://flake8.pycqa.org/en/latest/).
+
+To format your code, you can install [ufmt](https://github.com/omnilib/ufmt)
+with `pip install ufmt` and format your code with e.g.:
+
 ```bash
-pre-commit run --all-files
+ufmt format torchvision
 ```
-or run
+
+For the formatting to be a bit faster, you can also choose to only apply `ufmt`
+to the files that were edited in your PR with e.g.:
+
 ```bash
-pre-commit install
+ufmt format `git diff main --name-only`
 ```
-once to perform these checks automatically before every `git commit`. If `pre-commit` is not available you can install 
-it with
-```
-pip install pre-commit
-```
+
+You can also set your editor to run `ufmt format` every time you save a file.
+
+Note: the reason we rely on `ufmt` instead of just `black` is for the formatting
+to be fully compatible with Facebook internal formatting tools, although using
+`black` directly should work in most cases. Feel free to try and our linting CI
+will tell you if something is wrong.
+
+Similarly, you can check for flake8 errors with `flake8 torchvision`, although
+`flake8` errors should be fairly rare considering that most of them are
+automatically taken care of by `ufmt` already.
+
+##### Pre-commit hooks
+
+For convenience and purely optionally, you can rely on our [pre-commit
+hooks](https://pre-commit.com/) which will run both `ufmt` and `flake8` prior to
+every commit.
+
+First install the `pre-commit` package with `pip install pre-commit`, and then
+run `pre-commit install` at the root of the repo for the hooks to be set up -
+that's it.
+
+Feel free to check out the [pre-commit docs](https://pre-commit.com/#usage) to
+learn more and improve your workflow. You'll see for example that `pre-commit
+run --all-files` will run both `ufmt` and `flake8` without the need for you to
+commit anything, and that the `--no-verify` flag can be added when committing to
+deactivate the hooks.
+
+Again, pre-commit hooks are entirely optional: feel free to manually call `ufmt`
+and `flake8` manually instead.
+
+#### Type annotations
 
 The codebase has type annotations, please make sure to add type hints if required. We use `mypy` tool for type checking:
 ```bash
