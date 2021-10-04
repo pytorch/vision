@@ -19,7 +19,6 @@ from base64 import urlsafe_b64encode
 # Third party imports
 if sys.platform == "linux":
     from auditwheel.lddtree import lddtree
-from wheel.bdist_wheel import get_abi_tag
 
 
 ALLOWLIST = {

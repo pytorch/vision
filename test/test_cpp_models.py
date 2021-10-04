@@ -5,7 +5,7 @@ import unittest
 import torch
 import torchvision.transforms.functional as F
 from PIL import Image
-from torchvision import models, transforms
+from torchvision import models
 
 try:
     from torchvision import _C_tests

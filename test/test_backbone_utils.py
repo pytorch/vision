@@ -1,10 +1,8 @@
 import random
-from functools import partial
 from itertools import chain
 
 import pytest
 import torch
-import torchvision
 from common_utils import set_rng_seed
 from torchvision import models
 from torchvision.models._utils import IntermediateLayerGetter
