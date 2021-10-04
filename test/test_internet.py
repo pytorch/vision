@@ -6,10 +6,10 @@ cleanly ignored in FB internal test infra.
 """
 
 import os
-import pytest
 import warnings
 from urllib.error import URLError
 
+import pytest
 import torchvision.datasets.utils as utils
 
 
@@ -42,11 +42,11 @@ class TestDatasetUtils:
         filename = "filename"
         md5 = "md5"
 
-        mocked = mocker.patch('torchvision.datasets.utils.download_file_from_google_drive')
+        mocked = mocker.patch("torchvision.datasets.utils.download_file_from_google_drive")
         utils.download_url(url, tmpdir, filename, md5)
 
         mocked.assert_called_once_with(id, tmpdir, filename, md5)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

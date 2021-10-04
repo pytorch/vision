@@ -2,17 +2,17 @@ import collections
 import itertools
 import math
 import os
-import pytest
-from pytest import approx
 from fractions import Fraction
 
 import numpy as np
+import pytest
 import torch
 import torchvision.io as io
+from common_utils import assert_equal
 from numpy.random import randint
+from pytest import approx
 from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
-from common_utils import assert_equal
 
 
 try:
@@ -108,18 +108,14 @@ test_videos = {
 }
 
 
-DecoderResult = collections.namedtuple(
-    "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
-)
+DecoderResult = collections.namedtuple("DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase")
 
 # av_seek_frame is imprecise so seek to a timestamp earlier by a margin
 # The unit of margin is second
 seek_frame_margin = 0.25
 
 
-def _read_from_stream(
-    container, start_pts, end_pts, stream, stream_name, buffer_size=4
-):
+def _read_from_stream(container, start_pts, end_pts, stream, stream_name, buffer_size=4):
     """
     Args:
         container: pyav container
@@ -231,9 +227,7 @@ def _decode_frames_by_av_module(
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
 
-    aframe_pts = torch.tensor(
-        [audio_frame.pts for audio_frame in audio_frames], dtype=torch.int64
-    )
+    aframe_pts = torch.tensor([audio_frame.pts for audio_frame in audio_frames], dtype=torch.int64)
 
     return DecoderResult(
         vframes=vframes,
@@ -273,25 +267,28 @@ def _get_video_tensor(video_dir, video_file):
 @pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
 class TestVideoReader:
     def check_separate_decoding_result(self, tv_result, config):
-        """check the decoding results from TorchVision decoder
-        """
-        vframes, vframe_pts, vtimebase, vfps, vduration, \
-            aframes, aframe_pts, atimebase, asample_rate, aduration = (
-                tv_result
-            )
+        """check the decoding results from TorchVision decoder"""
+        (
+            vframes,
+            vframe_pts,
+            vtimebase,
+            vfps,
+            vduration,
+            aframes,
+            aframe_pts,
+            atimebase,
+            asample_rate,
+            aduration,
+        ) = tv_result
 
-        video_duration = vduration.item() * Fraction(
-            vtimebase[0].item(), vtimebase[1].item()
-        )
+        video_duration = vduration.item() * Fraction(vtimebase[0].item(), vtimebase[1].item())
         assert video_duration == approx(config.duration, abs=0.5)
 
         assert vfps.item() == approx(config.video_fps, abs=0.5)
 
         if asample_rate.numel() > 0:
             assert asample_rate.item() == config.audio_sample_rate
-            audio_duration = aduration.item() * Fraction(
-                atimebase[0].item(), atimebase[1].item()
-            )
+            audio_duration = aduration.item() * Fraction(atimebase[0].item(), atimebase[1].item())
             assert audio_duration == approx(config.duration, abs=0.5)
 
         # check if pts of video frames are sorted in ascending order
@@ -305,16 +302,12 @@ class TestVideoReader:
 
     def check_probe_result(self, result, config):
         vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
-        video_duration = vduration.item() * Fraction(
-            vtimebase[0].item(), vtimebase[1].item()
-        )
+        video_duration = vduration.item() * Fraction(vtimebase[0].item(), vtimebase[1].item())
         assert video_duration == approx(config.duration, abs=0.5)
         assert vfps.item() == approx(config.video_fps, abs=0.5)
         if asample_rate.numel() > 0:
             assert asample_rate.item() == config.audio_sample_rate
-            audio_duration = aduration.item() * Fraction(
-                atimebase[0].item(), atimebase[1].item()
-            )
+            audio_duration = aduration.item() * Fraction(atimebase[0].item(), atimebase[1].item())
             assert audio_duration == approx(config.duration, abs=0.5)
 
     def check_meta_result(self, result, config):
@@ -333,10 +326,18 @@ class TestVideoReader:
                         decoder or TorchVision decoder with getPtsOnly = 1
             config: config of decoding results checker
         """
-        vframes, vframe_pts, vtimebase, _vfps, _vduration, \
-            aframes, aframe_pts, atimebase, _asample_rate, _aduration = (
-                tv_result
-            )
+        (
+            vframes,
+            vframe_pts,
+            vtimebase,
+            _vfps,
+            _vduration,
+            aframes,
+            aframe_pts,
+            atimebase,
+            _asample_rate,
+            _aduration,
+        ) = tv_result
         if isinstance(ref_result, list):
             # the ref_result is from new video_reader decoder
             ref_result = DecoderResult(
@@ -349,32 +350,20 @@ class TestVideoReader:
             )
 
         if vframes.numel() > 0 and ref_result.vframes.numel() > 0:
-            mean_delta = torch.mean(
-                torch.abs(vframes.float() - ref_result.vframes.float())
-            )
+            mean_delta = torch.mean(torch.abs(vframes.float() - ref_result.vframes.float()))
             assert mean_delta == approx(0.0, abs=8.0)
 
-        mean_delta = torch.mean(
-            torch.abs(vframe_pts.float() - ref_result.vframe_pts.float())
-        )
+        mean_delta = torch.mean(torch.abs(vframe_pts.float() - ref_result.vframe_pts.float()))
         assert mean_delta == approx(0.0, abs=1.0)
 
         assert_equal(vtimebase, ref_result.vtimebase)
 
-        if (
-            config.check_aframes
-            and aframes.numel() > 0
-            and ref_result.aframes.numel() > 0
-        ):
+        if config.check_aframes and aframes.numel() > 0 and ref_result.aframes.numel() > 0:
             """Audio stream is available and audio frame is required to return
             from decoder"""
             assert_equal(aframes, ref_result.aframes)
 
-        if (
-            config.check_aframe_pts
-            and aframe_pts.numel() > 0
-            and ref_result.aframe_pts.numel() > 0
-        ):
+        if config.check_aframe_pts and aframe_pts.numel() > 0 and ref_result.aframe_pts.numel() > 0:
             """Audio stream is available"""
             assert_equal(aframe_pts, ref_result.aframe_pts)
 
@@ -508,19 +497,25 @@ class TestVideoReader:
                     audio_timebase_den,
                 )
 
-                vframes, vframe_pts, vtimebase, vfps, vduration, \
-                    aframes, aframe_pts, atimebase, asample_rate, aduration = (
-                        tv_result
-                    )
+                (
+                    vframes,
+                    vframe_pts,
+                    vtimebase,
+                    vfps,
+                    vduration,
+                    aframes,
+                    aframe_pts,
+                    atimebase,
+                    asample_rate,
+                    aduration,
+                ) = tv_result
 
                 assert (vframes.numel() > 0) is bool(readVideoStream)
                 assert (vframe_pts.numel() > 0) is bool(readVideoStream)
                 assert (vtimebase.numel() > 0) is bool(readVideoStream)
                 assert (vfps.numel() > 0) is bool(readVideoStream)
 
-                expect_audio_data = (
-                    readAudioStream == 1 and config.audio_sample_rate is not None
-                )
+                expect_audio_data = readAudioStream == 1 and config.audio_sample_rate is not None
                 assert (aframes.numel() > 0) is bool(expect_audio_data)
                 assert (aframe_pts.numel() > 0) is bool(expect_audio_data)
                 assert (atimebase.numel() > 0) is bool(expect_audio_data)
@@ -808,19 +803,23 @@ class TestVideoReader:
                     audio_timebase_num,
                     audio_timebase_den,
                 )
-                vframes, vframe_pts, vtimebase, vfps, vduration, \
-                    aframes, aframe_pts, atimebase, asample_rate, aduration = (
-                        tv_result
-                    )
+                (
+                    vframes,
+                    vframe_pts,
+                    vtimebase,
+                    vfps,
+                    vduration,
+                    aframes,
+                    aframe_pts,
+                    atimebase,
+                    asample_rate,
+                    aduration,
+                ) = tv_result
                 if aframes.numel() > 0:
                     assert samples == asample_rate.item()
                     assert 1 == aframes.size(1)
                     # when audio stream is found
-                    duration = (
-                        float(aframe_pts[-1])
-                        * float(atimebase[0])
-                        / float(atimebase[1])
-                    )
+                    duration = float(aframe_pts[-1]) * float(atimebase[0]) / float(atimebase[1])
                     assert aframes.size(0) == approx(int(duration * asample_rate.item()), abs=0.1 * asample_rate.item())
 
     def test_compare_read_video_from_memory_and_file(self):
@@ -1040,10 +1039,18 @@ class TestVideoReader:
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            vframes, vframe_pts, vtimebase, vfps, vduration, \
-                aframes, aframe_pts, atimebase, asample_rate, aduration = (
-                    tv_result
-                )
+            (
+                vframes,
+                vframe_pts,
+                vtimebase,
+                vfps,
+                vduration,
+                aframes,
+                aframe_pts,
+                atimebase,
+                asample_rate,
+                aduration,
+            ) = tv_result
             assert abs(config.video_fps - vfps.item()) < 0.01
 
             for num_frames in [4, 8, 16, 32, 64, 128]:
@@ -1097,41 +1104,31 @@ class TestVideoReader:
                 )
 
                 # pass 3: decode frames in range using PyAv
-                video_timebase_av, audio_timebase_av = _get_timebase_by_av_module(
-                    full_path
-                )
+                video_timebase_av, audio_timebase_av = _get_timebase_by_av_module(full_path)
 
                 video_start_pts_av = _pts_convert(
                     video_start_pts.item(),
                     Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                    Fraction(
-                        video_timebase_av.numerator, video_timebase_av.denominator
-                    ),
+                    Fraction(video_timebase_av.numerator, video_timebase_av.denominator),
                     math.floor,
                 )
                 video_end_pts_av = _pts_convert(
                     video_end_pts.item(),
                     Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                    Fraction(
-                        video_timebase_av.numerator, video_timebase_av.denominator
-                    ),
+                    Fraction(video_timebase_av.numerator, video_timebase_av.denominator),
                     math.ceil,
                 )
                 if audio_timebase_av:
                     audio_start_pts = _pts_convert(
                         video_start_pts.item(),
                         Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                        Fraction(
-                            audio_timebase_av.numerator, audio_timebase_av.denominator
-                        ),
+                        Fraction(audio_timebase_av.numerator, audio_timebase_av.denominator),
                         math.floor,
                     )
                     audio_end_pts = _pts_convert(
                         video_end_pts.item(),
                         Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                        Fraction(
-                            audio_timebase_av.numerator, audio_timebase_av.denominator
-                        ),
+                        Fraction(audio_timebase_av.numerator, audio_timebase_av.denominator),
                         math.ceil,
                     )
 
@@ -1218,46 +1215,42 @@ class TestVideoReader:
             # FUTURE: check value of video / audio frames
 
     def test_invalid_file(self):
-        set_video_backend('video_reader')
+        set_video_backend("video_reader")
         with pytest.raises(RuntimeError):
-            io.read_video('foo.mp4')
+            io.read_video("foo.mp4")
 
-        set_video_backend('pyav')
+        set_video_backend("pyav")
         with pytest.raises(RuntimeError):
-            io.read_video('foo.mp4')
+            io.read_video("foo.mp4")
 
     def test_audio_present_pts(self):
         """Test if audio frames are returned with pts unit."""
-        backends = ['video_reader', 'pyav']
+        backends = ["video_reader", "pyav"]
         start_offsets = [0, 1000]
         end_offsets = [3000, None]
         for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             container = av.open(full_path)
             if container.streams.audio:
-                for backend, start_offset, end_offset in itertools.product(
-                        backends, start_offsets, end_offsets):
+                for backend, start_offset, end_offset in itertools.product(backends, start_offsets, end_offsets):
                     set_video_backend(backend)
-                    _, audio, _ = io.read_video(
-                        full_path, start_offset, end_offset, pts_unit='pts')
+                    _, audio, _ = io.read_video(full_path, start_offset, end_offset, pts_unit="pts")
                     assert all([dimension > 0 for dimension in audio.shape[:2]])
 
     def test_audio_present_sec(self):
         """Test if audio frames are returned with sec unit."""
-        backends = ['video_reader', 'pyav']
+        backends = ["video_reader", "pyav"]
         start_offsets = [0, 0.1]
         end_offsets = [0.3, None]
         for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             container = av.open(full_path)
             if container.streams.audio:
-                for backend, start_offset, end_offset in itertools.product(
-                        backends, start_offsets, end_offsets):
+                for backend, start_offset, end_offset in itertools.product(backends, start_offsets, end_offsets):
                     set_video_backend(backend)
-                    _, audio, _ = io.read_video(
-                        full_path, start_offset, end_offset, pts_unit='sec')
+                    _, audio, _ = io.read_video(full_path, start_offset, end_offset, pts_unit="sec")
                     assert all([dimension > 0 for dimension in audio.shape[:2]])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])
