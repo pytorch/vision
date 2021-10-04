@@ -1,22 +1,21 @@
 import warnings
+from typing import Any
+
 import torch
 import torch.nn as nn
-from torch.nn import functional as F
-from typing import Any
 from torch import Tensor
+from torch.nn import functional as F
+from torchvision.models.googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.googlenet import (
-    GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls)
-
 from .utils import _replace_relu, quantize_model
 
 
-__all__ = ['QuantizableGoogLeNet', 'googlenet']
+__all__ = ["QuantizableGoogLeNet", "googlenet"]
 
 quant_model_urls = {
     # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch
-    'googlenet_fbgemm': 'https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth',
+    "googlenet_fbgemm": "https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
 }
 
 
@@ -44,35 +43,35 @@ def googlenet(
             was trained on ImageNet. Default: *False*
     """
     if pretrained:
-        if 'transform_input' not in kwargs:
-            kwargs['transform_input'] = True
-        if 'aux_logits' not in kwargs:
-            kwargs['aux_logits'] = False
-        if kwargs['aux_logits']:
-            warnings.warn('auxiliary heads in the pretrained googlenet model are NOT pretrained, '
-                          'so make sure to train them')
-        original_aux_logits = kwargs['aux_logits']
-        kwargs['aux_logits'] = True
-        kwargs['init_weights'] = False
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
+        if "aux_logits" not in kwargs:
+            kwargs["aux_logits"] = False
+        if kwargs["aux_logits"]:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, " "so make sure to train them"
+            )
+        original_aux_logits = kwargs["aux_logits"]
+        kwargs["aux_logits"] = True
+        kwargs["init_weights"] = False
 
     model = QuantizableGoogLeNet(**kwargs)
     _replace_relu(model)
 
     if quantize:
         # TODO use pretrained as a string to specify the backend
-        backend = 'fbgemm'
+        backend = "fbgemm"
         quantize_model(model, backend)
     else:
         assert pretrained in [True, False]
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls['googlenet' + '_' + backend]
+            model_url = quant_model_urls["googlenet" + "_" + backend]
         else:
-            model_url = model_urls['googlenet']
+            model_url = model_urls["googlenet"]
 
-        state_dict = load_state_dict_from_url(model_url,
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
 
         model.load_state_dict(state_dict)
 
@@ -84,7 +83,6 @@ def googlenet(
 
 
 class QuantizableBasicConv2d(BasicConv2d):
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableBasicConv2d, self).__init__(*args, **kwargs)
         self.relu = nn.ReLU()
@@ -100,10 +98,10 @@ class QuantizableBasicConv2d(BasicConv2d):
 
 
 class QuantizableInception(Inception):
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInception, self).__init__(  # type: ignore[misc]
-            conv_block=QuantizableBasicConv2d, *args, **kwargs)
+            conv_block=QuantizableBasicConv2d, *args, **kwargs
+        )
         self.cat = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -115,9 +113,7 @@ class QuantizableInceptionAux(InceptionAux):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableInceptionAux, self).__init__(  # type: ignore[misc]
-            conv_block=QuantizableBasicConv2d,
-            *args,
-            **kwargs
+            conv_block=QuantizableBasicConv2d, *args, **kwargs
         )
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.7)
@@ -144,9 +140,7 @@ class QuantizableGoogLeNet(GoogLeNet):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableGoogLeNet, self).__init__(  # type: ignore[misc]
-            blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux],
-            *args,
-            **kwargs
+            blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
         )
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
