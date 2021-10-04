@@ -4,7 +4,6 @@ import pickle
 from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
-import torch
 from PIL import Image
 
 from .utils import check_integrity, download_and_extract_archive

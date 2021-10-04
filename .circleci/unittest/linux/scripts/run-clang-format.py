@@ -32,7 +32,6 @@ A diff output is produced and a sensible exit code is returned.
 """
 
 import argparse
-import codecs
 import difflib
 import fnmatch
 import io
