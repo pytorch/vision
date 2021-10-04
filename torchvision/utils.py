@@ -159,9 +159,9 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
-            or a single color for all of the bounding boxes. The colors can be represented as `str` or
-            `Tuple[int, int, int]`.
+        colors: (color list of colors, optional): List containing the colors
+            of the boxes or single color for all boxes. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -242,11 +242,10 @@ def draw_segmentation_masks(
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
-        colors: Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]: List containing the colors
-            of the masks or single color for all masks. The colors can be represented as
+        colors: (color list of colors, optional): List containing the colors
+            of the masks or single color for all masks. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
-            When ``masks`` has a single entry of shape (H, W), you can pass a single color instead of a list
-            with one element. By default, random colors are generated for each mask.
+            By default, random colors are generated for each mask.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.

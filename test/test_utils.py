@@ -199,8 +199,7 @@ def test_draw_segmentation_masks(colors, alpha):
 
     if colors is None:
         colors = utils._generate_color_palette(num_masks)
-
-    if isinstance(colors, str) or isinstance(colors, tuple):
+    elif isinstance(colors, str) or isinstance(colors, tuple):
         colors = [colors]
 
     # Make sure each mask draws with its own color
