@@ -33,6 +33,41 @@ def leaf_function(x):
     return int(x)
 
 
+# Needed by TestFXFeatureExtraction. Checking that node naming conventions
+# are respected. Particularly the index postfix of repeated node names
+class TestSubModule(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.relu = torch.nn.ReLU()
+
+    def forward(self, x):
+        x = x + 1
+        x = x + 1
+        x = self.relu(x)
+        x = self.relu(x)
+        return x
+
+
+class TestModule(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.submodule = TestSubModule()
+        self.relu = torch.nn.ReLU()
+
+    def forward(self, x):
+        x = self.submodule(x)
+        x = x + 1
+        x = x + 1
+        x = self.relu(x)
+        x = self.relu(x)
+        return x
+
+
+test_module_nodes = [
+    'x', 'submodule.add', 'submodule.add_1', 'submodule.relu',
+    'submodule.relu_1', 'add', 'add_1', 'relu', 'relu_1']
+
+
 class TestFxFeatureExtraction:
     inp = torch.rand(1, 3, 224, 224, dtype=torch.float32, device='cpu')
     model_defaults = {
@@ -103,6 +138,11 @@ class TestFxFeatureExtraction:
                     model, train_return_nodes=['l'], eval_return_nodes=['l'])
             else:  # otherwise skip this check
                 raise ValueError
+
+    def test_node_name_conventions(self):
+        model = TestModule()
+        train_nodes, _ = get_graph_node_names(model)
+        assert all(a == b for a, b in zip(train_nodes, test_module_nodes))
 
     @pytest.mark.parametrize('model_name', get_available_models())
     def test_forward_backward(self, model_name):
