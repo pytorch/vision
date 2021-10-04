@@ -159,7 +159,7 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors: (color list of colors, optional): List containing the colors
+        colors: (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         fill (bool): If `True` fills the bounding box with specified color.
@@ -242,7 +242,7 @@ def draw_segmentation_masks(
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
-        colors: (color list of colors, optional): List containing the colors
+        colors: (color or list of colors, optional): List containing the colors
             of the masks or single color for all masks. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
             By default, random colors are generated for each mask.
