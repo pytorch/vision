@@ -1,24 +1,16 @@
-import argparse
 import contextlib
 import functools
-import inspect
 import os
 import random
 import shutil
-import sys
 import tempfile
-import unittest
-from collections import OrderedDict
-from numbers import Number
 
 import numpy as np
-import pytest
 import torch
 from PIL import Image
-from torch._six import string_classes
 from torchvision import io
 
-import __main__
+import __main__  # noqa
 
 
 IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"

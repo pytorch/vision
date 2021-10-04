@@ -64,12 +64,12 @@ class _DenseLayer(nn.Module):
 
         return cp.checkpoint(closure, *input)
 
-    @torch.jit._overload_method  # noqa: F811
-    def forward(self, input: List[Tensor]) -> Tensor:
+    @torch.jit._overload_method
+    def forward(self, input: List[Tensor]) -> Tensor:  # noqa: F811
         pass
 
-    @torch.jit._overload_method  # noqa: F811
-    def forward(self, input: Tensor) -> Tensor:
+    @torch.jit._overload_method
+    def forward(self, input: Tensor) -> Tensor:  # noqa: F811
         pass
 
     # torchscript does not yet support *args, so we overload method

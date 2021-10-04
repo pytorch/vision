@@ -6,7 +6,6 @@ import torch
 from PIL import Image
 
 from .utils import (
-    check_integrity,
     download_file_from_google_drive,
     download_and_extract_archive,
     extract_archive,

@@ -1,6 +1,3 @@
-import contextlib
-import os
-
 import pytest
 import torch
 from common_utils import get_list_of_videos, assert_equal

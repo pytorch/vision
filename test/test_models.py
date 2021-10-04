@@ -2,7 +2,6 @@ import functools
 import io
 import operator
 import os
-import sys
 import traceback
 import warnings
 from collections import OrderedDict

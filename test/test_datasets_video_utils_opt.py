@@ -1,7 +1,6 @@
 import unittest
 
 import test_datasets_video_utils
-from torchvision import set_video_backend
 
 # Disabling the video backend switching temporarily
 # set_video_backend('video_reader')

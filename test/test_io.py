@@ -2,8 +2,6 @@ import contextlib
 import os
 import sys
 import tempfile
-import warnings
-from urllib.error import URLError
 
 import pytest
 import torch

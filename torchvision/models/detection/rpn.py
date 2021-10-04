@@ -9,7 +9,7 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 
 # Import AnchorGenerator to keep compatibility.
-from .anchor_utils import AnchorGenerator
+from .anchor_utils import AnchorGenerator  # noqa
 from .image_list import ImageList
 
 

@@ -3,11 +3,9 @@ import distutils.spawn
 import glob
 import io
 import os
-import re
 import shutil
 import subprocess
 import sys
-from distutils.version import StrictVersion
 
 import torch
 from pkg_resources import parse_version, get_distribution, DistributionNotFound

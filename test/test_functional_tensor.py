@@ -2,8 +2,7 @@ import colorsys
 import itertools
 import math
 import os
-from functools import partial
-from typing import Dict, List, Sequence, Tuple
+from typing import Sequence
 
 import numpy as np
 import pytest
