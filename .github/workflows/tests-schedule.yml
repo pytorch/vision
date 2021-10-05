@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: 3.6
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+      - name: Upgrade system packages
+        run: python -m pip install --upgrade pip setuptools wheel
 
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -30,7 +30,7 @@ jobs:
         run: pip install --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 
       - name: Install torchvision
-        run: pip install -e .
+        run: pip install --no-build-isolation --editable .
 
       - name: Install all optional dataset requirements
         run: pip install scipy pandas pycocotools lmdb requests

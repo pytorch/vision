@@ -13,9 +13,7 @@ def compute_sha256(path: pathlib.Path) -> str:
 
 
 class LocalResource:
-    def __init__(
-        self, path: Union[str, pathlib.Path], *, sha256: Optional[str] = None
-    ) -> None:
+    def __init__(self, path: Union[str, pathlib.Path], *, sha256: Optional[str] = None) -> None:
         self.path = pathlib.Path(path).expanduser().resolve()
         self.file_name = self.path.name
         self.sha256 = sha256 or compute_sha256(self.path)
@@ -39,9 +37,7 @@ class OnlineResource:
 # TODO: add support for mirrors
 # TODO: add support for http -> https
 class HttpResource(OnlineResource):
-    def __init__(
-        self, url: str, *, sha256: str, file_name: Optional[str] = None
-    ) -> None:
+    def __init__(self, url: str, *, sha256: str, file_name: Optional[str] = None) -> None:
         if not file_name:
             file_name = os.path.basename(urlparse(url).path)
         super().__init__(url, sha256=sha256, file_name=file_name)

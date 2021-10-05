@@ -21,11 +21,11 @@ from typing import (
 
 import torch
 from torch.utils.data import IterDataPipe
-
 from torchvision.prototype.datasets.utils._internal import (
     add_suggestion,
     sequence_to_str,
 )
+
 from ._resource import OnlineResource
 
 
@@ -66,9 +66,7 @@ class DatasetConfig(Mapping):
         try:
             return self[name]
         except KeyError as error:
-            raise AttributeError(
-                f"'{type(self).__name__}' object has no attribute '{name}'"
-            ) from error
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'") from error
 
     def __setitem__(self, key: Any, value: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
@@ -135,9 +133,7 @@ class DatasetInfo:
 
     @property
     def default_config(self) -> DatasetConfig:
-        return DatasetConfig(
-            {name: valid_args[0] for name, valid_args in self._valid_options.items()}
-        )
+        return DatasetConfig({name: valid_args[0] for name, valid_args in self._valid_options.items()})
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():
@@ -169,12 +165,7 @@ class DatasetInfo:
             value = getattr(self, key)
             if value is not None:
                 items.append((key, value))
-        items.extend(
-            sorted(
-                (key, sequence_to_str(value))
-                for key, value in self._valid_options.items()
-            )
-        )
+        items.extend(sorted((key, sequence_to_str(value)) for key, value in self._valid_options.items()))
         return make_repr(type(self).__name__, items)
 
 
@@ -216,7 +207,5 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
-        resource_dps = [
-            resource.to_datapipe(root) for resource in self.resources(config)
-        ]
+        resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
