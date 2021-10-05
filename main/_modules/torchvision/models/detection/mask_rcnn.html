@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+54c1dda ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e5d0b6d ) &#x25BC</a>
     </div>
     
 
@@ -319,17 +319,16 @@
 <span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-
 <span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">MultiScaleRoIAlign</span>
 
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
 <span class="kn">from</span> <span class="nn">..._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
-
-<span class="kn">from</span> <span class="nn">.faster_rcnn</span> <span class="kn">import</span> <span class="n">FasterRCNN</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
 <span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">resnet_fpn_backbone</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
+<span class="kn">from</span> <span class="nn">.faster_rcnn</span> <span class="kn">import</span> <span class="n">FasterRCNN</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;MaskRCNN&quot;</span><span class="p">,</span> <span class="s2">&quot;maskrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MaskRCNN&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;maskrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -467,26 +466,46 @@
 <span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="c1"># transform parameters</span>
-                 <span class="n">min_size</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mi">1333</span><span class="p">,</span>
-                 <span class="n">image_mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_std</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="c1"># RPN parameters</span>
-                 <span class="n">rpn_anchor_generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rpn_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">rpn_pre_nms_top_n_train</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">rpn_pre_nms_top_n_test</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-                 <span class="n">rpn_post_nms_top_n_train</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">rpn_post_nms_top_n_test</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-                 <span class="n">rpn_nms_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-                 <span class="n">rpn_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">rpn_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
-                 <span class="n">rpn_batch_size_per_image</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">rpn_positive_fraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-                 <span class="n">rpn_score_thresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                 <span class="c1"># Box parameters</span>
-                 <span class="n">box_roi_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">box_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">box_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">box_score_thresh</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">box_nms_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">box_detections_per_img</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                 <span class="n">box_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">box_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-                 <span class="n">box_batch_size_per_image</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">box_positive_fraction</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
-                 <span class="n">bbox_reg_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="c1"># Mask parameters</span>
-                 <span class="n">mask_roi_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backbone</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># transform parameters</span>
+        <span class="n">min_size</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span>
+        <span class="n">max_size</span><span class="o">=</span><span class="mi">1333</span><span class="p">,</span>
+        <span class="n">image_mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">image_std</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># RPN parameters</span>
+        <span class="n">rpn_anchor_generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rpn_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rpn_pre_nms_top_n_train</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">rpn_pre_nms_top_n_test</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">rpn_post_nms_top_n_train</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">rpn_post_nms_top_n_test</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">rpn_nms_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">rpn_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">rpn_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">rpn_batch_size_per_image</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">rpn_positive_fraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">rpn_score_thresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="c1"># Box parameters</span>
+        <span class="n">box_roi_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">box_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">box_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">box_score_thresh</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">box_nms_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">box_detections_per_img</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">box_fg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">box_bg_iou_thresh</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">box_batch_size_per_image</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+        <span class="n">box_positive_fraction</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">bbox_reg_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Mask parameters</span>
+        <span class="n">mask_roi_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">mask_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">mask_predictor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_roi_pool</span><span class="p">,</span> <span class="p">(</span><span class="n">MultiScaleRoIAlign</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
 
@@ -497,10 +516,7 @@
         <span class="n">out_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span>
 
         <span class="k">if</span> <span class="n">mask_roi_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">mask_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span>
-                <span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">],</span>
-                <span class="n">output_size</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
-                <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">mask_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">],</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">mask_head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mask_layers</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
@@ -510,28 +526,42 @@
         <span class="k">if</span> <span class="n">mask_predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mask_predictor_in_channels</span> <span class="o">=</span> <span class="mi">256</span>  <span class="c1"># == mask_layers[-1]</span>
             <span class="n">mask_dim_reduced</span> <span class="o">=</span> <span class="mi">256</span>
-            <span class="n">mask_predictor</span> <span class="o">=</span> <span class="n">MaskRCNNPredictor</span><span class="p">(</span><span class="n">mask_predictor_in_channels</span><span class="p">,</span>
-                                               <span class="n">mask_dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
+            <span class="n">mask_predictor</span> <span class="o">=</span> <span class="n">MaskRCNNPredictor</span><span class="p">(</span><span class="n">mask_predictor_in_channels</span><span class="p">,</span> <span class="n">mask_dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">MaskRCNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span>
+            <span class="n">backbone</span><span class="p">,</span>
+            <span class="n">num_classes</span><span class="p">,</span>
             <span class="c1"># transform parameters</span>
-            <span class="n">min_size</span><span class="p">,</span> <span class="n">max_size</span><span class="p">,</span>
-            <span class="n">image_mean</span><span class="p">,</span> <span class="n">image_std</span><span class="p">,</span>
+            <span class="n">min_size</span><span class="p">,</span>
+            <span class="n">max_size</span><span class="p">,</span>
+            <span class="n">image_mean</span><span class="p">,</span>
+            <span class="n">image_std</span><span class="p">,</span>
             <span class="c1"># RPN-specific parameters</span>
-            <span class="n">rpn_anchor_generator</span><span class="p">,</span> <span class="n">rpn_head</span><span class="p">,</span>
-            <span class="n">rpn_pre_nms_top_n_train</span><span class="p">,</span> <span class="n">rpn_pre_nms_top_n_test</span><span class="p">,</span>
-            <span class="n">rpn_post_nms_top_n_train</span><span class="p">,</span> <span class="n">rpn_post_nms_top_n_test</span><span class="p">,</span>
+            <span class="n">rpn_anchor_generator</span><span class="p">,</span>
+            <span class="n">rpn_head</span><span class="p">,</span>
+            <span class="n">rpn_pre_nms_top_n_train</span><span class="p">,</span>
+            <span class="n">rpn_pre_nms_top_n_test</span><span class="p">,</span>
+            <span class="n">rpn_post_nms_top_n_train</span><span class="p">,</span>
+            <span class="n">rpn_post_nms_top_n_test</span><span class="p">,</span>
             <span class="n">rpn_nms_thresh</span><span class="p">,</span>
-            <span class="n">rpn_fg_iou_thresh</span><span class="p">,</span> <span class="n">rpn_bg_iou_thresh</span><span class="p">,</span>
-            <span class="n">rpn_batch_size_per_image</span><span class="p">,</span> <span class="n">rpn_positive_fraction</span><span class="p">,</span>
+            <span class="n">rpn_fg_iou_thresh</span><span class="p">,</span>
+            <span class="n">rpn_bg_iou_thresh</span><span class="p">,</span>
+            <span class="n">rpn_batch_size_per_image</span><span class="p">,</span>
+            <span class="n">rpn_positive_fraction</span><span class="p">,</span>
             <span class="n">rpn_score_thresh</span><span class="p">,</span>
             <span class="c1"># Box parameters</span>
-            <span class="n">box_roi_pool</span><span class="p">,</span> <span class="n">box_head</span><span class="p">,</span> <span class="n">box_predictor</span><span class="p">,</span>
-            <span class="n">box_score_thresh</span><span class="p">,</span> <span class="n">box_nms_thresh</span><span class="p">,</span> <span class="n">box_detections_per_img</span><span class="p">,</span>
-            <span class="n">box_fg_iou_thresh</span><span class="p">,</span> <span class="n">box_bg_iou_thresh</span><span class="p">,</span>
-            <span class="n">box_batch_size_per_image</span><span class="p">,</span> <span class="n">box_positive_fraction</span><span class="p">,</span>
-            <span class="n">bbox_reg_weights</span><span class="p">)</span>
+            <span class="n">box_roi_pool</span><span class="p">,</span>
+            <span class="n">box_head</span><span class="p">,</span>
+            <span class="n">box_predictor</span><span class="p">,</span>
+            <span class="n">box_score_thresh</span><span class="p">,</span>
+            <span class="n">box_nms_thresh</span><span class="p">,</span>
+            <span class="n">box_detections_per_img</span><span class="p">,</span>
+            <span class="n">box_fg_iou_thresh</span><span class="p">,</span>
+            <span class="n">box_bg_iou_thresh</span><span class="p">,</span>
+            <span class="n">box_batch_size_per_image</span><span class="p">,</span>
+            <span class="n">box_positive_fraction</span><span class="p">,</span>
+            <span class="n">bbox_reg_weights</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">roi_heads</span><span class="o">.</span><span class="n">mask_roi_pool</span> <span class="o">=</span> <span class="n">mask_roi_pool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">roi_heads</span><span class="o">.</span><span class="n">mask_head</span> <span class="o">=</span> <span class="n">mask_head</span>
@@ -550,8 +580,8 @@
         <span class="n">next_feature</span> <span class="o">=</span> <span class="n">in_channels</span>
         <span class="k">for</span> <span class="n">layer_idx</span><span class="p">,</span> <span class="n">layer_features</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">d</span><span class="p">[</span><span class="s2">&quot;mask_fcn</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer_idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
-                <span class="n">next_feature</span><span class="p">,</span> <span class="n">layer_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-                <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span><span class="p">)</span>
+                <span class="n">next_feature</span><span class="p">,</span> <span class="n">layer_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span>
+            <span class="p">)</span>
             <span class="n">d</span><span class="p">[</span><span class="s2">&quot;relu</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer_idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">next_feature</span> <span class="o">=</span> <span class="n">layer_features</span>
 
@@ -565,11 +595,15 @@
 
 <span class="k">class</span> <span class="nc">MaskRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">MaskRCNNPredictor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">([</span>
-            <span class="p">(</span><span class="s2">&quot;conv5_mask&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">dim_reduced</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
-            <span class="p">(</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
-            <span class="p">(</span><span class="s2">&quot;mask_fcn_logits&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
-        <span class="p">]))</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MaskRCNNPredictor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">OrderedDict</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">(</span><span class="s2">&quot;conv5_mask&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">dim_reduced</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s2">&quot;mask_fcn_logits&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
             <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
@@ -579,13 +613,13 @@
 
 
 <span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;maskrcnn_resnet50_fpn_coco&#39;</span><span class="p">:</span>
-        <span class="s1">&#39;https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth&#39;</span><span class="p">,</span>
+    <span class="s2">&quot;maskrcnn_resnet50_fpn_coco&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="maskrcnn_resnet50_fpn"><a class="viewcode-back" href="../../../../models.html#torchvision.models.detection.maskrcnn_resnet50_fpn">[docs]</a><span class="k">def</span> <span class="nf">maskrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                          <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="maskrcnn_resnet50_fpn"><a class="viewcode-back" href="../../../../models.html#torchvision.models.detection.maskrcnn_resnet50_fpn">[docs]</a><span class="k">def</span> <span class="nf">maskrcnn_resnet50_fpn</span><span class="p">(</span>
+    <span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.</span>
 
@@ -642,16 +676,16 @@
 <span class="sd">            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span>
-        <span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span>
+    <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="c1"># no need to download the backbone if pretrained is set</span>
         <span class="n">pretrained_backbone</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet_fpn_backbone</span><span class="p">(</span><span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_layers</span><span class="o">=</span><span class="n">trainable_backbone_layers</span><span class="p">)</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet_fpn_backbone</span><span class="p">(</span><span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_layers</span><span class="o">=</span><span class="n">trainable_backbone_layers</span><span class="p">)</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">MaskRCNN</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="s1">&#39;maskrcnn_resnet50_fpn_coco&#39;</span><span class="p">],</span>
-                                              <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="s2">&quot;maskrcnn_resnet50_fpn_coco&quot;</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
         <span class="n">overwrite_eps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span></div>

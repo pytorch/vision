@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+54c1dda ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e5d0b6d ) &#x25BC</a>
     </div>
     
 
@@ -316,13 +316,15 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.datasets.svhn</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_url</span><span class="p">,</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
 <div class="viewcode-block" id="SVHN"><a class="viewcode-back" href="../../../datasets.html#torchvision.datasets.SVHN">[docs]</a><span class="k">class</span> <span class="nc">SVHN</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
@@ -351,23 +353,32 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">split_list</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;train&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;http://ufldl.stanford.edu/housenumbers/train_32x32.mat&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;train_32x32.mat&quot;</span><span class="p">,</span> <span class="s2">&quot;e26dedcc434d2e4c54c9b2d4a06d8373&quot;</span><span class="p">],</span>
-        <span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;http://ufldl.stanford.edu/housenumbers/test_32x32.mat&quot;</span><span class="p">,</span>
-                 <span class="s2">&quot;test_32x32.mat&quot;</span><span class="p">,</span> <span class="s2">&quot;eb5a983be6a315427106f1b164d9cef3&quot;</span><span class="p">],</span>
-        <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;http://ufldl.stanford.edu/housenumbers/extra_32x32.mat&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;extra_32x32.mat&quot;</span><span class="p">,</span> <span class="s2">&quot;a93ce644f1a588dc4d68dda5feec44a7&quot;</span><span class="p">]}</span>
+        <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;http://ufldl.stanford.edu/housenumbers/train_32x32.mat&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;train_32x32.mat&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;e26dedcc434d2e4c54c9b2d4a06d8373&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;http://ufldl.stanford.edu/housenumbers/test_32x32.mat&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;test_32x32.mat&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;eb5a983be6a315427106f1b164d9cef3&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;extra&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;http://ufldl.stanford.edu/housenumbers/extra_32x32.mat&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;extra_32x32.mat&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;a93ce644f1a588dc4d68dda5feec44a7&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-            <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-            <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SVHN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span>
-                                   <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SVHN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_list</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_list</span><span class="p">[</span><span class="n">split</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_list</span><span class="p">[</span><span class="n">split</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
@@ -377,8 +388,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Dataset not found or corrupted.&#39;</span> <span class="o">+</span>
-                               <span class="s1">&#39; You can use download=True to download it&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found or corrupted.&quot;</span> <span class="o">+</span> <span class="s2">&quot; You can use download=True to download it&quot;</span><span class="p">)</span>
 
         <span class="c1"># import here rather than at top of file because this is</span>
         <span class="c1"># an optional dependency for torchvision</span>
@@ -387,12 +397,12 @@
         <span class="c1"># reading(loading) mat file as array</span>
         <span class="n">loaded_mat</span> <span class="o">=</span> <span class="n">sio</span><span class="o">.</span><span class="n">loadmat</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">loaded_mat</span><span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">loaded_mat</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">]</span>
         <span class="c1"># loading from the .mat file gives an np array of type np.uint8</span>
         <span class="c1"># converting to np.int64, so that we have a LongTensor after</span>
         <span class="c1"># the conversion from the numpy array</span>
         <span class="c1"># the squeeze is needed to obtain a 1D tensor</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">loaded_mat</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">loaded_mat</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
         <span class="c1"># the svhn dataset assigns the class label &quot;10&quot; to the digit 0</span>
         <span class="c1"># this makes it inconsistent with several loss functions</span>

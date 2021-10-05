@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+54c1dda ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e5d0b6d ) &#x25BC</a>
     </div>
     
 
@@ -319,6 +319,7 @@
 <span></span><span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="kn">from</span> <span class="nn">.folder</span> <span class="kn">import</span> <span class="n">find_classes</span><span class="p">,</span> <span class="n">make_dataset</span>
@@ -367,7 +368,7 @@
     <span class="n">data_url</span> <span class="o">=</span> <span class="s2">&quot;http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar&quot;</span>
     <span class="n">splits</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;md5&quot;</span><span class="p">:</span> <span class="s2">&quot;15e67781e70dcfbdce2d7dbb9b3344b5&quot;</span>
+        <span class="s2">&quot;md5&quot;</span><span class="p">:</span> <span class="s2">&quot;15e67781e70dcfbdce2d7dbb9b3344b5&quot;</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">TRAIN_TAG</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">TEST_TAG</span> <span class="o">=</span> <span class="mi">2</span>
@@ -393,7 +394,7 @@
         <span class="k">if</span> <span class="n">fold</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;fold should be between 1 and 3, got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fold</span><span class="p">))</span>
 
-        <span class="n">extensions</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;avi&#39;</span><span class="p">,)</span>
+        <span class="n">extensions</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;avi&quot;</span><span class="p">,)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">,</span> <span class="n">class_to_idx</span> <span class="o">=</span> <span class="n">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>

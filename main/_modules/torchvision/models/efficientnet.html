@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+54c1dda ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e5d0b6d ) &#x25BC</a>
     </div>
     
 
@@ -318,20 +318,29 @@
   <h1>Source code for torchvision.models.efficientnet</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">StochasticDepth</span>
 
 <span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 <span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span>
-<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">StochasticDepth</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;EfficientNet&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b0&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b1&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b2&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b3&quot;</span><span class="p">,</span>
-           <span class="s2">&quot;efficientnet_b4&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b5&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b6&quot;</span><span class="p">,</span> <span class="s2">&quot;efficientnet_b7&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;EfficientNet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b4&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b6&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnet_b7&quot;</span><span class="p">,</span>
+<span class="p">]</span>
 
 
 <span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
@@ -350,10 +359,17 @@
 
 <span class="k">class</span> <span class="nc">MBConvConfig</span><span class="p">:</span>
     <span class="c1"># Stores information listed at Table 1 of the EfficientNet paper</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">expand_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                 <span class="n">input_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                 <span class="n">width_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">depth_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">expand_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">input_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">width_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">depth_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expand_ratio</span> <span class="o">=</span> <span class="n">expand_ratio</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
@@ -362,14 +378,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjust_depth</span><span class="p">(</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">depth_mult</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;expand_ratio=</span><span class="si">{expand_ratio}</span><span class="s1">&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, kernel=</span><span class="si">{kernel}</span><span class="s1">&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, stride=</span><span class="si">{stride}</span><span class="s1">&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, input_channels=</span><span class="si">{input_channels}</span><span class="s1">&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, out_channels=</span><span class="si">{out_channels}</span><span class="s1">&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;, num_layers=</span><span class="si">{num_layers}</span><span class="s1">&#39;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;)&#39;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;expand_ratio=</span><span class="si">{expand_ratio}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, kernel=</span><span class="si">{kernel}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, stride=</span><span class="si">{stride}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, input_channels=</span><span class="si">{input_channels}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, out_channels=</span><span class="si">{out_channels}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, num_layers=</span><span class="si">{num_layers}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;)&quot;</span>
         <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
@@ -382,12 +398,17 @@
 
 
 <span class="k">class</span> <span class="nc">MBConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cnf</span><span class="p">:</span> <span class="n">MBConvConfig</span><span class="p">,</span> <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
-                 <span class="n">se_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">SqueezeExcitation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cnf</span><span class="p">:</span> <span class="n">MBConvConfig</span><span class="p">,</span>
+        <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">se_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">SqueezeExcitation</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">stride</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;illegal stride value&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;illegal stride value&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">use_res_connect</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">==</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span>
 
@@ -397,21 +418,39 @@
         <span class="c1"># expand</span>
         <span class="n">expanded_channels</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">adjust_channels</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">expand_ratio</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">expanded_channels</span> <span class="o">!=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">:</span>
-            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">expanded_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                             <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">))</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ConvNormActivation</span><span class="p">(</span>
+                    <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span><span class="p">,</span>
+                    <span class="n">expanded_channels</span><span class="p">,</span>
+                    <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                    <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="c1"># depthwise</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">expanded_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
-                                         <span class="n">stride</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">expanded_channels</span><span class="p">,</span>
-                                         <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ConvNormActivation</span><span class="p">(</span>
+                <span class="n">expanded_channels</span><span class="p">,</span>
+                <span class="n">expanded_channels</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+                <span class="n">stride</span><span class="o">=</span><span class="n">cnf</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+                <span class="n">groups</span><span class="o">=</span><span class="n">expanded_channels</span><span class="p">,</span>
+                <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="c1"># squeeze and excitation</span>
         <span class="n">squeeze_channels</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">se_layer</span><span class="p">(</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">squeeze_channels</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
 
         <span class="c1"># project</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">expanded_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
-                                         <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ConvNormActivation</span><span class="p">(</span>
+                <span class="n">expanded_channels</span><span class="p">,</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span> <span class="o">=</span> <span class="n">StochasticDepth</span><span class="p">(</span><span class="n">stochastic_depth_prob</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">)</span>
@@ -427,14 +466,14 @@
 
 <span class="k">class</span> <span class="nc">EfficientNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">inverted_residual_setting</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MBConvConfig</span><span class="p">],</span>
-            <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-            <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-            <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-            <span class="n">block</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inverted_residual_setting</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MBConvConfig</span><span class="p">],</span>
+        <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">block</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        EfficientNet main class</span>
@@ -451,8 +490,10 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inverted_residual_setting</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The inverted_residual_setting should not be empty&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">inverted_residual_setting</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span>
-                  <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">MBConvConfig</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">inverted_residual_setting</span><span class="p">])):</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">inverted_residual_setting</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">MBConvConfig</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">inverted_residual_setting</span><span class="p">])</span>
+        <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The inverted_residual_setting should be List[MBConvConfig]&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">block</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -465,8 +506,11 @@
 
         <span class="c1"># building first layer</span>
         <span class="n">firstconv_output_channels</span> <span class="o">=</span> <span class="n">inverted_residual_setting</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">input_channels</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">firstconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
-                                         <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ConvNormActivation</span><span class="p">(</span>
+                <span class="mi">3</span><span class="p">,</span> <span class="n">firstconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="c1"># building inverted residual blocks</span>
         <span class="n">total_stage_blocks</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">cnf</span><span class="o">.</span><span class="n">num_layers</span> <span class="k">for</span> <span class="n">cnf</span> <span class="ow">in</span> <span class="n">inverted_residual_setting</span><span class="p">])</span>
@@ -493,8 +537,15 @@
         <span class="c1"># building last several layers</span>
         <span class="n">lastconv_input_channels</span> <span class="o">=</span> <span class="n">inverted_residual_setting</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span>
         <span class="n">lastconv_output_channels</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">lastconv_input_channels</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">lastconv_input_channels</span><span class="p">,</span> <span class="n">lastconv_output_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                         <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ConvNormActivation</span><span class="p">(</span>
+                <span class="n">lastconv_input_channels</span><span class="p">,</span>
+                <span class="n">lastconv_output_channels</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -505,7 +556,7 @@
 
         <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
-                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;fan_out&#39;</span><span class="p">)</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">GroupNorm</span><span class="p">)):</span>
@@ -550,7 +601,7 @@
     <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">EfficientNet</span><span class="p">(</span><span class="n">inverted_residual_setting</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
@@ -636,8 +687,15 @@
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">inverted_residual_setting</span> <span class="o">=</span> <span class="n">_efficientnet_conf</span><span class="p">(</span><span class="n">width_mult</span><span class="o">=</span><span class="mf">1.6</span><span class="p">,</span> <span class="n">depth_mult</span><span class="o">=</span><span class="mf">2.2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_efficientnet_model</span><span class="p">(</span><span class="s2">&quot;efficientnet_b5&quot;</span><span class="p">,</span> <span class="n">inverted_residual_setting</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                               <span class="n">norm_layer</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_efficientnet_model</span><span class="p">(</span>
+        <span class="s2">&quot;efficientnet_b5&quot;</span><span class="p">,</span>
+        <span class="n">inverted_residual_setting</span><span class="p">,</span>
+        <span class="mf">0.4</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">progress</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="efficientnet_b6"><a class="viewcode-back" href="../../../models.html#torchvision.models.efficientnet_b6">[docs]</a><span class="k">def</span> <span class="nf">efficientnet_b6</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
@@ -650,8 +708,15 @@
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">inverted_residual_setting</span> <span class="o">=</span> <span class="n">_efficientnet_conf</span><span class="p">(</span><span class="n">width_mult</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span> <span class="n">depth_mult</span><span class="o">=</span><span class="mf">2.6</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_efficientnet_model</span><span class="p">(</span><span class="s2">&quot;efficientnet_b6&quot;</span><span class="p">,</span> <span class="n">inverted_residual_setting</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                               <span class="n">norm_layer</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_efficientnet_model</span><span class="p">(</span>
+        <span class="s2">&quot;efficientnet_b6&quot;</span><span class="p">,</span>
+        <span class="n">inverted_residual_setting</span><span class="p">,</span>
+        <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">progress</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="efficientnet_b7"><a class="viewcode-back" href="../../../models.html#torchvision.models.efficientnet_b7">[docs]</a><span class="k">def</span> <span class="nf">efficientnet_b7</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
@@ -664,8 +729,15 @@
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">inverted_residual_setting</span> <span class="o">=</span> <span class="n">_efficientnet_conf</span><span class="p">(</span><span class="n">width_mult</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">depth_mult</span><span class="o">=</span><span class="mf">3.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_efficientnet_model</span><span class="p">(</span><span class="s2">&quot;efficientnet_b7&quot;</span><span class="p">,</span> <span class="n">inverted_residual_setting</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                               <span class="n">norm_layer</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_efficientnet_model</span><span class="p">(</span>
+        <span class="s2">&quot;efficientnet_b7&quot;</span><span class="p">,</span>
+        <span class="n">inverted_residual_setting</span><span class="p">,</span>
+        <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">progress</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
 </pre></div>
 
              </article>

@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+54c1dda ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e5d0b6d ) &#x25BC</a>
     </div>
     
 
@@ -316,41 +316,46 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.detection.ssdlite</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_utils</span> <span class="k">as</span> <span class="n">det_utils</span>
-<span class="kn">from</span> <span class="nn">.ssd</span> <span class="kn">import</span> <span class="n">SSD</span><span class="p">,</span> <span class="n">SSDScoringHead</span>
-<span class="kn">from</span> <span class="nn">.anchor_utils</span> <span class="kn">import</span> <span class="n">DefaultBoxGenerator</span>
-<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">_validate_trainable_layers</span>
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">mobilenet</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+
 <span class="kn">from</span> <span class="nn">..._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 <span class="kn">from</span> <span class="nn">...ops.misc</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">mobilenet</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_utils</span> <span class="k">as</span> <span class="n">det_utils</span>
+<span class="kn">from</span> <span class="nn">.anchor_utils</span> <span class="kn">import</span> <span class="n">DefaultBoxGenerator</span>
+<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">_validate_trainable_layers</span>
+<span class="kn">from</span> <span class="nn">.ssd</span> <span class="kn">import</span> <span class="n">SSD</span><span class="p">,</span> <span class="n">SSDScoringHead</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ssdlite320_mobilenet_v3_large&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ssdlite320_mobilenet_v3_large&quot;</span><span class="p">]</span>
 
 <span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;ssdlite320_mobilenet_v3_large_coco&#39;</span><span class="p">:</span>
-        <span class="s1">&#39;https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth&#39;</span>
+    <span class="s2">&quot;ssdlite320_mobilenet_v3_large_coco&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth&quot;</span>
 <span class="p">}</span>
 
 
 <span class="c1"># Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper</span>
-<span class="k">def</span> <span class="nf">_prediction_block</span><span class="p">(</span><span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                      <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_prediction_block</span><span class="p">(</span>
+    <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
         <span class="c1"># 3x3 depthwise with stride 1 and padding 1</span>
-        <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span>
-                           <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU6</span><span class="p">),</span>
-
+        <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="p">,</span>
+            <span class="n">in_channels</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+            <span class="n">groups</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span>
+            <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+            <span class="n">activation_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU6</span><span class="p">,</span>
+        <span class="p">),</span>
         <span class="c1"># 1x1 projetion to output channels</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
     <span class="p">)</span>
 
 
@@ -359,16 +364,23 @@
     <span class="n">intermediate_channels</span> <span class="o">=</span> <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">2</span>
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
         <span class="c1"># 1x1 projection to half output channels</span>
-        <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                           <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation</span><span class="p">),</span>
-
+        <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="p">,</span> <span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation</span>
+        <span class="p">),</span>
         <span class="c1"># 3x3 depthwise with stride 2 and padding 1</span>
-        <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-                           <span class="n">groups</span><span class="o">=</span><span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation</span><span class="p">),</span>
-
+        <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="n">intermediate_channels</span><span class="p">,</span>
+            <span class="n">intermediate_channels</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">groups</span><span class="o">=</span><span class="n">intermediate_channels</span><span class="p">,</span>
+            <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+            <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span>
+        <span class="p">),</span>
         <span class="c1"># 1x1 projetion to output channels</span>
-        <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                           <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation</span><span class="p">),</span>
+        <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="n">intermediate_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation</span>
+        <span class="p">),</span>
     <span class="p">)</span>
 
 
@@ -381,22 +393,24 @@
 
 
 <span class="k">class</span> <span class="nc">SSDLiteHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_anchors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                 <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_anchors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classification_head</span> <span class="o">=</span> <span class="n">SSDLiteClassificationHead</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">regression_head</span> <span class="o">=</span> <span class="n">SSDLiteRegressionHead</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;bbox_regression&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">regression_head</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
-            <span class="s1">&#39;cls_logits&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">classification_head</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+            <span class="s2">&quot;bbox_regression&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">regression_head</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+            <span class="s2">&quot;cls_logits&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">classification_head</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
         <span class="p">}</span>
 
 
 <span class="k">class</span> <span class="nc">SSDLiteClassificationHead</span><span class="p">(</span><span class="n">SSDScoringHead</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_anchors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                 <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_anchors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span>
+    <span class="p">):</span>
         <span class="n">cls_logits</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">channels</span><span class="p">,</span> <span class="n">anchors</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">):</span>
             <span class="n">cls_logits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_prediction_block</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">num_classes</span> <span class="o">*</span> <span class="n">anchors</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">))</span>
@@ -414,24 +428,33 @@
 
 
 <span class="k">class</span> <span class="nc">SSDLiteFeatureExtractorMobileNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backbone</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">c4_pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span> <span class="n">width_mult</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-                 <span class="n">min_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backbone</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">c4_pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">width_mult</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">min_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">backbone</span><span class="p">[</span><span class="n">c4_pos</span><span class="p">]</span><span class="o">.</span><span class="n">use_res_connect</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
             <span class="c1"># As described in section 6.3 of MobileNetV3 paper</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">backbone</span><span class="p">[:</span><span class="n">c4_pos</span><span class="p">],</span> <span class="n">backbone</span><span class="p">[</span><span class="n">c4_pos</span><span class="p">]</span><span class="o">.</span><span class="n">block</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>  <span class="c1"># from start until C4 expansion layer</span>
-            <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">backbone</span><span class="p">[</span><span class="n">c4_pos</span><span class="p">]</span><span class="o">.</span><span class="n">block</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="o">*</span><span class="n">backbone</span><span class="p">[</span><span class="n">c4_pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]),</span>  <span class="c1"># from C4 depthwise until end</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">backbone</span><span class="p">[</span><span class="n">c4_pos</span><span class="p">]</span><span class="o">.</span><span class="n">block</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="o">*</span><span class="n">backbone</span><span class="p">[</span><span class="n">c4_pos</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]),</span>  <span class="c1"># from C4 depthwise until end</span>
         <span class="p">)</span>
 
         <span class="n">get_depth</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_depth</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span> <span class="o">*</span> <span class="n">width_mult</span><span class="p">))</span>  <span class="c1"># noqa: E731</span>
-        <span class="n">extra</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
-            <span class="n">_extra_block</span><span class="p">(</span><span class="n">backbone</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">512</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
-            <span class="n">_extra_block</span><span class="p">(</span><span class="n">get_depth</span><span class="p">(</span><span class="mi">512</span><span class="p">),</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
-            <span class="n">_extra_block</span><span class="p">(</span><span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
-            <span class="n">_extra_block</span><span class="p">(</span><span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">128</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
-        <span class="p">])</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">_extra_block</span><span class="p">(</span><span class="n">backbone</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">512</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
+                <span class="n">_extra_block</span><span class="p">(</span><span class="n">get_depth</span><span class="p">(</span><span class="mi">512</span><span class="p">),</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
+                <span class="n">_extra_block</span><span class="p">(</span><span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
+                <span class="n">_extra_block</span><span class="p">(</span><span class="n">get_depth</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">get_depth</span><span class="p">(</span><span class="mi">128</span><span class="p">),</span> <span class="n">norm_layer</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
         <span class="n">_normal_init</span><span class="p">(</span><span class="n">extra</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">extra</span> <span class="o">=</span> <span class="n">extra</span>
@@ -450,10 +473,17 @@
         <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output</span><span class="p">)])</span>
 
 
-<span class="k">def</span> <span class="nf">_mobilenet_extractor</span><span class="p">(</span><span class="n">backbone_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">trainable_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-    <span class="n">backbone</span> <span class="o">=</span> <span class="n">mobilenet</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">](</span><span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
-                                                 <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">features</span>
+<span class="k">def</span> <span class="nf">_mobilenet_extractor</span><span class="p">(</span>
+    <span class="n">backbone_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">trainable_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">mobilenet</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">](</span>
+        <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">features</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="c1"># Change the default initialization scheme if not pretrained</span>
         <span class="n">_normal_init</span><span class="p">(</span><span class="n">backbone</span><span class="p">)</span>
@@ -474,10 +504,15 @@
     <span class="k">return</span> <span class="n">SSDLiteFeatureExtractorMobileNet</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">stage_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">norm_layer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ssdlite320_mobilenet_v3_large"><a class="viewcode-back" href="../../../../models.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large">[docs]</a><span class="k">def</span> <span class="nf">ssdlite320_mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">91</span><span class="p">,</span>
-                                  <span class="n">pretrained_backbone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                                  <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                                  <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+<div class="viewcode-block" id="ssdlite320_mobilenet_v3_large"><a class="viewcode-back" href="../../../../models.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large">[docs]</a><span class="k">def</span> <span class="nf">ssdlite320_mobilenet_v3_large</span><span class="p">(</span>
+    <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">91</span><span class="p">,</span>
+    <span class="n">pretrained_backbone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at</span>
 <span class="sd">    `&quot;Searching for MobileNetV3&quot;</span>
 <span class="sd">    &lt;https://arxiv.org/abs/1905.02244&gt;`_ and</span>
@@ -506,7 +541,8 @@
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The size of the model is already fixed; ignoring the argument.&quot;</span><span class="p">)</span>
 
     <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span>
-        <span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="n">pretrained</span> <span class="ow">or</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span>
+    <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="n">pretrained_backbone</span> <span class="o">=</span> <span class="kc">False</span>
@@ -517,8 +553,15 @@
     <span class="k">if</span> <span class="n">norm_layer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">norm_layer</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.03</span><span class="p">)</span>
 
-    <span class="n">backbone</span> <span class="o">=</span> <span class="n">_mobilenet_extractor</span><span class="p">(</span><span class="s2">&quot;mobilenet_v3_large&quot;</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span>
-                                    <span class="n">norm_layer</span><span class="p">,</span> <span class="n">reduced_tail</span><span class="o">=</span><span class="n">reduce_tail</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">_mobilenet_extractor</span><span class="p">(</span>
+        <span class="s2">&quot;mobilenet_v3_large&quot;</span><span class="p">,</span>
+        <span class="n">progress</span><span class="p">,</span>
+        <span class="n">pretrained_backbone</span><span class="p">,</span>
+        <span class="n">trainable_backbone_layers</span><span class="p">,</span>
+        <span class="n">norm_layer</span><span class="p">,</span>
+        <span class="n">reduced_tail</span><span class="o">=</span><span class="n">reduce_tail</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">320</span><span class="p">,</span> <span class="mi">320</span><span class="p">)</span>
     <span class="n">anchor_generator</span> <span class="o">=</span> <span class="n">DefaultBoxGenerator</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)],</span> <span class="n">min_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">max_ratio</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
@@ -537,11 +580,17 @@
         <span class="s2">&quot;image_std&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
     <span class="p">}</span>
     <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">SSD</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">anchor_generator</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span>
-                <span class="n">head</span><span class="o">=</span><span class="n">SSDLiteHead</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">SSD</span><span class="p">(</span>
+        <span class="n">backbone</span><span class="p">,</span>
+        <span class="n">anchor_generator</span><span class="p">,</span>
+        <span class="n">size</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">head</span><span class="o">=</span><span class="n">SSDLiteHead</span><span class="p">(</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="n">weights_name</span> <span class="o">=</span> <span class="s1">&#39;ssdlite320_mobilenet_v3_large_coco&#39;</span>
+        <span class="n">weights_name</span> <span class="o">=</span> <span class="s2">&quot;ssdlite320_mobilenet_v3_large_coco&quot;</span>
         <span class="k">if</span> <span class="n">model_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">weights_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No checkpoint is available for model </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">weights_name</span><span class="p">))</span>
         <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="n">weights_name</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>

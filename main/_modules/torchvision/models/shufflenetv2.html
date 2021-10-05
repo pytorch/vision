@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+54c1dda ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e5d0b6d ) &#x25BC</a>
     </div>
     
 
@@ -316,23 +316,22 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.shufflenetv2</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
 <span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;ShuffleNetV2&#39;</span><span class="p">,</span> <span class="s1">&#39;shufflenet_v2_x0_5&#39;</span><span class="p">,</span> <span class="s1">&#39;shufflenet_v2_x1_0&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;shufflenet_v2_x1_5&#39;</span><span class="p">,</span> <span class="s1">&#39;shufflenet_v2_x2_0&#39;</span>
-<span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ShuffleNetV2&quot;</span><span class="p">,</span> <span class="s2">&quot;shufflenet_v2_x0_5&quot;</span><span class="p">,</span> <span class="s2">&quot;shufflenet_v2_x1_0&quot;</span><span class="p">,</span> <span class="s2">&quot;shufflenet_v2_x1_5&quot;</span><span class="p">,</span> <span class="s2">&quot;shufflenet_v2_x2_0&quot;</span><span class="p">]</span>
 
 <span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;shufflenetv2_x0.5&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;shufflenetv2_x1.0&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;shufflenetv2_x1.5&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;shufflenetv2_x2.0&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">&quot;shufflenetv2_x0.5&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shufflenetv2_x1.0&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shufflenetv2_x1.5&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">&quot;shufflenetv2_x2.0&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -341,8 +340,7 @@
     <span class="n">channels_per_group</span> <span class="o">=</span> <span class="n">num_channels</span> <span class="o">//</span> <span class="n">groups</span>
 
     <span class="c1"># reshape</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batchsize</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span>
-               <span class="n">channels_per_group</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batchsize</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">channels_per_group</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
 
     <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
 
@@ -353,16 +351,11 @@
 
 
 <span class="k">class</span> <span class="nc">InvertedResidual</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">inp</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">oup</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">oup</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">InvertedResidual</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">stride</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;illegal stride value&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;illegal stride value&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
 
         <span class="n">branch_features</span> <span class="o">=</span> <span class="n">oup</span> <span class="o">//</span> <span class="mi">2</span>
@@ -380,8 +373,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">branch1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">branch2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">inp</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="n">branch_features</span><span class="p">,</span>
-                      <span class="n">branch_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
+                <span class="n">inp</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="n">branch_features</span><span class="p">,</span>
+                <span class="n">branch_features</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">branch_features</span><span class="p">),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">depthwise_conv</span><span class="p">(</span><span class="n">branch_features</span><span class="p">,</span> <span class="n">branch_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
@@ -393,12 +392,7 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">depthwise_conv</span><span class="p">(</span>
-        <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">o</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="n">bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">o</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">bias</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
 
@@ -420,14 +414,14 @@
         <span class="n">stages_repeats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">stages_out_channels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-        <span class="n">inverted_residual</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">InvertedResidual</span>
+        <span class="n">inverted_residual</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">InvertedResidual</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ShuffleNetV2</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stages_repeats</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expected stages_repeats as list of 3 positive ints&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expected stages_repeats as list of 3 positive ints&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stages_out_channels</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;expected stages_out_channels as list of 5 positive ints&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expected stages_out_channels as list of 5 positive ints&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stage_out_channels</span> <span class="o">=</span> <span class="n">stages_out_channels</span>
 
         <span class="n">input_channels</span> <span class="o">=</span> <span class="mi">3</span>
@@ -445,9 +439,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stage2</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stage3</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stage4</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span>
-        <span class="n">stage_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;stage</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">repeats</span><span class="p">,</span> <span class="n">output_channels</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                <span class="n">stage_names</span><span class="p">,</span> <span class="n">stages_repeats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stage_out_channels</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+        <span class="n">stage_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;stage</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">repeats</span><span class="p">,</span> <span class="n">output_channels</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">stage_names</span><span class="p">,</span> <span class="n">stages_repeats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stage_out_channels</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
             <span class="n">seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">inverted_residual</span><span class="p">(</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">output_channels</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeats</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">seq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inverted_residual</span><span class="p">(</span><span class="n">output_channels</span><span class="p">,</span> <span class="n">output_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
@@ -485,7 +478,7 @@
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="n">model_url</span> <span class="o">=</span> <span class="n">model_urls</span><span class="p">[</span><span class="n">arch</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">model_url</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;pretrained </span><span class="si">{}</span><span class="s1"> is not supported as of now&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arch</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;pretrained </span><span class="si">{}</span><span class="s2"> is not supported as of now&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arch</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_url</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
             <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
@@ -503,8 +496,7 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s1">&#39;shufflenetv2_x0.5&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                         <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s2">&quot;shufflenetv2_x0.5&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="shufflenet_v2_x1_0"><a class="viewcode-back" href="../../../models.html#torchvision.models.shufflenet_v2_x1_0">[docs]</a><span class="k">def</span> <span class="nf">shufflenet_v2_x1_0</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShuffleNetV2</span><span class="p">:</span>
@@ -517,8 +509,7 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s1">&#39;shufflenetv2_x1.0&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                         <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">116</span><span class="p">,</span> <span class="mi">232</span><span class="p">,</span> <span class="mi">464</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s2">&quot;shufflenetv2_x1.0&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">116</span><span class="p">,</span> <span class="mi">232</span><span class="p">,</span> <span class="mi">464</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="shufflenet_v2_x1_5"><a class="viewcode-back" href="../../../models.html#torchvision.models.shufflenet_v2_x1_5">[docs]</a><span class="k">def</span> <span class="nf">shufflenet_v2_x1_5</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShuffleNetV2</span><span class="p">:</span>
@@ -531,8 +522,7 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s1">&#39;shufflenetv2_x1.5&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                         <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">176</span><span class="p">,</span> <span class="mi">352</span><span class="p">,</span> <span class="mi">704</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s2">&quot;shufflenetv2_x1.5&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">176</span><span class="p">,</span> <span class="mi">352</span><span class="p">,</span> <span class="mi">704</span><span class="p">,</span> <span class="mi">1024</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="shufflenet_v2_x2_0"><a class="viewcode-back" href="../../../models.html#torchvision.models.shufflenet_v2_x2_0">[docs]</a><span class="k">def</span> <span class="nf">shufflenet_v2_x2_0</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ShuffleNetV2</span><span class="p">:</span>
@@ -545,8 +535,7 @@
 <span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s1">&#39;shufflenetv2_x2.0&#39;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span>
-                         <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">244</span><span class="p">,</span> <span class="mi">488</span><span class="p">,</span> <span class="mi">976</span><span class="p">,</span> <span class="mi">2048</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_shufflenetv2</span><span class="p">(</span><span class="s2">&quot;shufflenetv2_x2.0&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">24</span><span class="p">,</span> <span class="mi">244</span><span class="p">,</span> <span class="mi">488</span><span class="p">,</span> <span class="mi">976</span><span class="p">,</span> <span class="mi">2048</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </pre></div>
 
              </article>
