@@ -2,16 +2,15 @@ import datetime
 import os
 import time
 
+import presets
 import torch
 import torch.utils.data
-from torch.utils.data.dataloader import default_collate
-from torch import nn
 import torchvision
-from torchvision.transforms.functional import InterpolationMode
-
-import presets
 import transforms
 import utils
+from torch import nn
+from torch.utils.data.dataloader import default_collate
+from torchvision.transforms.functional import InterpolationMode
 
 try:
     from apex import amp
@@ -22,8 +21,8 @@ except ImportError:
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
-    metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value}'))
+    metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
+    metric_logger.add_meter("img/s", utils.SmoothedValue(window_size=10, fmt="{value}"))
 
     header = 'Epoch: [{}]'.format(epoch)
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
@@ -49,15 +48,15 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
         acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
         batch_size = image.shape[0]
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
-        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
+        metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
+        metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+        metric_logger.meters["img/s"].update(batch_size / (time.time() - start_time))
 
 
-def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=''):
+def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=""):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
-    header = f'Test: {log_suffix}'
+    header = f"Test: {log_suffix}"
     with torch.no_grad():
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
             image = image.to(device, non_blocking=True)
@@ -70,17 +69,18 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix='
             # could have been padded in distributed setup
             batch_size = image.shape[0]
             metric_logger.update(loss=loss.item())
-            metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-            metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+            metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
+            metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
-    print(f'{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}')
+    print(f"{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}")
     return metric_logger.acc1.global_avg
 
 
 def _get_cache_path(filepath):
     import hashlib
+
     h = hashlib.sha1(filepath.encode()).hexdigest()
     cache_path = os.path.join("~", ".torch", "vision", "datasets", "imagefolder", h[:10] + ".pt")
     cache_path = os.path.expanduser(cache_path)
@@ -92,14 +92,20 @@ def load_data(traindir, valdir, args):
     print("Loading data")
     resize_size, crop_size = 256, 224
     interpolation = InterpolationMode.BILINEAR
-    if args.model == 'inception_v3':
+    if args.model == "inception_v3":
         resize_size, crop_size = 342, 299
-    elif args.model.startswith('efficientnet_'):
+    elif args.model.startswith("efficientnet_"):
         sizes = {
-            'b0': (256, 224), 'b1': (256, 240), 'b2': (288, 288), 'b3': (320, 300),
-            'b4': (384, 380), 'b5': (456, 456), 'b6': (528, 528), 'b7': (600, 600),
+            "b0": (256, 224),
+            "b1": (256, 240),
+            "b2": (288, 288),
+            "b3": (320, 300),
+            "b4": (384, 380),
+            "b5": (456, 456),
+            "b6": (528, 528),
+            "b7": (600, 600),
         }
-        e_type = args.model.replace('efficientnet_', '')
+        e_type = args.model.replace("efficientnet_", "")
         resize_size, crop_size = sizes[e_type]
         interpolation = InterpolationMode.BICUBIC
 
@@ -115,8 +121,10 @@ def load_data(traindir, valdir, args):
         random_erase_prob = getattr(args, "random_erase", 0.0)
         dataset = torchvision.datasets.ImageFolder(
             traindir,
-            presets.ClassificationPresetTrain(crop_size=crop_size, auto_augment_policy=auto_augment_policy,
-                                              random_erase_prob=random_erase_prob))
+            presets.ClassificationPresetTrain(
+                crop_size=crop_size, auto_augment_policy=auto_augment_policy, random_erase_prob=random_erase_prob
+            ),
+        )
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
@@ -132,8 +140,8 @@ def load_data(traindir, valdir, args):
     else:
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size,
-                                             interpolation=interpolation))
+            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size, interpolation=interpolation),
+        )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
@@ -152,8 +160,10 @@ def load_data(traindir, valdir, args):
 
 def main(args):
     if args.apex and amp is None:
-        raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
-                           "to enable mixed-precision training.")
+        raise RuntimeError(
+            "Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
+            "to enable mixed-precision training."
+        )
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -165,8 +175,8 @@ def main(args):
 
     torch.backends.cudnn.benchmark = True
 
-    train_dir = os.path.join(args.data_path, 'train')
-    val_dir = os.path.join(args.data_path, 'val')
+    train_dir = os.path.join(args.data_path, "train")
+    val_dir = os.path.join(args.data_path, "val")
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
 
     collate_fn = None
@@ -180,12 +190,16 @@ def main(args):
         mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
         collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True,
-        collate_fn=collate_fn)
+        dataset,
+        batch_size=args.batch_size,
+        sampler=train_sampler,
+        num_workers=args.workers,
+        pin_memory=True,
+        collate_fn=collate_fn,
+    )
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=args.batch_size,
-        sampler=test_sampler, num_workers=args.workers, pin_memory=True)
+        dataset_test, batch_size=args.batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=True
+    )
 
     print("Creating model")
     model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
@@ -216,36 +230,38 @@ def main(args):
         raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD, RMSprop and AdamW are supported.")
 
     if args.apex:
-        model, optimizer = amp.initialize(model, optimizer,
-                                          opt_level=args.apex_opt_level
-                                          )
+        model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_opt_level)
 
     args.lr_scheduler = args.lr_scheduler.lower()
-    if args.lr_scheduler == 'steplr':
+    if args.lr_scheduler == "steplr":
         main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
-    elif args.lr_scheduler == 'cosineannealinglr':
-        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
-                                                                       T_max=args.epochs - args.lr_warmup_epochs)
-    elif args.lr_scheduler == 'exponentiallr':
+    elif args.lr_scheduler == "cosineannealinglr":
+        main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=args.epochs - args.lr_warmup_epochs
+        )
+    elif args.lr_scheduler == "exponentiallr":
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
     else:
-        raise RuntimeError("Invalid lr scheduler '{}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
-                           "are supported.".format(args.lr_scheduler))
+        raise RuntimeError(
+            "Invalid lr scheduler '{}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
+            "are supported.".format(args.lr_scheduler)
+        )
 
     if args.lr_warmup_epochs > 0:
-        if args.lr_warmup_method == 'linear':
-            warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=args.lr_warmup_decay,
-                                                                    total_iters=args.lr_warmup_epochs)
-        elif args.lr_warmup_method == 'constant':
-            warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=args.lr_warmup_decay,
-                                                                      total_iters=args.lr_warmup_epochs)
+        if args.lr_warmup_method == "linear":
+            warmup_lr_scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer, start_factor=args.lr_warmup_decay, total_iters=args.lr_warmup_epochs
+            )
+        elif args.lr_warmup_method == "constant":
+            warmup_lr_scheduler = torch.optim.lr_scheduler.ConstantLR(
+                optimizer, factor=args.lr_warmup_decay, total_iters=args.lr_warmup_epochs
+            )
         else:
-            raise RuntimeError(f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant "
-                               "are supported.")
+            raise RuntimeError(
+                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant " "are supported."
+            )
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
-            optimizer,
-            schedulers=[warmup_lr_scheduler, main_lr_scheduler],
-            milestones=[args.lr_warmup_epochs]
+            optimizer, schedulers=[warmup_lr_scheduler, main_lr_scheduler], milestones=[args.lr_warmup_epochs]
         )
     else:
         lr_scheduler = main_lr_scheduler
@@ -276,7 +292,7 @@ def main(args):
             lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         args.start_epoch = checkpoint['epoch'] + 1
         if model_ema:
-            model_ema.load_state_dict(checkpoint['model_ema'])
+            model_ema.load_state_dict(checkpoint["model_ema"])
 
     if args.test_only:
         if model_ema:
@@ -294,26 +310,23 @@ def main(args):
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
-            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix='EMA')
+            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
         if args.output_dir:
             checkpoint = {
-                'model': model_without_ddp.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'lr_scheduler': lr_scheduler.state_dict(),
-                'epoch': epoch,
-                'args': args}
+                "model": model_without_ddp.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "lr_scheduler": lr_scheduler.state_dict(),
+                "epoch": epoch,
+                "args": args,
+            }
             if model_ema:
-                checkpoint['model_ema'] = model_ema.state_dict()
-            utils.save_on_master(
-                checkpoint,
-                os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
-            utils.save_on_master(
-                checkpoint,
-                os.path.join(args.output_dir, 'checkpoint.pth'))
+                checkpoint["model_ema"] = model_ema.state_dict()
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print('Training time {}'.format(total_time_str))
+    print("Training time {}".format(total_time_str))
 
 
 def get_args_parser(add_help=True):
@@ -378,25 +391,26 @@ def get_args_parser(add_help=True):
         help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
-    parser.add_argument('--auto-augment', default=None, help='auto augment policy (default: None)')
-    parser.add_argument('--random-erase', default=0.0, type=float, help='random erasing probability (default: 0.0)')
+    parser.add_argument("--auto-augment", default=None, help="auto augment policy (default: None)")
+    parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
-    parser.add_argument('--apex', action='store_true',
-                        help='Use apex for mixed precision training')
-    parser.add_argument('--apex-opt-level', default='O1', type=str,
-                        help='For apex mixed precision training'
-                             'O0 for FP32 training, O1 for mixed precision training.'
-                             'For further detail, see https://github.com/NVIDIA/apex/tree/master/examples/imagenet'
-                        )
+    parser.add_argument("--apex", action="store_true", help="Use apex for mixed precision training")
+    parser.add_argument(
+        "--apex-opt-level",
+        default="O1",
+        type=str,
+        help="For apex mixed precision training"
+        "O0 for FP32 training, O1 for mixed precision training."
+        "For further detail, see https://github.com/NVIDIA/apex/tree/master/examples/imagenet",
+    )
 
     # distributed training parameters
-    parser.add_argument('--world-size', default=1, type=int,
-                        help='number of distributed processes')
-    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
+    parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
     parser.add_argument(
-        '--model-ema', action='store_true',
-        help='enable tracking Exponential Moving Average of model parameters')
+        "--model-ema", action="store_true", help="enable tracking Exponential Moving Average of model parameters"
+    )
     parser.add_argument(
         '--model-ema-steps', type=int, default=32,
         help='the number of iterations that controls how often to update the EMA model (default: 32)')
