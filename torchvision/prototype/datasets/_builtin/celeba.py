@@ -11,9 +11,7 @@ from torch.utils.data.datapipes.iter import (
     Filter,
     ZipArchiveReader,
 )
-
 from torchdata.datapipes.iter import KeyZipper
-
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
