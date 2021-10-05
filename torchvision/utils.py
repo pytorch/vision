@@ -243,7 +243,7 @@ def draw_segmentation_masks(
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
-        colors: (color or list of colors, optional): List containing the colors
+        colors (color or list of colors, optional): List containing the colors
             of the masks or single color for all masks. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
             By default, random colors are generated for each mask.
