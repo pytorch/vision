@@ -160,7 +160,7 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors: (color or list of colors, optional): List containing the colors
+        colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         fill (bool): If `True` fills the bounding box with specified color.
