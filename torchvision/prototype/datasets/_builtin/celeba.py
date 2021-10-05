@@ -1,7 +1,7 @@
 import csv
 import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Sequence
 
 import torch
 from torch.utils.data import IterDataPipe
@@ -137,9 +137,12 @@ class CelebA(Dataset):
                 anns_dps,
             )
         }
+        anns_dp: IterDataPipe
+        partial_anns_dps: Sequence[IterDataPipe]
         anns_dp, *partial_anns_dps = [
             Mapper(dp, self._name_ann, fn_kwargs=dict(name=name)) for name, dp in anns_dps.items()
         ]
+        partial_anns_dp: IterDataPipe
         for partial_anns_dp in partial_anns_dps:
             anns_dp = KeyZipper(anns_dp, partial_anns_dp, lambda data: data[0], buffer_size=INFINITE_BUFFER_SIZE)
             anns_dp = Mapper(anns_dp, self._collate_partial_anns)
@@ -182,7 +185,7 @@ class CelebA(Dataset):
         splits_dp, images_dp, *anns_dps = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, has_header=False)
-        splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
+        splits_dp: IterDataPipe = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         images_dp = ZipArchiveReader(images_dp)
