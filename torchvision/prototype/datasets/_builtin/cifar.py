@@ -16,6 +16,7 @@ from torch.utils.data.datapipes.iter import (
     Shuffler,
 )
 from torchdata.datapipes.iter import KeyZipper
+from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -67,16 +68,18 @@ class _CifarBase(Dataset):
     ) -> Dict[str, Any]:
         (_, category_idx), (_, image_array_flat) = data
 
-        image_array = image_array_flat.reshape((3, 32, 32))
-        if decoder:
-            image = decoder(image_buffer_from_array(image_array.transpose(1, 2, 0)))
-        else:
-            image = torch.from_numpy(image_array)
-
         category = self.categories[category_idx]
         label = torch.tensor(category_idx)
 
-        return dict(image=image, label=label, category=category)
+        image_array = image_array_flat.reshape((3, 32, 32))
+        image: Union[torch.Tensor, io.BytesIO]
+        if decoder is raw:
+            image = torch.from_numpy(image_array)
+        else:
+            image_buffer = image_buffer_from_array(image_array.transpose(1, 2, 0))
+            image = decoder(image_buffer) if decoder else image_buffer
+
+        return dict(label=label, category=category, image=image)
 
     def _make_datapipe(
         self,
@@ -87,8 +90,8 @@ class _CifarBase(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         archive_dp = TarArchiveReader(archive_dp)
-        archive_dp = Filter(archive_dp, functools.partial(self._is_data_file, config=config))
-        archive_dp = Mapper(archive_dp, self._unpickle)
+        archive_dp: IterDataPipe = Filter(archive_dp, functools.partial(self._is_data_file, config=config))
+        archive_dp: IterDataPipe = Mapper(archive_dp, self._unpickle)
         archive_dp = MappingIterator(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
@@ -98,13 +101,13 @@ class _CifarBase(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        labels_dp = Mapper(labels_dp, self._remove_data_dict_key)
-        labels_dp = SequenceIterator(labels_dp)
+        labels_dp: IterDataPipe = Mapper(labels_dp, self._remove_data_dict_key)
+        labels_dp: IterDataPipe = SequenceIterator(labels_dp)
         labels_dp = Enumerator(labels_dp)
         labels_dp = Shuffler(labels_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        images_dp = Mapper(images_dp, self._remove_data_dict_key)
-        images_dp = SequenceIterator(images_dp)
+        images_dp: IterDataPipe = Mapper(images_dp, self._remove_data_dict_key)
+        images_dp: IterDataPipe = SequenceIterator(images_dp)
         images_dp = Enumerator(images_dp)
 
         dp = KeyZipper(labels_dp, images_dp, self._key_fn, buffer_size=INFINITE_BUFFER_SIZE)
@@ -127,8 +130,8 @@ class _CifarBase(Dataset):
     def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp = Filter(dp, self._is_meta_file)
-        dp = Mapper(dp, self._unpickle)
+        dp: IterDataPipe = Filter(dp, self._is_meta_file)
+        dp: IterDataPipe = Mapper(dp, self._unpickle)
         categories = next(iter(dp))[self._categories_key]
         create_categories_file(HERE, self.name, categories)
 
@@ -138,7 +141,7 @@ class Cifar10(_CifarBase):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar10",
-            type=DatasetType.PRE_DECODED,
+            type=DatasetType.RAW,
             categories=HERE / "cifar10.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
@@ -178,7 +181,7 @@ class Cifar100(_CifarBase):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar100",
-            type=DatasetType.PRE_DECODED,
+            type=DatasetType.RAW,
             categories=HERE / "cifar100.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(

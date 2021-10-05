@@ -47,7 +47,7 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
 
 
 class DatasetType(enum.Enum):
-    PRE_DECODED = enum.auto()
+    RAW = enum.auto()
     IMAGE = enum.auto()
 
 

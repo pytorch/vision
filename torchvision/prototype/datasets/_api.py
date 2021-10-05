@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional
 import torch
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.datasets import home
-from torchvision.prototype.datasets.decoder import pil
+from torchvision.prototype.datasets.decoder import raw, pil
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetType
 from torchvision.prototype.datasets.utils._internal import add_suggestion
 
@@ -51,6 +51,7 @@ def info(name: str) -> DatasetInfo:
 default = object()
 
 DEFAULT_DECODER: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
+    DatasetType.RAW: raw,
     DatasetType.IMAGE: pil,
 }
 
