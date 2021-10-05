@@ -22,6 +22,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     create_categories_file,
@@ -66,13 +67,16 @@ class _CifarBase(Dataset):
     ) -> Dict[str, Any]:
         (_, category_idx), (_, image_array_flat) = data
 
-        image_array = image_array_flat.reshape((3, 32, 32)).transpose(1, 2, 0)
-        image_buffer = image_buffer_from_array(image_array)
+        image_array = image_array_flat.reshape((3, 32, 32))
+        if decoder:
+            image = decoder(image_buffer_from_array(image_array.transpose(1, 2, 0)))
+        else:
+            image = torch.from_numpy(image_array)
 
         category = self.categories[category_idx]
         label = torch.tensor(category_idx)
 
-        return dict(image=decoder(image_buffer) if decoder else image_buffer, label=label, category=category)
+        return dict(image=image, label=label, category=category)
 
     def _make_datapipe(
         self,
@@ -134,6 +138,7 @@ class Cifar10(_CifarBase):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar10",
+            type=DatasetType.PRE_DECODED,
             categories=HERE / "cifar10.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
@@ -173,6 +178,7 @@ class Cifar100(_CifarBase):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar100",
+            type=DatasetType.PRE_DECODED,
             categories=HERE / "cifar100.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(

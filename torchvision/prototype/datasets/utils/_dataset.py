@@ -1,4 +1,5 @@
 import abc
+import enum
 import io
 import os
 import pathlib
@@ -43,6 +44,11 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
 
     body = textwrap.indent(to_str(",\n"), " " * 2)
     return f"{prefix}\n{body}\n{postfix}"
+
+
+class DatasetType(enum.Enum):
+    PRE_DECODED = enum.auto()
+    IMAGE = enum.auto()
 
 
 class DatasetConfig(Mapping):
@@ -96,6 +102,7 @@ class DatasetInfo:
         self,
         name: str,
         *,
+        type: Union[str, DatasetType],
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
@@ -103,6 +110,7 @@ class DatasetInfo:
         valid_options: Optional[Dict[str, Sequence]] = None,
     ) -> None:
         self.name = name.lower()
+        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
             categories = []
