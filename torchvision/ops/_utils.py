@@ -1,8 +1,8 @@
 from typing import List, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import nn, Tensor
-from typing import List, Optional, Tuple, Union
 
 
 def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
@@ -39,8 +39,9 @@ def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
     return
 
 
-def split_normalization_params(model: nn.Module,
-                               norm_classes: Optional[List[type]] = None) -> Tuple[List[Tensor], List[Tensor]]:
+def split_normalization_params(
+    model: nn.Module, norm_classes: Optional[List[type]] = None
+) -> Tuple[List[Tensor], List[Tensor]]:
     # Adapted from https://github.com/facebookresearch/ClassyVision/blob/659d7f78/classy_vision/generic/util.py#L501
     if not norm_classes:
         norm_classes = [nn.modules.batchnorm._BatchNorm, nn.LayerNorm, nn.GroupNorm]

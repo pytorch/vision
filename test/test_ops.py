@@ -2,17 +2,17 @@ import math
 import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
+from functools import lru_cache
+from typing import Tuple
 from typing import Tuple
 
 import numpy as np
 import pytest
 import torch
-from functools import lru_cache
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
-from typing import Tuple
 
 
 class RoIOpTester(ABC):
@@ -1177,7 +1177,7 @@ class TestStochasticDepth:
 
 
 class TestUtils:
-    @pytest.mark.parametrize('norm_layer', [None, nn.BatchNorm2d, nn.LayerNorm])
+    @pytest.mark.parametrize("norm_layer", [None, nn.BatchNorm2d, nn.LayerNorm])
     def test_split_normalization_params(self, norm_layer):
         model = models.mobilenet_v3_large(norm_layer=norm_layer)
         params = ops._utils.split_normalization_params(model, None if norm_layer is None else [norm_layer])
@@ -1186,5 +1186,5 @@ class TestUtils:
         assert len(params[1]) == 82
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

@@ -24,7 +24,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     metric_logger.add_meter("img/s", utils.SmoothedValue(window_size=10, fmt="{value}"))
 
-    header = 'Epoch: [{}]'.format(epoch)
+    header = "Epoch: [{}]".format(epoch)
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
@@ -219,12 +219,18 @@ def main(args):
 
     opt_name = args.opt.lower()
     if opt_name.startswith("sgd"):
-        optimizer = torch.optim.SGD(parameters, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
-                                    nesterov="nesterov" in opt_name)
-    elif opt_name == 'rmsprop':
-        optimizer = torch.optim.RMSprop(parameters, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay,
-                                        eps=0.0316, alpha=0.9)
-    elif opt_name == 'adamw':
+        optimizer = torch.optim.SGD(
+            parameters,
+            lr=args.lr,
+            momentum=args.momentum,
+            weight_decay=args.weight_decay,
+            nesterov="nesterov" in opt_name,
+        )
+    elif opt_name == "rmsprop":
+        optimizer = torch.optim.RMSprop(
+            parameters, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, eps=0.0316, alpha=0.9
+        )
+    elif opt_name == "adamw":
         optimizer = torch.optim.AdamW(parameters, lr=args.lr, weight_decay=args.weight_decay)
     else:
         raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD, RMSprop and AdamW are supported.")
@@ -285,18 +291,18 @@ def main(args):
         model_ema = utils.ExponentialMovingAverage(model_without_ddp, device=device, decay=1.0 - alpha)
 
     if args.resume:
-        checkpoint = torch.load(args.resume, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
+        checkpoint = torch.load(args.resume, map_location="cpu")
+        model_without_ddp.load_state_dict(checkpoint["model"])
         if not args.test_only:
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-        args.start_epoch = checkpoint['epoch'] + 1
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+        args.start_epoch = checkpoint["epoch"] + 1
         if model_ema:
             model_ema.load_state_dict(checkpoint["model_ema"])
 
     if args.test_only:
         if model_ema:
-            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix='EMA')
+            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
         else:
             evaluate(model, criterion, data_loader_test, device=device)
         return
@@ -331,42 +337,52 @@ def main(args):
 
 def get_args_parser(add_help=True):
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Classification Training', add_help=add_help)
 
-    parser.add_argument('--data-path', default='/datasets01/imagenet_full_size/061417/', help='dataset')
-    parser.add_argument('--model', default='resnet18', help='model')
-    parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('-b', '--batch-size', default=32, type=int)
-    parser.add_argument('--epochs', default=90, type=int, metavar='N',
-                        help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
-                        help='number of data loading workers (default: 16)')
-    parser.add_argument('--opt', default='sgd', type=str, help='optimizer')
-    parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
-    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
-                        help='momentum')
-    parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
-                        metavar='W', help='weight decay (default: 1e-4)',
-                        dest='weight_decay')
-    parser.add_argument('--norm-weight-decay', default=None, type=float,
-                        help='weight decay for Normalization layers (default: None, same value as --wd)')
-    parser.add_argument('--label-smoothing', default=0.0, type=float,
-                        help='label smoothing (default: 0.0)',
-                        dest='label_smoothing')
-    parser.add_argument('--mixup-alpha', default=0.0, type=float, help='mixup alpha (default: 0.0)')
-    parser.add_argument('--cutmix-alpha', default=0.0, type=float, help='cutmix alpha (default: 0.0)')
-    parser.add_argument('--lr-scheduler', default="steplr", help='the lr scheduler (default: steplr)')
-    parser.add_argument('--lr-warmup-epochs', default=0, type=int, help='the number of epochs to warmup (default: 0)')
-    parser.add_argument('--lr-warmup-method', default="constant", type=str,
-                        help='the warmup method (default: constant)')
-    parser.add_argument('--lr-warmup-decay', default=0.01, type=float, help='the decay for lr')
-    parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
-    parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
-    parser.add_argument('--output-dir', default='.', help='path where to save')
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
-    parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
-                        help='start epoch')
+    parser = argparse.ArgumentParser(description="PyTorch Classification Training", add_help=add_help)
+
+    parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", help="dataset")
+    parser.add_argument("--model", default="resnet18", help="model")
+    parser.add_argument("--device", default="cuda", help="device")
+    parser.add_argument("-b", "--batch-size", default=32, type=int)
+    parser.add_argument("--epochs", default=90, type=int, metavar="N", help="number of total epochs to run")
+    parser.add_argument(
+        "-j", "--workers", default=16, type=int, metavar="N", help="number of data loading workers (default: 16)"
+    )
+    parser.add_argument("--opt", default="sgd", type=str, help="optimizer")
+    parser.add_argument("--lr", default=0.1, type=float, help="initial learning rate")
+    parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
+    parser.add_argument(
+        "--wd",
+        "--weight-decay",
+        default=1e-4,
+        type=float,
+        metavar="W",
+        help="weight decay (default: 1e-4)",
+        dest="weight_decay",
+    )
+    parser.add_argument(
+        "--norm-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for Normalization layers (default: None, same value as --wd)",
+    )
+    parser.add_argument(
+        "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
+    )
+    parser.add_argument("--mixup-alpha", default=0.0, type=float, help="mixup alpha (default: 0.0)")
+    parser.add_argument("--cutmix-alpha", default=0.0, type=float, help="cutmix alpha (default: 0.0)")
+    parser.add_argument("--lr-scheduler", default="steplr", help="the lr scheduler (default: steplr)")
+    parser.add_argument("--lr-warmup-epochs", default=0, type=int, help="the number of epochs to warmup (default: 0)")
+    parser.add_argument(
+        "--lr-warmup-method", default="constant", type=str, help="the warmup method (default: constant)"
+    )
+    parser.add_argument("--lr-warmup-decay", default=0.01, type=float, help="the decay for lr")
+    parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
+    parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
+    parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
+    parser.add_argument("--output-dir", default=".", help="path where to save")
+    parser.add_argument("--resume", default="", help="resume from checkpoint")
+    parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
         "--cache-dataset",
         dest="cache_dataset",
@@ -412,11 +428,17 @@ def get_args_parser(add_help=True):
         "--model-ema", action="store_true", help="enable tracking Exponential Moving Average of model parameters"
     )
     parser.add_argument(
-        '--model-ema-steps', type=int, default=32,
-        help='the number of iterations that controls how often to update the EMA model (default: 32)')
+        "--model-ema-steps",
+        type=int,
+        default=32,
+        help="the number of iterations that controls how often to update the EMA model (default: 32)",
+    )
     parser.add_argument(
-        '--model-ema-decay', type=float, default=0.99998,
-        help='decay factor for Exponential Moving Average of model parameters (default: 0.99998)')
+        "--model-ema-decay",
+        type=float,
+        default=0.99998,
+        help="decay factor for Exponential Moving Average of model parameters (default: 0.99998)",
+    )
 
     return parser
 

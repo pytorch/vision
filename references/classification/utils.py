@@ -179,8 +179,7 @@ class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
             if self.n_averaged == 0:
                 p_swa.detach().copy_(p_model_)
             else:
-                p_swa.detach().copy_(self.avg_fn(p_swa.detach(), p_model_,
-                                     self.n_averaged.to(device)))
+                p_swa.detach().copy_(self.avg_fn(p_swa.detach(), p_model_, self.n_averaged.to(device)))
         self.n_averaged += 1
 
 
