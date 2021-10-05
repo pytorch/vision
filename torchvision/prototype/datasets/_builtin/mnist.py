@@ -95,6 +95,7 @@ class _MNISTBase(Dataset):
         self,
         data: Tuple[np.ndarray, np.ndarray],
         *,
+        config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ):
         image_array, label_array = data
@@ -124,7 +125,7 @@ class _MNISTBase(Dataset):
 
         dp: IterDataPipe = Zipper(images_dp, labels_dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 
 
 class MNIST(_MNISTBase):
@@ -215,18 +216,17 @@ class EMNIST(_MNISTBase):
     def info(self):
         return DatasetInfo(
             "emnist",
-            # FIXME: shift the labels at runtime to always return a static label
-            categories=list(string.digits + string.ascii_letters),
+            categories=list(string.digits + string.ascii_uppercase + string.ascii_lowercase),
             homepage="https://www.westernsydney.edu.au/icns/reproducible_research/publication_support_materials/emnist",
             valid_options=dict(
                 split=("train", "test"),
                 image_set=(
-                    "mnist",
-                    "byclass",
-                    "bymerge",
-                    "balanced",
-                    "digits",
-                    "letters",
+                    "Balanced",
+                    "By_Merge",
+                    "By_Class",
+                    "Letters",
+                    "Digits",
+                    "MNIST",
                 ),
             ),
         )
@@ -234,7 +234,7 @@ class EMNIST(_MNISTBase):
     _URL_BASE = "https://rds.westernsydney.edu.au/Institutes/MARCS/BENS/EMNIST"
 
     def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
-        prefix = f"emnist-{config.image_set}-{config.split}"
+        prefix = f"emnist-{config.image_set.replace('_', '').lower()}-{config.split}"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
         # Since EMNIST provides the data files inside an archive, we don't need provide checksums for them
@@ -257,6 +257,38 @@ class EMNIST(_MNISTBase):
             return 1
         else:
             return None
+
+    _LABEL_OFFSETS = {
+        38: 1,
+        39: 1,
+        40: 1,
+        41: 1,
+        42: 1,
+        43: 6,
+        44: 8,
+        45: 8,
+        46: 9,
+    }
+
+    def _collate_and_decode(
+        self,
+        data: Tuple[np.ndarray, np.ndarray],
+        *,
+        config: DatasetConfig,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+    ):
+        image_array, label_array = data
+        # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
+        # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
+        # i.e. no gaps between 0 and 46 for 47 total classes, we need to add an offset to create this gaps. For example,
+        # since there is no 'c', 'd' corresponds to
+        # label 38 (10 digits + 26 uppercase letters + 3rd unmerged lower case letter - 1 for zero indexing),
+        # and at the same time corresponds to
+        # index 39 (10 digits + 26 uppercase letters + 4th lower case letter - 1 for zero indexing)
+        # in self.categories. Thus, we need to add 1 to the label to correct this.
+        if config.image_set in ("Balanced", "By_Merge"):
+            label_array += np.array(self._LABEL_OFFSETS.get(int(label_array), 0), dtype=label_array.dtype)
+        return super()._collate_and_decode((image_array, label_array), config=config, decoder=decoder)
 
     def _make_datapipe(
         self,
@@ -333,11 +365,12 @@ class QMNIST(_MNISTBase):
         self,
         data: Tuple[np.ndarray, np.ndarray],
         *,
+        config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ):
         image_array, label_array = data
         label_parts = label_array.tolist()
-        sample = super()._collate_and_decode((image_array, label_parts[0]), decoder=decoder)
+        sample = super()._collate_and_decode((image_array, label_parts[0]), config=config, decoder=decoder)
 
         sample.update(
             dict(
