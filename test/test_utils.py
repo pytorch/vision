@@ -162,6 +162,9 @@ def test_draw_invalid_boxes():
     "colors",
     [
         None,
+        "blue",
+        "#FF00FF",
+        (1, 34, 122),
         ["red", "blue"],
         ["#FF00FF", (1, 34, 122)],
     ],
@@ -191,6 +194,8 @@ def test_draw_segmentation_masks(colors, alpha):
 
     if colors is None:
         colors = utils._generate_color_palette(num_masks)
+    elif isinstance(colors, str) or isinstance(colors, tuple):
+        colors = [colors]
 
     # Make sure each mask draws with its own color
     for mask, color in zip(masks, colors):
