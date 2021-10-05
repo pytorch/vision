@@ -1,7 +1,6 @@
 import csv
 import os
 from collections import namedtuple
-from functools import partial
 from typing import Any, Callable, List, Optional, Union, Tuple
 
 import PIL
@@ -115,15 +114,14 @@ class CelebA(VisionDataset):
         filename: str,
         header: Optional[int] = None,
     ) -> CSV:
-        data, indices, headers = [], [], []
-
-        fn = partial(os.path.join, self.root, self.base_folder)
-        with open(fn(filename)) as csv_file:
+        with open(os.path.join(self.root, self.base_folder, filename)) as csv_file:
             data = list(csv.reader(csv_file, delimiter=" ", skipinitialspace=True))
 
         if header is not None:
             headers = data[header]
             data = data[header + 1 :]
+        else:
+            headers = []
 
         indices = [row[0] for row in data]
         data = [row[1:] for row in data]
