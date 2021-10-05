@@ -1,21 +1,20 @@
-import pytest
-import numpy as np
 import os
 import sys
 import tempfile
-import torch
-import torchvision.utils as utils
-
 from io import BytesIO
+
+import numpy as np
+import pytest
+import torch
 import torchvision.transforms.functional as F
-from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
+import torchvision.utils as utils
 from common_utils import assert_equal
+from PIL import Image, __version__ as PILLOW_VERSION, ImageColor
 
 
-PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split('.'))
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
-boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
-                     [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
 keypoints = torch.tensor(
     [
@@ -33,13 +32,13 @@ def test_make_grid_not_inplace():
     t_clone = t.clone()
 
     utils.make_grid(t, normalize=False)
-    assert_equal(t, t_clone, msg='make_grid modified tensor in-place')
+    assert_equal(t, t_clone, msg="make_grid modified tensor in-place")
 
     utils.make_grid(t, normalize=True, scale_each=False)
-    assert_equal(t, t_clone, msg='make_grid modified tensor in-place')
+    assert_equal(t, t_clone, msg="make_grid modified tensor in-place")
 
     utils.make_grid(t, normalize=True, scale_each=True)
-    assert_equal(t, t_clone, msg='make_grid modified tensor in-place')
+    assert_equal(t, t_clone, msg="make_grid modified tensor in-place")
 
 
 def test_normalize_in_make_grid():
@@ -56,48 +55,48 @@ def test_normalize_in_make_grid():
     rounded_grid_max = torch.round(grid_max * 10 ** n_digits) / (10 ** n_digits)
     rounded_grid_min = torch.round(grid_min * 10 ** n_digits) / (10 ** n_digits)
 
-    assert_equal(norm_max, rounded_grid_max, msg='Normalized max is not equal to 1')
-    assert_equal(norm_min, rounded_grid_min, msg='Normalized min is not equal to 0')
+    assert_equal(norm_max, rounded_grid_max, msg="Normalized max is not equal to 1")
+    assert_equal(norm_min, rounded_grid_min, msg="Normalized min is not equal to 0")
 
 
-@pytest.mark.skipif(sys.platform in ('win32', 'cygwin'), reason='temporarily disabled on Windows')
+@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
 def test_save_image():
-    with tempfile.NamedTemporaryFile(suffix='.png') as f:
+    with tempfile.NamedTemporaryFile(suffix=".png") as f:
         t = torch.rand(2, 3, 64, 64)
         utils.save_image(t, f.name)
-        assert os.path.exists(f.name), 'The image is not present after save'
+        assert os.path.exists(f.name), "The image is not present after save"
 
 
-@pytest.mark.skipif(sys.platform in ('win32', 'cygwin'), reason='temporarily disabled on Windows')
+@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
 def test_save_image_single_pixel():
-    with tempfile.NamedTemporaryFile(suffix='.png') as f:
+    with tempfile.NamedTemporaryFile(suffix=".png") as f:
         t = torch.rand(1, 3, 1, 1)
         utils.save_image(t, f.name)
-        assert os.path.exists(f.name), 'The pixel image is not present after save'
+        assert os.path.exists(f.name), "The pixel image is not present after save"
 
 
-@pytest.mark.skipif(sys.platform in ('win32', 'cygwin'), reason='temporarily disabled on Windows')
+@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
 def test_save_image_file_object():
-    with tempfile.NamedTemporaryFile(suffix='.png') as f:
+    with tempfile.NamedTemporaryFile(suffix=".png") as f:
         t = torch.rand(2, 3, 64, 64)
         utils.save_image(t, f.name)
         img_orig = Image.open(f.name)
         fp = BytesIO()
-        utils.save_image(t, fp, format='png')
+        utils.save_image(t, fp, format="png")
         img_bytes = Image.open(fp)
-        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg='Image not stored in file object')
+        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg="Image not stored in file object")
 
 
-@pytest.mark.skipif(sys.platform in ('win32', 'cygwin'), reason='temporarily disabled on Windows')
+@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
 def test_save_image_single_pixel_file_object():
-    with tempfile.NamedTemporaryFile(suffix='.png') as f:
+    with tempfile.NamedTemporaryFile(suffix=".png") as f:
         t = torch.rand(1, 3, 1, 1)
         utils.save_image(t, f.name)
         img_orig = Image.open(f.name)
         fp = BytesIO()
-        utils.save_image(t, fp, format='png')
+        utils.save_image(t, fp, format="png")
         img_bytes = Image.open(fp)
-        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg='Image not stored in file object')
+        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg="Image not stored in file object")
 
 
 def test_draw_boxes():
@@ -123,13 +122,7 @@ def test_draw_boxes():
     assert_equal(img, img_cp)
 
 
-@pytest.mark.parametrize('colors', [
-    None,
-    ['red', 'blue', '#FF00FF', (1, 34, 122)],
-    'red',
-    '#FF00FF',
-    (1, 34, 122)
-])
+@pytest.mark.parametrize("colors", [None, ["red", "blue", "#FF00FF", (1, 34, 122)], "red", "#FF00FF", (1, 34, 122)])
 def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
@@ -164,8 +157,7 @@ def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
     img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
-    boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
-                          [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
     with pytest.raises(ValueError, match="Tensor uint8 expected"):
@@ -176,12 +168,15 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
 
 
-@pytest.mark.parametrize('colors', [
-    None,
-    ['red', 'blue'],
-    ['#FF00FF', (1, 34, 122)],
-])
-@pytest.mark.parametrize('alpha', (0, .5, .7, 1))
+@pytest.mark.parametrize(
+    "colors",
+    [
+        None,
+        ["red", "blue"],
+        ["#FF00FF", (1, 34, 122)],
+    ],
+)
+@pytest.mark.parametrize("alpha", (0, 0.5, 0.7, 1))
 def test_draw_segmentation_masks(colors, alpha):
     """This test makes sure that masks draw their corresponding color where they should"""
     num_masks, h, w = 2, 100, 100
@@ -251,10 +246,10 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="There are more masks"):
         utils.draw_segmentation_masks(image=img, masks=masks, colors=[])
     with pytest.raises(ValueError, match="colors must be a tuple or a string, or a list thereof"):
-        bad_colors = np.array(['red', 'blue'])  # should be a list
+        bad_colors = np.array(["red", "blue"])  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
     with pytest.raises(ValueError, match="It seems that you passed a tuple of colors instead of"):
-        bad_colors = ('red', 'blue')  # should be a list
+        bad_colors = ("red", "blue")  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
 
 

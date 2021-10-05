@@ -1,9 +1,10 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO
-import pathlib
-import torch
 import math
+import pathlib
 import warnings
+from typing import Union, Optional, List, Tuple, Text, BinaryIO
+
 import numpy as np
+import torch
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes",
@@ -19,7 +20,7 @@ def make_grid(
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: int = 0,
-    **kwargs
+    **kwargs,
 ) -> torch.Tensor:
     """
     Make a grid of images.
@@ -42,9 +43,8 @@ def make_grid(
     Returns:
         grid (Tensor): the tensor containing grid of images.
     """
-    if not (torch.is_tensor(tensor) or
-            (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
-        raise TypeError(f'tensor or list of tensors expected, got {type(tensor)}')
+    if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
+        raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if "range" in kwargs.keys():
         warning = "range will be deprecated, please use value_range instead."
@@ -68,8 +68,9 @@ def make_grid(
     if normalize is True:
         tensor = tensor.clone()  # avoid modifying tensor in-place
         if value_range is not None:
-            assert isinstance(value_range, tuple), \
-                "value_range has to be a tuple (min, max) if specified. min and max are numbers"
+            assert isinstance(
+                value_range, tuple
+            ), "value_range has to be a tuple (min, max) if specified. min and max are numbers"
 
         def norm_ip(img, low, high):
             img.clamp_(min=low, max=high)
@@ -116,7 +117,7 @@ def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -132,7 +133,7 @@ def save_image(
 
     grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
@@ -146,7 +147,7 @@ def draw_bounding_boxes(
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
-    font_size: int = 10
+    font_size: int = 10,
 ) -> torch.Tensor:
 
     """
