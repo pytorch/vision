@@ -293,8 +293,8 @@ def draw_segmentation_masks(
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
-    for mask, color_tensor in zip(masks, colors_):
-        img_to_draw[:, mask] = color_tensor[:, None]
+    for mask, color in zip(masks, colors_):
+        img_to_draw[:, mask] = color[:, None]
 
     out = image * (1 - alpha) + img_to_draw * alpha
     return out.to(out_dtype)
