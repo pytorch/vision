@@ -111,10 +111,18 @@ These can be constructed by passing ``pretrained=True``:
     efficientnet_b7 = models.efficientnet_b7(pretrained=True)
     regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
     regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
+    regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
+    regnet_y_3_2gf = models.regnet_y_3_2gf(pretrained=True)
     regnet_y_8gf = models.regnet_y_8gf(pretrained=True)
+    regnet_y_16gf = models.regnet_y_16gf(pretrained=True)
+    regnet_y_32gf = models.regnet_y_32gf(pretrained=True)
     regnet_x_400mf = models.regnet_x_400mf(pretrained=True)
     regnet_x_800mf = models.regnet_x_800mf(pretrained=True)
+    regnet_x_1_6gf = models.regnet_x_1_6gf(pretrained=True)
+    regnet_x_3_2gf = models.regnet_x_3_2gf(pretrained=True)
     regnet_x_8gf = models.regnet_x_8gf(pretrained=True)
+    regnet_x_16gf = models.regnet_x_16gf(pretrainedTrue)
+    regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -209,12 +217,20 @@ EfficientNet-B4                   83.384          96.594
 EfficientNet-B5                   83.444          96.628
 EfficientNet-B6                   84.008          96.916
 EfficientNet-B7                   84.122          96.908
-regnet_x_400mf                    72.834          90.950     
-regnet_x_800mf                    75.190          92.418
-regnet_x_8gf                      79.324          94.694
-regnet_y_400mf                    74.024          91.680
+regnet_x_400mf                    72.834          90.950
+regnet_x_800mf                    75.212          92.348
+regnet_x_1_6gf                    77.040          93.440
+regnet_x_3_2gf                    78.364          93.992
+regnet_x_8gf                      79.344          94.686 
+regnet_x_16gf                     80.058          94.944
+regnet_x_32gf                     80.622          95.248
+regnet_y_400mf                    74.046          91.716
 regnet_y_800mf                    76.420          93.136
-regnet_y_8gf                      79.966          95.100
+regnet_y_1_6gf                    77.950          93.966
+regnet_y_3_2gf                    78.948          94.576
+regnet_y_8gf                      80.032          95.048
+regnet_y_16gf                     80.424          95.240
+regnet_y_32gf                     80.878          95.340
 ================================  =============   =============
 
 
