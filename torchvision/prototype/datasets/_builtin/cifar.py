@@ -6,7 +6,6 @@ import pickle
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TypeVar
 
 import numpy as np
-
 import torch
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import (
@@ -17,7 +16,6 @@ from torch.utils.data.datapipes.iter import (
     Shuffler,
 )
 from torchdata.datapipes.iter import KeyZipper
-
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -43,9 +41,7 @@ D = TypeVar("D")
 
 class _CifarBase(Dataset):
     @abc.abstractmethod
-    def _is_data_file(
-        self, data: Tuple[str, io.IOBase], *, config: DatasetConfig
-    ) -> Optional[int]:
+    def _is_data_file(self, data: Tuple[str, io.IOBase], *, config: DatasetConfig) -> Optional[int]:
         pass
 
     @abc.abstractmethod
@@ -63,7 +59,8 @@ class _CifarBase(Dataset):
         return data[0]
 
     def _collate_and_decode(
-        self, data: Tuple[Tuple[int, int], Tuple[int, np.ndarray]],
+        self,
+        data: Tuple[Tuple[int, int], Tuple[int, np.ndarray]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
@@ -86,9 +83,7 @@ class _CifarBase(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         archive_dp = TarArchiveReader(archive_dp)
-        archive_dp = Filter(
-            archive_dp, functools.partial(self._is_data_file, config=config)
-        )
+        archive_dp = Filter(archive_dp, functools.partial(self._is_data_file, config=config))
         archive_dp = Mapper(archive_dp, self._unpickle)
         archive_dp = MappingIterator(archive_dp)
         images_dp, labels_dp = Demultiplexer(
@@ -125,12 +120,8 @@ class _CifarBase(Dataset):
         path = pathlib.Path(data[0])
         return path.name == self._meta_file_name
 
-    def generate_categories_file(
-        self, root: Union[str, pathlib.Path]
-    ) -> None:
-        dp = self.resources(self.default_config)[0].to_datapipe(
-            pathlib.Path(root) / self.name
-        )
+    def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
+        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
         dp = Filter(dp, self._is_meta_file)
         dp = Mapper(dp, self._unpickle)

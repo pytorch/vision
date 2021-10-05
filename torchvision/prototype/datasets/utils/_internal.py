@@ -6,7 +6,6 @@ from typing import Collection, Sequence, Callable, Union, Iterator, Tuple, TypeV
 
 import numpy as np
 import PIL.Image
-
 from torch.utils.data import IterDataPipe
 
 
