@@ -28,34 +28,30 @@ class CelebACSVParser(IterDataPipe):
         datapipe,
         *,
         has_header,
-        delimiter=" ",
-        skipinitialspace=True,
-        **other_fmtparams,
     ):
         self.datapipe = datapipe
         self.has_header = has_header
-        self.fmtparams = dict(other_fmtparams, delimiter=delimiter, skipinitialspace=skipinitialspace)
+        self._fmtparams = dict(delimiter=" ", skipinitialspace=True)
 
     def __iter__(self):
         for _, file in self.datapipe:
             file = (line.decode() for line in file)
 
             if self.has_header:
-                # The first row is skipped, because it only contains the number of
-                # samples
+                # The first row is skipped, because it only contains the number of samples
                 next(file)
 
-                # Empty field names are filtered out, because some files have an extra
-                # white space after the header line, which is recognized as extra column
-                fieldnames = [name for name in next(csv.reader([next(file)], **self.fmtparams)) if name]
+                # Empty field names are filtered out, because some files have an extr white space after the header
+                # line, which is recognized as extra column
+                fieldnames = [name for name in next(csv.reader([next(file)], **self._fmtparams)) if name]
                 # Some files do not include a label for the image ID column
                 if fieldnames[0] != "image_id":
                     fieldnames.insert(0, "image_id")
 
-                for line in csv.DictReader(file, fieldnames=fieldnames, **self.fmtparams):
+                for line in csv.DictReader(file, fieldnames=fieldnames, **self._fmtparams):
                     yield line.pop("image_id"), line
             else:
-                for line in csv.reader(file, **self.fmtparams):
+                for line in csv.reader(file, **self._fmtparams):
                     yield line[0], line[1:]
 
 
