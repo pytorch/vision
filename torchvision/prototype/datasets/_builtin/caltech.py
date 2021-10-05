@@ -1,10 +1,9 @@
 import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import re
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-
 import torch
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import (
@@ -13,7 +12,6 @@ from torch.utils.data.datapipes.iter import (
     Shuffler,
     Filter,
 )
-
 from torchdata.datapipes.iter import KeyZipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -120,8 +118,7 @@ class Caltech101(Dataset):
 
         images_dp = TarArchiveReader(images_dp)
         images_dp = Filter(images_dp, self._is_not_background_image)
-        # FIXME: add this after https://github.com/pytorch/pytorch/issues/65808 is resolved
-        # images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = TarArchiveReader(anns_dp)
         anns_dp = Filter(anns_dp, self._is_ann)
@@ -189,8 +186,7 @@ class Caltech256(Dataset):
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)
         dp = Filter(dp, self._is_not_rogue_file)
-        # FIXME: add this after https://github.com/pytorch/pytorch/issues/65808 is resolved
-        # dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
     def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
