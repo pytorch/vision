@@ -7,7 +7,7 @@ import itertools
 import lzma
 import os.path
 import pathlib
-from typing import Collection, Sequence, Callable, Any, Iterator, Optional, Tuple, TypeVar, Union
+from typing import Collection, Sequence, Callable, Union, Iterator, Tuple, TypeVar, Dict, Any, Optional
 
 import numpy as np
 import PIL.Image
@@ -21,14 +21,18 @@ __all__ = [
     "create_categories_file",
     "read_mat",
     "image_buffer_from_array",
+    "SequenceIterator",
+    "MappingIterator",
+    "Enumerator",
     "Decompressor",
     "Slicer",
 ]
 
+K = TypeVar("K")
+D = TypeVar("D")
+
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
 INFINITE_BUFFER_SIZE = 1_000_000_000
-
-D = TypeVar("D")
 
 
 def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
@@ -75,6 +79,34 @@ def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.Byt
     image.save(buffer, format=format)
     buffer.seek(0)
     return buffer
+
+
+class SequenceIterator(IterDataPipe[D]):
+    def __init__(self, datapipe: IterDataPipe[Sequence[D]]):
+        self.datapipe = datapipe
+
+    def __iter__(self) -> Iterator[D]:
+        for sequence in self.datapipe:
+            yield from iter(sequence)
+
+
+class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
+    def __init__(self, datapipe: IterDataPipe[Dict[K, D]], *, drop_key: bool = False) -> None:
+        self.datapipe = datapipe
+        self.drop_key = drop_key
+
+    def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
+        for mapping in self.datapipe:
+            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]
+
+
+class Enumerator(IterDataPipe[Tuple[int, D]]):
+    def __init__(self, datapipe: IterDataPipe[D], start: int = 0) -> None:
+        self.datapipe = datapipe
+        self.start = start
+
+    def __iter__(self) -> Iterator[Tuple[int, D]]:
+        yield from enumerate(self.datapipe, self.start)
 
 
 class CompressionType(enum.Enum):
