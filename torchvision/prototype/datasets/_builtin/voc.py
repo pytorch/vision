@@ -14,7 +14,6 @@ from torch.utils.data.datapipes.iter import (
     Demultiplexer,
 )
 from torchdata.datapipes.iter import KeyZipper, LineReader
-
 from torchvision.datasets import VOCDetection
 from torchvision.prototype.datasets.utils import (
     Dataset,
