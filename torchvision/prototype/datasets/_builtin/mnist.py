@@ -5,7 +5,7 @@ import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, Union
 
 import numpy as np
 import torch
@@ -17,8 +17,10 @@ from torch.utils.data.datapipes.iter import (
     Zipper,
     Shuffler,
 )
+from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
+    DatasetType,
     DatasetConfig,
     DatasetInfo,
     HttpResource,
@@ -92,15 +94,19 @@ class _MNISTBase(Dataset):
 
     def _collate_and_decode(
         self,
-        data: Tuple[np.ndarray, np.ndarray],
+        data: Tuple[np.ndarray, Union[np.ndarray, int]],
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ):
         image_array, label_array = data
 
-        image_buffer = image_buffer_from_array(image_array)
-        image = decoder(image_buffer) if decoder else image_buffer
+        image: Union[torch.Tensor, io.BytesIO]
+        if decoder is raw:
+            image = torch.from_numpy(image_array)
+        else:
+            image_buffer = image_buffer_from_array(image_array)
+            image = decoder(image_buffer) if decoder else image_buffer
 
         label = torch.tensor(label_array, dtype=torch.int64)
         category = self.info.categories[int(label)]
@@ -132,6 +138,7 @@ class MNIST(_MNISTBase):
     def info(self):
         return DatasetInfo(
             "mnist",
+            type=DatasetType.RAW,
             categories=10,
             homepage="http://yann.lecun.com/exdb/mnist",
             valid_options=dict(
@@ -162,6 +169,7 @@ class FashionMNIST(MNIST):
     def info(self):
         return DatasetInfo(
             "fashionmnist",
+            type=DatasetType.RAW,
             categories=(
                 "T-shirt/top",
                 "Trouser",
@@ -194,6 +202,7 @@ class KMNIST(MNIST):
     def info(self):
         return DatasetInfo(
             "kmnist",
+            type=DatasetType.RAW,
             categories=["o", "ki", "su", "tsu", "na", "ha", "ma", "ya", "re", "wo"],
             homepage="http://codh.rois.ac.jp/kmnist/index.html.en",
             valid_options=dict(
@@ -215,6 +224,7 @@ class EMNIST(_MNISTBase):
     def info(self):
         return DatasetInfo(
             "emnist",
+            type=DatasetType.RAW,
             categories=list(string.digits + string.ascii_uppercase + string.ascii_lowercase),
             homepage="https://www.westernsydney.edu.au/icns/reproducible_research/publication_support_materials/emnist",
             valid_options=dict(
@@ -313,6 +323,7 @@ class QMNIST(_MNISTBase):
     def info(self):
         return DatasetInfo(
             "qmnist",
+            type=DatasetType.RAW,
             categories=10,
             homepage="https://github.com/facebookresearch/qmnist",
             valid_options=dict(
@@ -339,26 +350,6 @@ class QMNIST(_MNISTBase):
             labels_file,
             self._CHECKSUMS[labels_file],
         )
-
-    def _split_label(self, sample: Dict[str, Any]) -> Dict[str, Any]:
-        parts = [part.squeeze(0) for part in sample.pop("label").split(1)]
-        sample.update(
-            dict(
-                zip(
-                    (
-                        "label",
-                        "nist_hsf_series",
-                        "nist_writer_id",
-                        "digit_index",
-                        "nist_label",
-                        "global_digit_index",
-                    ),
-                    parts[:6],
-                )
-            )
-        )
-        sample.update(dict(zip(("duplicate", "unused"), [bool(value) for value in parts[-2:]])))
-        return sample
 
     def _collate_and_decode(
         self,
@@ -390,7 +381,6 @@ class QMNIST(_MNISTBase):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = super()._make_datapipe(resource_dps, config=config, decoder=decoder)
-        # dp = Mapper(dp, self._split_label)
         if config.split not in ("test10k", "test50k"):
             return dp
 
