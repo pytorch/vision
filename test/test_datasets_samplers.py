@@ -1,18 +1,13 @@
-import contextlib
-import os
-import sys
-
 import pytest
 import torch
 from common_utils import get_list_of_videos, assert_equal
-from torchvision import get_video_backend
 from torchvision import io
 from torchvision.datasets.samplers import (
     DistributedSampler,
     RandomClipSampler,
     UniformClipSampler,
 )
-from torchvision.datasets.video_utils import VideoClips, unfold
+from torchvision.datasets.video_utils import VideoClips
 
 
 @pytest.mark.skipif(not io.video._av_available(), reason="this test requires av")

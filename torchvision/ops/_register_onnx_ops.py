@@ -7,12 +7,7 @@ _onnx_opset_version = 11
 
 
 def _register_custom_op():
-    from torch.onnx.symbolic_helper import (
-        parse_args,
-        scalar_type_to_onnx,
-        scalar_type_to_pytorch_type,
-        cast_pytorch_to_onnx,
-    )
+    from torch.onnx.symbolic_helper import parse_args
     from torch.onnx.symbolic_opset11 import select, squeeze, unsqueeze
     from torch.onnx.symbolic_opset9 import _cast_Long
 

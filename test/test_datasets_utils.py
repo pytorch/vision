@@ -1,13 +1,8 @@
-import bz2
 import contextlib
 import gzip
-import itertools
-import lzma
 import os
 import tarfile
-import warnings
 import zipfile
-from urllib.error import URLError
 
 import pytest
 import torchvision.datasets.utils as utils

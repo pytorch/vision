@@ -1,5 +1,4 @@
 import warnings
-from functools import partial
 from typing import Callable, Any, Optional, List
 
 import torch
