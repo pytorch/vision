@@ -106,6 +106,20 @@ otherwise, add the include and library paths in the environment variables ``TORC
 .. _libjpeg: http://ijg.org/
 .. _libjpeg-turbo: https://libjpeg-turbo.org/
 
+Video Backend
+=============
+Torchvision currently supports the following video backends:
+
+* [pyav](https://github.com/PyAV-Org/PyAV) (default) - Pythonic binding for ffmpeg libraries. 
+
+* video_reader - This needs ffmpeg to be installed and torchvision to be built from source. There shouldn't be any conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
+
+.. code:: bash
+
+     conda install -c conda-forge ffmpeg
+     python setup.py install
+
+
 Using the models on C++
 =======================
 TorchVision provides an example project for how to use the models on C++ using JIT Script.

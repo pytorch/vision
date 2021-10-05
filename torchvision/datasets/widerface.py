@@ -1,10 +1,16 @@
-from PIL import Image
 import os
 from os.path import abspath, expanduser
-import torch
 from typing import Any, Callable, List, Dict, Optional, Tuple, Union
-from .utils import check_integrity, download_file_from_google_drive, \
-    download_and_extract_archive, extract_archive, verify_str_arg
+
+import torch
+from PIL import Image
+
+from .utils import (
+    download_file_from_google_drive,
+    download_and_extract_archive,
+    extract_archive,
+    verify_str_arg,
+)
 from .vision import VisionDataset
 
 
@@ -40,25 +46,25 @@ class WIDERFace(VisionDataset):
         # File ID                             MD5 Hash                          Filename
         ("0B6eKvaijfFUDQUUwd21EckhUbWs", "3fedf70df600953d25982bcd13d91ba2", "WIDER_train.zip"),
         ("0B6eKvaijfFUDd3dIRmpvSk8tLUk", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
-        ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip")
+        ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip"),
     ]
     ANNOTATIONS_FILE = (
         "http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip",
         "0e3767bcf0e326556d407bf5bff5d27c",
-        "wider_face_split.zip"
+        "wider_face_split.zip",
     )
 
     def __init__(
-            self,
-            root: str,
-            split: str = "train",
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: str,
+        split: str = "train",
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
-        super(WIDERFace, self).__init__(root=os.path.join(root, self.BASE_FOLDER),
-                                        transform=transform,
-                                        target_transform=target_transform)
+        super(WIDERFace, self).__init__(
+            root=os.path.join(root, self.BASE_FOLDER), transform=transform, target_transform=target_transform
+        )
         # check arguments
         self.split = verify_str_arg(split, "split", ("train", "val", "test"))
 
@@ -66,8 +72,9 @@ class WIDERFace(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted. " +
-                               "You can use download=True to download and prepare it")
+            raise RuntimeError(
+                "Dataset not found or corrupted. " + "You can use download=True to download and prepare it"
+            )
 
         self.img_info: List[Dict[str, Union[str, Dict[str, torch.Tensor]]]] = []
         if self.split in ("train", "val"):
@@ -102,7 +109,7 @@ class WIDERFace(VisionDataset):
 
     def extra_repr(self) -> str:
         lines = ["Split: {split}"]
-        return '\n'.join(lines).format(**self.__dict__)
+        return "\n".join(lines).format(**self.__dict__)
 
     def parse_train_val_annotations_file(self) -> None:
         filename = "wider_face_train_bbx_gt.txt" if self.split == "train" else "wider_face_val_bbx_gt.txt"
@@ -133,16 +140,20 @@ class WIDERFace(VisionDataset):
                         box_annotation_line = False
                         file_name_line = True
                         labels_tensor = torch.tensor(labels)
-                        self.img_info.append({
-                            "img_path": img_path,
-                            "annotations": {"bbox": labels_tensor[:, 0:4],  # x, y, width, height
-                                            "blur": labels_tensor[:, 4],
-                                            "expression": labels_tensor[:, 5],
-                                            "illumination": labels_tensor[:, 6],
-                                            "occlusion": labels_tensor[:, 7],
-                                            "pose": labels_tensor[:, 8],
-                                            "invalid": labels_tensor[:, 9]}
-                        })
+                        self.img_info.append(
+                            {
+                                "img_path": img_path,
+                                "annotations": {
+                                    "bbox": labels_tensor[:, 0:4],  # x, y, width, height
+                                    "blur": labels_tensor[:, 4],
+                                    "expression": labels_tensor[:, 5],
+                                    "illumination": labels_tensor[:, 6],
+                                    "occlusion": labels_tensor[:, 7],
+                                    "pose": labels_tensor[:, 8],
+                                    "invalid": labels_tensor[:, 9],
+                                },
+                            }
+                        )
                         box_counter = 0
                         labels.clear()
                 else:
@@ -172,7 +183,7 @@ class WIDERFace(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print('Files already downloaded and verified')
+            print("Files already downloaded and verified")
             return
 
         # download and extract image data
@@ -182,6 +193,6 @@ class WIDERFace(VisionDataset):
             extract_archive(filepath)
 
         # download and extract annotation files
-        download_and_extract_archive(url=self.ANNOTATIONS_FILE[0],
-                                     download_root=self.root,
-                                     md5=self.ANNOTATIONS_FILE[1])
+        download_and_extract_archive(
+            url=self.ANNOTATIONS_FILE[0], download_root=self.root, md5=self.ANNOTATIONS_FILE[1]
+        )

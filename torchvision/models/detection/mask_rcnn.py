@@ -1,19 +1,18 @@
 from collections import OrderedDict
-
-from torch import nn
 from typing import Optional, Tuple, Any, List, cast
 
+from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
+from ..._internally_replaced_utils import load_state_dict_from_url
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
-from ..._internally_replaced_utils import load_state_dict_from_url
-
-from .faster_rcnn import FasterRCNN
 from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
+from .faster_rcnn import FasterRCNN
 
 __all__ = [
-    "MaskRCNN", "maskrcnn_resnet50_fpn",
+    "MaskRCNN",
+    "maskrcnn_resnet50_fpn",
 ]
 
 
@@ -151,6 +150,7 @@ class MaskRCNN(FasterRCNN):
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
+
     def __init__(
         self,
         backbone: nn.Module,
@@ -188,7 +188,7 @@ class MaskRCNN(FasterRCNN):
         # Mask parameters
         mask_roi_pool: Optional[MultiScaleRoIAlign] = None,
         mask_head: Optional[nn.Module] = None,
-        mask_predictor: Optional[nn.Module] = None
+        mask_predictor: Optional[nn.Module] = None,
     ) -> None:
 
         assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
@@ -200,10 +200,7 @@ class MaskRCNN(FasterRCNN):
         out_channels = cast(int, backbone.out_channels)
 
         if mask_roi_pool is None:
-            mask_roi_pool = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'],
-                output_size=14,
-                sampling_ratio=2)
+            mask_roi_pool = MultiScaleRoIAlign(featmap_names=["0", "1", "2", "3"], output_size=14, sampling_ratio=2)
 
         if mask_head is None:
             mask_layers = [256, 256, 256, 256]
@@ -213,28 +210,42 @@ class MaskRCNN(FasterRCNN):
         if mask_predictor is None:
             mask_predictor_in_channels = 256  # == mask_layers[-1]
             mask_dim_reduced = 256
-            mask_predictor = MaskRCNNPredictor(mask_predictor_in_channels,
-                                               mask_dim_reduced, num_classes)
+            mask_predictor = MaskRCNNPredictor(mask_predictor_in_channels, mask_dim_reduced, num_classes)
 
         super(MaskRCNN, self).__init__(
-            backbone, num_classes,
+            backbone,
+            num_classes,
             # transform parameters
-            min_size, max_size,
-            image_mean, image_std,
+            min_size,
+            max_size,
+            image_mean,
+            image_std,
             # RPN-specific parameters
-            rpn_anchor_generator, rpn_head,
-            rpn_pre_nms_top_n_train, rpn_pre_nms_top_n_test,
-            rpn_post_nms_top_n_train, rpn_post_nms_top_n_test,
+            rpn_anchor_generator,
+            rpn_head,
+            rpn_pre_nms_top_n_train,
+            rpn_pre_nms_top_n_test,
+            rpn_post_nms_top_n_train,
+            rpn_post_nms_top_n_test,
             rpn_nms_thresh,
-            rpn_fg_iou_thresh, rpn_bg_iou_thresh,
-            rpn_batch_size_per_image, rpn_positive_fraction,
+            rpn_fg_iou_thresh,
+            rpn_bg_iou_thresh,
+            rpn_batch_size_per_image,
+            rpn_positive_fraction,
             rpn_score_thresh,
             # Box parameters
-            box_roi_pool, box_head, box_predictor,
-            box_score_thresh, box_nms_thresh, box_detections_per_img,
-            box_fg_iou_thresh, box_bg_iou_thresh,
-            box_batch_size_per_image, box_positive_fraction,
-            bbox_reg_weights)
+            box_roi_pool,
+            box_head,
+            box_predictor,
+            box_score_thresh,
+            box_nms_thresh,
+            box_detections_per_img,
+            box_fg_iou_thresh,
+            box_bg_iou_thresh,
+            box_batch_size_per_image,
+            box_positive_fraction,
+            bbox_reg_weights,
+        )
 
         self.roi_heads.mask_roi_pool = mask_roi_pool
         self.roi_heads.mask_head = mask_head
@@ -242,12 +253,7 @@ class MaskRCNN(FasterRCNN):
 
 
 class MaskRCNNHeads(nn.Sequential):
-    def __init__(
-        self,
-        in_channels: int,
-        layers: List[int],
-        dilation: int
-    ) -> None:
+    def __init__(self, in_channels: int, layers: List[int], dilation: int) -> None:
         """
         Args:
             in_channels (int): number of input channels
@@ -257,8 +263,9 @@ class MaskRCNNHeads(nn.Sequential):
         d = nn.ModuleDict()
         next_feature = in_channels
         for layer_idx, layer_features in enumerate(layers, 1):
-            d[f"mask_fcn{layer_idx}"] = nn.Conv2d(next_feature, layer_features,
-                                                  kernel_size=3, stride=1, padding=dilation, dilation=dilation)
+            d[f"mask_fcn{layer_idx}"] = nn.Conv2d(
+                next_feature, layer_features, kernel_size=3, stride=1, padding=dilation, dilation=dilation
+            )
             d[f"relu{layer_idx}"] = nn.ReLU(inplace=True)
             next_feature = layer_features
 
@@ -271,17 +278,16 @@ class MaskRCNNHeads(nn.Sequential):
 
 
 class MaskRCNNPredictor(nn.Sequential):
-    def __init__(
-        self,
-        in_channels: int,
-        dim_reduced: int,
-        num_classes: int
-    ) -> None:
-        super(MaskRCNNPredictor, self).__init__(OrderedDict([
-            ("conv5_mask", nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
-            ("relu", nn.ReLU(inplace=True)),
-            ("mask_fcn_logits", nn.Conv2d(dim_reduced, num_classes, 1, 1, 0)),
-        ]))
+    def __init__(self, in_channels: int, dim_reduced: int, num_classes: int) -> None:
+        super(MaskRCNNPredictor, self).__init__(
+            OrderedDict(
+                [
+                    ("conv5_mask", nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
+                    ("relu", nn.ReLU(inplace=True)),
+                    ("mask_fcn_logits", nn.Conv2d(dim_reduced, num_classes, 1, 1, 0)),
+                ]
+            )
+        )
 
         for name, param in self.named_parameters():
             if "weight" in name:
@@ -291,8 +297,7 @@ class MaskRCNNPredictor(nn.Sequential):
 
 
 model_urls = {
-    'maskrcnn_resnet50_fpn_coco':
-        'https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth',
+    "maskrcnn_resnet50_fpn_coco": "https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
 }
 
 
@@ -302,7 +307,7 @@ def maskrcnn_resnet50_fpn(
     num_classes: int = 91,
     pretrained_backbone: bool = True,
     trainable_backbone_layers: Optional[int] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> MaskRCNN:
     """
     Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.
@@ -360,16 +365,16 @@ def maskrcnn_resnet50_fpn(
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
+    )
 
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = resnet_fpn_backbone("resnet50", pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = MaskRCNN(backbone, num_classes, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['maskrcnn_resnet50_fpn_coco'],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls["maskrcnn_resnet50_fpn_coco"], progress=progress)
         model.load_state_dict(state_dict)
         overwrite_eps(model, 0.0)
     return model

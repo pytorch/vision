@@ -1,30 +1,22 @@
+import contextlib
+import functools
 import os
+import random
 import shutil
 import tempfile
-import contextlib
-import unittest
-import pytest
-import argparse
-import sys
-import torch
-import __main__
-import random
-import inspect
-import functools
-
-from numbers import Number
-from torch._six import string_classes
-from collections import OrderedDict
-from torchvision import io
 
 import numpy as np
+import torch
 from PIL import Image
+from torchvision import io
+
+import __main__  # noqa: 401
 
 
-IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == 'true'
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
-CUDA_NOT_AVAILABLE_MSG = 'CUDA device not available'
+CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
 
@@ -95,7 +87,7 @@ def freeze_rng_state():
 
 def cycle_over(objs):
     for idx, obj1 in enumerate(objs):
-        for obj2 in objs[:idx] + objs[idx + 1:]:
+        for obj2 in objs[:idx] + objs[idx + 1 :]:
             yield obj1, obj2
 
 
@@ -117,11 +109,13 @@ def disable_console_output():
 
 def cpu_and_gpu():
     import pytest  # noqa
-    return ('cpu', pytest.param('cuda', marks=pytest.mark.needs_cuda))
+
+    return ("cpu", pytest.param("cuda", marks=pytest.mark.needs_cuda))
 
 
 def needs_cuda(test_func):
     import pytest  # noqa
+
     return pytest.mark.needs_cuda(test_func)
 
 
@@ -139,16 +133,11 @@ def _create_data(height=3, width=3, channels=3, device="cpu"):
 
 def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu"):
     # TODO: When all relevant tests are ported to pytest, turn this into a module-level fixture
-    batch_tensor = torch.randint(
-        0, 256,
-        (num_samples, channels, height, width),
-        dtype=torch.uint8,
-        device=device
-    )
+    batch_tensor = torch.randint(0, 256, (num_samples, channels, height, width), dtype=torch.uint8, device=device)
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=1e-6)
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
@@ -180,8 +169,9 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
     assert_equal(tensor.cpu(), pil_tensor, msg=msg)
 
 
-def _assert_approx_equal_tensor_to_pil(tensor, pil_image, tol=1e-5, msg=None, agg_method="mean",
-                                       allowed_percentage_diff=None):
+def _assert_approx_equal_tensor_to_pil(
+    tensor, pil_image, tol=1e-5, msg=None, agg_method="mean", allowed_percentage_diff=None
+):
     # TODO: we could just merge this into _assert_equal_tensor_to_pil
     np_pil_image = np.array(pil_image)
     if np_pil_image.ndim == 2:
