@@ -1,4 +1,5 @@
 import abc
+import enum
 import io
 import os
 import pathlib
@@ -17,7 +18,6 @@ from typing import (
     Tuple,
 )
 
-import torch
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.datasets.utils._internal import (
     add_suggestion,
@@ -43,6 +43,11 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
 
     body = textwrap.indent(to_str(",\n"), " " * 2)
     return f"{prefix}\n{body}\n{postfix}"
+
+
+class DatasetType(enum.Enum):
+    IMAGE = enum.auto()
+    VIDEO = enum.auto()
 
 
 class DatasetConfig(Mapping):
@@ -96,6 +101,7 @@ class DatasetInfo:
         self,
         name: str,
         *,
+        type: Union[str, DatasetType],
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
@@ -103,6 +109,7 @@ class DatasetInfo:
         valid_options: Optional[Dict[str, Sequence]] = None,
     ) -> None:
         self.name = name.lower()
+        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
             categories = []
@@ -191,7 +198,7 @@ class Dataset(abc.ABC):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
@@ -200,7 +207,7 @@ class Dataset(abc.ABC):
         root: Union[str, pathlib.Path],
         *,
         config: Optional[DatasetConfig] = None,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
             config = self.info.default_config

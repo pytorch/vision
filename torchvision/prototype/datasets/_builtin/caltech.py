@@ -30,6 +30,7 @@ class Caltech101(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
+            type="image",
             categories=HERE / "caltech101.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
@@ -82,7 +83,7 @@ class Caltech101(Dataset):
         return category, id
 
     def _collate_and_decode_sample(
-        self, data, *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self, data, *, decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]
     ) -> Dict[str, Any]:
         key, image_data, ann_data = data
         category, _ = key
@@ -91,28 +92,27 @@ class Caltech101(Dataset):
 
         label = self.info.categories.index(category)
 
-        image = decoder(image_buffer) if decoder else image_buffer
-
         ann = read_mat(ann_buffer)
         bbox = torch.as_tensor(ann["box_coord"].astype(np.int64))
         contour = torch.as_tensor(ann["obj_contour"])
 
-        return dict(
+        sample = dict(
             category=category,
             label=label,
-            image=image,
             image_path=image_path,
             bbox=bbox,
             contour=contour,
             ann_path=ann_path,
         )
+        sample.update(decoder(image_buffer) if decoder else dict(image=image_buffer))
+        return sample
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
@@ -146,6 +146,7 @@ class Caltech256(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
+            type="image",
             categories=HERE / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
@@ -166,7 +167,7 @@ class Caltech256(Dataset):
         self,
         data: Tuple[str, io.IOBase],
         *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         path, buffer = data
 
@@ -174,14 +175,16 @@ class Caltech256(Dataset):
         label_str, category = dir_name.split(".")
         label = torch.tensor(int(label_str))
 
-        return dict(label=label, category=category, image=decoder(buffer) if decoder else buffer)
+        sample = dict(label=label, category=category)
+        sample.update(decoder(buffer) if decoder else dict(image=buffer))
+        return sample
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)

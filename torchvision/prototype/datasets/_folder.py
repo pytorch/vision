@@ -25,24 +25,26 @@ def _collate_and_decode_data(
     *,
     root: pathlib.Path,
     categories: List[str],
-    decoder,
+    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
 ) -> Dict[str, Any]:
     path, buffer = data
-    data = decoder(buffer) if decoder else buffer
+
     category = pathlib.Path(path).relative_to(root).parts[0]
     label = torch.tensor(categories.index(category))
-    return dict(
+
+    sample = dict(
         path=path,
-        data=data,
         label=label,
         category=category,
     )
+    sample.update(decoder(buffer) if decoder else dict(data=buffer))
+    return sample
 
 
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
+    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
 ) -> Tuple[IterDataPipe, List[str]]:
@@ -67,7 +69,7 @@ def _data_to_image_key(sample: Dict[str, Any]) -> Dict[str, Any]:
 def from_image_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = pil,
+    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = pil,
     valid_extensions: Collection[str] = ("jpg", "jpeg", "png", "ppm", "bmp", "pgm", "tif", "tiff", "webp"),
     **kwargs: Any,
 ) -> Tuple[IterDataPipe, List[str]]:
