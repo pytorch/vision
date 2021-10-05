@@ -16,15 +16,7 @@ PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
 boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
-keypoints = torch.tensor(
-    [
-        [
-            [10, 10, 1.0], [5, 5, 1.0]
-        ],
-        [
-            [20, 20, 1.0], [30, 30, 1.0]
-        ]
-    ], dtype=torch.float)
+keypoints = torch.tensor([[[10, 10], [5, 5]], [[20, 20], [30, 30]]], dtype=torch.float)
 
 
 def test_make_grid_not_inplace():
@@ -259,7 +251,7 @@ def test_draw_keypoints_vanilla():
 
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
-    result = utils.draw_keypoints(img, keypoints, colors="red", connectivity=((0, 1), ))
+    result = utils.draw_keypoints(img, keypoints, colors="red", connectivity=((0, 1),))
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoint_vanilla.png")
     if not os.path.exists(path):
         res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
@@ -273,18 +265,14 @@ def test_draw_keypoints_vanilla():
     assert_equal(img, img_cp)
 
 
-@pytest.mark.parametrize('colors', [
-    'red',
-    '#FF00FF',
-    (1, 34, 122)
-])
+@pytest.mark.parametrize("colors", ["red", "#FF00FF", (1, 34, 122)])
 def test_draw_keypoints_colored(colors):
     # Keypoints is declared on top as global variable
     keypoints_cp = keypoints.clone()
 
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
-    result = utils.draw_keypoints(img, keypoints, colors=colors, connectivity=((0, 1), ))
+    result = utils.draw_keypoints(img, keypoints, colors=colors, connectivity=((0, 1),))
     assert result.size(0) == 3
     assert_equal(keypoints, keypoints_cp)
     assert_equal(img, img_cp)
@@ -292,9 +280,7 @@ def test_draw_keypoints_colored(colors):
 
 def test_draw_keypoints_errors():
     h, w = 10, 10
-
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
-    keypoints = torch.tensor([[[10, 10, 1.0], [5, 5, 1.0]], [[20, 20, 1.0], [30, 30, 1.0]]], dtype=torch.float)
 
     with pytest.raises(TypeError, match="The image must be a tensor"):
         utils.draw_keypoints(image="Not A Tensor Image", keypoints=keypoints)

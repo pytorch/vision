@@ -7,8 +7,7 @@ import numpy as np
 import torch
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes",
-           "draw_segmentation_masks", "draw_keypoints"]
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks", "draw_keypoints"]
 
 
 @torch.no_grad()
@@ -322,9 +321,9 @@ def draw_keypoints(
             in the format [x, y].
         connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
             each tuple contains pair of keypoints to be connected.
-        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
-            or a single color for all the keypoints.
-            The colors can be represented as `str` or `Tuple[int, int, int]`.
+        colors (color or list of colors, optional): List containing the colors
+            of the keypoints or single color for all keypoints. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
 
@@ -370,9 +369,7 @@ def draw_keypoints(
                 end_pt_y = kpt_inst[connection[1]][1]
 
                 draw.line(
-                    (
-                        (start_pt_x, start_pt_y), (end_pt_x, end_pt_y)
-                    ),
+                    ((start_pt_x, start_pt_y), (end_pt_x, end_pt_y)),
                     width=width,
                 )
 
