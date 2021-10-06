@@ -18,6 +18,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     GDriveResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
@@ -60,6 +61,7 @@ class CelebA(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "celeba",
+            type=DatasetType.IMAGE,
             homepage="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
         )
 
