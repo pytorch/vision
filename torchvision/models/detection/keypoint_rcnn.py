@@ -54,10 +54,10 @@ class KeypointRCNN(FasterRCNN):
             If box_predictor is specified, num_classes should be None.
         min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
         max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
-        image_mean (List[float, float, float]): mean values used for input normalization.
+        image_mean (List[float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
             on
-        image_std (List[float, float, float]): std values used for input normalization.
+        image_std (List[float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
         rpn_anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
             maps.

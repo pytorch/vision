@@ -437,9 +437,9 @@ class RetinaNet(nn.Module):
                 continue
 
             match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
-            matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+            matched_idxs.append(self.proposal_matcher(match_quality_matrix))  # type: ignore[operator]
 
-        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
+        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)  # type: ignore[operator]
 
     def postprocess_detections(
         self,
@@ -544,11 +544,11 @@ class RetinaNet(nn.Module):
                     raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
 
         # get the original image sizes
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: List[List[int]] = []
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2
-            original_image_sizes.append((val[0], val[1]))
+            original_image_sizes.append([val[0], val[1]])
 
         # transform the input
         images, targets = self.transform(images, targets)

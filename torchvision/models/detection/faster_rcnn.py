@@ -231,7 +231,7 @@ class FasterRCNN(GeneralizedRCNN):
 
         if box_predictor is None:
             representation_size = 1024
-            box_predictor = FastRCNNPredictor(representation_size, num_classes)
+            box_predictor = FastRCNNPredictor(representation_size, num_classes)  # type: ignore[arg-type]
 
         roi_heads = RoIHeads(
             # Box

@@ -210,7 +210,9 @@ class MaskRCNN(FasterRCNN):
         if mask_predictor is None:
             mask_predictor_in_channels = 256  # == mask_layers[-1]
             mask_dim_reduced = 256
-            mask_predictor = MaskRCNNPredictor(mask_predictor_in_channels, mask_dim_reduced, num_classes)
+            mask_predictor = MaskRCNNPredictor(
+                mask_predictor_in_channels, mask_dim_reduced, num_classes
+            )  # type: ignore[arg-type]
 
         super(MaskRCNN, self).__init__(
             backbone,

@@ -27,7 +27,7 @@ backbone_urls = {
 }
 
 
-def _xavier_init(conv: nn.Module):
+def _xavier_init(conv: nn.Module) -> None:
     for layer in conv.modules():
         if isinstance(layer, nn.Conv2d):
             torch.nn.init.xavier_uniform_(layer.weight)
@@ -36,7 +36,7 @@ def _xavier_init(conv: nn.Module):
 
 
 class SSDHead(nn.Module):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int) -> None:
         super().__init__()
         self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes)
         self.regression_head = SSDRegressionHead(in_channels, num_anchors)
@@ -49,7 +49,7 @@ class SSDHead(nn.Module):
 
 
 class SSDScoringHead(nn.Module):
-    def __init__(self, module_list: nn.ModuleList, num_columns: int):
+    def __init__(self, module_list: nn.ModuleList, num_columns: int) -> None:
         super().__init__()
         self.module_list = module_list
         self.num_columns = num_columns
@@ -86,7 +86,7 @@ class SSDScoringHead(nn.Module):
 
 
 class SSDClassificationHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int) -> None:
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
@@ -95,7 +95,7 @@ class SSDClassificationHead(SSDScoringHead):
 
 
 class SSDRegressionHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int]):
+    def __init__(self, in_channels: List[int], num_anchors: List[int]) -> None:
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
@@ -324,11 +324,11 @@ class SSD(nn.Module):
                     raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
 
         # get the original image sizes
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: List[List[int]] = []
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2
-            original_image_sizes.append((val[0], val[1]))
+            original_image_sizes.append([val[0], val[1]])
 
         # transform the input
         images, targets = self.transform(images, targets)
@@ -440,7 +440,7 @@ class SSD(nn.Module):
 
 
 class SSDFeatureExtractorVGG(nn.Module):
-    def __init__(self, backbone: nn.Module, highres: bool):
+    def __init__(self, backbone: nn.Module, highres: bool) -> None:
         super().__init__()
 
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))

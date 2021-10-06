@@ -182,12 +182,12 @@ class GeneralizedRCNNTransform(nn.Module):
             return image, target
 
         bbox = target["boxes"]
-        bbox = resize_boxes(bbox, (h, w), tuple(image.shape[-2:]))
+        bbox = resize_boxes(bbox, [h, w], list(image.shape[-2:]))
         target["boxes"] = bbox
 
         if "keypoints" in target:
             keypoints = target["keypoints"]
-            keypoints = resize_keypoints(keypoints, (h, w), tuple(image.shape[-2:]))
+            keypoints = resize_keypoints(keypoints, [h, w], list(image.shape[-2:]))
             target["keypoints"] = keypoints
         return image, target
 
@@ -245,8 +245,8 @@ class GeneralizedRCNNTransform(nn.Module):
     def postprocess(
         self,
         result: List[Dict[str, Tensor]],
-        image_shapes: List[Tuple[int, int]],
-        original_image_sizes: List[Tuple[int, int]],
+        image_shapes: List[List[int]],
+        original_image_sizes: List[List[int]],
     ) -> List[Dict[str, Tensor]]:
         if self.training:
             return result
@@ -275,7 +275,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return format_string
 
 
-def resize_keypoints(keypoints: Tensor, original_size: Tuple[int, int], new_size: Tuple[int, int]) -> Tensor:
+def resize_keypoints(keypoints: Tensor, original_size: List[int], new_size: List[int]) -> Tensor:
     ratios = [
         torch.tensor(s, dtype=torch.float32, device=keypoints.device)
         / torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
@@ -293,7 +293,7 @@ def resize_keypoints(keypoints: Tensor, original_size: Tuple[int, int], new_size
     return resized_data
 
 
-def resize_boxes(boxes: Tensor, original_size: Tuple[int, int], new_size: Tuple[int, int]) -> Tensor:
+def resize_boxes(boxes: Tensor, original_size: List[int], new_size: List[int]) -> Tensor:
     ratios = [
         torch.tensor(s, dtype=torch.float32, device=boxes.device)
         / torch.tensor(s_orig, dtype=torch.float32, device=boxes.device)
