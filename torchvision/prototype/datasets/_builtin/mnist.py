@@ -73,7 +73,7 @@ class MNISTFileReader(IterDataPipe):
             start = self.start or 0
             stop = self.stop or num_samples
 
-            file.seek(file.tell() + start * chunk_size)
+            file.seek(start * chunk_size, 1)
             for _ in range(stop - start):
                 chunk = file.read(chunk_size)
                 yield np.frombuffer(chunk, dtype=in_dtype).astype(out_dtype).reshape(shape)
