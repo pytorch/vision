@@ -3,6 +3,7 @@ import operator
 import torch
 import warnings
 
+from torch import fx
 from typing import Callable, Tuple
 
 
@@ -29,9 +30,9 @@ def add_regularized_shortcut(
         model = copy.deepcopy(model)
 
     ATTR_NAME = "_regularized_shotrcut"
-    tracer = torch.fx.Tracer()
-    changed = False
-    for m in model.modules():
+    tracer = fx.Tracer()
+    modifications = {}
+    for name, m in model.named_modules():
         if isinstance(m, block_types):
             # Add the Layer directly on submodule prior tracing
             # workaround due to https://github.com/pytorch/pytorch/issues/66197
@@ -49,13 +50,20 @@ def add_regularized_shortcut(
                             args = node.args if node.args[0] == input else node.args[::-1]
                             node.replace_all_uses_with(graph.call_module(ATTR_NAME, args))
                         graph.erase_node(node)
-                        changed = True
-                        break
+                        graph.lint()
+                        modifications[name] = graph
                 elif node.op == "placeholder":
                     input = node
 
-            graph.lint()
-    if not changed:
+    if modifications:
+        # Update the model by overwriting its modules
+        for name, graph in modifications.items():
+            parent_name, child_name = name.rsplit(".", 1)
+            parent = model.get_submodule(parent_name)
+            previous_child = parent.get_submodule(child_name)
+            new_child = fx.GraphModule(previous_child, graph)
+            parent.register_module(child_name, new_child)
+    else:
         warnings.warn("No shortcut was detected. Please ensure you have provided the correct `block_types` parameter "
                       "for this model.")
 
@@ -76,4 +84,6 @@ if __name__ == "__main__":
 
     # state_dict = load_state_dict_from_url("https://download.pytorch.org/models/resnet50-0676ba61.pth")
     # model.load_state_dict(state_dict)
+
+    fx.symbolic_trace(model).graph.print_tabular()
 
