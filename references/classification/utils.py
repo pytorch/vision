@@ -1,13 +1,13 @@
-from collections import defaultdict, deque, OrderedDict
 import copy
 import datetime
+import errno
 import hashlib
+import os
 import time
+from collections import defaultdict, deque, OrderedDict
+
 import torch
 import torch.distributed as dist
-
-import errno
-import os
 
 
 class SmoothedValue(object):
@@ -352,8 +352,8 @@ def store_model_weights(model, checkpoint_path, checkpoint_key='model', strict=T
         # Quantized Classification
         model = M.quantization.mobilenet_v3_large(pretrained=False, quantize=False)
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig('qnnpack')
-        _ = torch.quantization.prepare_qat(model, inplace=True)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig('qnnpack')
+        _ = torch.ao.quantization.prepare_qat(model, inplace=True)
         print(store_model_weights(model, './qat.pth'))
 
         # Object Detection

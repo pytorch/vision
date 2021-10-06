@@ -46,8 +46,8 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
             inverted_residual=QuantizableInvertedResidual,
             **kwargs
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
@@ -65,14 +65,14 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
 
         for name, m in self._modules.items():
             if name in ["conv1", "conv5"]:
-                torch.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
+                torch.ao.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
         for m in self.modules():
             if type(m) == QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
-                    torch.quantization.fuse_modules(
+                    torch.ao.quantization.fuse_modules(
                         m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True
                     )
-                torch.quantization.fuse_modules(
+                torch.ao.quantization.fuse_modules(
                     m.branch2,
                     [["0", "1", "2"], ["3", "4"], ["5", "6", "7"]],
                     inplace=True,

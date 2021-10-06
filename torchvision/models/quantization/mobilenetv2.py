@@ -1,14 +1,13 @@
-from torch import nn
-from torch import Tensor
-
-from ..._internally_replaced_utils import load_state_dict_from_url
-
 from typing import Any
 
+from torch import Tensor
+from torch import nn
+from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
-from .utils import _replace_relu, quantize_model
+
+from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation
+from .utils import _replace_relu, quantize_model
 
 
 __all__ = ['QuantizableMobileNetV2', 'mobilenet_v2']

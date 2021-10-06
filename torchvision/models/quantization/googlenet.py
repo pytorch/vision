@@ -96,7 +96,7 @@ class QuantizableBasicConv2d(BasicConv2d):
         return x
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+        torch.ao.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
 
 class QuantizableInception(Inception):
@@ -148,8 +148,8 @@ class QuantizableGoogLeNet(GoogLeNet):
             *args,
             **kwargs
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
         x = self._transform_input(x)
