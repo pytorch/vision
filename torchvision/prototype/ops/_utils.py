@@ -1,11 +1,11 @@
 import copy
 import operator
-import torch
 import warnings
+from typing import Callable, Tuple
 
+import torch
 from torch import fx
 from torchvision.models.feature_extraction import LeafModuleAwareTracer
-from typing import Callable, Tuple
 
 
 _MODULE_NAME = "_regularized_shotrcut"
@@ -21,10 +21,10 @@ class RegularizedShortcut(torch.nn.Module):
 
 
 def add_regularized_shortcut(
-        model: torch.nn.Module,
-        block_types: Tuple[type, ...],
-        regularizer_layer: Callable[..., torch.nn.Module],
-        inplace: bool = True
+    model: torch.nn.Module,
+    block_types: Tuple[type, ...],
+    regularizer_layer: Callable[..., torch.nn.Module],
+    inplace: bool = True,
 ) -> torch.nn.Module:
     if not inplace:
         model = copy.deepcopy(model)
@@ -42,7 +42,7 @@ def add_regularized_shortcut(
 
             input = None
             for node in graph.nodes:
-                if node.op == 'call_function':
+                if node.op == "call_function":
                     if node.target in patterns and len(node.args) == 2 and input in node.args:
                         with graph.inserting_after(node):
                             # Always put the shortcut value first
@@ -63,16 +63,15 @@ def add_regularized_shortcut(
             new_child = fx.GraphModule(previous_child, graph)
             parent.register_module(child_name, new_child)
     else:
-        warnings.warn("No shortcut was detected. Please ensure you have provided the correct `block_types` parameter "
-                      "for this model.")
+        warnings.warn(
+            "No shortcut was detected. Please ensure you have provided the correct `block_types` parameter "
+            "for this model."
+        )
 
     return model
 
 
-def del_regularized_shortcut(
-        model: torch.nn.Module,
-        inplace: bool = True
-) -> torch.nn.Module:
+def del_regularized_shortcut(model: torch.nn.Module, inplace: bool = True) -> torch.nn.Module:
     if not inplace:
         model = copy.deepcopy(model)
 
@@ -89,9 +88,10 @@ def del_regularized_shortcut(
 
 
 if __name__ == "__main__":
-    from torchvision.models.resnet import resnet18, resnet50, BasicBlock, Bottleneck, load_state_dict_from_url
-    from torchvision.ops.stochastic_depth import StochasticDepth
     from functools import partial
+
+    from torchvision.models.resnet import resnet50, BasicBlock, Bottleneck
+    from torchvision.ops.stochastic_depth import StochasticDepth
 
     out = []
     batch = torch.randn((7, 3, 224, 224))
@@ -117,4 +117,3 @@ if __name__ == "__main__":
 
     for v in out[1:]:
         torch.testing.assert_allclose(out[0], v)
-
