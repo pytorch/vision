@@ -1,7 +1,6 @@
 import csv
 import io
-import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple, Sequence
+from typing import Any, Callable, Dict, List, Optional, Tuple, Mapping, Union
 
 import torch
 from torch.utils.data import IterDataPipe
@@ -10,6 +9,7 @@ from torch.utils.data.datapipes.iter import (
     Shuffler,
     Filter,
     ZipArchiveReader,
+    Zipper,
 )
 from torchdata.datapipes.iter import KeyZipper
 from torchvision.prototype.datasets.utils import (
@@ -20,7 +20,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, getitem, path_accessor
 
 
 class CelebACSVParser(IterDataPipe):
@@ -108,46 +108,17 @@ class CelebA(Dataset):
         _, split_id = data
         return self._SPLIT_ID_TO_NAME[split_id[0]] == split
 
-    def _csv_key(self, data: Tuple[str, Any]) -> str:
-        return data[0]
-
-    def _image_key(self, data: Tuple[str, Any]) -> str:
-        return pathlib.Path(data[0]).name
-
-    def _name_ann(self, data: Tuple[str, io.IOBase], *, name: str) -> Tuple[str, Dict[str, io.IOBase]]:
-        return data[0], {name: data[1]}
-
-    def _collate_partial_anns(self, data):
-        (id, anns), (_, partial_anns) = data
-        anns.update(partial_anns)
-        return id, anns
-
-    def _zip_anns_dp(self, anns_dps: List[IterDataPipe]) -> IterDataPipe:
-        anns_dps = {
-            name: CelebACSVParser(dp, has_header=has_header)
-            for (name, has_header), dp in zip(
-                (
-                    ("identity", False),
-                    ("attributes", True),
-                    ("bboxes", True),
-                    ("landmarks", True),
-                ),
-                anns_dps,
-            )
-        }
-        anns_dp: IterDataPipe
-        partial_anns_dps: Sequence[IterDataPipe]
-        anns_dp, *partial_anns_dps = [
-            Mapper(dp, self._name_ann, fn_kwargs=dict(name=name)) for name, dp in anns_dps.items()
-        ]
-        partial_anns_dp: IterDataPipe
-        for partial_anns_dp in partial_anns_dps:
-            anns_dp = KeyZipper(anns_dp, partial_anns_dp, lambda data: data[0], buffer_size=INFINITE_BUFFER_SIZE)
-            anns_dp = Mapper(anns_dp, self._collate_partial_anns)
-        return anns_dp
+    def _collate_anns(
+        self, data: Tuple[Tuple[str, Union[List[str], Mapping[str, str]]], ...]
+    ) -> Tuple[str, Dict[str, Union[List[str], Mapping[str, str]]]]:
+        (image_id, identity), (_, attributes), (_, bbox), (_, landmarks) = data
+        return image_id, dict(identity=identity, attributes=attributes, bbox=bbox, landmarks=landmarks)
 
     def _collate_and_decode_sample(
-        self, data, *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self,
+        data: Tuple[Tuple[str, Tuple[str, List[str]], Tuple[str, io.IOBase]], Tuple[str, Dict[str, Any]]],
+        *,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, _, image_data = split_and_image_data
@@ -158,7 +129,7 @@ class CelebA(Dataset):
 
         identity = torch.tensor(int(ann["identity"][0]))
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
-        bboxes = torch.tensor([int(ann["bboxes"][key]) for key in ("x_1", "y_1", "width", "height")])
+        bbox = torch.tensor([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
         landmarks = {
             landmark: torch.tensor((int(ann["landmarks"][f"{landmark}_x"]), int(ann["landmarks"][f"{landmark}_y"])))
             for landmark in {key[:-2] for key in ann["landmarks"].keys()}
@@ -169,7 +140,7 @@ class CelebA(Dataset):
             image=image,
             identity=identity,
             attributes=attributes,
-            bboxes=bboxes,
+            bbox=bbox,
             landmarks=landmarks,
         )
 
@@ -180,7 +151,7 @@ class CelebA(Dataset):
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
-        splits_dp, images_dp, *anns_dps = resource_dps
+        splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, has_header=False)
         splits_dp: IterDataPipe = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
@@ -188,15 +159,26 @@ class CelebA(Dataset):
 
         images_dp = ZipArchiveReader(images_dp)
 
-        anns_dp = self._zip_anns_dp(anns_dps)
+        anns_dp: IterDataPipe = Zipper(
+            *[
+                CelebACSVParser(dp, has_header=has_header)
+                for dp, has_header in (
+                    (identities_dp, False),
+                    (attributes_dp, True),
+                    (bboxes_dp, True),
+                    (landmarks_dp, True),
+                )
+            ]
+        )
+        anns_dp: IterDataPipe = Mapper(anns_dp, self._collate_anns)
 
         dp = KeyZipper(
             splits_dp,
             images_dp,
-            key_fn=self._csv_key,
-            ref_key_fn=self._image_key,
+            key_fn=getitem(0),
+            ref_key_fn=path_accessor("name"),
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        dp = KeyZipper(dp, anns_dp, key_fn=self._csv_key, buffer_size=INFINITE_BUFFER_SIZE)
+        dp = KeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
