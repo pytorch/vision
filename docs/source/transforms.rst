@@ -206,7 +206,7 @@ Conversion Transforms
 .. autoclass:: ToTensor
     :members:
 
-.. autoclass:: PILToImage
+.. autoclass:: PILToTensor
     :members:
 
 
