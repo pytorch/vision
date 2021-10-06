@@ -21,6 +21,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
@@ -37,6 +38,7 @@ class VOC(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "voc",
+            type=DatasetType.IMAGE,
             homepage="http://host.robots.ox.ac.uk/pascal/VOC/",
             valid_options=dict(
                 split=("train", "val", "test"),
@@ -122,8 +124,10 @@ class VOC(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
-        split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
+        split_dp: IterDataPipe = Filter(
+            split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task])
+        )
+        split_dp: IterDataPipe = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         # TODO: replace the .map() call with decode=True in LineReader when
         #  https://github.com/pytorch/data/issues/28 is resolved
         split_dp = LineReader(split_dp).map(bytes.decode, input_col=1)
