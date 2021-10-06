@@ -62,12 +62,10 @@ class SSDScoringHead(nn.Module):
         num_blocks = len(self.module_list)
         if idx < 0:
             idx += num_blocks
-        i = 0
         out = x
-        for module in self.module_list:
+        for i, module in enumerate(self.module_list):
             if i == idx:
                 out = module(x)
-            i += 1
         return out
 
     def forward(self, x: List[Tensor]) -> Tensor:
