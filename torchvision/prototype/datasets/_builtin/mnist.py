@@ -29,7 +29,6 @@ from torchvision.prototype.datasets.utils import (
 from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     Decompressor,
-    Slicer,
     INFINITE_BUFFER_SIZE,
 )
 
@@ -49,8 +48,10 @@ class MNISTFileReader(IterDataPipe):
         14: "f8",  # float64
     }
 
-    def __init__(self, datapipe: IterDataPipe) -> None:
+    def __init__(self, datapipe: IterDataPipe, *, start: Optional[int], stop: Optional[int]) -> None:
         self.datapipe = datapipe
+        self.start = start
+        self.stop = stop
 
     @staticmethod
     def _decode(bytes):
@@ -68,7 +69,12 @@ class MNISTFileReader(IterDataPipe):
             in_dtype = np.dtype(f">{dtype_type}")
             out_dtype = np.dtype(dtype_type)
             chunk_size = (cast(int, prod(shape)) if shape else 1) * in_dtype.itemsize
-            for _ in range(num_samples):
+
+            start = self.start or 0
+            stop = self.stop or num_samples
+
+            file.seek(file.tell() + start * chunk_size)
+            for _ in range(stop - start):
                 chunk = file.read(chunk_size)
                 yield np.frombuffer(chunk, dtype=in_dtype).astype(out_dtype).reshape(shape)
 
@@ -91,6 +97,9 @@ class _MNISTBase(Dataset):
         labels = HttpResource(f"{self._URL_BASE}/{labels_file}", sha256=labels_sha256)
 
         return [images, labels]
+
+    def start_and_stop(self, config: DatasetConfig) -> Tuple[Optional[int], Optional[int]]:
+        return None, None
 
     def _collate_and_decode(
         self,
@@ -121,12 +130,13 @@ class _MNISTBase(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, labels_dp = resource_dps
+        start, stop = self.start_and_stop(config)
 
         images_dp = Decompressor(images_dp)
-        images_dp = MNISTFileReader(images_dp)
+        images_dp = MNISTFileReader(images_dp, start=start, stop=stop)
 
         labels_dp = Decompressor(labels_dp)
-        labels_dp = MNISTFileReader(labels_dp)
+        labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp: IterDataPipe = Zipper(images_dp, labels_dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
@@ -351,6 +361,20 @@ class QMNIST(_MNISTBase):
             self._CHECKSUMS[labels_file],
         )
 
+    def start_and_stop(self, config: DatasetConfig) -> Tuple[Optional[int], Optional[int]]:
+        start: Optional[int]
+        stop: Optional[int]
+        if config.split == "test10k":
+            start = 0
+            stop = 10000
+        elif config.split == "test50k":
+            start = 10000
+            stop = None
+        else:
+            start = stop = None
+
+        return start, stop
+
     def _collate_and_decode(
         self,
         data: Tuple[np.ndarray, np.ndarray],
@@ -372,25 +396,3 @@ class QMNIST(_MNISTBase):
         )
         sample.update(dict(zip(("duplicate", "unused"), [bool(value) for value in label_parts[-2:]])))
         return sample
-
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
-        dp = super()._make_datapipe(resource_dps, config=config, decoder=decoder)
-        if config.split not in ("test10k", "test50k"):
-            return dp
-
-        start: Optional[int]
-        stop: Optional[int]
-        if config.split == "test10k":
-            start = 0
-            stop = 10000
-        else:  # config.split == "test50k"
-            start = 10000
-            stop = None
-
-        return Slicer(dp, start=start, stop=stop)

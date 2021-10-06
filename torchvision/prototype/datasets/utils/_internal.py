@@ -3,7 +3,6 @@ import difflib
 import enum
 import gzip
 import io
-import itertools
 import lzma
 import os.path
 import pathlib
@@ -28,7 +27,6 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
-    "Slicer",
 ]
 
 K = TypeVar("K")
@@ -185,21 +183,3 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
             type = self._detect_compression_type(path)
             decompressor = self._DECOMPRESSORS[type]
             yield path, decompressor(file)
-
-
-class Slicer(IterDataPipe[D]):
-    def __init__(
-        self,
-        datapipe: IterDataPipe[D],
-        *,
-        start: Optional[int] = None,
-        stop: Optional[int] = None,
-        step: Optional[int] = None,
-    ):
-        self.datapipe = datapipe
-        self.start = start
-        self.stop = stop
-        self.step = step
-
-    def __iter__(self) -> Iterator[D]:
-        yield from itertools.islice(self.datapipe, self.start, self.stop, self.step)
