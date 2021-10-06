@@ -221,8 +221,7 @@ def main(args):
     else:
         raise RuntimeError("Invalid optimizer {}. Only SGD and RMSprop are supported.".format(args.opt))
 
-    if args.amp:
-        scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     args.lr_scheduler = args.lr_scheduler.lower()
     if args.lr_scheduler == "steplr":
