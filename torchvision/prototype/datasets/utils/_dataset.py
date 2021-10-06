@@ -1,4 +1,5 @@
 import abc
+import enum
 import io
 import os
 import pathlib
@@ -19,11 +20,11 @@ from typing import (
 
 import torch
 from torch.utils.data import IterDataPipe
-
 from torchvision.prototype.datasets.utils._internal import (
     add_suggestion,
     sequence_to_str,
 )
+
 from ._resource import OnlineResource
 
 
@@ -45,6 +46,11 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
     return f"{prefix}\n{body}\n{postfix}"
 
 
+class DatasetType(enum.Enum):
+    RAW = enum.auto()
+    IMAGE = enum.auto()
+
+
 class DatasetConfig(Mapping):
     def __init__(self, *args, **kwargs):
         data = dict(*args, **kwargs)
@@ -64,9 +70,7 @@ class DatasetConfig(Mapping):
         try:
             return self[name]
         except KeyError as error:
-            raise AttributeError(
-                f"'{type(self).__name__}' object has no attribute '{name}'"
-            ) from error
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'") from error
 
     def __setitem__(self, key: Any, value: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
@@ -98,6 +102,7 @@ class DatasetInfo:
         self,
         name: str,
         *,
+        type: Union[str, DatasetType],
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
@@ -105,6 +110,7 @@ class DatasetInfo:
         valid_options: Optional[Dict[str, Sequence]] = None,
     ) -> None:
         self.name = name.lower()
+        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
             categories = []
@@ -113,7 +119,7 @@ class DatasetInfo:
         elif isinstance(categories, (str, pathlib.Path)):
             with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
                 categories = [line.strip() for line in fh]
-        self.categories = categories
+        self.categories = tuple(categories)
 
         self.citation = citation
         self.homepage = homepage
@@ -133,9 +139,7 @@ class DatasetInfo:
 
     @property
     def default_config(self) -> DatasetConfig:
-        return DatasetConfig(
-            {name: valid_args[0] for name, valid_args in self._valid_options.items()}
-        )
+        return DatasetConfig({name: valid_args[0] for name, valid_args in self._valid_options.items()})
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():
@@ -167,12 +171,7 @@ class DatasetInfo:
             value = getattr(self, key)
             if value is not None:
                 items.append((key, value))
-        items.extend(
-            sorted(
-                (key, sequence_to_str(value))
-                for key, value in self._valid_options.items()
-            )
-        )
+        items.extend(sorted((key, sequence_to_str(value)) for key, value in self._valid_options.items()))
         return make_repr(type(self).__name__, items)
 
 
@@ -189,6 +188,10 @@ class Dataset(abc.ABC):
     @property
     def default_config(self) -> DatasetConfig:
         return self.info.default_config
+
+    @property
+    def categories(self) -> Tuple[str, ...]:
+        return self.info.categories
 
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -214,7 +217,5 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
-        resource_dps = [
-            resource.to_datapipe(root) for resource in self.resources(config)
-        ]
+        resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
