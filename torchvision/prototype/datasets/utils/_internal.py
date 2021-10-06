@@ -24,7 +24,6 @@ __all__ = [
     "path_comparator",
 ]
 
-
 K = TypeVar("K")
 D = TypeVar("D")
 
