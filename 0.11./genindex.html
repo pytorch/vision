@@ -1,0 +1,1487 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Index &mdash; Torchvision main documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <!-- Google Analytics -->
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-117752657-2');
+    </script>
+  
+  <!-- End Google Analytics -->
+  
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="active docs-active">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-orange-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/audio/stable/index.html">
+                  <span class="dropdown-title">torchaudio</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/text/stable/index.html">
+                  <span class="dropdown-title">torchtext</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/vision/stable/index.html">
+                  <span class="dropdown-title">torchvision</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
+                  <span class="dropdown-title">TorchElastic</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
+                  <span class="dropdown-title">TorchServe</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/xla">
+                  <span class="dropdown-title">PyTorch on XLA Devices</span>
+                  <p></p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="resource-option with-down-arrow">
+                Resources
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/features">
+                  <span class="dropdown-title">About</span>
+                  <p>Learn about PyTorch’s features and capabilities</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class="dropdown-title">Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered.</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class="dropdown-title">Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class="dropdown-title">Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/hub">
+                  <span class="dropdown-title">Models (Beta)</span>
+                  <p>Discover, publish, and reuse pre-trained models</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">GitHub</a>
+          </li>
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+   
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+1a969c6 ) &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Package Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">torchvision.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">torchvision.models.feature_extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">torchvision.ops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
+</ul>
+<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/text">torchtext</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/vision">torchvision</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/elastic/">TorchElastic</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pytorch.org/serve">TorchServe</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://pytorch.org/xla/">PyTorch on XLA Devices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>Index</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+          
+          <div class="rst-content">
+          
+            <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+             <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+              
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#_"><strong>_</strong></a>
+ | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ 
+</div>
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.Caltech101.__getitem__">__getitem__() (torchvision.datasets.Caltech101 method)</a>
+
+      <ul>
+        <li><a href="datasets.html#torchvision.datasets.Caltech256.__getitem__">(torchvision.datasets.Caltech256 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.CelebA.__getitem__">(torchvision.datasets.CelebA method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.CIFAR10.__getitem__">(torchvision.datasets.CIFAR10 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.Cityscapes.__getitem__">(torchvision.datasets.Cityscapes method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.CocoCaptions.__getitem__">(torchvision.datasets.CocoCaptions method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.CocoDetection.__getitem__">(torchvision.datasets.CocoDetection method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.DatasetFolder.__getitem__">(torchvision.datasets.DatasetFolder method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.Flickr30k.__getitem__">(torchvision.datasets.Flickr30k method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.Flickr8k.__getitem__">(torchvision.datasets.Flickr8k method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.HMDB51.__getitem__">(torchvision.datasets.HMDB51 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.ImageFolder.__getitem__">(torchvision.datasets.ImageFolder method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.INaturalist.__getitem__">(torchvision.datasets.INaturalist method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.Kinetics400.__getitem__">(torchvision.datasets.Kinetics400 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.Kitti.__getitem__">(torchvision.datasets.Kitti method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.LFWPairs.__getitem__">(torchvision.datasets.LFWPairs method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.LFWPeople.__getitem__">(torchvision.datasets.LFWPeople method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.LSUN.__getitem__">(torchvision.datasets.LSUN method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.PhotoTour.__getitem__">(torchvision.datasets.PhotoTour method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.Places365.__getitem__">(torchvision.datasets.Places365 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.SBDataset.__getitem__">(torchvision.datasets.SBDataset method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.SBU.__getitem__">(torchvision.datasets.SBU method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.SEMEION.__getitem__">(torchvision.datasets.SEMEION method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.STL10.__getitem__">(torchvision.datasets.STL10 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.SVHN.__getitem__">(torchvision.datasets.SVHN method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.UCF101.__getitem__">(torchvision.datasets.UCF101 method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.USPS.__getitem__">(torchvision.datasets.USPS method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.VisionDataset.__getitem__">(torchvision.datasets.VisionDataset method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.VOCDetection.__getitem__">(torchvision.datasets.VOCDetection method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.VOCSegmentation.__getitem__">(torchvision.datasets.VOCSegmentation method)</a>
+</li>
+        <li><a href="datasets.html#torchvision.datasets.WIDERFace.__getitem__">(torchvision.datasets.WIDERFace method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="io.html#torchvision.io.VideoReader.__next__">__next__() (torchvision.io.VideoReader method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_brightness">adjust_brightness() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_contrast">adjust_contrast() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_gamma">adjust_gamma() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_hue">adjust_hue() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_saturation">adjust_saturation() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.functional.adjust_sharpness">adjust_sharpness() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.affine">affine() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="models.html#torchvision.models.alexnet">alexnet() (in module torchvision.models)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.AutoAugment">AutoAugment (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.AutoAugmentPolicy">AutoAugmentPolicy (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.autocontrast">autocontrast() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="ops.html#torchvision.ops.batched_nms">batched_nms() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.box_area">box_area() (in module torchvision.ops)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="ops.html#torchvision.ops.box_convert">box_convert() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.box_iou">box_iou() (in module torchvision.ops)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.Caltech101">Caltech101 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.Caltech256">Caltech256 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.INaturalist.category_name">category_name() (torchvision.datasets.INaturalist method)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.CelebA">CelebA (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.center_crop">center_crop() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.CenterCrop">CenterCrop (class in torchvision.transforms)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.CIFAR10">CIFAR10 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.CIFAR100">CIFAR100 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.Cityscapes">Cityscapes (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="ops.html#torchvision.ops.clip_boxes_to_image">clip_boxes_to_image() (in module torchvision.ops)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.CocoCaptions">CocoCaptions (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.CocoDetection">CocoDetection (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.ColorJitter">ColorJitter (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.Compose">Compose (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.convert_image_dtype">convert_image_dtype() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.ConvertImageDtype">ConvertImageDtype (class in torchvision.transforms)</a>
+</li>
+      <li><a href="feature_extraction.html#torchvision.models.feature_extraction.create_feature_extractor">create_feature_extractor() (in module torchvision.models.feature_extraction)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.crop">crop() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.DatasetFolder">DatasetFolder (class in torchvision.datasets)</a>
+</li>
+      <li><a href="io.html#torchvision.io.decode_image">decode_image() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.decode_jpeg">decode_jpeg() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.decode_png">decode_png() (in module torchvision.io)</a>
+</li>
+      <li><a href="models.html#torchvision.models.segmentation.deeplabv3_mobilenet_v3_large">deeplabv3_mobilenet_v3_large() (in module torchvision.models.segmentation)</a>
+</li>
+      <li><a href="models.html#torchvision.models.segmentation.deeplabv3_resnet101">deeplabv3_resnet101() (in module torchvision.models.segmentation)</a>
+</li>
+      <li><a href="models.html#torchvision.models.segmentation.deeplabv3_resnet50">deeplabv3_resnet50() (in module torchvision.models.segmentation)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="ops.html#torchvision.ops.deform_conv2d">deform_conv2d() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.DeformConv2d">DeformConv2d (class in torchvision.ops)</a>
+</li>
+      <li><a href="models.html#torchvision.models.densenet121">densenet121() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.densenet161">densenet161() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.densenet169">densenet169() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.densenet201">densenet201() (in module torchvision.models)</a>
+</li>
+      <li><a href="utils.html#torchvision.utils.draw_bounding_boxes">draw_bounding_boxes() (in module torchvision.utils)</a>
+</li>
+      <li><a href="utils.html#torchvision.utils.draw_segmentation_masks">draw_segmentation_masks() (in module torchvision.utils)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.efficientnet_b0">efficientnet_b0() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.efficientnet_b1">efficientnet_b1() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.efficientnet_b2">efficientnet_b2() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.efficientnet_b3">efficientnet_b3() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.efficientnet_b4">efficientnet_b4() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.efficientnet_b5">efficientnet_b5() (in module torchvision.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.efficientnet_b6">efficientnet_b6() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.efficientnet_b7">efficientnet_b7() (in module torchvision.models)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.EMNIST">EMNIST (class in torchvision.datasets)</a>
+</li>
+      <li><a href="io.html#torchvision.io.encode_jpeg">encode_jpeg() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.encode_png">encode_png() (in module torchvision.io)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.equalize">equalize() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.erase">erase() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.FakeData">FakeData (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.FashionMNIST">FashionMNIST (class in torchvision.datasets)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn">fasterrcnn_mobilenet_v3_large_320_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn">fasterrcnn_mobilenet_v3_large_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn">fasterrcnn_resnet50_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="models.html#torchvision.models.segmentation.fcn_resnet101">fcn_resnet101() (in module torchvision.models.segmentation)</a>
+</li>
+      <li><a href="models.html#torchvision.models.segmentation.fcn_resnet50">fcn_resnet50() (in module torchvision.models.segmentation)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.FeaturePyramidNetwork">FeaturePyramidNetwork (class in torchvision.ops)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.DatasetFolder.find_classes">find_classes() (torchvision.datasets.DatasetFolder method)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.five_crop">five_crop() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.FiveCrop">FiveCrop (class in torchvision.transforms)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.Flickr30k">Flickr30k (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.Flickr8k">Flickr8k (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.AutoAugment.forward">forward() (torchvision.transforms.AutoAugment method)</a>
+
+      <ul>
+        <li><a href="transforms.html#torchvision.transforms.CenterCrop.forward">(torchvision.transforms.CenterCrop method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.ColorJitter.forward">(torchvision.transforms.ColorJitter method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.FiveCrop.forward">(torchvision.transforms.FiveCrop method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.GaussianBlur.forward">(torchvision.transforms.GaussianBlur method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.Grayscale.forward">(torchvision.transforms.Grayscale method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.LinearTransformation.forward">(torchvision.transforms.LinearTransformation method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.Normalize.forward">(torchvision.transforms.Normalize method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.Pad.forward">(torchvision.transforms.Pad method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandAugment.forward">(torchvision.transforms.RandAugment method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomAdjustSharpness.forward">(torchvision.transforms.RandomAdjustSharpness method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomAffine.forward">(torchvision.transforms.RandomAffine method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomAutocontrast.forward">(torchvision.transforms.RandomAutocontrast method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomCrop.forward">(torchvision.transforms.RandomCrop method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomEqualize.forward">(torchvision.transforms.RandomEqualize method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomErasing.forward">(torchvision.transforms.RandomErasing method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomGrayscale.forward">(torchvision.transforms.RandomGrayscale method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomHorizontalFlip.forward">(torchvision.transforms.RandomHorizontalFlip method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomInvert.forward">(torchvision.transforms.RandomInvert method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomPerspective.forward">(torchvision.transforms.RandomPerspective method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomPosterize.forward">(torchvision.transforms.RandomPosterize method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomResizedCrop.forward">(torchvision.transforms.RandomResizedCrop method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomRotation.forward">(torchvision.transforms.RandomRotation method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomSolarize.forward">(torchvision.transforms.RandomSolarize method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomVerticalFlip.forward">(torchvision.transforms.RandomVerticalFlip method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.Resize.forward">(torchvision.transforms.Resize method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.TenCrop.forward">(torchvision.transforms.TenCrop method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.TrivialAugmentWide.forward">(torchvision.transforms.TrivialAugmentWide method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.functional.gaussian_blur">gaussian_blur() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.GaussianBlur">GaussianBlur (class in torchvision.transforms)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.generalized_box_iou">generalized_box_iou() (in module torchvision.ops)</a>
+</li>
+      <li><a href="feature_extraction.html#torchvision.models.feature_extraction.get_graph_node_names">get_graph_node_names() (in module torchvision.models.feature_extraction)</a>
+</li>
+      <li><a href="index.html#torchvision.get_image_backend">get_image_backend() (in module torchvision)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.get_image_num_channels">get_image_num_channels() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.get_image_size">get_image_size() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="io.html#torchvision.io.VideoReader.get_metadata">get_metadata() (torchvision.io.VideoReader method)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.AutoAugment.get_params">get_params() (torchvision.transforms.AutoAugment static method)</a>
+
+      <ul>
+        <li><a href="transforms.html#torchvision.transforms.ColorJitter.get_params">(torchvision.transforms.ColorJitter static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.GaussianBlur.get_params">(torchvision.transforms.GaussianBlur static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomAffine.get_params">(torchvision.transforms.RandomAffine static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomCrop.get_params">(torchvision.transforms.RandomCrop static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomErasing.get_params">(torchvision.transforms.RandomErasing static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomPerspective.get_params">(torchvision.transforms.RandomPerspective static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomResizedCrop.get_params">(torchvision.transforms.RandomResizedCrop static method)</a>
+</li>
+        <li><a href="transforms.html#torchvision.transforms.RandomRotation.get_params">(torchvision.transforms.RandomRotation static method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="index.html#torchvision.get_video_backend">get_video_backend() (in module torchvision)</a>
+</li>
+      <li><a href="models.html#torchvision.models.googlenet">googlenet() (in module torchvision.models)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.Grayscale">Grayscale (class in torchvision.transforms)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.functional.hflip">hflip() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.HMDB51">HMDB51 (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.ImageFolder">ImageFolder (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.ImageNet">ImageNet (class in torchvision.datasets)</a>
+</li>
+      <li><a href="io.html#torchvision.io.ImageReadMode">ImageReadMode (class in torchvision.io)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.INaturalist">INaturalist (class in torchvision.datasets)</a>
+</li>
+      <li><a href="models.html#torchvision.models.inception_v3">inception_v3() (in module torchvision.models)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.InterpolationMode">InterpolationMode (class in torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.invert">invert() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.detection.keypointrcnn_resnet50_fpn">keypointrcnn_resnet50_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.Kinetics400">Kinetics400 (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.Kitti">Kitti (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.KMNIST">KMNIST (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.Lambda">Lambda (class in torchvision.transforms)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.LFWPairs">LFWPairs (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.LFWPeople">LFWPeople (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.LinearTransformation">LinearTransformation (class in torchvision.transforms)</a>
+</li>
+      <li><a href="models.html#torchvision.models.segmentation.lraspp_mobilenet_v3_large">lraspp_mobilenet_v3_large() (in module torchvision.models.segmentation)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.LSUN">LSUN (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.DatasetFolder.make_dataset">make_dataset() (torchvision.datasets.DatasetFolder static method)</a>
+</li>
+      <li><a href="utils.html#torchvision.utils.make_grid">make_grid() (in module torchvision.utils)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.maskrcnn_resnet50_fpn">maskrcnn_resnet50_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.masks_to_boxes">masks_to_boxes() (in module torchvision.ops)</a>
+</li>
+      <li><a href="models.html#torchvision.models.video.mc3_18">mc3_18() (in module torchvision.models.video)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mnasnet0_5">mnasnet0_5() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mnasnet0_75">mnasnet0_75() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mnasnet1_0">mnasnet1_0() (in module torchvision.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.mnasnet1_3">mnasnet1_3() (in module torchvision.models)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.MNIST">MNIST (class in torchvision.datasets)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mobilenet_v2">mobilenet_v2() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mobilenet_v3_large">mobilenet_v3_large() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.mobilenet_v3_small">mobilenet_v3_small() (in module torchvision.models)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="index.html#module-torchvision">torchvision</a>
+</li>
+        <li><a href="transforms.html#module-torchvision.transforms.functional">torchvision.transforms.functional</a>
+</li>
+      </ul></li>
+      <li><a href="ops.html#torchvision.ops.MultiScaleRoIAlign">MultiScaleRoIAlign (class in torchvision.ops)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="ops.html#torchvision.ops.nms">nms() (in module torchvision.ops)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.Normalize">Normalize (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.normalize">normalize() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.Omniglot">Omniglot (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.Pad">Pad (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.pad">pad() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.perspective">perspective() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.PhotoTour">PhotoTour (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.pil_to_tensor">pil_to_tensor() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.Places365">Places365 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.posterize">posterize() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.ps_roi_align">ps_roi_align() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.ps_roi_pool">ps_roi_pool() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.PSRoIAlign">PSRoIAlign (class in torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.PSRoIPool">PSRoIPool (class in torchvision.ops)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.QMNIST">QMNIST (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.video.r2plus1d_18">r2plus1d_18() (in module torchvision.models.video)</a>
+</li>
+      <li><a href="models.html#torchvision.models.video.r3d_18">r3d_18() (in module torchvision.models.video)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandAugment">RandAugment (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomAdjustSharpness">RandomAdjustSharpness (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomAffine">RandomAffine (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomApply">RandomApply (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomAutocontrast">RandomAutocontrast (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomChoice">RandomChoice (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomCrop">RandomCrop (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomEqualize">RandomEqualize (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomErasing">RandomErasing (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomGrayscale">RandomGrayscale (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomHorizontalFlip">RandomHorizontalFlip (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomInvert">RandomInvert (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomOrder">RandomOrder (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomPerspective">RandomPerspective (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomPosterize">RandomPosterize (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomResizedCrop">RandomResizedCrop (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomRotation">RandomRotation (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomSizedCrop">RandomSizedCrop (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomSolarize">RandomSolarize (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.RandomVerticalFlip">RandomVerticalFlip (class in torchvision.transforms)</a>
+</li>
+      <li><a href="io.html#torchvision.io.read_file">read_file() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.read_image">read_image() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.read_video">read_video() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.read_video_timestamps">read_video_timestamps() (in module torchvision.io)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_x_16gf">regnet_x_16gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_x_1_6gf">regnet_x_1_6gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_x_32gf">regnet_x_32gf() (in module torchvision.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.regnet_x_3_2gf">regnet_x_3_2gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_x_400mf">regnet_x_400mf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_x_800mf">regnet_x_800mf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_x_8gf">regnet_x_8gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_16gf">regnet_y_16gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_1_6gf">regnet_y_1_6gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_32gf">regnet_y_32gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_3_2gf">regnet_y_3_2gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_400mf">regnet_y_400mf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_800mf">regnet_y_800mf() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.regnet_y_8gf">regnet_y_8gf() (in module torchvision.models)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.remove_small_boxes">remove_small_boxes() (in module torchvision.ops)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.Resize">Resize (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.resize">resize() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.resized_crop">resized_crop() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnet101">resnet101() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnet152">resnet152() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnet18">resnet18() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnet34">resnet34() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnet50">resnet50() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnext101_32x8d">resnext101_32x8d() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.resnext50_32x4d">resnext50_32x4d() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.retinanet_resnet50_fpn">retinanet_resnet50_fpn() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.rgb_to_grayscale">rgb_to_grayscale() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.roi_align">roi_align() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.roi_pool">roi_pool() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.RoIAlign">RoIAlign (class in torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.RoIPool">RoIPool (class in torchvision.ops)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.rotate">rotate() (in module torchvision.transforms.functional)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils.html#torchvision.utils.save_image">save_image() (in module torchvision.utils)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.SBDataset">SBDataset (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.SBU">SBU (class in torchvision.datasets)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.Scale">Scale (class in torchvision.transforms)</a>
+</li>
+      <li><a href="io.html#torchvision.io.VideoReader.seek">seek() (torchvision.io.VideoReader method)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.SEMEION">SEMEION (class in torchvision.datasets)</a>
+</li>
+      <li><a href="io.html#torchvision.io.VideoReader.set_current_stream">set_current_stream() (torchvision.io.VideoReader method)</a>
+</li>
+      <li><a href="index.html#torchvision.set_image_backend">set_image_backend() (in module torchvision)</a>
+</li>
+      <li><a href="index.html#torchvision.set_video_backend">set_video_backend() (in module torchvision)</a>
+</li>
+      <li><a href="models.html#torchvision.models.shufflenet_v2_x0_5">shufflenet_v2_x0_5() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.shufflenet_v2_x1_0">shufflenet_v2_x1_0() (in module torchvision.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.shufflenet_v2_x1_5">shufflenet_v2_x1_5() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.shufflenet_v2_x2_0">shufflenet_v2_x2_0() (in module torchvision.models)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.sigmoid_focal_loss">sigmoid_focal_loss() (in module torchvision.ops)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.solarize">solarize() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="models.html#torchvision.models.squeezenet1_0">squeezenet1_0() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.squeezenet1_1">squeezenet1_1() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.ssd300_vgg16">ssd300_vgg16() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="models.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large">ssdlite320_mobilenet_v3_large() (in module torchvision.models.detection)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.STL10">STL10 (class in torchvision.datasets)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.stochastic_depth">stochastic_depth() (in module torchvision.ops)</a>
+</li>
+      <li><a href="ops.html#torchvision.ops.StochasticDepth">StochasticDepth (class in torchvision.ops)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.SVHN">SVHN (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.functional.ten_crop">ten_crop() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.TenCrop">TenCrop (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.to_grayscale">to_grayscale() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.to_pil_image">to_pil_image() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.functional.to_tensor">to_tensor() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.ToPILImage">ToPILImage (class in torchvision.transforms)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    torchvision
+
+      <ul>
+        <li><a href="index.html#module-torchvision">module</a>
+</li>
+      </ul></li>
+      <li>
+    torchvision.transforms.functional
+
+      <ul>
+        <li><a href="transforms.html#module-torchvision.transforms.functional">module</a>
+</li>
+      </ul></li>
+      <li><a href="transforms.html#torchvision.transforms.ToTensor">ToTensor (class in torchvision.transforms)</a>
+</li>
+      <li><a href="transforms.html#torchvision.transforms.TrivialAugmentWide">TrivialAugmentWide (class in torchvision.transforms)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.UCF101">UCF101 (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#torchvision.datasets.USPS">USPS (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="transforms.html#torchvision.transforms.functional.vflip">vflip() (in module torchvision.transforms.functional)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg11">vgg11() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg11_bn">vgg11_bn() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg13">vgg13() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg13_bn">vgg13_bn() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg16">vgg16() (in module torchvision.models)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.vgg16_bn">vgg16_bn() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg19">vgg19() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.vgg19_bn">vgg19_bn() (in module torchvision.models)</a>
+</li>
+      <li><a href="io.html#torchvision.io.VideoReader">VideoReader (class in torchvision.io)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.VisionDataset">VisionDataset (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.VOCDetection">VOCDetection (class in torchvision.datasets)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.VOCSegmentation">VOCSegmentation (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="models.html#torchvision.models.wide_resnet101_2">wide_resnet101_2() (in module torchvision.models)</a>
+</li>
+      <li><a href="models.html#torchvision.models.wide_resnet50_2">wide_resnet50_2() (in module torchvision.models)</a>
+</li>
+      <li><a href="datasets.html#torchvision.datasets.WIDERFace">WIDERFace (class in torchvision.datasets)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="io.html#torchvision.io.write_file">write_file() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.write_jpeg">write_jpeg() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.write_png">write_png() (in module torchvision.io)</a>
+</li>
+      <li><a href="io.html#torchvision.io.write_video">write_video() (in module torchvision.io)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+             </article>
+             
+            </div>
+            <footer>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-present, Torch Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+          </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/doctools.js"></script>
+         <script src="_static/clipboard.min.js"></script>
+         <script src="_static/copybutton.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col follow-us-col">
+          <ul>
+            <li class="list-title">Stay Connected</li>
+            <li>
+              <div id="mc_embed_signup">
+                <form
+                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
+                  method="post"
+                  id="mc-embedded-subscribe-form"
+                  name="mc-embedded-subscribe-form"
+                  class="email-subscribe-form validate"
+                  target="_blank"
+                  novalidate>
+                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
+                    <div class="mc-field-group">
+                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
+                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                    </div>
+
+                    <div id="mce-responses" class="clear">
+                      <div class="response" id="mce-error-response" style="display:none"></div>
+                      <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
+
+                    <div class="clear">
+                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="footer-social-icons">
+            <a href="https://www.facebook.com/pytorch" target="_blank" class="facebook"></a>
+            <a href="https://twitter.com/pytorch" target="_blank" class="twitter"></a>
+            <a href="https://www.youtube.com/pytorch" target="_blank" class="youtube"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+          <li>
+            <a href="https://pytorch.org/get-started">Get Started</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/ecosystem">Ecosystem</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/mobile">Mobile</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/hub">PyTorch Hub</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/blog/">Blog</a>
+          </li>
+
+          <li>
+            <a href="https://pytorch.org/tutorials">Tutorials</a>
+          </li>
+
+          <li class="resources-mobile-menu-title" class="active">
+            Docs
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/audio/stable/index.html">torchaudio</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/text/stable/index.html">torchtext</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/vision/stable/index.html">torchvision</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/elastic/">TorchElastic</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/serve/">TorchServe</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/xla">PyTorch on XLA Devices</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            Resources
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/resources">Developer Resources</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/features">About</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/hub">Models (Beta)</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/#community-module">Community</a>
+            </li>
+
+            <li>
+              <a href="https://discuss.pytorch.org/">Forums</a>
+            </li>
+          </ul>
+
+          <li>
+            <a href="https://github.com/pytorch/pytorch">Github</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>
