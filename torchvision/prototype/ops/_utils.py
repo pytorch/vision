@@ -1,7 +1,7 @@
 import copy
 import operator
 import warnings
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
 
 import torch
 from torch import fx
@@ -22,7 +22,7 @@ class RegularizedShortcut(torch.nn.Module):
 
 def add_regularized_shortcut(
     model: torch.nn.Module,
-    block_types: Tuple[type, ...],
+    block_types: Union[type, Tuple[type, ...]],
     regularizer_layer: Callable[..., torch.nn.Module],
     inplace: bool = True,
 ) -> torch.nn.Module:
