@@ -81,11 +81,11 @@ class GeneralizedRCNN(nn.Module):
                 else:
                     raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
 
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: List[List[int]] = []
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2
-            original_image_sizes.append((val[0], val[1]))
+            original_image_sizes.append([val[0], val[1]])
 
         images, targets = self.transform(images, targets)
 
