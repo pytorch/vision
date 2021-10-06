@@ -128,9 +128,7 @@ class VOC(Dataset):
             split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task])
         )
         split_dp: IterDataPipe = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
-        # TODO: replace the .map() call with decode=True in LineReader when
-        #  https://github.com/pytorch/data/issues/28 is resolved
-        split_dp = LineReader(split_dp).map(bytes.decode, input_col=1)
+        split_dp = LineReader(split_dp, decode=True)
         split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         dp = split_dp
