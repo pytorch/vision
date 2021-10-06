@@ -49,14 +49,15 @@ def add_regularized_shortcut(
                             args = node.args if node.args[0] == input else node.args[::-1]
                             node.replace_all_uses_with(graph.call_module(_MODULE_NAME, args))
                         graph.erase_node(node)
-                        graph.lint()
                         modifications[name] = graph
+                        break
                 elif node.op == "placeholder":
                     input = node
 
     if modifications:
         # Update the model by overwriting its modules
         for name, graph in modifications.items():
+            graph.lint()
             parent_name, child_name = name.rsplit(".", 1)
             parent = model.get_submodule(parent_name)
             previous_child = parent.get_submodule(child_name)
