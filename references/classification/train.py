@@ -13,8 +13,9 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch,
-                    print_freq, amp=False, model_ema=None, scaler=None):
+def train_one_epoch(
+    model, criterion, optimizer, data_loader, device, epoch, print_freq, amp=False, model_ema=None, scaler=None
+):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
@@ -285,7 +286,8 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(
-            model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.amp, model_ema, scaler)
+            model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.amp, model_ema, scaler
+        )
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
@@ -378,8 +380,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
-    parser.add_argument("--amp", action="store_true",
-                        help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
