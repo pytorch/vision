@@ -116,7 +116,7 @@ show(dogs_with_boxes)
 # lraspp mobilenet models
 # (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
 #
-# Let's start by looking at the ouput of the model. Remember that in general,
+# Let's start by looking at the output of the model. Remember that in general,
 # images must be normalized before they're passed to a semantic segmentation
 # model.
 
