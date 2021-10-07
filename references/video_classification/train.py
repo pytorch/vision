@@ -12,13 +12,10 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
-try:
-    from apex import amp
-except ImportError:
-    amp = None
 
-
-def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, apex=False):
+def train_one_epoch(
+    model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, amp=False, scaler=None
+):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
@@ -29,13 +26,16 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
         start_time = time.time()
         video, target = video.to(device), target.to(device)
         output = model(video)
-        loss = criterion(output, target)
 
         optimizer.zero_grad()
-        if apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
+        if amp:
+            with torch.cuda.amp.autocast():
+                loss = criterion(output, target)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
         else:
+            loss = criterion(output, target)
             loss.backward()
         optimizer.step()
 
@@ -93,12 +93,6 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.apex and amp is None:
-        raise RuntimeError(
-            "Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
-            "to enable mixed-precision training."
-        )
-
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -210,8 +204,7 @@ def main(args):
     lr = args.lr * args.world_size
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    if args.apex:
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_opt_level)
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     # convert scheduler to be per iteration, not per epoch, for warmup that lasts
     # between different epochs
@@ -264,7 +257,7 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(
-            model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, args.apex
+            model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, args.amp, scaler
         )
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
@@ -348,15 +341,7 @@ def parse_args():
     )
 
     # Mixed precision training parameters
-    parser.add_argument("--apex", action="store_true", help="Use apex for mixed precision training")
-    parser.add_argument(
-        "--apex-opt-level",
-        default="O1",
-        type=str,
-        help="For apex mixed precision training"
-        "O0 for FP32 training, O1 for mixed precision training."
-        "For further detail, see https://github.com/NVIDIA/apex/tree/master/examples/imagenet",
-    )
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
