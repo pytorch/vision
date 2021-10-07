@@ -305,7 +305,7 @@ def parse_args(args=None):
 
 
 if __name__ == "__main__":
-    args = parse_args(["cifar10"])
+    args = parse_args()
 
     try:
         main(args.name, number=args.number)
