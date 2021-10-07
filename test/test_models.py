@@ -470,14 +470,12 @@ def test_classification_model(model_name, dev):
 
 @pytest.mark.parametrize("model_name", get_available_segmentation_models())
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.parametrize("use_fe", [True, False])
-def test_segmentation_model(model_name, dev, use_fe):
+def test_segmentation_model(model_name, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
         "pretrained_backbone": False,
         "input_shape": (1, 3, 32, 32),
-        "use_fe": use_fe,
     }
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
