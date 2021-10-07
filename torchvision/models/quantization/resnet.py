@@ -3,7 +3,7 @@ from typing import Any, Type, Union, List
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torch.quantization import fuse_modules
+from torch.ao.quantization import fuse_modules
 from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
 
 from ..._internally_replaced_utils import load_state_dict_from_url
@@ -42,9 +42,9 @@ class QuantizableBasicBlock(BasicBlock):
         return out
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], inplace=True)
+        torch.ao.quantization.fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], inplace=True)
         if self.downsample:
-            torch.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            torch.ao.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
 
 
 class QuantizableBottleneck(Bottleneck):
@@ -75,15 +75,15 @@ class QuantizableBottleneck(Bottleneck):
     def fuse_model(self) -> None:
         fuse_modules(self, [["conv1", "bn1", "relu1"], ["conv2", "bn2", "relu2"], ["conv3", "bn3"]], inplace=True)
         if self.downsample:
-            torch.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            torch.ao.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
 
 
 class QuantizableResNet(ResNet):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(QuantizableResNet, self).__init__(*args, **kwargs)
 
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)

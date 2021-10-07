@@ -705,19 +705,19 @@ def test_quantized_classification_model(model_name):
         model = torchvision.models.quantization.__dict__[model_name](**kwargs)
         if eval_mode:
             model.eval()
-            model.qconfig = torch.quantization.default_qconfig
+            model.qconfig = torch.ao.quantization.default_qconfig
         else:
             model.train()
-            model.qconfig = torch.quantization.default_qat_qconfig
+            model.qconfig = torch.ao.quantization.default_qat_qconfig
 
         model.fuse_model()
         if eval_mode:
-            torch.quantization.prepare(model, inplace=True)
+            torch.ao.quantization.prepare(model, inplace=True)
         else:
-            torch.quantization.prepare_qat(model, inplace=True)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
             model.eval()
 
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
 
     try:
         torch.jit.script(model)

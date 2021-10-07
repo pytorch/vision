@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 import torch
 from torch import nn, Tensor
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
+from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation, SqueezeExcitation
@@ -132,13 +132,13 @@ def _mobilenet_v3_model(
         backend = "qnnpack"
 
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig(backend)
-        torch.quantization.prepare_qat(model, inplace=True)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
+        torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if pretrained:
             _load_weights(arch, model, quant_model_urls.get(arch + "_" + backend, None), progress)
 
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
         model.eval()
     else:
         if pretrained:
