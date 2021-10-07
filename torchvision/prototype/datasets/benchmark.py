@@ -20,10 +20,11 @@ from torchvision.transforms import ToTensor
 
 
 def main(name, *, number):
-    try:
-        benchmark = next(benchmark for benchmark in DATASET_BENCHMARKS if benchmark.name == name)
-    except StopIteration as error:
-        raise ValueError(f"No DatasetBenchmark available for dataset '{name}'") from error
+    for benchmark in DATASET_BENCHMARKS:
+        if benchmark.name == name:
+            break
+    else:
+        raise ValueError(f"No DatasetBenchmark available for dataset '{name}'")
 
     print("legacy", "cold_start", Measurement.time(benchmark.legacy_cold_start, number=number))
     print("legacy", "warm_start", Measurement.time(benchmark.legacy_warm_start, number=number))
