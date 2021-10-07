@@ -399,7 +399,4 @@ if __name__ == "__main__":
     except Exception as error:
         msg = str(error)
         print(msg or f"Unspecified {type(error)} was raised during execution.", file=sys.stderr)
-        status = 1
-    else:
-        status = 0
-    sys.exit(status)
+        sys.exit(1)
