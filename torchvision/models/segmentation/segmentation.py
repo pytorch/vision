@@ -6,6 +6,7 @@ from ..._internally_replaced_utils import load_state_dict_from_url
 from .. import mobilenetv3
 from .. import resnet
 from .._utils import IntermediateLayerGetter
+from ..feature_extraction import create_feature_extractor
 from .deeplabv3 import DeepLabHead, DeepLabV3
 from .fcn import FCN, FCNHead
 from .lraspp import LRASPP
@@ -32,7 +33,8 @@ model_urls = {
 
 
 def _segm_model(
-    name: str, backbone_name: str, num_classes: int, aux: Optional[bool], pretrained_backbone: bool = True
+    name: str, backbone_name: str, num_classes: int, aux: Optional[bool],
+    pretrained_backbone: bool = True, use_fe: bool = False,
 ) -> nn.Module:
     if "resnet" in backbone_name:
         backbone = resnet.__dict__[backbone_name](
@@ -60,7 +62,11 @@ def _segm_model(
     return_layers = {out_layer: "out"}
     if aux:
         return_layers[aux_layer] = "aux"
-    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
+
+    if use_fe:
+        backbone = create_feature_extractor(backbone, return_layers)
+    else:
+        backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = None
     if aux:
@@ -105,7 +111,10 @@ def _load_weights(model: nn.Module, arch_type: str, backbone: str, progress: boo
         model.load_state_dict(state_dict)
 
 
-def _segm_lraspp_mobilenetv3(backbone_name: str, num_classes: int, pretrained_backbone: bool = True) -> LRASPP:
+def _segm_lraspp_mobilenetv3(
+    backbone_name: str, num_classes: int,
+    pretrained_backbone: bool = True, use_fe: bool = False
+) -> LRASPP:
     backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
 
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
@@ -116,7 +125,11 @@ def _segm_lraspp_mobilenetv3(backbone_name: str, num_classes: int, pretrained_ba
     low_channels = backbone[low_pos].out_channels
     high_channels = backbone[high_pos].out_channels
 
-    backbone = IntermediateLayerGetter(backbone, return_layers={str(low_pos): "low", str(high_pos): "high"})
+    return_layers = {str(low_pos): "low", str(high_pos): "high"}
+    if use_fe:
+        backbone = create_feature_extractor(backbone, return_layers)
+    else:
+        backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     model = LRASPP(backbone, low_channels, high_channels, num_classes)
     return model
