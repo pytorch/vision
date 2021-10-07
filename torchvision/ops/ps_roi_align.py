@@ -30,8 +30,10 @@ def ps_roi_align(
             in the batch.
         output_size (int or Tuple[int, int]): the size of the output (in bins or pixels) after the pooling
             is performed, as (height, width).
-        spatial_scale (float): a scaling factor that maps the input coordinates to
-            the box coordinates. Default: 1.0
+        spatial_scale (float): a scaling factor that maps the box coordinates to
+            the input coordinates. For example, if your boxes are defined on the scale
+            of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
+            the original image), you'll want to set this to 0.5. Default: 1.0
         sampling_ratio (int): number of sampling points in the interpolation grid
             used to compute the output value of each pooled output bin. If > 0,
             then exactly ``sampling_ratio x sampling_ratio`` sampling points per bin are used. If
