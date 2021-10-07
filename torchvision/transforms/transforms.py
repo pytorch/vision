@@ -142,6 +142,10 @@ class PILToTensor:
 
     def __call__(self, pic):
         """
+        .. note::
+
+        A deep copy of the underlying array is performed.
+
         Args:
             pic (PIL Image): Image to be converted to tensor.
 

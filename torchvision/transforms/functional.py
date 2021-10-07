@@ -156,15 +156,15 @@ def pil_to_tensor(pic):
 
     See :class:`~torchvision.transforms.PILToTensor` for more details.
 
+    .. note::
+
+        A deep copy of the underlying array is performed.
+
     Args:
         pic (PIL Image): Image to be converted to tensor.
 
     Returns:
         Tensor: Converted image.
-
-    .. note::
-
-        A deep copy of the underlying array is performed.
     """
     if not F_pil._is_pil_image(pic):
         raise TypeError("pic should be PIL Image. Got {}".format(type(pic)))
