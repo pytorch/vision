@@ -164,7 +164,7 @@ def pil_to_tensor(pic):
 
     .. note::
 
-        A deep copy of the underdying array is performed.
+        A deep copy of the underlying array is performed.
     """
     if not F_pil._is_pil_image(pic):
         raise TypeError("pic should be PIL Image. Got {}".format(type(pic)))
