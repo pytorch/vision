@@ -161,6 +161,10 @@ def pil_to_tensor(pic):
 
     Returns:
         Tensor: Converted image.
+
+    .. note::
+
+        A deep copy of the underdying array is performed.
     """
     if not F_pil._is_pil_image(pic):
         raise TypeError("pic should be PIL Image. Got {}".format(type(pic)))
@@ -172,7 +176,7 @@ def pil_to_tensor(pic):
         return torch.as_tensor(nppic)
 
     # handle PIL Image
-    img = torch.as_tensor(np.asarray(pic))
+    img = torch.as_tensor(np.array(pic, copy=True))
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
