@@ -17,8 +17,6 @@ from torchvision.datasets.vision import StandardTransform
 from torchvision.prototype import datasets as new_datasets
 from torchvision.transforms import ToTensor
 
-new_datasets.home("~/datasets")
-
 
 def main(name, *, number):
     try:
