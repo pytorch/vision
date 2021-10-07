@@ -103,7 +103,7 @@ class _MNISTBase(Dataset):
 
     def _collate_and_decode(
         self,
-        data: Tuple[np.ndarray, Union[np.ndarray, int]],
+        data: Tuple[np.ndarray, np.ndarray],
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
