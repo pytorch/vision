@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 import torch
 from torch import nn, Tensor

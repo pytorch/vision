@@ -6,7 +6,6 @@ cleanly ignored in FB internal test infra.
 """
 
 import os
-import warnings
 from urllib.error import URLError
 
 import pytest
