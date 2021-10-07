@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import copy
 import inspect
+import itertools
 import os
 import os.path
 import pathlib
@@ -111,13 +112,26 @@ class DatasetBenchmark:
 
             yield stack
 
+    def _find_resource_file_names(self):
+        info = self.new_raw_dataset.info
+        valid_options = info._valid_options
+
+        file_names = set()
+        for options in (
+            dict(zip(valid_options.keys(), values)) for values in itertools.product(*valid_options.values())
+        ):
+            resources = self.new_raw_dataset.resources(info.make_config(**options))
+            file_names.update([resource.file_name for resource in resources])
+
+        return file_names
+
     @contextlib.contextmanager
     def legacy_root(self):
         new_root = new_datasets.home() / self.name
         legacy_root = pathlib.Path(tempfile.mkdtemp())
 
-        for resource in self.new_raw_dataset.resources(self.new_raw_dataset.default_config):
-            (legacy_root / resource.file_name).symlink_to(new_root / resource.file_name)
+        for file_name in self._find_resource_file_names():
+            (legacy_root / file_name).symlink_to(new_root / file_name)
 
         if self.prepare_legacy_root:
             self.prepare_legacy_root(self, legacy_root)
@@ -172,8 +186,15 @@ class DatasetBenchmark:
     }
 
     def _legacy_special_options_map(self, config):
-        available_kwargs = {name for name in inspect.signature(self.legacy_cls.__init__).parameters}
-        available_special_kwargs = self._SPECIAL_KWARGS.intersection(available_kwargs)
+        available_parameters = set()
+
+        for cls in self.legacy_cls.__mro__:
+            if cls is legacy_datasets.VisionDataset:
+                break
+
+            available_parameters.update(inspect.signature(cls.__init__).parameters)
+
+        available_special_kwargs = self._SPECIAL_KWARGS.intersection(available_parameters)
 
         special_options = dict()
 
@@ -188,52 +209,6 @@ class DatasetBenchmark:
             special_options["transforms"] = StandardTransform(ToTensor(), ToTensor())
 
         return special_options
-
-
-def base_folder(rel_folder=None):
-    def prepare_legacy_root(benchmark: DatasetBenchmark, root: pathlib.Path):
-        files = root.glob("*")
-        folder = root / (rel_folder or benchmark.name)
-        folder.mkdir()
-        for file in files:
-            shutil.move(str(file), str(folder))
-
-    return prepare_legacy_root
-
-
-DATASET_BENCHMARKS = [
-    DatasetBenchmark("caltech101", prepare_legacy_root=base_folder()),
-    DatasetBenchmark("caltech256", prepare_legacy_root=base_folder()),
-    DatasetBenchmark(
-        "celeba",
-        prepare_legacy_root=base_folder(),
-        legacy_config_map=lambda config: dict(
-            split="valid" if config.split == "val" else config.split,
-            target_type=("attr", "identity", "bbox", "landmarks"),
-        ),
-    ),
-    DatasetBenchmark(
-        "cifar10",
-        legacy_config_map=lambda config: dict(train=config.split == "train"),
-    ),
-    DatasetBenchmark(
-        "cifar100",
-        legacy_config_map=lambda config: dict(train=config.split == "train"),
-    ),
-    DatasetBenchmark(
-        "sbd",
-        legacy_cls=legacy_datasets.SBDataset,
-        legacy_config_map=lambda config: dict(
-            image_set=config.split,
-            mode="boundaries" if config.boundaries else "segmentation",
-        ),
-        legacy_special_options_map=lambda config: dict(
-            download=True,
-            transforms=StandardTransform(ToTensor(), torch.tensor if config.boundaries else ToTensor()),
-        ),
-    ),
-    DatasetBenchmark("voc", legacy_cls=legacy_datasets.VOCDetection),
-]
 
 
 class Measurement:
@@ -293,6 +268,118 @@ class Measurement:
         mean = float(t.mean())
         std = float(t.std(0, unbiased=t.numel() > 1))
         return mean, std
+
+
+def base_folder(rel_folder=None):
+    if rel_folder is None:
+
+        def rel_folder(benchmark):
+            return benchmark.name
+
+    elif not callable(rel_folder):
+        name = rel_folder
+
+        def rel_folder(_):
+            return name
+
+    def prepare_legacy_root(benchmark, root):
+        files = list(root.glob("*"))
+        folder = root / rel_folder(benchmark)
+        folder.mkdir(parents=True)
+        for file in files:
+            shutil.move(str(file), str(folder))
+
+        return folder
+
+    return prepare_legacy_root
+
+
+mnist_base_folder = base_folder(lambda benchmark: pathlib.Path(benchmark.legacy_cls.__name__) / "raw")
+
+
+def mnist_legacy_config_map(config):
+    return dict(train=config.split == "train")
+
+
+def emnist_prepare_legacy_root(benchmark, root):
+    folder = mnist_base_folder(benchmark, root)
+    shutil.move(str(folder / "emnist-gzip.zip"), str(folder / "gzip.zip"))
+    return folder
+
+
+def emnist_legacy_config_map(config):
+    legacy_config = mnist_legacy_config_map(config)
+    legacy_config["split"] = config.image_set.replace("_", "").lower()
+    return legacy_config
+
+
+def qmnist_legacy_config_map(config):
+    legacy_config = mnist_legacy_config_map(config)
+    legacy_config["what"] = config.split
+    # The new dataset always returns the full label
+    legacy_config["compat"] = False
+    return legacy_config
+
+
+DATASET_BENCHMARKS = [
+    DatasetBenchmark("caltech101", prepare_legacy_root=base_folder()),
+    DatasetBenchmark("caltech256", prepare_legacy_root=base_folder()),
+    DatasetBenchmark(
+        "celeba",
+        prepare_legacy_root=base_folder(),
+        legacy_config_map=lambda config: dict(
+            split="valid" if config.split == "val" else config.split,
+            # The new dataset always returns all annotations
+            target_type=("attr", "identity", "bbox", "landmarks"),
+        ),
+    ),
+    DatasetBenchmark(
+        "cifar10",
+        legacy_config_map=lambda config: dict(train=config.split == "train"),
+    ),
+    DatasetBenchmark(
+        "cifar100",
+        legacy_config_map=lambda config: dict(train=config.split == "train"),
+    ),
+    DatasetBenchmark(
+        "emnist",
+        prepare_legacy_root=emnist_prepare_legacy_root,
+        legacy_config_map=emnist_legacy_config_map,
+    ),
+    DatasetBenchmark(
+        "fashionmnist",
+        prepare_legacy_root=mnist_base_folder,
+        legacy_config_map=mnist_legacy_config_map,
+    ),
+    DatasetBenchmark(
+        "kmnist",
+        prepare_legacy_root=mnist_base_folder,
+        legacy_config_map=mnist_legacy_config_map,
+    ),
+    DatasetBenchmark(
+        "mnist",
+        prepare_legacy_root=mnist_base_folder,
+        legacy_config_map=mnist_legacy_config_map,
+    ),
+    DatasetBenchmark(
+        "qmnist",
+        prepare_legacy_root=mnist_base_folder,
+        legacy_config_map=mnist_legacy_config_map,
+    ),
+    DatasetBenchmark(
+        "sbd",
+        legacy_cls=legacy_datasets.SBDataset,
+        legacy_config_map=lambda config: dict(
+            image_set=config.split,
+            mode="boundaries" if config.boundaries else "segmentation",
+        ),
+        legacy_special_options_map=lambda config: dict(
+            download=True,
+            transforms=StandardTransform(ToTensor(), torch.tensor if config.boundaries else ToTensor()),
+        ),
+    ),
+    DatasetBenchmark("voc", legacy_cls=legacy_datasets.VOCDetection),
+]
 
 
 def parse_args(args=None):
