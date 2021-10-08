@@ -1,14 +1,14 @@
 import copy
 import operator
 import warnings
-from typing import Callable, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import torch
 from torch import fx
 from torchvision.models.feature_extraction import LeafModuleAwareTracer
 
 
-_MODULE_NAME = "_regularized_shotrcut"
+# TODO: Investigate what happens in the scenario of y = x + f1(x) + f2(x).
 
 
 class RegularizedShortcut(torch.nn.Module):
@@ -29,13 +29,14 @@ def add_regularized_shortcut(
     if not inplace:
         model = copy.deepcopy(model)
 
+    reg_name = RegularizedShortcut.__name__.lower()
     tracer = fx.Tracer()
     modifications = {}
     for name, m in model.named_modules():
         if isinstance(m, block_types):
             # Add the Layer directly on submodule prior tracing
             # workaround due to https://github.com/pytorch/pytorch/issues/66197
-            m.add_module(_MODULE_NAME, RegularizedShortcut(regularizer_layer))
+            m.add_module(reg_name, RegularizedShortcut(regularizer_layer))
 
             graph = tracer.trace(m)
             patterns = {operator.add, torch.add, "add"}
@@ -47,7 +48,7 @@ def add_regularized_shortcut(
                         with graph.inserting_after(node):
                             # Always put the shortcut value first
                             args = node.args if node.args[0] == input else node.args[::-1]
-                            node.replace_all_uses_with(graph.call_module(_MODULE_NAME, args))
+                            node.replace_all_uses_with(graph.call_module(reg_name, args))
                         graph.erase_node(node)
                         modifications[name] = graph
                         break
@@ -72,19 +73,33 @@ def add_regularized_shortcut(
     return model
 
 
-def del_regularized_shortcut(model: torch.nn.Module, inplace: bool = True) -> torch.nn.Module:
+def del_regularized_shortcut(
+    model: torch.nn.Module,
+    block_types: Union[type, Tuple[type, ...]] = RegularizedShortcut,
+    op: Optional[Callable] = operator.add,
+    inplace: bool = True,
+) -> torch.nn.Module:
+    if isinstance(block_types, type):
+        block_types = (block_types,)
     if not inplace:
         model = copy.deepcopy(model)
 
-    tracer = LeafModuleAwareTracer(leaf_modules=[RegularizedShortcut])
+    tracer = LeafModuleAwareTracer(leaf_modules=block_types)
     graph = tracer.trace(model)
     for node in graph.nodes:
-        if node.op == "call_module" and node.target.rsplit(".", 1)[-1] == _MODULE_NAME:
-            with graph.inserting_before(node):
-                new_node = graph.call_function(operator.add, node.args)
-                node.replace_all_uses_with(new_node)
+        if node.op == "call_module" and issubclass(model.get_submodule(node.target).__class__, block_types):
+            if op is not None:
+                with graph.inserting_before(node):
+                    new_node = graph.call_function(op, node.args)
+                    node.replace_all_uses_with(new_node)
+            else:
+                if len(node.args) == 1:
+                    node.replace_all_uses_with(node.prev)
+                else:
+                    raise ValueError("Can't eliminate an operator that receives more than 1 arguments.")
             graph.erase_node(node)
 
+    # BUG: When we reconstruct efficientnet, custom classes like MBConv are replaced with Module and lose their names.
     return fx.GraphModule(model, graph)
 
 
@@ -99,7 +114,8 @@ if __name__ == "__main__":
 
     print("Before")
     model = resnet50()
-    out.append(model(batch))
+    with torch.no_grad():
+        out.append(model(batch))
     fx.symbolic_trace(model).graph.print_tabular()
 
     print("After addition")
@@ -107,14 +123,16 @@ if __name__ == "__main__":
     model = add_regularized_shortcut(model, (BasicBlock, Bottleneck), regularizer_layer)
     fx.symbolic_trace(model).graph.print_tabular()
     # print(model)
-    out.append(model(batch))
+    with torch.no_grad():
+        out.append(model(batch))
     # state_dict = load_state_dict_from_url("https://download.pytorch.org/models/resnet50-0676ba61.pth")
     # model.load_state_dict(state_dict)
 
     print("After deletion")
     model = del_regularized_shortcut(model)
     fx.symbolic_trace(model).graph.print_tabular()
-    out.append(model(batch))
+    with torch.no_grad():
+        out.append(model(batch))
 
     for v in out[1:]:
         torch.testing.assert_allclose(out[0], v)
