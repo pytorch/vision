@@ -87,7 +87,9 @@ def del_regularized_shortcut(
     tracer = LeafModuleAwareTracer(leaf_modules=block_types)
     graph = tracer.trace(model)
     for node in graph.nodes:
-        if node.op == "call_module" and issubclass(model.get_submodule(node.target).__class__, block_types):
+        # The isinstance() won't work if the model has already been traced before because it loses
+        # the class info of submodules. See https://github.com/pytorch/pytorch/issues/66335
+        if node.op == "call_module" and isinstance(model.get_submodule(node.target), block_types):
             if op is not None:
                 with graph.inserting_before(node):
                     new_node = graph.call_function(op, node.args)
@@ -99,7 +101,6 @@ def del_regularized_shortcut(
                     raise ValueError("Can't eliminate an operator that receives more than 1 arguments.")
             graph.erase_node(node)
 
-    # BUG: When we reconstruct efficientnet, custom classes like MBConv are replaced with Module and lose their names.
     return fx.GraphModule(model, graph)
 
 
