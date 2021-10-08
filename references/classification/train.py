@@ -88,23 +88,25 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    resize_size, crop_size = 256, 224
+    val_resize_size, val_crop_size, train_crop_size = 256, 224, 224
     interpolation = InterpolationMode.BILINEAR
     if args.model == "inception_v3":
-        resize_size, crop_size = 342, 299
+        val_resize_size, val_crop_size, train_crop_size = 342, 299, 299
+    elif args.model == "resnet50":
+        val_resize_size, val_crop_size, train_crop_size = 256, 224, 192
     elif args.model.startswith("efficientnet_"):
         sizes = {
-            "b0": (256, 224),
-            "b1": (256, 240),
-            "b2": (288, 288),
-            "b3": (320, 300),
-            "b4": (384, 380),
-            "b5": (456, 456),
-            "b6": (528, 528),
-            "b7": (600, 600),
+            "b0": (256, 224, 224),
+            "b1": (256, 240, 240),
+            "b2": (288, 288, 288),
+            "b3": (320, 300, 300),
+            "b4": (384, 380, 380),
+            "b5": (456, 456, 456),
+            "b6": (528, 528, 528),
+            "b7": (600, 600, 600),
         }
         e_type = args.model.replace("efficientnet_", "")
-        resize_size, crop_size = sizes[e_type]
+        val_resize_size, val_crop_size, train_crop_size = sizes[e_type]
         interpolation = InterpolationMode.BICUBIC
 
     print("Loading training data")
@@ -120,7 +122,10 @@ def load_data(traindir, valdir, args):
         dataset = torchvision.datasets.ImageFolder(
             traindir,
             presets.ClassificationPresetTrain(
-                crop_size=crop_size, auto_augment_policy=auto_augment_policy, random_erase_prob=random_erase_prob
+                crop_size=train_crop_size,
+                interpolation=interpolation,
+                auto_augment_policy=auto_augment_policy,
+                random_erase_prob=random_erase_prob,
             ),
         )
         if args.cache_dataset:
@@ -138,7 +143,9 @@ def load_data(traindir, valdir, args):
     else:
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size, interpolation=interpolation),
+            presets.ClassificationPresetEval(
+                crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
+            ),
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
