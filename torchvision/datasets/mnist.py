@@ -466,10 +466,7 @@ class QMNIST(MNIST):
         split = self.resources[self.subsets[self.what]]
 
         for url, md5 in split:
-            filename = url.rpartition("/")[2]
-            file_path = os.path.join(self.raw_folder, filename)
-            if not os.path.isfile(file_path):
-                download_and_extract_archive(url, self.raw_folder, filename=filename, md5=md5)
+            download_and_extract_archive(url, self.raw_folder, md5=md5)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag
