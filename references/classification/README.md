@@ -1,5 +1,7 @@
 # Image classification reference training scripts
 
+blah
+
 This folder contains reference training scripts for image classification.
 They serve as a log of how to train specific models, as provide baseline
 training and evaluation scripts to quickly bootstrap research.
