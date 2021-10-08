@@ -144,7 +144,7 @@ class PILToTensor:
         """
         .. note::
 
-        A deep copy of the underlying array is performed.
+            A deep copy of the underlying array is performed.
 
         Args:
             pic (PIL Image): Image to be converted to tensor.
