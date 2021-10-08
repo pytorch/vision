@@ -19,6 +19,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import create_categories_file, INFINITE_BUFFER_SIZE, read_mat
 
@@ -30,6 +31,7 @@ class Caltech101(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
+            type=DatasetType.IMAGE,
             categories=HERE / "caltech101.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
@@ -146,6 +148,7 @@ class Caltech256(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
+            type=DatasetType.IMAGE,
             categories=HERE / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
