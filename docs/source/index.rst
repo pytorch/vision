@@ -38,6 +38,7 @@ architectures, and common image transformations for computer vision.
    ops
    transforms
    utils
+   training_references
 
 .. toctree::
    :maxdepth: 1
