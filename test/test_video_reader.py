@@ -258,7 +258,7 @@ def _get_video_tensor(video_dir, video_file):
     assert os.path.exists(full_path), "File not found: %s" % full_path
 
     with open(full_path, "rb") as fp:
-        video_tensor = torch.from_numpy(np.frombuffer(fp.read(), dtype=np.uint8))
+        video_tensor = torch.frombuffer(fp.read(), dtype=torch.uint8)
 
     return full_path, video_tensor
 
