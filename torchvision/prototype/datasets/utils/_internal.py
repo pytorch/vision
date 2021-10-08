@@ -1,8 +1,12 @@
 import collections.abc
 import difflib
+import enum
+import gzip
 import io
+import lzma
+import os.path
 import pathlib
-from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar, Iterator, Dict
+from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar, Iterator, Dict, Optional
 
 import numpy as np
 import PIL.Image
@@ -22,6 +26,7 @@ __all__ = [
     "getitem",
     "path_accessor",
     "path_comparator",
+    "Decompressor",
 ]
 
 K = TypeVar("K")
@@ -134,3 +139,47 @@ def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -
         return accessor(data) == value
 
     return wrapper
+
+
+class CompressionType(enum.Enum):
+    GZIP = "gzip"
+    LZMA = "lzma"
+
+
+class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
+    types = CompressionType
+
+    _DECOMPRESSORS = {
+        types.GZIP: lambda file: gzip.GzipFile(fileobj=file),
+        types.LZMA: lambda file: lzma.LZMAFile(file),
+    }
+
+    def __init__(
+        self,
+        datapipe: IterDataPipe[Tuple[str, io.IOBase]],
+        *,
+        type: Optional[Union[str, CompressionType]] = None,
+    ) -> None:
+        self.datapipe = datapipe
+        if isinstance(type, str):
+            type = self.types(type.upper())
+        self.type = type
+
+    def _detect_compression_type(self, path: str) -> CompressionType:
+        if self.type:
+            return self.type
+
+        # TODO: this needs to be more elaborate
+        ext = os.path.splitext(path)[1]
+        if ext == ".gz":
+            return self.types.GZIP
+        elif ext == ".xz":
+            return self.types.LZMA
+        else:
+            raise RuntimeError("FIXME")
+
+    def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
+        for path, file in self.datapipe:
+            type = self._detect_compression_type(path)
+            decompressor = self._DECOMPRESSORS[type]
+            yield path, decompressor(file)
