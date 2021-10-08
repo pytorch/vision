@@ -2,7 +2,7 @@ import collections.abc
 import difflib
 import io
 import pathlib
-from typing import Collection, Sequence, Callable, Union, Iterator, Tuple, TypeVar, Dict, Any
+from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar, Iterator, Dict
 
 import numpy as np
 import PIL.Image
