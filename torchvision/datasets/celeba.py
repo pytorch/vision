@@ -1,13 +1,12 @@
 import csv
 import os
 from collections import namedtuple
-from functools import partial
 from typing import Any, Callable, List, Optional, Union, Tuple
 
 import PIL
 import torch
 
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
+from .utils import download_file_from_google_drive, check_integrity, verify_str_arg, extract_archive
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
@@ -115,15 +114,14 @@ class CelebA(VisionDataset):
         filename: str,
         header: Optional[int] = None,
     ) -> CSV:
-        data, indices, headers = [], [], []
-
-        fn = partial(os.path.join, self.root, self.base_folder)
-        with open(fn(filename)) as csv_file:
+        with open(os.path.join(self.root, self.base_folder, filename)) as csv_file:
             data = list(csv.reader(csv_file, delimiter=" ", skipinitialspace=True))
 
         if header is not None:
             headers = data[header]
             data = data[header + 1 :]
+        else:
+            headers = []
 
         indices = [row[0] for row in data]
         data = [row[1:] for row in data]
@@ -144,8 +142,6 @@ class CelebA(VisionDataset):
         return os.path.isdir(os.path.join(self.root, self.base_folder, "img_align_celeba"))
 
     def download(self) -> None:
-        import zipfile
-
         if self._check_integrity():
             print("Files already downloaded and verified")
             return
@@ -153,8 +149,7 @@ class CelebA(VisionDataset):
         for (file_id, md5, filename) in self.file_list:
             download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
 
-        with zipfile.ZipFile(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"), "r") as f:
-            f.extractall(os.path.join(self.root, self.base_folder))
+        extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))

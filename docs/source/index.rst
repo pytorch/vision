@@ -41,9 +41,10 @@ architectures, and common image transformations for computer vision.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Examples
+   :caption: Examples and training references
 
    auto_examples/index
+   training_references
 
 .. automodule:: torchvision
    :members:

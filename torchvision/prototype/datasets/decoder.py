@@ -6,7 +6,11 @@ import PIL.Image
 from torchvision.io.video import read_video
 from torchvision.transforms.functional import pil_to_tensor
 
-__all__ = ["pil", "av"]
+__all__ = ["raw", "pil", "av"]
+
+
+def raw(buffer: io.IOBase) -> Dict[str, Any]:
+    raise RuntimeError("This is just a sentinel and should never be called.")
 
 
 def pil(buffer: io.IOBase, *, mode: str = "RGB") -> Dict[str, Any]:

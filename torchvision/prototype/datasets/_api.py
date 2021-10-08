@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.datasets import home
-from torchvision.prototype.datasets.decoder import pil, av
+from torchvision.prototype.datasets.decoder import av, raw, pil
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetType
 from torchvision.prototype.datasets.utils._internal import add_suggestion
 
@@ -50,6 +50,7 @@ def info(name: str) -> DatasetInfo:
 default = object()
 
 DEFAULT_DECODER: Dict[DatasetType, Callable[[io.IOBase], Dict[str, Any]]] = {
+    DatasetType.RAW: raw,
     DatasetType.IMAGE: pil,
     DatasetType.VIDEO: av,
 }
@@ -65,7 +66,7 @@ def load(
     dataset = find(name)
 
     if decoder is default:
-        decoder = DEFAULT_DECODER[dataset.info.type]
+        decoder = DEFAULT_DECODER.get(dataset.info.type)
 
     config = dataset.info.make_config(split=split, **options)
     root = home() / name
