@@ -156,6 +156,10 @@ def pil_to_tensor(pic):
 
     See :class:`~torchvision.transforms.PILToTensor` for more details.
 
+    .. note::
+
+        A deep copy of the underlying array is performed.
+
     Args:
         pic (PIL Image): Image to be converted to tensor.
 
@@ -172,7 +176,7 @@ def pil_to_tensor(pic):
         return torch.as_tensor(nppic)
 
     # handle PIL Image
-    img = torch.as_tensor(np.asarray(pic))
+    img = torch.as_tensor(np.array(pic, copy=True))
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
