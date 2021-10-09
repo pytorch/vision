@@ -279,7 +279,7 @@ class InceptionAux(nn.Module):
 
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
-        self.dropout = dropout
+        self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x: Tensor) -> Tensor:
         # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
@@ -291,7 +291,7 @@ class InceptionAux(nn.Module):
         # N x 2048
         x = F.relu(self.fc1(x), inplace=True)
         # N x 1024
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = self.dropout(x)
         # N x 1024
         x = self.fc2(x)
         # N x 1000 (num_classes)

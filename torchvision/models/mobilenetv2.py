@@ -106,6 +106,7 @@ class MobileNetV2(nn.Module):
             Set to 1 to turn off rounding
             block: Module specifying inverted residual building block for mobilenet
             norm_layer: Module specifying the normalization layer to use
+            dropout (float): The droupout probability
 
         """
         super(MobileNetV2, self).__init__()

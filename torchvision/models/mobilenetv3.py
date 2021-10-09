@@ -147,6 +147,7 @@ class MobileNetV3(nn.Module):
             num_classes (int): Number of classes
             block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
             norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            dropout (float): The droupout probability
         """
         super().__init__()
 
