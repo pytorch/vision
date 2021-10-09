@@ -70,6 +70,8 @@ class GoogLeNet(nn.Module):
         aux_logits: bool = True,
         transform_input: bool = False,
         init_weights: Optional[bool] = None,
+        dropout: float = 0.2,
+        dropout_aux: float = 0.7,
         blocks: Optional[List[Callable[..., nn.Module]]] = None,
     ) -> None:
         super(GoogLeNet, self).__init__()
@@ -112,14 +114,14 @@ class GoogLeNet(nn.Module):
         self.inception5b = inception_block(832, 384, 192, 384, 48, 128, 128)
 
         if aux_logits:
-            self.aux1 = inception_aux_block(512, num_classes)
-            self.aux2 = inception_aux_block(528, num_classes)
+            self.aux1 = inception_aux_block(512, num_classes, dropout_aux)
+            self.aux2 = inception_aux_block(528, num_classes, dropout_aux)
         else:
             self.aux1 = None  # type: ignore[assignment]
             self.aux2 = None  # type: ignore[assignment]
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(p=dropout)
         self.fc = nn.Linear(1024, num_classes)
 
         if init_weights:
@@ -264,7 +266,11 @@ class Inception(nn.Module):
 
 class InceptionAux(nn.Module):
     def __init__(
-        self, in_channels: int, num_classes: int, conv_block: Optional[Callable[..., nn.Module]] = None
+        self,
+        in_channels: int,
+        num_classes: int,
+        dropout: float = 0.7,
+        conv_block: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
@@ -273,6 +279,7 @@ class InceptionAux(nn.Module):
 
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
+        self.dropout = dropout
 
     def forward(self, x: Tensor) -> Tensor:
         # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
@@ -284,7 +291,7 @@ class InceptionAux(nn.Module):
         # N x 2048
         x = F.relu(self.fc1(x), inplace=True)
         # N x 1024
-        x = F.dropout(x, 0.7, training=self.training)
+        x = F.dropout(x, p=self.dropout, training=self.training)
         # N x 1024
         x = self.fc2(x)
         # N x 1000 (num_classes)
