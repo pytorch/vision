@@ -1,11 +1,12 @@
-import torch
 from enum import Enum
+
+import torch
 
 from .._internally_replaced_utils import _get_extension_path
 
 
 try:
-    lib_path = _get_extension_path('image')
+    lib_path = _get_extension_path("image")
     torch.ops.load_library(lib_path)
 except (ImportError, OSError):
     pass
@@ -21,6 +22,7 @@ class ImageReadMode(Enum):
     ``ImageReadMode.RGB`` for RGB and ``ImageReadMode.RGB_ALPHA`` for
     RGB with transparency.
     """
+
     UNCHANGED = 0
     GRAY = 1
     GRAY_ALPHA = 2
@@ -111,8 +113,9 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED,
-                device: str = 'cpu') -> torch.Tensor:
+def decode_jpeg(
+    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, device: str = "cpu"
+) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     Optionally converts the image to the desired format.
@@ -135,7 +138,7 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
         output (Tensor[image_channels, image_height, image_width])
     """
     device = torch.device(device)
-    if device.type == 'cuda':
+    if device.type == "cuda":
         output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
     else:
         output = torch.ops.image.decode_jpeg(input, mode.value)
@@ -158,8 +161,7 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
             JPEG file.
     """
     if quality < 1 or quality > 100:
-        raise ValueError('Image quality should be a positive number '
-                         'between 1 and 100')
+        raise ValueError("Image quality should be a positive number " "between 1 and 100")
 
     output = torch.ops.image.encode_jpeg(input, quality)
     return output

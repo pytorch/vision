@@ -26,6 +26,10 @@ fi
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
 conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
 
+printf "Installing torchdata from source"
+pip install git+https://github.com/pytorch/data.git
+
+
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
     # Install the minimal PILLOW version. Otherwise, let setup.py install the latest

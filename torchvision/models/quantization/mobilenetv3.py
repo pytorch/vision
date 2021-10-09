@@ -1,41 +1,75 @@
+from typing import Any, List, Optional
+
 import torch
 from torch import nn, Tensor
-from ..._internally_replaced_utils import load_state_dict_from_url
-from torchvision.models.mobilenetv3 import InvertedResidual, InvertedResidualConfig, ConvBNActivation, MobileNetV3,\
-    SqueezeExcitation, model_urls, _mobilenet_v3_conf
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
-from typing import Any, List, Optional
+
+from ..._internally_replaced_utils import load_state_dict_from_url
+from ...ops.misc import ConvNormActivation, SqueezeExcitation
+from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
 from .utils import _replace_relu
 
 
-__all__ = ['QuantizableMobileNetV3', 'mobilenet_v3_large']
+__all__ = ["QuantizableMobileNetV3", "mobilenet_v3_large"]
 
 quant_model_urls = {
-    'mobilenet_v3_large_qnnpack':
-        "https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
+    "mobilenet_v3_large_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
 }
 
 
 class QuantizableSqueezeExcitation(SqueezeExcitation):
+    _version = 2
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs["scale_activation"] = nn.Hardsigmoid
         super().__init__(*args, **kwargs)
         self.skip_mul = nn.quantized.FloatFunctional()
 
     def forward(self, input: Tensor) -> Tensor:
-        return self.skip_mul.mul(self._scale(input, False), input)
+        return self.skip_mul.mul(self._scale(input), input)
 
     def fuse_model(self) -> None:
-        fuse_modules(self, ['fc1', 'relu'], inplace=True)
+        fuse_modules(self, ["fc1", "activation"], inplace=True)
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        version = local_metadata.get("version", None)
+
+        if version is None or version < 2:
+            default_state_dict = {
+                "scale_activation.activation_post_process.scale": torch.tensor([1.0]),
+                "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),
+                "scale_activation.activation_post_process.fake_quant_enabled": torch.tensor([1]),
+                "scale_activation.activation_post_process.observer_enabled": torch.tensor([1]),
+            }
+            for k, v in default_state_dict.items():
+                full_key = prefix + k
+                if full_key not in state_dict:
+                    state_dict[full_key] = v
+
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
 
 
 class QuantizableInvertedResidual(InvertedResidual):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(  # type: ignore[misc]
-            se_layer=QuantizableSqueezeExcitation,
-            *args,
-            **kwargs
-        )
+        super().__init__(se_layer=QuantizableSqueezeExcitation, *args, **kwargs)  # type: ignore[misc]
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -65,21 +99,16 @@ class QuantizableMobileNetV3(MobileNetV3):
 
     def fuse_model(self) -> None:
         for m in self.modules():
-            if type(m) == ConvBNActivation:
-                modules_to_fuse = ['0', '1']
-                if type(m[2]) == nn.ReLU:
-                    modules_to_fuse.append('2')
+            if type(m) == ConvNormActivation:
+                modules_to_fuse = ["0", "1"]
+                if len(m) == 3 and type(m[2]) == nn.ReLU:
+                    modules_to_fuse.append("2")
                 fuse_modules(m, modules_to_fuse, inplace=True)
             elif type(m) == QuantizableSqueezeExcitation:
                 m.fuse_model()
 
 
-def _load_weights(
-    arch: str,
-    model: QuantizableMobileNetV3,
-    model_url: Optional[str],
-    progress: bool,
-) -> None:
+def _load_weights(arch: str, model: QuantizableMobileNetV3, model_url: Optional[str], progress: bool) -> None:
     if model_url is None:
         raise ValueError("No checkpoint is available for {}".format(arch))
     state_dict = load_state_dict_from_url(model_url, progress=progress)
@@ -100,14 +129,14 @@ def _mobilenet_v3_model(
     _replace_relu(model)
 
     if quantize:
-        backend = 'qnnpack'
+        backend = "qnnpack"
 
         model.fuse_model()
         model.qconfig = torch.quantization.get_default_qat_qconfig(backend)
         torch.quantization.prepare_qat(model, inplace=True)
 
         if pretrained:
-            _load_weights(arch, model, quant_model_urls.get(arch + '_' + backend, None), progress)
+            _load_weights(arch, model, quant_model_urls.get(arch + "_" + backend, None), progress)
 
         torch.quantization.convert(model, inplace=True)
         model.eval()
