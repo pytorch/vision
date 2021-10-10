@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import List, Tuple
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 from torchvision.ops.misc import FrozenBatchNorm2d
 
 
@@ -12,8 +12,7 @@ class BalancedPositiveNegativeSampler(object):
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
 
-    def __init__(self, batch_size_per_image, positive_fraction):
-        # type: (int, float) -> None
+    def __init__(self, batch_size_per_image: int, positive_fraction: float) -> None:
         """
         Args:
             batch_size_per_image (int): number of elements to be selected per image
@@ -350,7 +349,7 @@ class SSDMatcher(Matcher):
         return matches
 
 
-def overwrite_eps(model, eps):
+def overwrite_eps(model: nn.Module, eps: float) -> None:
     """
     This method overwrites the default eps values of all the
     FrozenBatchNorm2d layers of the model with the provided value.
@@ -368,7 +367,7 @@ def overwrite_eps(model, eps):
             module.eps = eps
 
 
-def retrieve_out_channels(model, size):
+def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
     """
     This method retrieves the number of output channels of a specific model.
 
