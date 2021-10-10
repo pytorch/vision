@@ -473,6 +473,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=get_extensions(),
+        python_requires='>=3.6',
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,
