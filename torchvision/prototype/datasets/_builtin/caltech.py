@@ -19,6 +19,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import create_categories_file, INFINITE_BUFFER_SIZE, read_mat
 
@@ -30,6 +31,7 @@ class Caltech101(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
+            type=DatasetType.IMAGE,
             categories=HERE / "caltech101.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
@@ -117,11 +119,11 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = TarArchiveReader(images_dp)
-        images_dp = Filter(images_dp, self._is_not_background_image)
+        images_dp: IterDataPipe = Filter(images_dp, self._is_not_background_image)
         images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = TarArchiveReader(anns_dp)
-        anns_dp = Filter(anns_dp, self._is_ann)
+        anns_dp: IterDataPipe = Filter(anns_dp, self._is_ann)
 
         dp = KeyZipper(
             images_dp,
@@ -136,7 +138,7 @@ class Caltech101(Dataset):
     def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp = Filter(dp, self._is_not_background_image)
+        dp: IterDataPipe = Filter(dp, self._is_not_background_image)
         dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
         create_categories_file(HERE, self.name, sorted(dir_names))
 
@@ -146,6 +148,7 @@ class Caltech256(Dataset):
     def info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
+            type=DatasetType.IMAGE,
             categories=HERE / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
@@ -185,7 +188,7 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)
-        dp = Filter(dp, self._is_not_rogue_file)
+        dp: IterDataPipe = Filter(dp, self._is_not_rogue_file)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
