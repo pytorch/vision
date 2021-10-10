@@ -193,6 +193,6 @@ def create_aspect_ratio_groups(dataset, k=0):
     # count number of elements per group
     counts = np.unique(groups, return_counts=True)[1]
     fbins = [0] + bins + [np.inf]
-    print("Using {} as bins for aspect ratio quantization".format(fbins))
-    print("Count of instances per bin: {}".format(counts))
+    print(f"Using {fbins} as bins for aspect ratio quantization")
+    print(f"Count of instances per bin: {counts}")
     return groups

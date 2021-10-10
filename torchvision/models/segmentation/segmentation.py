@@ -55,7 +55,7 @@ def _segm_model(
         aux_layer = str(aux_pos)
         aux_inplanes = backbone[aux_pos].out_channels
     else:
-        raise NotImplementedError("backbone {} is not supported as of now".format(backbone_name))
+        raise NotImplementedError(f"backbone {backbone_name} is not supported as of now")
 
     return_layers = {out_layer: "out"}
     if aux:
@@ -99,7 +99,7 @@ def _load_weights(model: nn.Module, arch_type: str, backbone: str, progress: boo
     arch = arch_type + "_" + backbone + "_coco"
     model_url = model_urls.get(arch, None)
     if model_url is None:
-        raise NotImplementedError("pretrained {} is not supported as of now".format(arch))
+        raise NotImplementedError(f"pretrained {arch} is not supported as of now")
     else:
         state_dict = load_state_dict_from_url(model_url, progress=progress)
         model.load_state_dict(state_dict)

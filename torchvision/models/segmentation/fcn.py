@@ -34,4 +34,4 @@ class FCNHead(nn.Sequential):
             nn.Conv2d(inter_channels, channels, 1),
         ]
 
-        super(FCNHead, self).__init__(*layers)
+        super().__init__(*layers)

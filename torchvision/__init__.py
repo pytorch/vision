@@ -43,7 +43,7 @@ def set_image_backend(backend):
     """
     global _image_backend
     if backend not in ["PIL", "accimage"]:
-        raise ValueError("Invalid backend '{}'. Options are 'PIL' and 'accimage'".format(backend))
+        raise ValueError(f"Invalid backend '{backend}'. Options are 'PIL' and 'accimage'")
     _image_backend = backend
 
 

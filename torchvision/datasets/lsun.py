@@ -18,7 +18,7 @@ class LSUNClass(VisionDataset):
     ) -> None:
         import lmdb
 
-        super(LSUNClass, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
 
         self.env = lmdb.open(root, max_readers=1, readonly=True, lock=False, readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
@@ -77,7 +77,7 @@ class LSUN(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
-        super(LSUN, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.classes = self._verify_classes(classes)
 
         # for each class, create an LSUNClassDataset

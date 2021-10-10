@@ -39,7 +39,7 @@ class Omniglot(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(Omniglot, self).__init__(join(root, self.folder), transform=transform, target_transform=target_transform)
+        super().__init__(join(root, self.folder), transform=transform, target_transform=target_transform)
         self.background = background
 
         if download:
@@ -51,7 +51,7 @@ class Omniglot(VisionDataset):
         self.target_folder = join(self.root, self._get_target_folder())
         self._alphabets = list_dir(self.target_folder)
         self._characters: List[str] = sum(
-            [[join(a, c) for c in list_dir(join(self.target_folder, a))] for a in self._alphabets], []
+            ([join(a, c) for c in list_dir(join(self.target_folder, a))] for a in self._alphabets), []
         )
         self._character_images = [
             [(image, idx) for image in list_files(join(self.target_folder, character), ".png")]

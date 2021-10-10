@@ -117,7 +117,7 @@ class DatasetInfo:
         elif isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
-            with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
+            with open(pathlib.Path(categories).expanduser().resolve()) as fh:
                 categories = [line.strip() for line in fh]
         self.categories = tuple(categories)
 

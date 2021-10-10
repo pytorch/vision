@@ -20,7 +20,7 @@ default_timebase = Fraction(0, 1)
 
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
-class Timebase(object):
+class Timebase:
     __annotations__ = {"numerator": int, "denominator": int}
     __slots__ = ["numerator", "denominator"]
 
@@ -34,7 +34,7 @@ class Timebase(object):
         self.denominator = denominator
 
 
-class VideoMetaData(object):
+class VideoMetaData:
     __annotations__ = {
         "has_video": bool,
         "video_timebase": Timebase,
@@ -74,7 +74,7 @@ def _validate_pts(pts_range):
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: {0:d} and end pts: {1:d}""".format(
+            start pts: {:d} and end pts: {:d}""".format(
             pts_range[0],
             pts_range[1],
         )

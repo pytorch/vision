@@ -60,7 +60,7 @@ class SVHN(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(SVHN, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = verify_str_arg(split, "split", tuple(self.split_list.keys()))
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]

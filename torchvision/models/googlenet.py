@@ -74,7 +74,7 @@ class GoogLeNet(nn.Module):
         dropout: float = 0.2,
         dropout_aux: float = 0.7,
     ) -> None:
-        super(GoogLeNet, self).__init__()
+        super().__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
         if init_weights is None:
@@ -229,7 +229,7 @@ class Inception(nn.Module):
         pool_proj: int,
         conv_block: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
-        super(Inception, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1 = conv_block(in_channels, ch1x1, kernel_size=1)
@@ -272,7 +272,7 @@ class InceptionAux(nn.Module):
         conv_block: Optional[Callable[..., nn.Module]] = None,
         dropout: float = 0.7,
     ) -> None:
-        super(InceptionAux, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.conv = conv_block(in_channels, 128, kernel_size=1)
@@ -301,7 +301,7 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, **kwargs: Any) -> None:
-        super(BasicConv2d, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
 

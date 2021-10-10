@@ -53,7 +53,7 @@ class STL10(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(STL10, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = verify_str_arg(split, "split", self.splits)
         self.folds = self._verify_folds(folds)
 
@@ -167,7 +167,7 @@ class STL10(VisionDataset):
         if folds is None:
             return
         path_to_folds = os.path.join(self.root, self.base_folder, self.folds_list_file)
-        with open(path_to_folds, "r") as f:
+        with open(path_to_folds) as f:
             str_idx = f.read().splitlines()[folds]
             list_idx = np.fromstring(str_idx, dtype=np.int64, sep=" ")
             self.data = self.data[list_idx, :, :, :]

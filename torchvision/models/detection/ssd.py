@@ -626,7 +626,7 @@ def ssd300_vgg16(
     if pretrained:
         weights_name = "ssd300_vgg16_coco"
         if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+            raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
     return model

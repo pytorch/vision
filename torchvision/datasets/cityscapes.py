@@ -111,7 +111,7 @@ class Cityscapes(VisionDataset):
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
     ) -> None:
-        super(Cityscapes, self).__init__(root, transforms, transform, target_transform)
+        super().__init__(root, transforms, transform, target_transform)
         self.mode = "gtFine" if mode == "fine" else "gtCoarse"
         self.images_dir = os.path.join(self.root, "leftImg8bit", split)
         self.targets_dir = os.path.join(self.root, self.mode, split)
@@ -206,16 +206,16 @@ class Cityscapes(VisionDataset):
         return "\n".join(lines).format(**self.__dict__)
 
     def _load_json(self, path: str) -> Dict[str, Any]:
-        with open(path, "r") as file:
+        with open(path) as file:
             data = json.load(file)
         return data
 
     def _get_target_suffix(self, mode: str, target_type: str) -> str:
         if target_type == "instance":
-            return "{}_instanceIds.png".format(mode)
+            return f"{mode}_instanceIds.png"
         elif target_type == "semantic":
-            return "{}_labelIds.png".format(mode)
+            return f"{mode}_labelIds.png"
         elif target_type == "color":
-            return "{}_color.png".format(mode)
+            return f"{mode}_color.png"
         else:
-            return "{}_polygons.json".format(mode)
+            return f"{mode}_polygons.json"

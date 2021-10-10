@@ -219,7 +219,7 @@ def test_write_png(img_path, tmpdir):
     img_pil = img_pil.permute(2, 0, 1)
 
     filename, _ = os.path.splitext(os.path.basename(img_path))
-    torch_png = os.path.join(tmpdir, "{0}_torch.png".format(filename))
+    torch_png = os.path.join(tmpdir, f"{filename}_torch.png")
     write_png(img_pil, torch_png, compression_level=6)
     saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
     saved_image = saved_image.permute(2, 0, 1)
@@ -426,7 +426,7 @@ def test_encode_jpeg_reference(img_path):
     dirname = os.path.dirname(img_path)
     filename, _ = os.path.splitext(os.path.basename(img_path))
     write_folder = os.path.join(dirname, "jpeg_write")
-    expected_file = os.path.join(write_folder, "{0}_pil.jpg".format(filename))
+    expected_file = os.path.join(write_folder, f"{filename}_pil.jpg")
     img = decode_jpeg(read_file(img_path))
 
     with open(expected_file, "rb") as f:
@@ -450,8 +450,8 @@ def test_write_jpeg_reference(img_path, tmpdir):
 
     basedir = os.path.dirname(img_path)
     filename, _ = os.path.splitext(os.path.basename(img_path))
-    torch_jpeg = os.path.join(tmpdir, "{0}_torch.jpg".format(filename))
-    pil_jpeg = os.path.join(basedir, "jpeg_write", "{0}_pil.jpg".format(filename))
+    torch_jpeg = os.path.join(tmpdir, f"{filename}_torch.jpg")
+    pil_jpeg = os.path.join(basedir, "jpeg_write", f"{filename}_pil.jpg")
 
     write_jpeg(img, torch_jpeg, quality=75)
 

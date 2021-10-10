@@ -66,9 +66,9 @@ class VisionDataset(data.Dataset):
 
     def __repr__(self) -> str:
         head = "Dataset " + self.__class__.__name__
-        body = ["Number of datapoints: {}".format(self.__len__())]
+        body = [f"Number of datapoints: {self.__len__()}"]
         if self.root is not None:
-            body.append("Root location: {}".format(self.root))
+            body.append(f"Root location: {self.root}")
         body += self.extra_repr().splitlines()
         if hasattr(self, "transforms") and self.transforms is not None:
             body += [repr(self.transforms)]
@@ -77,13 +77,13 @@ class VisionDataset(data.Dataset):
 
     def _format_transform_repr(self, transform: Callable, head: str) -> List[str]:
         lines = transform.__repr__().splitlines()
-        return ["{}{}".format(head, lines[0])] + ["{}{}".format(" " * len(head), line) for line in lines[1:]]
+        return [f"{head}{lines[0]}"] + ["{}{}".format(" " * len(head), line) for line in lines[1:]]
 
     def extra_repr(self) -> str:
         return ""
 
 
-class StandardTransform(object):
+class StandardTransform:
     def __init__(self, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None) -> None:
         self.transform = transform
         self.target_transform = target_transform
@@ -97,7 +97,7 @@ class StandardTransform(object):
 
     def _format_transform_repr(self, transform: Callable, head: str) -> List[str]:
         lines = transform.__repr__().splitlines()
-        return ["{}{}".format(head, lines[0])] + ["{}{}".format(" " * len(head), line) for line in lines[1:]]
+        return [f"{head}{lines[0]}"] + ["{}{}".format(" " * len(head), line) for line in lines[1:]]
 
     def __repr__(self) -> str:
         body = [self.__class__.__name__]

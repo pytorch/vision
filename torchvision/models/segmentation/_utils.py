@@ -9,7 +9,7 @@ class _SimpleSegmentationModel(nn.Module):
     __constants__ = ["aux_classifier"]
 
     def __init__(self, backbone: nn.Module, classifier: nn.Module, aux_classifier: Optional[nn.Module] = None) -> None:
-        super(_SimpleSegmentationModel, self).__init__()
+        super().__init__()
         self.backbone = backbone
         self.classifier = classifier
         self.aux_classifier = aux_classifier

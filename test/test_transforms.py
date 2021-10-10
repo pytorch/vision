@@ -114,7 +114,7 @@ class TestConvertImageDtype:
             output_image,
             rtol=0.0,
             atol=1e-6,
-            msg="{} vs {}".format(output_image_script, output_image),
+            msg=f"{output_image_script} vs {output_image}",
         )
 
         actual_min, actual_max = output_image.tolist()
@@ -368,7 +368,7 @@ def test_resize(height, width, osize, max_size):
     t = transforms.Resize(osize, max_size=max_size)
     result = t(img)
 
-    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
+    msg = f"{height}, {width} - {osize} - {max_size}"
     osize = osize[0] if isinstance(osize, (list, tuple)) else osize
     # If size is an int, smaller edge of the image will be matched to this number.
     # i.e, if height > width, then image will be rescaled to (size * height / width, size).
@@ -469,11 +469,11 @@ class TestPad:
         width = random.randint(10, 32) * 2
         img = transforms.ToPILImage()(torch.ones(3, height, width))
 
-        padding = tuple([random.randint(1, 20) for _ in range(2)])
+        padding = tuple(random.randint(1, 20) for _ in range(2))
         output = transforms.Pad(padding)(img)
         assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
 
-        padding = tuple([random.randint(1, 20) for _ in range(4)])
+        padding = tuple(random.randint(1, 20) for _ in range(4))
         output = transforms.Pad(padding)(img)
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
@@ -1823,7 +1823,7 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     assert_equal(
         output_tensor,
         output_pil,
-        msg="image_size: {} crop_size: {}".format(input_image_size, crop_size),
+        msg=f"image_size: {input_image_size} crop_size: {crop_size}",
     )
 
     # Check if content in center of both image and cropped output is same.
@@ -2210,9 +2210,9 @@ class TestAffine:
         np_result = np.array(result)
         n_diff_pixels = np.sum(np_result != true_result) / 3
         # Accept 3 wrong pixels
-        error_msg = "angle={}, translate={}, scale={}, shear={}\n".format(
-            angle, translate, scale, shear
-        ) + "n diff pixels={}\n".format(n_diff_pixels)
+        error_msg = (
+            f"angle={angle}, translate={translate}, scale={scale}, shear={shear}\n" + f"n diff pixels={n_diff_pixels}\n"
+        )
         assert n_diff_pixels < 3, error_msg
 
     def test_transformation_discrete(self, pil_image, input_img):

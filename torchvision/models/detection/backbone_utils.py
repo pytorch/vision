@@ -29,7 +29,7 @@ class BackboneWithFPN(nn.Module):
     """
 
     def __init__(self, backbone, return_layers, in_channels_list, out_channels, extra_blocks=None):
-        super(BackboneWithFPN, self).__init__()
+        super().__init__()
 
         if extra_blocks is None:
             extra_blocks = LastLevelMaxPool()

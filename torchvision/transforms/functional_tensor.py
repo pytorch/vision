@@ -28,7 +28,7 @@ def get_image_num_channels(img: Tensor) -> int:
     elif img.ndim > 2:
         return img.shape[-3]
 
-    raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
+    raise TypeError(f"Input ndim should be 2 or more. Got {img.ndim}")
 
 
 def _max_value(dtype: torch.dtype) -> float:
@@ -52,7 +52,7 @@ def _max_value(dtype: torch.dtype) -> float:
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
     c = get_image_num_channels(img)
     if c not in permitted:
-        raise TypeError("Input image tensor permitted channel values are {}, but found {}".format(permitted, c))
+        raise TypeError(f"Input image tensor permitted channel values are {permitted}, but found {c}")
 
 
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
@@ -134,7 +134,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     if img.ndim < 3:
-        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
     _assert_channels(img, [3])
 
     if num_output_channels not in (1, 3):
@@ -154,7 +154,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     if brightness_factor < 0:
-        raise ValueError("brightness_factor ({}) is not non-negative.".format(brightness_factor))
+        raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
 
@@ -165,7 +165,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
 def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     if contrast_factor < 0:
-        raise ValueError("contrast_factor ({}) is not non-negative.".format(contrast_factor))
+        raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
 
@@ -182,7 +182,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
 def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
-        raise ValueError("hue_factor ({}) is not in [-0.5, 0.5].".format(hue_factor))
+        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError("Input img should be Tensor image")
@@ -211,7 +211,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
 def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     if saturation_factor < 0:
-        raise ValueError("saturation_factor ({}) is not non-negative.".format(saturation_factor))
+        raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
 
@@ -382,7 +382,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 
     # crop if needed
     if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
-        crop_left, crop_right, crop_top, crop_bottom = [-min(x, 0) for x in padding]
+        crop_left, crop_right, crop_top, crop_bottom = (-min(x, 0) for x in padding)
         img = img[..., crop_top : img.shape[-2] - crop_bottom, crop_left : img.shape[-1] - crop_right]
         padding = [max(x, 0) for x in padding]
 
@@ -422,7 +422,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
     if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
         raise ValueError(
-            "Padding must be an int or a 1, 2, or 4 element tuple, not a " + "{} element tuple".format(len(padding))
+            "Padding must be an int or a 1, 2, or 4 element tuple, not a " + f"{len(padding)} element tuple"
         )
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
@@ -597,7 +597,7 @@ def _assert_grid_transform_inputs(
         raise ValueError(msg.format(len(fill), num_channels))
 
     if interpolation not in supported_interpolation_modes:
-        raise ValueError("Interpolation mode '{}' is unsupported with Tensor input".format(interpolation))
+        raise ValueError(f"Interpolation mode '{interpolation}' is unsupported with Tensor input")
 
 
 def _cast_squeeze_in(img: Tensor, req_dtypes: List[torch.dtype]) -> Tuple[Tensor, bool, bool, torch.dtype]:
@@ -823,7 +823,7 @@ def _get_gaussian_kernel2d(
 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Tensor:
     if not (isinstance(img, torch.Tensor)):
-        raise TypeError("img should be Tensor. Got {}".format(type(img)))
+        raise TypeError(f"img should be Tensor. Got {type(img)}")
 
     _assert_image_tensor(img)
 
@@ -852,7 +852,7 @@ def invert(img: Tensor) -> Tensor:
     _assert_image_tensor(img)
 
     if img.ndim < 3:
-        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
 
     _assert_channels(img, [1, 3])
 
@@ -865,9 +865,9 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     _assert_image_tensor(img)
 
     if img.ndim < 3:
-        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
     if img.dtype != torch.uint8:
-        raise TypeError("Only torch.uint8 image tensors are supported, but found {}".format(img.dtype))
+        raise TypeError(f"Only torch.uint8 image tensors are supported, but found {img.dtype}")
 
     _assert_channels(img, [1, 3])
     mask = -int(2 ** (8 - bits))  # JIT-friendly for: ~(2 ** (8 - bits) - 1)
@@ -879,7 +879,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     _assert_image_tensor(img)
 
     if img.ndim < 3:
-        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
 
     _assert_channels(img, [1, 3])
 
@@ -912,7 +912,7 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
 
 def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
     if sharpness_factor < 0:
-        raise ValueError("sharpness_factor ({}) is not non-negative.".format(sharpness_factor))
+        raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
 
@@ -929,7 +929,7 @@ def autocontrast(img: Tensor) -> Tensor:
     _assert_image_tensor(img)
 
     if img.ndim < 3:
-        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+        raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
 
     _assert_channels(img, [1, 3])
 
@@ -976,9 +976,9 @@ def equalize(img: Tensor) -> Tensor:
     _assert_image_tensor(img)
 
     if not (3 <= img.ndim <= 4):
-        raise TypeError("Input image tensor should have 3 or 4 dimensions, but found {}".format(img.ndim))
+        raise TypeError(f"Input image tensor should have 3 or 4 dimensions, but found {img.ndim}")
     if img.dtype != torch.uint8:
-        raise TypeError("Only torch.uint8 image tensors are supported, but found {}".format(img.dtype))
+        raise TypeError(f"Only torch.uint8 image tensors are supported, but found {img.dtype}")
 
     _assert_channels(img, [1, 3])
 

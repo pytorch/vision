@@ -66,7 +66,7 @@ class CelebA(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(CelebA, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -166,7 +166,7 @@ class CelebA(VisionDataset):
                 target.append(self.landmarks_align[index, :])
             else:
                 # TODO: refactor with utils.verify_str_arg
-                raise ValueError('Target type "{}" is not recognized.'.format(t))
+                raise ValueError(f'Target type "{t}" is not recognized.')
 
         if self.transform is not None:
             X = self.transform(X)

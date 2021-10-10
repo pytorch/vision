@@ -46,7 +46,7 @@ def unfold(tensor, size, step, dilation=1):
     return torch.as_strided(tensor, new_size, new_stride)
 
 
-class _VideoTimestampsDataset(object):
+class _VideoTimestampsDataset:
     """
     Dataset used to parallelize the reading of the timestamps
     of a list of videos, given their paths in the filesystem.
@@ -72,7 +72,7 @@ def _collate_fn(x):
     return x
 
 
-class VideoClips(object):
+class VideoClips:
     """
     Given a list of video files, computes all consecutive subvideos of size
     `clip_length_in_frames`, where the distance between each subvideo in the
@@ -359,7 +359,7 @@ class VideoClips(object):
                 resampling_idx = resampling_idx - resampling_idx[0]
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
-        assert len(video) == self.num_frames, "{} x {}".format(video.shape, self.num_frames)
+        assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
         return video, audio, info, video_idx
 
     def __getstate__(self):

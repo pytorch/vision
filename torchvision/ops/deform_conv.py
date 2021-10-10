@@ -122,7 +122,7 @@ class DeformConv2d(nn.Module):
         groups: int = 1,
         bias: bool = True,
     ):
-        super(DeformConv2d, self).__init__()
+        super().__init__()
 
         if in_channels % groups != 0:
             raise ValueError("in_channels must be divisible by groups")

@@ -92,7 +92,7 @@ class GeneralizedRCNNTransform(nn.Module):
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
     ):
-        super(GeneralizedRCNNTransform, self).__init__()
+        super().__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)
         self.min_size = min_size
@@ -264,8 +264,8 @@ class GeneralizedRCNNTransform(nn.Module):
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         _indent = "\n    "
-        format_string += "{0}Normalize(mean={1}, std={2})".format(_indent, self.image_mean, self.image_std)
-        format_string += "{0}Resize(min_size={1}, max_size={2}, mode='bilinear')".format(
+        format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
+        format_string += "{}Resize(min_size={}, max_size={}, mode='bilinear')".format(
             _indent, self.min_size, self.max_size
         )
         format_string += "\n)"

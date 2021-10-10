@@ -22,7 +22,7 @@ def train_one_epoch(
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     metric_logger.add_meter("img/s", utils.SmoothedValue(window_size=10, fmt="{value}"))
 
-    header = "Epoch: [{}]".format(epoch)
+    header = f"Epoch: [{epoch}]"
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
@@ -130,7 +130,7 @@ def load_data(traindir, valdir, args):
     cache_path = _get_cache_path(traindir)
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
-        print("Loading dataset_train from {}".format(cache_path))
+        print(f"Loading dataset_train from {cache_path}")
         dataset, _ = torch.load(cache_path)
     else:
         auto_augment_policy = getattr(args, "auto_augment", None)
@@ -142,7 +142,7 @@ def load_data(traindir, valdir, args):
             ),
         )
         if args.cache_dataset:
-            print("Saving dataset_train to {}".format(cache_path))
+            print(f"Saving dataset_train to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
     print("Took", time.time() - st)
@@ -151,7 +151,7 @@ def load_data(traindir, valdir, args):
     cache_path = _get_cache_path(valdir)
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
-        print("Loading dataset_test from {}".format(cache_path))
+        print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
     else:
         dataset_test = torchvision.datasets.ImageFolder(
@@ -159,7 +159,7 @@ def load_data(traindir, valdir, args):
             presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size, interpolation=interpolation),
         )
         if args.cache_dataset:
-            print("Saving dataset_test to {}".format(cache_path))
+            print(f"Saving dataset_test to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
 
@@ -243,7 +243,7 @@ def main(args):
             alpha=0.9,
         )
     else:
-        raise RuntimeError("Invalid optimizer {}. Only SGD and RMSprop are supported.".format(args.opt))
+        raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD and RMSprop are supported.")
 
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
@@ -329,12 +329,12 @@ def main(args):
             }
             if model_ema:
                 checkpoint["model_ema"] = model_ema.state_dict()
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 def get_args_parser(add_help=True):

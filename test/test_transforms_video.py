@@ -165,7 +165,7 @@ class TestVideoTransforms:
         random_state = random.getstate()
         random.seed(42)
         clip = torch.rand((3, 4, 112, 112), dtype=torch.float)
-        hclip = clip.flip((-1))
+        hclip = clip.flip(-1)
 
         num_samples = 250
         num_horizontal = 0

@@ -26,7 +26,7 @@ class LeafModuleAwareTracer(fx.Tracer):
         if "leaf_modules" in kwargs:
             leaf_modules = kwargs.pop("leaf_modules")
             self.leaf_modules = leaf_modules
-        super(LeafModuleAwareTracer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def is_leaf_module(self, m: nn.Module, module_qualname: str) -> bool:
         if isinstance(m, tuple(self.leaf_modules)):
@@ -54,7 +54,7 @@ class NodePathTracer(LeafModuleAwareTracer):
     """
 
     def __init__(self, *args, **kwargs):
-        super(NodePathTracer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Track the qualified name of the Node being traced
         self.current_module_qualname = ""
         # A map from FX Node to the qualified name\#

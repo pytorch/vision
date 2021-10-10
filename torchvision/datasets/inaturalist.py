@@ -74,9 +74,7 @@ class INaturalist(VisionDataset):
     ) -> None:
         self.version = verify_str_arg(version, "version", DATASET_URLS.keys())
 
-        super(INaturalist, self).__init__(
-            os.path.join(root, version), transform=transform, target_transform=target_transform
-        )
+        super().__init__(os.path.join(root, version), transform=transform, target_transform=target_transform)
 
         os.makedirs(root, exist_ok=True)
         if download:

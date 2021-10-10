@@ -33,7 +33,7 @@ class SBU(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = True,
     ) -> None:
-        super(SBU, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
 
         if download:
             self.download()

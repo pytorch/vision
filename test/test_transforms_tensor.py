@@ -366,7 +366,7 @@ def test_x_crop_save(method, tmpdir):
         ]
     )
     scripted_fn = torch.jit.script(fn)
-    scripted_fn.save(os.path.join(tmpdir, "t_op_list_{}.pt".format(method)))
+    scripted_fn.save(os.path.join(tmpdir, f"t_op_list_{method}.pt"))
 
 
 class TestResize:
@@ -811,7 +811,7 @@ def test_compose(device):
     transformed_tensor = transforms(tensor)
     torch.manual_seed(12)
     transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+    assert_equal(transformed_tensor, transformed_tensor_script, msg=f"{transforms}")
 
     t = T.Compose(
         [
@@ -849,7 +849,7 @@ def test_random_apply(device):
     transformed_tensor = transforms(tensor)
     torch.manual_seed(12)
     transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+    assert_equal(transformed_tensor, transformed_tensor_script, msg=f"{transforms}")
 
     if device == "cpu":
         # Can't check this twice, otherwise

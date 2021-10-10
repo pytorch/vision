@@ -34,7 +34,7 @@ def channel_shuffle(x: Tensor, groups: int) -> Tensor:
 
 class InvertedResidual(nn.Module):
     def __init__(self, inp: int, oup: int, stride: int) -> None:
-        super(InvertedResidual, self).__init__()
+        super().__init__()
 
         if not (1 <= stride <= 3):
             raise ValueError("illegal stride value")
@@ -98,7 +98,7 @@ class ShuffleNetV2(nn.Module):
         num_classes: int = 1000,
         inverted_residual: Callable[..., nn.Module] = InvertedResidual,
     ) -> None:
-        super(ShuffleNetV2, self).__init__()
+        super().__init__()
 
         if len(stages_repeats) != 3:
             raise ValueError("expected stages_repeats as list of 3 positive ints")
@@ -121,7 +121,7 @@ class ShuffleNetV2(nn.Module):
         self.stage2: nn.Sequential
         self.stage3: nn.Sequential
         self.stage4: nn.Sequential
-        stage_names = ["stage{}".format(i) for i in [2, 3, 4]]
+        stage_names = [f"stage{i}" for i in [2, 3, 4]]
         for name, repeats, output_channels in zip(stage_names, stages_repeats, self._stage_out_channels[1:]):
             seq = [inverted_residual(input_channels, output_channels, 2)]
             for i in range(repeats - 1):
@@ -160,7 +160,7 @@ def _shufflenetv2(arch: str, pretrained: bool, progress: bool, *args: Any, **kwa
     if pretrained:
         model_url = model_urls[arch]
         if model_url is None:
-            raise NotImplementedError("pretrained {} is not supported as of now".format(arch))
+            raise NotImplementedError(f"pretrained {arch} is not supported as of now")
         else:
             state_dict = load_state_dict_from_url(model_url, progress=progress)
             model.load_state_dict(state_dict)

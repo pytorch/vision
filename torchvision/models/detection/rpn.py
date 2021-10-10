@@ -34,7 +34,7 @@ class RPNHead(nn.Module):
     """
 
     def __init__(self, in_channels, num_anchors):
-        super(RPNHead, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
         self.cls_logits = nn.Conv2d(in_channels, num_anchors, kernel_size=1, stride=1)
         self.bbox_pred = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=1, stride=1)
@@ -137,7 +137,7 @@ class RegionProposalNetwork(torch.nn.Module):
         nms_thresh,
         score_thresh=0.0,
     ):
-        super(RegionProposalNetwork, self).__init__()
+        super().__init__()
         self.anchor_generator = anchor_generator
         self.head = head
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))

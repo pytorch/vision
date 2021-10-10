@@ -125,7 +125,7 @@ res_scripted = scripted_predictor(batch)
 
 import json
 
-with open(Path('assets') / 'imagenet_class_index.json', 'r') as labels_file:
+with open(Path('assets') / 'imagenet_class_index.json') as labels_file:
     labels = json.load(labels_file)
 
 for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):

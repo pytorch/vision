@@ -138,7 +138,7 @@ def download_url(
         try:
             print("Downloading " + url + " to " + fpath)
             _urlretrieve(url, fpath)
-        except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
+        except (urllib.error.URLError, OSError) as e:  # type: ignore[attr-defined]
             if url[:5] == "https":
                 url = url.replace("https:", "http:")
                 print("Failed download. Trying https -> http instead." " Downloading " + url + " to " + fpath)
@@ -428,7 +428,7 @@ def download_and_extract_archive(
     download_url(url, download_root, filename, md5)
 
     archive = os.path.join(download_root, filename)
-    print("Extracting {} to {}".format(archive, extract_root))
+    print(f"Extracting {archive} to {extract_root}")
     extract_archive(archive, extract_root, remove_finished)
 
 

@@ -75,12 +75,12 @@ def _assert_expected(output, name, prec):
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
-        print("Accepting updated output for {}:\n\n{}".format(filename, output))
+        print(f"Accepting updated output for {filename}:\n\n{output}")
         torch.save(output, expected_file)
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
         if binary_size > MAX_PICKLE_SIZE:
-            raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
+            raise RuntimeError(f"The output for {filename}, is larger than 50kb")
     else:
         expected = torch.load(expected_file)
         rtol = atol = prec
@@ -284,11 +284,11 @@ def test_memory_efficient_densenet(model_name):
 
     model1 = models.__dict__[model_name](num_classes=50, memory_efficient=True)
     params = model1.state_dict()
-    num_params = sum([x.numel() for x in model1.parameters()])
+    num_params = sum(x.numel() for x in model1.parameters())
     model1.eval()
     out1 = model1(x)
     out1.sum().backward()
-    num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
+    num_grad = sum(x.grad.numel() for x in model1.parameters() if x.grad is not None)
 
     model2 = models.__dict__[model_name](num_classes=50, memory_efficient=False)
     model2.load_state_dict(params)
@@ -435,8 +435,8 @@ def test_generalizedrcnn_transform_repr():
     # Check integrity of object __repr__ attribute
     expected_string = "GeneralizedRCNNTransform("
     _indent = "\n    "
-    expected_string += "{0}Normalize(mean={1}, std={2})".format(_indent, image_mean, image_std)
-    expected_string += "{0}Resize(min_size=({1},), max_size={2}, ".format(_indent, min_size, max_size)
+    expected_string += f"{_indent}Normalize(mean={image_mean}, std={image_std})"
+    expected_string += f"{_indent}Resize(min_size=({min_size},), max_size={max_size}, "
     expected_string += "mode='bilinear')\n)"
     assert t.__repr__() == expected_string
 

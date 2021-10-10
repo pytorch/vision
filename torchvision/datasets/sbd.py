@@ -65,7 +65,7 @@ class SBDataset(VisionDataset):
         except ImportError:
             raise RuntimeError("Scipy is not found. This dataset needs to have scipy installed: " "pip install scipy")
 
-        super(SBDataset, self).__init__(root, transforms)
+        super().__init__(root, transforms)
         self.image_set = verify_str_arg(image_set, "image_set", ("train", "val", "train_noval"))
         self.mode = verify_str_arg(mode, "mode", ("segmentation", "boundaries"))
         self.num_classes = 20
@@ -87,7 +87,7 @@ class SBDataset(VisionDataset):
 
         split_f = os.path.join(sbd_root, image_set.rstrip("\n") + ".txt")
 
-        with open(os.path.join(split_f), "r") as fh:
+        with open(os.path.join(split_f)) as fh:
             file_names = [x.strip() for x in fh.readlines()]
 
         self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
