@@ -125,7 +125,7 @@ class Cityscapes(VisionDataset):
             valid_modes = ("train", "test", "val")
         else:
             valid_modes = ("train", "train_extra", "val")
-        msg = "Unknown value '{}' for argument split if mode is '{}'. " "Valid values are {{{}}}."
+        msg = "Unknown value '{}' for argument split if mode is '{}'. Valid values are {{{}}}."
         msg = msg.format(split, mode, iterable_to_str(valid_modes))
         verify_str_arg(split, "split", valid_modes, msg)
 

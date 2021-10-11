@@ -279,7 +279,7 @@ def get_extensions():
                 image_include += [png_include]
                 image_link_flags.append("png")
             else:
-                print("libpng installed version is less than 1.6.0, " "disabling PNG support")
+                print("libpng installed version is less than 1.6.0, disabling PNG support")
                 png_found = False
         else:
             # Windows

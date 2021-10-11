@@ -60,7 +60,7 @@ class STL10(VisionDataset):
         if download:
             self.download()
         elif not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted. " "You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         # now load the picked numpy arrays
         self.labels: Optional[np.ndarray]
@@ -92,7 +92,7 @@ class STL10(VisionDataset):
         elif isinstance(folds, int):
             if folds in range(10):
                 return folds
-            msg = "Value for argument folds should be in the range [0, 10), " "but got {}."
+            msg = "Value for argument folds should be in the range [0, 10), but got {}."
             raise ValueError(msg.format(folds))
         else:
             msg = "Expected type None or int for argument folds, but got type {}."

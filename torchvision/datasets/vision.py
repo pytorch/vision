@@ -41,7 +41,7 @@ class VisionDataset(data.Dataset):
         has_transforms = transforms is not None
         has_separate_transform = transform is not None or target_transform is not None
         if has_transforms and has_separate_transform:
-            raise ValueError("Only transforms or transform/target_transform can " "be passed as argument")
+            raise ValueError("Only transforms or transform/target_transform can be passed as argument")
 
         # for backwards-compatibility
         self.transform = transform

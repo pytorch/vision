@@ -316,7 +316,7 @@ def patch_linux():
     patchelf = find_program("patchelf")
     if patchelf is None:
         raise FileNotFoundError(
-            "Patchelf was not found in the system, please" " make sure that is available on the PATH."
+            "Patchelf was not found in the system, please make sure that is available on the PATH."
         )
 
     # Find wheel
@@ -354,7 +354,7 @@ def patch_win():
     dumpbin = find_program("dumpbin")
     if dumpbin is None:
         raise FileNotFoundError(
-            "Dumpbin was not found in the system, please" " make sure that is available on the PATH."
+            "Dumpbin was not found in the system, please make sure that is available on the PATH."
         )
 
     # Find wheel

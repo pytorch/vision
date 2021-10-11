@@ -275,9 +275,9 @@ class Matcher:
         if match_quality_matrix.numel() == 0:
             # empty targets or proposals not supported during training
             if match_quality_matrix.shape[0] == 0:
-                raise ValueError("No ground-truth boxes available for one of the images " "during training")
+                raise ValueError("No ground-truth boxes available for one of the images during training")
             else:
-                raise ValueError("No proposal boxes available for one of the images " "during training")
+                raise ValueError("No proposal boxes available for one of the images during training")
 
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction

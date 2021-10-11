@@ -20,7 +20,7 @@ def main(args):
     print(args)
 
     if args.post_training_quantize and args.distributed:
-        raise RuntimeError("Post training quantization example should not be performed " "on distributed mode")
+        raise RuntimeError("Post training quantization example should not be performed on distributed mode")
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
     if args.backend not in torch.backends.quantized.supported_engines:

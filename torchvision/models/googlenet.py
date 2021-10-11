@@ -44,7 +44,7 @@ def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
             kwargs["aux_logits"] = False
         if kwargs["aux_logits"]:
             warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, " "so make sure to train them"
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
             )
         original_aux_logits = kwargs["aux_logits"]
         kwargs["aux_logits"] = True

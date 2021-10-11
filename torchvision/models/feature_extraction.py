@@ -168,7 +168,7 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
             "are a subsequence of those obtained in eval mode. "
         )
     else:
-        msg = "The nodes obtained by tracing the model in train mode " "are different to those obtained in eval mode. "
+        msg = "The nodes obtained by tracing the model in train mode are different to those obtained in eval mode. "
     warnings.warn(msg + suggestion_msg)
 
 
@@ -400,15 +400,15 @@ def create_feature_extractor(
     is_training = model.training
 
     assert any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]), (
-        "Either `return_nodes` or `train_return_nodes` and " "`eval_return_nodes` together, should be specified"
+        "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
     )
 
     assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), (
-        "If any of `train_return_nodes` and `eval_return_nodes` are " "specified, then both should be specified"
+        "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
     )
 
     assert (return_nodes is None) ^ (train_return_nodes is None), (
-        "If `train_return_nodes` and `eval_return_nodes` are specified, " "then both should be specified"
+        "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
     )
 
     # Put *_return_nodes into Dict[str, str] format

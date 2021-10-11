@@ -281,7 +281,7 @@ def _parse_fill(
         fill = tuple([fill] * num_bands)
     if isinstance(fill, (list, tuple)):
         if len(fill) != num_bands:
-            msg = "The number of elements in 'fill' does not match the number of " "bands of the image ({} != {})"
+            msg = "The number of elements in 'fill' does not match the number of bands of the image ({} != {})"
             raise ValueError(msg.format(len(fill), num_bands))
 
         fill = tuple(fill)

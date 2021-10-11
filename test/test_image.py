@@ -379,10 +379,10 @@ def test_encode_jpeg_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32))
 
-    with pytest.raises(ValueError, match="Image quality should be a positive number " "between 1 and 100"):
+    with pytest.raises(ValueError, match="Image quality should be a positive number between 1 and 100"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=-1)
 
-    with pytest.raises(ValueError, match="Image quality should be a positive number " "between 1 and 100"):
+    with pytest.raises(ValueError, match="Image quality should be a positive number between 1 and 100"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=101)
 
     with pytest.raises(RuntimeError, match="The number of channels should be 1 or 3, got: 5"):

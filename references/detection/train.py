@@ -65,7 +65,7 @@ def get_args_parser(add_help=True):
         "--lr",
         default=0.02,
         type=float,
-        help="initial learning rate, 0.02 is the default value for training " "on 8 gpus and 2 images_per_gpu",
+        help="initial learning rate, 0.02 is the default value for training on 8 gpus and 2 images_per_gpu",
     )
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument(

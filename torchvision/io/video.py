@@ -272,7 +272,7 @@ def read_video(
 
     if end_pts < start_pts:
         raise ValueError(
-            "end_pts should be larger than start_pts, got " "start_pts={} and end_pts={}".format(start_pts, end_pts)
+            "end_pts should be larger than start_pts, got start_pts={} and end_pts={}".format(start_pts, end_pts)
         )
 
     info = {}

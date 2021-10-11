@@ -117,11 +117,11 @@ class LSUN(VisionDataset):
                 classes = [c + "_" + classes for c in categories]
         except ValueError:
             if not isinstance(classes, Iterable):
-                msg = "Expected type str or Iterable for argument classes, " "but got type {}."
+                msg = "Expected type str or Iterable for argument classes, but got type {}."
                 raise ValueError(msg.format(type(classes)))
 
             classes = list(classes)
-            msg_fmtstr_type = "Expected type str for elements in argument classes, " "but got type {}."
+            msg_fmtstr_type = "Expected type str for elements in argument classes, but got type {}."
             for c in classes:
                 verify_str_arg(c, custom_msg=msg_fmtstr_type.format(type(c)))
                 c_short = c.split("_")

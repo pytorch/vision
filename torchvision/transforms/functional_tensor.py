@@ -246,7 +246,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
     """DEPRECATED"""
     warnings.warn(
-        "This method is deprecated and will be removed in future releases. " "Please, use ``F.center_crop`` instead."
+        "This method is deprecated and will be removed in future releases. Please, use ``F.center_crop`` instead."
     )
 
     _assert_image_tensor(img)
@@ -268,7 +268,7 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
 def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
     """DEPRECATED"""
     warnings.warn(
-        "This method is deprecated and will be removed in future releases. " "Please, use ``F.five_crop`` instead."
+        "This method is deprecated and will be removed in future releases. Please, use ``F.five_crop`` instead."
     )
 
     _assert_image_tensor(img)
@@ -293,7 +293,7 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
 def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = False) -> List[Tensor]:
     """DEPRECATED"""
     warnings.warn(
-        "This method is deprecated and will be removed in future releases. " "Please, use ``F.ten_crop`` instead."
+        "This method is deprecated and will be removed in future releases. Please, use ``F.ten_crop`` instead."
     )
 
     _assert_image_tensor(img)
@@ -501,7 +501,7 @@ def resize(
     if isinstance(size, list):
         if len(size) not in [1, 2]:
             raise ValueError(
-                "Size must be an int or a 1 or 2 element tuple/list, not a " "{} element tuple/list".format(len(size))
+                "Size must be an int or a 1 or 2 element tuple/list, not a {} element tuple/list".format(len(size))
             )
         if max_size is not None and len(size) != 1:
             raise ValueError(

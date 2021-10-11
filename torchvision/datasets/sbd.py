@@ -63,7 +63,7 @@ class SBDataset(VisionDataset):
 
             self._loadmat = loadmat
         except ImportError:
-            raise RuntimeError("Scipy is not found. This dataset needs to have scipy installed: " "pip install scipy")
+            raise RuntimeError("Scipy is not found. This dataset needs to have scipy installed: pip install scipy")
 
         super().__init__(root, transforms)
         self.image_set = verify_str_arg(image_set, "image_set", ("train", "val", "train_noval"))
