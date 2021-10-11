@@ -111,9 +111,9 @@ class TestRotate:
         if out_tensor.dtype != torch.uint8:
             out_tensor = out_tensor.to(torch.uint8)
 
-        assert out_tensor.shape == out_pil_tensor.shape, (
-            f"{(height, width, NEAREST, dt, angle, expand, center)}: " f"{out_tensor.shape} vs {out_pil_tensor.shape}"
-        )
+        assert (
+            out_tensor.shape == out_pil_tensor.shape
+        ), f"{(height, width, NEAREST, dt, angle, expand, center)}: {out_tensor.shape} vs {out_pil_tensor.shape}"
 
         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
