@@ -147,9 +147,7 @@ def pad(
         padding = tuple(padding)
 
     if isinstance(padding, tuple) and len(padding) not in [1, 2, 4]:
-        raise ValueError(
-            "Padding must be an int or a 1, 2, or 4 element tuple, not a " + f"{len(padding)} element tuple"
-        )
+        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
 
     if isinstance(padding, tuple) and len(padding) == 1:
         # Compatibility with `functional_tensor.pad`

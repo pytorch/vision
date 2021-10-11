@@ -83,7 +83,7 @@ class SBDataset(VisionDataset):
             download_url(self.voc_train_url, sbd_root, self.voc_split_filename, self.voc_split_md5)
 
         if not os.path.isdir(sbd_root):
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         split_f = os.path.join(sbd_root, image_set.rstrip("\n") + ".txt")
 

@@ -350,9 +350,7 @@ class Scale(Resize):
     """
 
     def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "The use of the transforms.Scale transform is deprecated, " + "please use transforms.Resize instead."
-        )
+        warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
         super().__init__(*args, **kwargs)
 
 
@@ -436,9 +434,7 @@ class Pad(torch.nn.Module):
             raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
         if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
-            raise ValueError(
-                "Padding must be an int or a 1, 2, or 4 element tuple, not a " + f"{len(padding)} element tuple"
-            )
+            raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
 
         self.padding = padding
         self.fill = fill

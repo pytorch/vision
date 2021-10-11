@@ -75,7 +75,7 @@ def inception_v3(
             if not original_aux_logits:
                 model.aux_logits = False
                 model.AuxLogits = None
-            model_url = quant_model_urls["inception_v3_google" + "_" + backend]
+            model_url = quant_model_urls["inception_v3_google_" + backend]
         else:
             model_url = inception_module.model_urls["inception_v3_google"]
 

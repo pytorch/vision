@@ -259,7 +259,7 @@ def to_pil_image(pic, mode=None):
         npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
-        raise TypeError("Input pic must be a torch.Tensor or NumPy ndarray, " + f"not {type(npimg)}")
+        raise TypeError("Input pic must be a torch.Tensor or NumPy ndarray, not {type(npimg)}")
 
     if npimg.shape[2] == 1:
         expected_mode = None
@@ -423,7 +423,7 @@ def resize(
 
 
 def scale(*args, **kwargs):
-    warnings.warn("The use of the transforms.Scale transform is deprecated, " + "please use transforms.Resize instead.")
+    warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
     return resize(*args, **kwargs)
 
 

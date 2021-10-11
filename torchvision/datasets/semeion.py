@@ -41,7 +41,7 @@ class SEMEION(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         fp = os.path.join(self.root, self.filename)
         data = np.loadtxt(fp)

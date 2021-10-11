@@ -46,7 +46,7 @@ class Omniglot(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.target_folder = join(self.root, self._get_target_folder())
         self._alphabets = list_dir(self.target_folder)

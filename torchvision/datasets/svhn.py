@@ -70,7 +70,7 @@ class SVHN(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         # import here rather than at top of file because this is
         # an optional dependency for torchvision

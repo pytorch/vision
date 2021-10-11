@@ -50,7 +50,7 @@ class Caltech101(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "101_ObjectCategories")))
         self.categories.remove("BACKGROUND_Google")  # this is not a real class
@@ -172,7 +172,7 @@ class Caltech256(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "256_ObjectCategories")))
         self.index: List[int] = []

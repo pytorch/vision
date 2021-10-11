@@ -98,7 +98,7 @@ class MNIST(VisionDataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError("Dataset not found." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         self.data, self.targets = self._load_data()
 

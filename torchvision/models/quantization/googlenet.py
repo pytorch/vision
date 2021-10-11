@@ -67,7 +67,7 @@ def googlenet(
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls["googlenet" + "_" + backend]
+            model_url = quant_model_urls["googlenet_" + backend]
         else:
             model_url = model_urls["googlenet"]
 

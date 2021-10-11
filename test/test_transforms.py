@@ -2211,7 +2211,7 @@ class TestAffine:
         n_diff_pixels = np.sum(np_result != true_result) / 3
         # Accept 3 wrong pixels
         error_msg = (
-            f"angle={angle}, translate={translate}, scale={scale}, shear={shear}\n" + f"n diff pixels={n_diff_pixels}\n"
+            f"angle={angle}, translate={translate}, scale={scale}, shear={shear}\nn diff pixels={n_diff_pixels}\n"
         )
         assert n_diff_pixels < 3, error_msg
 

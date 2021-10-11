@@ -382,7 +382,8 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 
     # crop if needed
     if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
-        crop_left, crop_right, crop_top, crop_bottom = (-min(x, 0) for x in padding)
+        neg_min_padding = [-min(x, 0) for x in padding]
+        crop_left, crop_right, crop_top, crop_bottom = neg_min_padding
         img = img[..., crop_top : img.shape[-2] - crop_bottom, crop_left : img.shape[-1] - crop_right]
         padding = [max(x, 0) for x in padding]
 
@@ -421,9 +422,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         padding = list(padding)
 
     if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
-        raise ValueError(
-            "Padding must be an int or a 1, 2, or 4 element tuple, not a " + f"{len(padding)} element tuple"
-        )
+        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")

@@ -53,7 +53,7 @@ class _LFW(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.images_dir = os.path.join(self.root, images_dir)
 

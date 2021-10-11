@@ -72,9 +72,7 @@ class WIDERFace(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError(
-                "Dataset not found or corrupted. " + "You can use download=True to download and prepare it"
-            )
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download and prepare it")
 
         self.img_info: List[Dict[str, Union[str, Dict[str, torch.Tensor]]]] = []
         if self.split in ("train", "val"):
