@@ -44,14 +44,14 @@ def get_available_quantizable_models():
     return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-def _get_expected_file(name=None):
+def _get_expected_file(name=None, quantized=False):
     # Determine expected file based on environment
     expected_file_base = get_relative_path(os.path.realpath(__file__), "expect")
 
     # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
     # We hardcode it here to avoid having to re-generate the reference files
     expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
-    expected_file += "_expect.pkl"
+    expected_file += "_quantized_expect.pkl" if quantized else "_expect.pkl"
 
     if not ACCEPT and not os.path.exists(expected_file):
         raise RuntimeError(
@@ -63,7 +63,7 @@ def _get_expected_file(name=None):
     return expected_file
 
 
-def _assert_expected(output, name, prec):
+def _assert_expected(output, name, prec, quantized=False):
     """Test that a python value matches the recorded contents of a file
     based on a "check" name. The value must be
     pickable with `torch.save`. This file
@@ -71,7 +71,7 @@ def _assert_expected(output, name, prec):
     as the test script. You can automatically update the recorded test
     output using an EXPECTTEST_ACCEPT=1 env variable.
     """
-    expected_file = _get_expected_file(name)
+    expected_file = _get_expected_file(name, quantized)
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
@@ -716,6 +716,30 @@ def test_quantized_classification_model(model_name):
         tb = traceback.format_exc()
         raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
 
+@pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
+                         'qnnpack' in torch.backends.quantized.supported_engines),
+                    reason="This Pytorch Build has not been built with fbgemm and qnnpack")
+@pytest.mark.parametrize('model_name', get_available_quantizable_models())
+def test_new_quantized_classification_model(model_name):
+    set_rng_seed(0)
+    defaults = {
+        'num_classes': 50,
+        'input_shape': (1, 3, 224, 224),
+        'pretrained': False,
+        'quantize': True,
+    }
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    input_shape = kwargs.pop('input_shape')
+
+    model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    x = torch.rand(input_shape)
+    out = model(x)
+    _assert_expected(out.cpu(), model_name, prec=0.1, quantized=True)
+    assert out.shape[-1] == 50
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
+    _check_input_backprop(model, x)
 
 if __name__ == '__main__':
     pytest.main([__file__])
