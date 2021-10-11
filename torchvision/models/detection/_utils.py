@@ -16,7 +16,7 @@ class BalancedPositiveNegativeSampler(object):
         """
         Args:
             batch_size_per_image (int): number of elements to be selected per image
-            positive_fraction (float): percentace of positive elements per batch
+            positive_fraction (float): percentage of positive elements per batch
         """
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
@@ -261,7 +261,7 @@ class Matcher(object):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def __call__(self, match_quality_matrix) -> Tensor:
+    def __call__(self, match_quality_matrix: Tensor) -> Tensor:
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -330,7 +330,7 @@ class Matcher(object):
 
 
 class SSDMatcher(Matcher):
-    def __init__(self, threshold):
+    def __init__(self, threshold: float) -> None:
         super().__init__(threshold, threshold, allow_low_quality_matches=False)
 
     def __call__(self, match_quality_matrix: Tensor) -> Tensor:
