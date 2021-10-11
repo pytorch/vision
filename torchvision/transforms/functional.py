@@ -921,7 +921,8 @@ def _get_inverse_affine_matrix(
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
     rot = math.radians(angle)
-    sx, sy = (math.radians(s) for s in shear)
+    sx = math.radians(shear[0])
+    sy = math.radians(shear[1])
 
     cx, cy = center
     tx, ty = translate
