@@ -124,8 +124,7 @@ class BoxCoder(object):
     the representation used for training the regressors.
     """
 
-    def __init__(self, weights: Tuple[float, bbox_xform_clip=math.log(1000.0 / 16)):
-        # type: (Tuple[float, float, float, float], float) -> None
+    def __init__(self, weights: Tuple[float, float, float, float], bbox_xform_clip: float = math.log(1000.0 / 16)) -> None:
         """
         Args:
             weights (4-element tuple)
@@ -134,15 +133,14 @@ class BoxCoder(object):
         self.weights = weights
         self.bbox_xform_clip = bbox_xform_clip
 
-    def encode(self, reference_boxes, proposals):
-        # type: (List[Tensor], List[Tensor]) -> List[Tensor]
+    def encode(self, reference_boxes: List[Tensor], proposals: List[Tensor]) -> List[Tensor]:
         boxes_per_image = [len(b) for b in reference_boxes]
         reference_boxes = torch.cat(reference_boxes, dim=0)
         proposals = torch.cat(proposals, dim=0)
         targets = self.encode_single(reference_boxes, proposals)
         return targets.split(boxes_per_image, 0)
 
-    def encode_single(self, reference_boxes, proposals):
+    def encode_single(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
         """
         Encode a set of proposals with respect to some
         reference boxes
@@ -158,7 +156,7 @@ class BoxCoder(object):
 
         return targets
 
-    def decode(self, rel_codes, boxes):
+    def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
         # type: (Tensor, List[Tensor]) -> Tensor
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
@@ -174,7 +172,7 @@ class BoxCoder(object):
             pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
         return pred_boxes
 
-    def decode_single(self, rel_codes, boxes):
+    def decode_single(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
@@ -241,8 +239,7 @@ class Matcher(object):
         "BETWEEN_THRESHOLDS": int,
     }
 
-    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
-        # type: (float, float, bool) -> None
+    def __init__(self, high_threshold: float, low_threshold: float, allow_low_quality_matches: bool = False) -> None:
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -263,7 +260,7 @@ class Matcher(object):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def __call__(self, match_quality_matrix):
+    def __call__(self, match_quality_matrix: Tensor[float]) -> Tensor[int64]:
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -301,7 +298,7 @@ class Matcher(object):
 
         return matches
 
-    def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix):
+    def set_low_quality_matches_(self, matches: Tensor[int64], all_matches: Tensor[int64], match_quality_matrix: Tensor[float]) -> None:
         """
         Produce additional matches for predictions that have only low-quality matches.
         Specifically, for each ground-truth find the set of predictions that have
@@ -335,7 +332,7 @@ class SSDMatcher(Matcher):
     def __init__(self, threshold):
         super().__init__(threshold, threshold, allow_low_quality_matches=False)
 
-    def __call__(self, match_quality_matrix):
+    def __call__(self, match_quality_matrix: Tensor[float]) -> Tensor[int64]:
         matches = super().__call__(match_quality_matrix)
 
         # For each gt, find the prediction with which it has the highest quality
