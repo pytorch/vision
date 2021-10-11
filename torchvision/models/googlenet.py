@@ -70,9 +70,9 @@ class GoogLeNet(nn.Module):
         aux_logits: bool = True,
         transform_input: bool = False,
         init_weights: Optional[bool] = None,
+        blocks: Optional[List[Callable[..., nn.Module]]] = None,
         dropout: float = 0.2,
         dropout_aux: float = 0.7,
-        blocks: Optional[List[Callable[..., nn.Module]]] = None,
     ) -> None:
         super(GoogLeNet, self).__init__()
         if blocks is None:
@@ -269,8 +269,8 @@ class InceptionAux(nn.Module):
         self,
         in_channels: int,
         num_classes: int,
-        dropout: float = 0.7,
         conv_block: Optional[Callable[..., nn.Module]] = None,
+        dropout: float = 0.7,
     ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
