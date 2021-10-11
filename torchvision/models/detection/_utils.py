@@ -157,7 +157,6 @@ class BoxCoder(object):
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
-        # type: (Tensor, List[Tensor]) -> Tensor
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
