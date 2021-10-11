@@ -285,7 +285,7 @@ class Matcher(object):
         if self.allow_low_quality_matches:
             all_matches = matches.clone()
         else:
-            all_matches = None
+            all_matches = None  # type: ignore[assignment]
 
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
