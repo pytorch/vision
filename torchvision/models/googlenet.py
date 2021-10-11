@@ -114,8 +114,8 @@ class GoogLeNet(nn.Module):
         self.inception5b = inception_block(832, 384, 192, 384, 48, 128, 128)
 
         if aux_logits:
-            self.aux1 = inception_aux_block(512, num_classes, dropout_aux)
-            self.aux2 = inception_aux_block(528, num_classes, dropout_aux)
+            self.aux1 = inception_aux_block(512, num_classes, dropout=dropout_aux)
+            self.aux2 = inception_aux_block(528, num_classes, dropout=dropout_aux)
         else:
             self.aux1 = None  # type: ignore[assignment]
             self.aux2 = None  # type: ignore[assignment]
