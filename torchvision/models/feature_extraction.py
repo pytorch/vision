@@ -399,17 +399,17 @@ def create_feature_extractor(
     """
     is_training = model.training
 
-    assert any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]), (
-        "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
-    )
+    assert any(
+        arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]
+    ), "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
 
-    assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), (
-        "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
-    )
+    assert not (
+        (train_return_nodes is None) ^ (eval_return_nodes is None)
+    ), "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
 
-    assert (return_nodes is None) ^ (train_return_nodes is None), (
-        "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
-    )
+    assert (return_nodes is None) ^ (
+        train_return_nodes is None
+    ), "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:

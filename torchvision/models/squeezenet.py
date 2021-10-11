@@ -72,7 +72,7 @@ class SqueezeNet(nn.Module):
             # FIXME: Is this needed? SqueezeNet should only be called from the
             # FIXME: squeezenet1_x() functions
             # FIXME: This checking is not done for the other models
-            raise ValueError("Unsupported SqueezeNet version {version}:1_0 or 1_1 expected".format(version=version))
+            raise ValueError(f"Unsupported SqueezeNet version {version}:1_0 or 1_1 expected")
 
         # Final convolution is initialized differently from the rest
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)

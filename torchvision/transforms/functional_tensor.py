@@ -501,7 +501,7 @@ def resize(
     if isinstance(size, list):
         if len(size) not in [1, 2]:
             raise ValueError(
-                "Size must be an int or a 1 or 2 element tuple/list, not a {} element tuple/list".format(len(size))
+                f"Size must be an int or a 1 or 2 element tuple/list, not a {len(size)} element tuple/list"
             )
         if max_size is not None and len(size) != 1:
             raise ValueError(

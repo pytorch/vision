@@ -489,11 +489,9 @@ class RetinaNet(nn.Module):
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(
-                            "Expected target boxes to be a tensor of shape [N, 4], got {:}.".format(boxes.shape)
-                        )
+                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError("Expected target boxes to be of type Tensor, got {:}.".format(type(boxes)))
+                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []

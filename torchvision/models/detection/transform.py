@@ -123,9 +123,7 @@ class GeneralizedRCNNTransform(nn.Module):
             target_index = targets[i] if targets is not None else None
 
             if image.dim() != 3:
-                raise ValueError(
-                    "images is expected to be a list of 3d tensors of shape [C, H, W], got {}".format(image.shape)
-                )
+                raise ValueError(f"images is expected to be a list of 3d tensors of shape [C, H, W], got {image.shape}")
             image = self.normalize(image)
             image, target_index = self.resize(image, target_index)
             images[i] = image
