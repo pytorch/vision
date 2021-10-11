@@ -21,8 +21,7 @@ class BalancedPositiveNegativeSampler(object):
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def __call__(self, matched_idxs):
-        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
+    def __call__(self, matched_idxs: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Args:
             matched idxs: list of tensors containing -1, 0 or positive values.
@@ -72,8 +71,7 @@ class BalancedPositiveNegativeSampler(object):
 
 
 @torch.jit._script_if_tracing
-def encode_boxes(reference_boxes, proposals, weights):
-    # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
+def encode_boxes(reference_boxes: Tensor, proposals: Tensor, weights: Tensor) -> Tensor:
     """
     Encode a set of proposals with respect to some
     reference boxes
@@ -126,7 +124,7 @@ class BoxCoder(object):
     the representation used for training the regressors.
     """
 
-    def __init__(self, weights, bbox_xform_clip=math.log(1000.0 / 16)):
+    def __init__(self, weights: Tuple[float, bbox_xform_clip=math.log(1000.0 / 16)):
         # type: (Tuple[float, float, float, float], float) -> None
         """
         Args:
