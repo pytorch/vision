@@ -476,9 +476,7 @@ def test_encode_jpeg(img_path):
     buf = io.BytesIO()
     pil_img.save(buf, format="JPEG", quality=75)
 
-    # pytorch can't read from raw bytes so we go through numpy
-    pil_bytes = np.frombuffer(buf.getvalue(), dtype=np.uint8)
-    encoded_jpeg_pil = torch.as_tensor(pil_bytes)
+    encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
 
     for src_img in [img, img.contiguous()]:
         encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
