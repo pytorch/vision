@@ -1,6 +1,6 @@
 import math
 from collections import OrderedDict
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -282,11 +282,10 @@ class Matcher(object):
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction
         matched_vals, matches = match_quality_matrix.max(dim=0)
-        all_matches: Optional[Tensor]
         if self.allow_low_quality_matches:
             all_matches = matches.clone()
         else:
-            all_matches = None
+            all_matches = None  # type: ignore[assignment]
 
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
