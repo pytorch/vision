@@ -33,14 +33,14 @@ import torchvision.transforms as T
 from torchvision.io import read_image
 
 
-plt.rcParams["savefig.bbox"] = 'tight'
+plt.rcParams["savefig.bbox"] = "tight"
 torch.manual_seed(1)
 
 
 def show(imgs):
     fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
     for i, img in enumerate(imgs):
-        img = T.ToPILImage()(img.to('cpu'))
+        img = T.ToPILImage()(img.to("cpu"))
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
@@ -49,8 +49,8 @@ def show(imgs):
 # The :func:`~torchvision.io.read_image` function allows to read an image and
 # directly load it as a tensor
 
-dog1 = read_image(str(Path('assets') / 'dog1.jpg'))
-dog2 = read_image(str(Path('assets') / 'dog2.jpg'))
+dog1 = read_image(str(Path("assets") / "dog1.jpg"))
+dog2 = read_image(str(Path("assets") / "dog2.jpg"))
 show([dog1, dog2])
 
 ####################################
@@ -68,7 +68,7 @@ transforms = torch.nn.Sequential(
     T.RandomHorizontalFlip(p=0.3),
 )
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 dog1 = dog1.to(device)
 dog2 = dog2.to(device)
 
@@ -89,15 +89,14 @@ from torchvision.models import resnet18
 
 
 class Predictor(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.resnet18 = resnet18(pretrained=True, progress=False).eval()
         self.transforms = nn.Sequential(
-            T.Resize([256, ]),  # We use single int value inside a list due to torchscript type restrictions
+            T.Resize((256,)),  # We use single int value inside a list due to torchscript type restrictions
             T.CenterCrop(224),
             T.ConvertImageDtype(torch.float),
-            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -125,7 +124,7 @@ res_scripted = scripted_predictor(batch)
 
 import json
 
-with open(Path('assets') / 'imagenet_class_index.json', 'r') as labels_file:
+with open(Path("assets") / "imagenet_class_index.json", "r") as labels_file:
     labels = json.load(labels_file)
 
 for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):

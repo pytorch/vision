@@ -35,9 +35,7 @@ from torchvision.datasets.utils import download_url
 
 # Download the sample video
 download_url(
-    "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
-    ".",
-    "WUzgd7C1pWA.mp4"
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true", ".", "WUzgd7C1pWA.mp4"
 )
 video_path = "./WUzgd7C1pWA.mp4"
 
@@ -75,12 +73,12 @@ video.set_current_stream("audio")
 frames = []  # we are going to save the frames here.
 ptss = []  # pts is a presentation timestamp in seconds (float) of each frame
 for frame in video:
-    frames.append(frame['data'])
-    ptss.append(frame['pts'])
+    frames.append(frame["data"])
+    ptss.append(frame["pts"])
 
 print("PTS for first five frames ", ptss[:5])
 print("Total number of frames: ", len(frames))
-approx_nf = metadata['audio']['duration'][0] * metadata['audio']['framerate'][0]
+approx_nf = metadata["audio"]["duration"][0] * metadata["audio"]["framerate"][0]
 print("Approx total number of datapoints we can expect: ", approx_nf)
 print("Read data size: ", frames[0].size(0) * len(frames))
 
@@ -96,6 +94,7 @@ print("Read data size: ", frames[0].size(0) * len(frames))
 
 
 import itertools
+
 video.set_current_stream("video")
 
 frames = []  # we are going to save the frames here.
@@ -116,11 +115,11 @@ video.set_current_stream("video")
 frames = []  # we are going to save the frames here.
 video = video.seek(2)
 
-for frame in itertools.takewhile(lambda x: x['pts'] <= 5, video):
-    frames.append(frame['data'])
+for frame in itertools.takewhile(lambda x: x["pts"] <= 5, video):
+    frames.append(frame["data"])
 
 print("Total number of frames: ", len(frames))
-approx_nf = (5 - 2) * video.get_metadata()['video']['fps'][0]
+approx_nf = (5 - 2) * video.get_metadata()["video"]["fps"][0]
 print("We can expect approx: ", approx_nf)
 print("Tensor size: ", frames[0].size())
 
@@ -136,8 +135,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
         end = float("inf")
     if end < start:
         raise ValueError(
-            "end time should be larger than start time, got "
-            "start time={} and end time={}".format(start, end)
+            "end time should be larger than start time, got " "start time={} and end time={}".format(start, end)
         )
 
     video_frames = torch.empty(0)
@@ -145,9 +143,9 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
     if read_video:
         video_object.set_current_stream("video")
         frames = []
-        for frame in itertools.takewhile(lambda x: x['pts'] <= end, video_object.seek(start)):
-            frames.append(frame['data'])
-            video_pts.append(frame['pts'])
+        for frame in itertools.takewhile(lambda x: x["pts"] <= end, video_object.seek(start)):
+            frames.append(frame["data"])
+            video_pts.append(frame["pts"])
         if len(frames) > 0:
             video_frames = torch.stack(frames, 0)
 
@@ -156,9 +154,9 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
     if read_audio:
         video_object.set_current_stream("audio")
         frames = []
-        for frame in itertools.takewhile(lambda x: x['pts'] <= end, video_object.seek(start)):
-            frames.append(frame['data'])
-            video_pts.append(frame['pts'])
+        for frame in itertools.takewhile(lambda x: x["pts"] <= end, video_object.seek(start)):
+            frames.append(frame["data"])
+            video_pts.append(frame["pts"])
         if len(frames) > 0:
             audio_frames = torch.cat(frames, 0)
 
@@ -179,6 +177,7 @@ print(vf.size(), af.size())
 ####################################
 # Make sample dataset
 import os
+
 os.makedirs("./dataset", exist_ok=True)
 os.makedirs("./dataset/1", exist_ok=True)
 os.makedirs("./dataset/2", exist_ok=True)
@@ -186,29 +185,31 @@ os.makedirs("./dataset/2", exist_ok=True)
 ####################################
 # Download the videos
 from torchvision.datasets.utils import download_url
+
 download_url(
     "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
-    "./dataset/1", "WUzgd7C1pWA.mp4"
+    "./dataset/1",
+    "WUzgd7C1pWA.mp4",
 )
 download_url(
     "https://github.com/pytorch/vision/blob/main/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi?raw=true",
     "./dataset/1",
-    "RATRACE_wave_f_nm_np1_fr_goo_37.avi"
+    "RATRACE_wave_f_nm_np1_fr_goo_37.avi",
 )
 download_url(
     "https://github.com/pytorch/vision/blob/main/test/assets/videos/SOX5yA1l24A.mp4?raw=true",
     "./dataset/2",
-    "SOX5yA1l24A.mp4"
+    "SOX5yA1l24A.mp4",
 )
 download_url(
     "https://github.com/pytorch/vision/blob/main/test/assets/videos/v_SoccerJuggling_g23_c01.avi?raw=true",
     "./dataset/2",
-    "v_SoccerJuggling_g23_c01.avi"
+    "v_SoccerJuggling_g23_c01.avi",
 )
 download_url(
     "https://github.com/pytorch/vision/blob/main/test/assets/videos/v_SoccerJuggling_g24_c01.avi?raw=true",
     "./dataset/2",
-    "v_SoccerJuggling_g24_c01.avi"
+    "v_SoccerJuggling_g24_c01.avi",
 )
 
 ####################################
@@ -230,6 +231,7 @@ def _find_classes(dir):
 def get_samples(root, extensions=(".mp4", ".avi")):
     _, class_to_idx = _find_classes(root)
     return make_dataset(root, class_to_idx, extensions=extensions)
+
 
 ####################################
 # We are going to define the dataset and some basic arguments.
@@ -269,22 +271,18 @@ class RandomDataset(torch.utils.data.IterableDataset):
             video_frames = []  # video frame buffer
 
             # Seek and return frames
-            max_seek = metadata["video"]['duration'][0] - (self.clip_len / metadata["video"]['fps'][0])
-            start = random.uniform(0., max_seek)
+            max_seek = metadata["video"]["duration"][0] - (self.clip_len / metadata["video"]["fps"][0])
+            start = random.uniform(0.0, max_seek)
             for frame in itertools.islice(vid.seek(start), self.clip_len):
-                video_frames.append(self.frame_transform(frame['data']))
-                current_pts = frame['pts']
+                video_frames.append(self.frame_transform(frame["data"]))
+                current_pts = frame["pts"]
             # Stack it into a tensor
             video = torch.stack(video_frames, 0)
             if self.video_transform:
                 video = self.video_transform(video)
-            output = {
-                'path': path,
-                'video': video,
-                'target': target,
-                'start': start,
-                'end': current_pts}
+            output = {"path": path, "video": video, "target": target, "start": start, "end": current_pts}
             yield output
+
 
 ####################################
 # Given a path of videos in a folder structure, i.e:
@@ -310,14 +308,15 @@ dataset = RandomDataset("./dataset", epoch_size=None, frame_transform=frame_tran
 
 ####################################
 from torch.utils.data import DataLoader
+
 loader = DataLoader(dataset, batch_size=12)
-data = {"video": [], 'start': [], 'end': [], 'tensorsize': []}
+data = {"video": [], "start": [], "end": [], "tensorsize": []}
 for batch in loader:
-    for i in range(len(batch['path'])):
-        data['video'].append(batch['path'][i])
-        data['start'].append(batch['start'][i].item())
-        data['end'].append(batch['end'][i].item())
-        data['tensorsize'].append(batch['video'][i].size())
+    for i in range(len(batch["path"])):
+        data["video"].append(batch["path"][i])
+        data["start"].append(batch["start"][i].item())
+        data["end"].append(batch["end"][i].item())
+        data["tensorsize"].append(batch["video"][i].size())
 print(data)
 
 ####################################
@@ -337,5 +336,6 @@ for i in range(16):
 # Cleanup the video and dataset:
 import os
 import shutil
+
 os.remove("./WUzgd7C1pWA.mp4")
 shutil.rmtree("./dataset")

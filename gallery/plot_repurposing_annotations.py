@@ -161,6 +161,7 @@ detection_outputs = model(img.unsqueeze(0), [target])
 # Here is an example where we re-purpose the dataset from the
 # `PenFudan Detection Tutorial <https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html>`_.
 
+
 class SegmentationToDetectionDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms):
         self.root = root
