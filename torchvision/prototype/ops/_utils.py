@@ -45,6 +45,7 @@ def add_regularized_shortcut(
             for node in graph.nodes:
                 if node.op == "call_function":
                     if node.target in patterns and len(node.args) == 2 and input in node.args:
+                        # TODO: ensure the arg2 has "input" as its ancestor
                         with graph.inserting_after(node):
                             # Always put the shortcut value first
                             args = node.args if node.args[0] == input else node.args[::-1]
@@ -62,7 +63,7 @@ def add_regularized_shortcut(
             parent_name, child_name = name.rsplit(".", 1)
             parent = model.get_submodule(parent_name)
             previous_child = parent.get_submodule(child_name)
-            new_child = fx.GraphModule(previous_child, graph)
+            new_child = fx.GraphModule(previous_child, graph, previous_child.__class__.__name__)
             parent.register_module(child_name, new_child)
     else:
         warnings.warn(
@@ -101,7 +102,7 @@ def del_regularized_shortcut(
                     raise ValueError("Can't eliminate an operator that receives more than 1 arguments.")
             graph.erase_node(node)
 
-    return fx.GraphModule(model, graph)
+    return fx.GraphModule(model, graph, model.__class__.__name__)
 
 
 if __name__ == "__main__":
@@ -126,8 +127,6 @@ if __name__ == "__main__":
     # print(model)
     with torch.no_grad():
         out.append(model(batch))
-    # state_dict = load_state_dict_from_url("https://download.pytorch.org/models/resnet50-0676ba61.pth")
-    # model.load_state_dict(state_dict)
 
     print("After deletion")
     model = del_regularized_shortcut(model)
