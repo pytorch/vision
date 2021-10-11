@@ -124,7 +124,9 @@ class BoxCoder(object):
     the representation used for training the regressors.
     """
 
-    def __init__(self, weights: Tuple[float, float, float, float], bbox_xform_clip: float = math.log(1000.0 / 16)) -> None:
+    def __init__(
+        self, weights: Tuple[float, float, float, float], bbox_xform_clip: float = math.log(1000.0 / 16)
+    ) -> None:
         """
         Args:
             weights (4-element tuple)
@@ -259,7 +261,7 @@ class Matcher(object):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def __call__(self, match_quality_matrix: Tensor[float]) -> Tensor[int64]:
+    def __call__(self, match_quality_matrix) -> Tensor:
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -297,7 +299,7 @@ class Matcher(object):
 
         return matches
 
-    def set_low_quality_matches_(self, matches: Tensor[int64], all_matches: Tensor[int64], match_quality_matrix: Tensor[float]) -> None:
+    def set_low_quality_matches_(self, matches: Tensor, all_matches: Tensor, match_quality_matrix: Tensor) -> None:
         """
         Produce additional matches for predictions that have only low-quality matches.
         Specifically, for each ground-truth find the set of predictions that have
@@ -331,7 +333,7 @@ class SSDMatcher(Matcher):
     def __init__(self, threshold):
         super().__init__(threshold, threshold, allow_low_quality_matches=False)
 
-    def __call__(self, match_quality_matrix: Tensor[float]) -> Tensor[int64]:
+    def __call__(self, match_quality_matrix: Tensor) -> Tensor:
         matches = super().__call__(match_quality_matrix)
 
         # For each gt, find the prediction with which it has the highest quality
