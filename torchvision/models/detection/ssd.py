@@ -532,7 +532,7 @@ def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained
         backbone = vgg.__dict__[backbone_name](pretrained=pretrained, progress=progress).features
 
     # Gather the indices of maxpools. These are the locations of output blocks.
-    stage_indices = [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)]
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
@@ -602,7 +602,7 @@ def ssd300_vgg16(
         warnings.warn("The size of the model is already fixed; ignoring the argument.")
 
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 5
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 4
     )
 
     if pretrained:
