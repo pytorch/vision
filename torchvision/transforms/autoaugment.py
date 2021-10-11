@@ -1,29 +1,58 @@
 import math
-import torch
-
 from enum import Enum
-from torch import Tensor
 from typing import List, Tuple, Optional, Dict
+
+import torch
+from torch import Tensor
 
 from . import functional as F, InterpolationMode
 
 __all__ = ["AutoAugmentPolicy", "AutoAugment", "RandAugment", "TrivialAugmentWide"]
 
 
-def _apply_op(img: Tensor, op_name: str, magnitude: float,
-              interpolation: InterpolationMode, fill: Optional[List[float]]):
+def _apply_op(
+    img: Tensor, op_name: str, magnitude: float, interpolation: InterpolationMode, fill: Optional[List[float]]
+):
     if op_name == "ShearX":
-        img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[math.degrees(magnitude), 0.0],
-                       interpolation=interpolation, fill=fill)
+        img = F.affine(
+            img,
+            angle=0.0,
+            translate=[0, 0],
+            scale=1.0,
+            shear=[math.degrees(magnitude), 0.0],
+            interpolation=interpolation,
+            fill=fill,
+        )
     elif op_name == "ShearY":
-        img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[0.0, math.degrees(magnitude)],
-                       interpolation=interpolation, fill=fill)
+        img = F.affine(
+            img,
+            angle=0.0,
+            translate=[0, 0],
+            scale=1.0,
+            shear=[0.0, math.degrees(magnitude)],
+            interpolation=interpolation,
+            fill=fill,
+        )
     elif op_name == "TranslateX":
-        img = F.affine(img, angle=0.0, translate=[int(magnitude), 0], scale=1.0,
-                       interpolation=interpolation, shear=[0.0, 0.0], fill=fill)
+        img = F.affine(
+            img,
+            angle=0.0,
+            translate=[int(magnitude), 0],
+            scale=1.0,
+            interpolation=interpolation,
+            shear=[0.0, 0.0],
+            fill=fill,
+        )
     elif op_name == "TranslateY":
-        img = F.affine(img, angle=0.0, translate=[0, int(magnitude)], scale=1.0,
-                       interpolation=interpolation, shear=[0.0, 0.0], fill=fill)
+        img = F.affine(
+            img,
+            angle=0.0,
+            translate=[0, int(magnitude)],
+            scale=1.0,
+            interpolation=interpolation,
+            shear=[0.0, 0.0],
+            fill=fill,
+        )
     elif op_name == "Rotate":
         img = F.rotate(img, magnitude, interpolation=interpolation, fill=fill)
     elif op_name == "Brightness":
@@ -55,6 +84,7 @@ class AutoAugmentPolicy(Enum):
     """AutoAugment policies learned on different datasets.
     Available policies are IMAGENET, CIFAR10 and SVHN.
     """
+
     IMAGENET = "imagenet"
     CIFAR10 = "cifar10"
     SVHN = "svhn"
@@ -82,7 +112,7 @@ class AutoAugment(torch.nn.Module):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None
+        fill: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
         self.policy = policy
@@ -91,8 +121,7 @@ class AutoAugment(torch.nn.Module):
         self.policies = self._get_policies(policy)
 
     def _get_policies(
-        self,
-        policy: AutoAugmentPolicy
+        self, policy: AutoAugmentPolicy
     ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
@@ -241,7 +270,7 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)
+        return self.__class__.__name__ + "(policy={}, fill={})".format(self.policy, self.fill)
 
 
 class RandAugment(torch.nn.Module):
@@ -261,11 +290,16 @@ class RandAugment(torch.nn.Module):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-        """
+    """
 
-    def __init__(self, num_ops: int = 2, magnitude: int = 9, num_magnitude_bins: int = 31,
-                 interpolation: InterpolationMode = InterpolationMode.NEAREST,
-                 fill: Optional[List[float]] = None) -> None:
+    def __init__(
+        self,
+        num_ops: int = 2,
+        magnitude: int = 9,
+        num_magnitude_bins: int = 31,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ) -> None:
         super().__init__()
         self.num_ops = num_ops
         self.magnitude = magnitude
@@ -319,13 +353,13 @@ class RandAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + '('
-        s += 'num_ops={num_ops}'
-        s += ', magnitude={magnitude}'
-        s += ', num_magnitude_bins={num_magnitude_bins}'
-        s += ', interpolation={interpolation}'
-        s += ', fill={fill}'
-        s += ')'
+        s = self.__class__.__name__ + "("
+        s += "num_ops={num_ops}"
+        s += ", magnitude={magnitude}"
+        s += ", num_magnitude_bins={num_magnitude_bins}"
+        s += ", interpolation={interpolation}"
+        s += ", fill={fill}"
+        s += ")"
         return s.format(**self.__dict__)
 
 
@@ -343,10 +377,14 @@ class TrivialAugmentWide(torch.nn.Module):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-        """
+    """
 
-    def __init__(self, num_magnitude_bins: int = 31, interpolation: InterpolationMode = InterpolationMode.NEAREST,
-                 fill: Optional[List[float]] = None) -> None:
+    def __init__(
+        self,
+        num_magnitude_bins: int = 31,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ) -> None:
         super().__init__()
         self.num_magnitude_bins = num_magnitude_bins
         self.interpolation = interpolation
@@ -389,17 +427,20 @@ class TrivialAugmentWide(torch.nn.Module):
         op_index = int(torch.randint(len(op_meta), (1,)).item())
         op_name = list(op_meta.keys())[op_index]
         magnitudes, signed = op_meta[op_name]
-        magnitude = float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item()) \
-            if magnitudes.ndim > 0 else 0.0
+        magnitude = (
+            float(magnitudes[torch.randint(len(magnitudes), (1,), dtype=torch.long)].item())
+            if magnitudes.ndim > 0
+            else 0.0
+        )
         if signed and torch.randint(2, (1,)):
             magnitude *= -1.0
 
         return _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + '('
-        s += 'num_magnitude_bins={num_magnitude_bins}'
-        s += ', interpolation={interpolation}'
-        s += ', fill={fill}'
-        s += ')'
+        s = self.__class__.__name__ + "("
+        s += "num_magnitude_bins={num_magnitude_bins}"
+        s += ", interpolation={interpolation}"
+        s += ", fill={fill}"
+        s += ")"
         return s.format(**self.__dict__)

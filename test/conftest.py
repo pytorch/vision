@@ -1,18 +1,15 @@
-from common_utils import IN_CIRCLE_CI, CIRCLECI_GPU_NO_CUDA_MSG, IN_FBCODE, IN_RE_WORKER, CUDA_NOT_AVAILABLE_MSG
-import torch
-import numpy as np
 import random
+
+import numpy as np
 import pytest
+import torch
+from common_utils import IN_CIRCLE_CI, CIRCLECI_GPU_NO_CUDA_MSG, IN_FBCODE, IN_RE_WORKER, CUDA_NOT_AVAILABLE_MSG
 
 
 def pytest_configure(config):
     # register an additional marker (see pytest_collection_modifyitems)
-    config.addinivalue_line(
-        "markers", "needs_cuda: mark for tests that rely on a CUDA device"
-    )
-    config.addinivalue_line(
-        "markers", "dont_collect: mark for tests that should not be collected"
-    )
+    config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
+    config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
 
 
 def pytest_collection_modifyitems(items):
@@ -34,7 +31,7 @@ def pytest_collection_modifyitems(items):
         # @pytest.mark.parametrize('device', cpu_and_gpu())
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
-        needs_cuda = item.get_closest_marker('needs_cuda') is not None
+        needs_cuda = item.get_closest_marker("needs_cuda") is not None
 
         if needs_cuda and not torch.cuda.is_available():
             # In general, we skip cuda tests on machines without a GPU
@@ -59,7 +56,7 @@ def pytest_collection_modifyitems(items):
                 # to run the CPU-only tests.
                 item.add_marker(pytest.mark.skip(reason=CIRCLECI_GPU_NO_CUDA_MSG))
 
-        if item.get_closest_marker('dont_collect') is not None:
+        if item.get_closest_marker("dont_collect") is not None:
             # currently, this is only used for some tests we're sure we dont want to run on fbcode
             continue
 

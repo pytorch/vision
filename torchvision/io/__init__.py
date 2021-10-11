@@ -1,5 +1,6 @@
-import torch
 from typing import Any, Dict, Iterator
+
+import torch
 
 from ._video_opt import (
     Timebase,
@@ -11,11 +12,6 @@ from ._video_opt import (
     _read_video_from_memory,
     _read_video_timestamps_from_file,
     _read_video_timestamps_from_memory,
-)
-from .video import (
-    read_video,
-    read_video_timestamps,
-    write_video,
 )
 from .image import (
     ImageReadMode,
@@ -29,6 +25,11 @@ from .image import (
     write_file,
     write_jpeg,
     write_png,
+)
+from .video import (
+    read_video,
+    read_video_timestamps,
+    write_video,
 )
 
 
@@ -127,10 +128,10 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self) -> Iterator['VideoReader']:
+    def __iter__(self) -> Iterator["VideoReader"]:
         return self
 
-    def seek(self, time_s: float) -> 'VideoReader':
+    def seek(self, time_s: float) -> "VideoReader":
         """Seek within current stream.
 
         Args:
