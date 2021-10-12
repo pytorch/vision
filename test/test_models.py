@@ -673,12 +673,11 @@ def test_video_model(model_name, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
-                         'qnnpack' in torch.backends.quantized.supported_engines),
-                    reason="This Pytorch Build has not been built with fbgemm and qnnpack")
 @pytest.mark.parametrize('model_name', get_available_quantizable_models())
 def test_quantized_classification_model(model_name):
+    set_rng_seed(0)
     defaults = {
+        'num_classes': 50,
         'input_shape': (1, 3, 224, 224),
         'pretrained': False,
         'quantize': True,
@@ -689,7 +688,12 @@ def test_quantized_classification_model(model_name):
     # First check if quantize=True provides models that can run with input data
     model = torchvision.models.quantization.__dict__[model_name](**kwargs)
     x = torch.rand(input_shape)
-    model(x)
+    out = model(x)
+
+    _assert_expected(out.cpu(), model_name, prec=0.1, quantized=True)
+    assert out.shape[-1] == 50
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
 
     kwargs['quantize'] = False
     for eval_mode in [True, False]:
@@ -716,30 +720,6 @@ def test_quantized_classification_model(model_name):
         tb = traceback.format_exc()
         raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
 
-@pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
-                         'qnnpack' in torch.backends.quantized.supported_engines),
-                    reason="This Pytorch Build has not been built with fbgemm and qnnpack")
-@pytest.mark.parametrize('model_name', get_available_quantizable_models())
-def test_new_quantized_classification_model(model_name):
-    set_rng_seed(0)
-    defaults = {
-        'num_classes': 50,
-        'input_shape': (1, 3, 224, 224),
-        'pretrained': False,
-        'quantize': True,
-    }
-    kwargs = {**defaults, **_model_params.get(model_name, {})}
-    input_shape = kwargs.pop('input_shape')
-
-    model = torchvision.models.quantization.__dict__[model_name](**kwargs)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-    x = torch.rand(input_shape)
-    out = model(x)
-    _assert_expected(out.cpu(), model_name, prec=0.1, quantized=True)
-    assert out.shape[-1] == 50
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
-    _check_input_backprop(model, x)
 
 if __name__ == '__main__':
     pytest.main([__file__])
