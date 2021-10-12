@@ -44,7 +44,7 @@ def get_available_quantizable_models():
     return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-def _get_expected_file(name=None, quantized=False):
+def _get_expected_file(name=None):
     # Determine expected file based on environment
     expected_file_base = get_relative_path(os.path.realpath(__file__), "expect")
 
