@@ -34,8 +34,8 @@ class AnchorGenerator(nn.Module):
 
     def __init__(
         self,
-        sizes: Tuple[Tuple[int, ...]] = ((128, 256, 512),),
-        aspect_ratios: Tuple[Tuple[float, ...]] = ((0.5, 1.0, 2.0),),
+        sizes: Tuple[List[int]] = ([128, 256, 512],),
+        aspect_ratios: Tuple[List[float]] = ([0.5, 1.0, 2.0],),
     ) -> None:
 
         super(AnchorGenerator, self).__init__()
@@ -60,8 +60,8 @@ class AnchorGenerator(nn.Module):
     # This method assumes aspect ratio = height / width for an anchor.
     def generate_anchors(
         self,
-        scales: Tuple[int, ...],
-        aspect_ratios: Tuple[float, ...],
+        scales: List[int],
+        aspect_ratios: List[float],
         dtype: torch.dtype = torch.float32,
         device: torch.device = torch.device("cpu"),
     ) -> Tensor:
