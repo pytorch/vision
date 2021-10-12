@@ -76,12 +76,11 @@ class VOC(Dataset):
     def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Optional[int]:
         if self._is_in_folder(data, name="ImageSets", depth=2):
             return 0
-        elif self._is_in_folder(data, name="JPEGImages"):
+        if self._is_in_folder(data, name="JPEGImages"):
             return 1
-        elif self._is_in_folder(data, name=self._ANNS_FOLDER[config.task]):
+        if self._is_in_folder(data, name=self._ANNS_FOLDER[config.task]):
             return 2
-        else:
-            return None
+        return None
 
     def _decode_detection_ann(self, buffer: io.IOBase) -> torch.Tensor:
         result = VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())  # type: ignore[arg-type]

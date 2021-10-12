@@ -173,10 +173,9 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
         ext = os.path.splitext(path)[1]
         if ext == ".gz":
             return self.types.GZIP
-        elif ext == ".xz":
+        if ext == ".xz":
             return self.types.LZMA
-        else:
-            raise RuntimeError("FIXME")
+        raise RuntimeError("FIXME")
 
     def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
         for path, file in self.datapipe:

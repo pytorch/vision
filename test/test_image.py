@@ -401,8 +401,7 @@ def _collect_if(cond):
     def _inner(test_func):
         if cond:
             return test_func
-        else:
-            return pytest.mark.dont_collect(test_func)
+        return pytest.mark.dont_collect(test_func)
 
     return _inner
 

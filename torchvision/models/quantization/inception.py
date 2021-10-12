@@ -235,8 +235,7 @@ class QuantizableInception3(inception_module.Inception3):
             if not aux_defined:
                 warnings.warn("Scripted QuantizableInception3 always returns QuantizableInception3 Tuple")
             return InceptionOutputs(x, aux)
-        else:
-            return self.eager_outputs(x, aux)
+        return self.eager_outputs(x, aux)
 
     def fuse_model(self) -> None:
         r"""Fuse conv/bn/relu modules in inception model

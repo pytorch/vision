@@ -557,8 +557,7 @@ def test_detection_model(model_name, dev):
             elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
             if elements_per_sample > 30:
                 return compute_mean_std(tensor)
-            else:
-                return subsample_tensor(tensor)
+            return subsample_tensor(tensor)
 
         def subsample_tensor(tensor):
             num_elems = tensor.size(0)

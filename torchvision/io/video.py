@@ -355,8 +355,7 @@ def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
     if _can_read_timestamps_from_packets(container):
         # fast path
         return [x.pts for x in container.demux(video=0) if x.pts is not None]
-    else:
-        return [x.pts for x in container.decode(video=0) if x.pts is not None]
+    return [x.pts for x in container.decode(video=0) if x.pts is not None]
 
 
 def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:

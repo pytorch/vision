@@ -70,8 +70,7 @@ class TestONNXExporter:
         def to_numpy(tensor):
             if tensor.requires_grad:
                 return tensor.detach().cpu().numpy()
-            else:
-                return tensor.cpu().numpy()
+            return tensor.cpu().numpy()
 
         inputs = list(map(to_numpy, inputs))
         outputs = list(map(to_numpy, outputs))

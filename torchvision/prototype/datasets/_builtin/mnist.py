@@ -272,10 +272,9 @@ class EMNIST(_MNISTBase):
         (images_file, _), (labels_file, _) = self._files_and_checksums(config)
         if path.name == images_file:
             return 0
-        elif path.name == labels_file:
+        if path.name == labels_file:
             return 1
-        else:
-            return None
+        return None
 
     _LABEL_OFFSETS = {
         38: 1,

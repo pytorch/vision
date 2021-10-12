@@ -71,10 +71,9 @@ class Coco(Dataset):
         key, _ = data
         if key == "images":
             return 0
-        elif key == "annotations":
+        if key == "annotations":
             return 1
-        else:
-            return None
+        return None
 
     def _decode_ann(self, ann: Dict[str, Any]) -> Dict[str, Any]:
         area = torch.tensor(ann["area"])

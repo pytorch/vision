@@ -94,8 +94,7 @@ def log_download_attempts(
         except AttributeError as error:
             if file != "utils":
                 return add_mock(stack, name, "utils", **kwargs)
-            else:
-                raise pytest.UsageError from error
+            raise pytest.UsageError from error
 
     if urls_and_md5s is None:
         urls_and_md5s = set()

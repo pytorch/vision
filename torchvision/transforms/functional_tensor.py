@@ -25,7 +25,7 @@ def get_image_size(img: Tensor) -> List[int]:
 def get_image_num_channels(img: Tensor) -> int:
     if img.ndim == 2:
         return 1
-    elif img.ndim > 2:
+    if img.ndim > 2:
         return img.shape[-3]
 
     raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
@@ -81,30 +81,28 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         max_val = _max_value(dtype)
         result = image.mul(max_val + 1.0 - eps)
         return result.to(dtype)
-    else:
-        input_max = _max_value(image.dtype)
+    input_max = _max_value(image.dtype)
 
-        # int to float
-        # TODO: replace with dtype.is_floating_point when torchscript supports it
-        if torch.tensor(0, dtype=dtype).is_floating_point():
-            image = image.to(dtype)
-            return image / input_max
+    # int to float
+    # TODO: replace with dtype.is_floating_point when torchscript supports it
+    if torch.tensor(0, dtype=dtype).is_floating_point():
+        image = image.to(dtype)
+        return image / input_max
 
-        output_max = _max_value(dtype)
+    output_max = _max_value(dtype)
 
-        # int to int
-        if input_max > output_max:
-            # factor should be forced to int for torch jit script
-            # otherwise factor is a float and image // factor can produce different results
-            factor = int((input_max + 1) // (output_max + 1))
-            image = torch.div(image, factor, rounding_mode="floor")
-            return image.to(dtype)
-        else:
-            # factor should be forced to int for torch jit script
-            # otherwise factor is a float and image * factor can produce different results
-            factor = int((output_max + 1) // (input_max + 1))
-            image = image.to(dtype)
-            return image * factor
+    # int to int
+    if input_max > output_max:
+        # factor should be forced to int for torch jit script
+        # otherwise factor is a float and image // factor can produce different results
+        factor = int((input_max + 1) // (output_max + 1))
+        image = torch.div(image, factor, rounding_mode="floor")
+        return image.to(dtype)
+    # factor should be forced to int for torch jit script
+    # otherwise factor is a float and image * factor can produce different results
+    factor = int((output_max + 1) // (input_max + 1))
+    image = image.to(dtype)
+    return image * factor
 
 
 def vflip(img: Tensor) -> Tensor:
@@ -401,10 +399,9 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     ndim = img.ndim
     if ndim == 3:
         return img[:, y_indices[:, None], x_indices[None, :]]
-    elif ndim == 4:
+    if ndim == 4:
         return img[:, :, y_indices[:, None], x_indices[None, :]]
-    else:
-        raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
+    raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:

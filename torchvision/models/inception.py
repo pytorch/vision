@@ -192,8 +192,7 @@ class Inception3(nn.Module):
     def eager_outputs(self, x: Tensor, aux: Optional[Tensor]) -> InceptionOutputs:
         if self.training and self.aux_logits:
             return InceptionOutputs(x, aux)
-        else:
-            return x  # type: ignore[return-value]
+        return x  # type: ignore[return-value]
 
     def forward(self, x: Tensor) -> InceptionOutputs:
         x = self._transform_input(x)
@@ -203,8 +202,7 @@ class Inception3(nn.Module):
             if not aux_defined:
                 warnings.warn("Scripted Inception3 always returns Inception3 Tuple")
             return InceptionOutputs(x, aux)
-        else:
-            return self.eager_outputs(x, aux)
+        return self.eager_outputs(x, aux)
 
 
 class InceptionA(nn.Module):

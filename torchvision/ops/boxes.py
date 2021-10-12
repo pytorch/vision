@@ -66,8 +66,7 @@ def batched_nms(
     # Ideally for GPU we'd use a higher threshold
     if boxes.numel() > 4_000 and not torchvision._is_tracing():
         return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-    else:
-        return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+    return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
 
 @torch.jit._script_if_tracing
@@ -210,8 +209,7 @@ def _upcast(t: Tensor) -> Tensor:
     # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
     if t.is_floating_point():
         return t if t.dtype in (torch.float32, torch.float64) else t.float()
-    else:
-        return t if t.dtype in (torch.int32, torch.int64) else t.int()
+    return t if t.dtype in (torch.int32, torch.int64) else t.int()
 
 
 def box_area(boxes: Tensor) -> Tensor:

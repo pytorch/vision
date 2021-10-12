@@ -213,9 +213,8 @@ class Cityscapes(VisionDataset):
     def _get_target_suffix(self, mode: str, target_type: str) -> str:
         if target_type == "instance":
             return "{}_instanceIds.png".format(mode)
-        elif target_type == "semantic":
+        if target_type == "semantic":
             return "{}_labelIds.png".format(mode)
-        elif target_type == "color":
+        if target_type == "color":
             return "{}_color.png".format(mode)
-        else:
-            return "{}_polygons.json".format(mode)
+        return "{}_polygons.json".format(mode)

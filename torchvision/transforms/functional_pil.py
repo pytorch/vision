@@ -15,8 +15,7 @@ except ImportError:
 def _is_pil_image(img: Any) -> bool:
     if accimage is not None:
         return isinstance(img, (Image.Image, accimage.Image))
-    else:
-        return isinstance(img, Image.Image)
+    return isinstance(img, Image.Image)
 
 
 @torch.jit.unused
@@ -167,44 +166,43 @@ def pad(
             return image
 
         return ImageOps.expand(img, border=padding, **opts)
-    else:
-        if isinstance(padding, int):
-            pad_left = pad_right = pad_top = pad_bottom = padding
-        if isinstance(padding, tuple) and len(padding) == 2:
-            pad_left = pad_right = padding[0]
-            pad_top = pad_bottom = padding[1]
-        if isinstance(padding, tuple) and len(padding) == 4:
-            pad_left = padding[0]
-            pad_top = padding[1]
-            pad_right = padding[2]
-            pad_bottom = padding[3]
+    if isinstance(padding, int):
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    if isinstance(padding, tuple) and len(padding) == 2:
+        pad_left = pad_right = padding[0]
+        pad_top = pad_bottom = padding[1]
+    if isinstance(padding, tuple) and len(padding) == 4:
+        pad_left = padding[0]
+        pad_top = padding[1]
+        pad_right = padding[2]
+        pad_bottom = padding[3]
 
-        p = [pad_left, pad_top, pad_right, pad_bottom]
-        cropping = -np.minimum(p, 0)
+    p = [pad_left, pad_top, pad_right, pad_bottom]
+    cropping = -np.minimum(p, 0)
 
-        if cropping.any():
-            crop_left, crop_top, crop_right, crop_bottom = cropping
-            img = img.crop((crop_left, crop_top, img.width - crop_right, img.height - crop_bottom))
+    if cropping.any():
+        crop_left, crop_top, crop_right, crop_bottom = cropping
+        img = img.crop((crop_left, crop_top, img.width - crop_right, img.height - crop_bottom))
 
-        pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
+    pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
 
-        if img.mode == "P":
-            palette = img.getpalette()
-            img = np.asarray(img)
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
-            img = Image.fromarray(img)
-            img.putpalette(palette)
-            return img
-
+    if img.mode == "P":
+        palette = img.getpalette()
         img = np.asarray(img)
-        # RGB image
-        if len(img.shape) == 3:
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), padding_mode)
-        # Grayscale image
-        if len(img.shape) == 2:
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+        img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+        img = Image.fromarray(img)
+        img.putpalette(palette)
+        return img
 
-        return Image.fromarray(img)
+    img = np.asarray(img)
+    # RGB image
+    if len(img.shape) == 3:
+        img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), padding_mode)
+    # Grayscale image
+    if len(img.shape) == 2:
+        img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+
+    return Image.fromarray(img)
 
 
 @torch.jit.unused
@@ -257,13 +255,12 @@ def resize(
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
         return img.resize((new_w, new_h), interpolation)
-    else:
-        if max_size is not None:
-            raise ValueError(
-                "max_size should only be passed if size specifies the length of the smaller edge, "
-                "i.e. size should be an int or a sequence of length 1 in torchscript mode."
-            )
-        return img.resize(size[::-1], interpolation)
+    if max_size is not None:
+        raise ValueError(
+            "max_size should only be passed if size specifies the length of the smaller edge, "
+            "i.e. size should be an int or a sequence of length 1 in torchscript mode."
+        )
+    return img.resize(size[::-1], interpolation)
 
 
 @torch.jit.unused

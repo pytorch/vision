@@ -47,8 +47,7 @@ class _InvertedResidual(nn.Module):
     def forward(self, input: Tensor) -> Tensor:
         if self.apply_residual:
             return self.layers(input) + input
-        else:
-            return self.layers(input)
+        return self.layers(input)
 
 
 def _stack(

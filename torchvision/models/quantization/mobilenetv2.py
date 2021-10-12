@@ -25,8 +25,7 @@ class QuantizableInvertedResidual(InvertedResidual):
     def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return self.skip_add.add(x, self.conv(x))
-        else:
-            return self.conv(x)
+        return self.conv(x)
 
     def fuse_model(self) -> None:
         for idx in range(len(self.conv)):

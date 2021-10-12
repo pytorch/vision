@@ -127,8 +127,7 @@ def to_tensor(pic):
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.to(dtype=default_float_dtype).div(255)
-        else:
-            return img
+        return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
@@ -146,8 +145,7 @@ def to_tensor(pic):
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
         return img.to(dtype=default_float_dtype).div(255)
-    else:
-        return img
+    return img
 
 
 def pil_to_tensor(pic):

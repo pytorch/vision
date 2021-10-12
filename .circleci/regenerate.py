@@ -134,10 +134,10 @@ manylinux_images = {
 def get_manylinux_image(cu_version):
     if cu_version == "cpu":
         return "pytorch/manylinux-cuda102"
-    elif cu_version.startswith("cu"):
+    if cu_version.startswith("cu"):
         cu_suffix = cu_version[len("cu") :]
         return f"pytorch/manylinux-cuda{cu_suffix}"
-    elif cu_version.startswith("rocm"):
+    if cu_version.startswith("rocm"):
         rocm_suffix = cu_version[len("rocm") :]
         return f"pytorch/manylinux-rocm:{rocm_suffix}"
 
@@ -145,7 +145,7 @@ def get_manylinux_image(cu_version):
 def get_conda_image(cu_version):
     if cu_version == "cpu":
         return "pytorch/conda-builder:cpu"
-    elif cu_version.startswith("cu"):
+    if cu_version.startswith("cu"):
         cu_suffix = cu_version[len("cu") :]
         return f"pytorch/conda-builder:cuda{cu_suffix}"
 

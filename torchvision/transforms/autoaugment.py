@@ -151,7 +151,7 @@ class AutoAugment(torch.nn.Module):
                 (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
                 (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
             ]
-        elif policy == AutoAugmentPolicy.CIFAR10:
+        if policy == AutoAugmentPolicy.CIFAR10:
             return [
                 (("Invert", 0.1, None), ("Contrast", 0.2, 6)),
                 (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
@@ -179,7 +179,7 @@ class AutoAugment(torch.nn.Module):
                 (("Equalize", 0.8, None), ("Invert", 0.1, None)),
                 (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
             ]
-        elif policy == AutoAugmentPolicy.SVHN:
+        if policy == AutoAugmentPolicy.SVHN:
             return [
                 (("ShearX", 0.9, 4), ("Invert", 0.2, None)),
                 (("ShearY", 0.9, 8), ("Invert", 0.7, None)),
@@ -207,8 +207,7 @@ class AutoAugment(torch.nn.Module):
                 (("ShearY", 0.8, 5), ("AutoContrast", 0.7, None)),
                 (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
             ]
-        else:
-            raise ValueError("The provided policy {} is not recognized.".format(policy))
+        raise ValueError("The provided policy {} is not recognized.".format(policy))
 
     def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {

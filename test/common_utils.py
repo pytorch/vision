@@ -45,20 +45,18 @@ class MapNestedTensorObjectImpl(object):
         if isinstance(object, torch.Tensor):
             return self.tensor_map_fn(object)
 
-        elif isinstance(object, dict):
+        if isinstance(object, dict):
             mapped_dict = {}
             for key, value in object.items():
                 mapped_dict[self(key)] = self(value)
             return mapped_dict
 
-        elif isinstance(object, (list, tuple)):
+        if isinstance(object, (list, tuple)):
             mapped_iter = []
             for iter in object:
                 mapped_iter.append(self(iter))
             return mapped_iter if not isinstance(object, tuple) else tuple(mapped_iter)
-
-        else:
-            return object
+        return object
 
 
 def map_nested_tensor_object(object, tensor_map_fn):

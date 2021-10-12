@@ -155,8 +155,7 @@ class QuantizableGoogLeNet(GoogLeNet):
             if not aux_defined:
                 warnings.warn("Scripted QuantizableGoogleNet always returns GoogleNetOutputs Tuple")
             return GoogLeNetOutputs(x, aux2, aux1)
-        else:
-            return self.eager_outputs(x, aux2, aux1)
+        return self.eager_outputs(x, aux2, aux1)
 
     def fuse_model(self) -> None:
         r"""Fuse conv/bn/relu modules in googlenet model

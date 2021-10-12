@@ -75,8 +75,7 @@ class QuantizableInvertedResidual(InvertedResidual):
     def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return self.skip_add.add(x, self.block(x))
-        else:
-            return self.block(x)
+        return self.block(x)
 
 
 class QuantizableMobileNetV3(MobileNetV3):

@@ -170,11 +170,10 @@ def mobilenet_backbone(
 
         in_channels_list = [backbone[stage_indices[i]].out_channels for i in returned_layers]
         return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
-    else:
-        m = nn.Sequential(
-            backbone,
-            # depthwise linear combination of channels to reduce their size
-            nn.Conv2d(backbone[-1].out_channels, out_channels, 1),
-        )
-        m.out_channels = out_channels
-        return m
+    m = nn.Sequential(
+        backbone,
+        # depthwise linear combination of channels to reduce their size
+        nn.Conv2d(backbone[-1].out_channels, out_channels, 1),
+    )
+    m.out_channels = out_channels
+    return m

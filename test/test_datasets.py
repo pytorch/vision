@@ -1482,16 +1482,15 @@ class QMNISTTestCase(MNISTTestCase):
     def _num_images(self, config):
         if config["what"] == "nist":
             return 3
-        elif config["what"] == "train":
+        if config["what"] == "train":
             return 2
-        elif config["what"] == "test50k":
+        if config["what"] == "test50k":
             # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
             # more than 10000 images for the dataset to not be empty. Since this takes significantly longer than the
             # creation of all other splits, this is excluded from the 'ADDITIONAL_CONFIGS' and is tested only once in
             # 'test_num_examples_test50k'.
             return 10001
-        else:
-            return 1
+        return 1
 
     def _labels_file(self, config):
         return f"{self._prefix(config)}-labels-idx2-int"

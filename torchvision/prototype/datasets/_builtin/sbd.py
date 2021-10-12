@@ -60,13 +60,12 @@ class SBD(Dataset):
 
         if parent.name == "dataset":
             return 0
-        elif grandparent.name == "dataset":
+        if grandparent.name == "dataset":
             if parent.name == "img":
                 return 1
-            elif parent.name == "cls":
+            if parent.name == "cls":
                 return 2
-            else:
-                return None
+            return None
         else:
             return None
 

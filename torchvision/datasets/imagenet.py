@@ -91,12 +91,11 @@ def load_meta_file(root: str, file: Optional[str] = None) -> Tuple[Dict[str, str
 
     if check_integrity(file):
         return torch.load(file)
-    else:
-        msg = (
-            "The meta file {} is not present in the root directory or is corrupted. "
-            "This file is automatically created by the ImageNet dataset."
-        )
-        raise RuntimeError(msg.format(file, root))
+    msg = (
+        "The meta file {} is not present in the root directory or is corrupted. "
+        "This file is automatically created by the ImageNet dataset."
+    )
+    raise RuntimeError(msg.format(file, root))
 
 
 def _verify_archive(root: str, file: str, md5: str) -> None:

@@ -80,8 +80,7 @@ class InvertedResidual(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return x + self.conv(x)
-        else:
-            return self.conv(x)
+        return self.conv(x)
 
 
 class MobileNetV2(nn.Module):

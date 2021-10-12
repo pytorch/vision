@@ -89,7 +89,7 @@ class STL10(VisionDataset):
     def _verify_folds(self, folds: Optional[int]) -> Optional[int]:
         if folds is None:
             return folds
-        elif isinstance(folds, int):
+        if isinstance(folds, int):
             if folds in range(10):
                 return folds
             msg = "Value for argument folds should be in the range [0, 10), " "but got {}."

@@ -264,8 +264,7 @@ def default_loader(path: str) -> Any:
 
     if get_image_backend() == "accimage":
         return accimage_loader(path)
-    else:
-        return pil_loader(path)
+    return pil_loader(path)
 
 
 class ImageFolder(DatasetFolder):
