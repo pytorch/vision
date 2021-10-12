@@ -52,22 +52,51 @@ def train_one_epoch(
 
 def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=""):
     model.eval()
+    torch.use_deterministic_algorithms(True)
+    torch.backends.cudnn.deterministic = True
+
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
+
+    def _eval(image, target):
+        image = image.to(device, non_blocking=True)
+        target = target.to(device, non_blocking=True)
+        output = model(image)
+        loss = criterion(output, target)
+
+        acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+        # FIXME need to take into account that the datasets
+        # could have been padded in distributed setup
+        batch_size = image.shape[0]
+        metric_logger.update(loss=loss.item())
+        metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
+        metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+
+    def _reduce(val):
+        val = torch.tensor([val], dtype=torch.int, device="cuda")
+        torch.distributed.barrier()
+        torch.distributed.all_reduce(val)
+        return val.item()
+
+    num_samples_processed = 0
     with torch.no_grad():
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
-            image = image.to(device, non_blocking=True)
-            target = target.to(device, non_blocking=True)
-            output = model(image)
-            loss = criterion(output, target)
+            _eval(image, target)
+            num_samples_processed += image.shape[0]  # batch-size
+        # Now we need to take care of the remaining samples
 
-            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-            # FIXME need to take into account that the datasets
-            # could have been padded in distributed setup
-            batch_size = image.shape[0]
-            metric_logger.update(loss=loss.item())
-            metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
-            metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+        # TODO: probably only do this if cuda is available, in ddp mode, etc.
+        num_samples_processed = _reduce(num_samples_processed)
+
+        dataset = data_loader.dataset
+        print(f"processed {num_samples_processed} samples in batch, out of {len(dataset)}")
+
+        if torch.distributed.get_rank() == 0:
+            for i in range(num_samples_processed, len(dataset)):
+                image, target = dataset[i]
+                image, target = image[None].cuda(), torch.tensor(target)[None]
+                _eval(image, target)
+
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
@@ -147,7 +176,8 @@ def load_data(traindir, valdir, args):
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        # we set drop_last = True but we still manually take care of the dropped samples
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False, drop_last=True)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
