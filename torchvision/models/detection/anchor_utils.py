@@ -34,8 +34,8 @@ class AnchorGenerator(nn.Module):
 
     def __init__(
         self,
-        sizes: Tuple[Tuple[int, int, int]] = ((128, 256, 512),),
-        aspect_ratios: Tuple[Tuple[float, float, float]] = ((0.5, 1.0, 2.0),),
+        sizes: Tuple[Tuple[int, ...]] = ((128, 256, 512),),
+        aspect_ratios: Tuple[Tuple[float, ...]] = ((0.5, 1.0, 2.0),),
     ) -> None:
 
         super(AnchorGenerator, self).__init__()
