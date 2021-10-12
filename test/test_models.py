@@ -687,9 +687,9 @@ def test_video_model(model_name, dev):
 )
 @pytest.mark.parametrize("model_name", get_available_quantizable_models())
 def test_quantized_classification_model(model_name):
-    set_rng_seed(128)
+    set_rng_seed(256)
     defaults = {
-        "num_classes": 5,
+        "num_classes": 12,
         "input_shape": (1, 3, 224, 224),
         "pretrained": False,
         "quantize": True,
@@ -704,7 +704,7 @@ def test_quantized_classification_model(model_name):
     out = model(x)
 
     _assert_expected(out, model_name + "_quantized", prec=0.1)
-    assert out.shape[-1] == 5
+    assert out.shape[-1] == 12
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
 
