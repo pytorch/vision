@@ -28,7 +28,7 @@ at::Tensor nms_kernel_impl(
   at::Tensor areas_t = (x2_t - x1_t) * (y2_t - y1_t);
 
   auto order_t =
-      std::get<1>(scores.sort(0, /* descending=*/true, /*stable*/ true));
+      std::get<1>(scores.sort(0, /* descending=*/true, /*stable*/ false));
 
   auto ndets = dets.size(0);
   at::Tensor suppressed_t = at::zeros({ndets}, dets.options().dtype(at::kByte));
