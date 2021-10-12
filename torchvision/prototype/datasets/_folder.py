@@ -8,14 +8,11 @@ from typing import Union, Tuple, List, Dict, Any
 import torch
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
-
 from torchvision.prototype.datasets.decoder import pil
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 
 __all__ = ["from_data_folder", "from_image_folder"]
-
-# pseudo-infinite buffer size until a true infinite buffer is supported
-INFINITE = 1_000_000_000
 
 
 def _is_not_top_level_file(path: str, *, root: pathlib.Path) -> bool:
@@ -45,7 +42,6 @@ def _collate_and_decode_data(
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    shuffler: Optional[Callable[[IterDataPipe], IterDataPipe]] = lambda dp: Shuffler(dp, buffer_size=INFINITE),
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
@@ -53,10 +49,9 @@ def from_data_folder(
     root = pathlib.Path(root).expanduser().resolve()
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
-    dp: IterDataPipe = FileLister(str(root), recursive=recursive, masks=masks)
-    dp = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
-    if shuffler:
-        dp = shuffler(dp)
+    dp = FileLister(str(root), recursive=recursive, masks=masks)
+    dp: IterDataPipe = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
+    dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
     dp = FileLoader(dp)
     return (
         Mapper(dp, _collate_and_decode_data, fn_kwargs=dict(root=root, categories=categories, decoder=decoder)),

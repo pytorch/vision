@@ -38,13 +38,14 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     return input * noise
 
 
-torch.fx.wrap('stochastic_depth')
+torch.fx.wrap("stochastic_depth")
 
 
 class StochasticDepth(nn.Module):
     """
     See :func:`stochastic_depth`.
     """
+
     def __init__(self, p: float, mode: str) -> None:
         super().__init__()
         self.p = p
@@ -54,8 +55,8 @@ class StochasticDepth(nn.Module):
         return stochastic_depth(input, self.p, self.mode, self.training)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + '('
-        tmpstr += 'p=' + str(self.p)
-        tmpstr += ', mode=' + str(self.mode)
-        tmpstr += ')'
+        tmpstr = self.__class__.__name__ + "("
+        tmpstr += "p=" + str(self.p)
+        tmpstr += ", mode=" + str(self.mode)
+        tmpstr += ")"
         return tmpstr
