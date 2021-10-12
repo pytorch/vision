@@ -689,10 +689,10 @@ def test_video_model(model_name, dev):
 def test_quantized_classification_model(model_name):
     set_rng_seed(0)
     defaults = {
-        'num_classes': 50,
-        'input_shape': (1, 3, 224, 224),
-        'pretrained': False,
-        'quantize': True,
+        "num_classes": 50,
+        "input_shape": (1, 3, 224, 224),
+        "pretrained": False,
+        "quantize": True,
     }
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
@@ -702,7 +702,7 @@ def test_quantized_classification_model(model_name):
     x = torch.rand(input_shape)
     out = model(x)
 
-    _assert_expected(out.cpu(), model_name + '_quantized', prec=0.1)
+    _assert_expected(out.cpu(), model_name + "_quantized", prec=0.1)
     assert out.shape[-1] == 50
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
