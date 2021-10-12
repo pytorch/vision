@@ -687,7 +687,7 @@ def test_video_model(model_name, dev):
 )
 @pytest.mark.parametrize("model_name", get_available_quantizable_models())
 def test_quantized_classification_model(model_name):
-    set_rng_seed(0)
+    set_rng_seed(10)
     defaults = {
         "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
