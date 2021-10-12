@@ -1,6 +1,7 @@
 import warnings
+from typing import Callable
 
-from torch import nn
+from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
 
@@ -42,7 +43,7 @@ class BackboneWithFPN(nn.Module):
         )
         self.out_channels = out_channels
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.body(x)
         x = self.fpn(x)
         return x
@@ -51,11 +52,11 @@ class BackboneWithFPN(nn.Module):
 def resnet_fpn_backbone(
     backbone_name,
     pretrained,
-    norm_layer=misc_nn_ops.FrozenBatchNorm2d,
+    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers=3,
     returned_layers=None,
     extra_blocks=None,
-):
+) -> BackboneWithFPN:
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
@@ -137,12 +138,13 @@ def _validate_trainable_layers(pretrained, trainable_backbone_layers, max_value,
 def mobilenet_backbone(
     backbone_name,
     pretrained,
-    fpn,
-    norm_layer=misc_nn_ops.FrozenBatchNorm2d,
+    fpn: bool,
+    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers=2,
     returned_layers=None,
     extra_blocks=None,
-):
+) -> nn.Module:
+
     backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer).features
 
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
