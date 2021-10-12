@@ -1,12 +1,15 @@
 import io
 
-import numpy as np
 import PIL.Image
 import torch
+from torchvision.transforms.functional import pil_to_tensor
 
-__all__ = ["pil"]
+__all__ = ["raw", "pil"]
 
 
-def pil(file: io.IOBase, mode: str = "RGB") -> torch.Tensor:
-    image = PIL.Image.open(file).convert(mode.upper())
-    return torch.from_numpy(np.array(image, copy=True)).permute((2, 0, 1))
+def raw(buffer: io.IOBase) -> torch.Tensor:
+    raise RuntimeError("This is just a sentinel and should never be called.")
+
+
+def pil(buffer: io.IOBase, mode: str = "RGB") -> torch.Tensor:
+    return pil_to_tensor(PIL.Image.open(buffer).convert(mode.upper()))

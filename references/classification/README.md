@@ -79,14 +79,44 @@ The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](ht
 
 The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTorch repo](https://github.com/lukemelas/EfficientNet-PyTorch/blob/1039e009545d9329ea026c9f7541341439712b96/efficientnet_pytorch/utils.py#L562-L564).
 
-## Mixed precision training
-Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).
 
-Mixed precision training makes use of both FP32 and FP16 precisions where appropriate. FP16 operations can leverage the Tensor cores on NVIDIA GPUs (Volta, Turing or newer architectures) for improved throughput, generally without loss in model accuracy. Mixed precision training also often allows larger batch sizes. GPU automatic mixed precision training for Pytorch Vision can be enabled via the flag value `--apex=True`.
+### RegNet
+
+#### Small models
+```
+torchrun --nproc_per_node=8 train.py\
+     --model $MODEL --epochs 100 --batch-size 128 --wd 0.00005 --lr=0.8\
+     --lr-scheduler=cosineannealinglr --lr-warmup-method=linear\
+     --lr-warmup-epochs=5 --lr-warmup-decay=0.1
+```
+Here `$MODEL` is one of `regnet_x_400mf`, `regnet_x_800mf`, `regnet_x_1_6gf`, `regnet_y_400mf`, `regnet_y_800mf` and `regnet_y_1_6gf`. Please note we used learning rate 0.4 for `regent_y_400mf` to get the same Acc@1 as [the paper)(https://arxiv.org/abs/2003.13678).
+
+### Medium models
+```
+torchrun --nproc_per_node=8 train.py\
+     --model $MODEL --epochs 100 --batch-size 64 --wd 0.00005 --lr=0.4\
+     --lr-scheduler=cosineannealinglr --lr-warmup-method=linear\
+     --lr-warmup-epochs=5 --lr-warmup-decay=0.1
+```
+Here `$MODEL` is one of `regnet_x_3_2gf`, `regnet_x_8gf`, `regnet_x_16gf`, `regnet_y_3_2gf` and `regnet_y_8gf`.
+
+### Large models
+```
+torchrun --nproc_per_node=8 train.py\
+     --model $MODEL --epochs 100 --batch-size 32 --wd 0.00005 --lr=0.2\
+     --lr-scheduler=cosineannealinglr --lr-warmup-method=linear\
+     --lr-warmup-epochs=5 --lr-warmup-decay=0.1
+```
+Here `$MODEL` is one of `regnet_x_32gf`, `regnet_y_16gf` and `regnet_y_32gf`.
+
+## Mixed precision training
+Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
+
+Mixed precision training makes use of both FP32 and FP16 precisions where appropriate. FP16 operations can leverage the Tensor cores on NVIDIA GPUs (Volta, Turing or newer architectures) for improved throughput, generally without loss in model accuracy. Mixed precision training also often allows larger batch sizes. GPU automatic mixed precision training for Pytorch Vision can be enabled via the flag value `--amp=True`.
 
 ```
 torchrun --nproc_per_node=8 train.py\
-    --model resnext50_32x4d --epochs 100 --apex
+    --model resnext50_32x4d --epochs 100 --amp
 ```
 
 ## Quantized

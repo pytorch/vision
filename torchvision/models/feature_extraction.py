@@ -1,17 +1,17 @@
-from typing import Dict, Callable, List, Union, Optional, Tuple
-from collections import OrderedDict
-import warnings
 import re
+import warnings
+from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
+from typing import Dict, Callable, List, Union, Optional, Tuple
 
 import torch
-from torch import nn
 from torch import fx
+from torch import nn
 from torch.fx.graph_module import _copy_attr
 
 
-__all__ = ['create_feature_extractor', 'get_graph_node_names']
+__all__ = ["create_feature_extractor", "get_graph_node_names"]
 
 
 class LeafModuleAwareTracer(fx.Tracer):
@@ -20,10 +20,11 @@ class LeafModuleAwareTracer(fx.Tracer):
     modules that are not to be traced through. The resulting graph ends up
     having single nodes referencing calls to the leaf modules' forward methods.
     """
+
     def __init__(self, *args, **kwargs):
         self.leaf_modules = {}
-        if 'leaf_modules' in kwargs:
-            leaf_modules = kwargs.pop('leaf_modules')
+        if "leaf_modules" in kwargs:
+            leaf_modules = kwargs.pop("leaf_modules")
             self.leaf_modules = leaf_modules
         super(LeafModuleAwareTracer, self).__init__(*args, **kwargs)
 
@@ -37,7 +38,7 @@ class NodePathTracer(LeafModuleAwareTracer):
     """
     NodePathTracer is an FX tracer that, for each operation, also records the
     name of the Node from which the operation originated. A node name here is
-    a `.` seperated path walking the hierarchy from top level module down to
+    a `.` separated path walking the hierarchy from top level module down to
     leaf operation or leaf module. The name of the top level module is not
     included as part of the node name. For example, if we trace a module whose
     forward method applies a ReLU module, the name for that node will simply
@@ -51,10 +52,11 @@ class NodePathTracer(LeafModuleAwareTracer):
         - When a duplicate node name is encountered, a suffix of the form
           _{int} is added. The counter starts from 1.
     """
+
     def __init__(self, *args, **kwargs):
         super(NodePathTracer, self).__init__(*args, **kwargs)
         # Track the qualified name of the Node being traced
-        self.current_module_qualname = ''
+        self.current_module_qualname = ""
         # A map from FX Node to the qualified name\#
         # NOTE: This is loosely like the "qualified name" mentioned in the
         # torch.fx docs https://pytorch.org/docs/stable/fx.html but adapted
@@ -78,50 +80,56 @@ class NodePathTracer(LeafModuleAwareTracer):
             if not self.is_leaf_module(m, module_qualname):
                 out = forward(*args, **kwargs)
                 return out
-            return self.create_proxy('call_module', module_qualname, args, kwargs)
+            return self.create_proxy("call_module", module_qualname, args, kwargs)
         finally:
             self.current_module_qualname = old_qualname
 
-    def create_proxy(self, kind: str, target: fx.node.Target, args, kwargs,
-                     name=None, type_expr=None, *_) -> fx.proxy.Proxy:
+    def create_proxy(
+        self, kind: str, target: fx.node.Target, args, kwargs, name=None, type_expr=None, *_
+    ) -> fx.proxy.Proxy:
         """
         Override of `Tracer.create_proxy`. This override intercepts the recording
         of every operation and stores away the current traced module's qualified
         name in `node_to_qualname`
         """
         proxy = super().create_proxy(kind, target, args, kwargs, name, type_expr)
-        self.node_to_qualname[proxy.node] = self._get_node_qualname(
-            self.current_module_qualname, proxy.node)
+        self.node_to_qualname[proxy.node] = self._get_node_qualname(self.current_module_qualname, proxy.node)
         return proxy
 
-    def _get_node_qualname(
-            self, module_qualname: str, node: fx.node.Node) -> str:
+    def _get_node_qualname(self, module_qualname: str, node: fx.node.Node) -> str:
         node_qualname = module_qualname
-        if node.op == 'call_module':
-            # Node terminates in a leaf module so the module_qualname is a
-            # complete description of the node
-            for existing_qualname in reversed(self.node_to_qualname.values()):
-                # Check to see if existing_qualname is of the form
-                # {node_qualname} or {node_qualname}_{int}
-                if re.match(rf'{node_qualname}(_[0-9]+)?$',
-                            existing_qualname) is not None:
-                    postfix = existing_qualname.replace(node_qualname, '')
-                    if len(postfix):
-                        # Existing_qualname is of the form {node_qualname}_{int}
-                        next_index = int(postfix[1:]) + 1
-                    else:
-                        # existing_qualname is of the form {node_qualname}
-                        next_index = 1
-                    node_qualname += f'_{next_index}'
-                    break
-                pass
-        else:
-            # Node terminates in non- leaf module so the node name needs to be
-            # appended
+
+        if node.op != "call_module":
+            # In this case module_qualname from torch.fx doesn't go all the
+            # way to the leaf function/op so we need to append it
             if len(node_qualname) > 0:
                 # Only append '.' if we are deeper than the top level module
-                node_qualname += '.'
+                node_qualname += "."
             node_qualname += str(node)
+
+        # Now we need to add an _{index} postfix on any repeated node names
+        # For modules we do this from scratch
+        # But for anything else, torch.fx already has a globally scoped
+        # _{index} postfix. But we want it locally (relative to direct parent)
+        # scoped. So first we need to undo the torch.fx postfix
+        if re.match(r".+_[0-9]+$", node_qualname) is not None:
+            node_qualname = node_qualname.rsplit("_", 1)[0]
+
+        # ... and now we add on our own postfix
+        for existing_qualname in reversed(self.node_to_qualname.values()):
+            # Check to see if existing_qualname is of the form
+            # {node_qualname} or {node_qualname}_{int}
+            if re.match(rf"{node_qualname}(_[0-9]+)?$", existing_qualname) is not None:
+                postfix = existing_qualname.replace(node_qualname, "")
+                if len(postfix):
+                    # existing_qualname is of the form {node_qualname}_{int}
+                    next_index = int(postfix[1:]) + 1
+                else:
+                    # existing_qualname is of the form {node_qualname}
+                    next_index = 1
+                node_qualname += f"_{next_index}"
+                break
+
         return node_qualname
 
 
@@ -133,8 +141,7 @@ def _is_subseq(x, y):
     return all(any(x_item == y_item for x_item in iter_x) for y_item in y)
 
 
-def _warn_graph_differences(
-        train_tracer: NodePathTracer, eval_tracer: NodePathTracer):
+def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathTracer):
     """
     Utility function for warning the user if there are differences between
     the train graph nodes and the eval graph nodes.
@@ -142,48 +149,55 @@ def _warn_graph_differences(
     train_nodes = list(train_tracer.node_to_qualname.values())
     eval_nodes = list(eval_tracer.node_to_qualname.values())
 
-    if len(train_nodes) == len(eval_nodes) and all(
-            t == e for t, e in zip(train_nodes, eval_nodes)):
+    if len(train_nodes) == len(eval_nodes) and all(t == e for t, e in zip(train_nodes, eval_nodes)):
         return
 
     suggestion_msg = (
         "When choosing nodes for feature extraction, you may need to specify "
-        "output nodes for train and eval mode separately.")
+        "output nodes for train and eval mode separately."
+    )
 
     if _is_subseq(train_nodes, eval_nodes):
-        msg = ("NOTE: The nodes obtained by tracing the model in eval mode "
-               "are a subsequence of those obtained in train mode. ")
+        msg = (
+            "NOTE: The nodes obtained by tracing the model in eval mode "
+            "are a subsequence of those obtained in train mode. "
+        )
     elif _is_subseq(eval_nodes, train_nodes):
-        msg = ("NOTE: The nodes obtained by tracing the model in train mode "
-               "are a subsequence of those obtained in eval mode. ")
+        msg = (
+            "NOTE: The nodes obtained by tracing the model in train mode "
+            "are a subsequence of those obtained in eval mode. "
+        )
     else:
-        msg = ("The nodes obtained by tracing the model in train mode "
-               "are different to those obtained in eval mode. ")
+        msg = "The nodes obtained by tracing the model in train mode " "are different to those obtained in eval mode. "
     warnings.warn(msg + suggestion_msg)
 
 
 def get_graph_node_names(
-        model: nn.Module, tracer_kwargs: Dict = {},
-        suppress_diff_warning: bool = False) -> Tuple[List[str], List[str]]:
+    model: nn.Module, tracer_kwargs: Dict = {}, suppress_diff_warning: bool = False
+) -> Tuple[List[str], List[str]]:
     """
     Dev utility to return node names in order of execution. See note on node
     names under :func:`create_feature_extractor`. Useful for seeing which node
     names are available for feature extraction. There are two reasons that
     node names can't easily be read directly from the code for a model:
 
-        1. Not all submodules are traced through. Modules from `torch.nn` all
+        1. Not all submodules are traced through. Modules from ``torch.nn`` all
            fall within this category.
         2. Nodes representing the repeated application of the same operation
-           or leaf module get a `_{counter}` postfix.
+           or leaf module get a ``_{counter}`` postfix.
 
     The model is traced twice: once in train mode, and once in eval mode. Both
-    sets of nodes are returned.
+    sets of node names are returned.
+
+    For more details on the node naming conventions used here, please see the
+    :ref:`relevant subheading <about-node-names>` in the
+    `documentation <https://pytorch.org/vision/stable/feature_extraction.html>`_.
 
     Args:
         model (nn.Module): model for which we'd like to print node names
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
-            `NodePathTracer` (they are eventually passed onto
-            `torch.fx.Tracer`).
+            ``NodePathTracer`` (they are eventually passed onto
+            `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -218,11 +232,10 @@ class DualGraphModule(fx.GraphModule):
     - Copies submodules according to the nodes of both train and eval graphs.
     - Calling train(mode) switches between train graph and eval graph.
     """
-    def __init__(self,
-                 root: torch.nn.Module,
-                 train_graph: fx.Graph,
-                 eval_graph: fx.Graph,
-                 class_name: str = 'GraphModule'):
+
+    def __init__(
+        self, root: torch.nn.Module, train_graph: fx.Graph, eval_graph: fx.Graph, class_name: str = "GraphModule"
+    ):
         """
         Args:
             root (nn.Module): module from which the copied module hierarchy is
@@ -240,7 +253,7 @@ class DualGraphModule(fx.GraphModule):
         # Copy all get_attr and call_module ops (indicated by BOTH train and
         # eval graphs)
         for node in chain(iter(train_graph.nodes), iter(eval_graph.nodes)):
-            if node.op in ['get_attr', 'call_module']:
+            if node.op in ["get_attr", "call_module"]:
                 assert isinstance(node.target, str)
                 _copy_attr(root, self, node.target)
 
@@ -254,10 +267,11 @@ class DualGraphModule(fx.GraphModule):
         # Locally defined Tracers are not pickleable. This is needed because torch.package will
         # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
         # to re-create the Graph during deserialization.
-        assert self.eval_graph._tracer_cls == self.train_graph._tracer_cls, \
-            "Train mode and eval mode should use the same tracer class"
+        assert (
+            self.eval_graph._tracer_cls == self.train_graph._tracer_cls
+        ), "Train mode and eval mode should use the same tracer class"
         self._tracer_cls = None
-        if self.graph._tracer_cls and '<locals>' not in self.graph._tracer_cls.__qualname__:
+        if self.graph._tracer_cls and "<locals>" not in self.graph._tracer_cls.__qualname__:
             self._tracer_cls = self.graph._tracer_cls
 
     def train(self, mode=True):
@@ -276,12 +290,13 @@ class DualGraphModule(fx.GraphModule):
 
 
 def create_feature_extractor(
-        model: nn.Module,
-        return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-        train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-        eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-        tracer_kwargs: Dict = {},
-        suppress_diff_warning: bool = False) -> fx.GraphModule:
+    model: nn.Module,
+    return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
+    train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
+    eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
+    tracer_kwargs: Dict = {},
+    suppress_diff_warning: bool = False,
+) -> fx.GraphModule:
     """
     Creates a new graph module that returns intermediate nodes from a given
     model as dictionary with user specified keys as strings, and the requested
@@ -289,58 +304,55 @@ def create_feature_extractor(
     the model via FX to return the desired nodes as outputs. All unused nodes
     are removed, together with their corresponding parameters.
 
-    A note on node specification: For the purposes of this feature extraction
-    utility, a node name is specified as a `.` seperated path walking the
-    hierarchy from top level module down to leaf operation or leaf module. For
-    instance `blocks.5.3.bn1`. The keys of the `return_nodes` argument should
-    point to either a node's name, or some truncated version of it. For
-    example, one could provide `blocks.5` as a key, and the last node with
-    that prefix will be selected. :func:`get_graph_node_names` is a useful
-    helper function for getting a list of node names of a model.
+    Desired output nodes must be specified as a ``.`` separated
+    path walking the module hierarchy from top level module down to leaf
+    operation or leaf module. For more details on the node naming conventions
+    used here, please see the :ref:`relevant subheading <about-node-names>`
+    in the `documentation <https://pytorch.org/vision/stable/feature_extraction.html>`_.
 
     Not all models will be FX traceable, although with some massaging they can
     be made to cooperate. Here's a (not exhaustive) list of tips:
 
         - If you don't need to trace through a particular, problematic
           sub-module, turn it into a "leaf module" by passing a list of
-          `leaf_modules` as one of the `tracer_kwargs` (see example below). It
-          will not be traced through, but rather, the resulting graph will
+          ``leaf_modules`` as one of the ``tracer_kwargs`` (see example below).
+          It will not be traced through, but rather, the resulting graph will
           hold a reference to that module's forward method.
         - Likewise, you may turn functions into leaf functions by passing a
-          list of `autowrap_functions` as one of the `tracer_kwargs` (see
+          list of ``autowrap_functions`` as one of the ``tracer_kwargs`` (see
           example below).
         - Some inbuilt Python functions can be problematic. For instance,
-          `int` will raise an error during tracing. You may wrap them in your
-          own function and then pass that in `autowrap_functions` as one of
-          the `tracer_kwargs`.
+          ``int`` will raise an error during tracing. You may wrap them in your
+          own function and then pass that in ``autowrap_functions`` as one of
+          the ``tracer_kwargs``.
 
     For further information on FX see the
     `torch.fx documentation <https://pytorch.org/docs/stable/fx.html>`_.
 
     Args:
         model (nn.Module): model on which we will extract the features
-        return_nodes (list or dict, optional): either a `List` or a `Dict`
+        return_nodes (list or dict, optional): either a ``List`` or a ``Dict``
             containing the names (or partial names - see note above)
             of the nodes for which the activations will be returned. If it is
-            a `Dict`, the keys are the node names, and the values
+            a ``Dict``, the keys are the node names, and the values
             are the user-specified keys for the graph module's returned
-            dictionary. If it is a `List`, it is treated as a `Dict` mapping
+            dictionary. If it is a ``List``, it is treated as a ``Dict`` mapping
             node specification strings directly to output names. In the case
-            that `train_return_nodes` and `eval_return_nodes` are specified,
+            that ``train_return_nodes`` and ``eval_return_nodes`` are specified,
             this should not be specified.
         train_return_nodes (list or dict, optional): similar to
-            `return_nodes`. This can be used if the return nodes
+            ``return_nodes``. This can be used if the return nodes
             for train mode are different than those from eval mode.
-            If this is specified, `eval_return_nodes` must also be specified,
-            and `return_nodes` should not be specified.
+            If this is specified, ``eval_return_nodes`` must also be specified,
+            and ``return_nodes`` should not be specified.
         eval_return_nodes (list or dict, optional): similar to
-            `return_nodes`. This can be used if the return nodes
+            ``return_nodes``. This can be used if the return nodes
             for train mode are different than those from eval mode.
-            If this is specified, `train_return_nodes` must also be specified,
+            If this is specified, ``train_return_nodes`` must also be specified,
             and `return_nodes` should not be specified.
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
-            `NodePathTracer` (which passes them onto it's parent class
-            `torch.fx.Tracer`).
+            ``NodePathTracer`` (which passes them onto it's parent class
+            `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -387,18 +399,17 @@ def create_feature_extractor(
     """
     is_training = model.training
 
-    assert any(arg is not None for arg in [
-        return_nodes, train_return_nodes, eval_return_nodes]), (
-            "Either `return_nodes` or `train_return_nodes` and "
-            "`eval_return_nodes` together, should be specified")
+    assert any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]), (
+        "Either `return_nodes` or `train_return_nodes` and " "`eval_return_nodes` together, should be specified"
+    )
 
-    assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), \
-        ("If any of `train_return_nodes` and `eval_return_nodes` are "
-         "specified, then both should be specified")
+    assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), (
+        "If any of `train_return_nodes` and `eval_return_nodes` are " "specified, then both should be specified"
+    )
 
-    assert ((return_nodes is None) ^ (train_return_nodes is None)), \
-        ("If `train_return_nodes` and `eval_return_nodes` are specified, "
-         "then both should be specified")
+    assert (return_nodes is None) ^ (train_return_nodes is None), (
+        "If `train_return_nodes` and `eval_return_nodes` are specified, " "then both should be specified"
+    )
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:
@@ -417,45 +428,42 @@ def create_feature_extractor(
     # Repeat the tracing and graph rewriting for train and eval mode
     tracers = {}
     graphs = {}
-    mode_return_nodes: Dict[str, Dict[str, str]] = {
-        'train': train_return_nodes,
-        'eval': eval_return_nodes
-    }
-    for mode in ['train', 'eval']:
-        if mode == 'train':
+    mode_return_nodes: Dict[str, Dict[str, str]] = {"train": train_return_nodes, "eval": eval_return_nodes}
+    for mode in ["train", "eval"]:
+        if mode == "train":
             model.train()
-        elif mode == 'eval':
+        elif mode == "eval":
             model.eval()
 
         # Instantiate our NodePathTracer and use that to trace the model
         tracer = NodePathTracer(**tracer_kwargs)
         graph = tracer.trace(model)
 
-        name = model.__class__.__name__ if isinstance(
-            model, nn.Module) else model.__name__
+        name = model.__class__.__name__ if isinstance(model, nn.Module) else model.__name__
         graph_module = fx.GraphModule(tracer.root, graph, name)
 
         available_nodes = list(tracer.node_to_qualname.values())
         # FIXME We don't know if we should expect this to happen
-        assert len(set(available_nodes)) == len(available_nodes), \
-            "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+        assert len(set(available_nodes)) == len(
+            available_nodes
+        ), "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
         # Check that all outputs in return_nodes are present in the model
         for query in mode_return_nodes[mode].keys():
             # To check if a query is available we need to check that at least
             # one of the available names starts with it up to a .
-            if not any([re.match(rf'^{query}(\.|$)', n) is not None
-                        for n in available_nodes]):
+            if not any([re.match(rf"^{query}(\.|$)", n) is not None for n in available_nodes]):
                 raise ValueError(
                     f"node: '{query}' is not present in model. Hint: use "
                     "`get_graph_node_names` to make sure the "
                     "`return_nodes` you specified are present. It may even "
                     "be that you need to specify `train_return_nodes` and "
-                    "`eval_return_nodes` separately.")
+                    "`eval_return_nodes` separately."
+                )
 
         # Remove existing output nodes (train mode)
         orig_output_nodes = []
         for n in reversed(graph_module.graph.nodes):
-            if n.op == 'output':
+            if n.op == "output":
                 orig_output_nodes.append(n)
         assert len(orig_output_nodes)
         for n in orig_output_nodes:
@@ -473,8 +481,8 @@ def create_feature_extractor(
                 # - When packing outputs into a named tuple like in InceptionV3
                 continue
             for query in mode_return_nodes[mode]:
-                depth = query.count('.')
-                if '.'.join(module_qualname.split('.')[:depth + 1]) == query:
+                depth = query.count(".")
+                if ".".join(module_qualname.split(".")[: depth + 1]) == query:
                     output_nodes[mode_return_nodes[mode][query]] = n
                     mode_return_nodes[mode].pop(query)
                     break
@@ -495,11 +503,10 @@ def create_feature_extractor(
     # Warn user if there are any discrepancies between the graphs of the
     # train and eval modes
     if not suppress_diff_warning:
-        _warn_graph_differences(tracers['train'], tracers['eval'])
+        _warn_graph_differences(tracers["train"], tracers["eval"])
 
     # Build the final graph module
-    graph_module = DualGraphModule(
-        model, graphs['train'], graphs['eval'], class_name=name)
+    graph_module = DualGraphModule(model, graphs["train"], graphs["eval"], class_name=name)
 
     # Restore original training mode
     model.train(is_training)

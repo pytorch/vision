@@ -1,22 +1,18 @@
-import bz2
-import os
-import torchvision.datasets.utils as utils
-import pytest
-import zipfile
-import tarfile
-import gzip
-import warnings
-from torch._utils_internal import get_file_path_2
-from urllib.error import URLError
-import itertools
-import lzma
 import contextlib
+import gzip
+import os
+import tarfile
+import zipfile
 
+import pytest
+import torchvision.datasets.utils as utils
+from torch._utils_internal import get_file_path_2
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
 
 
 TEST_FILE = get_file_path_2(
-    os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
+    os.path.dirname(os.path.abspath(__file__)), "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
+)
 
 
 def patch_url_redirection(mocker, redirect_url):
@@ -60,16 +56,16 @@ class TestDatasetsUtils:
 
     def test_check_md5(self):
         fpath = TEST_FILE
-        correct_md5 = '9c0bb82894bb3af7f7675ef2b3b6dcdc'
-        false_md5 = ''
+        correct_md5 = "9c0bb82894bb3af7f7675ef2b3b6dcdc"
+        false_md5 = ""
         assert utils.check_md5(fpath, correct_md5)
         assert not utils.check_md5(fpath, false_md5)
 
     def test_check_integrity(self):
         existing_fpath = TEST_FILE
-        nonexisting_fpath = ''
-        correct_md5 = '9c0bb82894bb3af7f7675ef2b3b6dcdc'
-        false_md5 = ''
+        nonexisting_fpath = ""
+        correct_md5 = "9c0bb82894bb3af7f7675ef2b3b6dcdc"
+        false_md5 = ""
         assert utils.check_integrity(existing_fpath, correct_md5)
         assert not utils.check_integrity(existing_fpath, false_md5)
         assert utils.check_integrity(existing_fpath)
@@ -87,31 +83,35 @@ class TestDatasetsUtils:
 
         assert utils._get_google_drive_file_id(url) is None
 
-    @pytest.mark.parametrize('file, expected', [
-        ("foo.tar.bz2", (".tar.bz2", ".tar", ".bz2")),
-        ("foo.tar.xz", (".tar.xz", ".tar", ".xz")),
-        ("foo.tar", (".tar", ".tar", None)),
-        ("foo.tar.gz", (".tar.gz", ".tar", ".gz")),
-        ("foo.tbz", (".tbz", ".tar", ".bz2")),
-        ("foo.tbz2", (".tbz2", ".tar", ".bz2")),
-        ("foo.tgz", (".tgz", ".tar", ".gz")),
-        ("foo.bz2", (".bz2", None, ".bz2")),
-        ("foo.gz", (".gz", None, ".gz")),
-        ("foo.zip", (".zip", ".zip", None)),
-        ("foo.xz", (".xz", None, ".xz")),
-        ("foo.bar.tar.gz", (".tar.gz", ".tar", ".gz")),
-        ("foo.bar.gz", (".gz", None, ".gz")),
-        ("foo.bar.zip", (".zip", ".zip", None))])
+    @pytest.mark.parametrize(
+        "file, expected",
+        [
+            ("foo.tar.bz2", (".tar.bz2", ".tar", ".bz2")),
+            ("foo.tar.xz", (".tar.xz", ".tar", ".xz")),
+            ("foo.tar", (".tar", ".tar", None)),
+            ("foo.tar.gz", (".tar.gz", ".tar", ".gz")),
+            ("foo.tbz", (".tbz", ".tar", ".bz2")),
+            ("foo.tbz2", (".tbz2", ".tar", ".bz2")),
+            ("foo.tgz", (".tgz", ".tar", ".gz")),
+            ("foo.bz2", (".bz2", None, ".bz2")),
+            ("foo.gz", (".gz", None, ".gz")),
+            ("foo.zip", (".zip", ".zip", None)),
+            ("foo.xz", (".xz", None, ".xz")),
+            ("foo.bar.tar.gz", (".tar.gz", ".tar", ".gz")),
+            ("foo.bar.gz", (".gz", None, ".gz")),
+            ("foo.bar.zip", (".zip", ".zip", None)),
+        ],
+    )
     def test_detect_file_type(self, file, expected):
         assert utils._detect_file_type(file) == expected
 
-    @pytest.mark.parametrize('file', ["foo", "foo.tar.baz", "foo.bar"])
+    @pytest.mark.parametrize("file", ["foo", "foo.tar.baz", "foo.bar"])
     def test_detect_file_type_incompatible(self, file):
         # tests detect file type for no extension, unknown compression and unknown partial extension
         with pytest.raises(RuntimeError):
             utils._detect_file_type(file)
 
-    @pytest.mark.parametrize('extension', [".bz2", ".gz", ".xz"])
+    @pytest.mark.parametrize("extension", [".bz2", ".gz", ".xz"])
     def test_decompress(self, extension, tmpdir):
         def create_compressed(root, content="this is the content"):
             file = os.path.join(root, "file")
@@ -152,8 +152,8 @@ class TestDatasetsUtils:
 
         assert not os.path.exists(compressed)
 
-    @pytest.mark.parametrize('extension', [".gz", ".xz"])
-    @pytest.mark.parametrize('remove_finished', [True, False])
+    @pytest.mark.parametrize("extension", [".gz", ".xz"])
+    @pytest.mark.parametrize("remove_finished", [True, False])
     def test_extract_archive_defer_to_decompress(self, extension, remove_finished, mocker):
         filename = "foo"
         file = f"{filename}{extension}"
@@ -182,8 +182,9 @@ class TestDatasetsUtils:
         with open(file, "r") as fh:
             assert fh.read() == content
 
-    @pytest.mark.parametrize('extension, mode', [
-        ('.tar', 'w'), ('.tar.gz', 'w:gz'), ('.tgz', 'w:gz'), ('.tar.xz', 'w:xz')])
+    @pytest.mark.parametrize(
+        "extension, mode", [(".tar", "w"), (".tar.gz", "w:gz"), (".tgz", "w:gz"), (".tar.xz", "w:xz")]
+    )
     def test_extract_tar(self, extension, mode, tmpdir):
         def create_archive(root, extension, mode, content="this is the content"):
             src = os.path.join(root, "src.txt")
@@ -213,5 +214,5 @@ class TestDatasetsUtils:
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])
