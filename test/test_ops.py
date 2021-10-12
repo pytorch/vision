@@ -996,30 +996,30 @@ class TestBox:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
 
 
-class TestBoxArea:
-    def test_box_area(self):
+class TestBoxOps:
+    @pytest.mark.parametrize("int_dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
+    @pytest.mark.parametrize("float_dtype", [torch.float32, torch.float64])
+    def test_box_area(self, int_dtype, float_dtype):
         def area_check(box, expected, tolerance=1e-4):
             out = ops.box_area(box)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
-        for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
-            box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
-            expected = torch.tensor([10000, 0])
-            area_check(box_tensor, expected)
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=int_dtype)
+        expected = torch.tensor([10000, 0])
+        area_check(box_tensor, expected)
 
         # Check for float32 and float64 boxes
-        for dtype in [torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
-            area_check(box_tensor, expected, tolerance=0.05)
+        box_tensor = torch.tensor(
+            [
+                [285.3538, 185.5758, 1193.5110, 851.4551],
+                [285.1472, 188.7374, 1192.4984, 851.0669],
+                [279.2440, 197.9812, 1189.4746, 849.2019],
+            ],
+            dtype=float_dtype,
+        )
+        expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
+        area_check(box_tensor, expected, tolerance=0.05)
 
         # Check for float16 box
         box_tensor = torch.tensor(
@@ -1037,31 +1037,29 @@ class TestBoxArea:
         scripted_area = scripted_fn(box_tensor)
         torch.testing.assert_close(scripted_area, expected, rtol=0.0, atol=TOLERANCE)
 
-
-class TestBoxIou:
-    def test_iou(self):
+    @pytest.mark.parametrize("int_dtype", [torch.int16, torch.int32, torch.int64])
+    @pytest.mark.parametrize("float_dtype", [torch.float16, torch.float32, torch.float64])
+    def test_iou(self, int_dtype, float_dtype):
         def iou_check(box, expected, tolerance=1e-4):
             out = ops.box_iou(box, box)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
-            expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
-            iou_check(box, expected)
+        box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=int_dtype)
+        expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+        iou_check(box, expected)
 
         # Check for float boxes
-        for dtype in [torch.float16, torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
-            iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
+        box_tensor = torch.tensor(
+            [
+                [285.3538, 185.5758, 1193.5110, 851.4551],
+                [285.1472, 188.7374, 1192.4984, 851.0669],
+                [279.2440, 197.9812, 1189.4746, 849.2019],
+            ],
+            dtype=float_dtype,
+        )
+        expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
+        iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
 
     def test_iou_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
@@ -1071,28 +1069,26 @@ class TestBoxIou:
         scripted_iou = scripted_fn(box_tensor, box_tensor)
         torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
 
-
-class TestGenBoxIou:
-    def test_gen_iou(self):
+    @pytest.mark.parametrize("int_dtype", [torch.int16, torch.int32, torch.int64])
+    @pytest.mark.parametrize("float_dtype", [torch.float16, torch.float32, torch.float64])
+    def test_gen_iou(self, int_dtype, float_dtype):
         def gen_iou_check(box, expected, tolerance=1e-4):
             out = ops.generalized_box_iou(box, box)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         # Check for int boxes
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
+            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=int_dtype)
             expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]])
             gen_iou_check(box, expected)
 
         # Check for float boxes
-        for dtype in [torch.float16, torch.float32, torch.float64]:
             box_tensor = torch.tensor(
                 [
                     [285.3538, 185.5758, 1193.5110, 851.4551],
                     [285.1472, 188.7374, 1192.4984, 851.0669],
                     [279.2440, 197.9812, 1189.4746, 849.2019],
                 ],
-                dtype=dtype,
+                dtype=float_dtype,
             )
             expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
             gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
