@@ -51,7 +51,7 @@ def _get_expected_file(name=None, quantized=False):
     # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
     # We hardcode it here to avoid having to re-generate the reference files
     expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
-    expected_file += "_quantized_expect.pkl" if quantized else "_expect.pkl"
+    expected_file += "_expect.pkl"
 
     if not ACCEPT and not os.path.exists(expected_file):
         raise RuntimeError(
@@ -63,7 +63,7 @@ def _get_expected_file(name=None, quantized=False):
     return expected_file
 
 
-def _assert_expected(output, name, prec, quantized=False):
+def _assert_expected(output, name, prec):
     """Test that a python value matches the recorded contents of a file
     based on a "check" name. The value must be
     pickable with `torch.save`. This file
@@ -71,7 +71,7 @@ def _assert_expected(output, name, prec, quantized=False):
     as the test script. You can automatically update the recorded test
     output using an EXPECTTEST_ACCEPT=1 env variable.
     """
-    expected_file = _get_expected_file(name, quantized)
+    expected_file = _get_expected_file(name)
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
@@ -693,7 +693,7 @@ def test_quantized_classification_model(model_name):
     x = torch.rand(input_shape)
     out = model(x)
 
-    _assert_expected(out.cpu(), model_name, prec=0.1, quantized=True)
+    _assert_expected(out.cpu(), model_name + '_quantized', prec=0.1)
     assert out.shape[-1] == 50
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
