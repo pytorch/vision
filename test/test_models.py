@@ -673,6 +673,9 @@ def test_video_model(model_name, dev):
     _check_input_backprop(model, x)
 
 
+@pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
+                         'qnnpack' in torch.backends.quantized.supported_engines),
+                    reason="This Pytorch Build has not been built with fbgemm and qnnpack")
 @pytest.mark.parametrize('model_name', get_available_quantizable_models())
 def test_quantized_classification_model(model_name):
     set_rng_seed(0)
