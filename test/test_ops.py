@@ -65,11 +65,11 @@ class RoIOpTester(ABC):
         gradcheck(func, (x,))
         gradcheck(script_func, (x,))
 
-    @pytest.mark.parametrize('device', cpu_and_gpu())
-    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
-    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
+    @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
     def test_autocast(self, device, x_dtype, rois_dtype):
-        cm = torch.cpu.amp.autocast if device == 'cpu' else torch.cuda.amp.autocast
+        cm = torch.cpu.amp.autocast if device == "cpu" else torch.cuda.amp.autocast
         with cm():
             self.test_forward(torch.device(device), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
@@ -285,15 +285,16 @@ class TestRoIAlign(RoIOpTester):
             device=device, contiguous=contiguous, x_dtype=x_dtype, rois_dtype=rois_dtype, aligned=aligned
         )
 
-    @pytest.mark.parametrize('device', cpu_and_gpu())
-    @pytest.mark.parametrize('aligned', (True, False))
-    @pytest.mark.parametrize('x_dtype', (torch.float, torch.half))
-    @pytest.mark.parametrize('rois_dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("x_dtype", (torch.float, torch.half))
+    @pytest.mark.parametrize("rois_dtype", (torch.float, torch.half))
     def test_autocast(self, device, aligned, x_dtype, rois_dtype):
-        cm = torch.cpu.amp.autocast if device == 'cpu' else torch.cuda.amp.autocast
+        cm = torch.cpu.amp.autocast if device == "cpu" else torch.cuda.amp.autocast
         with cm():
-            self.test_forward(torch.device(device), contiguous=False, aligned=aligned, x_dtype=x_dtype,
-                              rois_dtype=rois_dtype)
+            self.test_forward(
+                torch.device(device), contiguous=False, aligned=aligned, x_dtype=x_dtype, rois_dtype=rois_dtype
+            )
 
     def _make_rois(self, img_size, num_imgs, dtype, num_rois=1000):
         rois = torch.randint(0, img_size // 2, size=(num_rois, 5)).to(dtype)
@@ -533,12 +534,12 @@ class TestNMS:
             is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
         assert is_eq, err_msg.format(iou)
 
-    @pytest.mark.parametrize('device', cpu_and_gpu())
-    @pytest.mark.parametrize("iou", (.2, .5, .8))
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     @pytest.mark.parametrize("dtype", (torch.float, torch.half))
     def test_autocast(self, device, iou, dtype):
-        test_fn = self.test_nms_ref if device == 'cpu' else partial(self.test_nms_cuda, dtype=dtype)
-        cm = torch.cpu.amp.autocast if device == 'cpu' else torch.cuda.amp.autocast
+        test_fn = self.test_nms_ref if device == "cpu" else partial(self.test_nms_cuda, dtype=dtype)
+        cm = torch.cpu.amp.autocast if device == "cpu" else torch.cuda.amp.autocast
         with cm():
             test_fn(iou=iou)
 
@@ -826,11 +827,11 @@ class TestDeformConv:
                 res_grads = init_weight.grad.to("cpu")
                 torch.testing.assert_close(true_cpu_grads, res_grads)
 
-    @pytest.mark.parametrize('device', cpu_and_gpu())
-    @pytest.mark.parametrize('batch_sz', (0, 33))
-    @pytest.mark.parametrize('dtype', (torch.float, torch.half))
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("batch_sz", (0, 33))
+    @pytest.mark.parametrize("dtype", (torch.float, torch.half))
     def test_autocast(self, device, batch_sz, dtype):
-        cm = torch.cpu.amp.autocast if device == 'cpu' else torch.cuda.amp.autocast
+        cm = torch.cpu.amp.autocast if device == "cpu" else torch.cuda.amp.autocast
         with cm():
             self.test_forward(torch.device(device), contiguous=False, batch_sz=batch_sz, dtype=dtype)
 
