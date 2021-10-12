@@ -42,9 +42,9 @@ class AnchorGenerator(nn.Module):
 
         if not isinstance(sizes[0], (list, tuple)):
             # TODO change this
-            sizes = tuple((s,) for s in sizes)
+            sizes = tuple((s,) for s in sizes)  # type: ignore[assignment]
         if not isinstance(aspect_ratios[0], (list, tuple)):
-            aspect_ratios = (aspect_ratios,) * len(sizes)
+            aspect_ratios = (aspect_ratios,) * len(sizes)  # type: ignore[assignment]
 
         assert len(sizes) == len(aspect_ratios)
 
@@ -60,8 +60,8 @@ class AnchorGenerator(nn.Module):
     # This method assumes aspect ratio = height / width for an anchor.
     def generate_anchors(
         self,
-        scales: List[int],
-        aspect_ratios: List[float],
+        scales: Tuple[int, ...],
+        aspect_ratios: Tuple[float, ...],
         dtype: torch.dtype = torch.float32,
         device: torch.device = torch.device("cpu"),
     ) -> Tensor:
@@ -117,7 +117,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
-        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
+        grid_sizes = [list(feature_map.shape[-2:]) for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         strides = [
@@ -248,8 +248,8 @@ class DefaultBoxGenerator(nn.Module):
         return s.format(**self.__dict__)
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
-        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
-        image_size = image_list.tensors.shape[-2:]
+        grid_sizes = [list(feature_map.shape[-2:]) for feature_map in feature_maps]
+        image_size = list(image_list.tensors.shape[-2:])
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         default_boxes = self._grid_default_boxes(grid_sizes, image_size, dtype=dtype)
         default_boxes = default_boxes.to(device)
