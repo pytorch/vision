@@ -228,11 +228,11 @@ def to_pil_image(pic, mode=None):
     if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError("pic should be Tensor or ndarray. Got {}.".format(type(pic)))
 
-    elif isinstance(pic, torch.Tensor):
+    if isinstance(pic, torch.Tensor):
         if pic.ndimension() not in {2, 3}:
             raise ValueError("pic should be 2/3 dimensional. Got {} dimensions.".format(pic.ndimension()))
 
-        elif pic.ndimension() == 2:
+        if pic.ndimension() == 2:
             # if 2D image, add channel dimension (CHW)
             pic = pic.unsqueeze(0)
 
@@ -244,7 +244,7 @@ def to_pil_image(pic, mode=None):
         if pic.ndim not in {2, 3}:
             raise ValueError("pic should be 2/3 dimensional. Got {} dimensions.".format(pic.ndim))
 
-        elif pic.ndim == 2:
+        if pic.ndim == 2:
             # if 2D image, add channel dimension (HWC)
             pic = np.expand_dims(pic, 2)
 

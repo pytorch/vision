@@ -214,11 +214,10 @@ class INaturalist(VisionDataset):
         else:
             if category_type not in self.categories_index:
                 raise ValueError(f"Invalid category type '{category_type}'")
-            else:
-                for name, id in self.categories_index[category_type].items():
-                    if id == category_id:
-                        return name
-                raise ValueError(f"Invalid category id {category_id} for {category_type}")
+            for name, id in self.categories_index[category_type].items():
+                if id == category_id:
+                    return name
+            raise ValueError(f"Invalid category id {category_id} for {category_type}")
 
     def _check_integrity(self) -> bool:
         return os.path.exists(self.root) and len(os.listdir(self.root)) > 0

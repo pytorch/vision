@@ -486,7 +486,7 @@ class DatasetTestCase(unittest.TestCase):
                 "The method 'inject_fake_data' needs to return at least an integer indicating the number of "
                 "examples for the current configuration."
             )
-        elif isinstance(info, int):
+        if isinstance(info, int):
             info = dict(num_examples=info)
         elif not isinstance(info, dict):
             raise UsageError(

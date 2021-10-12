@@ -250,7 +250,7 @@ class Measurement:
         def delta(self):
             if self._start is None:
                 raise RuntimeError()
-            elif self._stop is None:
+            if self._stop is None:
                 raise RuntimeError()
             return self._stop - self._start
 

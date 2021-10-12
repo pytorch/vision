@@ -40,11 +40,11 @@ class RandomMixup(torch.nn.Module):
         """
         if batch.ndim != 4:
             raise ValueError("Batch ndim should be 4. Got {}".format(batch.ndim))
-        elif target.ndim != 1:
+        if target.ndim != 1:
             raise ValueError("Target ndim should be 1. Got {}".format(target.ndim))
-        elif not batch.is_floating_point():
+        if not batch.is_floating_point():
             raise TypeError("Batch dtype should be a float tensor. Got {}.".format(batch.dtype))
-        elif target.dtype != torch.int64:
+        if target.dtype != torch.int64:
             raise TypeError("Target dtype should be torch.int64. Got {}".format(target.dtype))
 
         if not self.inplace:
@@ -116,11 +116,11 @@ class RandomCutmix(torch.nn.Module):
         """
         if batch.ndim != 4:
             raise ValueError("Batch ndim should be 4. Got {}".format(batch.ndim))
-        elif target.ndim != 1:
+        if target.ndim != 1:
             raise ValueError("Target ndim should be 1. Got {}".format(target.ndim))
-        elif not batch.is_floating_point():
+        if not batch.is_floating_point():
             raise TypeError("Batch dtype should be a float tensor. Got {}.".format(batch.dtype))
-        elif target.dtype != torch.int64:
+        if target.dtype != torch.int64:
             raise TypeError("Target dtype should be torch.int64. Got {}".format(target.dtype))
 
         if not self.inplace:

@@ -151,7 +151,7 @@ class MobileNetV3(nn.Module):
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
-        elif not (
+        if not (
             isinstance(inverted_residual_setting, Sequence)
             and all([isinstance(s, InvertedResidualConfig) for s in inverted_residual_setting])
         ):

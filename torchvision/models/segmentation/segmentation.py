@@ -100,9 +100,8 @@ def _load_weights(model: nn.Module, arch_type: str, backbone: str, progress: boo
     model_url = model_urls.get(arch, None)
     if model_url is None:
         raise NotImplementedError("pretrained {} is not supported as of now".format(arch))
-    else:
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-        model.load_state_dict(state_dict)
+    state_dict = load_state_dict_from_url(model_url, progress=progress)
+    model.load_state_dict(state_dict)
 
 
 def _segm_lraspp_mobilenetv3(backbone_name: str, num_classes: int, pretrained_backbone: bool = True) -> LRASPP:

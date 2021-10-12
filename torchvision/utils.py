@@ -176,11 +176,11 @@ def draw_bounding_boxes(
 
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
-    elif image.dtype != torch.uint8:
+    if image.dtype != torch.uint8:
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
-    elif image.dim() != 3:
+    if image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
-    elif image.size(0) not in {1, 3}:
+    if image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
 
     if image.size(0) == 1:
@@ -254,11 +254,11 @@ def draw_segmentation_masks(
 
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
-    elif image.dtype != torch.uint8:
+    if image.dtype != torch.uint8:
         raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
-    elif image.dim() != 3:
+    if image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
-    elif image.size()[0] != 3:
+    if image.size()[0] != 3:
         raise ValueError("Pass an RGB image. Other Image formats are not supported")
     if masks.ndim == 2:
         masks = masks[None, :, :]

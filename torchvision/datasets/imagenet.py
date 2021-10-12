@@ -48,7 +48,7 @@ class ImageNet(ImageFolder):
                 "directory."
             )
             raise RuntimeError(msg)
-        elif download is False:
+        if download is False:
             msg = "The use of the download flag is deprecated, since the dataset " "is no longer publicly accessible."
             warnings.warn(msg, RuntimeWarning)
 
