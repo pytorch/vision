@@ -48,13 +48,24 @@ class Weights(Enum):
         self._value_ = value
 
     @classmethod
-    def check_type(cls, obj: Any) -> None:
-        if obj is not None and not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
-            raise TypeError(
-                f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
-            )
+    def verify(cls, obj: Any) -> Any:
+        if obj is not None:
+            if type(obj) is str:
+                obj = cls.from_str(obj)
+            elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
+                raise TypeError(
+                    f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
+                )
+        return obj
 
-    def state_dict(self, progress: bool) -> OrderedDict[str, Any]:
+    @classmethod
+    def from_str(cls, value: str) -> "Weights":
+        for v in cls:
+            if v._name_ == value:
+                return v
+        raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
+
+    def state_dict(self, progress: bool) -> OrderedDict:
         return self.value.state_dict(progress)
 
     def __repr__(self):

@@ -63,6 +63,6 @@ def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, *
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
-    ResNet50Weights.check_type(weights)
+    weights = ResNet50Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
