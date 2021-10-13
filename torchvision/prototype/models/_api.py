@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ['Weights', 'WeightEntry']
+__all__ = ["Weights", "WeightEntry"]
 
 
 @dataclass
@@ -24,6 +24,7 @@ class WeightEntry:
             etc), configuration parameters (for example the `num_classes`) needed to construct the model or important
             meta-data (for example the `classes` of a classification model) needed to use the model.
     """
+
     url: str
     transforms: Callable
     meta: Dict[str, Any]
@@ -41,14 +42,16 @@ class Weights(Enum):
     Args:
         value (WeightEntry): The data class entry with the weight information.
     """
+
     def __init__(self, value: WeightEntry):
         self._value_ = value
 
     @classmethod
     def check_type(cls, obj: Any) -> None:
         if obj is not None and not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
-            raise TypeError(f"Invalid Weight class provided; expected {cls.__name__} "
-                            f"but received {obj.__class__.__name__}.")
+            raise TypeError(
+                f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
+            )
 
     def state_dict(self, progress: bool) -> Dict[str, Any]:
         return self.value.state_dict(progress)
