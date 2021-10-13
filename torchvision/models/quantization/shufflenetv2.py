@@ -68,7 +68,7 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
             if name in ["conv1", "conv5"]:
                 torch.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
         for m in self.modules():
-            if type(m) == QuantizableInvertedResidual:
+            if type(m) is QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
                     torch.quantization.fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True)
                 torch.quantization.fuse_modules(
