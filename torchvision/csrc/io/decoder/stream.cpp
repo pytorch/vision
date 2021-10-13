@@ -67,9 +67,9 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     // that don't have threading context functions
     if (codecCtx_->codec->capabilities & AV_CODEC_CAP_INTRA_ONLY) {
       codecCtx_->thread_type = FF_THREAD_FRAME;
-      codecCtx_->thread_count = (2 <= max_threads) ? 2 : max_threads;
+      codecCtx_->thread_count = 2;
     } else {
-      codecCtx_->thread_count = (8 <= max_threads) ? 8 : max_threads;
+      codecCtx_->thread_count = 8;
       codecCtx_->thread_type = FF_THREAD_SLICE;
     }
   }
