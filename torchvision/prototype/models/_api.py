@@ -30,9 +30,6 @@ class WeightEntry:
     transforms: Callable
     meta: Dict[str, Any]
 
-    def state_dict(self, progress: bool) -> Dict[str, Any]:
-        return load_state_dict_from_url(self.url, progress=progress)
-
 
 class Weights(Enum):
     """
@@ -66,7 +63,7 @@ class Weights(Enum):
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
     def state_dict(self, progress: bool) -> OrderedDict:
-        return self.value.state_dict(progress)
+        return load_state_dict_from_url(self.url, progress=progress)
 
     def __repr__(self):
         return f"{self.__class__.__name__}.{self._name_}"
