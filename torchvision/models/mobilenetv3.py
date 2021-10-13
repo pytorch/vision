@@ -135,6 +135,7 @@ class MobileNetV3(nn.Module):
         num_classes: int = 1000,
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        dropout: float = 0.2,
         **kwargs: Any,
     ) -> None:
         """
@@ -146,6 +147,7 @@ class MobileNetV3(nn.Module):
             num_classes (int): Number of classes
             block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
             norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            dropout (float): The droupout probability
         """
         super().__init__()
 
@@ -200,7 +202,7 @@ class MobileNetV3(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(lastconv_output_channels, last_channel),
             nn.Hardswish(inplace=True),
-            nn.Dropout(p=0.2, inplace=True),
+            nn.Dropout(p=dropout, inplace=True),
             nn.Linear(last_channel, num_classes),
         )
 
