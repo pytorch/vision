@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Type, Union
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
+from ._meta import _IMAGENET_CATEGORIES
 
 
 __all__ = ["ResNet", "ResNet50Weights", "resnet50"]
@@ -30,9 +31,7 @@ def _resnet(
 
 _common_meta = {
     "size": (224, 224),
-    "categories": [
-        f"imagenet-cat-{i}" for i in range(1000)
-    ],  # TODO: torchvision.prototype.datasets.find("ImageNet").info.categories
+    "categories": _IMAGENET_CATEGORIES,
 }
 
 
