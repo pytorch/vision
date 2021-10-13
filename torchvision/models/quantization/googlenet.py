@@ -166,5 +166,5 @@ class QuantizableGoogLeNet(GoogLeNet):
         """
 
         for m in self.modules():
-            if type(m) == QuantizableBasicConv2d:
+            if type(m) is QuantizableBasicConv2d:
                 m.fuse_model()
