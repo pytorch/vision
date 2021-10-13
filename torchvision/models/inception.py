@@ -70,6 +70,7 @@ class Inception3(nn.Module):
         transform_input: bool = False,
         inception_blocks: Optional[List[Callable[..., nn.Module]]] = None,
         init_weights: Optional[bool] = None,
+        dropout: float = 0.5,
     ) -> None:
         super(Inception3, self).__init__()
         if inception_blocks is None:
@@ -115,7 +116,7 @@ class Inception3(nn.Module):
         self.Mixed_7b = inception_e(1280)
         self.Mixed_7c = inception_e(2048)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout()
+        self.dropout = nn.Dropout(p=dropout)
         self.fc = nn.Linear(2048, num_classes)
         if init_weights:
             for m in self.modules():
