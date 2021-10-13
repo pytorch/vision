@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass, fields
 from enum import Enum
 from typing import Any, Callable, Dict
@@ -53,7 +54,7 @@ class Weights(Enum):
                 f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
             )
 
-    def state_dict(self, progress: bool) -> Dict[str, Any]:
+    def state_dict(self, progress: bool) -> OrderedDict[str, Any]:
         return self.value.state_dict(progress)
 
     def __repr__(self):
