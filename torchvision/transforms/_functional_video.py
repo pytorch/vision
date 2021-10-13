@@ -1,10 +1,9 @@
-import torch
 import warnings
 
+import torch
 
-warnings.warn(
-    "The _functional_video module is deprecated. Please use the functional module instead."
-)
+
+warnings.warn("The _functional_video module is deprecated. Please use the functional module instead.")
 
 
 def _is_tensor_video_clip(clip):
@@ -23,14 +22,12 @@ def crop(clip, i, j, h, w):
         clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
     """
     assert len(clip.size()) == 4, "clip should be a 4D tensor"
-    return clip[..., i:i + h, j:j + w]
+    return clip[..., i : i + h, j : j + w]
 
 
 def resize(clip, target_size, interpolation_mode):
     assert len(target_size) == 2, "target size should be tuple (height, width)"
-    return torch.nn.functional.interpolate(
-        clip, size=target_size, mode=interpolation_mode, align_corners=False
-    )
+    return torch.nn.functional.interpolate(clip, size=target_size, mode=interpolation_mode, align_corners=False)
 
 
 def resized_crop(clip, i, j, h, w, size, interpolation_mode="bilinear"):

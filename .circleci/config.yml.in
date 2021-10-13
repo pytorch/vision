@@ -200,7 +200,8 @@ jobs:
             pip install --user --progress-bar off mypy
             pip install --user --progress-bar off types-requests
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --user --progress-bar off --editable .
+            pip install --user --progress-bar off git+https://github.com/pytorch/data.git
+            pip install --user --progress-bar off --no-build-isolation --editable .
             mypy --config-file mypy.ini
 
   docstring_parameters_sync:
@@ -234,7 +235,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off .
+            pip install --user --progress-bar off --no-build-isolation .
             pip install pytest
             python test/test_hub.py
 
@@ -247,7 +248,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off .
+            pip install --user --progress-bar off --no-build-isolation .
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
@@ -739,7 +740,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.2"
+      CUDA_VERSION: "11.1"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -763,6 +764,12 @@ jobs:
           paths:
             - conda
             - env
+      - run:
+          name: Install CUDA
+          command: packaging/windows/internal/cuda_install.bat
+      - run:
+          name: Update CUDA driver
+          command: packaging/windows/internal/driver_update.bat
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
@@ -835,7 +842,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-1604-cuda-10.2:202012-01
-    resource_class: gpu.small
+    resource_class: gpu.nvidia.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
       PYTORCH_VERSION: << parameters.pytorch_version >>
@@ -910,15 +917,6 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
           name: Build docs
           command: |
             set -ex
@@ -930,12 +928,6 @@ jobs:
             pip install -r requirements.txt
             make html
             popd
-      - save_cache:
-          {% raw %}
-          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:

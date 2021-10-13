@@ -1,9 +1,10 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO
-import pathlib
-import torch
 import math
+import pathlib
 import warnings
+from typing import Union, Optional, List, Tuple, Text, BinaryIO
+
 import numpy as np
+import torch
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks"]
@@ -18,7 +19,7 @@ def make_grid(
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: int = 0,
-    **kwargs
+    **kwargs,
 ) -> torch.Tensor:
     """
     Make a grid of images.
@@ -41,9 +42,8 @@ def make_grid(
     Returns:
         grid (Tensor): the tensor containing grid of images.
     """
-    if not (torch.is_tensor(tensor) or
-            (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
-        raise TypeError(f'tensor or list of tensors expected, got {type(tensor)}')
+    if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
+        raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if "range" in kwargs.keys():
         warning = "range will be deprecated, please use value_range instead."
@@ -67,8 +67,9 @@ def make_grid(
     if normalize is True:
         tensor = tensor.clone()  # avoid modifying tensor in-place
         if value_range is not None:
-            assert isinstance(value_range, tuple), \
-                "value_range has to be a tuple (min, max) if specified. min and max are numbers"
+            assert isinstance(
+                value_range, tuple
+            ), "value_range has to be a tuple (min, max) if specified. min and max are numbers"
 
         def norm_ip(img, low, high):
             img.clamp_(min=low, max=high)
@@ -115,7 +116,7 @@ def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -131,7 +132,7 @@ def save_image(
 
     grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
@@ -145,7 +146,7 @@ def draw_bounding_boxes(
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
-    font_size: int = 10
+    font_size: int = 10,
 ) -> torch.Tensor:
 
     """
@@ -159,9 +160,9 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
-            or a single color for all of the bounding boxes. The colors can be represented as `str` or
-            `Tuple[int, int, int]`.
+        colors (color or list of colors, optional): List containing the colors
+            of the boxes or single color for all boxes. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -230,7 +231,7 @@ def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
     alpha: float = 0.8,
-    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
 
     """
@@ -242,10 +243,10 @@ def draw_segmentation_masks(
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
-        colors (list or None): List containing the colors of the masks. The colors can
-            be represented as PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
-            When ``masks`` has a single entry of shape (H, W), you can pass a single color instead of a list
-            with one element. By default, random colors are generated for each mask.
+        colors (color or list of colors, optional): List containing the colors
+            of the masks or single color for all masks. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+            By default, random colors are generated for each mask.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
@@ -288,8 +289,7 @@ def draw_segmentation_masks(
     for color in colors:
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
-        color = torch.tensor(color, dtype=out_dtype)
-        colors_.append(color)
+        colors_.append(torch.tensor(color, dtype=out_dtype))
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
@@ -300,6 +300,6 @@ def draw_segmentation_masks(
     return out.to(out_dtype)
 
 
-def _generate_color_palette(num_masks):
+def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_masks)]
