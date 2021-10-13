@@ -32,11 +32,7 @@ class SmoothedValue(object):
         """
         Warning: does not synchronize the deque!
         """
-        if not is_dist_avail_and_initialized():
-            return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device="cuda")
-        dist.barrier()
-        dist.all_reduce(t)
+        t = reduce_across_processes([self.count, self.total])
         t = t.tolist()
         self.count = int(t[0])
         self.total = t[1]
@@ -402,10 +398,10 @@ def store_model_weights(model, checkpoint_path, checkpoint_key="model", strict=T
     return output_path
 
 
-def reduce_across_processes(val):
-    if not torch.cuda.is_available():
-        return val
-    val = torch.tensor([val], device="cuda")
+def reduce_across_processes(l):
+    if not is_dist_avail_and_initialized():
+        return l
+    t = torch.tensor(l, device="cuda")
     dist.barrier()
-    dist.all_reduce(val)
-    return val.item()
+    dist.all_reduce(t)
+    return t
