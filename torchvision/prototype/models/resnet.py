@@ -30,7 +30,9 @@ def _resnet(
 
 _common_meta = {
     "size": (224, 224),
-    "categories": list(range(1000)),  # TODO: torchvision.prototype.datasets.find("ImageNet").info.categories
+    "categories": [
+        f"imagenet-cat-{i}" for i in range(1000)
+    ],  # TODO: torchvision.prototype.datasets.find("ImageNet").info.categories
 }
 
 
