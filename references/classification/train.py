@@ -54,6 +54,13 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix="
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
+    def _reduce(val):
+        val = torch.tensor([val], dtype=torch.int, device="cuda")
+        torch.distributed.barrier()
+        torch.distributed.all_reduce(val)
+        return val.item()
+
+    n_samples = 0
     with torch.no_grad():
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
             image = image.to(device, non_blocking=True)
@@ -68,7 +75,12 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix="
             metric_logger.update(loss=loss.item())
             metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
             metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+            n_samples += batch_size
     # gather the stats from all processes
+
+    n_samples = _reduce(n_samples)
+    print(f"We processed {n_samples} in total")
+
     metric_logger.synchronize_between_processes()
 
     print(f"{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}")
@@ -164,7 +176,10 @@ def main(args):
 
     device = torch.device(args.device)
 
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True)
+    torch.backends.cudnn.deterministic = True
+
 
     train_dir = os.path.join(args.data_path, "train")
     val_dir = os.path.join(args.data_path, "val")
