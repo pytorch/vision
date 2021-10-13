@@ -398,10 +398,10 @@ def store_model_weights(model, checkpoint_path, checkpoint_key="model", strict=T
     return output_path
 
 
-def reduce_across_processes(l):
+def reduce_across_processes(val):
     if not is_dist_avail_and_initialized():
-        return l
-    t = torch.tensor(l, device="cuda")
+        return val
+    t = torch.tensor(val, device="cuda")
     dist.barrier()
     dist.all_reduce(t)
     return t
