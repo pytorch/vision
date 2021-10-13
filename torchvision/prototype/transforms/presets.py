@@ -22,7 +22,7 @@ class ConvertImageDtype(nn.Module):
         return F.convert_image_dtype(img, self.dtype)
 
 
-class ImageNetEval(nn.Module):
+class ImageNetEval:
     def __init__(
         self,
         crop_size: int,
@@ -31,7 +31,6 @@ class ImageNetEval(nn.Module):
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: T.InterpolationMode = T.InterpolationMode.BILINEAR,
     ) -> None:
-        super().__init__()
         self.transforms = T.Compose(
             [
                 T.Resize(resize_size, interpolation=interpolation),
@@ -41,5 +40,5 @@ class ImageNetEval(nn.Module):
             ]
         )
 
-    def forward(self, img: Tensor) -> Tensor:
+    def __call__(self, img: Tensor) -> Tensor:
         return self.transforms(img)
