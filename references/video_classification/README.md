@@ -18,11 +18,11 @@ We assume the training and validation AVI videos are stored at `/data/kinectics4
 
 Run the training on a single node with 8 GPUs:
 ```bash
-python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py --data-path=/data/kinectics400 --train-dir=train --val-dir=val --batch-size=16 --cache-dataset --sync-bn --apex
+torchrun --nproc_per_node=8 train.py --data-path=/data/kinectics400 --train-dir=train --val-dir=val --batch-size=16 --cache-dataset --sync-bn --apex
 ```
 
 **Note:** all our models were trained on 8 nodes with 8 V100 GPUs each for a total of 64 GPUs. Expected training time for 64 GPUs is 24 hours, depending on the storage solution.
-**Note 2:** hyperparameters for exact replication of our training can be found [here](https://github.com/pytorch/vision/blob/master/torchvision/models/video/README.md). Some hyperparameters such as learning rate are scaled linearly in proportion to the number of GPUs.
+**Note 2:** hyperparameters for exact replication of our training can be found [here](https://github.com/pytorch/vision/blob/main/torchvision/models/video/README.md). Some hyperparameters such as learning rate are scaled linearly in proportion to the number of GPUs.
 
 ### Single GPU 
 

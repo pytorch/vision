@@ -1,3 +1,5 @@
+from typing import Any, Dict, Iterator
+
 import torch
 
 from ._video_opt import (
@@ -10,11 +12,6 @@ from ._video_opt import (
     _read_video_from_memory,
     _read_video_timestamps_from_file,
     _read_video_timestamps_from_memory,
-)
-from .video import (
-    read_video,
-    read_video_timestamps,
-    write_video,
 )
 from .image import (
     ImageReadMode,
@@ -29,17 +26,22 @@ from .image import (
     write_jpeg,
     write_png,
 )
+from .video import (
+    read_video,
+    read_video_timestamps,
+    write_video,
+)
 
 
 if _HAS_VIDEO_OPT:
 
-    def _has_video_opt():
+    def _has_video_opt() -> bool:
         return True
 
 
 else:
 
-    def _has_video_opt():
+    def _has_video_opt() -> bool:
         return False
 
 
@@ -99,7 +101,7 @@ class VideoReader:
             Currently available options include ``['video', 'audio']``
     """
 
-    def __init__(self, path, stream="video"):
+    def __init__(self, path: str, stream: str = "video") -> None:
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -109,7 +111,7 @@ class VideoReader:
             )
         self._c = torch.classes.torchvision.Video(path, stream)
 
-    def __next__(self):
+    def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
         Frames are encoded as a dict with mandatory
         data and pts fields, where data is a tensor, and pts is a
@@ -126,10 +128,10 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator["VideoReader"]:
         return self
 
-    def seek(self, time_s: float):
+    def seek(self, time_s: float) -> "VideoReader":
         """Seek within current stream.
 
         Args:
@@ -144,7 +146,7 @@ class VideoReader:
         self._c.seek(time_s)
         return self
 
-    def get_metadata(self):
+    def get_metadata(self) -> Dict[str, Any]:
         """Returns video metadata
 
         Returns:
@@ -152,7 +154,7 @@ class VideoReader:
         """
         return self._c.get_metadata()
 
-    def set_current_stream(self, stream: str):
+    def set_current_stream(self, stream: str) -> bool:
         """Set current stream.
         Explicitly define the stream we are operating on.
 

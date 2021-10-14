@@ -33,7 +33,7 @@ clear and has sufficient instructions to be able to reproduce the issue.
 ### Install PyTorch Nightly 
 
 ```bash
-conda install pytorch -c pytorch-nightly -c conda-forge
+conda install pytorch -c pytorch-nightly
 # or with pip (see https://pytorch.org/get-started/locally/)
 # pip install numpy
 # pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
@@ -49,7 +49,7 @@ python setup.py develop
 # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
 # for C++ debugging, please use DEBUG=1
 # DEBUG=1 python setup.py develop
-pip install flake8 typing mypy pytest scipy
+pip install flake8 typing mypy pytest pytest-mock scipy
 ```
 You may also have to install `libpng-dev` and `libjpeg-turbo8-dev` libraries:
 ```bash
@@ -60,11 +60,11 @@ conda install libpng jpeg
 
 If you plan to modify the code or documentation, please follow the steps below:
 
-1. Fork the repository and create your branch from `master`.
+1. Fork the repository and create your branch from `main`.
 2. If you have modified the code (new feature or bug-fix), please add unit tests.
 3. If you have changed APIs, update the documentation. Make sure the documentation builds.
 4. Ensure the test suite passes.
-5. Make sure your code passes `flake8` formatting check.
+5. Make sure your code passes the formatting checks (see below).
 
 For more details about pull requests, 
 please read [GitHub's guides](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request). 
@@ -75,10 +75,49 @@ If you would like to contribute a new dataset, please see [here](#New-dataset).
 
 ### Code formatting and typing
 
-New code should be compatible with Python 3.X versions and be compliant with PEP8. To check the codebase, please run
+#### Formatting
+
+The torchvision code is formatted by [black](https://black.readthedocs.io/en/stable/),
+and checked against pep8 compliance with [flake8](https://flake8.pycqa.org/en/latest/).
+Instead of relying directly on `black` however, we rely on
+[ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
+internal infrastructure.
+
+To format your code, install `ufmt` with `pip install ufmt` and use e.g.:
+
 ```bash
-flake8 --config=setup.cfg .
+ufmt format torchvision
 ```
+
+For the vast majority of cases, this is all you should need to run. For the
+formatting to be a bit faster, you can also choose to only apply `ufmt` to the
+files that were edited in your PR with e.g.:
+
+```bash
+ufmt format `git diff main --name-only`
+```
+
+Similarly, you can check for `flake8` errors with `flake8 torchvision`, although
+they should be fairly rare considering that most of the errors are automatically
+taken care of by `ufmt` already.
+
+##### Pre-commit hooks
+
+For convenience and **purely optionally**, you can rely on [pre-commit
+hooks](https://pre-commit.com/) which will run both `ufmt` and `flake8` prior to
+every commit.
+
+First install the `pre-commit` package with `pip install pre-commit`, and then
+run `pre-commit install` at the root of the repo for the hooks to be set up -
+that's it.
+
+Feel free to read the [pre-commit docs](https://pre-commit.com/#usage) to learn
+more and improve your workflow. You'll see for example that `pre-commit run
+--all-files` will run both `ufmt` and `flake8` without the need for you to
+commit anything, and that the `--no-verify` flag can be added to `git commit` to
+temporarily deactivate the hooks.
+
+#### Type annotations
 
 The codebase has type annotations, please make sure to add type hints if required. We use `mypy` tool for type checking:
 ```bash

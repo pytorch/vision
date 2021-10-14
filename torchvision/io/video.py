@@ -3,6 +3,7 @@ import math
 import os
 import re
 import warnings
+from fractions import Fraction
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -93,16 +94,16 @@ def write_video(
 
         if audio_array is not None:
             audio_format_dtypes = {
-                'dbl': '<f8',
-                'dblp': '<f8',
-                'flt': '<f4',
-                'fltp': '<f4',
-                's16': '<i2',
-                's16p': '<i2',
-                's32': '<i4',
-                's32p': '<i4',
-                'u8': 'u1',
-                'u8p': 'u1',
+                "dbl": "<f8",
+                "dblp": "<f8",
+                "flt": "<f4",
+                "fltp": "<f4",
+                "s16": "<i2",
+                "s16p": "<i2",
+                "s32": "<i4",
+                "s32p": "<i4",
+                "u8": "u1",
+                "u8p": "u1",
             }
             a_stream = container.add_stream(audio_codec, rate=audio_fps)
             a_stream.options = audio_options or {}
@@ -114,9 +115,7 @@ def write_video(
             format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
             audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
 
-            frame = av.AudioFrame.from_ndarray(
-                audio_array, format=audio_sample_fmt, layout=audio_layout
-            )
+            frame = av.AudioFrame.from_ndarray(audio_array, format=audio_sample_fmt, layout=audio_layout)
 
             frame.sample_rate = audio_fps
 
@@ -206,9 +205,7 @@ def _read_from_stream(
         # TODO add a warning
         pass
     # ensure that the results are sorted wrt the pts
-    result = [
-        frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset
-    ]
+    result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
     if len(frames) > 0 and start_offset > 0 and start_offset not in frames:
         # if there is no frame that exactly matches the pts of start_offset
         # add the last frame smaller than start_offset, to guarantee that
@@ -236,7 +233,10 @@ def _align_audio_frames(
 
 
 def read_video(
-    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+    filename: str,
+    start_pts: Union[float, Fraction] = 0,
+    end_pts: Optional[Union[float, Fraction]] = None,
+    pts_unit: str = "pts",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
@@ -260,7 +260,7 @@ def read_video(
     from torchvision import get_video_backend
 
     if not os.path.exists(filename):
-        raise RuntimeError(f'File not found: {filename}')
+        raise RuntimeError(f"File not found: {filename}")
 
     if get_video_backend() != "pyav":
         return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
@@ -272,29 +272,30 @@ def read_video(
 
     if end_pts < start_pts:
         raise ValueError(
-            "end_pts should be larger than start_pts, got "
-            "start_pts={} and end_pts={}".format(start_pts, end_pts)
+            "end_pts should be larger than start_pts, got " "start_pts={} and end_pts={}".format(start_pts, end_pts)
         )
 
     info = {}
     video_frames = []
     audio_frames = []
+    audio_timebase = _video_opt.default_timebase
 
     try:
         with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.audio:
+                audio_timebase = container.streams.audio[0].time_base
             time_base = _video_opt.default_timebase
             if container.streams.video:
                 time_base = container.streams.video[0].time_base
             elif container.streams.audio:
                 time_base = container.streams.audio[0].time_base
             # video_timebase is the default time_base
-            start_pts_sec, end_pts_sec, pts_unit = _video_opt._convert_to_sec(
-                start_pts, end_pts, pts_unit, time_base)
+            start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(start_pts, end_pts, pts_unit, time_base)
             if container.streams.video:
                 video_frames = _read_from_stream(
                     container,
-                    start_pts_sec,
-                    end_pts_sec,
+                    start_pts,
+                    end_pts,
                     pts_unit,
                     container.streams.video[0],
                     {"video": 0},
@@ -307,8 +308,8 @@ def read_video(
             if container.streams.audio:
                 audio_frames = _read_from_stream(
                     container,
-                    start_pts_sec,
-                    end_pts_sec,
+                    start_pts,
+                    end_pts,
                     pts_unit,
                     container.streams.audio[0],
                     {"audio": 0},
@@ -330,6 +331,10 @@ def read_video(
     if aframes_list:
         aframes = np.concatenate(aframes_list, 1)
         aframes = torch.as_tensor(aframes)
+        if pts_unit == "sec":
+            start_pts = int(math.floor(start_pts * (1 / audio_timebase)))
+            if end_pts != float("inf"):
+                end_pts = int(math.ceil(end_pts * (1 / audio_timebase)))
         aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)

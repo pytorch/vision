@@ -1,24 +1,24 @@
+from typing import Tuple, Optional, Callable, List, Type, Any, Union
+
 import torch.nn as nn
+from torch import Tensor
 
-from ..utils import load_state_dict_from_url
+from ..._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ['r3d_18', 'mc3_18', 'r2plus1d_18']
+__all__ = ["r3d_18", "mc3_18", "r2plus1d_18"]
 
 model_urls = {
-    'r3d_18': 'https://download.pytorch.org/models/r3d_18-b3b3357e.pth',
-    'mc3_18': 'https://download.pytorch.org/models/mc3_18-a90a0ba3.pth',
-    'r2plus1d_18': 'https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth',
+    "r3d_18": "https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
+    "mc3_18": "https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
+    "r2plus1d_18": "https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
 }
 
 
 class Conv3DSimple(nn.Conv3d):
-    def __init__(self,
-                 in_planes,
-                 out_planes,
-                 midplanes=None,
-                 stride=1,
-                 padding=1):
+    def __init__(
+        self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
+    ) -> None:
 
         super(Conv3DSimple, self).__init__(
             in_channels=in_planes,
@@ -26,44 +26,41 @@ class Conv3DSimple(nn.Conv3d):
             kernel_size=(3, 3, 3),
             stride=stride,
             padding=padding,
-            bias=False)
+            bias=False,
+        )
 
     @staticmethod
-    def get_downsample_stride(stride):
+    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
         return stride, stride, stride
 
 
 class Conv2Plus1D(nn.Sequential):
-
-    def __init__(self,
-                 in_planes,
-                 out_planes,
-                 midplanes,
-                 stride=1,
-                 padding=1):
+    def __init__(self, in_planes: int, out_planes: int, midplanes: int, stride: int = 1, padding: int = 1) -> None:
         super(Conv2Plus1D, self).__init__(
-            nn.Conv3d(in_planes, midplanes, kernel_size=(1, 3, 3),
-                      stride=(1, stride, stride), padding=(0, padding, padding),
-                      bias=False),
+            nn.Conv3d(
+                in_planes,
+                midplanes,
+                kernel_size=(1, 3, 3),
+                stride=(1, stride, stride),
+                padding=(0, padding, padding),
+                bias=False,
+            ),
             nn.BatchNorm3d(midplanes),
             nn.ReLU(inplace=True),
-            nn.Conv3d(midplanes, out_planes, kernel_size=(3, 1, 1),
-                      stride=(stride, 1, 1), padding=(padding, 0, 0),
-                      bias=False))
+            nn.Conv3d(
+                midplanes, out_planes, kernel_size=(3, 1, 1), stride=(stride, 1, 1), padding=(padding, 0, 0), bias=False
+            ),
+        )
 
     @staticmethod
-    def get_downsample_stride(stride):
+    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
         return stride, stride, stride
 
 
 class Conv3DNoTemporal(nn.Conv3d):
-
-    def __init__(self,
-                 in_planes,
-                 out_planes,
-                 midplanes=None,
-                 stride=1,
-                 padding=1):
+    def __init__(
+        self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
+    ) -> None:
 
         super(Conv3DNoTemporal, self).__init__(
             in_channels=in_planes,
@@ -71,10 +68,11 @@ class Conv3DNoTemporal(nn.Conv3d):
             kernel_size=(1, 3, 3),
             stride=(1, stride, stride),
             padding=(0, padding, padding),
-            bias=False)
+            bias=False,
+        )
 
     @staticmethod
-    def get_downsample_stride(stride):
+    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
         return 1, stride, stride
 
 
@@ -82,24 +80,26 @@ class BasicBlock(nn.Module):
 
     expansion = 1
 
-    def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
+    def __init__(
+        self,
+        inplanes: int,
+        planes: int,
+        conv_builder: Callable[..., nn.Module],
+        stride: int = 1,
+        downsample: Optional[nn.Module] = None,
+    ) -> None:
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            conv_builder(inplanes, planes, midplanes, stride),
-            nn.BatchNorm3d(planes),
-            nn.ReLU(inplace=True)
+            conv_builder(inplanes, planes, midplanes, stride), nn.BatchNorm3d(planes), nn.ReLU(inplace=True)
         )
-        self.conv2 = nn.Sequential(
-            conv_builder(planes, planes, midplanes),
-            nn.BatchNorm3d(planes)
-        )
+        self.conv2 = nn.Sequential(conv_builder(planes, planes, midplanes), nn.BatchNorm3d(planes))
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         residual = x
 
         out = self.conv1(x)
@@ -116,34 +116,37 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
+    def __init__(
+        self,
+        inplanes: int,
+        planes: int,
+        conv_builder: Callable[..., nn.Module],
+        stride: int = 1,
+        downsample: Optional[nn.Module] = None,
+    ) -> None:
 
         super(Bottleneck, self).__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         # 1x1x1
         self.conv1 = nn.Sequential(
-            nn.Conv3d(inplanes, planes, kernel_size=1, bias=False),
-            nn.BatchNorm3d(planes),
-            nn.ReLU(inplace=True)
+            nn.Conv3d(inplanes, planes, kernel_size=1, bias=False), nn.BatchNorm3d(planes), nn.ReLU(inplace=True)
         )
         # Second kernel
         self.conv2 = nn.Sequential(
-            conv_builder(planes, planes, midplanes, stride),
-            nn.BatchNorm3d(planes),
-            nn.ReLU(inplace=True)
+            conv_builder(planes, planes, midplanes, stride), nn.BatchNorm3d(planes), nn.ReLU(inplace=True)
         )
 
         # 1x1x1
         self.conv3 = nn.Sequential(
             nn.Conv3d(planes, planes * self.expansion, kernel_size=1, bias=False),
-            nn.BatchNorm3d(planes * self.expansion)
+            nn.BatchNorm3d(planes * self.expansion),
         )
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         residual = x
 
         out = self.conv1(x)
@@ -160,45 +163,48 @@ class Bottleneck(nn.Module):
 
 
 class BasicStem(nn.Sequential):
-    """The default conv-batchnorm-relu stem
-    """
-    def __init__(self):
+    """The default conv-batchnorm-relu stem"""
+
+    def __init__(self) -> None:
         super(BasicStem, self).__init__(
-            nn.Conv3d(3, 64, kernel_size=(3, 7, 7), stride=(1, 2, 2),
-                      padding=(1, 3, 3), bias=False),
+            nn.Conv3d(3, 64, kernel_size=(3, 7, 7), stride=(1, 2, 2), padding=(1, 3, 3), bias=False),
             nn.BatchNorm3d(64),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=True),
+        )
 
 
 class R2Plus1dStem(nn.Sequential):
-    """R(2+1)D stem is different than the default one as it uses separated 3D convolution
-    """
-    def __init__(self):
+    """R(2+1)D stem is different than the default one as it uses separated 3D convolution"""
+
+    def __init__(self) -> None:
         super(R2Plus1dStem, self).__init__(
-            nn.Conv3d(3, 45, kernel_size=(1, 7, 7),
-                      stride=(1, 2, 2), padding=(0, 3, 3),
-                      bias=False),
+            nn.Conv3d(3, 45, kernel_size=(1, 7, 7), stride=(1, 2, 2), padding=(0, 3, 3), bias=False),
             nn.BatchNorm3d(45),
             nn.ReLU(inplace=True),
-            nn.Conv3d(45, 64, kernel_size=(3, 1, 1),
-                      stride=(1, 1, 1), padding=(1, 0, 0),
-                      bias=False),
+            nn.Conv3d(45, 64, kernel_size=(3, 1, 1), stride=(1, 1, 1), padding=(1, 0, 0), bias=False),
             nn.BatchNorm3d(64),
-            nn.ReLU(inplace=True))
+            nn.ReLU(inplace=True),
+        )
 
 
 class VideoResNet(nn.Module):
-
-    def __init__(self, block, conv_makers, layers,
-                 stem, num_classes=400,
-                 zero_init_residual=False):
+    def __init__(
+        self,
+        block: Type[Union[BasicBlock, Bottleneck]],
+        conv_makers: List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
+        layers: List[int],
+        stem: Callable[..., nn.Module],
+        num_classes: int = 400,
+        zero_init_residual: bool = False,
+    ) -> None:
         """Generic resnet video generator.
 
         Args:
-            block (nn.Module): resnet building block
-            conv_makers (list(functions)): generator function for each layer
+            block (Type[Union[BasicBlock, Bottleneck]]): resnet building block
+            conv_makers (List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]]): generator
+                function for each layer
             layers (List[int]): number of blocks per layer
-            stem (nn.Module, optional): Resnet stem, if None, defaults to conv-bn-relu. Defaults to None.
+            stem (Callable[..., nn.Module]): module specifying the ResNet stem.
             num_classes (int, optional): Dimension of the final FC layer. Defaults to 400.
             zero_init_residual (bool, optional): Zero init bottleneck residual BN. Defaults to False.
         """
@@ -221,9 +227,9 @@ class VideoResNet(nn.Module):
         if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
+                    nn.init.constant_(m.bn3.weight, 0)  # type: ignore[union-attr, arg-type]
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
 
         x = self.layer1(x)
@@ -238,15 +244,21 @@ class VideoResNet(nn.Module):
 
         return x
 
-    def _make_layer(self, block, conv_builder, planes, blocks, stride=1):
+    def _make_layer(
+        self,
+        block: Type[Union[BasicBlock, Bottleneck]],
+        conv_builder: Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]],
+        planes: int,
+        blocks: int,
+        stride: int = 1,
+    ) -> nn.Sequential:
         downsample = None
 
         if stride != 1 or self.inplanes != planes * block.expansion:
             ds_stride = conv_builder.get_downsample_stride(stride)
             downsample = nn.Sequential(
-                nn.Conv3d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=ds_stride, bias=False),
-                nn.BatchNorm3d(planes * block.expansion)
+                nn.Conv3d(self.inplanes, planes * block.expansion, kernel_size=1, stride=ds_stride, bias=False),
+                nn.BatchNorm3d(planes * block.expansion),
             )
         layers = []
         layers.append(block(self.inplanes, planes, conv_builder, stride, downsample))
@@ -257,11 +269,10 @@ class VideoResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _initialize_weights(self):
+    def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out',
-                                        nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm3d):
@@ -272,17 +283,16 @@ class VideoResNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 
-def _video_resnet(arch, pretrained=False, progress=True, **kwargs):
+def _video_resnet(arch: str, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
     model = VideoResNet(**kwargs)
 
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
 
-def r3d_18(pretrained=False, progress=True, **kwargs):
+def r3d_18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Resnet3D model as in
     https://arxiv.org/abs/1711.11248
 
@@ -294,15 +304,19 @@ def r3d_18(pretrained=False, progress=True, **kwargs):
         nn.Module: R3D-18 network
     """
 
-    return _video_resnet('r3d_18',
-                         pretrained, progress,
-                         block=BasicBlock,
-                         conv_makers=[Conv3DSimple] * 4,
-                         layers=[2, 2, 2, 2],
-                         stem=BasicStem, **kwargs)
+    return _video_resnet(
+        "r3d_18",
+        pretrained,
+        progress,
+        block=BasicBlock,
+        conv_makers=[Conv3DSimple] * 4,
+        layers=[2, 2, 2, 2],
+        stem=BasicStem,
+        **kwargs,
+    )
 
 
-def mc3_18(pretrained=False, progress=True, **kwargs):
+def mc3_18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Constructor for 18 layer Mixed Convolution network as in
     https://arxiv.org/abs/1711.11248
 
@@ -313,15 +327,19 @@ def mc3_18(pretrained=False, progress=True, **kwargs):
     Returns:
         nn.Module: MC3 Network definition
     """
-    return _video_resnet('mc3_18',
-                         pretrained, progress,
-                         block=BasicBlock,
-                         conv_makers=[Conv3DSimple] + [Conv3DNoTemporal] * 3,
-                         layers=[2, 2, 2, 2],
-                         stem=BasicStem, **kwargs)
+    return _video_resnet(
+        "mc3_18",
+        pretrained,
+        progress,
+        block=BasicBlock,
+        conv_makers=[Conv3DSimple] + [Conv3DNoTemporal] * 3,  # type: ignore[list-item]
+        layers=[2, 2, 2, 2],
+        stem=BasicStem,
+        **kwargs,
+    )
 
 
-def r2plus1d_18(pretrained=False, progress=True, **kwargs):
+def r2plus1d_18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Constructor for the 18 layer deep R(2+1)D network as in
     https://arxiv.org/abs/1711.11248
 
@@ -332,9 +350,13 @@ def r2plus1d_18(pretrained=False, progress=True, **kwargs):
     Returns:
         nn.Module: R(2+1)D-18 network
     """
-    return _video_resnet('r2plus1d_18',
-                         pretrained, progress,
-                         block=BasicBlock,
-                         conv_makers=[Conv2Plus1D] * 4,
-                         layers=[2, 2, 2, 2],
-                         stem=R2Plus1dStem, **kwargs)
+    return _video_resnet(
+        "r2plus1d_18",
+        pretrained,
+        progress,
+        block=BasicBlock,
+        conv_makers=[Conv2Plus1D] * 4,
+        layers=[2, 2, 2, 2],
+        stem=R2Plus1dStem,
+        **kwargs,
+    )

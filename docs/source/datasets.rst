@@ -122,6 +122,12 @@ ImageNet
 .. note ::
     This requires `scipy` to be installed
 
+iNaturalist
+~~~~~~~~~~~
+
+.. autoclass:: INaturalist
+  :members: __getitem__, category_name
+
 Kinetics-400
 ~~~~~~~~~~~~
 
@@ -140,6 +146,17 @@ KMNIST
 ~~~~~~~~~~~~~
 
 .. autoclass:: KMNIST
+
+LFW
+~~~~~
+
+.. autoclass:: LFWPeople
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: LFWPairs
+  :members: __getitem__
+  :special-members:
 
 LSUN
 ~~~~

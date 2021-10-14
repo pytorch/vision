@@ -1,20 +1,21 @@
-import torch
-import torch.nn as nn
-from .utils import load_state_dict_from_url
 from typing import Any
 
+import torch
+import torch.nn as nn
 
-__all__ = ['AlexNet', 'alexnet']
+from .._internally_replaced_utils import load_state_dict_from_url
+
+
+__all__ = ["AlexNet", "alexnet"]
 
 
 model_urls = {
-    'alexnet': 'https://download.pytorch.org/models/alexnet-owt-7be5be79.pth',
+    "alexnet": "https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
 }
 
 
 class AlexNet(nn.Module):
-
-    def __init__(self, num_classes: int = 1000) -> None:
+    def __init__(self, num_classes: int = 1000, dropout: float = 0.5) -> None:
         super(AlexNet, self).__init__()
         self.features = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
@@ -33,10 +34,10 @@ class AlexNet(nn.Module):
         )
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.classifier = nn.Sequential(
-            nn.Dropout(),
+            nn.Dropout(p=dropout),
             nn.Linear(256 * 6 * 6, 4096),
             nn.ReLU(inplace=True),
-            nn.Dropout(),
+            nn.Dropout(p=dropout),
             nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
             nn.Linear(4096, num_classes),
@@ -61,7 +62,6 @@ def alexnet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> A
     """
     model = AlexNet(**kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['alexnet'],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls["alexnet"], progress=progress)
         model.load_state_dict(state_dict)
     return model

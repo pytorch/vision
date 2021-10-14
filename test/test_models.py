@@ -1,22 +1,22 @@
-import os
-import io
-import sys
-from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed
-from _utils_internal import get_relative_path
-from collections import OrderedDict
-from itertools import product
 import functools
+import io
 import operator
-import torch
-import torch.nn as nn
-from torchvision import models
-import unittest
+import os
+import traceback
 import warnings
+from collections import OrderedDict
 
 import pytest
+import torch
+import torch.fx
+import torch.nn as nn
+import torchvision
+from _utils_internal import get_relative_path
+from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from torchvision import models
 
 
-ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
+ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 
 def get_available_classification_models():
@@ -39,13 +39,18 @@ def get_available_video_models():
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
+def get_available_quantizable_models():
+    # TODO add a registration mechanism to torchvision.models
+    return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+
+
 def _get_expected_file(name=None):
     # Determine expected file based on environment
     expected_file_base = get_relative_path(os.path.realpath(__file__), "expect")
 
     # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
     # We hardcode it here to avoid having to re-generate the reference files
-    expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
+    expected_file = expected_file = os.path.join(expected_file_base, "ModelTester.test_" + name)
     expected_file += "_expect.pkl"
 
     if not ACCEPT and not os.path.exists(expected_file):
@@ -87,6 +92,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
     def assert_export_import_module(m, args):
         """Check that the results of a model are the same after saving and loading"""
+
         def get_export_import_copy(m):
             """Save and load a TorchScript model"""
             buffer = io.BytesIO()
@@ -103,22 +109,24 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
         tol = 3e-4
         try:
             torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
-        except pytest.UsageError:
+        except ValueError:
             # custom check for the models that return named tuples:
             # we compare field by field while ignoring None as assert_close can't handle None
             for a, b in zip(results, results_from_imported):
                 if a is not None:
                     torch.testing.assert_close(a, b, atol=tol, rtol=tol)
 
-    TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
+    TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
     if not TEST_WITH_SLOW or skip:
         # TorchScript is not enabled, skip these tests
-        msg = "The check_jit_scriptable test for {} was skipped. " \
-              "This test checks if the module's results in TorchScript " \
-              "match eager and that it can be exported. To run these " \
-              "tests make sure you set the environment variable " \
-              "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
-              "manually skipped.".format(nn_module.__class__.__name__)
+        msg = (
+            "The check_jit_scriptable test for {} was skipped. "
+            "This test checks if the module's results in TorchScript "
+            "match eager and that it can be exported. To run these "
+            "tests make sure you set the environment variable "
+            "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
+            "manually skipped.".format(nn_module.__class__.__name__)
+        )
         warnings.warn(msg, RuntimeWarning)
         return None
 
@@ -136,12 +144,48 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
     assert_export_import_module(sm, args)
 
 
+def _check_fx_compatible(model, inputs):
+    model_fx = torch.fx.symbolic_trace(model)
+    out = model(inputs)
+    out_fx = model_fx(inputs)
+    torch.testing.assert_close(out, out_fx)
+
+
+def _check_input_backprop(model, inputs):
+    if isinstance(inputs, list):
+        requires_grad = list()
+        for inp in inputs:
+            requires_grad.append(inp.requires_grad)
+            inp.requires_grad_(True)
+    else:
+        requires_grad = inputs.requires_grad
+        inputs.requires_grad_(True)
+
+    out = model(inputs)
+
+    if isinstance(out, dict):
+        out["out"].sum().backward()
+    else:
+        if isinstance(out[0], dict):
+            out[0]["scores"].sum().backward()
+        else:
+            out[0].sum().backward()
+
+    if isinstance(inputs, list):
+        for i, inp in enumerate(inputs):
+            assert inputs[i].grad is not None
+            inp.requires_grad_(requires_grad[i])
+    else:
+        assert inputs.grad is not None
+        inputs.requires_grad_(requires_grad)
+
+
 # If 'unwrapper' is provided it will be called with the script model outputs
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
 script_model_unwrapper = {
-    'googlenet': lambda x: x.logits,
-    'inception_v3': lambda x: x.logits,
+    "googlenet": lambda x: x.logits,
+    "inception_v3": lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
@@ -176,444 +220,525 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
 )
 
+# The tests for the following quantized models are flaky possibly due to inconsistent
+# rounding errors in different platforms. For this reason the input/output consistency
+# tests under test_quantized_classification_model will be skipped for the following models.
+quantized_flaky_models = ("inception_v3",)
+
 
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    'inception_v3': {
-        'input_shape': (1, 3, 299, 299)
+    "inception_v3": {"input_shape": (1, 3, 299, 299)},
+    "retinanet_resnet50_fpn": {
+        "num_classes": 20,
+        "score_thresh": 0.01,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
     },
-    'retinanet_resnet50_fpn': {
-        'num_classes': 20,
-        'score_thresh': 0.01,
-        'min_size': 224,
-        'max_size': 224,
-        'input_shape': (3, 224, 224),
+    "keypointrcnn_resnet50_fpn": {
+        "num_classes": 2,
+        "min_size": 224,
+        "max_size": 224,
+        "box_score_thresh": 0.15,
+        "input_shape": (3, 224, 224),
     },
-    'keypointrcnn_resnet50_fpn': {
-        'num_classes': 2,
-        'min_size': 224,
-        'max_size': 224,
-        'box_score_thresh': 0.15,
-        'input_shape': (3, 224, 224),
+    "fasterrcnn_resnet50_fpn": {
+        "num_classes": 20,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
     },
-    'fasterrcnn_resnet50_fpn': {
-        'num_classes': 20,
-        'min_size': 224,
-        'max_size': 224,
-        'input_shape': (3, 224, 224),
+    "maskrcnn_resnet50_fpn": {
+        "num_classes": 10,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
     },
-    'maskrcnn_resnet50_fpn': {
-        'num_classes': 10,
-        'min_size': 224,
-        'max_size': 224,
-        'input_shape': (3, 224, 224),
+    "fasterrcnn_mobilenet_v3_large_fpn": {
+        "box_score_thresh": 0.02076,
     },
-    'fasterrcnn_mobilenet_v3_large_fpn': {
-        'box_score_thresh': 0.02076,
+    "fasterrcnn_mobilenet_v3_large_320_fpn": {
+        "box_score_thresh": 0.02076,
+        "rpn_pre_nms_top_n_test": 1000,
+        "rpn_post_nms_top_n_test": 1000,
     },
-    'fasterrcnn_mobilenet_v3_large_320_fpn': {
-        'box_score_thresh': 0.02076,
-        'rpn_pre_nms_top_n_test': 1000,
-        'rpn_post_nms_top_n_test': 1000,
-    }
 }
 
 
-class ModelTester(TestCase):
-    def _test_classification_model(self, name, dev):
-        set_rng_seed(0)
-        defaults = {
-            'num_classes': 50,
-            'input_shape': (1, 3, 224, 224),
-        }
-        kwargs = {**defaults, **_model_params.get(name, {})}
-        input_shape = kwargs.pop('input_shape')
+def _make_sliced_model(model, stop_layer):
+    layers = OrderedDict()
+    for name, layer in model.named_children():
+        layers[name] = layer
+        if name == stop_layer:
+            break
+    new_model = torch.nn.Sequential(layers)
+    return new_model
 
-        model = models.__dict__[name](**kwargs)
-        model.eval().to(device=dev)
-        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-        x = torch.rand(input_shape).to(device=dev)
-        out = model(x)
-        _assert_expected(out.cpu(), name, prec=0.1)
-        self.assertEqual(out.shape[-1], 50)
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == torch.device("cuda"):
-            with torch.cuda.amp.autocast():
-                out = model(x)
-                # See autocast_flaky_numerics comment at top of file.
-                if name not in autocast_flaky_numerics:
-                    _assert_expected(out.cpu(), name, prec=0.1)
-                self.assertEqual(out.shape[-1], 50)
+@pytest.mark.parametrize("model_name", ["densenet121", "densenet169", "densenet201", "densenet161"])
+def test_memory_efficient_densenet(model_name):
+    input_shape = (1, 3, 300, 300)
+    x = torch.rand(input_shape)
 
-    def _test_segmentation_model(self, name, dev):
-        set_rng_seed(0)
-        defaults = {
-            'num_classes': 10,
-            'pretrained_backbone': False,
-            'input_shape': (1, 3, 32, 32),
-        }
-        kwargs = {**defaults, **_model_params.get(name, {})}
-        input_shape = kwargs.pop('input_shape')
+    model1 = models.__dict__[model_name](num_classes=50, memory_efficient=True)
+    params = model1.state_dict()
+    num_params = sum([x.numel() for x in model1.parameters()])
+    model1.eval()
+    out1 = model1(x)
+    out1.sum().backward()
+    num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
 
-        model = models.segmentation.__dict__[name](**kwargs)
-        model.eval().to(device=dev)
-        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-        x = torch.rand(input_shape).to(device=dev)
-        out = model(x)["out"]
+    model2 = models.__dict__[model_name](num_classes=50, memory_efficient=False)
+    model2.load_state_dict(params)
+    model2.eval()
+    out2 = model2(x)
 
-        def check_out(out):
-            prec = 0.01
-            try:
-                # We first try to assert the entire output if possible. This is not
-                # only the best way to assert results but also handles the cases
-                # where we need to create a new expected result.
-                _assert_expected(out.cpu(), name, prec=prec)
-            except AssertionError:
-                # Unfortunately some segmentation models are flaky with autocast
-                # so instead of validating the probability scores, check that the class
-                # predictions match.
-                expected_file = _get_expected_file(name)
-                expected = torch.load(expected_file)
-                torch.testing.assert_close(out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec)
-                return False  # Partial validation performed
+    assert num_params == num_grad
+    torch.testing.assert_close(out1, out2, rtol=0.0, atol=1e-5)
 
-            return True  # Full validation performed
+    _check_input_backprop(model1, x)
+    _check_input_backprop(model2, x)
 
-        full_validation = check_out(out)
 
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+@pytest.mark.parametrize("dilate_layer_2", (True, False))
+@pytest.mark.parametrize("dilate_layer_3", (True, False))
+@pytest.mark.parametrize("dilate_layer_4", (True, False))
+def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
+    # TODO improve tests to also check that each layer has the right dimensionality
+    model = models.__dict__["resnet50"](replace_stride_with_dilation=(dilate_layer_2, dilate_layer_3, dilate_layer_4))
+    model = _make_sliced_model(model, stop_layer="layer4")
+    model.eval()
+    x = torch.rand(1, 3, 224, 224)
+    out = model(x)
+    f = 2 ** sum((dilate_layer_2, dilate_layer_3, dilate_layer_4))
+    assert out.shape == (1, 2048, 7 * f, 7 * f)
 
-        if dev == torch.device("cuda"):
-            with torch.cuda.amp.autocast():
-                out = model(x)["out"]
-                # See autocast_flaky_numerics comment at top of file.
-                if name not in autocast_flaky_numerics:
-                    full_validation &= check_out(out)
 
-        if not full_validation:
-            msg = "The output of {} could only be partially validated. " \
-                  "This is likely due to unit-test flakiness, but you may " \
-                  "want to do additional manual checks if you made " \
-                  "significant changes to the codebase.".format(self._testMethodName)
-            warnings.warn(msg, RuntimeWarning)
-            raise unittest.SkipTest(msg)
+def test_mobilenet_v2_residual_setting():
+    model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
+    model.eval()
+    x = torch.rand(1, 3, 224, 224)
+    out = model(x)
+    assert out.shape[-1] == 1000
 
-    def _test_detection_model(self, name, dev):
-        set_rng_seed(0)
-        defaults = {
-            'num_classes': 50,
-            'pretrained_backbone': False,
-            'input_shape': (3, 300, 300),
-        }
-        kwargs = {**defaults, **_model_params.get(name, {})}
-        input_shape = kwargs.pop('input_shape')
 
-        model = models.detection.__dict__[name](**kwargs)
-        model.eval().to(device=dev)
-        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-        x = torch.rand(input_shape).to(device=dev)
-        model_input = [x]
+@pytest.mark.parametrize("model_name", ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"])
+def test_mobilenet_norm_layer(model_name):
+    model = models.__dict__[model_name]()
+    assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
+
+    def get_gn(num_channels):
+        return nn.GroupNorm(32, num_channels)
+
+    model = models.__dict__[model_name](norm_layer=get_gn)
+    assert not (any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+    assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
+
+
+def test_inception_v3_eval():
+    # replacement for models.inception_v3(pretrained=True) that does not download weights
+    kwargs = {}
+    kwargs["transform_input"] = True
+    kwargs["aux_logits"] = True
+    kwargs["init_weights"] = False
+    name = "inception_v3"
+    model = models.Inception3(**kwargs)
+    model.aux_logits = False
+    model.AuxLogits = None
+    model = model.eval()
+    x = torch.rand(1, 3, 299, 299)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+    _check_input_backprop(model, x)
+
+
+def test_fasterrcnn_double():
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model.double()
+    model.eval()
+    input_shape = (3, 300, 300)
+    x = torch.rand(input_shape, dtype=torch.float64)
+    model_input = [x]
+    out = model(model_input)
+    assert model_input[0] is x
+    assert len(out) == 1
+    assert "boxes" in out[0]
+    assert "scores" in out[0]
+    assert "labels" in out[0]
+    _check_input_backprop(model, model_input)
+
+
+def test_googlenet_eval():
+    # replacement for models.googlenet(pretrained=True) that does not download weights
+    kwargs = {}
+    kwargs["transform_input"] = True
+    kwargs["aux_logits"] = True
+    kwargs["init_weights"] = False
+    name = "googlenet"
+    model = models.GoogLeNet(**kwargs)
+    model.aux_logits = False
+    model.aux1 = None
+    model.aux2 = None
+    model = model.eval()
+    x = torch.rand(1, 3, 224, 224)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+    _check_input_backprop(model, x)
+
+
+@needs_cuda
+def test_fasterrcnn_switch_devices():
+    def checkOut(out):
+        assert len(out) == 1
+        assert "boxes" in out[0]
+        assert "scores" in out[0]
+        assert "labels" in out[0]
+
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model.cuda()
+    model.eval()
+    input_shape = (3, 300, 300)
+    x = torch.rand(input_shape, device="cuda")
+    model_input = [x]
+    out = model(model_input)
+    assert model_input[0] is x
+
+    checkOut(out)
+
+    with torch.cuda.amp.autocast():
         out = model(model_input)
-        self.assertIs(model_input[0], x)
 
-        def check_out(out):
-            self.assertEqual(len(out), 1)
+    checkOut(out)
 
-            def compact(tensor):
-                size = tensor.size()
-                elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
-                if elements_per_sample > 30:
-                    return compute_mean_std(tensor)
-                else:
-                    return subsample_tensor(tensor)
+    _check_input_backprop(model, model_input)
 
-            def subsample_tensor(tensor):
-                num_elems = tensor.size(0)
-                num_samples = 20
-                if num_elems <= num_samples:
-                    return tensor
+    # now switch to cpu and make sure it works
+    model.cpu()
+    x = x.cpu()
+    out_cpu = model([x])
 
-                ith_index = num_elems // num_samples
-                return tensor[ith_index - 1::ith_index]
+    checkOut(out_cpu)
 
-            def compute_mean_std(tensor):
-                # can't compute mean of integral tensor
-                tensor = tensor.to(torch.double)
-                mean = torch.mean(tensor)
-                std = torch.std(tensor)
-                return {"mean": mean, "std": std}
+    _check_input_backprop(model, [x])
 
-            output = map_nested_tensor_object(out, tensor_map_fn=compact)
-            prec = 0.01
-            try:
-                # We first try to assert the entire output if possible. This is not
-                # only the best way to assert results but also handles the cases
-                # where we need to create a new expected result.
-                _assert_expected(output, name, prec=prec)
-            except AssertionError:
-                # Unfortunately detection models are flaky due to the unstable sort
-                # in NMS. If matching across all outputs fails, use the same approach
-                # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
-                # scores.
-                expected_file = _get_expected_file(name)
-                expected = torch.load(expected_file)
-                torch.testing.assert_close(output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec,
-                                           check_device=False, check_dtype=False)
 
-                # Note: Fmassa proposed turning off NMS by adapting the threshold
-                # and then using the Hungarian algorithm as in DETR to find the
-                # best match between output and expected boxes and eliminate some
-                # of the flakiness. Worth exploring.
-                return False  # Partial validation performed
+def test_generalizedrcnn_transform_repr():
 
-            return True  # Full validation performed
+    min_size, max_size = 224, 299
+    image_mean = [0.485, 0.456, 0.406]
+    image_std = [0.229, 0.224, 0.225]
 
-        full_validation = check_out(out)
-        _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
+    t = models.detection.transform.GeneralizedRCNNTransform(
+        min_size=min_size, max_size=max_size, image_mean=image_mean, image_std=image_std
+    )
 
-        if dev == torch.device("cuda"):
-            with torch.cuda.amp.autocast():
-                out = model(model_input)
-                # See autocast_flaky_numerics comment at top of file.
-                if name not in autocast_flaky_numerics:
-                    full_validation &= check_out(out)
+    # Check integrity of object __repr__ attribute
+    expected_string = "GeneralizedRCNNTransform("
+    _indent = "\n    "
+    expected_string += "{0}Normalize(mean={1}, std={2})".format(_indent, image_mean, image_std)
+    expected_string += "{0}Resize(min_size=({1},), max_size={2}, ".format(_indent, min_size, max_size)
+    expected_string += "mode='bilinear')\n)"
+    assert t.__repr__() == expected_string
 
-        if not full_validation:
-            msg = "The output of {} could only be partially validated. " \
-                  "This is likely due to unit-test flakiness, but you may " \
-                  "want to do additional manual checks if you made " \
-                  "significant changes to the codebase.".format(self._testMethodName)
-            warnings.warn(msg, RuntimeWarning)
-            raise unittest.SkipTest(msg)
 
-    def _test_detection_model_validation(self, name):
-        set_rng_seed(0)
-        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
-        input_shape = (3, 300, 300)
-        x = [torch.rand(input_shape)]
+@pytest.mark.parametrize("model_name", get_available_classification_models())
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_classification_model(model_name, dev):
+    set_rng_seed(0)
+    defaults = {
+        "num_classes": 50,
+        "input_shape": (1, 3, 224, 224),
+    }
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    input_shape = kwargs.pop("input_shape")
 
-        # validate that targets are present in training
-        self.assertRaises(ValueError, model, x)
+    model = models.__dict__[model_name](**kwargs)
+    model.eval().to(device=dev)
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    x = torch.rand(input_shape).to(device=dev)
+    out = model(x)
+    _assert_expected(out.cpu(), model_name, prec=0.1)
+    assert out.shape[-1] == 50
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
 
-        # validate type
-        targets = [{'boxes': 0.}]
-        self.assertRaises(ValueError, model, x, targets=targets)
-
-        # validate boxes shape
-        for boxes in (torch.rand((4,)), torch.rand((1, 5))):
-            targets = [{'boxes': boxes}]
-            self.assertRaises(ValueError, model, x, targets=targets)
-
-        # validate that no degenerate boxes are present
-        boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
-        targets = [{'boxes': boxes}]
-        self.assertRaises(ValueError, model, x, targets=targets)
-
-    def _test_video_model(self, name, dev):
-        # the default input shape is
-        # bs * num_channels * clip_len * h *w
-        input_shape = (1, 3, 4, 112, 112)
-        # test both basicblock and Bottleneck
-        model = models.video.__dict__[name](num_classes=50)
-        model.eval().to(device=dev)
-        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
-        x = torch.rand(input_shape).to(device=dev)
-        out = model(x)
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
-        self.assertEqual(out.shape[-1], 50)
-
-        if dev == torch.device("cuda"):
-            with torch.cuda.amp.autocast():
-                out = model(x)
-                self.assertEqual(out.shape[-1], 50)
-
-    def _make_sliced_model(self, model, stop_layer):
-        layers = OrderedDict()
-        for name, layer in model.named_children():
-            layers[name] = layer
-            if name == stop_layer:
-                break
-        new_model = torch.nn.Sequential(layers)
-        return new_model
-
-    def test_memory_efficient_densenet(self):
-        input_shape = (1, 3, 300, 300)
-        x = torch.rand(input_shape)
-
-        for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
-            model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
-            params = model1.state_dict()
-            num_params = sum([x.numel() for x in model1.parameters()])
-            model1.eval()
-            out1 = model1(x)
-            out1.sum().backward()
-            num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
-
-            model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
-            model2.load_state_dict(params)
-            model2.eval()
-            out2 = model2(x)
-
-            self.assertTrue(num_params == num_grad)
-            torch.testing.assert_close(out1, out2, rtol=0.0, atol=1e-5)
-
-    def test_resnet_dilation(self):
-        # TODO improve tests to also check that each layer has the right dimensionality
-        for i in product([False, True], [False, True], [False, True]):
-            model = models.__dict__["resnet50"](replace_stride_with_dilation=i)
-            model = self._make_sliced_model(model, stop_layer="layer4")
-            model.eval()
-            x = torch.rand(1, 3, 224, 224)
+    if dev == torch.device("cuda"):
+        with torch.cuda.amp.autocast():
             out = model(x)
-            f = 2 ** sum(i)
-            self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
+            # See autocast_flaky_numerics comment at top of file.
+            if model_name not in autocast_flaky_numerics:
+                _assert_expected(out.cpu(), model_name, prec=0.1)
+            assert out.shape[-1] == 50
 
-    def test_mobilenet_v2_residual_setting(self):
-        model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
-        model.eval()
-        x = torch.rand(1, 3, 224, 224)
-        out = model(x)
-        self.assertEqual(out.shape[-1], 1000)
+    _check_input_backprop(model, x)
 
-    def test_mobilenet_norm_layer(self):
-        for name in ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"]:
-            model = models.__dict__[name]()
-            self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
 
-            def get_gn(num_channels):
-                return nn.GroupNorm(32, num_channels)
+@pytest.mark.parametrize("model_name", get_available_segmentation_models())
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_segmentation_model(model_name, dev):
+    set_rng_seed(0)
+    defaults = {
+        "num_classes": 10,
+        "pretrained_backbone": False,
+        "input_shape": (1, 3, 32, 32),
+    }
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    input_shape = kwargs.pop("input_shape")
 
-            model = models.__dict__[name](norm_layer=get_gn)
-            self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
-            self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
+    model = models.segmentation.__dict__[model_name](**kwargs)
+    model.eval().to(device=dev)
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    x = torch.rand(input_shape).to(device=dev)
+    out = model(x)["out"]
 
-    def test_inception_v3_eval(self):
-        # replacement for models.inception_v3(pretrained=True) that does not download weights
-        kwargs = {}
-        kwargs['transform_input'] = True
-        kwargs['aux_logits'] = True
-        kwargs['init_weights'] = False
-        name = "inception_v3"
-        model = models.Inception3(**kwargs)
-        model.aux_logits = False
-        model.AuxLogits = None
-        model = model.eval()
-        x = torch.rand(1, 3, 299, 299)
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+    def check_out(out):
+        prec = 0.01
+        try:
+            # We first try to assert the entire output if possible. This is not
+            # only the best way to assert results but also handles the cases
+            # where we need to create a new expected result.
+            _assert_expected(out.cpu(), model_name, prec=prec)
+        except AssertionError:
+            # Unfortunately some segmentation models are flaky with autocast
+            # so instead of validating the probability scores, check that the class
+            # predictions match.
+            expected_file = _get_expected_file(model_name)
+            expected = torch.load(expected_file)
+            torch.testing.assert_close(out.argmax(dim=1), expected.argmax(dim=1), rtol=prec, atol=prec)
+            return False  # Partial validation performed
 
-    def test_fasterrcnn_double(self):
-        model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
-        model.double()
-        model.eval()
-        input_shape = (3, 300, 300)
-        x = torch.rand(input_shape, dtype=torch.float64)
-        model_input = [x]
-        out = model(model_input)
-        self.assertIs(model_input[0], x)
-        self.assertEqual(len(out), 1)
-        self.assertTrue("boxes" in out[0])
-        self.assertTrue("scores" in out[0])
-        self.assertTrue("labels" in out[0])
+        return True  # Full validation performed
 
-    def test_googlenet_eval(self):
-        # replacement for models.googlenet(pretrained=True) that does not download weights
-        kwargs = {}
-        kwargs['transform_input'] = True
-        kwargs['aux_logits'] = True
-        kwargs['init_weights'] = False
-        name = "googlenet"
-        model = models.GoogLeNet(**kwargs)
-        model.aux_logits = False
-        model.aux1 = None
-        model.aux2 = None
-        model = model.eval()
-        x = torch.rand(1, 3, 224, 224)
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
+    full_validation = check_out(out)
 
-    @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
-    def test_fasterrcnn_switch_devices(self):
-        def checkOut(out):
-            self.assertEqual(len(out), 1)
-            self.assertTrue("boxes" in out[0])
-            self.assertTrue("scores" in out[0])
-            self.assertTrue("labels" in out[0])
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
 
-        model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
-        model.cuda()
-        model.eval()
-        input_shape = (3, 300, 300)
-        x = torch.rand(input_shape, device='cuda')
-        model_input = [x]
-        out = model(model_input)
-        self.assertIs(model_input[0], x)
+    if dev == torch.device("cuda"):
+        with torch.cuda.amp.autocast():
+            out = model(x)["out"]
+            # See autocast_flaky_numerics comment at top of file.
+            if model_name not in autocast_flaky_numerics:
+                full_validation &= check_out(out)
 
-        checkOut(out)
+    if not full_validation:
+        msg = (
+            "The output of {} could only be partially validated. "
+            "This is likely due to unit-test flakiness, but you may "
+            "want to do additional manual checks if you made "
+            "significant changes to the codebase.".format(test_segmentation_model.__name__)
+        )
+        warnings.warn(msg, RuntimeWarning)
+        pytest.skip(msg)
 
+    _check_input_backprop(model, x)
+
+
+@pytest.mark.parametrize("model_name", get_available_detection_models())
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_detection_model(model_name, dev):
+    set_rng_seed(0)
+    defaults = {
+        "num_classes": 50,
+        "pretrained_backbone": False,
+        "input_shape": (3, 300, 300),
+    }
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    input_shape = kwargs.pop("input_shape")
+
+    model = models.detection.__dict__[model_name](**kwargs)
+    model.eval().to(device=dev)
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    x = torch.rand(input_shape).to(device=dev)
+    model_input = [x]
+    out = model(model_input)
+    assert model_input[0] is x
+
+    def check_out(out):
+        assert len(out) == 1
+
+        def compact(tensor):
+            size = tensor.size()
+            elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
+            if elements_per_sample > 30:
+                return compute_mean_std(tensor)
+            else:
+                return subsample_tensor(tensor)
+
+        def subsample_tensor(tensor):
+            num_elems = tensor.size(0)
+            num_samples = 20
+            if num_elems <= num_samples:
+                return tensor
+
+            ith_index = num_elems // num_samples
+            return tensor[ith_index - 1 :: ith_index]
+
+        def compute_mean_std(tensor):
+            # can't compute mean of integral tensor
+            tensor = tensor.to(torch.double)
+            mean = torch.mean(tensor)
+            std = torch.std(tensor)
+            return {"mean": mean, "std": std}
+
+        output = map_nested_tensor_object(out, tensor_map_fn=compact)
+        prec = 0.01
+        try:
+            # We first try to assert the entire output if possible. This is not
+            # only the best way to assert results but also handles the cases
+            # where we need to create a new expected result.
+            _assert_expected(output, model_name, prec=prec)
+        except AssertionError:
+            # Unfortunately detection models are flaky due to the unstable sort
+            # in NMS. If matching across all outputs fails, use the same approach
+            # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
+            # scores.
+            expected_file = _get_expected_file(model_name)
+            expected = torch.load(expected_file)
+            torch.testing.assert_close(
+                output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
+            )
+
+            # Note: Fmassa proposed turning off NMS by adapting the threshold
+            # and then using the Hungarian algorithm as in DETR to find the
+            # best match between output and expected boxes and eliminate some
+            # of the flakiness. Worth exploring.
+            return False  # Partial validation performed
+
+        return True  # Full validation performed
+
+    full_validation = check_out(out)
+    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None))
+
+    if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
             out = model(model_input)
+            # See autocast_flaky_numerics comment at top of file.
+            if model_name not in autocast_flaky_numerics:
+                full_validation &= check_out(out)
 
-        checkOut(out)
+    if not full_validation:
+        msg = (
+            "The output of {} could only be partially validated. "
+            "This is likely due to unit-test flakiness, but you may "
+            "want to do additional manual checks if you made "
+            "significant changes to the codebase.".format(test_detection_model.__name__)
+        )
+        warnings.warn(msg, RuntimeWarning)
+        pytest.skip(msg)
 
-        # now switch to cpu and make sure it works
-        model.cpu()
-        x = x.cpu()
-        out_cpu = model([x])
-
-        checkOut(out_cpu)
-
-    def test_generalizedrcnn_transform_repr(self):
-
-        min_size, max_size = 224, 299
-        image_mean = [0.485, 0.456, 0.406]
-        image_std = [0.229, 0.224, 0.225]
-
-        t = models.detection.transform.GeneralizedRCNNTransform(min_size=min_size,
-                                                                max_size=max_size,
-                                                                image_mean=image_mean,
-                                                                image_std=image_std)
-
-        # Check integrity of object __repr__ attribute
-        expected_string = 'GeneralizedRCNNTransform('
-        _indent = '\n    '
-        expected_string += '{0}Normalize(mean={1}, std={2})'.format(_indent, image_mean, image_std)
-        expected_string += '{0}Resize(min_size=({1},), max_size={2}, '.format(_indent, min_size, max_size)
-        expected_string += "mode='bilinear')\n)"
-        self.assertEqual(t.__repr__(), expected_string)
+    _check_input_backprop(model, model_input)
 
 
-_devs = [torch.device("cpu"), torch.device("cuda")] if torch.cuda.is_available() else [torch.device("cpu")]
-
-
-@pytest.mark.parametrize('model_name', get_available_classification_models())
-@pytest.mark.parametrize('dev', _devs)
-def test_classification_model(model_name, dev):
-    ModelTester()._test_classification_model(model_name, dev)
-
-
-@pytest.mark.parametrize('model_name', get_available_segmentation_models())
-@pytest.mark.parametrize('dev', _devs)
-def test_segmentation_model(model_name, dev):
-    ModelTester()._test_segmentation_model(model_name, dev)
-
-
-@pytest.mark.parametrize('model_name', get_available_detection_models())
-@pytest.mark.parametrize('dev', _devs)
-def test_detection_model(model_name, dev):
-    ModelTester()._test_detection_model(model_name, dev)
-
-
-@pytest.mark.parametrize('model_name', get_available_detection_models())
+@pytest.mark.parametrize("model_name", get_available_detection_models())
 def test_detection_model_validation(model_name):
-    ModelTester()._test_detection_model_validation(model_name)
+    set_rng_seed(0)
+    model = models.detection.__dict__[model_name](num_classes=50, pretrained_backbone=False)
+    input_shape = (3, 300, 300)
+    x = [torch.rand(input_shape)]
+
+    # validate that targets are present in training
+    with pytest.raises(ValueError):
+        model(x)
+
+    # validate type
+    targets = [{"boxes": 0.0}]
+    with pytest.raises(ValueError):
+        model(x, targets=targets)
+
+    # validate boxes shape
+    for boxes in (torch.rand((4,)), torch.rand((1, 5))):
+        targets = [{"boxes": boxes}]
+        with pytest.raises(ValueError):
+            model(x, targets=targets)
+
+    # validate that no degenerate boxes are present
+    boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
+    targets = [{"boxes": boxes}]
+    with pytest.raises(ValueError):
+        model(x, targets=targets)
 
 
-@pytest.mark.parametrize('model_name', get_available_video_models())
-@pytest.mark.parametrize('dev', _devs)
+@pytest.mark.parametrize("model_name", get_available_video_models())
+@pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_video_model(model_name, dev):
-    ModelTester()._test_video_model(model_name, dev)
+    # the default input shape is
+    # bs * num_channels * clip_len * h *w
+    input_shape = (1, 3, 4, 112, 112)
+    # test both basicblock and Bottleneck
+    model = models.video.__dict__[model_name](num_classes=50)
+    model.eval().to(device=dev)
+    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+    x = torch.rand(input_shape).to(device=dev)
+    out = model(x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_fx_compatible(model, x)
+    assert out.shape[-1] == 50
+
+    if dev == torch.device("cuda"):
+        with torch.cuda.amp.autocast():
+            out = model(x)
+            assert out.shape[-1] == 50
+
+    _check_input_backprop(model, x)
 
 
-if __name__ == '__main__':
+@pytest.mark.skipif(
+    not (
+        "fbgemm" in torch.backends.quantized.supported_engines
+        and "qnnpack" in torch.backends.quantized.supported_engines
+    ),
+    reason="This Pytorch Build has not been built with fbgemm and qnnpack",
+)
+@pytest.mark.parametrize("model_name", get_available_quantizable_models())
+def test_quantized_classification_model(model_name):
+    set_rng_seed(0)
+    defaults = {
+        "num_classes": 5,
+        "input_shape": (1, 3, 224, 224),
+        "pretrained": False,
+        "quantize": True,
+    }
+    kwargs = {**defaults, **_model_params.get(model_name, {})}
+    input_shape = kwargs.pop("input_shape")
+
+    # First check if quantize=True provides models that can run with input data
+    model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+    model.eval()
+    x = torch.rand(input_shape)
+    out = model(x)
+
+    if model_name not in quantized_flaky_models:
+        _assert_expected(out, model_name + "_quantized", prec=0.1)
+        assert out.shape[-1] == 5
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+        _check_fx_compatible(model, x)
+
+    kwargs["quantize"] = False
+    for eval_mode in [True, False]:
+        model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+        if eval_mode:
+            model.eval()
+            model.qconfig = torch.quantization.default_qconfig
+        else:
+            model.train()
+            model.qconfig = torch.quantization.default_qat_qconfig
+
+        model.fuse_model()
+        if eval_mode:
+            torch.quantization.prepare(model, inplace=True)
+        else:
+            torch.quantization.prepare_qat(model, inplace=True)
+            model.eval()
+
+        torch.quantization.convert(model, inplace=True)
+
+    try:
+        torch.jit.script(model)
+    except Exception as e:
+        tb = traceback.format_exc()
+        raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
+
+
+if __name__ == "__main__":
     pytest.main([__file__])

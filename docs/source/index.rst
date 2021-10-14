@@ -34,15 +34,17 @@ architectures, and common image transformations for computer vision.
    datasets
    io
    models
+   feature_extraction
    ops
    transforms
    utils
 
 .. toctree::
    :maxdepth: 1
-   :caption: Examples
+   :caption: Examples and training references
 
    auto_examples/index
+   training_references
 
 .. automodule:: torchvision
    :members:

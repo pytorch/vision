@@ -27,4 +27,3 @@ IF "%cross_compiler_target_platform%" == "win-64" (
   echo CALL "VC\Auxiliary\Build\vcvars32.bat" >> "%PREFIX%\etc\conda\activate.d\vs%YEAR%_compiler_vars.bat"
   echo popd
   )
-
