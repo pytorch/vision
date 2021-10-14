@@ -1,8 +1,9 @@
 import warnings
+from typing import List, Optional
 
 from torch import nn
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
+from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool, ExtraFPNBlock
 
 from .. import mobilenet
 from .. import resnet
@@ -95,7 +96,12 @@ def resnet_fpn_backbone(
     return _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks)
 
 
-def _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks):
+def _resnet_backbone_config(
+    backbone: resnet.ResNet,
+    trainable_layers: int,
+    returned_layers: Optional[List[int]],
+    extra_blocks: Optional[ExtraFPNBlock],
+):
     # select layers that wont be frozen
     assert 0 <= trainable_layers <= 5
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
