@@ -3,6 +3,7 @@ import io
 import operator
 import os
 import traceback
+import unittest
 import warnings
 from collections import OrderedDict
 
@@ -337,6 +338,11 @@ def test_mobilenet_norm_layer(model_name):
     assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
 
 
+@unittest.skipIf(
+    True,
+    "Skipping because the test segment faults since PyTorch nightly 20211014; "
+    "see https://github.com/pytorch/vision/issues/4616",
+)
 def test_inception_v3_eval():
     # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
