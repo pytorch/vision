@@ -204,7 +204,7 @@ if __name__ == "__main__":
 
     # Usage: change the tags below accordingly to the current release, then save the json with
     # cdc.write_to_disk().
-    # Then you can rely on https://nbviewer.org/gist/NicolasHug/248a72aa086fd874936f16eb56240226
+    # Then you can use classify_prs.py (as a notebook)
     # to open the json and generate the release notes semi-automatically.
     cdc = main("tags/v0.9.0", "fc852f3b39fe25dd8bf1dedee8f19ea04aa84c15")
     from IPython import embed
