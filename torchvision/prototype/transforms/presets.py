@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Dict, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -7,22 +7,19 @@ from ... import transforms as T
 from ...transforms import functional as F
 
 
-__all__ = ["ConvertImageDtype", "ImageNetEval"]
+__all__ = ["CocoEval", "ImageNetEval"]
 
 
-# Allows handling of both PIL and Tensor images
-class ConvertImageDtype(nn.Module):
-    def __init__(self, dtype: torch.dtype) -> None:
-        super().__init__()
-        self.dtype = dtype
-
-    def forward(self, img: Tensor) -> Tensor:
+class CocoEval(nn.Module):
+    def forward(
+        self, img: Tensor, target: Optional[Dict[str, Tensor]] = None
+    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
-        return F.convert_image_dtype(img, self.dtype)
+        return F.convert_image_dtype(img, torch.float), target
 
 
-class ImageNetEval:
+class ImageNetEval(nn.Module):
     def __init__(
         self,
         crop_size: int,
@@ -31,14 +28,14 @@ class ImageNetEval:
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: T.InterpolationMode = T.InterpolationMode.BILINEAR,
     ) -> None:
-        self.transforms = T.Compose(
-            [
-                T.Resize(resize_size, interpolation=interpolation),
-                T.CenterCrop(crop_size),
-                ConvertImageDtype(dtype=torch.float),
-                T.Normalize(mean=mean, std=std),
-            ]
-        )
+        super().__init__()
+        self._resize = T.Resize(resize_size, interpolation=interpolation)
+        self._crop = T.CenterCrop(crop_size)
+        self._normalize = T.Normalize(mean=mean, std=std)
 
-    def __call__(self, img: Tensor) -> Tensor:
-        return self.transforms(img)
+    def forward(self, img: Tensor) -> Tensor:
+        img = self._crop(self._resize(img))
+        if not isinstance(img, Tensor):
+            img = F.pil_to_tensor(img)
+        img = F.convert_image_dtype(img, torch.float)
+        return self._normalize(img)
