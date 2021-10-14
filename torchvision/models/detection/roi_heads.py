@@ -401,8 +401,8 @@ def expand_boxes(boxes: Tensor, scale: float) -> Tensor:
 
 
 @torch.jit.unused
-def expand_masks_tracing_scale(M: int, padding: int) -> Tensor:
-    return torch.tensor(M + 2 * padding).to(torch.float32) / torch.tensor(M).to(torch.float32)
+def expand_masks_tracing_scale(M: int, padding: int) -> float:
+    return torch.tensor(M + 2 * padding).to(torch.float32) / torch.tensor(M).to(torch.float32)  # type: ignore[return-value]
 
 
 def expand_masks(mask: Tensor, padding: int) -> Tuple[Tensor, float]:
