@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, cast
 
 import torch
 import torchvision
@@ -14,14 +14,14 @@ from .image_list import ImageList
 
 
 @torch.jit.unused
-def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
-    # type: (Tensor, int) -> Tuple[int, int]
+def _onnx_get_num_anchors_and_pre_nms_top_n(ob: Tensor, orig_pre_nms_top_n: int) -> Tuple[int, int]:
     from torch.onnx import operators
 
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
     pre_nms_top_n = torch.min(torch.cat((torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype), num_anchors), 0))
 
-    return num_anchors, pre_nms_top_n
+    # for mypy we cast at runtime
+    return cast(int, num_anchors), cast(int, pre_nms_top_n)
 
 
 class RPNHead(nn.Module):
@@ -33,7 +33,7 @@ class RPNHead(nn.Module):
         num_anchors (int): number of anchors to be predicted
     """
 
-    def __init__(self, in_channels, num_anchors):
+    def __init__(self, in_channels: int, num_anchors: int) -> None:
         super(RPNHead, self).__init__()
         self.conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
         self.cls_logits = nn.Conv2d(in_channels, num_anchors, kernel_size=1, stride=1)
@@ -43,8 +43,7 @@ class RPNHead(nn.Module):
             torch.nn.init.normal_(layer.weight, std=0.01)
             torch.nn.init.constant_(layer.bias, 0)
 
-    def forward(self, x):
-        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
+    def forward(self, x: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
         logits = []
         bbox_reg = []
         for feature in x:
@@ -54,16 +53,14 @@ class RPNHead(nn.Module):
         return logits, bbox_reg
 
 
-def permute_and_flatten(layer, N, A, C, H, W):
-    # type: (Tensor, int, int, int, int, int) -> Tensor
+def permute_and_flatten(layer: Tensor, N: int, A: int, C: int, H: int, W: int) -> Tensor:
     layer = layer.view(N, -1, C, H, W)
     layer = layer.permute(0, 3, 4, 1, 2)
     layer = layer.reshape(N, -1, C)
     return layer
 
 
-def concat_box_prediction_layers(box_cls, box_regression):
-    # type: (List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
+def concat_box_prediction_layers(box_cls: List[Tensor], box_regression: List[Tensor]) -> Tuple[Tensor, Tensor]:
     box_cls_flattened = []
     box_regression_flattened = []
     # for each feature level, permute the outputs to make them be in the
@@ -124,19 +121,19 @@ class RegionProposalNetwork(torch.nn.Module):
 
     def __init__(
         self,
-        anchor_generator,
-        head,
-        #
-        fg_iou_thresh,
-        bg_iou_thresh,
-        batch_size_per_image,
-        positive_fraction,
-        #
-        pre_nms_top_n,
-        post_nms_top_n,
-        nms_thresh,
-        score_thresh=0.0,
-    ):
+        anchor_generator: AnchorGenerator,
+        head: nn.Module,
+        # Faster-RCNN Training
+        fg_iou_thresh: float,
+        bg_iou_thresh: float,
+        batch_size_per_image: int,
+        positive_fraction: float,
+        # Faster-RCNN Inference
+        pre_nms_top_n: Dict[str, int],
+        post_nms_top_n: Dict[str, int],
+        nms_thresh: float,
+        score_thresh: float = 0.0,
+    ) -> None:
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
@@ -159,18 +156,20 @@ class RegionProposalNetwork(torch.nn.Module):
         self.score_thresh = score_thresh
         self.min_size = 1e-3
 
-    def pre_nms_top_n(self):
+    def pre_nms_top_n(self) -> int:
         if self.training:
             return self._pre_nms_top_n["training"]
         return self._pre_nms_top_n["testing"]
 
-    def post_nms_top_n(self):
+    def post_nms_top_n(self) -> int:
         if self.training:
             return self._post_nms_top_n["training"]
         return self._post_nms_top_n["testing"]
 
-    def assign_targets_to_anchors(self, anchors, targets):
-        # type: (List[Tensor], List[Dict[str, Tensor]]) -> Tuple[List[Tensor], List[Tensor]]
+    def assign_targets_to_anchors(
+        self, anchors: List[Tensor], targets: List[Dict[str, Tensor]]
+    ) -> Tuple[List[Tensor], List[Tensor]]:
+
         labels = []
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
@@ -205,8 +204,7 @@ class RegionProposalNetwork(torch.nn.Module):
             matched_gt_boxes.append(matched_gt_boxes_per_image)
         return labels, matched_gt_boxes
 
-    def _get_top_n_idx(self, objectness, num_anchors_per_level):
-        # type: (Tensor, List[int]) -> Tensor
+    def _get_top_n_idx(self, objectness: Tensor, num_anchors_per_level: List[int]) -> Tensor:
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
@@ -220,8 +218,14 @@ class RegionProposalNetwork(torch.nn.Module):
             offset += num_anchors
         return torch.cat(r, dim=1)
 
-    def filter_proposals(self, proposals, objectness, image_shapes, num_anchors_per_level):
-        # type: (Tensor, Tensor, List[Tuple[int, int]], List[int]) -> Tuple[List[Tensor], List[Tensor]]
+    def filter_proposals(
+        self,
+        proposals: Tensor,
+        objectness: Tensor,
+        image_shapes: List[Tuple[int, int]],
+        num_anchors_per_level: List[int],
+    ) -> Tuple[List[Tensor], List[Tensor]]:
+
         num_images = proposals.shape[0]
         device = proposals.device
         # do not backprop through objectness
@@ -271,8 +275,9 @@ class RegionProposalNetwork(torch.nn.Module):
             final_scores.append(scores)
         return final_boxes, final_scores
 
-    def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
-        # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
+    def compute_loss(
+        self, objectness: Tensor, pred_bbox_deltas: Tensor, labels: List[Tensor], regression_targets: List[Tensor]
+    ) -> Tuple[Tensor, Tensor]:
         """
         Args:
             objectness (Tensor)
@@ -312,11 +317,11 @@ class RegionProposalNetwork(torch.nn.Module):
 
     def forward(
         self,
-        images,  # type: ImageList
-        features,  # type: Dict[str, Tensor]
-        targets=None,  # type: Optional[List[Dict[str, Tensor]]]
-    ):
-        # type: (...) -> Tuple[List[Tensor], Dict[str, Tensor]]
+        images: ImageList,
+        features: Dict[str, Tensor],
+        targets: Optional[List[Dict[str, Tensor]]] = None,
+    ) -> Tuple[List[Tensor], Dict[str, Tensor]]:
+
         """
         Args:
             images (ImageList): images for which we want to compute the predictions
