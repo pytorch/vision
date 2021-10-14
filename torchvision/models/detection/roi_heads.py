@@ -214,7 +214,7 @@ def _onnx_heatmaps_to_keypoints(
 
     # TODO: simplify when indexing without rank will be supported by ONNX
     base = num_keypoints * num_keypoints + num_keypoints + 1
-    ind = torch.arange(num_keypoints)
+    ind = torch.arange(int(num_keypoints))
     ind = ind.to(dtype=torch.int64) * base
     end_scores_i = (
         roi_map.index_select(1, y_int.to(dtype=torch.int64))
@@ -236,8 +236,9 @@ def _onnx_heatmaps_to_keypoints_loop(
     heights: List[Tensor],
     offset_x: List[Tensor],
     offset_y: List[Tensor],
-    num_keypoints: float,
-):
+    num_keypoints: Tensor,
+) -> Tuple[Tensor, Tensor]:
+
     xy_preds = torch.zeros((0, 3, int(num_keypoints)), dtype=torch.float32, device=maps.device)
     end_scores = torch.zeros((0, int(num_keypoints)), dtype=torch.float32, device=maps.device)
 
@@ -468,19 +469,19 @@ def _onnx_paste_mask_in_image(mask: Tensor, box: Tensor, im_h: Tensor, im_w: Ten
     # TODO : replace below with a dynamic padding when support is added in ONNX
 
     # pad y
-    zeros_y0 = torch.zeros(y_0, unpaded_im_mask.size(1))
-    zeros_y1 = torch.zeros(im_h - y_1, unpaded_im_mask.size(1))
-    concat_0 = torch.cat((zeros_y0, unpaded_im_mask.to(dtype=torch.float32), zeros_y1), 0)[0:im_h, :]
+    zeros_y0 = torch.zeros(int(y_0), unpaded_im_mask.size(1))
+    zeros_y1 = torch.zeros(int(im_h - y_1), unpaded_im_mask.size(1))
+    concat_0 = torch.cat((zeros_y0, unpaded_im_mask.to(dtype=torch.float32), zeros_y1), 0)[0 : int(im_h), :]
     # pad x
-    zeros_x0 = torch.zeros(concat_0.size(0), x_0)
-    zeros_x1 = torch.zeros(concat_0.size(0), im_w - x_1)
-    im_mask = torch.cat((zeros_x0, concat_0, zeros_x1), 1)[:, :im_w]
+    zeros_x0 = torch.zeros(concat_0.size(0), int(x_0))
+    zeros_x1 = torch.zeros(concat_0.size(0), int(im_w - x_1))
+    im_mask = torch.cat((zeros_x0, concat_0, zeros_x1), 1)[:, : int(im_w)]
     return im_mask
 
 
 @torch.jit._script_if_tracing
 def _onnx_paste_masks_in_image_loop(masks: Tensor, boxes: Tensor, im_h: Tensor, im_w: Tensor) -> Tensor:
-    res_append = torch.zeros(0, im_h, im_w)
+    res_append = torch.zeros(0, int(im_h), int(im_w))
     for i in range(masks.size(0)):
         mask_res = _onnx_paste_mask_in_image(masks[i][0], boxes[i], im_h, im_w)
         mask_res = mask_res.unsqueeze(0)
