@@ -171,10 +171,10 @@ def keypoints_to_heatmap(keypoints: Tensor, rois: Tensor, heatmap_size: int) -> 
 def _onnx_heatmaps_to_keypoints(
     maps: Tensor,
     maps_i: Tensor,
-    roi_map_width,
-    roi_map_height,
-    widths_i,
-    heights_i,
+    roi_map_width: Tensor,
+    roi_map_height: Tensor,
+    widths_i: Tensor,
+    heights_i: Tensor,
     offset_x_i: Tensor,
     offset_y_i: Tensor,
 ):
@@ -228,7 +228,15 @@ def _onnx_heatmaps_to_keypoints(
 
 @torch.jit._script_if_tracing
 def _onnx_heatmaps_to_keypoints_loop(
-    maps: Tensor, rois: Tensor, widths_ceil, heights_ceil, widths, heights, offset_x, offset_y, num_keypoints
+    maps: Tensor,
+    rois: Tensor,
+    widths_ceil: List[Tensor],
+    heights_ceil: List[Tensor],
+    widths: List[Tensor],
+    heights: List[Tensor],
+    offset_x: List[Tensor],
+    offset_y: List[Tensor],
+    num_keypoints: float,
 ):
     xy_preds = torch.zeros((0, 3, int(num_keypoints)), dtype=torch.float32, device=maps.device)
     end_scores = torch.zeros((0, int(num_keypoints)), dtype=torch.float32, device=maps.device)
@@ -393,7 +401,7 @@ def expand_boxes(boxes: Tensor, scale: float) -> Tensor:
 
 
 @torch.jit.unused
-def expand_masks_tracing_scale(M: int, padding: int) -> float:
+def expand_masks_tracing_scale(M: int, padding: int) -> Tensor:
     return torch.tensor(M + 2 * padding).to(torch.float32) / torch.tensor(M).to(torch.float32)
 
 
@@ -409,12 +417,13 @@ def expand_masks(mask: Tensor, padding: int) -> Tuple[Tensor, float]:
 
 def paste_mask_in_image(mask: Tensor, box: Tensor, im_h: int, im_w: int) -> Tensor:
     TO_REMOVE = 1
+    # Here Box is a single tensor E.g. box = torch.tensor([10, 20, 40, 60])
     w = int(box[2] - box[0] + TO_REMOVE)
     h = int(box[3] - box[1] + TO_REMOVE)
     w = max(w, 1)
     h = max(h, 1)
 
-    # Set shape to [batchxCxHxW]
+    # Set shape to [batch x C x H x W]
     mask = mask.expand((1, 1, -1, -1))
 
     # Resize mask
@@ -422,12 +431,14 @@ def paste_mask_in_image(mask: Tensor, box: Tensor, im_h: int, im_w: int) -> Tens
     mask = mask[0][0]
 
     im_mask = torch.zeros((im_h, im_w), dtype=mask.dtype, device=mask.device)
-    x_0 = max(box[0], 0)
-    x_1 = min(box[2] + 1, im_w)
-    y_0 = max(box[1], 0)
-    y_1 = min(box[3] + 1, im_h)
 
-    im_mask[y_0:y_1, x_0:x_1] = mask[(y_0 - box[1]) : (y_1 - box[1]), (x_0 - box[0]) : (x_1 - box[0])]
+    # Since we are slicing, we need int
+    x_0 = int(max(box[0].item(), 0))
+    x_1 = int(min(box[2].item() + 1, im_w))
+    y_0 = int(max(box[1].item(), 0))
+    y_1 = int(min(box[3].item() + 1, im_h))
+
+    im_mask[y_0:y_1, x_0:x_1] = mask[int(y_0 - box[1]) : int(y_1 - box[1]), int(x_0 - box[0]) : int(x_1 - box[0])]
     return im_mask
 
 
@@ -452,7 +463,7 @@ def _onnx_paste_mask_in_image(mask: Tensor, box: Tensor, im_h: Tensor, im_w: Ten
     y_0 = torch.max(torch.cat((box[1].unsqueeze(0), zero)))
     y_1 = torch.min(torch.cat((box[3].unsqueeze(0) + one, im_h.unsqueeze(0))))
 
-    unpaded_im_mask = mask[(y_0 - box[1]) : (y_1 - box[1]), (x_0 - box[0]) : (x_1 - box[0])]
+    unpaded_im_mask = mask[int(y_0 - box[1]) : int(y_1 - box[1]), int(x_0 - box[0]) : int(x_1 - box[0])]
 
     # TODO : replace below with a dynamic padding when support is added in ONNX
 
@@ -788,12 +799,12 @@ class RoIHeads(nn.Module):
                     mask_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
-                pos_matched_idxs = None
+                pos_matched_idxs = None  # type: ignore[assignment]
 
             if self.mask_roi_pool is not None:
                 mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
-                mask_features = self.mask_head(mask_features)
-                mask_logits = self.mask_predictor(mask_features)
+                mask_features = self.mask_head(mask_features)  # type: ignore[misc]
+                mask_logits = self.mask_predictor(mask_features)  # type: ignore[misc]
             else:
                 raise Exception("Expected mask_roi_pool to be not None")
 
