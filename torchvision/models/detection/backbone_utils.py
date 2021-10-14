@@ -92,7 +92,10 @@ def resnet_fpn_backbone(
             default a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    return _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks)
 
+
+def _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks):
     # select layers that wont be frozen
     assert 0 <= trainable_layers <= 5
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
