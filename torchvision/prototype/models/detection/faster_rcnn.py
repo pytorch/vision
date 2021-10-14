@@ -26,7 +26,7 @@ class FasterRCNNResNet50FPNWeights(Weights):
 
 def fasterrcnn_resnet50_fpn(
     weights: Optional[FasterRCNNResNet50FPNWeights] = None,
-    weights_backbone: Optional[ResNet50Weights] = ResNet50Weights.ImageNet1K_RefV1,  # TODO: Should we default to None?
+    weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
     num_classes: int = 91,
     trainable_backbone_layers: Optional[int] = None,
