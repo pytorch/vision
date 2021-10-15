@@ -54,6 +54,7 @@ def fasterrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.state_dict(progress=progress))
-        overwrite_eps(model, 0.0)
+        if weights == FasterRCNNResNet50FPNWeights.Coco_RefV1:
+            overwrite_eps(model, 0.0)
 
     return model
