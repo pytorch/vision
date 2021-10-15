@@ -34,7 +34,9 @@ class GeneralizedRCNN(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(
-        self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]
+        self,
+        losses: Dict[str, Tensor],
+        detections: List[Dict[str, Tensor]],
     ) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]:
 
         if self.training:
@@ -45,12 +47,12 @@ class GeneralizedRCNN(nn.Module):
     def forward(
         self,
         images: List[Tensor],
-        targets: Optional[List[str, Tensor]] = None,
+        targets: Optional[List[Dict[str, Tensor]]] = None,
     ) -> Union[Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]], Dict[str, Tensor], List[Dict[str, Tensor]]]:
         """
         Args:
             images (list[Tensor]): images to be processed
-            targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
+            targets (list[Dict[str, Tensor]]): ground-truth boxes present in the image (optional)
 
         Returns:
             result (list[BoxList] or dict[Tensor]): the output from the model.
