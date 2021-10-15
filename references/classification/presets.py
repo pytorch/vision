@@ -19,12 +19,12 @@ class ClassificationPresetTrain:
             trans.append(transforms.RandomHorizontalFlip(hflip_prob))
         if auto_augment_policy is not None:
             if auto_augment_policy == "ra":
-                trans.append(autoaugment.RandAugment())
+                trans.append(autoaugment.RandAugment(interpolation=interpolation))
             elif auto_augment_policy == "ta_wide":
-                trans.append(autoaugment.TrivialAugmentWide())
+                trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
-                trans.append(autoaugment.AutoAugment(policy=aa_policy))
+                trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
         trans.extend(
             [
                 transforms.PILToTensor(),
