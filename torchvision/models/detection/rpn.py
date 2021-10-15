@@ -40,8 +40,8 @@ class RPNHead(nn.Module):
         self.bbox_pred = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=1, stride=1)
 
         for layer in self.children():
-            torch.nn.init.normal_(layer.weight, std=0.01)
-            torch.nn.init.constant_(layer.bias, 0)
+            torch.nn.init.normal_(layer.weight, std=0.01)  # type: ignore[arg-type]
+            torch.nn.init.constant_(layer.bias, 0)  # type: ignore[arg-type]
 
     def forward(self, x: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
         logits = []
@@ -323,17 +323,17 @@ class RegionProposalNetwork(torch.nn.Module):
         """
         Args:
             images (ImageList): images for which we want to compute the predictions
-            features (OrderedDict[Tensor]): features computed from the images that are
+            features (Dict[str, Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
-            targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
+            targets (List[Dict[str, Tensor]]): ground-truth boxes present in the image (optional).
                 If provided, each element in the dict should contain a field `boxes`,
                 with the locations of the ground-truth boxes.
 
         Returns:
             boxes (List[Tensor]): the predicted boxes from the RPN, one Tensor per
                 image.
-            losses (Dict[Tensor]): the losses for the model during training. During
+            losses (Dict[str, Tensor]): the losses for the model during training. During
                 testing, it is an empty dict.
         """
         # RPN uses all feature maps that are available
