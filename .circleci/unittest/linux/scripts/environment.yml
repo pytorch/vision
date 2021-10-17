@@ -3,6 +3,8 @@ channels:
   - defaults
 dependencies:
   - pytest
+  - pytest-xdist
+  - pytest-timeout
   - pytest-cov
   - pytest-mock
   - pip
