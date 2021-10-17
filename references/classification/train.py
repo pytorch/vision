@@ -108,7 +108,7 @@ def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
     val_resize_size, val_crop_size, train_crop_size = 256, 224, 224
-    interpolation = InterpolationMode.BILINEAR
+    interpolation = InterpolationMode(args.interpolation)
     if args.model == "inception_v3":
         val_resize_size, val_crop_size, train_crop_size = 342, 299, 299
     elif args.model == "resnet50":
@@ -458,6 +458,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
+    parser.add_argument("--interpolation", default="bilinear", help="the default interpolation (default: bilinear)")
 
     return parser
 
