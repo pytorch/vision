@@ -112,7 +112,7 @@ def load_data(traindir, valdir, args):
     if args.model == "inception_v3":
         val_resize_size, val_crop_size, train_crop_size = 342, 299, 299
     elif args.model == "resnet50":
-        val_resize_size, val_crop_size, train_crop_size = 256, 224, 192
+        val_resize_size, val_crop_size, train_crop_size = 256, 224, 176
     elif args.model.startswith("efficientnet_"):
         sizes = {
             "b0": (256, 224, 224),
