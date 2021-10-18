@@ -1,5 +1,3 @@
-from typing import Any
-
 from torch import nn
 
 from .. import resnet
@@ -48,20 +46,10 @@ class FCNHead(nn.Sequential):
 
 
 def _fcn_resnet(
-    backbone_name: str,
-    pretrained: bool,
-    progress: bool,
+    backbone: resnet.ResNet,
     num_classes: int,
     aux: bool,
-    pretrained_backbone: bool = True,
 ) -> FCN:
-    if pretrained:
-        aux = True
-        pretrained_backbone = False
-
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True]
-    )
     return_layers = {"layer4": "out"}
     if aux:
         return_layers["layer3"] = "aux"
@@ -69,12 +57,7 @@ def _fcn_resnet(
 
     aux_classifier = FCNHead(1024, num_classes) if aux else None
     classifier = FCNHead(2048, num_classes)
-    model = FCN(backbone, classifier, aux_classifier)
-
-    if pretrained:
-        arch = "fcn_" + backbone_name + "_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
-    return model
+    return FCN(backbone, classifier, aux_classifier)
 
 
 def fcn_resnet50(
@@ -82,7 +65,7 @@ def fcn_resnet50(
     progress: bool = True,
     num_classes: int = 21,
     aux_loss: bool = False,
-    **kwargs: Any,
+    pretrained_backbone: bool = True,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
 
@@ -92,8 +75,19 @@ def fcn_resnet50(
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
         aux_loss (bool): If True, it uses an auxiliary loss
+        pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
-    return _fcn_resnet("resnet50", pretrained, progress, num_classes, aux_loss, **kwargs)
+    if pretrained:
+        aux_loss = True
+        pretrained_backbone = False
+
+    backbone = resnet.resnet50(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    model = _fcn_resnet(backbone, num_classes, aux_loss)
+
+    if pretrained:
+        arch = "fcn_resnet50_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model
 
 
 def fcn_resnet101(
@@ -101,7 +95,7 @@ def fcn_resnet101(
     progress: bool = True,
     num_classes: int = 21,
     aux_loss: bool = False,
-    **kwargs: Any,
+    pretrained_backbone: bool = True,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
 
@@ -111,5 +105,16 @@ def fcn_resnet101(
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
         aux_loss (bool): If True, it uses an auxiliary loss
+        pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
-    return _fcn_resnet("resnet101", pretrained, progress, num_classes, aux_loss, **kwargs)
+    if pretrained:
+        aux_loss = True
+        pretrained_backbone = False
+
+    backbone = resnet.resnet101(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    model = _fcn_resnet(backbone, num_classes, aux_loss)
+
+    if pretrained:
+        arch = "fcn_resnet101_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model

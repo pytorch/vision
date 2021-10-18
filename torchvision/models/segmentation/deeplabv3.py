@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List
 
 import torch
 from torch import nn
@@ -114,20 +114,10 @@ class ASPP(nn.Module):
 
 
 def _deeplabv3_resnet(
-    backbone_name: str,
-    pretrained: bool,
-    progress: bool,
+    backbone: resnet.ResNet,
     num_classes: int,
     aux: bool,
-    pretrained_backbone: bool = True,
 ) -> DeepLabV3:
-    if pretrained:
-        aux = True
-        pretrained_backbone = False
-
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True]
-    )
     return_layers = {"layer4": "out"}
     if aux:
         return_layers["layer3"] = "aux"
@@ -135,27 +125,14 @@ def _deeplabv3_resnet(
 
     aux_classifier = FCNHead(1024, num_classes) if aux else None
     classifier = DeepLabHead(2048, num_classes)
-    model = DeepLabV3(backbone, classifier, aux_classifier)
-
-    if pretrained:
-        arch = "deeplabv3_" + backbone_name + "_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
-    return model
+    return DeepLabV3(backbone, classifier, aux_classifier)
 
 
 def _deeplabv3_mobilenetv3(
-    backbone_name: str,
-    pretrained: bool,
-    progress: bool,
+    backbone: mobilenetv3.MobileNetV3,
     num_classes: int,
     aux: bool,
-    pretrained_backbone: bool = True,
 ) -> DeepLabV3:
-    if pretrained:
-        aux = True
-        pretrained_backbone = False
-
-    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
@@ -170,12 +147,7 @@ def _deeplabv3_mobilenetv3(
 
     aux_classifier = FCNHead(aux_inplanes, num_classes) if aux else None
     classifier = DeepLabHead(out_inplanes, num_classes)
-    model = DeepLabV3(backbone, classifier, aux_classifier)
-
-    if pretrained:
-        arch = "deeplabv3_" + backbone_name + "_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
-    return model
+    return DeepLabV3(backbone, classifier, aux_classifier)
 
 
 def deeplabv3_resnet50(
@@ -183,7 +155,7 @@ def deeplabv3_resnet50(
     progress: bool = True,
     num_classes: int = 21,
     aux_loss: bool = False,
-    **kwargs: Any,
+    pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
@@ -193,8 +165,19 @@ def deeplabv3_resnet50(
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
         aux_loss (bool): If True, it uses an auxiliary loss
+        pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
-    return _deeplabv3_resnet("resnet50", pretrained, progress, num_classes, aux_loss, **kwargs)
+    if pretrained:
+        aux_loss = True
+        pretrained_backbone = False
+
+    backbone = resnet.resnet50(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    model = _deeplabv3_resnet(backbone, num_classes, aux_loss)
+
+    if pretrained:
+        arch = "deeplabv3_resnet50_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model
 
 
 def deeplabv3_resnet101(
@@ -202,7 +185,7 @@ def deeplabv3_resnet101(
     progress: bool = True,
     num_classes: int = 21,
     aux_loss: bool = False,
-    **kwargs: Any,
+    pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
 
@@ -212,8 +195,19 @@ def deeplabv3_resnet101(
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): The number of classes
         aux_loss (bool): If True, include an auxiliary classifier
+        pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
-    return _deeplabv3_resnet("resnet101", pretrained, progress, num_classes, aux_loss, **kwargs)
+    if pretrained:
+        aux_loss = True
+        pretrained_backbone = False
+
+    backbone = resnet.resnet101(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    model = _deeplabv3_resnet(backbone, num_classes, aux_loss)
+
+    if pretrained:
+        arch = "deeplabv3_resnet101_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model
 
 
 def deeplabv3_mobilenet_v3_large(
@@ -221,7 +215,7 @@ def deeplabv3_mobilenet_v3_large(
     progress: bool = True,
     num_classes: int = 21,
     aux_loss: bool = False,
-    **kwargs: Any,
+    pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.
 
@@ -231,5 +225,16 @@ def deeplabv3_mobilenet_v3_large(
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
         aux_loss (bool): If True, it uses an auxiliary loss
+        pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
-    return _deeplabv3_mobilenetv3("mobilenet_v3_large", pretrained, progress, num_classes, aux_loss, **kwargs)
+    if pretrained:
+        aux_loss = True
+        pretrained_backbone = False
+
+    backbone = mobilenetv3.mobilenet_v3_large(pretrained=pretrained_backbone, dilated=True).features
+    model = _deeplabv3_mobilenetv3(backbone, num_classes, aux_loss)
+
+    if pretrained:
+        arch = "deeplabv3_mobilenet_v3_large_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model

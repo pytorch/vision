@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Dict
 
 from torch import nn, Tensor
 from torch.nn import functional as F
@@ -79,13 +79,7 @@ class LRASPPHead(nn.Module):
         return self.low_classifier(low) + self.high_classifier(x)
 
 
-def _lraspp_mobilenetv3(
-    backbone_name: str, pretrained: bool, progress: bool, num_classes: int, pretrained_backbone: bool = True
-) -> LRASPP:
-    if pretrained:
-        pretrained_backbone = False
-
-    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
+def _lraspp_mobilenetv3(backbone: mobilenetv3.MobileNetV3, num_classes: int) -> LRASPP:
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
@@ -95,16 +89,11 @@ def _lraspp_mobilenetv3(
     high_channels = backbone[high_pos].out_channels
     backbone = create_feature_extractor(backbone, {str(low_pos): "low", str(high_pos): "high"})
 
-    model = LRASPP(backbone, low_channels, high_channels, num_classes)
-
-    if pretrained:
-        arch = "lraspp_" + backbone_name + "_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
-    return model
+    return LRASPP(backbone, low_channels, high_channels, num_classes)
 
 
 def lraspp_mobilenet_v3_large(
-    pretrained: bool = False, progress: bool = True, num_classes: int = 21, **kwargs: Any
+    pretrained: bool = False, progress: bool = True, num_classes: int = 21, pretrained_backbone: bool = True
 ) -> LRASPP:
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
 
@@ -113,8 +102,15 @@ def lraspp_mobilenet_v3_large(
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
-    if kwargs.pop("aux_loss", False):
-        raise NotImplementedError("This model does not use auxiliary loss")
+    if pretrained:
+        pretrained_backbone = False
 
-    return _lraspp_mobilenetv3("mobilenet_v3_large", pretrained, progress, num_classes, **kwargs)
+    backbone = mobilenetv3.mobilenet_v3_large(pretrained=pretrained_backbone, dilated=True).features
+    model = _lraspp_mobilenetv3(backbone, num_classes)
+
+    if pretrained:
+        arch = "lraspp_mobilenet_v3_large_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model
