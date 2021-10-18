@@ -53,7 +53,7 @@ def _fcn_resnet(
     progress: bool,
     num_classes: int,
     aux: Optional[bool],
-    pretrained_backbone: bool = True
+    pretrained_backbone: bool = True,
 ) -> nn.Module:
     if pretrained:
         aux = True
