@@ -1,11 +1,20 @@
 from collections import OrderedDict
-from typing import Dict
+from typing import Any, Dict
 
 from torch import nn, Tensor
 from torch.nn import functional as F
 
+from .. import mobilenetv3
+from ..feature_extraction import create_feature_extractor
+from ._utils import _load_weights
 
-__all__ = ["LRASPP"]
+
+__all__ = ["LRASPP", "lraspp_mobilenet_v3_large"]
+
+
+model_urls = {
+    "lraspp_mobilenet_v3_large_coco": "https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
+}
 
 
 class LRASPP(nn.Module):
@@ -68,3 +77,46 @@ class LRASPPHead(nn.Module):
         x = F.interpolate(x, size=low.shape[-2:], mode="bilinear", align_corners=False)
 
         return self.low_classifier(low) + self.high_classifier(x)
+
+
+def _lraspp_mobilenetv3(
+    backbone_name: str, pretrained: bool, progress: bool, num_classes: int, pretrained_backbone: bool = True
+) -> LRASPP:
+    if pretrained:
+        pretrained_backbone = False
+
+    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
+
+    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
+    low_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
+    high_pos = stage_indices[-1]  # use C5 which has output_stride = 16
+    low_channels = backbone[low_pos].out_channels
+    high_channels = backbone[high_pos].out_channels
+
+    backbone = create_feature_extractor(backbone, {str(low_pos): "low", str(high_pos): "high"})
+
+    model = LRASPP(backbone, low_channels, high_channels, num_classes)
+
+    if pretrained:
+        arch = "lraspp_" + backbone_name + "_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model
+
+
+def lraspp_mobilenet_v3_large(
+    pretrained: bool = False, progress: bool = True, num_classes: int = 21, **kwargs: Any
+) -> nn.Module:
+    """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
+            contains the same classes as Pascal VOC
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+    """
+    if kwargs.pop("aux_loss", False):
+        raise NotImplementedError("This model does not use auxiliary loss")
+
+    return _lraspp_mobilenetv3("mobilenet_v3_large", pretrained, progress, num_classes, **kwargs)
