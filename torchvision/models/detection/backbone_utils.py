@@ -87,7 +87,7 @@ def resnet_fpn_backbone(
         backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
         pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
-        norm_layer (torchvision.ops): it is recommended to use the default value. For details visit:
+        norm_layer (callable nn.Module): it is recommended to use the default value. For details visit:
             (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
         trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
@@ -134,9 +134,12 @@ def _resnet_backbone_config(
 
 
 def _validate_trainable_layers(
-    pretrained: bool, trainable_backbone_layers: int, max_value: int, default_value: int
+    pretrained: bool,
+    trainable_backbone_layers: Optional[int],
+    max_value: int,
+    default_value: int,
 ) -> int:
-    # dont freeze any layers if pretrained model or backbone is not used
+    # don't freeze any layers if pretrained model or backbone is not used
     if not pretrained:
         if trainable_backbone_layers is not None:
             warnings.warn(
