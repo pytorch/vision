@@ -50,7 +50,7 @@ class BackboneWithFPN(nn.Module):
         )
         self.out_channels = out_channels
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Dict[str, Tensor]:
         x = self.body(x)
         x = self.fpn(x)
         return x
@@ -61,9 +61,9 @@ def resnet_fpn_backbone(
     pretrained: bool,
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 3,
-    returned_layers: List[int] = None,
+    returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
-) -> Optional[BackboneWithFPN]:
+) -> BackboneWithFPN:
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
@@ -106,9 +106,10 @@ def resnet_fpn_backbone(
 def _resnet_backbone_config(
     backbone: resnet.ResNet,
     trainable_layers: int,
-    returned_layers: Optional[List[int]],
-    extra_blocks: Optional[ExtraFPNBlock],
-):
+    returned_layers: Optional[List[int]] = None,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
+) -> BackboneWithFPN:
+
     # select layers that wont be frozen
     assert 0 <= trainable_layers <= 5
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
@@ -195,5 +196,5 @@ def mobilenet_backbone(
             # depthwise linear combination of channels to reduce their size
             nn.Conv2d(backbone[-1].out_channels, out_channels, 1),
         )
-        m.out_channels = out_channels
+        m.out_channels = out_channels  # type: ignore[assignment]
         return m
