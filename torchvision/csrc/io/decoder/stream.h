@@ -20,7 +20,9 @@ class Stream {
   virtual ~Stream();
 
   // returns 0 - on success or negative error
-  int openCodec(std::vector<DecoderMetadata>* metadata);
+  // num_threads sets up the codec context for multithreading if needed
+  // default is set to single thread in order to not break BC
+  int openCodec(std::vector<DecoderMetadata>* metadata, int num_threads = 1);
   // returns 1 - if packet got consumed, 0 - if it's not, and < 0 on error
   int decodePacket(
       const AVPacket* packet,
@@ -69,6 +71,10 @@ class Stream {
   // estimated next frame pts for flushing the last frame
   int64_t nextPts_{0};
   double fps_{30.};
+  // this is a dumb conservative limit; ideally we'd use
+  // int max_threads = at::get_num_threads(); but this would cause
+  // fb sync to fail as it would add dependency to ATen to the decoder API
+  const int max_threads = 12;
 };
 
 } // namespace ffmpeg
