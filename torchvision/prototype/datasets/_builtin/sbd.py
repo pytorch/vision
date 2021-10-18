@@ -5,9 +5,16 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import Mapper, TarArchiveReader, Shuffler, Demultiplexer, Filter
-from torchdata.datapipes.iter import KeyZipper, LineReader
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    TarArchiveReader,
+    Shuffler,
+    Demultiplexer,
+    Filter,
+    KeyZipper,
+    LineReader,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
