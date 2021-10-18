@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
@@ -34,16 +34,17 @@ class AnchorGenerator(nn.Module):
 
     def __init__(
         self,
-        sizes=((128, 256, 512),),
-        aspect_ratios=((0.5, 1.0, 2.0),),
-    ):
+        sizes: Tuple[Tuple[int, ...]] = ((128, 256, 512),),
+        aspect_ratios: Tuple[Tuple[float, ...]] = ((0.5, 1.0, 2.0),),
+    ) -> None:
+
         super(AnchorGenerator, self).__init__()
 
         if not isinstance(sizes[0], (list, tuple)):
             # TODO change this
-            sizes = tuple((s,) for s in sizes)
+            sizes = tuple((s,) for s in sizes)  # type: ignore[assignment]
         if not isinstance(aspect_ratios[0], (list, tuple)):
-            aspect_ratios = (aspect_ratios,) * len(sizes)
+            aspect_ratios = (aspect_ratios,) * len(sizes)  # type: ignore[assignment]
 
         assert len(sizes) == len(aspect_ratios)
 
@@ -59,11 +60,11 @@ class AnchorGenerator(nn.Module):
     # This method assumes aspect ratio = height / width for an anchor.
     def generate_anchors(
         self,
-        scales: List[int],
-        aspect_ratios: List[float],
+        scales: Tuple[int, ...],
+        aspect_ratios: Tuple[float, ...],
         dtype: torch.dtype = torch.float32,
         device: torch.device = torch.device("cpu"),
-    ):
+    ) -> Tensor:
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
@@ -75,10 +76,10 @@ class AnchorGenerator(nn.Module):
         base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
         return base_anchors.round()
 
-    def set_cell_anchors(self, dtype: torch.dtype, device: torch.device):
+    def set_cell_anchors(self, dtype: torch.dtype, device: torch.device) -> None:
         self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device) for cell_anchor in self.cell_anchors]
 
-    def num_anchors_per_location(self):
+    def num_anchors_per_location(self) -> List[int]:
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
 
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
@@ -116,7 +117,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
-        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
+        grid_sizes = [list(feature_map.shape[-2:]) for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         strides = [
@@ -162,7 +163,7 @@ class DefaultBoxGenerator(nn.Module):
         scales: Optional[List[float]] = None,
         steps: Optional[List[int]] = None,
         clip: bool = True,
-    ):
+    ) -> None:
         super().__init__()
         if steps is not None:
             assert len(aspect_ratios) == len(steps)
@@ -204,7 +205,7 @@ class DefaultBoxGenerator(nn.Module):
             _wh_pairs.append(torch.as_tensor(wh_pairs, dtype=dtype, device=device))
         return _wh_pairs
 
-    def num_anchors_per_location(self):
+    def num_anchors_per_location(self) -> List[int]:
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
         return [2 + 2 * len(r) for r in self.aspect_ratios]
 
@@ -247,8 +248,8 @@ class DefaultBoxGenerator(nn.Module):
         return s.format(**self.__dict__)
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
-        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
-        image_size = image_list.tensors.shape[-2:]
+        grid_sizes = [list(feature_map.shape[-2:]) for feature_map in feature_maps]
+        image_size = list(image_list.tensors.shape[-2:])
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         default_boxes = self._grid_default_boxes(grid_sizes, image_size, dtype=dtype)
         default_boxes = default_boxes.to(device)
