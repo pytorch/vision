@@ -8,7 +8,7 @@ from .. import resnet
 
 def resnet_fpn_backbone(
     backbone_name: str,
-    weights,
+    weights: Optional[Weights],
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 3,
     returned_layers: Optional[List[int]] = None,
