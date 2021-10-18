@@ -87,7 +87,7 @@ def resnet_fpn_backbone(
         backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
         pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
-        norm_layer (callable nn.Module): it is recommended to use the default value. For details visit:
+        norm_layer (callable): it is recommended to use the default value. For details visit:
             (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
         trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
@@ -106,8 +106,8 @@ def resnet_fpn_backbone(
 def _resnet_backbone_config(
     backbone: resnet.ResNet,
     trainable_layers: int,
-    returned_layers: Optional[List[int]] = None,
-    extra_blocks: Optional[ExtraFPNBlock] = None,
+    returned_layers: Optional[List[int]],
+    extra_blocks: Optional[ExtraFPNBlock],
 ) -> BackboneWithFPN:
 
     # select layers that wont be frozen
@@ -162,7 +162,7 @@ def mobilenet_backbone(
     fpn: bool,
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 2,
-    returned_layers: List[int] = None,
+    returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
 
