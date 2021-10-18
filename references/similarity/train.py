@@ -51,7 +51,7 @@ def find_best_threshold(dists, targets, device):
     return best_thresh, accuracy
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def evaluate(model, loader, device):
     model.eval()
     embeds, labels = [], []
