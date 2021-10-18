@@ -113,7 +113,7 @@ class ASPP(nn.Module):
         return self.project(res)
 
 
-def _deeplabv3(
+def _deeplabv3_resnet(
     backbone_name: str,
     pretrained: bool,
     progress: bool,
@@ -125,30 +125,47 @@ def _deeplabv3(
         aux = True
         pretrained_backbone = False
 
-    if "resnet" in backbone_name:
-        backbone = resnet.__dict__[backbone_name](
-            pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True]
-        )
-        out_layer = "layer4"
-        out_inplanes = 2048
-        aux_layer = "layer3"
-        aux_inplanes = 1024
-    elif "mobilenet_v3" in backbone_name:
-        backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
-        # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
-        # The first and last blocks are always included because they are the C0 (conv1) and Cn.
-        stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
-        out_pos = stage_indices[-1]  # use C5 which has output_stride = 16
-        out_layer = str(out_pos)
-        out_inplanes = backbone[out_pos].out_channels
-        aux_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
-        aux_layer = str(aux_pos)
-        aux_inplanes = backbone[aux_pos].out_channels
-    else:
-        raise NotImplementedError("backbone {} is not supported as of now".format(backbone_name))
-    return_layers = {out_layer: "out"}
+    backbone = resnet.__dict__[backbone_name](
+        pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True]
+    )
+    return_layers = {"layer4": "out"}
     if aux:
-        return_layers[aux_layer] = "aux"
+        return_layers["layer3"] = "aux"
+    backbone = create_feature_extractor(backbone, return_layers)
+
+    aux_classifier = FCNHead(1024, num_classes) if aux else None
+    classifier = DeepLabHead(2048, num_classes)
+    model = DeepLabV3(backbone, classifier, aux_classifier)
+
+    if pretrained:
+        arch = "deeplabv3_" + backbone_name + "_coco"
+        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    return model
+
+
+def _deeplabv3_mobilenetv3(
+    backbone_name: str,
+    pretrained: bool,
+    progress: bool,
+    num_classes: int,
+    aux: Optional[bool],
+    pretrained_backbone: bool = True,
+) -> DeepLabV3:
+    if pretrained:
+        aux = True
+        pretrained_backbone = False
+
+    backbone = mobilenetv3.__dict__[backbone_name](pretrained=pretrained_backbone, dilated=True).features
+    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
+    out_pos = stage_indices[-1]  # use C5 which has output_stride = 16
+    out_inplanes = backbone[out_pos].out_channels
+    aux_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
+    aux_inplanes = backbone[aux_pos].out_channels
+    return_layers = {str(out_pos): "out"}
+    if aux:
+        return_layers[str(aux_pos)] = "aux"
     backbone = create_feature_extractor(backbone, return_layers)
 
     aux_classifier = FCNHead(aux_inplanes, num_classes) if aux else None
@@ -177,7 +194,7 @@ def deeplabv3_resnet50(
         num_classes (int): number of output classes of the model (including the background)
         aux_loss (bool): If True, it uses an auxiliary loss
     """
-    return _deeplabv3("resnet50", pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _deeplabv3_resnet("resnet50", pretrained, progress, num_classes, aux_loss, **kwargs)
 
 
 def deeplabv3_resnet101(
@@ -196,7 +213,7 @@ def deeplabv3_resnet101(
         num_classes (int): The number of classes
         aux_loss (bool): If True, include an auxiliary classifier
     """
-    return _deeplabv3("resnet101", pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _deeplabv3_resnet("resnet101", pretrained, progress, num_classes, aux_loss, **kwargs)
 
 
 def deeplabv3_mobilenet_v3_large(
@@ -215,4 +232,4 @@ def deeplabv3_mobilenet_v3_large(
         num_classes (int): number of output classes of the model (including the background)
         aux_loss (bool): If True, it uses an auxiliary loss
     """
-    return _deeplabv3("mobilenet_v3_large", pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _deeplabv3_mobilenetv3("mobilenet_v3_large", pretrained, progress, num_classes, aux_loss, **kwargs)
