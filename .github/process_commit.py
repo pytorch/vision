@@ -12,15 +12,19 @@ from typing import Any, Optional, Set, Tuple
 
 import requests
 
-# If the PR has any of these labels, we accept it as properly labeled.
-REQUIRED_LABELS = {
+# For a PR to be properly labeled it should have one primary label and one secondary label
+PRIMARY_LABELS = {
     "new feature",
     "bug",
     "code quality",
     "enhancement",
     "bc-breaking",
-    "dependency issue",
     "deprecation",
+    "other",
+}
+
+SECONDARY_LABELS = {
+    "dependency issue",
     "module: c++ frontend",
     "module: ci",
     "module: datasets",
@@ -69,7 +73,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     merger, labels = get_pr_merger_and_labels(pr_number)
-    is_properly_labeled = bool(REQUIRED_LABELS.intersection(labels))
+    is_properly_labeled = bool(PRIMARY_LABELS.intersection(labels) and SECONDARY_LABELS.intersection(labels))
 
     if not is_properly_labeled:
         print(f"@{merger}")

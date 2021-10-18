@@ -49,7 +49,7 @@ def evaluate(model, data_loader, device, num_classes):
     confmat = utils.ConfusionMatrix(num_classes)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
-    with torch.no_grad():
+    with torch.inference_mode():
         for image, target in metric_logger.log_every(data_loader, 100, header):
             image, target = image.to(device), target.to(device)
             output = model(image)
