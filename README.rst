@@ -25,6 +25,8 @@ supported Python versions.
 +--------------------------+--------------------------+---------------------------------+
 | ``1.9.0``                | ``0.10.0``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.8.2``                | ``0.9.2``                | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
 | ``1.8.1``                | ``0.9.1``                | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.8.0``                | ``0.9.0``                | ``>=3.6``, ``<=3.9``            |
@@ -110,7 +112,7 @@ Video Backend
 =============
 Torchvision currently supports the following video backends:
 
-* [pyav](https://github.com/PyAV-Org/PyAV) (default) - Pythonic binding for ffmpeg libraries. 
+* [pyav](https://github.com/PyAV-Org/PyAV) (default) - Pythonic binding for ffmpeg libraries.
 
 * video_reader - This needs ffmpeg to be installed and torchvision to be built from source. There shouldn't be any conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
 
