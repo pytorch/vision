@@ -54,7 +54,7 @@ def _fcn_resnet(
     num_classes: int,
     aux: Optional[bool],
     pretrained_backbone: bool = True,
-) -> nn.Module:
+) -> FCN:
     if pretrained:
         aux = True
         pretrained_backbone = False
@@ -62,7 +62,6 @@ def _fcn_resnet(
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True]
     )
-
     return_layers = {"layer4": "out"}
     if aux:
         return_layers["layer3"] = "aux"
@@ -84,7 +83,7 @@ def fcn_resnet50(
     num_classes: int = 21,
     aux_loss: Optional[bool] = None,
     **kwargs: Any,
-) -> nn.Module:
+) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
 
     Args:
@@ -103,7 +102,7 @@ def fcn_resnet101(
     num_classes: int = 21,
     aux_loss: Optional[bool] = None,
     **kwargs: Any,
-) -> nn.Module:
+) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
 
     Args:
