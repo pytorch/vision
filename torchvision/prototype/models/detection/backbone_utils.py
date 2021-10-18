@@ -2,8 +2,7 @@ from typing import Callable, Optional, List
 
 from torch import nn
 
-from ....models.detection.backbone_utils import misc_nn_ops, _resnet_backbone_config, BackboneWithFPN
-from ....ops.feature_pyramid_network import ExtraFPNBlock
+from ....models.detection.backbone_utils import misc_nn_ops, _resnet_backbone_config, BackboneWithFPN, ExtraFPNBlock
 from .. import resnet
 
 
