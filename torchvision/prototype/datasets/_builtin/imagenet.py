@@ -39,12 +39,12 @@ class ImageNet(Dataset):
         if config.split == "train":
             images = HttpResource(
                 "ILSVRC2012_img_train.tar",
-                sha256="",
+                sha256="b08200a27a8e34218a0e58fde36b0fe8f73bc377f4acea2d91602057c3ca45bb",
             )
         else:  # config.split == "val"
             images = HttpResource(
                 "ILSVRC2012_img_val.tar",
-                sha256="",
+                sha256="c7e06a6c0baccf06d8dbeb6577d71efff84673a5dbdd50633ab44f8ea0456ae0",
             )
 
         devkit = HttpResource(
