@@ -1,4 +1,4 @@
-from typing import Tuple, List, Optional, Any
+from typing import Tuple, List, Optional, Any, cast
 
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -196,7 +196,7 @@ class FasterRCNN(GeneralizedRCNN):
             if box_predictor is None:
                 raise ValueError("num_classes should not be None when box_predictor " "is not specified")
 
-        out_channels = backbone.out_channels
+        out_channels = cast(int, backbone.out_channels)
 
         if rpn_anchor_generator is None:
             anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
@@ -231,7 +231,7 @@ class FasterRCNN(GeneralizedRCNN):
 
         if box_predictor is None:
             representation_size = 1024
-            box_predictor = FastRCNNPredictor(representation_size, num_classes)
+            box_predictor = FastRCNNPredictor(representation_size, num_classes)  # type: ignore[arg-type]
 
         roi_heads = RoIHeads(
             # Box
