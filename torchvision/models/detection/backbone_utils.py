@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Dict, Optional, List, Union
+from typing import Callable, Dict, Optional, List
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
@@ -29,7 +29,14 @@ class BackboneWithFPN(nn.Module):
         out_channels (int): the number of channels in the FPN
     """
 
-    def __init__(self, backbone: nn.Module, return_layers: Dict[str, str], in_channels_list: List[int], out_channels: int, extra_blocks: Optional[ExtraFPNBlock] = None) -> None:
+    def __init__(
+        self,
+        backbone: nn.Module,
+        return_layers: Dict[str, str],
+        in_channels_list: List[int],
+        out_channels: int,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
+    ) -> None:
         super(BackboneWithFPN, self).__init__()
 
         if extra_blocks is None:
@@ -50,12 +57,12 @@ class BackboneWithFPN(nn.Module):
 
 
 def resnet_fpn_backbone(
-        backbone_name: str,
-        pretrained: bool,
-        norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
-        trainable_layers: int = 3,
-        returned_layers: List[int] = None,
-        extra_blocks: Optional[ExtraFPNBlock] = None,
+    backbone_name: str,
+    pretrained: bool,
+    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
+    trainable_layers: int = 3,
+    returned_layers: List[int] = None,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> Optional[BackboneWithFPN]:
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
@@ -93,7 +100,15 @@ def resnet_fpn_backbone(
             default a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    return _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks)
 
+
+def _resnet_backbone_config(
+    backbone: resnet.ResNet,
+    trainable_layers: int,
+    returned_layers: Optional[List[int]],
+    extra_blocks: Optional[ExtraFPNBlock],
+):
     # select layers that wont be frozen
     assert 0 <= trainable_layers <= 5
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
@@ -117,7 +132,9 @@ def resnet_fpn_backbone(
     return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
 
 
-def _validate_trainable_layers(pretrained: bool, trainable_backbone_layers: int, max_value: int, default_value: int) -> int:
+def _validate_trainable_layers(
+    pretrained: bool, trainable_backbone_layers: int, max_value: int, default_value: int
+) -> int:
     # dont freeze any layers if pretrained model or backbone is not used
     if not pretrained:
         if trainable_backbone_layers is not None:
@@ -136,13 +153,13 @@ def _validate_trainable_layers(pretrained: bool, trainable_backbone_layers: int,
 
 
 def mobilenet_backbone(
-        backbone_name: str,
-        pretrained: bool,
-        fpn: bool,
-        norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
-        trainable_layers: int = 2,
-        returned_layers: List[int] = None,
-        extra_blocks: Optional[ExtraFPNBlock] = None,
+    backbone_name: str,
+    pretrained: bool,
+    fpn: bool,
+    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
+    trainable_layers: int = 2,
+    returned_layers: List[int] = None,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
 
     backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer).features
