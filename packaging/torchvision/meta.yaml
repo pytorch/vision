@@ -32,7 +32,7 @@ requirements:
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
-  script: bash checktorch.sh && python setup.py install --single-version-externally-managed --record=record.txt
+  script: bash packaging/torchvision/checktorch.sh && python setup.py install --single-version-externally-managed --record=record.txt
   script_env:
     - CUDA_HOME
     - FORCE_CUDA
