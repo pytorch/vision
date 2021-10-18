@@ -7,7 +7,7 @@ from .. import mobilenetv3
 from .. import resnet
 from ..feature_extraction import create_feature_extractor
 from .deeplabv3 import DeepLabHead, DeepLabV3
-from .fcn import FCN, FCNHead
+from .fcn import FCNHead, fcn_resnet50, fcn_resnet101
 from .lraspp import LRASPP
 
 
@@ -22,8 +22,6 @@ __all__ = [
 
 
 model_urls = {
-    "fcn_resnet50_coco": "https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
-    "fcn_resnet101_coco": "https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
     "deeplabv3_resnet50_coco": "https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
     "deeplabv3_resnet101_coco": "https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
     "deeplabv3_mobilenet_v3_large_coco": "https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
@@ -68,7 +66,6 @@ def _segm_model(
 
     model_map = {
         "deeplabv3": (DeepLabHead, DeepLabV3),
-        "fcn": (FCNHead, FCN),
     }
     classifier = model_map[name][0](out_inplanes, num_classes)
     base_model = model_map[name][1]
@@ -120,44 +117,6 @@ def _segm_lraspp_mobilenetv3(backbone_name: str, num_classes: int, pretrained_ba
 
     model = LRASPP(backbone, low_channels, high_channels, num_classes)
     return model
-
-
-def fcn_resnet50(
-    pretrained: bool = False,
-    progress: bool = True,
-    num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
-    **kwargs: Any,
-) -> nn.Module:
-    """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
-    """
-    return _load_model("fcn", "resnet50", pretrained, progress, num_classes, aux_loss, **kwargs)
-
-
-def fcn_resnet101(
-    pretrained: bool = False,
-    progress: bool = True,
-    num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
-    **kwargs: Any,
-) -> nn.Module:
-    """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
-    """
-    return _load_model("fcn", "resnet101", pretrained, progress, num_classes, aux_loss, **kwargs)
 
 
 def deeplabv3_resnet50(
