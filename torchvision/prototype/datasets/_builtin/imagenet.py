@@ -58,14 +58,14 @@ class ImageNet(Dataset):
 
     def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[None, int], Tuple[str, io.IOBase]]:
         path = pathlib.Path(data[0])
-        category = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("category")
+        category = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("category")  # type: ignore[union-attr]
         return (None, self.categories.index(category)), data
 
     _VAL_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_val_(?P<id>\d{8})[.]JPEG")
 
     def _val_image_key(self, data: Tuple[str, Any]) -> int:
         path = pathlib.Path(data[0])
-        return int(self._VAL_IMAGE_NAME_PATTERN.match(path.name).group("id"))
+        return int(self._VAL_IMAGE_NAME_PATTERN.match(path.name).group("id"))  # type: ignore[union-attr]
 
     def _collate_and_decode_sample(
         self,
@@ -87,7 +87,7 @@ class ImageNet(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[str, io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, devkit_dp = resource_dps
 
