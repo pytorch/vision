@@ -118,7 +118,7 @@ def _deeplabv3_resnet(
     pretrained: bool,
     progress: bool,
     num_classes: int,
-    aux: Optional[bool],
+    aux: bool,
     pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     if pretrained:
@@ -148,7 +148,7 @@ def _deeplabv3_mobilenetv3(
     pretrained: bool,
     progress: bool,
     num_classes: int,
-    aux: Optional[bool],
+    aux: bool,
     pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     if pretrained:
@@ -182,7 +182,7 @@ def deeplabv3_resnet50(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
+    aux_loss: bool = False,
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
@@ -201,7 +201,7 @@ def deeplabv3_resnet101(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
+    aux_loss: bool = False,
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
@@ -220,7 +220,7 @@ def deeplabv3_mobilenet_v3_large(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
+    aux_loss: bool = False,
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.

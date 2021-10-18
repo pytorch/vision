@@ -52,7 +52,7 @@ def _fcn_resnet(
     pretrained: bool,
     progress: bool,
     num_classes: int,
-    aux: Optional[bool],
+    aux: bool,
     pretrained_backbone: bool = True,
 ) -> FCN:
     if pretrained:
@@ -81,7 +81,7 @@ def fcn_resnet50(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
+    aux_loss: bool = False,
     **kwargs: Any,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
@@ -100,7 +100,7 @@ def fcn_resnet101(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: Optional[bool] = None,
+    aux_loss: bool = False,
     **kwargs: Any,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
