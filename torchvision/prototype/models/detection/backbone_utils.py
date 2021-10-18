@@ -4,6 +4,7 @@ from torch import nn
 
 from ....models.detection.backbone_utils import misc_nn_ops, _resnet_backbone_config, BackboneWithFPN, ExtraFPNBlock
 from .. import resnet
+from .._api import Weights
 
 
 def resnet_fpn_backbone(
