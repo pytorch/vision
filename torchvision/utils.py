@@ -141,7 +141,7 @@ def save_image(
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
-    labels: Optional[List[str]] = None,
+    labels: Optional[Union[str, List[str]]] = None,
     colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
     fill: Optional[bool] = False,
     width: int = 1,
@@ -159,7 +159,7 @@ def draw_bounding_boxes(
         boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
-        labels (List[str]): List containing the labels of bounding boxes.
+        labels (str or List[str]): Single string for all labels or a list containing the labels of each bounding boxes.
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
@@ -221,7 +221,10 @@ def draw_bounding_boxes(
 
         if labels is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), labels[i], fill=color, font=txt_font)
+            if isinstance(labels, str):
+                draw.text((bbox[0] + margin, bbox[1] + margin), labels, fill=color, font=txt_font)
+            else:
+                draw.text((bbox[0] + margin, bbox[1] + margin), labels[i], fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
@@ -249,7 +252,7 @@ def draw_segmentation_masks(
             By default, random colors are generated for each mask.
 
     Returns:
-        img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with segmentation masks drawn on top.
     """
 
     if not isinstance(image, torch.Tensor):
