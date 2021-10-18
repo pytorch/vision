@@ -80,6 +80,7 @@ class LRASPPHead(nn.Module):
 
 
 def _lraspp_mobilenetv3(backbone: mobilenetv3.MobileNetV3, num_classes: int) -> LRASPP:
+    backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
@@ -107,7 +108,7 @@ def lraspp_mobilenet_v3_large(
     if pretrained:
         pretrained_backbone = False
 
-    backbone = mobilenetv3.mobilenet_v3_large(pretrained=pretrained_backbone, dilated=True).features
+    backbone = mobilenetv3.mobilenet_v3_large(pretrained=pretrained_backbone, dilated=True)
     model = _lraspp_mobilenetv3(backbone, num_classes)
 
     if pretrained:
