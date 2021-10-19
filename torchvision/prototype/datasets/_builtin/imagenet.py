@@ -48,7 +48,11 @@ class ImageNet(Dataset):
         )
 
     @property
-    def wnid_to_category(self):
+    def category_to_wnid(self) -> Dict[str, str]:
+        return self.info.extra.category_to_wnid
+
+    @property
+    def wnid_to_category(self) -> Dict[str, str]:
         return self.info.extra.wnid_to_category
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -72,12 +76,12 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[int, str], Tuple[str, io.IOBase]]:
+    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[int, str, str], Tuple[str, io.IOBase]]:
         path = pathlib.Path(data[0])
         wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
         category = self.wnid_to_category[wnid]
         label = self.categories.index(category)
-        return (label, category), data
+        return (label, category, wnid), data
 
     _VAL_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_val_(?P<id>\d{8})[.]JPEG")
 
@@ -87,26 +91,28 @@ class ImageNet(Dataset):
 
     def _collate_val_data(
         self, data: Tuple[Tuple[int, int], Tuple[str, io.IOBase]]
-    ) -> Tuple[Tuple[int, str], Tuple[str, io.IOBase]]:
+    ) -> Tuple[Tuple[int, str, str], Tuple[str, io.IOBase]]:
         label_data, image_data = data
         _, label = label_data
         category = self.categories[label]
-        return (label, category), image_data
+        wnid = self.category_to_wnid[category]
+        return (label, category, wnid), image_data
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[int, str], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[int, str, str], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
-        label, category = ann_data
+        label, category, wnid = ann_data
         path, buffer = image_data
         return dict(
             path=path,
             image=decoder(buffer) if decoder else buffer,
-            category=category,
             label=torch.tensor(label),
+            category=category,
+            wnid=wnid,
         )
 
     def _make_datapipe(
