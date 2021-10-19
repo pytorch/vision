@@ -171,6 +171,7 @@ class ImageNet(Dataset):
             # if num_children > 0, we are looking at a superclass that has no direct instance
             if num_children == 0
         ]
+        categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
 
         create_categories_file(HERE, self.name, categories_and_wnids, delimiter=self._CATEGORY_FILE_DELIMITER)
 
