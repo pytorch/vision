@@ -199,10 +199,15 @@ def draw_bounding_boxes(
 
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
+    if colors is None:
+        if labels is None:
+            colors = _generate_color_palette(len(img_boxes))
+        else:
+            label_color_map = dict(zip(labels, _generate_color_palette(len(labels))))
+            colors = [label_color_map[label] for label in labels]
+
     for i, bbox in enumerate(img_boxes):
-        if colors is None:
-            color = None
-        elif isinstance(colors, list):
+        if isinstance(colors, list):
             color = colors[i]
         else:
             color = colors
