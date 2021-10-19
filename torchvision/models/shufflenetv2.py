@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = ["ShuffleNetV2", "shufflenet_v2_x0_5", "shufflenet_v2_x1_0", "shufflenet_v2_x1_5", "shufflenet_v2_x2_0"]
@@ -99,6 +100,7 @@ class ShuffleNetV2(nn.Module):
         inverted_residual: Callable[..., nn.Module] = InvertedResidual,
     ) -> None:
         super(ShuffleNetV2, self).__init__()
+        _log_api_usage_once(self)
 
         if len(stages_repeats) != 3:
             raise ValueError("expected stages_repeats as list of 3 positive ints")
