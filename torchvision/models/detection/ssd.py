@@ -519,18 +519,7 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
-    if backbone_name in backbone_urls:
-        # Use custom backbones more appropriate for SSD
-        arch = backbone_name.split("_")[0]
-        backbone = vgg.__dict__[arch](pretrained=False, progress=progress).features
-        if pretrained:
-            state_dict = load_state_dict_from_url(backbone_urls[backbone_name], progress=progress)
-            backbone.load_state_dict(state_dict)
-    else:
-        # Use standard backbones from TorchVision
-        backbone = vgg.__dict__[backbone_name](pretrained=pretrained, progress=progress).features
-
+def _vgg_extractor(backbone: nn.Module, highres: bool, trainable_layers: int):
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
@@ -609,7 +598,13 @@ def ssd300_vgg16(
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
+    # Use custom backbones more appropriate for SSD
+    backbone = vgg.vgg16(pretrained=False, progress=progress).features  # TODO: pass a full vgg instead
+    if pretrained_backbone:
+        state_dict = load_state_dict_from_url(backbone_urls["vgg16_features"], progress=progress)
+        backbone.load_state_dict(state_dict)
+
+    backbone = _vgg_extractor(backbone, False, trainable_backbone_layers)
     anchor_generator = DefaultBoxGenerator(
         [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
         scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05],
