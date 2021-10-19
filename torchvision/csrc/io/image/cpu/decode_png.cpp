@@ -72,11 +72,6 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
-  if (bit_depth > 8) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(false, "At most 8-bit PNG images are supported currently.")
-  }
-
   int channels = png_get_channels(png_ptr, info_ptr);
 
   if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
@@ -168,15 +163,71 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     png_read_update_info(png_ptr, info_ptr);
   }
 
-  auto tensor =
-      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor.accessor<uint8_t, 3>().data();
-  for (int pass = 0; pass < number_of_passes; pass++) {
-    for (png_uint_32 i = 0; i < height; ++i) {
-      png_read_row(png_ptr, ptr, nullptr);
-      ptr += width * channels;
+  auto tensor = torch::empty(
+      {int64_t(height), int64_t(width), channels},
+      bit_depth <= 8 ? torch::kU8 : torch::kI32);
+
+  if (bit_depth <= 8) {
+    auto ptr = tensor.accessor<uint8_t, 3>().data();
+    auto num_bytes_per_row = width * channels;
+    for (int pass = 0; pass < number_of_passes; pass++) {
+      for (png_uint_32 i = 0; i < height; ++i) {
+        png_read_row(png_ptr, ptr, nullptr);
+        ptr += num_bytes_per_row;
+      }
+      ptr = tensor.accessor<uint8_t, 3>().data();
     }
-    ptr = tensor.accessor<uint8_t, 3>().data();
+  } else {
+    // We're reading a 16bits png, but pytorch doesn't support uint16. So we
+    // read the whole image in an int32 tensor, and we'll convert it later to
+    // a uint8
+    auto ptr = (uint8_t*)tensor.accessor<int32_t, 3>().data();
+    auto num_bytes_per_row = width * channels * 4;
+    for (int pass = 0; pass < number_of_passes; pass++) {
+      for (png_uint_32 i = 0; i < height; ++i) {
+        png_read_row(png_ptr, ptr, nullptr);
+
+        // We have a row that looks like this
+        // [a, b, c, d, ., ., ., .]
+        // where each letter is one byte - and so each consecutive pair of
+        // letters corresponds to an actual 16bits pixel value. Half of the
+        // cells on the right are empty because png_read_row() will read
+        // num_pixels 16bits values, while our row has num_pixels 32bits cells
+        // (and 32 = 2 * 16...)
+        //
+        // We need to re-organize the row for the int32 entries to be properly
+        // interpreted with the same value as their 16bits counter-parts. On a
+        // little-endian arch, we need a mapping like this:
+        // [b, a, 0, 0, d, c, 0, 0]
+        //  ^^^^        ^^^^
+        // uint16      uint16
+        //  ^^^^^^^^^^  ^^^^^^^^^^
+        //     int32       int32
+        // TODO: support big endian????
+        for (int j = num_bytes_per_row - 1; j >= 0; j--) {
+          switch (j % 4) {
+            case 0:
+              ptr[j] = ptr[j / 2 + 1];
+              break;
+            case 1:
+              ptr[j] = ptr[j / 2];
+              break;
+            case 2:
+              ptr[j] = 0;
+              break;
+            case 3:
+              ptr[j] = 0;
+              break;
+            default:
+              break;
+          }
+        }
+        ptr += num_bytes_per_row;
+      }
+      ptr = (uint8_t*)tensor.accessor<int32_t, 3>().data();
+    }
+    // now let's pretend we had a uint8 tensor all along <o/
+    tensor = (tensor / 65535. * 255.).to(torch::kU8);
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});
