@@ -1,25 +1,31 @@
 import argparse
-import pathlib
 import sys
+import unittest.mock
+import warnings
 
-from torchvision.prototype import datasets
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message=r"The categories file .+? does not exist.", category=UserWarning)
+
+    from torchvision.prototype import datasets
+
 from torchvision.prototype.datasets._api import find
-
-HERE = pathlib.Path(__file__).parent
-BUILTIN = HERE / "_builtin"
+from torchvision.prototype.datasets.utils._internal import BUILTIN_DIR
 
 
 def main(*names, force=False):
     root = datasets.home()
 
     for name in names:
-        file = BUILTIN / f"{name}.categories"
+        file = BUILTIN_DIR / f"{name}.categories"
         if file.exists() and not force:
             continue
 
         dataset = find(name)
         try:
-            categories = dataset._generate_categories(root)
+            with unittest.mock.patch(
+                "torchvision.prototype.datasets.utils._dataset.DatasetInfo._read_categories_file", return_value=[]
+            ):
+                categories = dataset._generate_categories(root)
         except NotImplementedError:
             continue
 

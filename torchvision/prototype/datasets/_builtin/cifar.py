@@ -25,13 +25,12 @@ from torchvision.prototype.datasets.utils import (
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
+    BUILTIN_DIR,
     image_buffer_from_array,
     path_comparator,
 )
 
 __all__ = ["Cifar10", "Cifar100"]
-
-HERE = pathlib.Path(__file__).parent
 
 
 class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
@@ -116,7 +115,7 @@ class Cifar10(_CifarBase):
         return DatasetInfo(
             "cifar10",
             type=DatasetType.RAW,
-            categories=HERE / "cifar10.categories",
+            categories=BUILTIN_DIR / "cifar10.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
 
@@ -143,7 +142,7 @@ class Cifar100(_CifarBase):
         return DatasetInfo(
             "cifar100",
             type=DatasetType.RAW,
-            categories=HERE / "cifar100.categories",
+            categories=BUILTIN_DIR / "cifar100.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(
                 split=("train", "test"),
