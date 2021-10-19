@@ -110,7 +110,7 @@ class QuantizableResNet(ResNet):
 
 def _resnet(
     arch: str,
-    block: Type[Union[BasicBlock, Bottleneck]],
+    block: Type[Union[QuantizableBasicBlock, QuantizableBottleneck]],
     layers: List[int],
     pretrained: bool,
     progress: bool,
