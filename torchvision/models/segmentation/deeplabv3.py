@@ -116,7 +116,7 @@ class ASPP(nn.Module):
 def _deeplabv3_resnet(
     backbone: resnet.ResNet,
     num_classes: int,
-    aux: bool,
+    aux: Optional[bool],
 ) -> DeepLabV3:
     return_layers = {"layer4": "out"}
     if aux:
