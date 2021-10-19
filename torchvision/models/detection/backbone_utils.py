@@ -100,14 +100,14 @@ def resnet_fpn_backbone(
             default a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
-    return _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks)
+    return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
 
 
-def _resnet_backbone_config(
+def _resnet_fpn_extractor(
     backbone: resnet.ResNet,
     trainable_layers: int,
-    returned_layers: Optional[List[int]],
-    extra_blocks: Optional[ExtraFPNBlock],
+    returned_layers: Optional[List[int]] = None,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> BackboneWithFPN:
 
     # select layers that wont be frozen
