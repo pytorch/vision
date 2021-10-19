@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict
+from typing import Any, Dict
 
 from torch import nn, Tensor
 from torch.nn import functional as F
@@ -94,7 +94,11 @@ def _lraspp_mobilenetv3(backbone: mobilenetv3.MobileNetV3, num_classes: int) -> 
 
 
 def lraspp_mobilenet_v3_large(
-    pretrained: bool = False, progress: bool = True, num_classes: int = 21, pretrained_backbone: bool = True
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 21,
+    pretrained_backbone: bool = True,
+    **kwargs: Any,
 ) -> LRASPP:
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
 
@@ -105,6 +109,8 @@ def lraspp_mobilenet_v3_large(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
+    if kwargs.pop("aux_loss", False):
+        raise NotImplementedError("This model does not use auxiliary loss")
     if pretrained:
         pretrained_backbone = False
 
