@@ -1,3 +1,4 @@
+import csv
 import io
 import pathlib
 import re
@@ -19,21 +20,36 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     Enumerator,
     getitem,
+    read_mat,
+    FrozenMapping,
 )
 
 HERE = pathlib.Path(__file__).parent
 
 
 class ImageNet(Dataset):
+    _CATEGORY_FILE_DELIMITER = ","
+
     @property
     def info(self) -> DatasetInfo:
+        with open(HERE / "imagenet.categories", "r", newline="") as file:
+            categories, wnids = zip(*csv.reader(file, delimiter=self._CATEGORY_FILE_DELIMITER))
+
         return DatasetInfo(
             "imagenet",
             type=DatasetType.IMAGE,
-            categories=HERE / "imagenet.categories",
+            categories=categories,
             homepage="https://www.image-net.org/",
             valid_options=dict(split=("train", "val")),
+            extra=dict(
+                wnid_to_category=FrozenMapping(zip(wnids, categories)),
+                category_to_wnid=FrozenMapping(zip(categories, wnids)),
+            ),
         )
+
+    @property
+    def wnid_to_category(self):
+        return self.info.extra.wnid_to_category
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         if config.split == "train":
@@ -54,12 +70,14 @@ class ImageNet(Dataset):
 
         return [images, devkit]
 
-    _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<category>n\d{8})_\d+[.]JPEG")
+    _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[None, int], Tuple[str, io.IOBase]]:
+    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[int, str], Tuple[str, io.IOBase]]:
         path = pathlib.Path(data[0])
-        category = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("category")  # type: ignore[union-attr]
-        return (None, self.categories.index(category)), data
+        wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
+        category = self.wnid_to_category[wnid]
+        label = self.categories.index(category)
+        return (label, category), data
 
     _VAL_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_val_(?P<id>\d{8})[.]JPEG")
 
@@ -67,20 +85,29 @@ class ImageNet(Dataset):
         path = pathlib.Path(data[0])
         return int(self._VAL_IMAGE_NAME_PATTERN.match(path.name).group("id"))  # type: ignore[union-attr]
 
+    def _collate_val_data(
+        self, data: Tuple[Tuple[int, int], Tuple[str, io.IOBase]]
+    ) -> Tuple[Tuple[int, str], Tuple[str, io.IOBase]]:
+        label_data, image_data = data
+        _, label = label_data
+        category = self.categories[label]
+        return (label, category), image_data
+
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[Optional[int], int], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[int, str], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        label_data, image_data = data
-        _, label = label_data
+        ann_data, image_data = data
+        label, category = ann_data
         path, buffer = image_data
-
-        category = self.categories[label]
-        label = torch.tensor(label)
-
-        return dict(path=path, image=decoder(buffer) if decoder else buffer, category=category, label=label)
+        return dict(
+            path=path,
+            image=decoder(buffer) if decoder else buffer,
+            category=category,
+            label=torch.tensor(label),
+        )
 
     def _make_datapipe(
         self,
@@ -96,14 +123,14 @@ class ImageNet(Dataset):
         if config.split == "train":
             # the train archive is a tar of tars
             dp = TarArchiveReader(images_dp)
-            dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+            # dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_train_data)
         else:
             devkit_dp = TarArchiveReader(devkit_dp)
             devkit_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
             devkit_dp = LineReader(devkit_dp, return_path=False)
             devkit_dp = Mapper(devkit_dp, int)
-            devkit_dp = Enumerator(devkit_dp)
+            devkit_dp = Enumerator(devkit_dp, 1)
             devkit_dp = Shuffler(devkit_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
             dp = KeyZipper(
@@ -113,15 +140,33 @@ class ImageNet(Dataset):
                 ref_key_fn=self._val_image_key,
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
+            dp = Mapper(dp, self._collate_val_data)
 
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
+    # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
+    # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
+    _WNID_MAP = {
+        "n03126707": "construction crane",
+        "n03710721": "tank suite",
+    }
+
     def generate_categories_file(self, root):
-        resources = self.resources(DatasetConfig(split="train"))
-        dp = resources[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
-        categories = sorted(pathlib.Path(path).stem for path, _ in dp)
-        create_categories_file(HERE, self.name, categories)
+        resources = self.resources(self.default_config)
+        devkit_dp = resources[1].to_datapipe(root / self.name)
+        devkit_dp = TarArchiveReader(devkit_dp)
+        devkit_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
+
+        meta = next(iter(devkit_dp))[1]
+        synsets = read_mat(meta, squeeze_me=True)["synsets"]
+        categories_and_wnids = [
+            (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
+            for _, wnid, category, _, num_children, *_ in synsets
+            # if num_children > 0, we are looking at a superclass that has no direct instance
+            if num_children == 0
+        ]
+
+        create_categories_file(HERE, self.name, categories_and_wnids, delimiter=self._CATEGORY_FILE_DELIMITER)
 
 
 if __name__ == "__main__":

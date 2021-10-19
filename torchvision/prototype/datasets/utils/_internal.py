@@ -1,12 +1,29 @@
 import collections.abc
+import csv
 import difflib
 import enum
 import gzip
 import io
 import lzma
+import os
 import os.path
 import pathlib
-from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar, Iterator, Dict, Optional
+import textwrap
+from collections import Mapping
+from typing import (
+    Collection,
+    Sequence,
+    Callable,
+    Union,
+    Any,
+    Tuple,
+    TypeVar,
+    Iterator,
+    Dict,
+    Optional,
+    NoReturn,
+    Iterable,
+)
 
 import numpy as np
 import PIL.Image
@@ -17,6 +34,9 @@ __all__ = [
     "INFINITE_BUFFER_SIZE",
     "sequence_to_str",
     "add_suggestion",
+    "make_repr",
+    "FrozenMapping",
+    "FrozenBunch",
     "create_categories_file",
     "read_mat",
     "image_buffer_from_array",
@@ -60,9 +80,80 @@ def add_suggestion(
     return f"{msg.strip()} {hint}"
 
 
-def create_categories_file(root: Union[str, pathlib.Path], name: str, categories: Sequence[str]) -> None:
-    with open(pathlib.Path(root) / f"{name}.categories", "w") as fh:
-        fh.write("\n".join(categories) + "\n")
+def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
+    def to_str(sep: str) -> str:
+        return sep.join([f"{key}={value}" for key, value in items])
+
+    prefix = f"{name}("
+    postfix = ")"
+    body = to_str(", ")
+
+    line_length = int(os.environ.get("COLUMNS", 80))
+    body_too_long = (len(prefix) + len(body) + len(postfix)) > line_length
+    multiline_body = len(str(body).splitlines()) > 1
+    if not (body_too_long or multiline_body):
+        return prefix + body + postfix
+
+    body = textwrap.indent(to_str(",\n"), " " * 2)
+    return f"{prefix}\n{body}\n{postfix}"
+
+
+class FrozenMapping(Mapping):
+    def __init__(self, *args, **kwargs):
+        data = dict(*args, **kwargs)
+        self.__dict__["__data__"] = data
+        self.__dict__["__final_hash__"] = hash(tuple(data.items()))
+
+    def __getitem__(self, name: str) -> Any:
+        return self.__dict__["__data__"][name]
+
+    def __iter__(self):
+        return iter(self.__dict__["__data__"].keys())
+
+    def __len__(self):
+        return len(self.__dict__["__data__"])
+
+    def __setitem__(self, key: Any, value: Any) -> NoReturn:
+        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
+
+    def __delitem__(self, key: Any) -> NoReturn:
+        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
+
+    def __hash__(self) -> int:
+        return self.__dict__["__final_hash__"]
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, FrozenMapping):
+            return NotImplemented
+
+        return hash(self) == hash(other)
+
+    def __repr__(self):
+        return repr(self.__dict__["__data__"])
+
+
+class FrozenBunch(FrozenMapping):
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError as error:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'") from error
+
+    def __setattr__(self, key: Any, value: Any) -> NoReturn:
+        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
+
+    def __delattr__(self, item: Any) -> NoReturn:
+        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
+
+    def __repr__(self) -> str:
+        return make_repr(type(self).__name__, self.items())
+
+
+def create_categories_file(
+    root: Union[str, pathlib.Path], name: str, categories: Sequence[Union[str, Sequence[str]]], **fmtparams: Any
+) -> None:
+    with open(pathlib.Path(root) / f"{name}.categories", "w", newline="") as file:
+        csv.writer(file, **fmtparams).writerows(categories)
 
 
 def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
