@@ -218,7 +218,7 @@ def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True,
 
     weights = ResNet101Weights.verify(weights)
 
-    return _resnet(BasicBlock, [3, 4, 23, 3], weights, progress, **kwargs)
+    return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
 def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
@@ -228,7 +228,7 @@ def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True,
 
     weights = ResNet152Weights.verify(weights)
 
-    return _resnet(BasicBlock, [3, 8, 36, 3], weights, progress, **kwargs)
+    return _resnet(Bottleneck, [3, 8, 36, 3], weights, progress, **kwargs)
 
 
 def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
@@ -239,7 +239,7 @@ def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: 
     weights = ResNeXt50_32x4dWeights.verify(weights)
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 4
-    return _resnet(BasicBlock, [3, 4, 6, 3], weights, progress, **kwargs)
+    return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
 def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
@@ -250,7 +250,7 @@ def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress
     weights = ResNeXt101_32x8dWeights.verify(weights)
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 8
-    return _resnet(BasicBlock, [3, 4, 23, 3], weights, progress, **kwargs)
+    return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
 def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
@@ -260,7 +260,7 @@ def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: b
 
     weights = WideResNet50_2Weights.verify(weights)
     kwargs["width_per_group"] = 64 * 2
-    return _resnet(BasicBlock, [3, 4, 6, 3], weights, progress, **kwargs)
+    return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
 def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
@@ -270,4 +270,4 @@ def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress:
 
     weights = WideResNet101_2Weights.verify(weights)
     kwargs["width_per_group"] = 64 * 2
-    return _resnet(BasicBlock, [3, 4, 23, 3], weights, progress, **kwargs)
+    return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
