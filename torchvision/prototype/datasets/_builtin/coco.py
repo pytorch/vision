@@ -44,29 +44,34 @@ class Coco(Dataset):
             homepage="https://cocodataset.org/",
             valid_options=dict(
                 split=("train",),
-                year=("2014",),
+                year=("2014", "2017"),
                 drop_unannotated=(True, False),
             ),
         )
 
+    _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
+
+    _IMAGES_CHECKSUMS = {
+        ("2014", "train"): "ede4087e640bddba550e090eae701092534b554b42b05ac33f0300b984b31775",
+        ("2017", "train"): "ADDME",
+    }
+
+    _META_URL_BASE = "http://images.cocodataset.org/annotations"
+
+    _META_CHECKSUMS = {
+        "2014": "031296bbc80c45a1d1f76bf9a90ead27e94e99ec629208449507a4917a3bf009",
+        "2017": "113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268",
+    }
+
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        if config.year == "2014":
-            if config.split in ("train", "val"):
-                if config.split == "train":
-                    images = HttpResource(
-                        "http://images.cocodataset.org/zips/train2014.zip",
-                        sha256="ede4087e640bddba550e090eae701092534b554b42b05ac33f0300b984b31775",
-                    )
-                else:
-                    raise RuntimeError("FIXME")
-                meta = HttpResource(
-                    "http://images.cocodataset.org/annotations/annotations_trainval2014.zip",
-                    sha256="031296bbc80c45a1d1f76bf9a90ead27e94e99ec629208449507a4917a3bf009",
-                )
-            else:
-                raise RuntimeError("FIXME")
-        else:
-            raise RuntimeError("FIXME")
+        images = HttpResource(
+            f"{self._IMAGE_URL_BASE}/{config.split}{config.year}.zip",
+            sha256=self._IMAGES_CHECKSUMS[(config.year, config.split)],
+        )
+        meta = HttpResource(
+            f"{self._META_URL_BASE}/annotations_trainval{config.year}.zip",
+            sha256=self._META_CHECKSUMS[config.year],
+        )
         return [images, meta]
 
     def _classify_meta(self, data: Tuple[str, Any]) -> Optional[int]:
