@@ -1,6 +1,6 @@
 import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 from torchdata.datapipes.iter import (
@@ -29,6 +29,7 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
     path_comparator,
+    create_categories_file,
 )
 
 HERE = pathlib.Path(__file__).parent
@@ -44,6 +45,7 @@ class Coco(Dataset):
             valid_options=dict(
                 split=("train",),
                 year=("2014",),
+                drop_unannotated=(True, False),
             ),
         )
 
@@ -80,8 +82,15 @@ class Coco(Dataset):
         area = torch.tensor(ann["area"])
         iscrowd = bool(ann["iscrowd"])
         bbox = torch.tensor(ann["bbox"])
+        category = self.categories.index(ann["category_id"])
         id = ann["id"]
-        return dict(area=area, iscrowd=iscrowd, bbox=bbox, id=id)
+        return dict(
+            area=area,
+            iscrowd=iscrowd,
+            bbox=bbox,
+            category=category,
+            id=id,
+        )
 
     def _collate_and_decode_sample(
         self,
@@ -128,8 +137,8 @@ class Coco(Dataset):
         anns_meta_dp = UnBatcher(anns_meta_dp)
 
         anns_dp = Grouper(anns_meta_dp, group_key_fn=getitem("image_id"), buffer_size=INFINITE_BUFFER_SIZE)
-        # drop images without annotations
-        anns_dp = Filter(anns_dp, bool)
+        if config.drop_unannotated:
+            anns_dp = Filter(anns_dp, bool)
         anns_dp = Shuffler(anns_dp, buffer_size=INFINITE_BUFFER_SIZE)
         anns_dp = KeyZipper(
             anns_dp,
@@ -149,3 +158,25 @@ class Coco(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+
+    def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
+        config = self.default_config
+        resources = self.resources(config)
+
+        dp = resources[1].to_datapipe(pathlib.Path(root) / self.name)
+        dp = ZipArchiveReader(dp)
+        dp = Filter(dp, path_comparator("name", f"instances_{config.split}{config.year}.json"))
+        dp = JsonParser(dp)
+
+        _, meta = next(iter(dp))
+        categories_and_ids = [(info["name"], info["id"]) for info in meta["categories"]]
+        categories, _ = zip(*sorted(categories_and_ids, key=lambda category_and_id: category_and_id[1]))
+
+        create_categories_file(HERE, self.name, categories)
+
+
+if __name__ == "__main__":
+    from torchvision.prototype.datasets import home
+
+    root = home()
+    Coco().generate_categories_file(root)
