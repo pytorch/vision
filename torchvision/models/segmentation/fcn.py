@@ -1,3 +1,5 @@
+from typing import Optional
+
 from torch import nn
 
 from .. import resnet
@@ -48,7 +50,7 @@ class FCNHead(nn.Sequential):
 def _fcn_resnet(
     backbone: resnet.ResNet,
     num_classes: int,
-    aux: bool,
+    aux: Optional[bool],
 ) -> FCN:
     return_layers = {"layer4": "out"}
     if aux:
@@ -64,7 +66,7 @@ def fcn_resnet50(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     pretrained_backbone: bool = True,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
@@ -74,7 +76,7 @@ def fcn_resnet50(
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
     if pretrained:
@@ -94,7 +96,7 @@ def fcn_resnet101(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     pretrained_backbone: bool = True,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
@@ -104,7 +106,7 @@ def fcn_resnet101(
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
     if pretrained:

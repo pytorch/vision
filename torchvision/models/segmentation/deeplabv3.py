@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import torch
 from torch import nn
@@ -131,7 +131,7 @@ def _deeplabv3_resnet(
 def _deeplabv3_mobilenetv3(
     backbone: mobilenetv3.MobileNetV3,
     num_classes: int,
-    aux: bool,
+    aux: Optional[bool],
 ) -> DeepLabV3:
     backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
@@ -155,7 +155,7 @@ def deeplabv3_resnet50(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
@@ -165,7 +165,7 @@ def deeplabv3_resnet50(
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
     if pretrained:
@@ -185,7 +185,7 @@ def deeplabv3_resnet101(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
@@ -195,7 +195,7 @@ def deeplabv3_resnet101(
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): The number of classes
-        aux_loss (bool): If True, include an auxiliary classifier
+        aux_loss (bool, optional): If True, include an auxiliary classifier
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
     if pretrained:
@@ -215,7 +215,7 @@ def deeplabv3_mobilenet_v3_large(
     pretrained: bool = False,
     progress: bool = True,
     num_classes: int = 21,
-    aux_loss: bool = False,
+    aux_loss: Optional[bool] = None,
     pretrained_backbone: bool = True,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.
@@ -225,7 +225,7 @@ def deeplabv3_mobilenet_v3_large(
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
-        aux_loss (bool): If True, it uses an auxiliary loss
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
     if pretrained:
