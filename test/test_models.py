@@ -783,7 +783,7 @@ def test_detection_model_trainable_backbone_layers(model_name):
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
         model = torchvision.models.detection.__dict__[model_name](
-            pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers
+            pretrained=False, pretrained_backbone=False, trainable_backbone_layers=trainable_layers
         )
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
