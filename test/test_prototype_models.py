@@ -46,7 +46,6 @@ def test_old_vs_new_classification_factory(model_name, dev):
     input_shape = kwargs.pop("input_shape")
     model_old = original_models.__dict__[model_name](**kwargs)
     model_old.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out_old = model_old(x)
     # comapre with new model builder parameterized in the old fashion way
