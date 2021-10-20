@@ -47,7 +47,7 @@ def _densenet(
     growth_rate: int,
     block_config: Tuple[int, int, int, int],
     num_init_features: int,
-    weights: Weights,
+    weights: Optional[Weights],
     progress: bool,
     **kwargs: Any,
 ) -> DenseNet:
