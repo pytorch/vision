@@ -36,7 +36,6 @@ def test_classification_model(model_name, dev):
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
 def test_old_vs_new_classification_factory(model_name, dev):
-    set_rng_seed(0)
     defaults = {
         "pretrained": True,
         "input_shape": (1, 3, 224, 224),
