@@ -1,12 +1,17 @@
 import warnings
 from typing import Any, Optional
 
-from ....models.detection.faster_rcnn import FasterRCNN, overwrite_eps, _validate_trainable_layers
+from ....models.detection.faster_rcnn import (
+    _validate_trainable_layers,
+    _resnet_fpn_extractor,
+    FasterRCNN,
+    misc_nn_ops,
+    overwrite_eps,
+)
 from ...transforms.presets import CocoEval
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from ..resnet import ResNet50Weights
-from .backbone_utils import resnet_fpn_backbone
+from ..resnet import ResNet50Weights, resnet50
 
 
 __all__ = ["FasterRCNN", "FasterRCNNResNet50FPNWeights", "fasterrcnn_resnet50_fpn"]
@@ -49,7 +54,8 @@ def fasterrcnn_resnet50_fpn(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
     )
 
-    backbone = resnet_fpn_backbone("resnet50", weights_backbone, trainable_layers=trainable_backbone_layers)
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = FasterRCNN(backbone, num_classes=num_classes, **kwargs)
 
     if weights is not None:
