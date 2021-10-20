@@ -29,7 +29,7 @@ csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 class CelebACSVParser(IterDataPipe):
     def __init__(
         self,
-        datapipe: IterDataPipe[Tuple[str, io.IOBase]],
+        datapipe: IterDataPipe[Tuple[Any, io.IOBase]],
         *,
         has_header: bool,
     ) -> None:
@@ -156,12 +156,12 @@ class CelebA(Dataset):
         splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, has_header=False)
-        splits_dp: IterDataPipe = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
+        splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         images_dp = ZipArchiveReader(images_dp)
 
-        anns_dp: IterDataPipe = Zipper(
+        anns_dp = Zipper(
             *[
                 CelebACSVParser(dp, has_header=has_header)
                 for dp, has_header in (
@@ -172,7 +172,7 @@ class CelebA(Dataset):
                 )
             ]
         )
-        anns_dp: IterDataPipe = Mapper(anns_dp, self._collate_anns)
+        anns_dp = Mapper(anns_dp, self._collate_anns)
 
         dp = KeyZipper(
             splits_dp,

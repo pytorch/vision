@@ -86,9 +86,9 @@ class _CifarBase(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp: IterDataPipe = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, functools.partial(self._is_data_file, config=config))
-        dp: IterDataPipe = Mapper(dp, self._unpickle)
+        dp = TarArchiveReader(dp)
+        dp = Filter(dp, functools.partial(self._is_data_file, config=config))
+        dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
@@ -96,8 +96,8 @@ class _CifarBase(Dataset):
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, path_comparator("name", self._META_FILE_NAME))
-        dp: IterDataPipe = Mapper(dp, self._unpickle)
+        dp = Filter(dp, path_comparator("name", self._META_FILE_NAME))
+        dp = Mapper(dp, self._unpickle)
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])
 
 

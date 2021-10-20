@@ -48,7 +48,7 @@ class MNISTFileReader(IterDataPipe):
         14: "f8",  # float64
     }
 
-    def __init__(self, datapipe: IterDataPipe, *, start: Optional[int], stop: Optional[int]) -> None:
+    def __init__(self, datapipe: IterDataPipe[Any, io.IOBase], *, start: Optional[int], stop: Optional[int]) -> None:
         self.datapipe = datapipe
         self.start = start
         self.stop = stop
@@ -138,7 +138,7 @@ class _MNISTBase(Dataset):
         labels_dp = Decompressor(labels_dp)
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
-        dp: IterDataPipe = Zipper(images_dp, labels_dp)
+        dp = Zipper(images_dp, labels_dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 
