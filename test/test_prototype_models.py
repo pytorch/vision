@@ -48,7 +48,7 @@ def test_old_vs_new_classification_factory(model_name, dev):
     model_old.eval().to(device=dev)
     x = torch.rand(input_shape).to(device=dev)
     out_old = model_old(x)
-    # comapre with new model builder parameterized in the old fashion way
+    # compare with new model builder parameterized in the old fashion way
     model_new = models.__dict__[model_name](**kwargs)
     model_new.eval().to(device=dev)
     out_new = model_new(x)
