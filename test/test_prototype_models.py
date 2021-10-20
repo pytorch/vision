@@ -27,7 +27,6 @@ def test_classification_model(model_name, dev):
     input_shape = kwargs.pop("input_shape")
     model = models.__dict__[model_name](**kwargs)
     model.eval().to(device=dev)
-    # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
