@@ -1,18 +1,18 @@
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
+from torchdata.datapipes.iter import (
+    IterDataPipe,
     Mapper,
     TarArchiveReader,
     Shuffler,
     Filter,
+    KeyZipper,
 )
-from torchdata.datapipes.iter import KeyZipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -21,9 +21,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import create_categories_file, INFINITE_BUFFER_SIZE, read_mat
-
-HERE = pathlib.Path(__file__).parent
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, BUILTIN_DIR, read_mat
 
 
 class Caltech101(Dataset):
@@ -32,7 +30,7 @@ class Caltech101(Dataset):
         return DatasetInfo(
             "caltech101",
             type=DatasetType.IMAGE,
-            categories=HERE / "caltech101.categories",
+            categories=BUILTIN_DIR / "caltech101.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
 
@@ -135,12 +133,11 @@ class Caltech101(Dataset):
         )
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
-    def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
+    def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
         dp: IterDataPipe = Filter(dp, self._is_not_background_image)
-        dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
-        create_categories_file(HERE, self.name, sorted(dir_names))
+        return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
 class Caltech256(Dataset):
@@ -149,7 +146,7 @@ class Caltech256(Dataset):
         return DatasetInfo(
             "caltech256",
             type=DatasetType.IMAGE,
-            categories=HERE / "caltech256.categories",
+            categories=BUILTIN_DIR / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
 
@@ -192,17 +189,8 @@ class Caltech256(Dataset):
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
-    def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
+    def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
         dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
-        categories = [name.split(".")[1] for name in sorted(dir_names)]
-        create_categories_file(HERE, self.name, categories)
-
-
-if __name__ == "__main__":
-    from torchvision.prototype.datasets import home
-
-    root = home()
-    Caltech101().generate_categories_file(root)
-    Caltech256().generate_categories_file(root)
+        return [name.split(".")[1] for name in sorted(dir_names)]

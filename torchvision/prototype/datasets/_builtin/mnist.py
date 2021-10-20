@@ -9,8 +9,8 @@ import sys
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, Union
 
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
+from torchdata.datapipes.iter import (
+    IterDataPipe,
     Demultiplexer,
     Mapper,
     ZipArchiveReader,
