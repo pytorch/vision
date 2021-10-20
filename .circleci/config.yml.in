@@ -267,7 +267,7 @@ jobs:
       - checkout
       - run:
           name: Install torchvision
-          command: python setup.py install
+          command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Install test utilities
           command: pip install --user --progress-bar=off pytest
