@@ -273,7 +273,7 @@ jobs:
           command: pip install --user --progress-bar=off pytest
       - run:
           name: Run tests
-          command: pytest/test_prototype.py
+          command: pytest test/test_prototype_*.py
 
   binary_linux_wheel:
     <<: *binary_common
