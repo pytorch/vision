@@ -152,7 +152,7 @@ class ImageNet(Dataset):
         "n03710721": "tank suit",
     }
 
-    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
+    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, str]]:
         resources = self.resources(self.default_config)
         devkit_dp = resources[1].to_datapipe(root / self.name)
         devkit_dp = TarArchiveReader(devkit_dp)

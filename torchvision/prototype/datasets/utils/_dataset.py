@@ -165,5 +165,5 @@ class Dataset(abc.ABC):
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 
-    def _generate_categories(self, root: pathlib.Path) -> Sequence[str]:
+    def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
         raise NotImplementedError
