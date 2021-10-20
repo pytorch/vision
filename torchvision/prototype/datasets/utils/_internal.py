@@ -32,6 +32,7 @@ from torch.utils.data import IterDataPipe
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
+    "BUILTIN_DIR",
     "sequence_to_str",
     "add_suggestion",
     "make_repr",
@@ -54,6 +55,8 @@ D = TypeVar("D")
 
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
 INFINITE_BUFFER_SIZE = 1_000_000_000
+
+BUILTIN_DIR = pathlib.Path(__file__).parent.parent / "_builtin"
 
 
 def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
