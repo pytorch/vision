@@ -19,7 +19,7 @@ requirements:
     - setuptools
     - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
-    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
 
   run:
     - python
