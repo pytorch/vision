@@ -44,7 +44,7 @@ echo torch.cuda.is_available is $torch_cuda
 
 if [ ! -z "${CUDA_VERSION:-}" ] ; then
     if [ "$torch_cuda" == "False" ]; then
-        echo "torch with cuda installed but torch.cuda.is_available() is False"
+        echo "It's unittest for GPU but torch.cuda.is_available() is False"
         exit 1
     fi
 fi

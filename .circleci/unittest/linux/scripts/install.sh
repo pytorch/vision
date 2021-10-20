@@ -41,7 +41,7 @@ echo torch.cuda.is_available is $torch_cuda
 
 if [ "${CU_VERSION:-}" != "cpu" ] ; then
     if [ "$torch_cuda" == "False" ]; then
-        echo "unittest for GPU but torch.cuda.is_available() is False"
+        echo "It's unittest for GPU but torch.cuda.is_available() is False"
         exit 1
     fi
 fi
