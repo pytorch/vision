@@ -74,7 +74,7 @@ def deform_conv2d(
     pad_h, pad_w = _pair(padding)
     dil_h, dil_w = _pair(dilation)
     weights_h, weights_w = weight.shape[-2:]
-    _, n_in_channels, in_h, in_w = input.shape
+    _, n_in_channels, *_ = input.shape
 
     n_offset_grps = offset.shape[1] // (2 * weights_h * weights_w)
     n_weight_grps = n_in_channels // weight.shape[1]
