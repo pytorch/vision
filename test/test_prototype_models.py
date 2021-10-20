@@ -1,4 +1,3 @@
-# tests
 import os
 
 import pytest
