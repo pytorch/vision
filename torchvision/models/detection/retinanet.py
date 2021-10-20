@@ -10,6 +10,7 @@ from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
+from ...utils import _log_api_usage_once
 from . import _utils as det_utils
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
@@ -334,6 +335,7 @@ class RetinaNet(nn.Module):
         topk_candidates=1000,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
