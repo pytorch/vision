@@ -21,6 +21,7 @@ PRIMARY_LABELS = {
     "bc-breaking",
     "deprecation",
     "other",
+    "prototype",
 }
 
 SECONDARY_LABELS = {
