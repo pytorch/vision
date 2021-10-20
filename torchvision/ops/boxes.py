@@ -323,7 +323,7 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     bounding_boxes = torch.zeros((n, 4), device=masks.device, dtype=torch.float)
 
     for index, mask in enumerate(masks):
-        y, x = torch.where(masks[index] != 0)
+        y, x = torch.where(mask != 0)
 
         bounding_boxes[index, 0] = torch.min(x)
         bounding_boxes[index, 1] = torch.min(y)
