@@ -513,7 +513,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     assert 8 <= ty <= 14
     torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
-    parsed = torch.frombuffer(data, dtype=torch_type, offset=(4 * (nd + 1)))
+    parsed = torch.frombuffer(bytearray(data), dtype=torch_type, offset=(4 * (nd + 1)))
     assert parsed.shape[0] == np.prod(s) or not strict
     return parsed.view(*s)
 
