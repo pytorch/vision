@@ -51,3 +51,7 @@ def test_old_vs_new_classification_factory(model_name, dev):
     model_new.eval().to(device=dev)
     out_new = model_new(x)
     torch.testing.assert_close(out_new, out_old, rtol=0.0, atol=0.0, check_dtype=False)
+
+
+def test_smoke():
+    import torchvision.prototype.models  # noqa: F401
