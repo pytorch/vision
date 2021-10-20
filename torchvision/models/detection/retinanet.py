@@ -12,6 +12,7 @@ from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ..resnet import resnet50
+from ...utils import _log_api_usage_once
 from . import _utils as det_utils
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
@@ -336,6 +337,7 @@ class RetinaNet(nn.Module):
         topk_candidates=1000,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
