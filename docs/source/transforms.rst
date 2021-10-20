@@ -206,6 +206,9 @@ Conversion Transforms
 .. autoclass:: ToTensor
     :members:
 
+.. autoclass:: PILToTensor
+    :members:
+
 
 Generic Transforms
 ------------------

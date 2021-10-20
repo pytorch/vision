@@ -10,6 +10,7 @@ segmentation masks into object localization annotations for different tasks
 methods into bounding boxes used by object detection methods).
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/repurposing_annotations_thumbnail.png"
 
 import os
 import numpy as np

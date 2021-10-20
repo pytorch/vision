@@ -1,5 +1,6 @@
-import torch
 from typing import Any, Dict, Iterator
+
+import torch
 
 from ._video_opt import (
     Timebase,
@@ -11,11 +12,6 @@ from ._video_opt import (
     _read_video_from_memory,
     _read_video_timestamps_from_file,
     _read_video_timestamps_from_memory,
-)
-from .video import (
-    read_video,
-    read_video_timestamps,
-    write_video,
 )
 from .image import (
     ImageReadMode,
@@ -29,6 +25,11 @@ from .image import (
     write_file,
     write_jpeg,
     write_png,
+)
+from .video import (
+    read_video,
+    read_video_timestamps,
+    write_video,
 )
 
 
@@ -98,9 +99,13 @@ class VideoReader:
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
             Currently available options include ``['video', 'audio']``
+
+        num_threads (int, optional): number of threads used by the codec to decode video.
+            Default value (0) enables multithreading with codec-dependent heuristic. The performance
+            will depend on the version of FFMPEG codecs supported.
     """
 
-    def __init__(self, path: str, stream: str = "video") -> None:
+    def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -108,7 +113,7 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and"
                 + "build torchvision from source."
             )
-        self._c = torch.classes.torchvision.Video(path, stream)
+        self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
     def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
@@ -127,10 +132,10 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self) -> Iterator['VideoReader']:
+    def __iter__(self) -> Iterator["VideoReader"]:
         return self
 
-    def seek(self, time_s: float) -> 'VideoReader':
+    def seek(self, time_s: float) -> "VideoReader":
         """Seek within current stream.
 
         Args:
