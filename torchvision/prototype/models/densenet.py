@@ -5,7 +5,7 @@ from typing import Any, Optional, Tuple
 
 import torch.nn as nn
 
-from ...models.densenet import _DenseLayer, _DenseBlock, _Transition, DenseNet
+from ...models.densenet import DenseNet
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
