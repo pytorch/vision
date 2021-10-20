@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import Any, List, Optional, Type, Union
+from typing import Any, Optional
 
 from ...models.alexnet import AlexNet
 from ..transforms.presets import ImageNetEval
@@ -28,7 +28,6 @@ class AlexNetWeights(Weights):
             "acc@5": 79.066,
         },
     )
-
 
 
 def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
