@@ -11,6 +11,11 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
 }
 #else
 
+bool is_little_endian() {
+  uint32_t x = 1;
+  return *(uint8_t*)&x;
+}
+
 torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
@@ -163,71 +168,42 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     png_read_update_info(png_ptr, info_ptr);
   }
 
+  auto num_pixels_per_row = width * channels;
   auto tensor = torch::empty(
       {int64_t(height), int64_t(width), channels},
       bit_depth <= 8 ? torch::kU8 : torch::kI32);
 
   if (bit_depth <= 8) {
-    auto ptr = tensor.accessor<uint8_t, 3>().data();
-    auto num_bytes_per_row = width * channels;
+    auto t_ptr = tensor.accessor<uint8_t, 3>().data();
     for (int pass = 0; pass < number_of_passes; pass++) {
       for (png_uint_32 i = 0; i < height; ++i) {
-        png_read_row(png_ptr, ptr, nullptr);
-        ptr += num_bytes_per_row;
+        png_read_row(png_ptr, t_ptr, nullptr);
+        t_ptr += num_pixels_per_row;
       }
-      ptr = tensor.accessor<uint8_t, 3>().data();
+      t_ptr = tensor.accessor<uint8_t, 3>().data();
     }
   } else {
-    // We're reading a 16bits png, but pytorch doesn't support uint16. So we
-    // read the whole image in an int32 tensor, and we'll convert it later to
-    // a uint8
-    auto ptr = (uint8_t*)tensor.accessor<int32_t, 3>().data();
-    auto num_bytes_per_row = width * channels * 4;
+    // We're reading a 16bits png, but pytorch doesn't support uint16.
+    // So we read each row in a 16bits tmp_buffer which we then cast into
+    // a int32 tensor instead.
+    if (is_little_endian()) {
+      png_set_swap(png_ptr);
+    }
+    int32_t* t_ptr = tensor.accessor<int32_t, 3>().data();
+    uint16_t* tmp_buffer =
+        (uint16_t*)malloc(num_pixels_per_row * sizeof(uint16_t));
+
     for (int pass = 0; pass < number_of_passes; pass++) {
       for (png_uint_32 i = 0; i < height; ++i) {
-        png_read_row(png_ptr, ptr, nullptr);
-
-        // We have a row that looks like this
-        // [a, b, c, d, ., ., ., .]
-        // where each letter is one byte - and so each consecutive pair of
-        // letters corresponds to an actual 16bits pixel value. Half of the
-        // cells on the right are empty because png_read_row() will read
-        // num_pixels 16bits values, while our row has num_pixels 32bits cells
-        // (and 32 = 2 * 16...)
-        //
-        // We need to re-organize the row for the int32 entries to be properly
-        // interpreted with the same value as their 16bits counter-parts. On a
-        // little-endian arch, we need a mapping like this:
-        // [b, a, 0, 0, d, c, 0, 0]
-        //  ^^^^        ^^^^
-        // uint16      uint16
-        //  ^^^^^^^^^^  ^^^^^^^^^^
-        //     int32       int32
-        // TODO: support big endian????
-        for (int j = num_bytes_per_row - 1; j >= 0; j--) {
-          switch (j % 4) {
-            case 0:
-              ptr[j] = ptr[j / 2 + 1];
-              break;
-            case 1:
-              ptr[j] = ptr[j / 2];
-              break;
-            case 2:
-              ptr[j] = 0;
-              break;
-            case 3:
-              ptr[j] = 0;
-              break;
-            default:
-              break;
-          }
+        png_read_row(png_ptr, (uint8_t*)tmp_buffer, nullptr);
+        // Now we copy the uint16 values into the int32 tensor.
+        for (size_t j = 0; j < num_pixels_per_row; ++j) {
+          t_ptr[j] = (int32_t)tmp_buffer[j];
         }
-        ptr += num_bytes_per_row;
+        t_ptr += num_pixels_per_row;
       }
-      ptr = (uint8_t*)tensor.accessor<int32_t, 3>().data();
+      t_ptr = tensor.accessor<int32_t, 3>().data();
     }
-    // now let's pretend we had a uint8 tensor all along <o/
-    tensor = (tensor / 65535. * 255.).to(torch::kU8);
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});
