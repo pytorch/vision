@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Dict, Optional, List
+from typing import Callable, Dict, Optional, List, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
@@ -100,14 +100,14 @@ def resnet_fpn_backbone(
             default a ``LastLevelMaxPool`` is used.
     """
     backbone = resnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
-    return _resnet_backbone_config(backbone, trainable_layers, returned_layers, extra_blocks)
+    return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
 
 
-def _resnet_backbone_config(
+def _resnet_fpn_extractor(
     backbone: resnet.ResNet,
     trainable_layers: int,
-    returned_layers: Optional[List[int]],
-    extra_blocks: Optional[ExtraFPNBlock],
+    returned_layers: Optional[List[int]] = None,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> BackboneWithFPN:
 
     # select layers that wont be frozen
@@ -165,9 +165,18 @@ def mobilenet_backbone(
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
+    backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    return _mobilenet_extractor(backbone, fpn, trainable_layers, returned_layers, extra_blocks)
 
-    backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer).features
 
+def _mobilenet_extractor(
+    backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
+    fpn: bool,
+    trainable_layers,
+    returned_layers: Optional[List[int]] = None,
+    extra_blocks: Optional[ExtraFPNBlock] = None,
+) -> nn.Module:
+    backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]

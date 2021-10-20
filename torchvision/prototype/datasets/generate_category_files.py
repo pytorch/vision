@@ -38,7 +38,7 @@ def parse_args(argv=None):
 
     parser.add_argument(
         "names",
-        nargs="?",
+        nargs="*",
         type=str,
         help="Names of datasets to generate category files for. If omitted, all datasets will be used.",
     )
