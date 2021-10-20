@@ -998,6 +998,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       {{ ios_workflows() }}
       {{ android_workflows() }}
 
@@ -1019,6 +1020,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       {{ ios_workflows(nightly=True) }}
       {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
