@@ -111,7 +111,7 @@ class VGG16Weights(Weights):
 
 class VGG16BNWeights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
-        url="https://download.pytorch.org/models/vgg16_bn-6002323d.pth",
+        url="https://download.pytorch.org/models/vgg16_bn-6c64b313.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
