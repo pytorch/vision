@@ -8,7 +8,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn as nn
@@ -20,25 +20,23 @@ __all__ = [
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
+    "vit_h_14",
 ]
-
-
-LayerNorm = partial(nn.LayerNorm, eps=1e-6)
 
 
 class MLPBlock(nn.Sequential):
     """Transformer MLP block."""
 
-    def __init__(self, in_dim: int, mlp_dim: int, dropout_rate: float):
+    def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
         super().__init__()
         self.linear_1 = nn.Linear(in_dim, mlp_dim)
         self.act = nn.GELU()
-        self.dropout_1 = nn.Dropout(dropout_rate)
+        self.dropout_1 = nn.Dropout(dropout)
         self.linear_2 = nn.Linear(mlp_dim, in_dim)
-        self.dropout_2 = nn.Dropout(dropout_rate)
-        self.init_weights()
+        self.dropout_2 = nn.Dropout(dropout)
+        self._init_weights()
 
-    def init_weights(self):
+    def _init_weights(self):
         nn.init.xavier_uniform_(self.linear_1.weight)
         nn.init.xavier_uniform_(self.linear_2.weight)
         nn.init.normal_(self.linear_1.bias, std=1e-6)
@@ -49,22 +47,28 @@ class EncoderBlock(nn.Module):
     """Transformer encoder block."""
 
     def __init__(
-        self, num_heads: int, hidden_dim: int, mlp_dim: int, dropout_rate: float, attention_dropout_rate: float
+        self,
+        num_heads: int,
+        hidden_dim: int,
+        mlp_dim: int,
+        dropout: float,
+        attention_dropout: float,
+        norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
         self.num_heads = num_heads
 
         # Attention block
-        self.ln_1 = LayerNorm(hidden_dim)
-        self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout_rate)
-        self.dropout = nn.Dropout(dropout_rate)
+        self.ln_1 = norm_layer(hidden_dim)
+        self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout)
+        self.dropout = nn.Dropout(dropout)
 
         # MLP block
-        self.ln_2 = LayerNorm(hidden_dim)
-        self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout_rate)
+        self.ln_2 = norm_layer(hidden_dim)
+        self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: Tensor):
-        # assert input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}"
+        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
@@ -85,28 +89,30 @@ class Encoder(nn.Module):
         num_heads: int,
         hidden_dim: int,
         mlp_dim: int,
-        dropout_rate: float,
-        attention_dropout_rate: float,
+        dropout: float,
+        attention_dropout: float,
+        norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
         # Note that batch_size is on the second dim because
         # we have batch_first=False in nn.MultiAttention() by default
         self.pos_embedding = nn.Parameter(torch.empty(seq_length, 1, hidden_dim).normal_(std=0.02))  # from BERT
-        self.dropout = nn.Dropout(dropout_rate)
+        self.dropout = nn.Dropout(dropout)
         layers: OrderedDict[str, nn.Module] = OrderedDict()
         for i in range(num_layers):
             layers[f"encoder_layer_{i}"] = EncoderBlock(
                 num_heads,
                 hidden_dim,
                 mlp_dim,
-                dropout_rate,
-                attention_dropout_rate,
+                dropout,
+                attention_dropout,
+                norm_layer,
             )
         self.layers = nn.Sequential(layers)
-        self.ln = LayerNorm(hidden_dim)
+        self.ln = norm_layer(hidden_dim)
 
     def forward(self, input: Tensor):
-        # assert input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}"
+        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
         input = input + self.pos_embedding
         return self.ln(self.layers(self.dropout(input)))
 
@@ -122,22 +128,26 @@ class VisionTransformer(nn.Module):
         num_heads: int,
         hidden_dim: int,
         mlp_dim: int,
-        dropout_rate: float = 0.0,
-        attention_dropout_rate: float = 0.0,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
         classifier: str = "token",
         num_classes: int = 1000,
+        representation_size: Optional[int] = None,
+        norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
-        # assert image_size % patch_size == 0, "Input shape indivisible by patch size!"
-        # assert classifier in ["token", "gap"], "Unexpected classifier mode!"
+        torch._assert(image_size % patch_size == 0, "Input shape indivisible by patch size!")
+        torch._assert(classifier in ["token", "gap"], "Unexpected classifier mode!")
         self.image_size = image_size
         self.patch_size = patch_size
         self.hidden_dim = hidden_dim
         self.mlp_dim = mlp_dim
-        self.attention_dropout_rate = attention_dropout_rate
-        self.dropout_rate = dropout_rate
+        self.attention_dropout = attention_dropout
+        self.dropout = dropout
         self.classifier = classifier
         self.num_classes = num_classes
+        self.representation_size = representation_size
+        self.norm_layer = norm_layer
 
         input_channels = 3
 
@@ -157,24 +167,41 @@ class VisionTransformer(nn.Module):
             num_heads,
             hidden_dim,
             mlp_dim,
-            dropout_rate,
-            attention_dropout_rate,
+            dropout,
+            attention_dropout,
+            norm_layer,
         )
         self.seq_length = seq_length
 
-        self.head = nn.Linear(hidden_dim, num_classes)
-        self.init_weights()
+        heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
+        if representation_size is None:
+            heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
+        else:
+            heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
+            heads_layers["act"] = nn.Tanh()
+            heads_layers["head"] = nn.Linear(representation_size, num_classes)
 
-    def init_weights(self):
+        self.heads = nn.Sequential(heads_layers)
+        self._init_weights()
+
+    def _init_weights(self):
         fan_in = self.conv_proj.in_channels * self.conv_proj.kernel_size[0] * self.conv_proj.kernel_size[1]
         nn.init.trunc_normal_(self.conv_proj.weight, std=math.sqrt(1 / fan_in))
         nn.init.zeros_(self.conv_proj.bias)
-        nn.init.zeros_(self.head.weight)
+
+        if hasattr(self.heads, "pre_logits"):
+            fan_in = self.layers.pre_logits.in_features
+            nn.init.trunc_normal_(self.layers.pre_logits.weight, std=math.sqrt(1 / fan_in))
+            nn.init.zeros_(self.heads.pre_logits.bias)
+
+        nn.init.zeros_(self.heads.head.weight)
+        nn.init.zeros_(self.heads.head.bias)
 
     def forward(self, x: torch.Tensor):
         n, c, h, w = x.shape
         p = self.patch_size
-        # assert h == w == self.image_size
+        torch._assert(h == self.image_size, "Wrong image height!")
+        torch._assert(w == self.image_size, "Wrong image width!")
         n_h = h // p
         n_w = w // p
 
@@ -205,16 +232,16 @@ class VisionTransformer(nn.Module):
         else:
             raise ValueError(f"Invalid classifier={self.classifier}")
 
-        x = self.head(x)
+        x = self.heads(x)
 
         return x
 
 
 def _vision_transformer(version: str, pretrained: bool, progress: bool, **kwargs: Any) -> VisionTransformer:
-    if kwargs.get("image_size", None) is None:
-        model = VisionTransformer(image_size=224, **kwargs)
-    else:
-        model = VisionTransformer(**kwargs)
+    image_size = kwargs.get("image_size", 224)
+    if "image_size" in kwargs:
+        kwargs.pop("image_size")
+    model = VisionTransformer(image_size=image_size, **kwargs)
     # TODO: Adding pre-trained models
     return model
 
@@ -225,8 +252,8 @@ def vit_b_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
         version="b_16",
@@ -247,8 +274,8 @@ def vit_b_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
         version="b_32",
@@ -269,8 +296,8 @@ def vit_l_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
         version="l_16",
@@ -291,8 +318,8 @@ def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
         version="l_32",
@@ -303,5 +330,27 @@ def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        **kwargs,
+    )
+
+
+def vit_h_14(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+    """
+    Constructs a ViT_h_14 architecture from
+    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
+
+    Args:
+        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
+    """
+    return _vision_transformer(
+        version="h_14",
+        pretrained=pretrained,
+        progress=progress,
+        patch_size=14,
+        num_layers=32,
+        num_heads=16,
+        hidden_dim=1280,
+        mlp_dim=5120,
         **kwargs,
     )
