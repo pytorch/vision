@@ -7,11 +7,11 @@ import lzma
 import os.path
 import pathlib
 from typing import Collection, Sequence, Callable, Union, Any, Tuple, TypeVar, Iterator, Dict, Optional
+from typing import cast
 
 import numpy as np
 import PIL.Image
 from torch.utils.data import IterDataPipe
-
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
@@ -108,7 +108,7 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
 
 
 def getitem(*items: Any) -> Callable[[Any], Any]:
-    def wrapper(obj: Any):
+    def wrapper(obj: Any) -> Any:
         for item in items:
             obj = obj[item]
         return obj
@@ -121,7 +121,7 @@ def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[
         name = getter
 
         def getter(path: pathlib.Path) -> D:
-            return getattr(path, name)
+            return cast(D, getattr(path, name))
 
     def wrapper(data: Tuple[str, Any]) -> D:
         return getter(pathlib.Path(data[0]))  # type: ignore[operator]

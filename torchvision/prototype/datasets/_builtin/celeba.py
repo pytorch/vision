@@ -1,6 +1,6 @@
 import csv
 import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Mapping, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Mapping, Union, Iterator
 
 import torch
 from torchdata.datapipes.iter import (
@@ -23,18 +23,20 @@ from torchvision.prototype.datasets.utils import (
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, getitem, path_accessor
 
 
+csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
+
+
 class CelebACSVParser(IterDataPipe):
     def __init__(
         self,
-        datapipe,
+        datapipe: IterDataPipe[Tuple[str, io.IOBase]],
         *,
-        has_header,
-    ):
+        has_header: bool,
+    ) -> None:
         self.datapipe = datapipe
         self.has_header = has_header
-        self._fmtparams = dict(delimiter=" ", skipinitialspace=True)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[str, Union[Dict[str, str], List[str]]]]:
         for _, file in self.datapipe:
             file = (line.decode() for line in file)
 
@@ -42,18 +44,18 @@ class CelebACSVParser(IterDataPipe):
                 # The first row is skipped, because it only contains the number of samples
                 next(file)
 
-                # Empty field names are filtered out, because some files have an extr white space after the header
+                # Empty field names are filtered out, because some files have an extra white space after the header
                 # line, which is recognized as extra column
-                fieldnames = [name for name in next(csv.reader([next(file)], **self._fmtparams)) if name]
+                fieldnames = [name for name in next(csv.reader([next(file)], dialect="celeba")) if name]
                 # Some files do not include a label for the image ID column
                 if fieldnames[0] != "image_id":
                     fieldnames.insert(0, "image_id")
 
-                for line in csv.DictReader(file, fieldnames=fieldnames, **self._fmtparams):
-                    yield line.pop("image_id"), line
+                for line_dict in csv.DictReader(file, fieldnames=fieldnames, dialect="celeba"):
+                    yield line_dict.pop("image_id"), line_dict
             else:
-                for line in csv.reader(file, **self._fmtparams):
-                    yield line[0], line[1:]
+                for line_list in csv.reader(file, dialect="celeba"):
+                    yield line_list[0], line_list[1:]
 
 
 class CelebA(Dataset):
@@ -104,7 +106,7 @@ class CelebA(Dataset):
         "2": "test",
     }
 
-    def _filter_split(self, data: Tuple[str, str], *, split):
+    def _filter_split(self, data: Tuple[str, str], *, split: str) -> bool:
         _, split_id = data
         return self._SPLIT_ID_TO_NAME[split_id[0]] == split
 

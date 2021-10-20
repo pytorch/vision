@@ -1,7 +1,7 @@
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 import torch
@@ -135,7 +135,7 @@ class SBD(Dataset):
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
-            self._classify_archive,  # type: ignore[arg-type]
+            self._classify_archive,
             buffer_size=INFINITE_BUFFER_SIZE,
             drop_none=True,
         )
@@ -165,9 +165,15 @@ class SBD(Dataset):
         lines = tuple(zip(*iter(dp)))[1]
 
         pattern = re.compile(r"\s*'(?P<category>\w+)';\s*%(?P<label>\d+)")
-        categories_and_labels = [
-            pattern.match(line).groups()  # type: ignore[union-attr]
-            # the first and last line contain no information
-            for line in lines[1:-1]
-        ]
-        return tuple(zip(*sorted(categories_and_labels, key=lambda category_and_label: int(category_and_label[1]))))[0]
+        categories_and_labels = cast(
+            List[Tuple[str, str]],
+            [
+                pattern.match(line).groups()  # type: ignore[union-attr]
+                # the first and last line contain no information
+                for line in lines[1:-1]
+            ],
+        )
+        categories_and_labels.sort(key=lambda category_and_label: int(category_and_label[1]))
+        categories, _ = zip(*categories_and_labels)
+
+        return categories
