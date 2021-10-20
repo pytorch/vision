@@ -19,11 +19,11 @@ class MNIST(VisionDataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``MNIST/processed/training.pt``
-            and  ``MNIST/processed/test.pt`` exist.
-        train (bool, optional): If True, creates dataset from ``training.pt``,
-            otherwise from ``test.pt``.
-        download (bool, optional): If true, downloads the dataset from the internet and
+        root (string): Root directory of dataset where ``MNIST/raw/train-images-idx3-ubyte``
+            and  ``MNIST/raw/t10k-images-idx3-ubyte`` exist.
+        train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
+            otherwise from ``t10k-images-idx3-ubyte``.
+        download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image
@@ -201,11 +201,11 @@ class FashionMNIST(MNIST):
     """`Fashion-MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``FashionMNIST/processed/training.pt``
-            and  ``FashionMNIST/processed/test.pt`` exist.
-        train (bool, optional): If True, creates dataset from ``training.pt``,
-            otherwise from ``test.pt``.
-        download (bool, optional): If true, downloads the dataset from the internet and
+        root (string): Root directory of dataset where ``FashionMNIST/raw/train-images-idx3-ubyte``
+            and  ``FashionMNIST/raw/t10k-images-idx3-ubyte`` exist.
+        train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
+            otherwise from ``t10k-images-idx3-ubyte``.
+        download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image
@@ -229,11 +229,11 @@ class KMNIST(MNIST):
     """`Kuzushiji-MNIST <https://github.com/rois-codh/kmnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``KMNIST/processed/training.pt``
-            and  ``KMNIST/processed/test.pt`` exist.
-        train (bool, optional): If True, creates dataset from ``training.pt``,
-            otherwise from ``test.pt``.
-        download (bool, optional): If true, downloads the dataset from the internet and
+        root (string): Root directory of dataset where ``KMNIST/raw/train-images-idx3-ubyte``
+            and  ``KMNIST/raw/t10k-images-idx3-ubyte`` exist.
+        train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
+            otherwise from ``t10k-images-idx3-ubyte``.
+        download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image
@@ -257,14 +257,14 @@ class EMNIST(MNIST):
     """`EMNIST <https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``EMNIST/processed/training.pt``
-            and  ``EMNIST/processed/test.pt`` exist.
+        root (string): Root directory of dataset where ``EMNIST/raw/train-images-idx3-ubyte``
+            and  ``EMNIST/raw/t10k-images-idx3-ubyte`` exist.
         split (string): The dataset has 6 different splits: ``byclass``, ``bymerge``,
             ``balanced``, ``letters``, ``digits`` and ``mnist``. This argument specifies
             which one to use.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
-        download (bool, optional): If true, downloads the dataset from the internet and
+        download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image
@@ -341,8 +341,8 @@ class QMNIST(MNIST):
     """`QMNIST <https://github.com/facebookresearch/qmnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset whose ``processed``
-            subdir contains torch binary files with the datasets.
+        root (string): Root directory of dataset whose ``raw``
+            subdir contains binary files of the datasets.
         what (string,optional): Can be 'train', 'test', 'test10k',
             'test50k', or 'nist' for respectively the mnist compatible
             training set, the 60k qmnist testing set, the 10k qmnist
@@ -354,7 +354,7 @@ class QMNIST(MNIST):
             for each example is class number (for compatibility with
             the MNIST dataloader) or a torch vector containing the
             full qmnist information. Default=True.
-        download (bool, optional): If true, downloads the dataset from
+        download (bool, optional): If True, downloads the dataset from
             the internet and puts it in root directory. If dataset is
             already downloaded, it is not downloaded again.
         transform (callable, optional): A function/transform that
@@ -466,10 +466,7 @@ class QMNIST(MNIST):
         split = self.resources[self.subsets[self.what]]
 
         for url, md5 in split:
-            filename = url.rpartition("/")[2]
-            file_path = os.path.join(self.raw_folder, filename)
-            if not os.path.isfile(file_path):
-                download_and_extract_archive(url, self.raw_folder, filename=filename, md5=md5)
+            download_and_extract_archive(url, self.raw_folder, md5=md5)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag

@@ -33,7 +33,7 @@ class Fire(nn.Module):
 
 
 class SqueezeNet(nn.Module):
-    def __init__(self, version: str = "1_0", num_classes: int = 1000) -> None:
+    def __init__(self, version: str = "1_0", num_classes: int = 1000, dropout: float = 0.5) -> None:
         super(SqueezeNet, self).__init__()
         self.num_classes = num_classes
         if version == "1_0":
@@ -77,7 +77,7 @@ class SqueezeNet(nn.Module):
         # Final convolution is initialized differently from the rest
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5), final_conv, nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d((1, 1))
+            nn.Dropout(p=dropout), final_conv, nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d((1, 1))
         )
 
         for m in self.modules():

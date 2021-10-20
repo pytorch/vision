@@ -99,12 +99,12 @@ class QuantizableMobileNetV3(MobileNetV3):
 
     def fuse_model(self) -> None:
         for m in self.modules():
-            if type(m) == ConvNormActivation:
+            if type(m) is ConvNormActivation:
                 modules_to_fuse = ["0", "1"]
-                if len(m) == 3 and type(m[2]) == nn.ReLU:
+                if len(m) == 3 and type(m[2]) is nn.ReLU:
                     modules_to_fuse.append("2")
                 fuse_modules(m, modules_to_fuse, inplace=True)
-            elif type(m) == QuantizableSqueezeExcitation:
+            elif type(m) is QuantizableSqueezeExcitation:
                 m.fuse_model()
 
 

@@ -1,8 +1,10 @@
 import abc
+import enum
 import io
 import os
 import pathlib
 import textwrap
+import warnings
 from collections import Mapping
 from typing import (
     Any,
@@ -45,6 +47,11 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
 
     body = textwrap.indent(to_str(",\n"), " " * 2)
     return f"{prefix}\n{body}\n{postfix}"
+
+
+class DatasetType(enum.Enum):
+    RAW = enum.auto()
+    IMAGE = enum.auto()
 
 
 class DatasetConfig(Mapping):
@@ -98,6 +105,7 @@ class DatasetInfo:
         self,
         name: str,
         *,
+        type: Union[str, DatasetType],
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
@@ -105,15 +113,15 @@ class DatasetInfo:
         valid_options: Optional[Dict[str, Sequence]] = None,
     ) -> None:
         self.name = name.lower()
+        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
             categories = []
         elif isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
-            with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
-                categories = [line.strip() for line in fh]
-        self.categories = categories
+            categories = self._read_categories_file(pathlib.Path(categories).expanduser().resolve())
+        self.categories = tuple(categories)
 
         self.citation = citation
         self.homepage = homepage
@@ -130,6 +138,17 @@ class DatasetInfo:
                 f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
             )
         self._valid_options: Dict[str, Sequence] = valid_options
+
+    @staticmethod
+    def _read_categories_file(path: pathlib.Path) -> List[str]:
+        if not path.exists() or not path.is_file():
+            warnings.warn(
+                f"The categories file {path} does not exist. Continuing without loaded categories.", UserWarning
+            )
+            return []
+
+        with open(path, "r") as file:
+            return [line.strip() for line in file]
 
     @property
     def default_config(self) -> DatasetConfig:
@@ -183,6 +202,10 @@ class Dataset(abc.ABC):
     def default_config(self) -> DatasetConfig:
         return self.info.default_config
 
+    @property
+    def categories(self) -> Tuple[str, ...]:
+        return self.info.categories
+
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         pass
@@ -209,3 +232,6 @@ class Dataset(abc.ABC):
 
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
+
+    def _generate_categories(self, root: pathlib.Path) -> Sequence[str]:
+        raise NotImplementedError

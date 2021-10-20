@@ -112,7 +112,7 @@ def main(args):
         print("Starting training for epoch", epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
         lr_scheduler.step()
-        with torch.no_grad():
+        with torch.inference_mode():
             if epoch >= args.num_observer_update_epochs:
                 print("Disabling observer for subseq epochs, epoch = ", epoch)
                 model.apply(torch.quantization.disable_observer)

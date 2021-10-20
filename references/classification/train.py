@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import warnings
 
 import presets
 import torch
@@ -12,13 +13,10 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
-try:
-    from apex import amp
-except ImportError:
-    amp = None
 
-
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq, apex=False, model_ema=None):
+def train_one_epoch(
+    model, criterion, optimizer, data_loader, device, epoch, print_freq, amp=False, model_ema=None, scaler=None
+):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
@@ -29,13 +27,16 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         start_time = time.time()
         image, target = image.to(device), target.to(device)
         output = model(image)
-        loss = criterion(output, target)
 
         optimizer.zero_grad()
-        if apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
+        if amp:
+            with torch.cuda.amp.autocast():
+                loss = criterion(output, target)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
         else:
+            loss = criterion(output, target)
             loss.backward()
         optimizer.step()
 
@@ -54,7 +55,9 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix="
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
-    with torch.no_grad():
+
+    num_processed_samples = 0
+    with torch.inference_mode():
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
             image = image.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
@@ -68,7 +71,23 @@ def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix="
             metric_logger.update(loss=loss.item())
             metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
             metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+            num_processed_samples += batch_size
     # gather the stats from all processes
+
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and len(data_loader.dataset) != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the dataset has {len(data_loader.dataset)} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
+
     metric_logger.synchronize_between_processes()
 
     print(f"{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}")
@@ -147,7 +166,7 @@ def load_data(traindir, valdir, args):
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
@@ -156,12 +175,6 @@ def load_data(traindir, valdir, args):
 
 
 def main(args):
-    if args.apex and amp is None:
-        raise RuntimeError(
-            "Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
-            "to enable mixed-precision training."
-        )
-
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -170,7 +183,11 @@ def main(args):
 
     device = torch.device(args.device)
 
-    torch.backends.cudnn.benchmark = True
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
 
     train_dir = os.path.join(args.data_path, "train")
     val_dir = os.path.join(args.data_path, "val")
@@ -228,8 +245,7 @@ def main(args):
     else:
         raise RuntimeError("Invalid optimizer {}. Only SGD and RMSprop are supported.".format(args.opt))
 
-    if args.apex:
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.apex_opt_level)
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     args.lr_scheduler = args.lr_scheduler.lower()
     if args.lr_scheduler == "steplr":
@@ -284,6 +300,10 @@ def main(args):
             model_ema.load_state_dict(checkpoint["model_ema"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
@@ -292,7 +312,9 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.apex, model_ema)
+        train_one_epoch(
+            model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.amp, model_ema, scaler
+        )
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if model_ema:
@@ -385,15 +407,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
-    parser.add_argument("--apex", action="store_true", help="Use apex for mixed precision training")
-    parser.add_argument(
-        "--apex-opt-level",
-        default="O1",
-        type=str,
-        help="For apex mixed precision training"
-        "O0 for FP32 training, O1 for mixed precision training."
-        "For further detail, see https://github.com/NVIDIA/apex/tree/master/examples/imagenet",
-    )
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
@@ -406,6 +420,9 @@ def get_args_parser(add_help=True):
         type=float,
         default=0.9,
         help="decay factor for Exponential Moving Average of model parameters(default: 0.9)",
+    )
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
 
     return parser
