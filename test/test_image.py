@@ -170,6 +170,7 @@ def test_decode_png(img_path, pil_mode, mode):
 
     if "16" in img_path:
         # PIL converts 16 bits pngs in uint8
+        assert img_lpng.dtype == torch.int32
         img_lpng = torch.round(img_lpng / (2 ** 16 - 1) * 255).to(torch.uint8)
 
     torch.testing.assert_close(img_lpng, img_pil, atol=tol, rtol=0)
