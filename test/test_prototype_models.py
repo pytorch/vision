@@ -2,7 +2,6 @@ import os
 
 import pytest
 import torch
-import torch.fx
 from common_utils import set_rng_seed, cpu_and_gpu
 from test_models import _assert_expected, _model_params
 from torchvision import models as original_models
