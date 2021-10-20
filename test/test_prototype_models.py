@@ -1,18 +1,9 @@
-import functools
-import io
-import operator
+# tests
 import os
-import traceback
-import warnings
-from collections import OrderedDict
-
 import pytest
 import torch
 import torch.fx
-import torch.nn as nn
-import torchvision
-from _utils_internal import get_relative_path
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
+from common_utils import set_rng_seed, cpu_and_gpu
 from test_models import _assert_expected, _model_params
 from torchvision import models as original_models
 from torchvision.prototype import models
