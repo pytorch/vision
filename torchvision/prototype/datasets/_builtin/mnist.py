@@ -6,7 +6,7 @@ import operator
 import pathlib
 import string
 import sys
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
 
 import torch
 from torchdata.datapipes.iter import (
@@ -116,12 +116,11 @@ class _MNISTBase(Dataset):
     ):
         image, label = data
 
-        image: Union[torch.Tensor, io.BytesIO]
         if decoder is raw:
             image = image.unsqueeze(0)
         else:
-            image_buffer = image_buffer_from_array(image.numpy())  # type: ignore[union-attr]
-            image = decoder(image_buffer) if decoder else image_buffer
+            image_buffer = image_buffer_from_array(image.numpy())
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
         category = self.info.categories[int(label)]
         label = label.to(torch.int64)
