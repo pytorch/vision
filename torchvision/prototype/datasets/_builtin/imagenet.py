@@ -1,4 +1,3 @@
-import csv
 import io
 import pathlib
 import re
@@ -15,8 +14,8 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    create_categories_file,
     INFINITE_BUFFER_SIZE,
+    BUILTIN_DIR,
     path_comparator,
     Enumerator,
     getitem,
@@ -24,19 +23,15 @@ from torchvision.prototype.datasets.utils._internal import (
     FrozenMapping,
 )
 
-HERE = pathlib.Path(__file__).parent
-
 
 class ImageNet(Dataset):
-    _CATEGORY_FILE_DELIMITER = ","
-
     @property
     def info(self) -> DatasetInfo:
-        with open(HERE / "imagenet.categories", "r", newline="") as file:
-            categories, wnids = zip(*csv.reader(file, delimiter=self._CATEGORY_FILE_DELIMITER))
+        name = "imagenet"
+        categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
 
         return DatasetInfo(
-            "imagenet",
+            name,
             type=DatasetType.IMAGE,
             categories=categories,
             homepage="https://www.image-net.org/",
@@ -154,10 +149,10 @@ class ImageNet(Dataset):
     # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
     _WNID_MAP = {
         "n03126707": "construction crane",
-        "n03710721": "tank suite",
+        "n03710721": "tank suit",
     }
 
-    def generate_categories_file(self, root):
+    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
         resources = self.resources(self.default_config)
         devkit_dp = resources[1].to_datapipe(root / self.name)
         devkit_dp = TarArchiveReader(devkit_dp)
@@ -173,11 +168,4 @@ class ImageNet(Dataset):
         ]
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
 
-        create_categories_file(HERE, self.name, categories_and_wnids, delimiter=self._CATEGORY_FILE_DELIMITER)
-
-
-if __name__ == "__main__":
-    from torchvision.prototype.datasets import home
-
-    root = home()
-    ImageNet().generate_categories_file(root)
+        return categories_and_wnids

@@ -1,8 +1,8 @@
 import abc
+import csv
 import enum
 import io
 import pathlib
-import warnings
 from typing import (
     Any,
     Callable,
@@ -55,7 +55,8 @@ class DatasetInfo:
         elif isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
-            categories = self._read_categories_file(pathlib.Path(categories).expanduser().resolve())
+            path = pathlib.Path(categories).expanduser().resolve()
+            categories, *_ = zip(*self.read_categories_file(path))
         self.categories = tuple(categories)
 
         self.citation = citation
@@ -77,15 +78,9 @@ class DatasetInfo:
         self.extra = FrozenBunch(extra or dict())
 
     @staticmethod
-    def _read_categories_file(path: pathlib.Path) -> List[str]:
-        if not path.exists() or not path.is_file():
-            warnings.warn(
-                f"The categories file {path} does not exist. Continuing without loaded categories.", UserWarning
-            )
-            return []
-
-        with open(path, "r") as file:
-            return [line.strip() for line in file]
+    def read_categories_file(path: pathlib.Path) -> List[List[str]]:
+        with open(path, "r", newline="") as file:
+            return [row for row in csv.reader(file)]
 
     @property
     def default_config(self) -> DatasetConfig:
