@@ -35,7 +35,7 @@ def get_available_classification_models():
 
 @pytest.mark.parametrize("model_name", get_available_classification_models())
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "1") == "0", reason="Prototype code tests are disabled")
+@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "1", reason="Prototype code tests are disabled")
 def test_classification_model(model_name, dev):
     set_rng_seed(0)
     defaults = {
