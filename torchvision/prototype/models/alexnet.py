@@ -23,7 +23,7 @@ class AlexNetWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 56.522,
             "acc@5": 79.066,
         },
