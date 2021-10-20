@@ -15,9 +15,9 @@ from torch.utils.data import IterDataPipe
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
+    "BUILTIN_DIR",
     "sequence_to_str",
     "add_suggestion",
-    "create_categories_file",
     "read_mat",
     "image_buffer_from_array",
     "SequenceIterator",
@@ -34,6 +34,8 @@ D = TypeVar("D")
 
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
 INFINITE_BUFFER_SIZE = 1_000_000_000
+
+BUILTIN_DIR = pathlib.Path(__file__).parent.parent / "_builtin"
 
 
 def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
@@ -58,11 +60,6 @@ def add_suggestion(
     suggestions = difflib.get_close_matches(word, possibilities, 1)
     hint = close_match_hint(suggestions[0]) if suggestions else alternative_hint(possibilities)
     return f"{msg.strip()} {hint}"
-
-
-def create_categories_file(root: Union[str, pathlib.Path], name: str, categories: Sequence[str]) -> None:
-    with open(pathlib.Path(root) / f"{name}.categories", "w") as fh:
-        fh.write("\n".join(categories) + "\n")
 
 
 def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
