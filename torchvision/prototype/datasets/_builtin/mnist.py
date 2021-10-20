@@ -80,7 +80,10 @@ class MNISTFileReader(IterDataPipe):
                 chunk = bytearray(file.read(chunk_size))
                 if needs_byte_reversal:
                     chunk.reverse()
-                yield torch.frombuffer(chunk, dtype=dtype).reshape(shape)
+                data = torch.frombuffer(chunk, dtype=dtype)
+                if needs_byte_reversal:
+                    data = data.flip(0)
+                yield data.reshape(shape)
 
 
 class _MNISTBase(Dataset):
@@ -114,7 +117,9 @@ class _MNISTBase(Dataset):
         image, label = data
 
         image: Union[torch.Tensor, io.BytesIO]
-        if decoder is not raw:
+        if decoder is raw:
+            image = image.unsqueeze(0)
+        else:
             image_buffer = image_buffer_from_array(image.numpy())  # type: ignore[union-attr]
             image = decoder(image_buffer) if decoder else image_buffer
 
