@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, List, Optional
 
 from torch import nn
+from torchvision.transforms.functional import InterpolationMode
 
 from ...models.efficientnet import EfficientNet, MBConvConfig, _efficientnet_conf
 from ..transforms.presets import ImageNetEval
@@ -51,13 +52,14 @@ def _efficientnet(
 
 _common_meta = {
     "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BICUBIC
 }
 
 
 class EfficientNetB0Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=256),
         meta={
             **_common_meta,
             "size": (224, 224),
@@ -71,7 +73,7 @@ class EfficientNetB0Weights(Weights):
 class EfficientNetB1Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=240, resize_size=256),
         meta={
             **_common_meta,
             "size": (240, 240), 
@@ -85,7 +87,7 @@ class EfficientNetB1Weights(Weights):
 class EfficientNetB2Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=288, resize_size=288),
         meta={
             **_common_meta,
             "size": (288, 288), 
@@ -99,7 +101,7 @@ class EfficientNetB2Weights(Weights):
 class EfficientNetB3Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=300, resize_size=320),
         meta={
             **_common_meta,
             "size": (300, 300),
@@ -113,7 +115,7 @@ class EfficientNetB3Weights(Weights):
 class EfficientNetB4Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=380, resize_size=384),
         meta={
             **_common_meta,
             "size": (380, 380),
@@ -127,7 +129,7 @@ class EfficientNetB4Weights(Weights):
 class EfficientNetB5Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=456, resize_size=456),
         meta={
             **_common_meta,
             "size": (456, 456),
@@ -141,7 +143,7 @@ class EfficientNetB5Weights(Weights):
 class EfficientNetB6Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=528, resize_size=528),
         meta={
             **_common_meta,
             "size": (528, 528),
@@ -155,7 +157,7 @@ class EfficientNetB6Weights(Weights):
 class EfficientNetB7Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=600, resize_size=600),
         meta={
             **_common_meta,
             "size": (600, 600),
