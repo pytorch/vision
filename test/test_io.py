@@ -23,7 +23,7 @@ VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "
 
 
 def _create_video_frames(num_frames, height, width):
-    y, x = torch.meshgrid(torch.linspace(-2, 2, height), torch.linspace(-2, 2, width))
+    y, x = torch.meshgrid(torch.linspace(-2, 2, height), torch.linspace(-2, 2, width), indexing="ij")
     data = []
     for i in range(num_frames):
         xc = float(i) / num_frames
