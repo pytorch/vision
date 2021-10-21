@@ -50,10 +50,7 @@ def _efficientnet(
     return model
 
 
-_common_meta = {
-    "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BICUBIC
-}
+_common_meta = {"categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BICUBIC}
 
 
 class EfficientNetB0Weights(Weights):
@@ -76,7 +73,7 @@ class EfficientNetB1Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=240, resize_size=256),
         meta={
             **_common_meta,
-            "size": (240, 240), 
+            "size": (240, 240),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 78.642,
             "acc@5": 94.186,
@@ -90,7 +87,7 @@ class EfficientNetB2Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=288, resize_size=288),
         meta={
             **_common_meta,
-            "size": (288, 288), 
+            "size": (288, 288),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 80.608,
             "acc@5": 95.310,
