@@ -254,6 +254,27 @@ jobs:
             pip install --user pytest
             python test/test_onnx.py
 
+  prototype_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - run:
+          name: Install torch
+          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+      - run:
+          name: Install prototype dependencies
+          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
+      - checkout
+      - run:
+          name: Install torchvision
+          command: pip install --user --progress-bar off --no-build-isolation .
+      - run:
+          name: Install test utilities
+          command: pip install --user --progress-bar=off pytest
+      - run:
+          name: Run tests
+          command: pytest test/test_prototype_*.py
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -1479,6 +1500,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       - binary_ios_build:
           build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
           ios_arch: x86_64
@@ -1639,6 +1661,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       - binary_ios_build:
           build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
           filters:
