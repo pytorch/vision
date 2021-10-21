@@ -77,13 +77,13 @@ class MNISTFileReader(IterDataPipe):
 
             file.seek(start * chunk_size, 1)
             for _ in range(stop - start):
-                chunk = bytearray(file.read(chunk_size))
-                if needs_byte_reversal:
-                    chunk.reverse()
-                data = torch.frombuffer(chunk, dtype=dtype)
-                if needs_byte_reversal:
-                    data = data.flip(0)
-                yield data.reshape(shape)
+                chunk = file.read(chunk_size)
+                if not needs_byte_reversal:
+                    yield torch.frombuffer(chunk, dtype=dtype).reshape(shape)
+
+                chunk = bytearray(chunk)
+                chunk.reverse()
+                yield torch.frombuffer(chunk, dtype=dtype).flip(0).reshape(shape)
 
 
 class _MNISTBase(Dataset):
