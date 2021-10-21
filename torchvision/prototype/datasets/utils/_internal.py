@@ -27,6 +27,7 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
+    "RarArchiveReader,
 ]
 
 K = TypeVar("K")
@@ -180,3 +181,37 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
             type = self._detect_compression_type(path)
             decompressor = self._DECOMPRESSORS[type]
             yield path, decompressor(file)
+
+
+class RarArchiveReader(IterDataPipe[Tuple[str, io.BufferedIOBase]]):
+    def __init__(self, datapipe: IterDataPipe[Tuple[str, io.BufferedIOBase]]):
+        self._rarfile = self._verify_dependencies()
+        super().__init__()
+        self.datapipe = datapipe
+
+    @staticmethod
+    def _verify_dependencies():
+        try:
+            import rarfile
+        except ImportError as error:
+            raise ModuleNotFoundError(
+                "Package `rarfile` is required to be installed to use this datapipe. "
+                "Please use `pip install rarfile` or `conda -c conda-forge install rarfile` to install it."
+            ) from error
+
+        # check if at least one system library for reading rar archives is available to be used by rarfile
+        rarfile.tool_setup()
+
+        return rarfile
+
+    def __iter__(self) -> Iterator[Tuple[str, io.BufferedIOBase]]:
+        for path, stream in self.datapipe:
+            rar = self._rarfile.RarFile(stream)
+            for info in rar.infolist():
+                if info.filename.endswith("/"):
+                    continue
+
+                inner_path = os.path.join(path, info.filename)
+                file_obj = rar.open(info)
+
+                yield inner_path, file_obj
