@@ -38,7 +38,7 @@ __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 prod = functools.partial(functools.reduce, operator.mul)
 
 
-class MNISTFileReader(IterDataPipe):
+class MNISTFileReader(IterDataPipe[np.ndarray]):
     _DTYPE_MAP = {
         8: "u1",  # uint8
         9: "i1",  # int8
@@ -48,7 +48,9 @@ class MNISTFileReader(IterDataPipe):
         14: "f8",  # float64
     }
 
-    def __init__(self, datapipe: IterDataPipe[Any, io.IOBase], *, start: Optional[int], stop: Optional[int]) -> None:
+    def __init__(
+        self, datapipe: IterDataPipe[Tuple[Any, io.IOBase]], *, start: Optional[int], stop: Optional[int]
+    ) -> None:
         self.datapipe = datapipe
         self.start = start
         self.stop = stop
