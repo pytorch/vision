@@ -1,6 +1,6 @@
 import csv
 import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Mapping, Union, Iterator
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
 
 import torch
 from torchdata.datapipes.iter import (
@@ -26,21 +26,23 @@ from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE,
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
 
-class CelebACSVParser(IterDataPipe):
+class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
     def __init__(
         self,
         datapipe: IterDataPipe[Tuple[Any, io.IOBase]],
         *,
-        has_header: bool,
+        fieldnames: Optional[Sequence[str]] = None,
     ) -> None:
         self.datapipe = datapipe
-        self.has_header = has_header
+        self.fieldnames = fieldnames
 
-    def __iter__(self) -> Iterator[Tuple[str, Union[Dict[str, str], List[str]]]]:
+    def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
         for _, file in self.datapipe:
             file = (line.decode() for line in file)
 
-            if self.has_header:
+            if self.fieldnames:
+                fieldnames = self.fieldnames
+            else:
                 # The first row is skipped, because it only contains the number of samples
                 next(file)
 
@@ -51,11 +53,8 @@ class CelebACSVParser(IterDataPipe):
                 if fieldnames[0] != "image_id":
                     fieldnames.insert(0, "image_id")
 
-                for line_dict in csv.DictReader(file, fieldnames=fieldnames, dialect="celeba"):
-                    yield line_dict.pop("image_id"), line_dict
-            else:
-                for line_list in csv.reader(file, dialect="celeba"):
-                    yield line_list[0], line_list[1:]
+            for line in csv.DictReader(file, fieldnames=fieldnames, dialect="celeba"):
+                yield line.pop("image_id"), line
 
 
 class CelebA(Dataset):
@@ -106,13 +105,10 @@ class CelebA(Dataset):
         "2": "test",
     }
 
-    def _filter_split(self, data: Tuple[str, str], *, split: str) -> bool:
-        _, split_id = data
-        return self._SPLIT_ID_TO_NAME[split_id[0]] == split
+    def _filter_split(self, data: Tuple[str, Dict[str, str]], *, split: str) -> bool:
+        return self._SPLIT_ID_TO_NAME[data[1]["split_id"]] == split
 
-    def _collate_anns(
-        self, data: Tuple[Tuple[str, Union[List[str], Mapping[str, str]]], ...]
-    ) -> Tuple[str, Dict[str, Union[List[str], Mapping[str, str]]]]:
+    def _collate_anns(self, data: Tuple[Tuple[str, Dict[str, str]], ...]) -> Tuple[str, Dict[str, Dict[str, str]]]:
         (image_id, identity), (_, attributes), (_, bbox), (_, landmarks) = data
         return image_id, dict(identity=identity, attributes=attributes, bbox=bbox, landmarks=landmarks)
 
@@ -129,7 +125,7 @@ class CelebA(Dataset):
 
         image = decoder(buffer) if decoder else buffer
 
-        identity = torch.tensor(int(ann["identity"][0]))
+        identity = int(ann["identity"]["identity"])
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
         bbox = torch.tensor([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
         landmarks = {
@@ -155,7 +151,7 @@ class CelebA(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
 
-        splits_dp = CelebACSVParser(splits_dp, has_header=False)
+        splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
         splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
@@ -163,12 +159,12 @@ class CelebA(Dataset):
 
         anns_dp = Zipper(
             *[
-                CelebACSVParser(dp, has_header=has_header)
-                for dp, has_header in (
-                    (identities_dp, False),
-                    (attributes_dp, True),
-                    (bboxes_dp, True),
-                    (landmarks_dp, True),
+                CelebACSVParser(dp, fieldnames=fieldnames)
+                for dp, fieldnames in (
+                    (identities_dp, ("image_id", "identity")),
+                    (attributes_dp, None),
+                    (bboxes_dp, None),
+                    (landmarks_dp, None),
                 )
             ]
         )
