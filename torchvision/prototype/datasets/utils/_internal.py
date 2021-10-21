@@ -9,7 +9,7 @@ import os
 import os.path
 import pathlib
 import textwrap
-from collections import Mapping
+from collections.abc import Mapping
 from typing import (
     Collection,
     Sequence,
