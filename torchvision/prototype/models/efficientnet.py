@@ -124,7 +124,7 @@ class EfficientNetB4Weights(Weights):
 
 
 class EfficientNetB5Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    <span class="x x-first x-last">ImageNet1K_TFV1</span> = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
         transforms=partial(ImageNetEval, crop_size=456, resize_size=456),
         meta={
