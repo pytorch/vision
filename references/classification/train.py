@@ -107,26 +107,8 @@ def _get_cache_path(filepath):
 def load_data(traindir, valdir, args):
     # Data loading code
     print("Loading data")
-    val_resize_size, val_crop_size, train_crop_size = 256, 224, 224
+    val_resize_size, val_crop_size, train_crop_size = args.val_resize_size, args.val_crop_size, args.train_crop_size
     interpolation = InterpolationMode(args.interpolation)
-    if args.model == "inception_v3":
-        val_resize_size, val_crop_size, train_crop_size = 342, 299, 299
-    elif args.model == "resnet50":
-        val_resize_size, val_crop_size, train_crop_size = 256, 224, 176
-    elif args.model.startswith("efficientnet_"):
-        sizes = {
-            "b0": (256, 224, 224),
-            "b1": (256, 240, 240),
-            "b2": (288, 288, 288),
-            "b3": (320, 300, 300),
-            "b4": (384, 380, 380),
-            "b5": (456, 456, 456),
-            "b6": (528, 528, 528),
-            "b7": (600, 600, 600),
-        }
-        e_type = args.model.replace("efficientnet_", "")
-        val_resize_size, val_crop_size, train_crop_size = sizes[e_type]
-        interpolation = InterpolationMode.BICUBIC
 
     print("Loading training data")
     st = time.time()
@@ -458,7 +440,13 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
-    parser.add_argument("--interpolation", default="bilinear", help="the default interpolation (default: bilinear)")
+    parser.add_argument("--interpolation", default="bilinear", help="the interpolation method (default: bilinear)")
+    parser.add_argument("--val-resize-size", default=256, type=int,
+                        help="the resize size used for validation (default: 256)")
+    parser.add_argument("--val-crop-size", default=224, type=int,
+                        help="the central crop size used for validation (default: 224)")
+    parser.add_argument("--train-crop-size", default=224, type=int,
+                        help="the random crop size used for training (default: 224)")
 
     return parser
 
