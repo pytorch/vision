@@ -195,8 +195,12 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
       png_set_swap(png_ptr);
     }
     int32_t* t_ptr = tensor.accessor<int32_t, 3>().data();
+
+    // We create a tensor instead of malloc-ing for automatic memory management
+    auto tmp_buffer_tensor = torch::empty(
+        {int64_t(num_pixels_per_row * sizeof(uint16_t))}, torch::kU8);
     uint16_t* tmp_buffer =
-        (uint16_t*)malloc(num_pixels_per_row * sizeof(uint16_t));
+        (uint16_t*)tmp_buffer_tensor.accessor<uint8_t, 1>().data();
 
     for (int pass = 0; pass < number_of_passes; pass++) {
       for (png_uint_32 i = 0; i < height; ++i) {
