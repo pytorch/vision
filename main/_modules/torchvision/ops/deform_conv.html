@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+24344b3 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+eb285b7 ) &#x25BC</a>
     </div>
     
 
@@ -393,7 +393,7 @@
     <span class="n">pad_h</span><span class="p">,</span> <span class="n">pad_w</span> <span class="o">=</span> <span class="n">_pair</span><span class="p">(</span><span class="n">padding</span><span class="p">)</span>
     <span class="n">dil_h</span><span class="p">,</span> <span class="n">dil_w</span> <span class="o">=</span> <span class="n">_pair</span><span class="p">(</span><span class="n">dilation</span><span class="p">)</span>
     <span class="n">weights_h</span><span class="p">,</span> <span class="n">weights_w</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">n_in_channels</span><span class="p">,</span> <span class="n">in_h</span><span class="p">,</span> <span class="n">in_w</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">n_in_channels</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="n">n_offset_grps</span> <span class="o">=</span> <span class="n">offset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">weights_h</span> <span class="o">*</span> <span class="n">weights_w</span><span class="p">)</span>
     <span class="n">n_weight_grps</span> <span class="o">=</span> <span class="n">n_in_channels</span> <span class="o">//</span> <span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>

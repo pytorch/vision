@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+24344b3 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+eb285b7 ) &#x25BC</a>
     </div>
     
 
@@ -588,9 +588,10 @@ RGB with transparency.</p>
 <dl class="py function">
 <dt id="torchvision.io.read_image">
 <code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">read_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">path:</span> <span class="pre">str</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#read_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.read_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads a JPEG or PNG image into a 3 dimensional RGB Tensor.
+<dd><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
 Optionally converts the image to the desired format.
-The values of the output tensor are uint8 between 0 and 255.</p>
+The values of the output tensor are uint8 in [0, 255], except for
+16-bits pngs which are int32 tensors in [0, 65535].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -624,9 +625,10 @@ available modes.</p></li>
 <dt id="torchvision.io.decode_image">
 <code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">decode_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">input:</span> <span class="pre">torch.Tensor</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#decode_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detects whether an image is a JPEG or PNG and performs the appropriate
-operation to decode the image into a 3 dimensional RGB Tensor.</p>
+operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p>
 <p>Optionally converts the image to the desired format.
-The values of the output tensor are uint8 between 0 and 255.</p>
+The values of the output tensor are uint8 in [0, 255], except for
+16-bits pngs which are int32 tensors in [0, 65535].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -674,7 +676,7 @@ of its corresponding JPEG file.</p>
 <dl class="py function">
 <dt id="torchvision.io.decode_jpeg">
 <code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">decode_jpeg</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">input:</span> <span class="pre">torch.Tensor</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em>, <em class="sig-param"><span class="pre">device:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'cpu'</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#decode_jpeg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_jpeg" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decodes a JPEG image into a 3 dimensional RGB Tensor.
+<dd><p>Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
 Optionally converts the image to the desired format.
 The values of the output tensor are uint8 between 0 and 255.</p>
 <dl class="field-list simple">
@@ -746,9 +748,15 @@ between 0 and 9. Default: 6</p></li>
 <dl class="py function">
 <dt id="torchvision.io.decode_png">
 <code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">decode_png</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">input:</span> <span class="pre">torch.Tensor</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.9.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#decode_png"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_png" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decodes a PNG image into a 3 dimensional RGB Tensor.
+<dd><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
 Optionally converts the image to the desired format.
-The values of the output tensor are uint8 between 0 and 255.</p>
+The values of the output tensor are uint8 in [0, 255], except for
+16-bits pngs which are int32 tensors in [0, 65535].</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Should pytorch ever support the uint16 dtype natively, the dtype of the
+output for 16-bits pngs will be updated from int32 to uint16.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
