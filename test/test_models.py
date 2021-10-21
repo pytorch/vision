@@ -223,7 +223,7 @@ autocast_flaky_numerics = (
 # The tests for the following quantized models are flaky possibly due to inconsistent
 # rounding errors in different platforms. For this reason the input/output consistency
 # tests under test_quantized_classification_model will be skipped for the following models.
-quantized_flaky_models = ("inception_v3",)
+quantized_flaky_models = ("inception_v3", "resnet50")
 
 
 # The following contains configuration parameters for all models which are used by
