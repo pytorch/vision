@@ -1,7 +1,7 @@
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, LineReader, KeyZipper, Mapper, TarArchiveReader, Filter, Shuffler
@@ -44,11 +44,11 @@ class ImageNet(Dataset):
 
     @property
     def category_to_wnid(self) -> Dict[str, str]:
-        return self.info.extra.category_to_wnid
+        return cast(Dict[str, str], self.info.extra.category_to_wnid)
 
     @property
     def wnid_to_category(self) -> Dict[str, str]:
-        return self.info.extra.wnid_to_category
+        return cast(Dict[str, str], self.info.extra.wnid_to_category)
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         if config.split == "train":
@@ -152,7 +152,7 @@ class ImageNet(Dataset):
         "n03710721": "tank suit",
     }
 
-    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, str]]:
+    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
         resources = self.resources(self.default_config)
         devkit_dp = resources[1].to_datapipe(root / self.name)
         devkit_dp = TarArchiveReader(devkit_dp)
@@ -160,12 +160,15 @@ class ImageNet(Dataset):
 
         meta = next(iter(devkit_dp))[1]
         synsets = read_mat(meta, squeeze_me=True)["synsets"]
-        categories_and_wnids = [
-            (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
-            for _, wnid, category, _, num_children, *_ in synsets
-            # if num_children > 0, we are looking at a superclass that has no direct instance
-            if num_children == 0
-        ]
+        categories_and_wnids = cast(
+            List[Tuple[str, ...]],
+            [
+                (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
+                for _, wnid, category, _, num_children, *_ in synsets
+                # if num_children > 0, we are looking at a superclass that has no direct instance
+                if num_children == 0
+            ],
+        )
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
 
         return categories_and_wnids

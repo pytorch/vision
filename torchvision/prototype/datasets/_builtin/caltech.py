@@ -82,7 +82,10 @@ class Caltech101(Dataset):
         return category, id
 
     def _collate_and_decode_sample(
-        self, data, *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self,
+        data: Tuple[Tuple[str, str], Tuple[str, io.IOBase], Tuple[str, io.IOBase]],
+        *,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         key, image_data, ann_data = data
         category, _ = key
@@ -117,11 +120,11 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = TarArchiveReader(images_dp)
-        images_dp: IterDataPipe = Filter(images_dp, self._is_not_background_image)
+        images_dp = Filter(images_dp, self._is_not_background_image)
         images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = TarArchiveReader(anns_dp)
-        anns_dp: IterDataPipe = Filter(anns_dp, self._is_ann)
+        anns_dp = Filter(anns_dp, self._is_ann)
 
         dp = KeyZipper(
             images_dp,
@@ -136,7 +139,7 @@ class Caltech101(Dataset):
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, self._is_not_background_image)
+        dp = Filter(dp, self._is_not_background_image)
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
@@ -185,7 +188,7 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, self._is_not_rogue_file)
+        dp = Filter(dp, self._is_not_rogue_file)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 

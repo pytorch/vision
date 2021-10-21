@@ -3,16 +3,7 @@ import csv
 import enum
 import io
 import pathlib
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    Tuple,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
 import torch
 from torch.utils.data import IterDataPipe
