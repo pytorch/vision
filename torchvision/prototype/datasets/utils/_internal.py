@@ -101,7 +101,7 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
     return f"{prefix}\n{body}\n{postfix}"
 
 
-class FrozenMapping(collections.abc.Mapping[K, D]):
+class FrozenMapping(Mapping[K, D]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         data = dict(*args, **kwargs)
         self.__dict__["__data__"] = data
