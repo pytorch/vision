@@ -1,3 +1,5 @@
+# type: ignore
+
 import argparse
 import csv
 import sys
@@ -50,7 +52,7 @@ def parse_args(argv=None):
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = parse_args(["-f", "sbd"])
 
     try:
         main(*args.names, force=args.force)
