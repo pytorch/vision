@@ -1,14 +1,12 @@
+import unittest.mock
+
 import pytest
 from torchdata.datapipes.iter import IterableWrapper
 from torchvision.prototype import datasets
 
 
-@pytest.fixture
-def make_minimal_dataset_info():
-    def make(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
-        return datasets.utils.DatasetInfo(name, type=type, categories=categories or [], **kwargs)
-
-    return make
+def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
+    return datasets.utils.DatasetInfo(name, type=type, categories=categories or [], **kwargs)
 
 
 @pytest.fixture
@@ -19,7 +17,7 @@ def patch_datasets(monkeypatch):
 
 
 @pytest.fixture
-def dataset(mocker, make_minimal_dataset_info):
+def dataset(mocker):
     info = make_minimal_dataset_info(valid_options=dict(split=("train", "test"), foo=("bar", "baz")))
 
     class DatasetMock(datasets.utils.Dataset):
@@ -160,22 +158,22 @@ class TestDatasetInfo:
 
     @staticmethod
     @pytest.fixture
-    def info(make_minimal_dataset_info, valid_options):
+    def info(valid_options):
         return make_minimal_dataset_info(valid_options=valid_options)
 
-    def test_no_valid_options(self, make_minimal_dataset_info):
+    def test_no_valid_options(self):
         info = make_minimal_dataset_info()
         assert info.default_config.split == "train"
 
-    def test_valid_options_no_split(self, make_minimal_dataset_info):
+    def test_valid_options_no_split(self):
         info = make_minimal_dataset_info(valid_options=dict(option=("argument",)))
         assert info.default_config.split == "train"
 
-    def test_valid_options_no_train(self, make_minimal_dataset_info):
+    def test_valid_options_no_train(self):
         with pytest.raises(ValueError):
             make_minimal_dataset_info(valid_options=dict(split=("test",)))
 
-    def test_default_config(self, make_minimal_dataset_info, valid_options):
+    def test_default_config(self, valid_options):
         default_config = datasets.utils.DatasetConfig({key: values[0] for key, values in valid_options.items()})
 
         assert make_minimal_dataset_info(valid_options=valid_options).default_config == default_config
@@ -188,7 +186,7 @@ class TestDatasetInfo:
         with pytest.raises(ValueError):
             info.make_config(split="unknown_split")
 
-    def test_repr(self, make_minimal_dataset_info, valid_options):
+    def test_repr(self, valid_options):
         output = repr(make_minimal_dataset_info(valid_options=valid_options))
 
         assert isinstance(output, str)
@@ -197,7 +195,7 @@ class TestDatasetInfo:
             assert f"{key}={str(value)[1:-1]}" in output
 
     @pytest.mark.parametrize("optional_info", ("citation", "homepage", "license"))
-    def test_repr_optional_info(self, make_minimal_dataset_info, optional_info):
+    def test_repr_optional_info(self, optional_info):
         sentinel = "sentinel"
         info = make_minimal_dataset_info(**{optional_info: sentinel})
 
@@ -205,43 +203,38 @@ class TestDatasetInfo:
 
 
 class TestDataset:
-    @staticmethod
-    @pytest.fixture
-    def make_dataset(mocker):
-        def make(name="name", valid_options=None, resources=None):
-            cls = type(
-                "DatasetMock",
-                (datasets.utils.Dataset,),
-                dict(
-                    info=datasets.utils.DatasetInfo(
-                        name,
-                        type=datasets.utils.DatasetType.RAW,
-                        categories=[],
-                        valid_options=valid_options or dict(split=("train", "test")),
-                    ),
-                    resources=mocker.Mock(return_value=[]) if resources is None else lambda self, config: resources,
-                    _make_datapipe=mocker.Mock(),
+    def make_dataset_mock(self, name="name", valid_options=None, resources=None):
+        cls = type(
+            "DatasetMock",
+            (datasets.utils.Dataset,),
+            dict(
+                info=datasets.utils.DatasetInfo(
+                    name,
+                    type=datasets.utils.DatasetType.RAW,
+                    categories=[],
+                    valid_options=valid_options or dict(split=("train", "test")),
                 ),
-            )
-            return cls()
+                resources=unittest.mock.Mock(return_value=[]) if resources is None else lambda self, config: resources,
+                _make_datapipe=unittest.mock.Mock(),
+            ),
+        )
+        return cls()
 
-        return make
-
-    def test_name(self, make_dataset):
+    def test_name(self):
         name = "sentinel"
-        dataset = make_dataset(name=name)
+        dataset = self.make_dataset_mock(name=name)
 
         assert dataset.name == name
 
-    def test_default_config(self, make_dataset):
+    def test_default_config(self):
         sentinel = "sentinel"
         valid_options = dict(split=(sentinel, "train"))
-        dataset = make_dataset(valid_options=valid_options)
+        dataset = self.make_dataset_mock(valid_options=valid_options)
 
         assert dataset.default_config == datasets.utils.DatasetConfig(split=sentinel)
 
-    def test_to_datapipe_config(self, make_dataset):
-        dataset = make_dataset()
+    def test_to_datapipe_config(self):
+        dataset = self.make_dataset_mock()
         config = datasets.utils.DatasetConfig(split="test")
 
         dataset.to_datapipe("", config=config)
@@ -251,8 +244,8 @@ class TestDataset:
         (_, call_kwargs) = dataset._make_datapipe.call_args
         assert call_kwargs["config"] == config
 
-    def test_to_datapipe_default_config(self, make_dataset):
-        dataset = make_dataset()
+    def test_to_datapipe_default_config(self):
+        dataset = self.make_dataset_mock()
         config = dataset.default_config
 
         dataset.to_datapipe("")
@@ -262,11 +255,11 @@ class TestDataset:
         (_, call_kwargs) = dataset._make_datapipe.call_args
         assert call_kwargs["config"] == config
 
-    def test_resources(self, mocker, make_dataset):
+    def test_resources(self, mocker):
         resource_mock = mocker.Mock(spec=["to_datapipe"])
         sentinel = object()
         resource_mock.to_datapipe.return_value = sentinel
-        dataset = make_dataset(resources=[resource_mock])
+        dataset = self.make_dataset_mock(resources=[resource_mock])
 
         root = "root"
         dataset.to_datapipe(root)
@@ -276,8 +269,8 @@ class TestDataset:
         (call_args, _) = dataset._make_datapipe.call_args
         assert call_args[0][0] is sentinel
 
-    def test_decoder(self, make_dataset):
-        dataset = make_dataset()
+    def test_decoder(self):
+        dataset = self.make_dataset_mock()
 
         sentinel = object()
         dataset.to_datapipe("", decoder=sentinel)
