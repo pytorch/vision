@@ -82,7 +82,7 @@ class EfficientNetB1Weights(Weights):
 
 
 class EfficientNetB2Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
         transforms=partial(ImageNetEval, crop_size=288, resize_size=288),
         meta={
