@@ -36,7 +36,13 @@ else
   MKL_CONSTRAINT=''
 fi
 
-conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
+if [[ $CONDA_BUILD_VARIANT == "cpu" ]]; then
+  PYTORCH_MUTEX_CONSTRAINT='pytorch-mutex=1.0=cpu'
+else
+  PYTORCH_MUTEX_CONSTRAINT=''
+fi
+
+conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
