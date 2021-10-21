@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Search &mdash; Torchvision main documentation</title>
+  <title>Training references &mdash; Torchvision main documentation</title>
   
 
   
@@ -34,7 +34,8 @@
   <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Video API" href="auto_examples/plot_video_api.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -196,7 +197,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.11.0a0+58a60b2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>0.11.0 &#x25BC</a>
     </div>
     
 
@@ -205,7 +206,7 @@
 
 
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="#" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search Docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -231,9 +232,9 @@
 <li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Training references</a></li>
 </ul>
 <p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
@@ -284,12 +285,14 @@
       </li>
 
         
-      <li>Search</li>
+      <li>Training references</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
+            <a href="_sources/training_references.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
         
       </li>
     
@@ -314,24 +317,45 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <noscript>
-  <div id="fallback" class="admonition warning">
-    <p class="last">
-      Please activate JavaScript to enable the search
-      functionality.
-    </p>
-  </div>
-  </noscript>
+  <div class="section" id="training-references">
+<h1>Training references<a class="headerlink" href="#training-references" title="Permalink to this headline">¶</a></h1>
+<p>On top of the many models, datasets, and image transforms, Torchvision also
+provides training reference scripts. These are the scripts that we use to train
+the <a class="reference internal" href="models.html#models"><span class="std std-ref">models</span></a> which are then available with pre-trained weights.</p>
+<p>These scripts are not part of the core package and are instead available <a class="reference external" href="https://github.com/pytorch/vision/tree/main/references">on
+GitHub</a>. We currently
+provide references for
+<a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification">classification</a>,
+<a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/detection">detection</a>,
+<a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/segmentation">segmentation</a>,
+<a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/similarity">similarity learning</a>,
+and <a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/video_classification">video classification</a>.</p>
+<p>While these scripts are largely stable, they do not offer backward compatibility
+guarantees.</p>
+<p>In general, these scripts rely on the latest (not yet released) pytorch version
+or the latest torchvision version. This means that to use them, <strong>you might need
+to install the latest pytorch and torchvision versions</strong>, with e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">pytorch</span> <span class="n">torchvision</span> <span class="o">-</span><span class="n">c</span> <span class="n">pytorch</span><span class="o">-</span><span class="n">nightly</span>
+</pre></div>
+</div>
+<p>If you need to rely on an older stable version of pytorch or torchvision, e.g.
+torchvision 0.10, then it’s safer to use the scripts from that corresponding
+release on GitHub, namely
+<a class="reference external" href="https://github.com/pytorch/vision/tree/v0.10.0/references">https://github.com/pytorch/vision/tree/v0.10.0/references</a>.</p>
+</div>
 
-  
-  <div id="search-results">
-  
-  </div>
 
              </article>
              
             </div>
             <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="auto_examples/plot_video_api.html" class="btn btn-neutral" title="Video API" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
   
 
   
@@ -360,7 +384,10 @@
         <div class="pytorch-content-right" id="pytorch-content-right">
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
-              
+              <ul>
+<li><a class="reference internal" href="#">Training references</a></li>
+</ul>
+
             </div>
           </div>
         </div>
@@ -379,8 +406,6 @@
          <script src="_static/doctools.js"></script>
          <script src="_static/clipboard.min.js"></script>
          <script src="_static/copybutton.js"></script>
-         <script src="_static/searchtools.js"></script>
-         <script src="_static/language_data.js"></script>
      
 
   
@@ -394,10 +419,7 @@
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-  <script type="text/javascript" src="searchindex.js" defer></script>
-   
-
+  </script> 
 
   <!-- Begin Footer -->
 
