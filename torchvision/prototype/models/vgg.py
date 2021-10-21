@@ -40,11 +40,7 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, weights: Optional[Weights], prog
     return model
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR
-}
+_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 class VGG11Weights(Weights):

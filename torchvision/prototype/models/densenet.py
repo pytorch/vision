@@ -63,11 +63,7 @@ def _densenet(
     return model
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR
-}
+_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 class DenseNet121Weights(Weights):

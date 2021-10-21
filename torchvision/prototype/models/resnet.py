@@ -51,11 +51,7 @@ def _resnet(
     return model
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR
-}
+_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 class ResNet18Weights(Weights):

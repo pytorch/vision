@@ -13,11 +13,7 @@ from ._meta import _IMAGENET_CATEGORIES
 __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR
-}
+_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 class AlexNetWeights(Weights):
