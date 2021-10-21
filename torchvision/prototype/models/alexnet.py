@@ -2,6 +2,8 @@ import warnings
 from functools import partial
 from typing import Any, Optional
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ...models.alexnet import AlexNet
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
@@ -14,6 +16,7 @@ __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
 _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR
 }
 
 

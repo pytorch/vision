@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any, Optional, Tuple
 
 import torch.nn as nn
+from torchvision.transforms.functional import InterpolationMode
 
 from ...models.densenet import DenseNet
 from ..transforms.presets import ImageNetEval
@@ -65,6 +66,7 @@ def _densenet(
 _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR
 }
 
 

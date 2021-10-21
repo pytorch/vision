@@ -2,6 +2,8 @@ import warnings
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
@@ -52,6 +54,7 @@ def _resnet(
 _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR
 }
 
 
