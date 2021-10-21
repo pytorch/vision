@@ -4,7 +4,8 @@ import io
 import os
 import pathlib
 import textwrap
-from collections import Mapping
+import warnings
+from collections.abc import Mapping
 from typing import (
     Any,
     Callable,
@@ -117,8 +118,7 @@ class DatasetInfo:
         elif isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
-            with open(pathlib.Path(categories).expanduser().resolve(), "r") as fh:
-                categories = [line.strip() for line in fh]
+            categories = self._read_categories_file(pathlib.Path(categories).expanduser().resolve())
         self.categories = tuple(categories)
 
         self.citation = citation
@@ -136,6 +136,17 @@ class DatasetInfo:
                 f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
             )
         self._valid_options: Dict[str, Sequence] = valid_options
+
+    @staticmethod
+    def _read_categories_file(path: pathlib.Path) -> List[str]:
+        if not path.exists() or not path.is_file():
+            warnings.warn(
+                f"The categories file {path} does not exist. Continuing without loaded categories.", UserWarning
+            )
+            return []
+
+        with open(path, "r") as file:
+            return [line.strip() for line in file]
 
     @property
     def default_config(self) -> DatasetConfig:
@@ -219,3 +230,6 @@ class Dataset(abc.ABC):
 
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
+
+    def _generate_categories(self, root: pathlib.Path) -> Sequence[str]:
+        raise NotImplementedError

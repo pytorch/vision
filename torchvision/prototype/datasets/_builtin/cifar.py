@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator
 
 import numpy as np
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
+from torchdata.datapipes.iter import (
+    IterDataPipe,
     Filter,
     Mapper,
     TarArchiveReader,
@@ -24,15 +24,13 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    create_categories_file,
     INFINITE_BUFFER_SIZE,
+    BUILTIN_DIR,
     image_buffer_from_array,
     path_comparator,
 )
 
 __all__ = ["Cifar10", "Cifar100"]
-
-HERE = pathlib.Path(__file__).parent
 
 
 class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
@@ -95,13 +93,12 @@ class _CifarBase(Dataset):
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
-    def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
+    def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
         dp: IterDataPipe = Filter(dp, path_comparator("name", self._META_FILE_NAME))
         dp: IterDataPipe = Mapper(dp, self._unpickle)
-        categories = next(iter(dp))[self._CATEGORIES_KEY]
-        create_categories_file(HERE, self.name, categories)
+        return next(iter(dp))[self._CATEGORIES_KEY]
 
 
 class Cifar10(_CifarBase):
@@ -118,7 +115,7 @@ class Cifar10(_CifarBase):
         return DatasetInfo(
             "cifar10",
             type=DatasetType.RAW,
-            categories=HERE / "cifar10.categories",
+            categories=BUILTIN_DIR / "cifar10.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
 
@@ -145,7 +142,7 @@ class Cifar100(_CifarBase):
         return DatasetInfo(
             "cifar100",
             type=DatasetType.RAW,
-            categories=HERE / "cifar100.categories",
+            categories=BUILTIN_DIR / "cifar100.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(
                 split=("train", "test"),
@@ -159,11 +156,3 @@ class Cifar100(_CifarBase):
                 sha256="85cd44d02ba6437773c5bbd22e183051d648de2e7d6b014e1ef29b855ba677a7",
             )
         ]
-
-
-if __name__ == "__main__":
-    from torchvision.prototype.datasets import home
-
-    root = home()
-    Cifar10().generate_categories_file(root)
-    Cifar100().generate_categories_file(root)
