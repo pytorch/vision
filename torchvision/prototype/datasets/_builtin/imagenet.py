@@ -152,7 +152,7 @@ class ImageNet(Dataset):
         "n03710721": "tank suit",
     }
 
-    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, str]]:
+    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
         resources = self.resources(self.default_config)
         devkit_dp = resources[1].to_datapipe(root / self.name)
         devkit_dp = TarArchiveReader(devkit_dp)
@@ -161,7 +161,7 @@ class ImageNet(Dataset):
         meta = next(iter(devkit_dp))[1]
         synsets = read_mat(meta, squeeze_me=True)["synsets"]
         categories_and_wnids = cast(
-            List[Tuple[str, str]],
+            List[Tuple[str, ...]],
             [
                 (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
                 for _, wnid, category, _, num_children, *_ in synsets

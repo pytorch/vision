@@ -166,7 +166,7 @@ class SBD(Dataset):
 
         pattern = re.compile(r"\s*'(?P<category>\w+)';\s*%(?P<label>\d+)")
         categories_and_labels = cast(
-            List[Tuple[str, str]],
+            List[Tuple[str, ...]],
             [
                 pattern.match(line).groups()  # type: ignore[union-attr]
                 # the first and last line contain no information
