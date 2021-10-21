@@ -54,7 +54,7 @@ _common_meta = {"categories": _IMAGENET_CATEGORIES, "interpolation": Interpolati
 
 
 class EfficientNetB0Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
