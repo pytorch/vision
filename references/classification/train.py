@@ -441,12 +441,15 @@ def get_args_parser(add_help=True):
         "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
     parser.add_argument("--interpolation", default="bilinear", help="the interpolation method (default: bilinear)")
-    parser.add_argument("--val-resize-size", default=256, type=int,
-                        help="the resize size used for validation (default: 256)")
-    parser.add_argument("--val-crop-size", default=224, type=int,
-                        help="the central crop size used for validation (default: 224)")
-    parser.add_argument("--train-crop-size", default=224, type=int,
-                        help="the random crop size used for training (default: 224)")
+    parser.add_argument(
+        "--val-resize-size", default=256, type=int, help="the resize size used for validation (default: 256)"
+    )
+    parser.add_argument(
+        "--val-crop-size", default=224, type=int, help="the central crop size used for validation (default: 224)"
+    )
+    parser.add_argument(
+        "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
+    )
 
     return parser
 
