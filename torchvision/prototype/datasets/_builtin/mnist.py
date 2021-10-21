@@ -71,7 +71,7 @@ class MNISTFileReader(IterDataPipe):
             chunk_size = (cast(int, prod(shape)) if shape else 1) * in_dtype.itemsize
 
             start = self.start or 0
-            stop = self.stop or num_samples
+            stop = min(self.stop, num_samples) if self.stop else num_samples
 
             file.seek(start * chunk_size, 1)
             for _ in range(stop - start):

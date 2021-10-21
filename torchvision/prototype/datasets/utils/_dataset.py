@@ -1,6 +1,7 @@
 import abc
 import enum
 import io
+import itertools
 import os
 import pathlib
 import textwrap
@@ -137,6 +138,15 @@ class DatasetInfo:
             )
         self._valid_options: Dict[str, Sequence] = valid_options
 
+        self._configs = tuple(
+            DatasetConfig(**dict(zip(valid_options.keys(), combination)))
+            for combination in itertools.product(*valid_options.values())
+        )
+
+    @property
+    def default_config(self) -> DatasetConfig:
+        return self._configs[0]
+
     @staticmethod
     def _read_categories_file(path: pathlib.Path) -> List[str]:
         if not path.exists() or not path.is_file():
@@ -147,10 +157,6 @@ class DatasetInfo:
 
         with open(path, "r") as file:
             return [line.strip() for line in file]
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return DatasetConfig({name: valid_args[0] for name, valid_args in self._valid_options.items()})
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():
