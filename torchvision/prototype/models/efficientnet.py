@@ -50,7 +50,6 @@ def _efficientnet(
 
 
 _common_meta = {
-    "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
 }
 
@@ -61,6 +60,7 @@ class EfficientNetB0Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 77.692,
             "acc@5": 93.532,
@@ -74,6 +74,7 @@ class EfficientNetB1Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (240, 240), 
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 78.642,
             "acc@5": 94.186,
@@ -87,6 +88,7 @@ class EfficientNetB2Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (288, 288), 
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 80.608,
             "acc@5": 95.310,
@@ -100,6 +102,7 @@ class EfficientNetB3Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (300, 300),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 82.008,
             "acc@5": 96.054,
@@ -113,6 +116,7 @@ class EfficientNetB4Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (380, 380),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 83.384,
             "acc@5": 96.594,
@@ -126,6 +130,7 @@ class EfficientNetB5Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (456, 456),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 83.444,
             "acc@5": 96.628,
@@ -139,6 +144,7 @@ class EfficientNetB6Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (528, 528),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 84.008,
             "acc@5": 96.916,
@@ -152,6 +158,7 @@ class EfficientNetB7Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "size": (600, 600),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 84.122,
             "acc@5": 96.908,
