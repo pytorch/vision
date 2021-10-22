@@ -185,7 +185,7 @@ def efficientnet_b0(
         weights = EfficientNetB0Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB0Weights.verify(weights)
     return _efficientnet(width_mult=1.0, depth_mult=1.0, dropout=0.2, weights=weights, progress=progress, **kwargs)
-    
+
 
 def efficientnet_b1(
     weights: Optional[EfficientNetB1Weights] = None, progress: bool = True, **kwargs: Any
