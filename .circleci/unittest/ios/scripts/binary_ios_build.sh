@@ -5,7 +5,7 @@ echo ""
 echo "DIR: $(pwd)"
 WORKSPACE=/Users/distiller/workspace
 PROJ_ROOT_IOS=/Users/distiller/project/ios
-PYTORCH_IOS_NIGHTLY_NAME=libtorch_ios_nightly_build.zip
+PYTORCH_IOS_NIGHTLY_NAME=libtorch_ios_1.10.0.zip
 export TCLLIBPATH="/usr/local/lib"
 
 # install conda
@@ -22,6 +22,8 @@ export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
 
 # sync submodules
 cd ${PROJ_ROOT_IOS}
+git fetch
+git checkout release/0.11
 git submodule sync
 git submodule update --init --recursive
 
@@ -32,7 +34,7 @@ mkdir -p ${PROJ_ROOT_IOS}/pytorch
 TORCH_ROOT="${PROJ_ROOT_IOS}/pytorch"
 
 cd ${TORCH_ROOT}
-wget https://ossci-ios-build.s3.amazonaws.com/${PYTORCH_IOS_NIGHTLY_NAME}
+wget https://ossci-ios.s3.amazonaws.com/${PYTORCH_IOS_NIGHTLY_NAME}
 mkdir -p ./build_ios
 unzip -d ./build_ios ./${PYTORCH_IOS_NIGHTLY_NAME}
 
