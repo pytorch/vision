@@ -1,11 +1,11 @@
 import warnings
 from functools import partial
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from torch import nn
 from torchvision.transforms.functional import InterpolationMode
 
-from ...models.efficientnet import EfficientNet, MBConvConfig, _efficientnet_conf
+from ...models.efficientnet import EfficientNet, MBConvConfig
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
@@ -33,7 +33,8 @@ __all__ = [
 
 
 def _efficientnet(
-    inverted_residual_setting: List[MBConvConfig],
+    width_mult: float,
+    depth_mult: float,
     dropout: float,
     weights: Optional[Weights],
     progress: bool,
@@ -41,6 +42,17 @@ def _efficientnet(
 ) -> EfficientNet:
     if weights is not None:
         kwargs["num_classes"] = len(weights.meta["categories"])
+
+    bneck_conf = partial(MBConvConfig, width_mult=width_mult, depth_mult=depth_mult)
+    inverted_residual_setting = [
+        bneck_conf(1, 3, 1, 32, 16, 1),
+        bneck_conf(6, 3, 2, 16, 24, 2),
+        bneck_conf(6, 5, 2, 24, 40, 2),
+        bneck_conf(6, 3, 2, 40, 80, 3),
+        bneck_conf(6, 5, 1, 80, 112, 3),
+        bneck_conf(6, 5, 2, 112, 192, 4),
+        bneck_conf(6, 3, 1, 192, 320, 1),
+    ]
 
     model = EfficientNet(inverted_residual_setting, dropout, **kwargs)
 
@@ -172,8 +184,7 @@ def efficientnet_b0(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB0Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB0Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.0, **kwargs)
-    return _efficientnet(inverted_residual_setting, dropout=0.2, weights=weights, progress=progress, **kwargs)
+    return _efficientnet(width_mult=1.0, depth_mult=1.0, dropout=0.2, weights=weights, progress=progress, **kwargs)
 
 
 def efficientnet_b1(
@@ -183,8 +194,7 @@ def efficientnet_b1(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB1Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB1Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.1, **kwargs)
-    return _efficientnet(inverted_residual_setting, dropout=0.2, weights=weights, progress=progress, **kwargs)
+    return _efficientnet(width_mult=1.0, depth_mult=1.1, dropout=0.2, weights=weights, progress=progress, **kwargs)
 
 
 def efficientnet_b2(
@@ -194,8 +204,7 @@ def efficientnet_b2(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB2Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB2Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.1, depth_mult=1.2, **kwargs)
-    return _efficientnet(inverted_residual_setting, dropout=0.3, weights=weights, progress=progress, **kwargs)
+    return _efficientnet(width_mult=1.1, depth_mult=1.2, dropout=0.3, weights=weights, progress=progress, **kwargs)
 
 
 def efficientnet_b3(
@@ -205,8 +214,7 @@ def efficientnet_b3(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB3Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB3Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.2, depth_mult=1.4, **kwargs)
-    return _efficientnet(inverted_residual_setting, dropout=0.3, weights=weights, progress=progress, **kwargs)
+    return _efficientnet(width_mult=1.2, depth_mult=1.4, dropout=0.3, weights=weights, progress=progress, **kwargs)
 
 
 def efficientnet_b4(
@@ -216,8 +224,7 @@ def efficientnet_b4(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB4Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB4Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.4, depth_mult=1.8, **kwargs)
-    return _efficientnet(inverted_residual_setting, dropout=0.4, weights=weights, progress=progress, **kwargs)
+    return _efficientnet(width_mult=1.4, depth_mult=1.8, dropout=0.4, weights=weights, progress=progress, **kwargs)
 
 
 def efficientnet_b5(
@@ -227,9 +234,9 @@ def efficientnet_b5(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB5Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB5Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.6, depth_mult=2.2, **kwargs)
     return _efficientnet(
-        inverted_residual_setting,
+        width_mult=1.6,
+        depth_mult=2.2,
         dropout=0.4,
         weights=weights,
         progress=progress,
@@ -245,9 +252,9 @@ def efficientnet_b6(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB6Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB6Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.8, depth_mult=2.6, **kwargs)
     return _efficientnet(
-        inverted_residual_setting,
+        width_mult=1.8,
+        depth_mult=2.6,
         dropout=0.5,
         weights=weights,
         progress=progress,
@@ -263,9 +270,9 @@ def efficientnet_b7(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = EfficientNetB7Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB7Weights.verify(weights)
-    inverted_residual_setting = _efficientnet_conf(width_mult=2.0, depth_mult=3.1, **kwargs)
     return _efficientnet(
-        inverted_residual_setting,
+        width_mult=2.0,
+        depth_mult=3.1,
         dropout=0.5,
         weights=weights,
         progress=progress,
