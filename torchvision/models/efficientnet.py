@@ -1,7 +1,7 @@
 import copy
 import math
 from functools import partial
-from typing import Any, Callable, Optional, List
+from typing import Any, Callable, Optional, List, Sequence
 
 import torch
 from torch import nn, Tensor
