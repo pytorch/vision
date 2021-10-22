@@ -37,9 +37,8 @@ def dataset(mocker):
 
 
 class TestDatasetConfig:
-    @staticmethod
     @pytest.fixture
-    def options():
+    def options(self):
         return dict(foo="bar", baz=1)
 
     def test_creation_from_dict(self, options):
