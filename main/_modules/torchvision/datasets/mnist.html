@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+eb285b7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+865e18a ) &#x25BC</a>
     </div>
     
 
@@ -322,6 +322,7 @@
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">from</span> <span class="nn">urllib.error</span> <span class="kn">import</span> <span class="n">URLError</span>
@@ -808,12 +809,12 @@
 
 
 <span class="n">SN3_PASCALVINCENT_TYPEMAP</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="mi">8</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span>
-    <span class="mi">9</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">),</span>
-    <span class="mi">11</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;&gt;i2&quot;</span><span class="p">),</span> <span class="s2">&quot;i2&quot;</span><span class="p">),</span>
-    <span class="mi">12</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;&gt;i4&quot;</span><span class="p">),</span> <span class="s2">&quot;i4&quot;</span><span class="p">),</span>
-    <span class="mi">13</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;&gt;f4&quot;</span><span class="p">),</span> <span class="s2">&quot;f4&quot;</span><span class="p">),</span>
-    <span class="mi">14</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;&gt;f8&quot;</span><span class="p">),</span> <span class="s2">&quot;f8&quot;</span><span class="p">),</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span>
+    <span class="mi">9</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span>
+    <span class="mi">11</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+    <span class="mi">12</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+    <span class="mi">13</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+    <span class="mi">14</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -830,11 +831,19 @@
     <span class="n">ty</span> <span class="o">=</span> <span class="n">magic</span> <span class="o">//</span> <span class="mi">256</span>
     <span class="k">assert</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">nd</span> <span class="o">&lt;=</span> <span class="mi">3</span>
     <span class="k">assert</span> <span class="mi">8</span> <span class="o">&lt;=</span> <span class="n">ty</span> <span class="o">&lt;=</span> <span class="mi">14</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">SN3_PASCALVINCENT_TYPEMAP</span><span class="p">[</span><span class="n">ty</span><span class="p">]</span>
+    <span class="n">torch_type</span> <span class="o">=</span> <span class="n">SN3_PASCALVINCENT_TYPEMAP</span><span class="p">[</span><span class="n">ty</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">:</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nd</span><span class="p">)]</span>
-    <span class="n">parsed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">nd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="n">num_bytes_per_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">torch_type</span><span class="p">)</span><span class="o">.</span><span class="n">bits</span> <span class="o">//</span> <span class="mi">8</span>
+    <span class="c1"># The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,</span>
+    <span class="c1"># we need to reverse the bytes before we can read them with torch.frombuffer().</span>
+    <span class="n">needs_byte_reversal</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">==</span> <span class="s2">&quot;little&quot;</span> <span class="ow">and</span> <span class="n">num_bytes_per_value</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch_type</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">nd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">needs_byte_reversal</span><span class="p">:</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
     <span class="k">assert</span> <span class="n">parsed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">strict</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">*</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parsed</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">*</span><span class="n">s</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">read_label_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
