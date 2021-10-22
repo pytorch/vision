@@ -148,7 +148,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=1e-6)
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
