@@ -62,20 +62,26 @@ class MNASNet1_3Weights(Weights):
     pass
 
 
+def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs: Any):
+    if weights is not None:
+        kwargs["num_classes"] = len(weights.meta["categories"])
+
+    model = MNASNet(alpha, **kwargs)
+
+    if weights:
+        model.load_state_dict(weights.state_dict(progress=progress))
+
+    return model
+
+
 def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         weights = MNASNet0_5Weights.ImageNet1K_TrainerV1 if kwargs.pop("pretrained") else None
+
     weights = MNASNet0_5Weights.verify(weights)
 
-    if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
-
-    model = MNASNet(0.5, **kwargs)
-
-    if weights:
-        model.load_state_dict(weights.state_dict(progress=progress))
-    return model
+    return _mnasnet(0.5, weights, progress, **kwargs)
 
 
 def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
@@ -86,14 +92,7 @@ def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = T
 
     weights = MNASNet0_75Weights.verify(weights)
 
-    if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
-
-    model = MNASNet(0.75, **kwargs)
-
-    if weights:
-        model.load_state_dict(weights.state_dict(progress=progress))
-    return model
+    return _mnasnet(0.75, weights, progress, **kwargs)
 
 
 def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
@@ -102,14 +101,7 @@ def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = Tru
         weights = MNASNet1_0Weights.ImageNet1K_TrainerV1 if kwargs.pop("pretrained") else None
     weights = MNASNet1_0Weights.verify(weights)
 
-    if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
-
-    model = MNASNet(1.0, **kwargs)
-
-    if weights:
-        model.load_state_dict(weights.state_dict(progress=progress))
-    return model
+    return _mnasnet(1.0, weights, progress, **kwargs)
 
 
 def mnasnet1_3(weights: Optional[MNASNet1_3Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
@@ -120,11 +112,4 @@ def mnasnet1_3(weights: Optional[MNASNet1_3Weights] = None, progress: bool = Tru
 
     weights = MNASNet1_3Weights.verify(weights)
 
-    if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
-
-    model = MNASNet(1.3, **kwargs)
-
-    if weights:
-        model.load_state_dict(weights.state_dict(progress=progress))
-    return model
+    return _mnasnet(1.3, weights, progress, **kwargs)
