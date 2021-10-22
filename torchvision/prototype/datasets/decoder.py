@@ -7,6 +7,6 @@ import torch
 __all__ = ["pil"]
 
 
-def pil(file: io.IOBase, mode="RGB") -> torch.Tensor:
+def pil(file: io.IOBase, mode: str = "RGB") -> torch.Tensor:
     image = PIL.Image.open(file).convert(mode.upper())
     return torch.from_numpy(np.array(image, copy=True)).permute((2, 0, 1))
