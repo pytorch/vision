@@ -15,7 +15,7 @@ __all__ = ["FCN", "FCNResNet50Weights", "FCNResNet101Weights", "fcn_resnet50", "
 class FCNResNet50Weights(Weights):
     CocoWithVocLabels_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
-        transforms=partial(VocEval, base_size=520),
+        transforms=partial(VocEval, resize_size=520),
         meta={
             "categories": _VOC_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
@@ -28,7 +28,7 @@ class FCNResNet50Weights(Weights):
 class FCNResNet101Weights(Weights):
     CocoWithVocLabels_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
-        transforms=partial(VocEval, base_size=520),
+        transforms=partial(VocEval, resize_size=520),
         meta={
             "categories": _VOC_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",

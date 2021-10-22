@@ -44,14 +44,14 @@ class ImageNetEval(nn.Module):
 class VocEval(nn.Module):
     def __init__(
         self,
-        base_size: int,
+        resize_size: int,
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: T.InterpolationMode = T.InterpolationMode.BILINEAR,
         interpolation_target: T.InterpolationMode = T.InterpolationMode.NEAREST,
     ) -> None:
         super().__init__()
-        self._size = [base_size]
+        self._size = [resize_size]
         self._mean = list(mean)
         self._std = list(std)
         self._interpolation = interpolation
