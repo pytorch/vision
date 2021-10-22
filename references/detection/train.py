@@ -77,7 +77,9 @@ def get_args_parser(add_help=True):
         help="weight decay (default: 1e-4)",
         dest="weight_decay",
     )
-    parser.add_argument("--lr-scheduler", default="multisteplr", type=str, help="name of lr scheduler (default: multisteplr)")
+    parser.add_argument(
+        "--lr-scheduler", default="multisteplr", type=str, help="name of lr scheduler (default: multisteplr)"
+    )
     parser.add_argument(
         "--lr-step-size", default=8, type=int, help="decrease lr every step-size epochs (multisteplr scheduler only)"
     )
@@ -100,7 +102,9 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--trainable-backbone-layers", default=None, type=int, help="number of trainable layers of backbone"
     )
-    parser.add_argument("--data-augmentation", default="hflip", type=str, help="data augmentation policy (default: hflip)")
+    parser.add_argument(
+        "--data-augmentation", default="hflip", type=str, help="data augmentation policy (default: hflip)"
+    )
     parser.add_argument(
         "--sync-bn",
         dest="sync_bn",
