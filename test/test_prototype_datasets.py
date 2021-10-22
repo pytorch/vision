@@ -1,8 +1,8 @@
 import unittest.mock
 
 import pytest
-from torchdata.datapipes.iter import IterableWrapper
 from torchvision.prototype import datasets
+from torchvision.prototype.datasets import _api
 
 
 def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
@@ -10,30 +10,10 @@ def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, 
 
 
 @pytest.fixture
-def patch_datasets(monkeypatch):
-    datasets_storage = {}
-    monkeypatch.setattr(datasets._api, "DATASETS", datasets_storage)
-    return datasets_storage
-
-
-@pytest.fixture
-def dataset(mocker):
-    info = make_minimal_dataset_info(valid_options=dict(split=("train", "test"), foo=("bar", "baz")))
-
-    class DatasetMock(datasets.utils.Dataset):
-        @property
-        def info(self):
-            return info
-
-        def resources(self, config):
-            return []
-
-        def _make_datapipe(self, resource_dps, *, config, decoder):
-            return IterableWrapper(resource_dps)
-
-        to_datapipe = mocker.Mock()
-
-    return DatasetMock()
+def patch_datasets(mocker):
+    registered_datasets = {}
+    mocker.patch.dict(_api.DATASETS, registered_datasets, clear=True)
+    return registered_datasets
 
 
 class TestDatasetConfig:
@@ -52,7 +32,7 @@ class TestDatasetConfig:
 
     def test_creation_unhashable(self, options):
         with pytest.raises(TypeError):
-            datasets.utils.DatasetConfig(options=options)
+            datasets.utils.DatasetConfig(foo=[])
 
     def test_getitem(self, options):
         config = datasets.utils.DatasetConfig(options)
@@ -110,6 +90,12 @@ class TestDatasetConfig:
 
         assert config1 == config2
 
+    def test_neq(self, options):
+        config1 = datasets.utils.DatasetConfig(options)
+        config2 = datasets.utils.DatasetConfig()
+
+        assert config1 != config2
+
     def test_repr(self, options):
         output = repr(datasets.utils.DatasetConfig(options))
 
@@ -125,7 +111,7 @@ class TestDatasetConfig:
             assert key in config
 
     def test_keys(self, options):
-        assert set(datasets.utils.DatasetConfig(options).keys()) == set(options.keys())
+        assert datasets.utils.DatasetConfig(options).keys() == options.keys()
 
     def test_values(self, options):
         assert set(datasets.utils.DatasetConfig(options).values()) == set(options.values())
