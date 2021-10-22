@@ -1,8 +1,9 @@
 import warnings
 from functools import partial
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from torch import nn
+from torchvision.transforms.functional import InterpolationMode
 
 from ...models.efficientnet import EfficientNet, MBConvConfig
 from ..transforms.presets import ImageNetEval
@@ -61,18 +62,16 @@ def _efficientnet(
     return model
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-}
+_common_meta = {"categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BICUBIC}
 
 
 class EfficientNetB0Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 77.692,
             "acc@5": 93.532,
@@ -81,11 +80,12 @@ class EfficientNetB0Weights(Weights):
 
 
 class EfficientNetB1Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (240, 240),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 78.642,
             "acc@5": 94.186,
@@ -94,11 +94,12 @@ class EfficientNetB1Weights(Weights):
 
 
 class EfficientNetB2Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (288, 288),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 80.608,
             "acc@5": 95.310,
@@ -107,11 +108,12 @@ class EfficientNetB2Weights(Weights):
 
 
 class EfficientNetB3Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (300, 300),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 82.008,
             "acc@5": 96.054,
@@ -120,11 +122,12 @@ class EfficientNetB3Weights(Weights):
 
 
 class EfficientNetB4Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TimmV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (380, 380),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 83.384,
             "acc@5": 96.594,
@@ -133,11 +136,12 @@ class EfficientNetB4Weights(Weights):
 
 
 class EfficientNetB5Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (456, 456),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 83.444,
             "acc@5": 96.628,
@@ -146,11 +150,12 @@ class EfficientNetB5Weights(Weights):
 
 
 class EfficientNetB6Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (528, 528),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 84.008,
             "acc@5": 96.916,
@@ -159,11 +164,12 @@ class EfficientNetB6Weights(Weights):
 
 
 class EfficientNetB7Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_common_meta,
+            "size": (600, 600),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
             "acc@1": 84.122,
             "acc@5": 96.908,
@@ -176,20 +182,18 @@ def efficientnet_b0(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB0Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB0Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB0Weights.verify(weights)
-
     return _efficientnet(width_mult=1.0, depth_mult=1.0, dropout=0.2, weights=weights, progress=progress, **kwargs)
-
+    
 
 def efficientnet_b1(
     weights: Optional[EfficientNetB1Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB1Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB1Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB1Weights.verify(weights)
-
     return _efficientnet(width_mult=1.0, depth_mult=1.1, dropout=0.2, weights=weights, progress=progress, **kwargs)
 
 
@@ -198,9 +202,8 @@ def efficientnet_b2(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB2Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB2Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB2Weights.verify(weights)
-
     return _efficientnet(width_mult=1.1, depth_mult=1.2, dropout=0.3, weights=weights, progress=progress, **kwargs)
 
 
@@ -209,9 +212,8 @@ def efficientnet_b3(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB3Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB3Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB3Weights.verify(weights)
-
     return _efficientnet(width_mult=1.2, depth_mult=1.4, dropout=0.3, weights=weights, progress=progress, **kwargs)
 
 
@@ -220,9 +222,8 @@ def efficientnet_b4(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB4Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB4Weights.ImageNet1K_TimmV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB4Weights.verify(weights)
-
     return _efficientnet(width_mult=1.4, depth_mult=1.8, dropout=0.4, weights=weights, progress=progress, **kwargs)
 
 
@@ -231,9 +232,8 @@ def efficientnet_b5(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB5Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB5Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB5Weights.verify(weights)
-
     return _efficientnet(
         width_mult=1.6,
         depth_mult=2.2,
@@ -250,9 +250,8 @@ def efficientnet_b6(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB6Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB6Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB6Weights.verify(weights)
-
     return _efficientnet(
         width_mult=1.8,
         depth_mult=2.6,
@@ -269,9 +268,8 @@ def efficientnet_b7(
 ) -> EfficientNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = EfficientNetB7Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = EfficientNetB7Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = EfficientNetB7Weights.verify(weights)
-
     return _efficientnet(
         width_mult=2.0,
         depth_mult=3.1,
