@@ -77,7 +77,7 @@ def get_args_parser(add_help=True):
         help="weight decay (default: 1e-4)",
         dest="weight_decay",
     )
-    parser.add_argument("--lr-scheduler", default="multisteplr", help="the lr scheduler (default: multisteplr)")
+    parser.add_argument("--lr-scheduler", default="multisteplr", type=str, help="name of lr scheduler (default: multisteplr)")
     parser.add_argument(
         "--lr-step-size", default=8, type=int, help="decrease lr every step-size epochs (multisteplr scheduler only)"
     )

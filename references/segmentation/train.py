@@ -244,7 +244,7 @@ def get_args_parser(add_help=True):
     )
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
-    parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
+    parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
     return parser
 
