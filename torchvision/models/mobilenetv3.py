@@ -309,7 +309,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
     """
     arch = "mobilenet_v3_large"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
 
 
 def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
@@ -323,4 +323,4 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
     """
     arch = "mobilenet_v3_small"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
