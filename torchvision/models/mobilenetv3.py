@@ -281,7 +281,7 @@ def _mobilenet_v3_conf(
     return inverted_residual_setting, last_channel
 
 
-def _mobilenet_v3_model(
+def _mobilenet_v3(
     arch: str,
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,

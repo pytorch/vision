@@ -22,7 +22,7 @@ __all__ = [
 def _mobilenet_v3(
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
-    weights: bool,
+    weights: Optional[Weights],
     progress: bool,
     **kwargs: Any,
 ) -> MobileNetV3:
@@ -46,7 +46,7 @@ class MobileNetV3LargeWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 74.042,
             "acc@5": 91.340,
         },
@@ -59,7 +59,7 @@ class MobileNetV3SmallWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 67.668,
             "acc@5": 87.402,
         },
