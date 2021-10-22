@@ -380,6 +380,9 @@ def store_model_weights(model, checkpoint_path, checkpoint_key="model", strict=T
 
     # Load the weights to the model to validate that everything works
     # and remove unnecessary weights (such as auxiliaries, etc)
+    if checkpoint_key == "model_ema":
+        del checkpoint[checkpoint_key]["n_averaged"]
+        torch.nn.modules.utils.consume_prefix_in_state_dict_if_present(checkpoint[checkpoint_key], "module.")
     model.load_state_dict(checkpoint[checkpoint_key], strict=strict)
 
     tmp_path = os.path.join(output_dir, str(model.__hash__()))
