@@ -1,4 +1,5 @@
 import io
+from typing import cast
 
 import PIL.Image
 import torch
@@ -12,4 +13,4 @@ def raw(buffer: io.IOBase) -> torch.Tensor:
 
 
 def pil(buffer: io.IOBase, mode: str = "RGB") -> torch.Tensor:
-    return pil_to_tensor(PIL.Image.open(buffer).convert(mode.upper()))
+    return cast(torch.Tensor, pil_to_tensor(PIL.Image.open(buffer).convert(mode.upper())))
