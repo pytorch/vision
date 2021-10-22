@@ -941,7 +941,8 @@ jobs:
           name: Build docs
           command: |
             set -ex
-            tag=${CIRCLE_TAG:1:5}
+            # turn v1.12.0rc3 into 1.12.0
+            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9.]*\).*/\1/')
             VERSION=${tag:-main}
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
