@@ -33,7 +33,6 @@ class SmoothedValue(object):
         Warning: does not synchronize the deque!
         """
         t = reduce_across_processes([self.count, self.total])
-        t = t.tolist()
         self.count = int(t[0])
         self.total = t[1]
 
@@ -407,4 +406,4 @@ def reduce_across_processes(val):
     t = torch.tensor(val, device="cuda")
     dist.barrier()
     dist.all_reduce(t)
-    return t
+    return t.tolist()
