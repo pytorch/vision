@@ -5,3 +5,4 @@ from .vgg import *
 from .efficientnet import *
 from . import detection
 from . import quantization
+from . import segmentation
