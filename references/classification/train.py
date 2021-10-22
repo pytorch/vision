@@ -348,8 +348,10 @@ def get_args_parser(add_help=True):
 
     parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", type=str, help="dataset path")
     parser.add_argument("--model", default="resnet18", type=str, help="model name")
-    parser.add_argument("--device", default="cuda", type=str, help="device (cuda for GPU use, cpu for not using GPU")
-    parser.add_argument("-b", "--batch-size", default=32, type=int)
+    parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
+    parser.add_argument(
+        "-b", "--batch-size", default=32, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+    )
     parser.add_argument("--epochs", default=90, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument(
         "-j", "--workers", default=16, type=int, metavar="N", help="number of data loading workers (default: 16)"
@@ -387,7 +389,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
     parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
-    parser.add_argument("--resume", default="", type=str, help="path for resume checkpoint from")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
         "--cache-dataset",

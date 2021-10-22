@@ -205,8 +205,10 @@ def get_args_parser(add_help=True):
     parser.add_argument("--dataset", default="coco", type=str, help="dataset name")
     parser.add_argument("--model", default="fcn_resnet101", type=str, help="model name")
     parser.add_argument("--aux-loss", action="store_true", help="auxiliar loss")
-    parser.add_argument("--device", default="cuda", type=str, help="device (cuda for GPU use, cpu for not using GPU")
-    parser.add_argument("-b", "--batch-size", default=8, type=int, help="size of batch")
+    parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
+    parser.add_argument(
+        "-b", "--batch-size", default=8, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+    )
     parser.add_argument("--epochs", default=30, type=int, metavar="N", help="number of total epochs to run")
 
     parser.add_argument(
@@ -227,8 +229,8 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-warmup-method", default="linear", type=str, help="the warmup method (default: linear)")
     parser.add_argument("--lr-warmup-decay", default=0.01, type=float, help="the decay for lr")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
-    parser.add_argument("--output-dir", default=".", type=str, help="path where to save")
-    parser.add_argument("--resume", default="", type=str, help="path for resume checkpoint from")
+    parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
         "--test-only",
