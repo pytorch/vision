@@ -62,7 +62,7 @@ class MNASNet1_3Weights(Weights):
     pass
 
 
-def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs: Any):
+def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs: Any) -> MNASNet:
     if weights is not None:
         kwargs["num_classes"] = len(weights.meta["categories"])
 
