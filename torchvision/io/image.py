@@ -61,7 +61,12 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
     """
     Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 in [0, 255], except for
+    16-bits pngs which are int32 tensors in [0, 65535].
+
+    .. warning::
+        Should pytorch ever support the uint16 dtype natively, the dtype of the
+        output for 16-bits pngs will be updated from int32 to uint16.
 
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
@@ -188,7 +193,8 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     operation to decode the image into a 3 dimensional RGB or grayscale Tensor.
 
     Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 in [0, 255], except for
+    16-bits pngs which are int32 tensors in [0, 65535].
 
     Args:
         input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the
@@ -209,7 +215,8 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
     """
     Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 in [0, 255], except for
+    16-bits pngs which are int32 tensors in [0, 65535].
 
     Args:
         path (str): path of the JPEG or PNG image.

@@ -38,7 +38,7 @@ __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 prod = functools.partial(functools.reduce, operator.mul)
 
 
-class MNISTFileReader(IterDataPipe):
+class MNISTFileReader(IterDataPipe[np.ndarray]):
     _DTYPE_MAP = {
         8: "u1",  # uint8
         9: "i1",  # int8
@@ -48,13 +48,15 @@ class MNISTFileReader(IterDataPipe):
         14: "f8",  # float64
     }
 
-    def __init__(self, datapipe: IterDataPipe, *, start: Optional[int], stop: Optional[int]) -> None:
+    def __init__(
+        self, datapipe: IterDataPipe[Tuple[Any, io.IOBase]], *, start: Optional[int], stop: Optional[int]
+    ) -> None:
         self.datapipe = datapipe
         self.start = start
         self.stop = stop
 
     @staticmethod
-    def _decode(bytes):
+    def _decode(bytes: bytes) -> int:
         return int(codecs.encode(bytes, "hex"), 16)
 
     def __iter__(self) -> Iterator[np.ndarray]:
@@ -107,7 +109,7 @@ class _MNISTBase(Dataset):
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ):
+    ) -> Dict[str, Any]:
         image_array, label_array = data
 
         image: Union[torch.Tensor, io.BytesIO]
@@ -138,14 +140,14 @@ class _MNISTBase(Dataset):
         labels_dp = Decompressor(labels_dp)
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
-        dp: IterDataPipe = Zipper(images_dp, labels_dp)
+        dp = Zipper(images_dp, labels_dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 
 
 class MNIST(_MNISTBase):
     @property
-    def info(self):
+    def info(self) -> DatasetInfo:
         return DatasetInfo(
             "mnist",
             type=DatasetType.RAW,
@@ -176,7 +178,7 @@ class MNIST(_MNISTBase):
 
 class FashionMNIST(MNIST):
     @property
-    def info(self):
+    def info(self) -> DatasetInfo:
         return DatasetInfo(
             "fashionmnist",
             type=DatasetType.RAW,
@@ -209,7 +211,7 @@ class FashionMNIST(MNIST):
 
 class KMNIST(MNIST):
     @property
-    def info(self):
+    def info(self) -> DatasetInfo:
         return DatasetInfo(
             "kmnist",
             type=DatasetType.RAW,
@@ -231,7 +233,7 @@ class KMNIST(MNIST):
 
 class EMNIST(_MNISTBase):
     @property
-    def info(self):
+    def info(self) -> DatasetInfo:
         return DatasetInfo(
             "emnist",
             type=DatasetType.RAW,
@@ -295,7 +297,7 @@ class EMNIST(_MNISTBase):
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ):
+    ) -> Dict[str, Any]:
         image_array, label_array = data
         # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
         # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
@@ -321,7 +323,7 @@ class EMNIST(_MNISTBase):
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,
-            functools.partial(self._classify_archive, config=config),  # type:ignore[arg-type]
+            functools.partial(self._classify_archive, config=config),
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
@@ -330,7 +332,7 @@ class EMNIST(_MNISTBase):
 
 class QMNIST(_MNISTBase):
     @property
-    def info(self):
+    def info(self) -> DatasetInfo:
         return DatasetInfo(
             "qmnist",
             type=DatasetType.RAW,
@@ -381,7 +383,7 @@ class QMNIST(_MNISTBase):
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ):
+    ) -> Dict[str, Any]:
         image_array, label_array = data
         label_parts = label_array.tolist()
         sample = super()._collate_and_decode((image_array, label_parts[0]), config=config, decoder=decoder)
