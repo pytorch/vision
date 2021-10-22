@@ -135,6 +135,7 @@ class MobileNetV3(nn.Module):
         num_classes: int = 1000,
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        dropout: float = 0.2,
         **kwargs: Any,
     ) -> None:
         """
@@ -146,6 +147,7 @@ class MobileNetV3(nn.Module):
             num_classes (int): Number of classes
             block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
             norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            dropout (float): The droupout probability
         """
         super().__init__()
 
@@ -200,7 +202,7 @@ class MobileNetV3(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(lastconv_output_channels, last_channel),
             nn.Hardswish(inplace=True),
-            nn.Dropout(p=0.2, inplace=True),
+            nn.Dropout(p=dropout, inplace=True),
             nn.Linear(last_channel, num_classes),
         )
 
@@ -279,7 +281,7 @@ def _mobilenet_v3_conf(
     return inverted_residual_setting, last_channel
 
 
-def _mobilenet_v3_model(
+def _mobilenet_v3(
     arch: str,
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
@@ -307,7 +309,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
     """
     arch = "mobilenet_v3_large"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
 
 
 def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
@@ -321,4 +323,4 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
     """
     arch = "mobilenet_v3_small"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)

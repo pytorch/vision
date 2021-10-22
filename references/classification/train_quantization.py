@@ -112,7 +112,7 @@ def main(args):
         print("Starting training for epoch", epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
         lr_scheduler.step()
-        with torch.no_grad():
+        with torch.inference_mode():
             if epoch >= args.num_observer_update_epochs:
                 print("Disabling observer for subseq epochs, epoch = ", epoch)
                 model.apply(torch.quantization.disable_observer)
@@ -235,6 +235,19 @@ def get_args_parser(add_help=True):
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
+
+    parser.add_argument(
+        "--interpolation", default="bilinear", type=str, help="the interpolation method (default: bilinear)"
+    )
+    parser.add_argument(
+        "--val-resize-size", default=256, type=int, help="the resize size used for validation (default: 256)"
+    )
+    parser.add_argument(
+        "--val-crop-size", default=224, type=int, help="the central crop size used for validation (default: 224)"
+    )
+    parser.add_argument(
+        "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
+    )
 
     return parser
 

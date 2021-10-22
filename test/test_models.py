@@ -220,6 +220,11 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
 )
 
+# The tests for the following quantized models are flaky possibly due to inconsistent
+# rounding errors in different platforms. For this reason the input/output consistency
+# tests under test_quantized_classification_model will be skipped for the following models.
+quantized_flaky_models = ("inception_v3", "resnet50")
+
 
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
@@ -258,6 +263,43 @@ _model_params = {
         "box_score_thresh": 0.02076,
         "rpn_pre_nms_top_n_test": 1000,
         "rpn_post_nms_top_n_test": 1000,
+    },
+}
+
+
+# The following contains configuration and expected values to be used tests that are model specific
+_model_tests_values = {
+    "retinanet_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [36, 46, 65, 78, 88, 89],
+    },
+    "keypointrcnn_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [48, 58, 77, 90, 100, 101],
+    },
+    "fasterrcnn_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [30, 40, 59, 72, 82, 83],
+    },
+    "maskrcnn_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [42, 52, 71, 84, 94, 95],
+    },
+    "fasterrcnn_mobilenet_v3_large_fpn": {
+        "max_trainable": 6,
+        "n_trn_params_per_layer": [22, 23, 44, 70, 91, 97, 100],
+    },
+    "fasterrcnn_mobilenet_v3_large_320_fpn": {
+        "max_trainable": 6,
+        "n_trn_params_per_layer": [22, 23, 44, 70, 91, 97, 100],
+    },
+    "ssd300_vgg16": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [45, 51, 57, 63, 67, 71],
+    },
+    "ssdlite320_mobilenet_v3_large": {
+        "max_trainable": 6,
+        "n_trn_params_per_layer": [96, 99, 138, 200, 239, 257, 266],
     },
 }
 
@@ -687,7 +729,9 @@ def test_video_model(model_name, dev):
 )
 @pytest.mark.parametrize("model_name", get_available_quantizable_models())
 def test_quantized_classification_model(model_name):
+    set_rng_seed(0)
     defaults = {
+        "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
         "pretrained": False,
         "quantize": True,
@@ -697,8 +741,15 @@ def test_quantized_classification_model(model_name):
 
     # First check if quantize=True provides models that can run with input data
     model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+    model.eval()
     x = torch.rand(input_shape)
-    model(x)
+    out = model(x)
+
+    if model_name not in quantized_flaky_models:
+        _assert_expected(out, model_name + "_quantized", prec=0.1)
+        assert out.shape[-1] == 5
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+        _check_fx_compatible(model, x)
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
@@ -724,6 +775,19 @@ def test_quantized_classification_model(model_name):
     except Exception as e:
         tb = traceback.format_exc()
         raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
+
+
+@pytest.mark.parametrize("model_name", get_available_detection_models())
+def test_detection_model_trainable_backbone_layers(model_name):
+    max_trainable = _model_tests_values[model_name]["max_trainable"]
+    n_trainable_params = []
+    for trainable_layers in range(0, max_trainable + 1):
+        model = torchvision.models.detection.__dict__[model_name](
+            pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers
+        )
+
+        n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
+    assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
 
 
 if __name__ == "__main__":

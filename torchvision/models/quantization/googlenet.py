@@ -116,7 +116,6 @@ class QuantizableInceptionAux(InceptionAux):
             conv_block=QuantizableBasicConv2d, *args, **kwargs
         )
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.7)
 
     def forward(self, x: Tensor) -> Tensor:
         # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
@@ -167,5 +166,5 @@ class QuantizableGoogLeNet(GoogLeNet):
         """
 
         for m in self.modules():
-            if type(m) == QuantizableBasicConv2d:
+            if type(m) is QuantizableBasicConv2d:
                 m.fuse_model()
