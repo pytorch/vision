@@ -282,20 +282,6 @@ def _efficientnet(
         bneck_conf(6, 5, 2, 112, 192, 4),
         bneck_conf(6, 3, 1, 192, 320, 1),
     ]
-<<<<<<< HEAD
-=======
-    return inverted_residual_setting
-
-
-def _efficientnet(
-    arch: str,
-    inverted_residual_setting: List[MBConvConfig],
-    dropout: float,
-    pretrained: bool,
-    progress: bool,
-    **kwargs: Any,
-) -> EfficientNet:
->>>>>>> main
     model = EfficientNet(inverted_residual_setting, dropout, **kwargs)
     if pretrained:
         if model_urls.get(arch, None) is None:
@@ -314,12 +300,7 @@ def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
     return _efficientnet("efficientnet_b0", 1.0, 1.0, 0.2, pretrained, progress, **kwargs)
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.0, **kwargs)
-    return _efficientnet("efficientnet_b0", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
->>>>>>> main
 
 
 def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -331,12 +312,7 @@ def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
     return _efficientnet("efficientnet_b1", 1.0, 1.1, 0.2, pretrained, progress, **kwargs)
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.1, **kwargs)
-    return _efficientnet("efficientnet_b1", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
->>>>>>> main
 
 
 def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -348,12 +324,7 @@ def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
     return _efficientnet("efficientnet_b2", 1.1, 1.2, 0.3, pretrained, progress, **kwargs)
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.1, depth_mult=1.2, **kwargs)
-    return _efficientnet("efficientnet_b2", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
->>>>>>> main
 
 
 def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -365,12 +336,7 @@ def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
     return _efficientnet("efficientnet_b3", 1.2, 1.4, 0.3, pretrained, progress, **kwargs)
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.2, depth_mult=1.4, **kwargs)
-    return _efficientnet("efficientnet_b3", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
->>>>>>> main
 
 
 def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -382,12 +348,7 @@ def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
     return _efficientnet("efficientnet_b4", 1.4, 1.8, 0.4, pretrained, progress, **kwargs)
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.4, depth_mult=1.8, **kwargs)
-    return _efficientnet("efficientnet_b4", inverted_residual_setting, 0.4, pretrained, progress, **kwargs)
->>>>>>> main
 
 
 def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -399,10 +360,6 @@ def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.6, depth_mult=2.2, **kwargs)
->>>>>>> main
     return _efficientnet(
         "efficientnet_b5",
         1.6,
@@ -424,10 +381,6 @@ def efficientnet_b6(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=1.8, depth_mult=2.6, **kwargs)
->>>>>>> main
     return _efficientnet(
         "efficientnet_b6",
         1.8,
@@ -449,10 +402,6 @@ def efficientnet_b7(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-<<<<<<< HEAD
-=======
-    inverted_residual_setting = _efficientnet_conf(width_mult=2.0, depth_mult=3.1, **kwargs)
->>>>>>> main
     return _efficientnet(
         "efficientnet_b7",
         2.0,
