@@ -8,7 +8,7 @@ from torch.utils.data.datapipes.iter import FileLoader, IterableWrapper
 
 
 # FIXME
-def compute_sha256(_) -> str:
+def compute_sha256(path: pathlib.Path) -> str:
     return ""
 
 
