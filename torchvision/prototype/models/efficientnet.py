@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from torch import nn
 from torchvision.transforms.functional import InterpolationMode
