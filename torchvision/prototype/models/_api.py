@@ -93,11 +93,11 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
         raise ValueError("The method is missing the 'weights' argument.")
 
     ann = signature(fn).parameters["weights"].annotation
+    weights_class = None
     if isinstance(ann, type) and issubclass(ann, Weights):
         weights_class = ann
     else:
         # handle cases like Union[Optional, T]
-        weights_class = None
         for t in get_args(ann):
             if isinstance(t, type) and issubclass(t, Weights):
                 weights_class = t
