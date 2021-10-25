@@ -1,15 +1,15 @@
 #include "image.h"
 
-#include <Python.h>
+//#include <Python.h>
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
-#ifdef _WIN32
-PyMODINIT_FUNC PyInit_image(void) {
-  // No need to do anything.
-  return NULL;
-}
-#endif
+//#ifdef _WIN32
+//PyMODINIT_FUNC PyInit_image(void) {
+//  // No need to do anything.
+//  return NULL;
+//}
+//#endif
 
 namespace vision {
 namespace image {

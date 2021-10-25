@@ -228,6 +228,7 @@ def get_extensions():
             include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
+            export_symbols=[],
         )
     ]
     if compile_cpp_tests:
@@ -238,6 +239,7 @@ def get_extensions():
                 include_dirs=tests_include_dirs,
                 define_macros=define_macros,
                 extra_compile_args=extra_compile_args,
+                export_symbols=[],
             )
         )
 
