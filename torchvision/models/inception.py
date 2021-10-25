@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = ["Inception3", "inception_v3", "InceptionOutputs", "_InceptionOutputs"]
@@ -73,6 +74,7 @@ class Inception3(nn.Module):
         dropout: float = 0.5,
     ) -> None:
         super(Inception3, self).__init__()
+        _log_api_usage_once(self)
         if inception_blocks is None:
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux]
         if init_weights is None:
