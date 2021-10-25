@@ -1,12 +1,13 @@
 from collections import OrderedDict
 from dataclasses import dataclass, fields
 from enum import Enum
-from typing import Any, Callable, Dict
+from inspect import signature
+from typing import Any, Callable, Dict, get_args
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["Weights", "WeightEntry"]
+__all__ = ["Weights", "WeightEntry", "get_weight"]
 
 
 @dataclass
@@ -74,3 +75,37 @@ class Weights(Enum):
             if f.name == name:
                 return object.__getattribute__(self.value, name)
         return super().__getattr__(name)
+
+
+def get_weight(fn: Callable, weight_name: str) -> Weights:
+    """
+    Gets the weight enum of a specific model builder method and weight name combination.
+
+    Args:
+        fn (Callable): The builder method used to create the model.
+        weight_name (str): The name of the weight enum entry of the specific model.
+
+    Returns:
+        Weights: The requested weight enum.
+    """
+    sig = signature(fn)
+    if "weights" not in sig.parameters:
+        raise ValueError("The method is missing the 'weights' argument.")
+
+    ann = signature(fn).parameters["weights"].annotation
+    if isinstance(ann, type) and issubclass(ann, Weights):
+        weights_class = ann
+    else:
+        # handle cases like Union[Optional, T]
+        weights_class = None
+        for t in get_args(ann):
+            if isinstance(t, type) and issubclass(t, Weights):
+                weights_class = t
+                break
+
+    if weights_class is None:
+        raise ValueError(
+            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is " "correct."
+        )
+
+    return weights_class.from_str(weight_name)
