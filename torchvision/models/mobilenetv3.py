@@ -7,6 +7,7 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation, SqueezeExcitation as SElayer
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -150,6 +151,7 @@ class MobileNetV3(nn.Module):
             dropout (float): The droupout probability
         """
         super().__init__()
+        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
