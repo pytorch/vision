@@ -7,6 +7,7 @@ from torch import nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -110,6 +111,7 @@ class MobileNetV2(nn.Module):
 
         """
         super(MobileNetV2, self).__init__()
+        _log_api_usage_once(self)
 
         if block is None:
             block = InvertedResidual
