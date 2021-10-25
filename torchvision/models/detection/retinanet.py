@@ -11,8 +11,8 @@ from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
-from ..resnet import resnet50
 from ...utils import _log_api_usage_once
+from ..resnet import resnet50
 from . import _utils as det_utils
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
