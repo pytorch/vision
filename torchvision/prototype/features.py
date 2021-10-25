@@ -53,8 +53,13 @@ class Feature(torch.Tensor):
 
         return cls(output, like=args[0])
 
+    def __repr__(self) -> str:
+        return super().__repr__().replace("tensor", type(self).__name__)
+
 
 class ColorSpace(enum.Enum):
+    # this is just for test purposes
+    _SENTINEL = -1
     OTHER = 0
     GRAYSCALE = 1
     RGB = 3
