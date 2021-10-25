@@ -115,12 +115,12 @@ class _MNISTBase(Dataset):
 
         image: Union[Image, io.IOBase]
         if decoder is raw:
-            image = Image(torch.from_numpy(image_array))
+            image = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array)
-            image = Image(decoder(image_buffer)) if decoder else image_buffer
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        label = Label(torch.tensor(label_array, dtype=torch.int64), category=self.info.categories[int(label_array)])
+        label = Label(label_array, dtype=torch.int64, category=self.info.categories[int(label_array)])
 
         return dict(image=image, label=label)
 

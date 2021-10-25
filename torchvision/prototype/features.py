@@ -15,13 +15,17 @@ class Feature(torch.Tensor):
 
     def __new__(
         cls: Type[T],
-        data: Any = None,
+        data: Any,
         *,
         like: Optional[T] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
         meta_data: FrozenMapping[str, Any] = FrozenMapping(),
     ) -> T:
-        if data is None:
-            data = torch.empty(0)
+        if like is not None:
+            dtype = dtype or like.dtype
+            device = device or like.device
+        data = torch.as_tensor(data, dtype=dtype, device=device)
         requires_grad = False
         self = cast(T, torch.Tensor._make_subclass(cast(_TensorBase, cls), data, requires_grad))
 
@@ -61,9 +65,11 @@ class Image(Feature):
 
     def __new__(
         cls,
-        data: Any = None,
+        data: Any,
         *,
         like: Optional["Image"] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
         color_space: Optional[Union[str, ColorSpace]] = None,
     ) -> "Image":
         if color_space is None:
@@ -73,7 +79,7 @@ class Image(Feature):
 
         meta_data: FrozenMapping[str, Any] = FrozenMapping(color_space=color_space)
 
-        return Feature.__new__(cls, data, like=like, meta_data=meta_data)
+        return Feature.__new__(cls, data, like=like, dtype=dtype, device=device, meta_data=meta_data)
 
     @staticmethod
     def guess_color_space(image: torch.Tensor) -> ColorSpace:
@@ -96,9 +102,13 @@ class Label(Feature):
 
     def __new__(
         cls,
-        data: Any = None,
+        data: Any,
         *,
         like: Optional["Label"] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
         category: Optional[str] = None,
     ) -> "Label":
-        return Feature.__new__(cls, data, like=like, meta_data=FrozenMapping(category=category))
+        return Feature.__new__(
+            cls, data, like=like, dtype=dtype, device=device, meta_data=FrozenMapping(category=category)
+        )
