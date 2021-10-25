@@ -224,7 +224,7 @@ def main(args):
     else:
         if PM is None:
             raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-        model = PM.__dict__[args.model](weights=args.weights)
+        model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
