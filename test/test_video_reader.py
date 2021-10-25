@@ -269,12 +269,12 @@ class TestVideoReader:
     def check_separate_decoding_result(self, tv_result, config):
         """check the decoding results from TorchVision decoder"""
         (
-            vframes,
+            _,
             vframe_pts,
             vtimebase,
             vfps,
             vduration,
-            aframes,
+            _,
             aframe_pts,
             atimebase,
             asample_rate,
@@ -502,12 +502,12 @@ class TestVideoReader:
                     vframe_pts,
                     vtimebase,
                     vfps,
-                    vduration,
+                    _,
                     aframes,
                     aframe_pts,
                     atimebase,
                     asample_rate,
-                    aduration,
+                    _,
                 ) = tv_result
 
                 assert (vframes.numel() > 0) is bool(readVideoStream)
@@ -804,16 +804,12 @@ class TestVideoReader:
                     audio_timebase_den,
                 )
                 (
-                    vframes,
-                    vframe_pts,
-                    vtimebase,
-                    vfps,
-                    vduration,
+                    *_,
                     aframes,
                     aframe_pts,
                     atimebase,
                     asample_rate,
-                    aduration,
+                    _,
                 ) = tv_result
                 if aframes.numel() > 0:
                     assert samples == asample_rate.item()
@@ -948,7 +944,7 @@ class TestVideoReader:
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            _, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
             tv_result = torch.ops.video_reader.read_video_from_memory(
@@ -1040,16 +1036,14 @@ class TestVideoReader:
                 audio_timebase_den,
             )
             (
-                vframes,
+                _,
                 vframe_pts,
                 vtimebase,
                 vfps,
-                vduration,
-                aframes,
-                aframe_pts,
+                *_,
                 atimebase,
-                asample_rate,
-                aduration,
+                _,
+                _,
             ) = tv_result
             assert abs(config.video_fps - vfps.item()) < 0.01
 
@@ -1161,7 +1155,7 @@ class TestVideoReader:
         Test the case when decoder probes a video in memory
         """
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            _, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
             probe_result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
             self.check_probe_result(probe_result, config)
 
@@ -1170,7 +1164,7 @@ class TestVideoReader:
         assert scripted_fun is not None
 
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            _, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
             probe_result = scripted_fun(video_tensor)
             self.check_meta_result(probe_result, config)
 
@@ -1191,7 +1185,7 @@ class TestVideoReader:
         assert scripted_fun is not None
 
         for test_video, _config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            _, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # decode all frames using cpp decoder
             scripted_fun(

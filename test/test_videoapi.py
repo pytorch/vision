@@ -53,7 +53,7 @@ test_videos = {
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     def test_frame_reading(self):
-        for test_video, config in test_videos.items():
+        for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             av_reader = av.open(full_path)
@@ -101,12 +101,12 @@ class TestVideoApi:
             assert config.duration == approx(reader_md["video"]["duration"][0], abs=0.5)
 
     def test_seek_start(self):
-        for test_video, config in test_videos.items():
+        for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             video_reader = VideoReader(full_path, "video")
             num_frames = 0
-            for frame in video_reader:
+            for _ in video_reader:
                 num_frames += 1
 
             # now seek the container to 0 and do it again
@@ -114,7 +114,7 @@ class TestVideoApi:
             # this way and it doesn't start at 0
             video_reader.seek(0)
             start_num_frames = 0
-            for frame in video_reader:
+            for _ in video_reader:
                 start_num_frames += 1
 
             assert start_num_frames == num_frames
@@ -122,13 +122,13 @@ class TestVideoApi:
             # now seek the container to < 0 to check for unexpected behaviour
             video_reader.seek(-1)
             start_num_frames = 0
-            for frame in video_reader:
+            for _ in video_reader:
                 start_num_frames += 1
 
             assert start_num_frames == num_frames
 
     def test_accurateseek_middle(self):
-        for test_video, config in test_videos.items():
+        for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             stream = "video"
@@ -138,12 +138,12 @@ class TestVideoApi:
             if duration is not None:
 
                 num_frames = 0
-                for frame in video_reader:
+                for _ in video_reader:
                     num_frames += 1
 
                 video_reader.seek(duration / 2)
                 middle_num_frames = 0
-                for frame in video_reader:
+                for _ in video_reader:
                     middle_num_frames += 1
 
                 assert middle_num_frames < num_frames
