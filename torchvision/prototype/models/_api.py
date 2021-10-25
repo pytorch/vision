@@ -2,7 +2,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, fields
 from enum import Enum
 from inspect import signature
-from typing import Any, Callable, Dict, get_args
+from typing import Any, Callable, Dict
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
@@ -98,7 +98,8 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
         weights_class = ann
     else:
         # handle cases like Union[Optional, T]
-        for t in get_args(ann):
+        # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
+        for t in ann.__args__:  # type: ignore[union-attr]
             if isinstance(t, type) and issubclass(t, Weights):
                 weights_class = t
                 break
