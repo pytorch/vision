@@ -155,12 +155,14 @@ def get_args_parser(add_help=True):
 
     parser = argparse.ArgumentParser(description="PyTorch Quantized Classification Training", add_help=add_help)
 
-    parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", help="dataset")
-    parser.add_argument("--model", default="mobilenet_v2", help="model")
-    parser.add_argument("--backend", default="qnnpack", help="fbgemm or qnnpack")
-    parser.add_argument("--device", default="cuda", help="device")
+    parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", type=str, help="dataset path")
+    parser.add_argument("--model", default="mobilenet_v2", type=str, help="model name")
+    parser.add_argument("--backend", default="qnnpack", type=str, help="fbgemm or qnnpack")
+    parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
 
-    parser.add_argument("-b", "--batch-size", default=32, type=int, help="batch size for calibration/training")
+    parser.add_argument(
+        "-b", "--batch-size", default=32, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+    )
     parser.add_argument("--eval-batch-size", default=128, type=int, help="batch size for evaluation")
     parser.add_argument("--epochs", default=90, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument(
@@ -203,8 +205,8 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
-    parser.add_argument("--output-dir", default=".", help="path where to save")
-    parser.add_argument("--resume", default="", help="resume from checkpoint")
+    parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
         "--cache-dataset",
@@ -234,7 +236,20 @@ def get_args_parser(add_help=True):
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
-    parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
+    parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
+
+    parser.add_argument(
+        "--interpolation", default="bilinear", type=str, help="the interpolation method (default: bilinear)"
+    )
+    parser.add_argument(
+        "--val-resize-size", default=256, type=int, help="the resize size used for validation (default: 256)"
+    )
+    parser.add_argument(
+        "--val-crop-size", default=224, type=int, help="the central crop size used for validation (default: 224)"
+    )
+    parser.add_argument(
+        "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
+    )
 
     return parser
 

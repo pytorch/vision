@@ -9,7 +9,6 @@ import os
 import os.path
 import pathlib
 import textwrap
-from collections.abc import Mapping
 from typing import (
     Collection,
     Sequence,
@@ -23,12 +22,13 @@ from typing import (
     Optional,
     NoReturn,
     Iterable,
+    Mapping,
 )
+from typing import cast
 
 import numpy as np
 import PIL.Image
 from torch.utils.data import IterDataPipe
-
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
@@ -83,7 +83,7 @@ def add_suggestion(
     return f"{msg.strip()} {hint}"
 
 
-def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
+def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
     def to_str(sep: str) -> str:
         return sep.join([f"{key}={value}" for key, value in items])
 
@@ -101,29 +101,29 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
     return f"{prefix}\n{body}\n{postfix}"
 
 
-class FrozenMapping(Mapping):
-    def __init__(self, *args, **kwargs):
+class FrozenMapping(Mapping[K, D]):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         data = dict(*args, **kwargs)
         self.__dict__["__data__"] = data
         self.__dict__["__final_hash__"] = hash(tuple(data.items()))
 
-    def __getitem__(self, name: str) -> Any:
-        return self.__dict__["__data__"][name]
+    def __getitem__(self, item: K) -> D:
+        return cast(Mapping[K, D], self.__dict__["__data__"])[item]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[K]:
         return iter(self.__dict__["__data__"].keys())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__dict__["__data__"])
 
-    def __setitem__(self, key: Any, value: Any) -> NoReturn:
+    def __setitem__(self, key: K, value: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
-    def __delitem__(self, key: Any) -> NoReturn:
+    def __delitem__(self, key: K) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __hash__(self) -> int:
-        return self.__dict__["__final_hash__"]
+        return cast(int, self.__dict__["__final_hash__"])
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, FrozenMapping):
@@ -131,7 +131,7 @@ class FrozenMapping(Mapping):
 
         return hash(self) == hash(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.__dict__["__data__"])
 
 
@@ -205,7 +205,7 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
 
 
 def getitem(*items: Any) -> Callable[[Any], Any]:
-    def wrapper(obj: Any):
+    def wrapper(obj: Any) -> Any:
         for item in items:
             obj = obj[item]
         return obj
@@ -218,7 +218,7 @@ def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[
         name = getter
 
         def getter(path: pathlib.Path) -> D:
-            return getattr(path, name)
+            return cast(D, getattr(path, name))
 
     def wrapper(data: Tuple[str, Any]) -> D:
         return getter(pathlib.Path(data[0]))  # type: ignore[operator]
