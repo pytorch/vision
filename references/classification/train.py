@@ -14,6 +14,12 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -142,11 +148,18 @@ def load_data(traindir, valdir, args):
         print("Loading dataset_test from {}".format(cache_path))
         dataset_test, _ = torch.load(cache_path)
     else:
+        if not args.weights:
+            preprocessing = presets.ClassificationPresetEval(
+                crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
+            )
+        else:
+            fn = PM.__dict__[args.model]
+            weights = PM._api.get_weight(fn, args.weights)
+            preprocessing = weights.transforms()
+
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            presets.ClassificationPresetEval(
-                crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
-            ),
+            preprocessing,
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
@@ -206,7 +219,12 @@ def main(args):
     )
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
+    if not args.weights:
+        model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
+    else:
+        if PM is None:
+            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+        model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -346,10 +364,12 @@ def get_args_parser(add_help=True):
 
     parser = argparse.ArgumentParser(description="PyTorch Classification Training", add_help=add_help)
 
-    parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", help="dataset")
-    parser.add_argument("--model", default="resnet18", help="model")
-    parser.add_argument("--device", default="cuda", help="device")
-    parser.add_argument("-b", "--batch-size", default=32, type=int)
+    parser.add_argument("--data-path", default="/datasets01/imagenet_full_size/061417/", type=str, help="dataset path")
+    parser.add_argument("--model", default="resnet18", type=str, help="model name")
+    parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
+    parser.add_argument(
+        "-b", "--batch-size", default=32, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+    )
     parser.add_argument("--epochs", default=90, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument(
         "-j", "--workers", default=16, type=int, metavar="N", help="number of data loading workers (default: 16)"
@@ -377,7 +397,7 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument("--mixup-alpha", default=0.0, type=float, help="mixup alpha (default: 0.0)")
     parser.add_argument("--cutmix-alpha", default=0.0, type=float, help="cutmix alpha (default: 0.0)")
-    parser.add_argument("--lr-scheduler", default="steplr", help="the lr scheduler (default: steplr)")
+    parser.add_argument("--lr-scheduler", default="steplr", type=str, help="the lr scheduler (default: steplr)")
     parser.add_argument("--lr-warmup-epochs", default=0, type=int, help="the number of epochs to warmup (default: 0)")
     parser.add_argument(
         "--lr-warmup-method", default="constant", type=str, help="the warmup method (default: constant)"
@@ -386,8 +406,8 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
-    parser.add_argument("--output-dir", default=".", help="path where to save")
-    parser.add_argument("--resume", default="", help="resume from checkpoint")
+    parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
         "--cache-dataset",
@@ -413,7 +433,7 @@ def get_args_parser(add_help=True):
         help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
-    parser.add_argument("--auto-augment", default=None, help="auto augment policy (default: None)")
+    parser.add_argument("--auto-augment", default=None, type=str, help="auto augment policy (default: None)")
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
     # Mixed precision training parameters
@@ -421,7 +441,7 @@ def get_args_parser(add_help=True):
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
-    parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
+    parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
     parser.add_argument(
         "--model-ema", action="store_true", help="enable tracking Exponential Moving Average of model parameters"
     )
@@ -452,6 +472,9 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser
 

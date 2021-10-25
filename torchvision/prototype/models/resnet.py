@@ -92,13 +92,13 @@ class ResNet50Weights(Weights):
         },
     )
     ImageNet1K_RefV2 = WeightEntry(
-        url="https://download.pytorch.org/models/resnet50-tmp.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        url="https://download.pytorch.org/models/resnet50-f46c3f97.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_common_meta,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 80.352,
-            "acc@5": 95.148,
+            "acc@1": 80.674,
+            "acc@5": 95.166,
         },
     )
 
