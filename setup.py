@@ -143,7 +143,7 @@ def get_extensions():
     if torch.__version__ >= "1.5":
         from torch.utils.cpp_extension import ROCM_HOME
 
-        is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
+        is_rocm_pytorch = (torch.version.hip is not None) and (ROCM_HOME is not None)
 
     if is_rocm_pytorch:
         from torch.utils.hipify import hipify_python
