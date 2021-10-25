@@ -188,38 +188,46 @@ class TestDatasetInfo:
 
 
 class TestDataset:
-    def make_dataset_mock(self, name="name", valid_options=None, resources=None):
-        cls = type(
-            "DatasetMock",
-            (datasets.utils.Dataset,),
-            dict(
-                info=datasets.utils.DatasetInfo(
-                    name,
-                    type=datasets.utils.DatasetType.RAW,
-                    categories=[],
-                    valid_options=valid_options or dict(split=("train", "test")),
-                ),
-                resources=unittest.mock.Mock(return_value=[]) if resources is None else lambda self, config: resources,
-                _make_datapipe=unittest.mock.Mock(),
-            ),
-        )
-        return cls()
+    class DatasetMock(datasets.utils.Dataset):
+        def __init__(self, name="name", *, valid_options=None, resources=None):
+            self._name = name
+            self._valid_options = valid_options or dict(split=("train", "test"))
+
+            self.resources = unittest.mock.Mock(return_value=[]) if resources is None else lambda config: resources
+            self._make_datapipe = unittest.mock.Mock()
+
+        @property
+        def info(self):
+            return datasets.utils.DatasetInfo(
+                self._name,
+                type=datasets.utils.DatasetType.RAW,
+                categories=[],
+                valid_options=self._valid_options,
+            )
+
+        def resources(self, config):
+            # This method is just defined to appease the ABC, but will be overwritten at instantiation
+            pass
+
+        def _make_datapipe(self, resource_dps, *, config, decoder):
+            # This method is just defined to appease the ABC, but will be overwritten at instantiation
+            pass
 
     def test_name(self):
         name = "sentinel"
-        dataset = self.make_dataset_mock(name=name)
+        dataset = self.DatasetMock(name=name)
 
         assert dataset.name == name
 
     def test_default_config(self):
         sentinel = "sentinel"
         valid_options = dict(split=(sentinel, "train"))
-        dataset = self.make_dataset_mock(valid_options=valid_options)
+        dataset = self.DatasetMock(valid_options=valid_options)
 
         assert dataset.default_config == datasets.utils.DatasetConfig(split=sentinel)
 
     def test_to_datapipe_config(self):
-        dataset = self.make_dataset_mock()
+        dataset = self.DatasetMock()
         config = datasets.utils.DatasetConfig(split="test")
 
         dataset.to_datapipe("", config=config)
@@ -230,7 +238,7 @@ class TestDataset:
         assert call_kwargs["config"] == config
 
     def test_to_datapipe_default_config(self):
-        dataset = self.make_dataset_mock()
+        dataset = self.DatasetMock()
         config = dataset.default_config
 
         dataset.to_datapipe("")
@@ -244,7 +252,7 @@ class TestDataset:
         resource_mock = mocker.Mock(spec=["to_datapipe"])
         sentinel = object()
         resource_mock.to_datapipe.return_value = sentinel
-        dataset = self.make_dataset_mock(resources=[resource_mock])
+        dataset = self.DatasetMock(resources=[resource_mock])
 
         root = "root"
         dataset.to_datapipe(root)
@@ -255,7 +263,7 @@ class TestDataset:
         assert call_args[0][0] is sentinel
 
     def test_decoder(self):
-        dataset = self.make_dataset_mock()
+        dataset = self.DatasetMock()
 
         sentinel = object()
         dataset.to_datapipe("", decoder=sentinel)
