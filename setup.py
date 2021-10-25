@@ -159,7 +159,6 @@ def get_extensions():
         # Copy over additional files
         for file in glob.glob(r"torchvision/csrc/ops/cuda/*.h"):
             shutil.copy(file, "torchvision/csrc/ops/hip")
-
     else:
         source_cuda = glob.glob(os.path.join(extensions_dir, "ops", "cuda", "*.cu"))
 
