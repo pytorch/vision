@@ -7,3 +7,4 @@ from .mobilenetv3 import *
 from .mnasnet import *
 from . import detection
 from . import quantization
+from . import segmentation

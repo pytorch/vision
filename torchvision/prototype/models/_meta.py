@@ -1101,3 +1101,28 @@ _COCO_CATEGORIES = [
     "hair drier",
     "toothbrush",
 ]
+
+# To be replaced with torchvision.datasets.find("voc").info.categories
+_VOC_CATEGORIES = [
+    "__background__",
+    "aeroplane",
+    "bicycle",
+    "bird",
+    "boat",
+    "bottle",
+    "bus",
+    "car",
+    "cat",
+    "chair",
+    "cow",
+    "diningtable",
+    "dog",
+    "horse",
+    "motorbike",
+    "person",
+    "pottedplant",
+    "sheep",
+    "sofa",
+    "train",
+    "tvmonitor",
+]
