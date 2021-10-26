@@ -32,15 +32,7 @@ if [ $PYTHON_VERSION == "3.6" ]; then
     pip install pillow>=5.3.0
 fi
 
-torch_cuda=$(python -c "import torch; print(torch.cuda.is_available())")
-echo torch.cuda.is_available is $torch_cuda
-
-if [ "${CU_VERSION:-}" != "cpu" ] ; then
-    if [ "$torch_cuda" == "False" ]; then
-        echo "It's unittest for GPU but torch.cuda.is_available() is False"
-        exit 1
-    fi
-fi
+source packaging/torchvision/checktorch.sh
 
 printf "* Installing torchvision\n"
 python setup.py develop
