@@ -8,6 +8,7 @@ from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
+from ...utils import _log_api_usage_once
 from .. import vgg
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
@@ -181,6 +182,7 @@ class SSD(nn.Module):
         positive_fraction: float = 0.25,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         self.backbone = backbone
 

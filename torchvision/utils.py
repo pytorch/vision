@@ -308,3 +308,7 @@ def draw_segmentation_masks(
 def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_masks)]
+
+
+def _log_api_usage_once(obj: object) -> None:
+    torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
