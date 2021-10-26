@@ -31,6 +31,17 @@ Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg13`, `vgg16` or `vgg19`. Note
 that `vgg11_bn`, `vgg13_bn`, `vgg16_bn`, and `vgg19_bn` include batch
 normalization and thus are trained with the default parameters.
 
+### Inception V3
+
+The weights of the Inception V3 model are ported from the original paper rather than trained from scratch.
+
+Since it expects tensors with a size of N x 3 x 299 x 299, to validate the model use the following command:
+
+```
+torchrun --nproc_per_node=8 train.py --model inception_v3
+      --val-resize-size 342 --val-crop-size 299 --train-crop-size 299 --test-only --pretrained
+```
+
 ### ResNext-50 32x4d
 ```
 torchrun --nproc_per_node=8 train.py\
@@ -79,6 +90,25 @@ The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](ht
 
 The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTorch repo](https://github.com/lukemelas/EfficientNet-PyTorch/blob/1039e009545d9329ea026c9f7541341439712b96/efficientnet_pytorch/utils.py#L562-L564).
 
+All models were trained using Bicubic interpolation and each have custom crop and resize sizes. To validate the models use the following commands:
+```
+torchrun --nproc_per_node=8 train.py --model efficientnet_b0 --interpolation bicubic\
+     --val-resize-size 256 --val-crop-size 224 --train-crop-size 224 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b1 --interpolation bicubic\
+      --val-resize-size 256 --val-crop-size 240 --train-crop-size 240 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b2 --interpolation bicubic\
+      --val-resize-size 288 --val-crop-size 288 --train-crop-size 288 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b3 --interpolation bicubic\
+      --val-resize-size 320 --val-crop-size 300 --train-crop-size 300 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b4 --interpolation bicubic\
+      --val-resize-size 384 --val-crop-size 380 --train-crop-size 380 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b5 --interpolation bicubic\
+      --val-resize-size 456 --val-crop-size 456 --train-crop-size 456 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b6 --interpolation bicubic\
+      --val-resize-size 528 --val-crop-size 528 --train-crop-size 528 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b7 --interpolation bicubic\
+      --val-resize-size 600 --val-crop-size 600 --train-crop-size 600 --test-only --pretrained
+```
 
 ### RegNet
 
@@ -180,4 +210,9 @@ For post training quant, device is set to CPU. For training, the device is set t
 
 ```
 python train_quantization.py --device='cpu' --test-only --backend='<backend>' --model='<model_name>'
+```
+
+For inception_v3 you need to pass the following extra parameters:
+```
+--val-resize-size 342 --val-crop-size 299 --train-crop-size 299
 ```

@@ -236,6 +236,19 @@ def get_args_parser(add_help=True):
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
 
+    parser.add_argument(
+        "--interpolation", default="bilinear", type=str, help="the interpolation method (default: bilinear)"
+    )
+    parser.add_argument(
+        "--val-resize-size", default=256, type=int, help="the resize size used for validation (default: 256)"
+    )
+    parser.add_argument(
+        "--val-crop-size", default=224, type=int, help="the central crop size used for validation (default: 224)"
+    )
+    parser.add_argument(
+        "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
+    )
+
     return parser
 
 
