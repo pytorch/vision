@@ -5,7 +5,10 @@ namespace vision {
 namespace image {
 
 #if !PNG_FOUND
-torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_png(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool allow_16_bits) {
   TORCH_CHECK(
       false, "decode_png: torchvision not compiled with libPNG support");
 }
@@ -16,7 +19,10 @@ bool is_little_endian() {
   return *(uint8_t*)&x;
 }
 
-torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_png(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool allow_16_bits) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -77,9 +83,12 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
-  if (bit_depth > 16) {
+  auto max_bit_depth = allow_16_bits ? 16 : 8;
+  auto err_msg = "At most " + std::to_string(max_bit_depth) +
+      "-bit PNG images are supported currently.";
+  if (bit_depth > max_bit_depth) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(false, "At most 16-bit PNG images are supported currently.")
+    TORCH_CHECK(false, err_msg)
   }
 
   int channels = png_get_channels(png_ptr, info_ptr);
