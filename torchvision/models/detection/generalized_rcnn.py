@@ -26,7 +26,7 @@ class GeneralizedRCNN(nn.Module):
     """
 
     def __init__(self, backbone, rpn, roi_heads, transform):
-        super(GeneralizedRCNN, self).__init__()
+        super().__init__()
         _log_api_usage_once(self)
         self.transform = transform
         self.backbone = backbone

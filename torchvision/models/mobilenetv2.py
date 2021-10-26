@@ -42,7 +42,7 @@ class InvertedResidual(nn.Module):
     def __init__(
         self, inp: int, oup: int, stride: int, expand_ratio: int, norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InvertedResidual, self).__init__()
+        super().__init__()
         self.stride = stride
         assert stride in [1, 2]
 
@@ -110,7 +110,7 @@ class MobileNetV2(nn.Module):
             dropout (float): The droupout probability
 
         """
-        super(MobileNetV2, self).__init__()
+        super().__init__()
         _log_api_usage_once(self)
 
         if block is None:

@@ -37,7 +37,7 @@ class BackboneWithFPN(nn.Module):
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
     ) -> None:
-        super(BackboneWithFPN, self).__init__()
+        super().__init__()
 
         if extra_blocks is None:
             extra_blocks = LastLevelMaxPool()
