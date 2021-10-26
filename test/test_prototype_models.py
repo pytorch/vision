@@ -12,6 +12,12 @@ def get_available_classification_models():
     return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
+def test_get_weight():
+    fn = models.resnet50
+    weight_name = "ImageNet1K_RefV2"
+    assert models._api.get_weight(fn, weight_name) == models.ResNet50Weights.ImageNet1K_RefV2
+
+
 @pytest.mark.parametrize("model_name", get_available_classification_models())
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
