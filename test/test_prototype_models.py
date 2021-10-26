@@ -2,8 +2,8 @@ import importlib
 import os
 
 import pytest
-import torch
 import test_models as TM
+import torch
 from common_utils import cpu_and_gpu
 from torchvision.prototype import models
 
