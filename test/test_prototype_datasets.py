@@ -1,8 +1,10 @@
+import re
 import unittest.mock
 
 import pytest
 from torchvision.prototype import datasets
 from torchvision.prototype.datasets import _api
+from torchvision.prototype.datasets.utils._internal import FrozenMapping, FrozenBunch
 
 
 def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
@@ -16,167 +18,148 @@ def patch_datasets(mocker):
     return registered_datasets
 
 
-class TestDatasetConfig:
-    @pytest.fixture
-    def options(self):
-        return dict(foo="bar", baz=1)
+class TestFrozenMapping:
+    @pytest.mark.parametrize(
+        ("args", "kwargs"),
+        [
+            pytest.param((dict(foo="bar", baz=1),), dict(), id="from_dict"),
+            pytest.param((), dict(foo="bar", baz=1), id="from_kwargs"),
+            pytest.param((dict(foo="bar"),), dict(baz=1), id="mixed"),
+        ],
+    )
+    def test_instantiation(self, args, kwargs):
+        FrozenMapping(*args, **kwargs)
 
-    def test_creation_from_dict(self, options):
-        datasets.utils.DatasetConfig(options)
+    def test_unhashable_items(self):
+        with pytest.raises(TypeError, match=re.escape("unhashable type")):
+            FrozenMapping(foo=[])
 
-    def test_creation_from_kwargs(self, options):
-        datasets.utils.DatasetConfig(**options)
-
-    def test_creation_mixed(self, options):
-        datasets.utils.DatasetConfig(options, baz=options.pop("baz"))
-
-    def test_creation_unhashable(self, options):
-        with pytest.raises(TypeError):
-            datasets.utils.DatasetConfig(foo=[])
-
-    def test_getitem(self, options):
-        config = datasets.utils.DatasetConfig(options)
+    def test_getitem(self):
+        options = dict(foo="bar", baz=1)
+        config = FrozenMapping(options)
 
         for key, value in options.items():
             assert config[key] == value
 
     def test_getitem_unknown(self):
         with pytest.raises(KeyError):
-            datasets.utils.DatasetConfig()["unknown"]
+            FrozenMapping()["unknown"]
 
-    def test_iter(self, options):
-        assert set(iter(datasets.utils.DatasetConfig(options))) == set(options.keys())
+    def test_iter(self):
+        options = dict(foo="bar", baz=1)
+        assert set(iter(FrozenMapping(options))) == set(options.keys())
 
-    def test_len(self, options):
-        assert len(datasets.utils.DatasetConfig(options)) == len(options)
+    def test_len(self):
+        options = dict(foo="bar", baz=1)
+        assert len(FrozenMapping(options)) == len(options)
 
-    def test_getattr(self, options):
-        config = datasets.utils.DatasetConfig(options)
+    @pytest.mark.parametrize(
+        "method",
+        [
+            pytest.param(lambda obj, key, value: FrozenMapping.__setitem__(obj, key, value), id="setitem"),
+            pytest.param(lambda obj, key, value: FrozenMapping.__delitem__(obj, key), id="delitem"),
+        ],
+    )
+    def test_immutable(self, method):
+        with pytest.raises(RuntimeError, match=re.escape("immutable")):
+            method(FrozenMapping(), "foo", "bar")
+
+    def test_eq(self):
+        options = dict(foo="bar", baz=1)
+        assert FrozenMapping(options) == FrozenMapping(options)
+
+    def test_ne(self):
+        options1 = dict(foo="bar", baz=1)
+        options2 = options1.copy()
+        options2["baz"] += 1
+
+        assert FrozenMapping(options1) != FrozenMapping(options2)
+
+    def test_repr(self):
+        options = dict(foo="bar", baz=1)
+        output = repr(FrozenMapping(options))
+
+        assert isinstance(output, str)
+        for key, value in options.items():
+            assert str(key) in output and str(value) in output
+
+
+class TestFrozenBunch:
+    def test_getattr(self):
+        options = dict(foo="bar", baz=1)
+        config = FrozenBunch(options)
 
         for key, value in options.items():
             assert getattr(config, key) == value
 
     def test_getattr_unknown(self):
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError, match=re.escape("no attribute 'unknown'")):
             datasets.utils.DatasetConfig().unknown
 
-    def test_setitem(self):
-        config = datasets.utils.DatasetConfig()
+    @pytest.mark.parametrize(
+        "method",
+        [
+            pytest.param(lambda obj, key, value: FrozenBunch.__setattr__(obj, key, value), id="setattr"),
+            pytest.param(lambda obj, key, value: FrozenBunch.__delattr__(obj, key), id="delattr"),
+        ],
+    )
+    def test_immutable(self, method):
+        with pytest.raises(RuntimeError, match=re.escape("immutable")):
+            method(FrozenBunch(), "foo", "bar")
 
-        with pytest.raises(RuntimeError):
-            config["foo"] = "bar"
-
-    def test_setattr(self):
-        config = datasets.utils.DatasetConfig()
-
-        with pytest.raises(RuntimeError):
-            config.foo = "bar"
-
-    def test_delitem(self, options):
-        config = datasets.utils.DatasetConfig(options)
-
-        with pytest.raises(RuntimeError):
-            del config["foo"]
-
-    def test_delattr(self, options):
-        config = datasets.utils.DatasetConfig(options)
-
-        with pytest.raises(RuntimeError):
-            del config.foo
-
-    def test_eq(self, options):
-        config1 = datasets.utils.DatasetConfig(options)
-        config2 = datasets.utils.DatasetConfig(options)
-
-        assert config1 == config2
-
-    def test_neq(self, options):
-        config1 = datasets.utils.DatasetConfig(options)
-        config2 = datasets.utils.DatasetConfig()
-
-        assert config1 != config2
-
-    def test_repr(self, options):
-        output = repr(datasets.utils.DatasetConfig(options))
+    def test_repr(self):
+        options = dict(foo="bar", baz=1)
+        output = repr(FrozenBunch(options))
 
         assert isinstance(output, str)
-        assert "DatasetConfig" in output
+        assert output.startswith("FrozenBunch")
         for key, value in options.items():
             assert f"{key}={value}" in output
 
-    def test_contains(self, options):
-        config = datasets.utils.DatasetConfig(options)
-
-        for key in options.keys():
-            assert key in config
-
-    def test_keys(self, options):
-        assert datasets.utils.DatasetConfig(options).keys() == options.keys()
-
-    def test_values(self, options):
-        assert set(datasets.utils.DatasetConfig(options).values()) == set(options.values())
-
-    def test_get(self, options):
-        config = datasets.utils.DatasetConfig(options)
-
-        for key, value in options.items():
-            assert config.get(key) == value
-
-    def test_get_default(self, options):
-        sentinel = object()
-
-        assert datasets.utils.DatasetConfig().get("unknown", sentinel) is sentinel
-
-    def test_ne(self, options):
-        config1 = datasets.utils.DatasetConfig(options)
-        options["baz"] = 2
-        config2 = datasets.utils.DatasetConfig(options)
-
-        assert config1 != config2
-
 
 class TestDatasetInfo:
-    @staticmethod
     @pytest.fixture
-    def valid_options():
-        return dict(split=("train", "test"), foo=("bar", "baz"))
+    def info(self):
+        return make_minimal_dataset_info(valid_options=dict(split=("train", "test"), foo=("bar", "baz")))
 
-    @staticmethod
-    @pytest.fixture
-    def info(valid_options):
-        return make_minimal_dataset_info(valid_options=valid_options)
-
-    def test_no_valid_options(self):
-        info = make_minimal_dataset_info()
-        assert info.default_config.split == "train"
-
-    def test_valid_options_no_split(self):
-        info = make_minimal_dataset_info(valid_options=dict(option=("argument",)))
-        assert info.default_config.split == "train"
-
-    def test_valid_options_no_train(self):
-        with pytest.raises(ValueError):
-            make_minimal_dataset_info(valid_options=dict(split=("test",)))
-
-    def test_default_config(self, valid_options):
+    def test_default_config(self, info):
+        valid_options = info._valid_options
         default_config = datasets.utils.DatasetConfig({key: values[0] for key, values in valid_options.items()})
 
-        assert make_minimal_dataset_info(valid_options=valid_options).default_config == default_config
+        assert info.default_config == default_config
 
-    def test_make_config_unknown_option(self, info):
-        with pytest.raises(ValueError):
-            info.make_config(unknown_option=None)
+    @pytest.mark.parametrize(
+        "valid_options",
+        [
+            pytest.param(None, id="default"),
+            pytest.param(dict(option=("value",)), id="no_split"),
+        ],
+    )
+    def test_default_config_split_train(self, valid_options):
+        info = make_minimal_dataset_info(valid_options=valid_options)
+        assert info.default_config.split == "train"
 
-    def test_make_config_invalid_argument(self, info):
-        with pytest.raises(ValueError):
-            info.make_config(split="unknown_split")
+    def test_valid_options_split_but_no_train(self):
+        with pytest.raises(ValueError, match=re.escape("'train' has to be a valid argument for option 'split'")):
+            make_minimal_dataset_info(valid_options=dict(split=("test",)))
 
-    def test_repr(self, valid_options):
-        output = repr(make_minimal_dataset_info(valid_options=valid_options))
+    @pytest.mark.parametrize(
+        ("options", "expected_error_msg"),
+        [
+            pytest.param(dict(unknown_option=None), "Unknown option 'unknown_option'", id="unknown_option"),
+            pytest.param(dict(split="unknown_split"), "Invalid argument 'unknown_split'", id="invalid_argument"),
+        ],
+    )
+    def test_make_config_invalid_inputs(self, info, options, expected_error_msg):
+        with pytest.raises(ValueError, match=re.escape(expected_error_msg)):
+            info.make_config(**options)
+
+    def test_repr(self, info):
+        output = repr(info)
 
         assert isinstance(output, str)
         assert "DatasetInfo" in output
-        for key, value in valid_options.items():
+        for key, value in info._valid_options.items():
             assert f"{key}={str(value)[1:-1]}" in output
 
     @pytest.mark.parametrize("optional_info", ("citation", "homepage", "license"))
@@ -226,22 +209,17 @@ class TestDataset:
 
         assert dataset.default_config == datasets.utils.DatasetConfig(split=sentinel)
 
-    def test_to_datapipe_config(self):
+    @pytest.mark.parametrize(
+        ("config", "kwarg"),
+        [
+            pytest.param(*(datasets.utils.DatasetConfig(split="test"),) * 2, id="specific"),
+            pytest.param(make_minimal_dataset_info().default_config, None, id="default"),
+        ],
+    )
+    def test_to_datapipe_config(self, config, kwarg):
         dataset = self.DatasetMock()
-        config = datasets.utils.DatasetConfig(split="test")
 
-        dataset.to_datapipe("", config=config)
-
-        dataset.resources.assert_called_with(config)
-
-        (_, call_kwargs) = dataset._make_datapipe.call_args
-        assert call_kwargs["config"] == config
-
-    def test_to_datapipe_default_config(self):
-        dataset = self.DatasetMock()
-        config = dataset.default_config
-
-        dataset.to_datapipe("")
+        dataset.to_datapipe("", config=kwarg)
 
         dataset.resources.assert_called_with(config)
 
