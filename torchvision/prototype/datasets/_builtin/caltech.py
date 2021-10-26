@@ -25,8 +25,7 @@ from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE,
 
 
 class Caltech101(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
             type=DatasetType.IMAGE,
@@ -144,8 +143,7 @@ class Caltech101(Dataset):
 
 
 class Caltech256(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
             type=DatasetType.IMAGE,

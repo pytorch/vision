@@ -112,10 +112,16 @@ class DatasetInfo:
 
 
 class Dataset(abc.ABC):
-    @property
+    def __init__(self) -> None:
+        self._info = self._make_info()
+
     @abc.abstractmethod
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         pass
+
+    @property
+    def info(self) -> DatasetInfo:
+        return self._info
 
     @property
     def name(self) -> str:

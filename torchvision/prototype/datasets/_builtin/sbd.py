@@ -34,8 +34,7 @@ from torchvision.prototype.datasets.utils._internal import (
 
 
 class SBD(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "sbd",
             type=DatasetType.IMAGE,
