@@ -9,6 +9,7 @@ import torch.utils.checkpoint as cp
 from torch import Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = ["DenseNet", "densenet121", "densenet169", "densenet201", "densenet161"]
@@ -25,7 +26,7 @@ class _DenseLayer(nn.Module):
     def __init__(
         self, num_input_features: int, growth_rate: int, bn_size: int, drop_rate: float, memory_efficient: bool = False
     ) -> None:
-        super().__init__()
+        super(_DenseLayer, self).__init__()
         self.norm1: nn.BatchNorm2d
         self.add_module("norm1", nn.BatchNorm2d(num_input_features))
         self.relu1: nn.ReLU
@@ -106,7 +107,7 @@ class _DenseBlock(nn.ModuleDict):
         drop_rate: float,
         memory_efficient: bool = False,
     ) -> None:
-        super().__init__()
+        super(_DenseBlock, self).__init__()
         for i in range(num_layers):
             layer = _DenseLayer(
                 num_input_features + i * growth_rate,
@@ -127,7 +128,7 @@ class _DenseBlock(nn.ModuleDict):
 
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features: int, num_output_features: int) -> None:
-        super().__init__()
+        super(_Transition, self).__init__()
         self.add_module("norm", nn.BatchNorm2d(num_input_features))
         self.add_module("relu", nn.ReLU(inplace=True))
         self.add_module("conv", nn.Conv2d(num_input_features, num_output_features, kernel_size=1, stride=1, bias=False))
@@ -161,7 +162,8 @@ class DenseNet(nn.Module):
         memory_efficient: bool = False,
     ) -> None:
 
-        super().__init__()
+        super(DenseNet, self).__init__()
+        _log_api_usage_once(self)
 
         # First convolution
         self.features = nn.Sequential(

@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-
+from ...utils import _log_api_usage_once
 
 __all__ = ["r3d_18", "mc3_18", "r2plus1d_18"]
 
@@ -20,7 +20,7 @@ class Conv3DSimple(nn.Conv3d):
         self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
     ) -> None:
 
-        super().__init__(
+        super(Conv3DSimple, self).__init__(
             in_channels=in_planes,
             out_channels=out_planes,
             kernel_size=(3, 3, 3),
@@ -36,7 +36,7 @@ class Conv3DSimple(nn.Conv3d):
 
 class Conv2Plus1D(nn.Sequential):
     def __init__(self, in_planes: int, out_planes: int, midplanes: int, stride: int = 1, padding: int = 1) -> None:
-        super().__init__(
+        super(Conv2Plus1D, self).__init__(
             nn.Conv3d(
                 in_planes,
                 midplanes,
@@ -62,7 +62,7 @@ class Conv3DNoTemporal(nn.Conv3d):
         self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
     ) -> None:
 
-        super().__init__(
+        super(Conv3DNoTemporal, self).__init__(
             in_channels=in_planes,
             out_channels=out_planes,
             kernel_size=(1, 3, 3),
@@ -90,7 +90,7 @@ class BasicBlock(nn.Module):
     ) -> None:
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
-        super().__init__()
+        super(BasicBlock, self).__init__()
         self.conv1 = nn.Sequential(
             conv_builder(inplanes, planes, midplanes, stride), nn.BatchNorm3d(planes), nn.ReLU(inplace=True)
         )
@@ -125,7 +125,7 @@ class Bottleneck(nn.Module):
         downsample: Optional[nn.Module] = None,
     ) -> None:
 
-        super().__init__()
+        super(Bottleneck, self).__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         # 1x1x1
@@ -166,7 +166,7 @@ class BasicStem(nn.Sequential):
     """The default conv-batchnorm-relu stem"""
 
     def __init__(self) -> None:
-        super().__init__(
+        super(BasicStem, self).__init__(
             nn.Conv3d(3, 64, kernel_size=(3, 7, 7), stride=(1, 2, 2), padding=(1, 3, 3), bias=False),
             nn.BatchNorm3d(64),
             nn.ReLU(inplace=True),
@@ -177,7 +177,7 @@ class R2Plus1dStem(nn.Sequential):
     """R(2+1)D stem is different than the default one as it uses separated 3D convolution"""
 
     def __init__(self) -> None:
-        super().__init__(
+        super(R2Plus1dStem, self).__init__(
             nn.Conv3d(3, 45, kernel_size=(1, 7, 7), stride=(1, 2, 2), padding=(0, 3, 3), bias=False),
             nn.BatchNorm3d(45),
             nn.ReLU(inplace=True),
@@ -208,7 +208,8 @@ class VideoResNet(nn.Module):
             num_classes (int, optional): Dimension of the final FC layer. Defaults to 400.
             zero_init_residual (bool, optional): Zero init bottleneck residual BN. Defaults to False.
         """
-        super().__init__()
+        super(VideoResNet, self).__init__()
+        _log_api_usage_once(self)
         self.inplanes = 64
 
         self.stem = stem()

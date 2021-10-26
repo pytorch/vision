@@ -7,6 +7,7 @@ from torch import nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -41,7 +42,7 @@ class InvertedResidual(nn.Module):
     def __init__(
         self, inp: int, oup: int, stride: int, expand_ratio: int, norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super().__init__()
+        super(InvertedResidual, self).__init__()
         self.stride = stride
         assert stride in [1, 2]
 
@@ -109,7 +110,8 @@ class MobileNetV2(nn.Module):
             dropout (float): The droupout probability
 
         """
-        super().__init__()
+        super(MobileNetV2, self).__init__()
+        _log_api_usage_once(self)
 
         if block is None:
             block = InvertedResidual

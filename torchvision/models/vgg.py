@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = [
@@ -35,7 +36,8 @@ class VGG(nn.Module):
     def __init__(
         self, features: nn.Module, num_classes: int = 1000, init_weights: bool = True, dropout: float = 0.5
     ) -> None:
-        super().__init__()
+        super(VGG, self).__init__()
+        _log_api_usage_once(self)
         self.features = features
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(

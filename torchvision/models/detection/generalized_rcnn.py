@@ -9,6 +9,8 @@ from typing import Tuple, List, Dict, Optional, Union
 import torch
 from torch import nn, Tensor
 
+from ...utils import _log_api_usage_once
+
 
 class GeneralizedRCNN(nn.Module):
     """
@@ -24,7 +26,8 @@ class GeneralizedRCNN(nn.Module):
     """
 
     def __init__(self, backbone, rpn, roi_heads, transform):
-        super().__init__()
+        super(GeneralizedRCNN, self).__init__()
+        _log_api_usage_once(self)
         self.transform = transform
         self.backbone = backbone
         self.rpn = rpn
@@ -62,9 +65,11 @@ class GeneralizedRCNN(nn.Module):
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
+                        raise ValueError(
+                            "Expected target boxes to be a tensor" "of shape [N, 4], got {:}.".format(boxes.shape)
+                        )
                 else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                    raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:

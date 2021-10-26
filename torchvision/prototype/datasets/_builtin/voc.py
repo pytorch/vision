@@ -5,15 +5,16 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from xml.etree import ElementTree
 
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
+from torchdata.datapipes.iter import (
+    IterDataPipe,
     Mapper,
     TarArchiveReader,
     Shuffler,
     Filter,
     Demultiplexer,
+    KeyZipper,
+    LineReader,
 )
-from torchdata.datapipes.iter import KeyZipper, LineReader
 from torchvision.datasets import VOCDetection
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -91,7 +92,11 @@ class VOC(Dataset):
         return torch.tensor(bboxes)
 
     def _collate_and_decode_sample(
-        self, data, *, config: DatasetConfig, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self,
+        data: Tuple[Tuple[Tuple[str, str], Tuple[str, io.IOBase]], Tuple[str, io.IOBase]],
+        *,
+        config: DatasetConfig,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
@@ -103,7 +108,7 @@ class VOC(Dataset):
         if config.task == "detection":
             ann = self._decode_detection_ann(ann_buffer)
         else:  # config.task == "segmentation":
-            ann = decoder(ann_buffer) if decoder else ann_buffer
+            ann = decoder(ann_buffer) if decoder else ann_buffer  # type: ignore[assignment]
 
         return dict(image_path=image_path, image=image, ann_path=ann_path, ann=ann)
 
@@ -119,15 +124,13 @@ class VOC(Dataset):
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
-            functools.partial(self._classify_archive, config=config),  # type: ignore[arg-type]
+            functools.partial(self._classify_archive, config=config),
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        split_dp: IterDataPipe = Filter(
-            split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task])
-        )
-        split_dp: IterDataPipe = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
+        split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
+        split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
         split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
 

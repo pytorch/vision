@@ -43,13 +43,13 @@ class WIDERFace(VisionDataset):
 
     BASE_FOLDER = "widerface"
     FILE_LIST = [
-        # File ID                             MD5 Hash                          Filename
-        ("0B6eKvaijfFUDQUUwd21EckhUbWs", "3fedf70df600953d25982bcd13d91ba2", "WIDER_train.zip"),
-        ("0B6eKvaijfFUDd3dIRmpvSk8tLUk", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
-        ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip"),
+        # File ID                             MD5 Hash                            Filename
+        ("15hGDLhsx8bLgLcIRD5DhYt5iBxnjNF1M", "3fedf70df600953d25982bcd13d91ba2", "WIDER_train.zip"),
+        ("1GUCogbp16PMGa39thoMMeWxp7Rp5oM8Q", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
+        ("1HIfDbVEWKmsYKJZm4lchTBDLW5N7dY5T", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip"),
     ]
     ANNOTATIONS_FILE = (
-        "http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip",
+        "http://shuoyang1213.me/WIDERFACE/support/bbx_annotation/wider_face_split.zip",
         "0e3767bcf0e326556d407bf5bff5d27c",
         "wider_face_split.zip",
     )

@@ -3,9 +3,12 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ..._internally_replaced_utils import load_state_dict_from_url
+from ...ops import misc as misc_nn_ops
+from ..mobilenetv3 import mobilenet_v3_large
+from ..resnet import resnet50
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
-from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mobilenet_backbone
+from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers, _mobilenet_extractor
 from .generalized_rcnn import GeneralizedRCNN
 from .roi_heads import RoIHeads
 from .rpn import RPNHead, RegionProposalNetwork
@@ -385,7 +388,9 @@ def fasterrcnn_resnet50_fpn(
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone("resnet50", pretrained_backbone, trainable_layers=trainable_backbone_layers)
+
+    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls["fasterrcnn_resnet50_fpn_coco"], progress=progress)
@@ -409,9 +414,11 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 
     if pretrained:
         pretrained_backbone = False
-    backbone = mobilenet_backbone(
-        "mobilenet_v3_large", pretrained_backbone, True, trainable_layers=trainable_backbone_layers
+
+    backbone = mobilenet_v3_large(
+        pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d
     )
+    backbone = _mobilenet_extractor(backbone, True, trainable_backbone_layers)
 
     anchor_sizes = (
         (

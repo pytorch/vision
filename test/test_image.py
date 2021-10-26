@@ -22,6 +22,7 @@ from torchvision.io.image import (
     write_file,
     ImageReadMode,
     read_image,
+    _read_png_16,
 )
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -156,8 +157,21 @@ def test_decode_png(img_path, pil_mode, mode):
         img_pil = torch.from_numpy(np.array(img))
 
     img_pil = normalize_dimensions(img_pil)
-    data = read_file(img_path)
-    img_lpng = decode_image(data, mode=mode)
+
+    if "16" in img_path:
+        # 16 bits image decoding is supported, but only as a private API
+        # FIXME: see https://github.com/pytorch/vision/issues/4731 for potential solutions to making it public
+        with pytest.raises(RuntimeError, match="At most 8-bit PNG images are supported"):
+            data = read_file(img_path)
+            img_lpng = decode_image(data, mode=mode)
+
+        img_lpng = _read_png_16(img_path, mode=mode)
+        assert img_lpng.dtype == torch.int32
+        # PIL converts 16 bits pngs in uint8
+        img_lpng = torch.round(img_lpng / (2 ** 16 - 1) * 255).to(torch.uint8)
+    else:
+        data = read_file(img_path)
+        img_lpng = decode_image(data, mode=mode)
 
     tol = 0 if pil_mode is None else 1
 
