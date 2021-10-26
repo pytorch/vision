@@ -230,7 +230,8 @@ void deformable_im2col(
     at::Tensor data_col) {
   at::cuda::CUDAGuard device_guard(input.get_device());
 
-  const int64_t num_kernels = (int64_t)n_in_channels * out_h * out_w * parallel_imgs;
+  const int64_t num_kernels =
+      (int64_t)n_in_channels * out_h * out_w * parallel_imgs;
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
