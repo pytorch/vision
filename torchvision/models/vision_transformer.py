@@ -1,6 +1,3 @@
-# Implement ViT from:
-# https://arxiv.org/abs/2010.11929
-
 # References:
 # https://github.com/google-research/vision_transformer
 # https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/vision_transformer.py
@@ -237,7 +234,7 @@ class VisionTransformer(nn.Module):
         return x
 
 
-def _vision_transformer(version: str, pretrained: bool, progress: bool, **kwargs: Any) -> VisionTransformer:
+def _vision_transformer(arch: str, pretrained: bool, progress: bool, **kwargs: Any) -> VisionTransformer:
     image_size = kwargs.get("image_size", 224)
     if "image_size" in kwargs:
         kwargs.pop("image_size")
@@ -256,7 +253,7 @@ def vit_b_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
-        version="b_16",
+        arch="b_16",
         pretrained=pretrained,
         progress=progress,
         patch_size=16,
@@ -278,14 +275,14 @@ def vit_b_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
-        version="b_32",
+        arch="b_32",
         pretrained=pretrained,
         progress=progress,
         patch_size=32,
         num_layers=12,
         num_heads=12,
         hidden_dim=768,
-        mlp_dim=3072, 
+        mlp_dim=3072,
         **kwargs,
     )
 
@@ -300,7 +297,7 @@ def vit_l_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
-        version="l_16",
+        arch="l_16",
         pretrained=pretrained,
         progress=progress,
         patch_size=16,
@@ -322,7 +319,7 @@ def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
-        version="l_32",
+        arch="l_32",
         pretrained=pretrained,
         progress=progress,
         patch_size=32,
@@ -344,7 +341,7 @@ def vit_h_14(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
     return _vision_transformer(
-        version="h_14",
+        arch="h_14",
         pretrained=pretrained,
         progress=progress,
         patch_size=14,
