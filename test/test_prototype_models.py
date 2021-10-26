@@ -14,6 +14,17 @@ def _get_original_model(model_fn):
     return module.__dict__[model_fn.__name__]
 
 
+def _build_model(fn, **kwargs):
+    try:
+        model = fn(**kwargs)
+    except ValueError as e:
+        msg = str(e)
+        if "No checkpoint is available" in msg:
+            pytest.skip(msg)
+        raise e
+    return model.eval()
+
+
 def test_get_weight():
     fn = models.resnet50
     weight_name = "ImageNet1K_RefV2"
@@ -38,16 +49,12 @@ def test_old_vs_new_classification_factory(model_fn, dev):
     model_name = model_fn.__name__
     kwargs = {**defaults, **TM._model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
-    original_model_fn = _get_original_model(model_fn)
-    model_old = original_model_fn(**kwargs)
-    model_old.eval().to(device=dev)
     x = torch.rand(input_shape).to(device=dev)
-    out_old = model_old(x)
+
     # compare with new model builder parameterized in the old fashion way
-    model_new = model_fn(**kwargs)
-    model_new.eval().to(device=dev)
-    out_new = model_new(x)
-    torch.testing.assert_close(out_new, out_old, rtol=0.0, atol=0.0, check_dtype=False)
+    model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
+    model_new = _build_model(model_fn, **kwargs).to(device=dev)
+    torch.testing.assert_close(model_new(x), model_old(x), rtol=0.0, atol=0.0, check_dtype=False)
 
 
 def test_smoke():
