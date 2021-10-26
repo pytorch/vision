@@ -14,6 +14,12 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -142,11 +148,18 @@ def load_data(traindir, valdir, args):
         print("Loading dataset_test from {}".format(cache_path))
         dataset_test, _ = torch.load(cache_path)
     else:
+        if not args.weights:
+            preprocessing = presets.ClassificationPresetEval(
+                crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
+            )
+        else:
+            fn = PM.__dict__[args.model]
+            weights = PM._api.get_weight(fn, args.weights)
+            preprocessing = weights.transforms()
+
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
-            presets.ClassificationPresetEval(
-                crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
-            ),
+            preprocessing,
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
@@ -206,7 +219,12 @@ def main(args):
     )
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
+    if not args.weights:
+        model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
+    else:
+        if PM is None:
+            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+        model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -454,6 +472,9 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser
 

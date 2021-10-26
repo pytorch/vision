@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 __all__ = ["MNASNet", "mnasnet0_5", "mnasnet0_75", "mnasnet1_0", "mnasnet1_3"]
 
@@ -97,6 +98,7 @@ class MNASNet(torch.nn.Module):
 
     def __init__(self, alpha: float, num_classes: int = 1000, dropout: float = 0.2) -> None:
         super(MNASNet, self).__init__()
+        _log_api_usage_once(self)
         assert alpha > 0.0
         self.alpha = alpha
         self.num_classes = num_classes
