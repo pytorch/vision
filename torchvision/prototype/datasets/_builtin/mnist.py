@@ -68,7 +68,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
             num_samples = self._decode(file.read(4))
             shape = [self._decode(file.read(4)) for _ in range(ndim)]
 
-            num_bytes_per_value = torch.iinfo(dtype).bits // 8
+            num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
             # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
             # we need to reverse the bytes before we can read them with torch.frombuffer().
             needs_byte_reversal = sys.byteorder == "little" and num_bytes_per_value > 1
