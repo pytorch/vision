@@ -190,8 +190,8 @@ class VisionTransformer(nn.Module):
         nn.init.zeros_(self.conv_proj.bias)
 
         if hasattr(self.heads, "pre_logits"):
-            fan_in = self.layers.pre_logits.in_features
-            nn.init.trunc_normal_(self.layers.pre_logits.weight, std=math.sqrt(1 / fan_in))
+            fan_in = self.heads.pre_logits.in_features
+            nn.init.trunc_normal_(self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in))
             nn.init.zeros_(self.heads.pre_logits.bias)
 
         nn.init.zeros_(self.heads.head.weight)
@@ -285,7 +285,7 @@ def vit_b_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         num_layers=12,
         num_heads=12,
         hidden_dim=768,
-        mlp_dim=3072,
+        mlp_dim=3072, 
         **kwargs,
     )
 
