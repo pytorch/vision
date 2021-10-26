@@ -77,8 +77,9 @@ class RandomResizedCropVideo(RandomResizedCrop):
         return F.resized_crop(clip, i, j, h, w, self.size, self.interpolation_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(size={}, interpolation_mode={}, scale={}, ratio={})".format(
-            self.size, self.interpolation_mode, self.scale, self.ratio
+        return (
+            self.__class__.__name__
+            + f"(size={self.size}, interpolation_mode={self.interpolation_mode}, scale={self.scale}, ratio={self.ratio})"
         )
 
 

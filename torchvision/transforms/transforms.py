@@ -338,10 +338,8 @@ class Resize(torch.nn.Module):
         return F.resize(img, self.size, self.interpolation, self.max_size, self.antialias)
 
     def __repr__(self):
-        interpolate_str = self.interpolation.value
-        return self.__class__.__name__ + "(size={}, interpolation={}, max_size={}, antialias={})".format(
-            self.size, interpolate_str, self.max_size, self.antialias
-        )
+        detail = f"(size={self.size}, interpolation={self.interpolation.value}, max_size={self.max_size}, antialias={self.antialias})"
+        return self.__class__.__name__ + detail
 
 
 class Scale(Resize):
@@ -434,7 +432,9 @@ class Pad(torch.nn.Module):
             raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
         if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
-            raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+            raise ValueError(
+                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
+            )
 
         self.padding = padding
         self.fill = fill
@@ -451,9 +451,7 @@ class Pad(torch.nn.Module):
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(padding={}, fill={}, padding_mode={})".format(
-            self.padding, self.fill, self.padding_mode
-        )
+        return self.__class__.__name__ + f"(padding={self.padding}, fill={self.fill}, padding_mode={self.padding_mode})"
 
 
 class Lambda:
