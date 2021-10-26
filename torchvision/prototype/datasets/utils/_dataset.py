@@ -5,7 +5,7 @@ import os
 import pathlib
 import textwrap
 import warnings
-from collections import Mapping
+from collections.abc import Mapping
 from typing import (
     Any,
     Callable,
