@@ -55,6 +55,6 @@ else
     if [[ "$OSTYPE" == "msys" ]]; then
         "$script_dir/windows/internal/vc_env_helper.bat" python $script_dir/wheel/relocate.py
     else
-        LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH" python $script_dir/wheel/relocate.py
+        LD_LIBRARY_PATH="/usr/local/lib:$CUDA_HOME/lib64:$LD_LIBRARY_PATH" python $script_dir/wheel/relocate.py
     fi
 fi
