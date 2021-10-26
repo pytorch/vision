@@ -9,6 +9,7 @@ import torch.utils.checkpoint as cp
 from torch import Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = ["DenseNet", "densenet121", "densenet169", "densenet201", "densenet161"]
@@ -162,6 +163,7 @@ class DenseNet(nn.Module):
     ) -> None:
 
         super(DenseNet, self).__init__()
+        _log_api_usage_once(self)
 
         # First convolution
         self.features = nn.Sequential(
