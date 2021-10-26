@@ -25,7 +25,6 @@ from torchvision.prototype.datasets.utils import (
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
-    BUILTIN_DIR,
     image_buffer_from_array,
     path_comparator,
 )
@@ -114,7 +113,6 @@ class Cifar10(_CifarBase):
         return DatasetInfo(
             "cifar10",
             type=DatasetType.RAW,
-            categories=BUILTIN_DIR / "cifar10.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
 
@@ -140,7 +138,6 @@ class Cifar100(_CifarBase):
         return DatasetInfo(
             "cifar100",
             type=DatasetType.RAW,
-            categories=BUILTIN_DIR / "cifar100.categories",
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(
                 split=("train", "test"),
