@@ -38,10 +38,16 @@ def test_classification_model(model_fn, dev):
     TM.test_classification_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
+@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_segmentation_model(model_fn, dev):
+    TM.test_segmentation_model(model_fn, dev)
+
+
+@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models) + TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_old_vs_new_classification_factory(model_fn, dev):
+def test_old_vs_new_factory(model_fn, dev):
     defaults = {
         "pretrained": True,
         "input_shape": (1, 3, 224, 224),
