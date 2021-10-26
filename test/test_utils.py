@@ -122,7 +122,7 @@ def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
     boxes_cp = boxes.clone()
-    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7)
+    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors="white")
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_vanilla.png")
     if not os.path.exists(path):
