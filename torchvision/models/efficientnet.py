@@ -279,7 +279,7 @@ def _efficientnet_conf(width_mult: float, depth_mult: float, **kwargs: Any) -> L
     return inverted_residual_setting
 
 
-def _efficientnet_model(
+def _efficientnet(
     arch: str,
     inverted_residual_setting: List[MBConvConfig],
     dropout: float,
@@ -306,7 +306,7 @@ def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.0, **kwargs)
-    return _efficientnet_model("efficientnet_b0", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
+    return _efficientnet("efficientnet_b0", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
 
 
 def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -319,7 +319,7 @@ def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.0, depth_mult=1.1, **kwargs)
-    return _efficientnet_model("efficientnet_b1", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
+    return _efficientnet("efficientnet_b1", inverted_residual_setting, 0.2, pretrained, progress, **kwargs)
 
 
 def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -332,7 +332,7 @@ def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.1, depth_mult=1.2, **kwargs)
-    return _efficientnet_model("efficientnet_b2", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
+    return _efficientnet("efficientnet_b2", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
 
 
 def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -345,7 +345,7 @@ def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.2, depth_mult=1.4, **kwargs)
-    return _efficientnet_model("efficientnet_b3", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
+    return _efficientnet("efficientnet_b3", inverted_residual_setting, 0.3, pretrained, progress, **kwargs)
 
 
 def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -358,7 +358,7 @@ def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.4, depth_mult=1.8, **kwargs)
-    return _efficientnet_model("efficientnet_b4", inverted_residual_setting, 0.4, pretrained, progress, **kwargs)
+    return _efficientnet("efficientnet_b4", inverted_residual_setting, 0.4, pretrained, progress, **kwargs)
 
 
 def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -371,7 +371,7 @@ def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.6, depth_mult=2.2, **kwargs)
-    return _efficientnet_model(
+    return _efficientnet(
         "efficientnet_b5",
         inverted_residual_setting,
         0.4,
@@ -392,7 +392,7 @@ def efficientnet_b6(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=1.8, depth_mult=2.6, **kwargs)
-    return _efficientnet_model(
+    return _efficientnet(
         "efficientnet_b6",
         inverted_residual_setting,
         0.5,
@@ -413,7 +413,7 @@ def efficientnet_b7(pretrained: bool = False, progress: bool = True, **kwargs: A
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     inverted_residual_setting = _efficientnet_conf(width_mult=2.0, depth_mult=3.1, **kwargs)
-    return _efficientnet_model(
+    return _efficientnet(
         "efficientnet_b7",
         inverted_residual_setting,
         0.5,
