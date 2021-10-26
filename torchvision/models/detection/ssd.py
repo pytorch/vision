@@ -24,7 +24,8 @@ model_urls = {
 backbone_urls = {
     # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
     # same input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-    "vgg16_features": "https://download.pytorch.org/models/vgg16_features-amdegroot.pth"
+    # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
+    "vgg16_features": "https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth"
 }
 
 
@@ -521,18 +522,8 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone_name: str, highres: bool, progress: bool, pretrained: bool, trainable_layers: int):
-    if backbone_name in backbone_urls:
-        # Use custom backbones more appropriate for SSD
-        arch = backbone_name.split("_")[0]
-        backbone = vgg.__dict__[arch](pretrained=False, progress=progress).features
-        if pretrained:
-            state_dict = load_state_dict_from_url(backbone_urls[backbone_name], progress=progress)
-            backbone.load_state_dict(state_dict)
-    else:
-        # Use standard backbones from TorchVision
-        backbone = vgg.__dict__[backbone_name](pretrained=pretrained, progress=progress).features
-
+def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
+    backbone = backbone.features
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
@@ -611,7 +602,13 @@ def ssd300_vgg16(
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = _vgg_extractor("vgg16_features", False, progress, pretrained_backbone, trainable_backbone_layers)
+    # Use custom backbones more appropriate for SSD
+    backbone = vgg.vgg16(pretrained=False, progress=progress)
+    if pretrained_backbone:
+        state_dict = load_state_dict_from_url(backbone_urls["vgg16_features"], progress=progress)
+        backbone.load_state_dict(state_dict)
+
+    backbone = _vgg_extractor(backbone, False, trainable_backbone_layers)
     anchor_generator = DefaultBoxGenerator(
         [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
         scales=[0.07, 0.15, 0.33, 0.51, 0.69, 0.87, 1.05],
