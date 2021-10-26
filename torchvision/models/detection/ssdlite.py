@@ -8,6 +8,7 @@ from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation
+from ...utils import _log_api_usage_once
 from .. import mobilenet
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
@@ -119,6 +120,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         min_depth: int = 16,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(

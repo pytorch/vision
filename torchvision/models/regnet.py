@@ -13,6 +13,7 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -309,6 +310,7 @@ class RegNet(nn.Module):
         activation: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
+        _log_api_usage_once(self)
 
         if stem_type is None:
             stem_type = SimpleStemIN

@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.init as init
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 __all__ = ["SqueezeNet", "squeezenet1_0", "squeezenet1_1"]
 
@@ -35,6 +36,7 @@ class Fire(nn.Module):
 class SqueezeNet(nn.Module):
     def __init__(self, version: str = "1_0", num_classes: int = 1000, dropout: float = 0.5) -> None:
         super(SqueezeNet, self).__init__()
+        _log_api_usage_once(self)
         self.num_classes = num_classes
         if version == "1_0":
             self.features = nn.Sequential(
