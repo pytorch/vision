@@ -542,7 +542,6 @@ class TestPad:
         assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
 
 
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 @pytest.mark.parametrize(
     "fn, trans, kwargs",
     [
@@ -563,13 +562,13 @@ def test_randomness(fn, trans, kwargs, seed, p):
     torch.manual_seed(seed)
     img = transforms.ToPILImage()(torch.rand(3, 16, 18))
 
-    transformed_img = fn(img, **kwargs)
+    expected_transformed_img = fn(img, **kwargs)
     randomly_transformed_img = trans(p=p, **kwargs)(img)
 
     if p == 0:
         assert randomly_transformed_img == img
     elif p == 1:
-        assert randomly_transformed_img == transformed_img
+        assert randomly_transformed_img == expected_transformed_img
 
     trans(**kwargs).__repr__()
 
