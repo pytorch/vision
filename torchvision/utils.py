@@ -203,6 +203,7 @@ def draw_bounding_boxes(
         if labels is None:
             colors = _generate_color_palette(len(img_boxes))
         else:
+            assert len(labels) == len(img_boxes)
             label_color_map = dict(zip(labels, _generate_color_palette(len(labels))))
             colors = [label_color_map[label] for label in labels]
 
