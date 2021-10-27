@@ -162,7 +162,7 @@ def deeplabv3_mobilenet_v3_large(
         num_classes,
         {"dilated": True},
         weights,
-        aux_loss,
         weights_backbone,
+        aux_loss,
         kwargs=kwargs,
     )
