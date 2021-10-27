@@ -1750,7 +1750,7 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
-@pytest.mark.parametrize("seed", range(100))
+@pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 def test_random_erasing(seed):
     torch.random.manual_seed(seed)
