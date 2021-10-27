@@ -44,7 +44,7 @@ class Caltech101(VisionDataset):
             os.path.join(root, "caltech101"), transform=transform, target_transform=target_transform
         )
         os.makedirs(self.root, exist_ok=True)
-        if not isinstance(target_type, list):
+        if isinstance(target_type, str):
             target_type = [target_type]
         self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation")) for t in target_type]
 

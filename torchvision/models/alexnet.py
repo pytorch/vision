@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = ["AlexNet", "alexnet"]
@@ -15,8 +16,9 @@ model_urls = {
 
 
 class AlexNet(nn.Module):
-    def __init__(self, num_classes: int = 1000) -> None:
+    def __init__(self, num_classes: int = 1000, dropout: float = 0.5) -> None:
         super(AlexNet, self).__init__()
+        _log_api_usage_once(self)
         self.features = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
             nn.ReLU(inplace=True),
@@ -34,10 +36,10 @@ class AlexNet(nn.Module):
         )
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.classifier = nn.Sequential(
-            nn.Dropout(),
+            nn.Dropout(p=dropout),
             nn.Linear(256 * 6 * 6, 4096),
             nn.ReLU(inplace=True),
-            nn.Dropout(),
+            nn.Dropout(p=dropout),
             nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
             nn.Linear(4096, num_classes),

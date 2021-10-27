@@ -20,4 +20,4 @@ jobs:
       - name: Run Bandit Security Analysis
         run: |
               python -m pip install bandit
-              python -m bandit -r . -x ./third_party -lll
+              python -m bandit -r . -x ./scripts -lll

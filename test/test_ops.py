@@ -9,10 +9,10 @@ import pytest
 import torch
 from common_utils import needs_cuda, cpu_and_gpu, assert_equal
 from PIL import Image
-from torch import Tensor
+from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
-from torchvision import ops
+from torchvision import models, ops
 
 
 class RoIOpTester(ABC):
@@ -1149,13 +1149,15 @@ class TestMasksToBoxes:
 
 
 class TestStochasticDepth:
+    @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("p", [0.2, 0.5, 0.8])
     @pytest.mark.parametrize("mode", ["batch", "row"])
-    def test_stochastic_depth(self, mode, p):
+    def test_stochastic_depth_random(self, seed, mode, p):
+        torch.manual_seed(seed)
         stats = pytest.importorskip("scipy.stats")
         batch_size = 5
         x = torch.ones(size=(batch_size, 3, 4, 4))
-        layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
+        layer = ops.StochasticDepth(p=p, mode=mode)
         layer.__repr__()
 
         trials = 250
@@ -1173,7 +1175,32 @@ class TestStochasticDepth:
                 num_samples += batch_size
 
         p_value = stats.binom_test(counts, num_samples, p=p)
-        assert p_value > 0.0001
+        assert p_value > 0.01
+
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("p", (0, 1))
+    @pytest.mark.parametrize("mode", ["batch", "row"])
+    def test_stochastic_depth(self, seed, mode, p):
+        torch.manual_seed(seed)
+        batch_size = 5
+        x = torch.ones(size=(batch_size, 3, 4, 4))
+        layer = ops.StochasticDepth(p=p, mode=mode)
+
+        out = layer(x)
+        if p == 0:
+            assert out.equal(x)
+        elif p == 1:
+            assert out.equal(torch.zeros_like(x))
+
+
+class TestUtils:
+    @pytest.mark.parametrize("norm_layer", [None, nn.BatchNorm2d, nn.LayerNorm])
+    def test_split_normalization_params(self, norm_layer):
+        model = models.mobilenet_v3_large(norm_layer=norm_layer)
+        params = ops._utils.split_normalization_params(model, None if norm_layer is None else [norm_layer])
+
+        assert len(params[0]) == 92
+        assert len(params[1]) == 82
 
 
 if __name__ == "__main__":

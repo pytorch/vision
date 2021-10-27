@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 __all__ = ["GoogLeNet", "googlenet", "GoogLeNetOutputs", "_GoogLeNetOutputs"]
 
@@ -71,8 +72,11 @@ class GoogLeNet(nn.Module):
         transform_input: bool = False,
         init_weights: Optional[bool] = None,
         blocks: Optional[List[Callable[..., nn.Module]]] = None,
+        dropout: float = 0.2,
+        dropout_aux: float = 0.7,
     ) -> None:
         super(GoogLeNet, self).__init__()
+        _log_api_usage_once(self)
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
         if init_weights is None:
@@ -112,14 +116,14 @@ class GoogLeNet(nn.Module):
         self.inception5b = inception_block(832, 384, 192, 384, 48, 128, 128)
 
         if aux_logits:
-            self.aux1 = inception_aux_block(512, num_classes)
-            self.aux2 = inception_aux_block(528, num_classes)
+            self.aux1 = inception_aux_block(512, num_classes, dropout=dropout_aux)
+            self.aux2 = inception_aux_block(528, num_classes, dropout=dropout_aux)
         else:
             self.aux1 = None  # type: ignore[assignment]
             self.aux2 = None  # type: ignore[assignment]
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(p=dropout)
         self.fc = nn.Linear(1024, num_classes)
 
         if init_weights:
@@ -264,7 +268,11 @@ class Inception(nn.Module):
 
 class InceptionAux(nn.Module):
     def __init__(
-        self, in_channels: int, num_classes: int, conv_block: Optional[Callable[..., nn.Module]] = None
+        self,
+        in_channels: int,
+        num_classes: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None,
+        dropout: float = 0.7,
     ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
@@ -273,6 +281,7 @@ class InceptionAux(nn.Module):
 
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
+        self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x: Tensor) -> Tensor:
         # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
@@ -284,7 +293,7 @@ class InceptionAux(nn.Module):
         # N x 2048
         x = F.relu(self.fc1(x), inplace=True)
         # N x 1024
-        x = F.dropout(x, 0.7, training=self.training)
+        x = self.dropout(x)
         # N x 1024
         x = self.fc2(x)
         # N x 1000 (num_classes)

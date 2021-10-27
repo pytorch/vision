@@ -51,7 +51,7 @@ def find_best_threshold(dists, targets, device):
     return best_thresh, accuracy
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def evaluate(model, loader, device):
     model.eval()
     embeds, labels = [], []
@@ -137,19 +137,19 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description="PyTorch Embedding Learning")
 
-    parser.add_argument("--dataset-dir", default="/tmp/fmnist/", help="FashionMNIST dataset directory path")
+    parser.add_argument("--dataset-dir", default="/tmp/fmnist/", type=str, help="FashionMNIST dataset directory path")
     parser.add_argument(
         "-p", "--labels-per-batch", default=8, type=int, help="Number of unique labels/classes per batch"
     )
     parser.add_argument("-k", "--samples-per-label", default=8, type=int, help="Number of samples per label in a batch")
-    parser.add_argument("--eval-batch-size", default=512, type=int)
-    parser.add_argument("--epochs", default=10, type=int, metavar="N", help="Number of training epochs to run")
-    parser.add_argument("-j", "--workers", default=4, type=int, metavar="N", help="Number of data loading workers")
-    parser.add_argument("--lr", default=0.0001, type=float, help="Learning rate")
+    parser.add_argument("--eval-batch-size", default=512, type=int, help="batch size for evaluation")
+    parser.add_argument("--epochs", default=10, type=int, metavar="N", help="number of total epochs to run")
+    parser.add_argument("-j", "--workers", default=4, type=int, metavar="N", help="number of data loading workers")
+    parser.add_argument("--lr", default=0.0001, type=float, help="initial learning rate")
     parser.add_argument("--margin", default=0.2, type=float, help="Triplet loss margin")
-    parser.add_argument("--print-freq", default=20, type=int, help="Print frequency")
-    parser.add_argument("--save-dir", default=".", help="Model save directory")
-    parser.add_argument("--resume", default="", help="Resume from checkpoint")
+    parser.add_argument("--print-freq", default=20, type=int, help="print frequency")
+    parser.add_argument("--save-dir", default=".", type=str, help="Model save directory")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
 
     return parser.parse_args()
 

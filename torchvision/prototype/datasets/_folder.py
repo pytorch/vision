@@ -25,7 +25,7 @@ def _collate_and_decode_data(
     *,
     root: pathlib.Path,
     categories: List[str],
-    decoder,
+    decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
 ) -> Dict[str, Any]:
     path, buffer = data
     data = decoder(buffer) if decoder else buffer

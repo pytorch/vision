@@ -104,13 +104,13 @@ class QuantizableResNet(ResNet):
 
         fuse_modules(self, ["conv1", "bn1", "relu"], inplace=True)
         for m in self.modules():
-            if type(m) == QuantizableBottleneck or type(m) == QuantizableBasicBlock:
+            if type(m) is QuantizableBottleneck or type(m) is QuantizableBasicBlock:
                 m.fuse_model()
 
 
 def _resnet(
     arch: str,
-    block: Type[Union[BasicBlock, Bottleneck]],
+    block: Type[Union[QuantizableBasicBlock, QuantizableBottleneck]],
     layers: List[int],
     pretrained: bool,
     progress: bool,

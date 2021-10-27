@@ -30,7 +30,7 @@ class QuantizableInvertedResidual(InvertedResidual):
 
     def fuse_model(self) -> None:
         for idx in range(len(self.conv)):
-            if type(self.conv[idx]) == nn.Conv2d:
+            if type(self.conv[idx]) is nn.Conv2d:
                 fuse_modules(self.conv, [str(idx), str(idx + 1)], inplace=True)
 
 
@@ -54,9 +54,9 @@ class QuantizableMobileNetV2(MobileNetV2):
 
     def fuse_model(self) -> None:
         for m in self.modules():
-            if type(m) == ConvNormActivation:
+            if type(m) is ConvNormActivation:
                 fuse_modules(m, ["0", "1", "2"], inplace=True)
-            if type(m) == QuantizableInvertedResidual:
+            if type(m) is QuantizableInvertedResidual:
                 m.fuse_model()
 
 
