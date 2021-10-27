@@ -1459,29 +1459,17 @@ def test_random_grayscale():
     trans3.__repr__()
 
 
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_apply():
-    random_state = random.getstate()
-    random.seed(42)
-    random_apply_transform = transforms.RandomApply(
-        [
-            transforms.RandomRotation((-45, 45)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-        ],
-        p=0.75,
-    )
-    img = transforms.ToPILImage()(torch.rand(3, 10, 10))
-    num_samples = 250
-    num_applies = 0
-    for _ in range(num_samples):
-        out = random_apply_transform(img)
-        if out != img:
-            num_applies += 1
-
-    p_value = stats.binom_test(num_applies, num_samples, p=0.75)
-    random.setstate(random_state)
-    assert p_value > 0.0001
+@pytest.mark.parametrize("seed", range(10))
+@pytest.mark.parametrize("p", (0, 1))
+def test_random_apply(p, seed):
+    torch.manual_seed(seed)
+    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((-45, 45))], p=p)
+    img = transforms.ToPILImage()(torch.rand(3, 30, 40))
+    out = random_apply_transform(img)
+    if p == 0:
+        assert out == img
+    elif p == 1:
+        assert out != img
 
     # Checking if RandomApply can be printed as string
     random_apply_transform.__repr__()
