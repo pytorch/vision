@@ -151,8 +151,7 @@ class _MNISTBase(Dataset):
 
 
 class MNIST(_MNISTBase):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "mnist",
             type=DatasetType.RAW,
@@ -182,8 +181,7 @@ class MNIST(_MNISTBase):
 
 
 class FashionMNIST(MNIST):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "fashionmnist",
             type=DatasetType.RAW,
@@ -215,8 +213,7 @@ class FashionMNIST(MNIST):
 
 
 class KMNIST(MNIST):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "kmnist",
             type=DatasetType.RAW,
@@ -237,8 +234,7 @@ class KMNIST(MNIST):
 
 
 class EMNIST(_MNISTBase):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "emnist",
             type=DatasetType.RAW,
@@ -335,8 +331,7 @@ class EMNIST(_MNISTBase):
 
 
 class QMNIST(_MNISTBase):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "qmnist",
             type=DatasetType.RAW,
