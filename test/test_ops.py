@@ -1157,7 +1157,7 @@ class TestStochasticDepth:
         stats = pytest.importorskip("scipy.stats")
         batch_size = 5
         x = torch.ones(size=(batch_size, 3, 4, 4))
-        layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
+        layer = ops.StochasticDepth(p=p, mode=mode)
         layer.__repr__()
 
         trials = 250
@@ -1184,7 +1184,7 @@ class TestStochasticDepth:
         torch.manual_seed(seed)
         batch_size = 5
         x = torch.ones(size=(batch_size, 3, 4, 4))
-        layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
+        layer = ops.StochasticDepth(p=p, mode=mode)
 
         out = layer(x)
         if p == 0:
