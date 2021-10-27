@@ -9,6 +9,8 @@ from typing import Tuple, List, Dict, Optional, Union
 import torch
 from torch import nn, Tensor
 
+from ...utils import _log_api_usage_once
+
 
 class GeneralizedRCNN(nn.Module):
     """
@@ -25,6 +27,7 @@ class GeneralizedRCNN(nn.Module):
 
     def __init__(self, backbone, rpn, roi_heads, transform):
         super(GeneralizedRCNN, self).__init__()
+        _log_api_usage_once(self)
         self.transform = transform
         self.backbone = backbone
         self.rpn = rpn

@@ -35,8 +35,7 @@ HERE = pathlib.Path(__file__).parent
 
 
 class Coco(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "coco",
             type=DatasetType.IMAGE,
