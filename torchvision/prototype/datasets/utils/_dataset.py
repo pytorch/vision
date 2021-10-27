@@ -12,7 +12,7 @@ from torchvision.prototype.datasets.utils._internal import (
     sequence_to_str,
 )
 
-from ._internal import FrozenBunch, make_repr
+from ._internal import FrozenBunch, make_repr, BUILTIN_DIR
 from ._resource import OnlineResource
 
 
@@ -42,8 +42,9 @@ class DatasetInfo:
         self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
-            categories = []
-        elif isinstance(categories, int):
+            path = BUILTIN_DIR / f"{self.name}.categories"
+            categories = path if path.exists() else []
+        if isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
             path = pathlib.Path(categories).expanduser().resolve()
@@ -112,10 +113,16 @@ class DatasetInfo:
 
 
 class Dataset(abc.ABC):
-    @property
+    def __init__(self) -> None:
+        self._info = self._make_info()
+
     @abc.abstractmethod
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         pass
+
+    @property
+    def info(self) -> DatasetInfo:
+        return self._info
 
     @property
     def name(self) -> str:

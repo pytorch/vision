@@ -46,9 +46,11 @@ class RoIOpTester(ABC):
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
+    @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
-    def test_backward(self, device, contiguous):
+    def test_backward(self, seed, device, contiguous):
+        torch.random.manual_seed(seed)
         pool_size = 2
         x = torch.rand(1, 2 * (pool_size ** 2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
         if not contiguous:
@@ -845,7 +847,9 @@ class TestFrozenBNT:
         expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
         assert repr(t) == expected_string
 
-    def test_frozenbatchnorm2d_eps(self):
+    @pytest.mark.parametrize("seed", range(10))
+    def test_frozenbatchnorm2d_eps(self, seed):
+        torch.random.manual_seed(seed)
         sample_size = (4, 32, 28, 28)
         x = torch.rand(sample_size)
         state_dict = dict(
@@ -1149,13 +1153,15 @@ class TestMasksToBoxes:
 
 
 class TestStochasticDepth:
+    @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("p", [0.2, 0.5, 0.8])
     @pytest.mark.parametrize("mode", ["batch", "row"])
-    def test_stochastic_depth(self, mode, p):
+    def test_stochastic_depth_random(self, seed, mode, p):
+        torch.manual_seed(seed)
         stats = pytest.importorskip("scipy.stats")
         batch_size = 5
         x = torch.ones(size=(batch_size, 3, 4, 4))
-        layer = ops.StochasticDepth(p=p, mode=mode).to(device=x.device, dtype=x.dtype)
+        layer = ops.StochasticDepth(p=p, mode=mode)
         layer.__repr__()
 
         trials = 250
@@ -1173,7 +1179,22 @@ class TestStochasticDepth:
                 num_samples += batch_size
 
         p_value = stats.binom_test(counts, num_samples, p=p)
-        assert p_value > 0.0001
+        assert p_value > 0.01
+
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("p", (0, 1))
+    @pytest.mark.parametrize("mode", ["batch", "row"])
+    def test_stochastic_depth(self, seed, mode, p):
+        torch.manual_seed(seed)
+        batch_size = 5
+        x = torch.ones(size=(batch_size, 3, 4, 4))
+        layer = ops.StochasticDepth(p=p, mode=mode)
+
+        out = layer(x)
+        if p == 0:
+            assert out.equal(x)
+        elif p == 1:
+            assert out.equal(torch.zeros_like(x))
 
 
 class TestUtils:

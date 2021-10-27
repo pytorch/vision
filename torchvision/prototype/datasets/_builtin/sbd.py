@@ -25,7 +25,6 @@ from torchvision.prototype.datasets.utils import (
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
-    BUILTIN_DIR,
     read_mat,
     getitem,
     path_accessor,
@@ -34,12 +33,10 @@ from torchvision.prototype.datasets.utils._internal import (
 
 
 class SBD(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "sbd",
             type=DatasetType.IMAGE,
-            categories=BUILTIN_DIR / "caltech256.categories",
             homepage="http://home.bharathh.info/pubs/codes/SBD/download.html",
             valid_options=dict(
                 split=("train", "val", "train_noval"),
