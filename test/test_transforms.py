@@ -543,7 +543,7 @@ class TestPad:
 
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 @pytest.mark.parametrize(
-    "fn, trans, config",
+    "fn, trans, kwargs",
     [
         (F.invert, transforms.RandomInvert, {}),
         (F.posterize, transforms.RandomPosterize, {"bits": 4}),
@@ -553,26 +553,20 @@ class TestPad:
         (F.equalize, transforms.RandomEqualize, {}),
     ],
 )
-@pytest.mark.parametrize("p", (0.5, 0.7))
-def test_randomness(fn, trans, config, p):
-    random_state = random.getstate()
-    random.seed(42)
+@pytest.mark.parametrize("seed", range(10))
+@pytest.mark.parametrize("p", (0, 1))
+def test_randomness(fn, trans, kwargs, seed, p):
+    torch.manual_seed(seed)
     img = transforms.ToPILImage()(torch.rand(3, 16, 18))
+    transformed_img = fn(img, **kwargs)
+    randomly_transformed_img = trans(p=p, **kwargs)(img)
 
-    inv_img = fn(img, **config)
+    if p == 0:
+        assert randomly_transformed_img == img
+    elif p == 1:
+        assert randomly_transformed_img == transformed_img
 
-    num_samples = 250
-    counts = 0
-    for _ in range(num_samples):
-        tranformation = trans(p=p, **config)
-        tranformation.__repr__()
-        out = tranformation(img)
-        if out == inv_img:
-            counts += 1
-
-    p_value = stats.binom_test(counts, num_samples, p=p)
-    random.setstate(random_state)
-    assert p_value > 0.0001
+    trans(**kwargs).__repr__()
 
 
 class TestToPil:
