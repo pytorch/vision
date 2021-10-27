@@ -551,6 +551,8 @@ class TestPad:
         (F.adjust_sharpness, transforms.RandomAdjustSharpness, {"sharpness_factor": 2.0}),
         (F.autocontrast, transforms.RandomAutocontrast, {}),
         (F.equalize, transforms.RandomEqualize, {}),
+        (F.vflip, transforms.RandomVerticalFlip, {}),
+        (F.hflip, transforms.RandomHorizontalFlip, {}),
     ],
 )
 @pytest.mark.parametrize("seed", range(10))
@@ -1982,72 +1984,6 @@ def test_randomperspective_fill(mode):
     wrong_num_bands = num_bands + 1
     with pytest.raises(ValueError):
         F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
-
-
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_vertical_flip():
-    random_state = random.getstate()
-    random.seed(42)
-    img = transforms.ToPILImage()(torch.rand(3, 10, 10))
-    vimg = img.transpose(Image.FLIP_TOP_BOTTOM)
-
-    num_samples = 250
-    num_vertical = 0
-    for _ in range(num_samples):
-        out = transforms.RandomVerticalFlip()(img)
-        if out == vimg:
-            num_vertical += 1
-
-    p_value = stats.binom_test(num_vertical, num_samples, p=0.5)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    num_samples = 250
-    num_vertical = 0
-    for _ in range(num_samples):
-        out = transforms.RandomVerticalFlip(p=0.7)(img)
-        if out == vimg:
-            num_vertical += 1
-
-    p_value = stats.binom_test(num_vertical, num_samples, p=0.7)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    # Checking if RandomVerticalFlip can be printed as string
-    transforms.RandomVerticalFlip().__repr__()
-
-
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_horizontal_flip():
-    random_state = random.getstate()
-    random.seed(42)
-    img = transforms.ToPILImage()(torch.rand(3, 10, 10))
-    himg = img.transpose(Image.FLIP_LEFT_RIGHT)
-
-    num_samples = 250
-    num_horizontal = 0
-    for _ in range(num_samples):
-        out = transforms.RandomHorizontalFlip()(img)
-        if out == himg:
-            num_horizontal += 1
-
-    p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    num_samples = 250
-    num_horizontal = 0
-    for _ in range(num_samples):
-        out = transforms.RandomHorizontalFlip(p=0.7)(img)
-        if out == himg:
-            num_horizontal += 1
-
-    p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    # Checking if RandomHorizontalFlip can be printed as string
-    transforms.RandomHorizontalFlip().__repr__()
 
 
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
