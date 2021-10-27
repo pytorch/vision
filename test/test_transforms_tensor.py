@@ -115,8 +115,7 @@ def test_random(func, method, device, channels, fn_kwargs, match_kwargs):
     _test_op(func, method, device, channels, fn_kwargs, fn_kwargs, **match_kwargs)
 
 
-# @pytest.mark.parametrize("seed", range(100))
-@pytest.mark.parametrize("seed", range(100))
+@pytest.mark.parametrize("seed", range(10))
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("channels", [1, 3])
 class TestColorJitter:
