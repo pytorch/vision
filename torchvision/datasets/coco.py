@@ -1,8 +1,10 @@
-from .vision import VisionDataset
-from PIL import Image
 import os
 import os.path
 from typing import Any, Callable, Optional, Tuple, List
+
+from PIL import Image
+
+from .vision import VisionDataset
 
 
 class CocoDetection(VisionDataset):
@@ -26,7 +28,7 @@ class CocoDetection(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
-    ):
+    ) -> None:
         super().__init__(root, transforms, transform, target_transform)
         from pycocotools.coco import COCO
 
@@ -37,7 +39,7 @@ class CocoDetection(VisionDataset):
         path = self.coco.loadImgs(id)[0]["file_name"]
         return Image.open(os.path.join(self.root, path)).convert("RGB")
 
-    def _load_target(self, id) -> List[Any]:
+    def _load_target(self, id: int) -> List[Any]:
         return self.coco.loadAnns(self.coco.getAnnIds(id))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
@@ -95,5 +97,5 @@ class CocoCaptions(CocoDetection):
 
     """
 
-    def _load_target(self, id) -> List[str]:
+    def _load_target(self, id: int) -> List[str]:
         return [ann["caption"] for ann in super()._load_target(id)]

@@ -8,7 +8,10 @@ from .googlenet import *
 from .mobilenet import *
 from .mnasnet import *
 from .shufflenetv2 import *
-from . import segmentation
+from .efficientnet import *
+from .regnet import *
 from . import detection
-from . import video
+from . import feature_extraction
 from . import quantization
+from . import segmentation
+from . import video

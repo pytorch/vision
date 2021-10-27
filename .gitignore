@@ -36,3 +36,7 @@ gen.yml
 
 ## Xcode User settings
 xcuserdata/
+
+# direnv
+.direnv
+.envrc

@@ -15,7 +15,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
 export BUILD_TYPE=conda
-setup_env 0.11.0
+setup_env 0.12.0
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
@@ -28,13 +28,31 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
-conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c "pytorch-${UPLOAD_CHANNEL}"
+if [[ "$(uname)" == Darwin ]]; then
+  # TODO: this can be removed as soon as mkl's CMake support works with clang
+  #  see https://github.com/pytorch/vision/pull/4203 for details
+  MKL_CONSTRAINT='mkl==2021.2.0'
+else
+  MKL_CONSTRAINT=''
+fi
+
+if [[ $CONDA_BUILD_VARIANT == "cpu" ]]; then
+  PYTORCH_MUTEX_CONSTRAINT='pytorch-mutex=1.0=cpu'
+else
+  PYTORCH_MUTEX_CONSTRAINT=''
+fi
+
+conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     conda install -yq libpng jpeg
 else
     yum install -y libpng-devel libjpeg-turbo-devel
+fi
+
+if [[ "$OSTYPE" == "msys" ]]; then
+    source .circleci/unittest/windows/scripts/set_cuda_envs.sh
 fi
 
 mkdir cpp_build
@@ -90,13 +108,18 @@ fi
 # Compile and run the CPP example
 popd
 cd examples/cpp/hello_world
-
 mkdir build
+
+# Trace model
+python trace_model.py
+cp resnet18.pt build
+
 cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
 
 if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat" $PARALLELISM
+    mv resnet18.pt Release
     cd Release
 else
     make -j$PARALLELISM

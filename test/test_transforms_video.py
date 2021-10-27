@@ -1,10 +1,11 @@
-import torch
-from torchvision.transforms import Compose
-import pytest
 import random
-import numpy as np
 import warnings
-from _assert_utils import assert_equal
+
+import numpy as np
+import pytest
+import torch
+from common_utils import assert_equal
+from torchvision.transforms import Compose
 
 try:
     from scipy import stats
@@ -17,8 +18,7 @@ with warnings.catch_warnings(record=True):
     import torchvision.transforms._transforms_video as transforms
 
 
-class TestVideoTransforms():
-
+class TestVideoTransforms:
     def test_random_crop_video(self):
         numFrames = random.randint(4, 128)
         height = random.randint(10, 32) * 2
@@ -26,10 +26,12 @@ class TestVideoTransforms():
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
-        result = Compose([
-            transforms.ToTensorVideo(),
-            transforms.RandomCropVideo((oheight, owidth)),
-        ])(clip)
+        result = Compose(
+            [
+                transforms.ToTensorVideo(),
+                transforms.RandomCropVideo((oheight, owidth)),
+            ]
+        )(clip)
         assert result.size(2) == oheight
         assert result.size(3) == owidth
 
@@ -42,10 +44,12 @@ class TestVideoTransforms():
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
-        result = Compose([
-            transforms.ToTensorVideo(),
-            transforms.RandomResizedCropVideo((oheight, owidth)),
-        ])(clip)
+        result = Compose(
+            [
+                transforms.ToTensorVideo(),
+                transforms.RandomResizedCropVideo((oheight, owidth)),
+            ]
+        )(clip)
         assert result.size(2) == oheight
         assert result.size(3) == owidth
 
@@ -61,47 +65,56 @@ class TestVideoTransforms():
         clip = torch.ones((numFrames, height, width, 3), dtype=torch.uint8) * 255
         oh1 = (height - oheight) // 2
         ow1 = (width - owidth) // 2
-        clipNarrow = clip[:, oh1:oh1 + oheight, ow1:ow1 + owidth, :]
+        clipNarrow = clip[:, oh1 : oh1 + oheight, ow1 : ow1 + owidth, :]
         clipNarrow.fill_(0)
-        result = Compose([
-            transforms.ToTensorVideo(),
-            transforms.CenterCropVideo((oheight, owidth)),
-        ])(clip)
+        result = Compose(
+            [
+                transforms.ToTensorVideo(),
+                transforms.CenterCropVideo((oheight, owidth)),
+            ]
+        )(clip)
 
-        msg = "height: " + str(height) + " width: " \
-            + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        msg = (
+            "height: " + str(height) + " width: " + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        )
         assert result.sum().item() == 0, msg
 
         oheight += 1
         owidth += 1
-        result = Compose([
-            transforms.ToTensorVideo(),
-            transforms.CenterCropVideo((oheight, owidth)),
-        ])(clip)
+        result = Compose(
+            [
+                transforms.ToTensorVideo(),
+                transforms.CenterCropVideo((oheight, owidth)),
+            ]
+        )(clip)
         sum1 = result.sum()
 
-        msg = "height: " + str(height) + " width: " \
-            + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        msg = (
+            "height: " + str(height) + " width: " + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        )
         assert sum1.item() > 1, msg
 
         oheight += 1
         owidth += 1
-        result = Compose([
-            transforms.ToTensorVideo(),
-            transforms.CenterCropVideo((oheight, owidth)),
-        ])(clip)
+        result = Compose(
+            [
+                transforms.ToTensorVideo(),
+                transforms.CenterCropVideo((oheight, owidth)),
+            ]
+        )(clip)
         sum2 = result.sum()
 
-        msg = "height: " + str(height) + " width: " \
-            + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        msg = (
+            "height: " + str(height) + " width: " + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        )
         assert sum2.item() > 1, msg
         assert sum2.item() > sum1.item(), msg
 
-    @pytest.mark.skipif(stats is None, reason='scipy.stats is not available')
-    @pytest.mark.parametrize('channels', [1, 3])
+    @pytest.mark.skipif(stats is None, reason="scipy.stats is not available")
+    @pytest.mark.parametrize("channels", [1, 3])
     def test_normalize_video(self, channels):
         def samples_from_standard_normal(tensor):
-            p_value = stats.kstest(list(tensor.view(-1)), 'norm', args=(0, 1)).pvalue
+            p_value = stats.kstest(list(tensor.view(-1)), "norm", args=(0, 1)).pvalue
             return p_value > 0.0001
 
         random_state = random.getstate()
@@ -131,18 +144,23 @@ class TestVideoTransforms():
         trans = transforms.ToTensorVideo()
 
         with pytest.raises(TypeError):
-            trans(np.random.rand(numFrames, height, width, 1).tolist())
+            np_rng = np.random.RandomState(0)
+            trans(np_rng.rand(numFrames, height, width, 1).tolist())
+        with pytest.raises(TypeError):
             trans(torch.rand((numFrames, height, width, 1), dtype=torch.float))
 
         with pytest.raises(ValueError):
             trans(torch.ones((3, numFrames, height, width, 3), dtype=torch.uint8))
+        with pytest.raises(ValueError):
             trans(torch.ones((height, width, 3), dtype=torch.uint8))
+        with pytest.raises(ValueError):
             trans(torch.ones((width, 3), dtype=torch.uint8))
+        with pytest.raises(ValueError):
             trans(torch.ones((3), dtype=torch.uint8))
 
         trans.__repr__()
 
-    @pytest.mark.skipif(stats is None, reason='scipy.stats not available')
+    @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
     def test_random_horizontal_flip_video(self):
         random_state = random.getstate()
         random.seed(42)
@@ -174,5 +192,5 @@ class TestVideoTransforms():
         transforms.RandomHorizontalFlipVideo().__repr__()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

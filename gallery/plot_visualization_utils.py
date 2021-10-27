@@ -7,6 +7,7 @@ This example illustrates some of the utilities that torchvision offers for
 visualizing images, bounding boxes, and segmentation masks.
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/visualization_utils_thumbnail.png"
 
 import torch
 import numpy as np
@@ -115,7 +116,7 @@ show(dogs_with_boxes)
 # lraspp mobilenet models
 # (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
 #
-# Let's start by looking at the ouput of the model. Remember that in general,
+# Let's start by looking at the output of the model. Remember that in general,
 # images must be normalized before they're passed to a semantic segmentation
 # model.
 
@@ -343,7 +344,7 @@ show(draw_segmentation_masks(dog1_int, dog1_bool_masks, alpha=0.9))
 print(dog1_output['scores'])
 
 #####################################
-# Clearly the model is less confident about the dog detection than it is about
+# Clearly the model is more confident about the dog detection than it is about
 # the people detections. That's good news. When plotting the masks, we can ask
 # for only those that have a good score. Let's use a score threshold of .75
 # here, and also plot the masks of the second dog.

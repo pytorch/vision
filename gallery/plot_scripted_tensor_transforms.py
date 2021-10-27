@@ -133,7 +133,7 @@ for i, (pred, pred_scripted) in enumerate(zip(res, res_scripted)):
     print(f"Prediction for Dog {i + 1}: {labels[str(pred.item())]}")
 
 ####################################
-# Since the model is scripted, it can be easily dumped on disk an re-used
+# Since the model is scripted, it can be easily dumped on disk and re-used
 
 import tempfile
 
