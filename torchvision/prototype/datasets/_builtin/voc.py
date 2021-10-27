@@ -35,8 +35,7 @@ HERE = pathlib.Path(__file__).parent
 
 
 class VOC(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "voc",
             type=DatasetType.IMAGE,

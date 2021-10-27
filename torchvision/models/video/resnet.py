@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-
+from ...utils import _log_api_usage_once
 
 __all__ = ["r3d_18", "mc3_18", "r2plus1d_18"]
 
@@ -209,6 +209,7 @@ class VideoResNet(nn.Module):
             zero_init_residual (bool, optional): Zero init bottleneck residual BN. Defaults to False.
         """
         super(VideoResNet, self).__init__()
+        _log_api_usage_once(self)
         self.inplanes = 64
 
         self.stem = stem()
