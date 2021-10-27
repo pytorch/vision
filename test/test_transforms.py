@@ -1971,8 +1971,10 @@ def test_randomperspective():
         )
 
 
+@pytest.mark.parametrize("seed", range(100))
 @pytest.mark.parametrize("mode", ["L", "RGB", "F"])
-def test_randomperspective_fill(mode):
+def test_randomperspective_fill(mode, seed):
+    torch.random.manual_seed(seed)
 
     # assert fill being either a Sequence or a Number
     with pytest.raises(TypeError):
