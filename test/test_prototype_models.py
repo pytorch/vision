@@ -25,6 +25,11 @@ def _build_model(fn, **kwargs):
     return model.eval()
 
 
+def _get_models_with_module_names(module):
+    module_name = module.__name__.split('.')[-1]
+    return [(x, module_name) for x in TM.get_models_from_module(module)]
+
+
 def test_get_weight():
     fn = models.resnet50
     weight_name = "ImageNet1K_RefV2"
@@ -45,16 +50,35 @@ def test_segmentation_model(model_fn, dev):
     TM.test_segmentation_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models) + TM.get_models_from_module(models.segmentation))
+@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
-def test_old_vs_new_factory(model_fn, dev):
+def test_video_model(model_fn, dev):
+    TM.test_video_model(model_fn, dev)
+
+
+@pytest.mark.parametrize(
+    "model_fn, module_name",
+    _get_models_with_module_names(models) +
+    _get_models_with_module_names(models.segmentation) +
+    _get_models_with_module_names(models.video)
+)
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+def test_old_vs_new_factory(model_fn, module_name, dev):
     defaults = {
-        "pretrained": True,
-        "input_shape": (1, 3, 224, 224),
+        'models': {
+            "input_shape": (1, 3, 64, 64),
+        },
+        'segmentation': {
+            "input_shape": (1, 3, 32, 32),
+        },
+        'video': {
+            "input_shape": (1, 3, 4, 112, 112),
+        }
     }
     model_name = model_fn.__name__
-    kwargs = {**defaults, **TM._model_params.get(model_name, {})}
+    kwargs = {"pretrained": True, **defaults[module_name], **TM._model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
     x = torch.rand(input_shape).to(device=dev)
 
