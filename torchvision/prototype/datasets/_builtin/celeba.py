@@ -58,8 +58,7 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
 
 
 class CelebA(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "celeba",
             type=DatasetType.IMAGE,
