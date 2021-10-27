@@ -8,7 +8,6 @@ from ....models.segmentation.deeplabv3 import DeepLabV3, _deeplabv3_mobilenetv3,
 from ...transforms.presets import VocEval
 from .._api import Weights, WeightEntry
 from .._meta import _VOC_CATEGORIES
-from ..mobilenetv3 import MobileNetV3LargeWeights
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 from ..resnet import ResNet50Weights, ResNet101Weights
 
@@ -65,14 +64,14 @@ class DeepLabV3MobileNetV3LargeWeights(Weights):
 
 def _deeplabv3(
     weights_class: Type[Weights],
-    weights: Weights,
     model_builder: Callable,
     weights_backbone_class: Type[Weights],
-    weights_backbone: Weights,
     backbone_model_builder: Callable,
     progress: bool,
     num_classes: int,
     backbone_args: Dict[str, Any],
+    weights: Optional[Weights] = None,
+    weights_backbone: Optional[Weights] = None,
     aux_loss: Optional[bool] = None,
     **kwargs: Any,
 ) -> DeepLabV3:
@@ -110,14 +109,14 @@ def deeplabv3_resnet50(
 ) -> DeepLabV3:
     return _deeplabv3(
         DeepLabV3ResNet50Weights,
-        weights,
         _deeplabv3_resnet,
         ResNet50Weights,
-        weights_backbone,
         resnet50,
         progress,
         num_classes,
         {"replace_stride_with_dilation": [False, True, True]},
+        weights,
+        weights_backbone,
         aux_loss,
         kwargs=kwargs,
     )
@@ -133,14 +132,14 @@ def deeplabv3_resnet101(
 ) -> DeepLabV3:
     return _deeplabv3(
         DeepLabV3ResNet101Weights,
-        weights,
         _deeplabv3_resnet,
         ResNet101Weights,
-        weights_backbone,
         resnet101,
         progress,
         num_classes,
         {"replace_stride_with_dilation": [False, True, True]},
+        weights,
+        weights_backbone,
         aux_loss,
         kwargs=kwargs,
     )
@@ -156,14 +155,14 @@ def deeplabv3_mobilenet_v3_large(
 ) -> DeepLabV3:
     return _deeplabv3(
         DeepLabV3MobileNetV3LargeWeights,
-        weights,
         _deeplabv3_mobilenetv3,
         MobileNetV3LargeWeights,
-        weights_backbone,
         mobilenet_v3_large,
         progress,
         num_classes,
         {"dilated": True},
+        weights,
         aux_loss,
+        weights_backbone,
         kwargs=kwargs,
     )
