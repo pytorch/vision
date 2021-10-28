@@ -271,9 +271,17 @@ jobs:
       - run:
           name: Install test utilities
           command: pip install --user --progress-bar=off pytest
+      - restore_cache:
+          keys:
+            - torch-hub
       - run:
           name: Run tests
           command: pytest test/test_prototype_*.py
+      - save_cache:
+          keys:
+            - torch-hub
+          paths:
+            - ~/.cache/torch/hub
 
   binary_linux_wheel:
     <<: *binary_common
