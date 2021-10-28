@@ -65,9 +65,9 @@ class UCF101(VisionDataset):
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
     ) -> None:
-        super(UCF101, self).__init__(root)
+        super().__init__(root)
         if not 1 <= fold <= 3:
-            raise ValueError("fold should be between 1 and 3, got {}".format(fold))
+            raise ValueError(f"fold should be between 1 and 3, got {fold}")
 
         extensions = ("avi",)
         self.fold = fold
@@ -102,10 +102,10 @@ class UCF101(VisionDataset):
 
     def _select_fold(self, video_list: List[str], annotation_path: str, fold: int, train: bool) -> List[int]:
         name = "train" if train else "test"
-        name = "{}list{:02d}.txt".format(name, fold)
+        name = f"{name}list{fold:02d}.txt"
         f = os.path.join(annotation_path, name)
         selected_files = set()
-        with open(f, "r") as fid:
+        with open(f) as fid:
             data = fid.readlines()
             data = [x.strip().split(" ")[0] for x in data]
             data = [os.path.join(self.root, x) for x in data]

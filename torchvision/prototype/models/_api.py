@@ -1,12 +1,13 @@
 from collections import OrderedDict
 from dataclasses import dataclass, fields
 from enum import Enum
+from inspect import signature
 from typing import Any, Callable, Dict
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["Weights", "WeightEntry"]
+__all__ = ["Weights", "WeightEntry", "get_weight"]
 
 
 @dataclass
@@ -51,7 +52,7 @@ class Weights(Enum):
                 obj = cls.from_str(obj)
             elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
                 raise TypeError(
-                    f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
+                    f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
         return obj
 
@@ -74,3 +75,38 @@ class Weights(Enum):
             if f.name == name:
                 return object.__getattribute__(self.value, name)
         return super().__getattr__(name)
+
+
+def get_weight(fn: Callable, weight_name: str) -> Weights:
+    """
+    Gets the weight enum of a specific model builder method and weight name combination.
+
+    Args:
+        fn (Callable): The builder method used to create the model.
+        weight_name (str): The name of the weight enum entry of the specific model.
+
+    Returns:
+        Weights: The requested weight enum.
+    """
+    sig = signature(fn)
+    if "weights" not in sig.parameters:
+        raise ValueError("The method is missing the 'weights' argument.")
+
+    ann = signature(fn).parameters["weights"].annotation
+    weights_class = None
+    if isinstance(ann, type) and issubclass(ann, Weights):
+        weights_class = ann
+    else:
+        # handle cases like Union[Optional, T]
+        # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
+        for t in ann.__args__:  # type: ignore[union-attr]
+            if isinstance(t, type) and issubclass(t, Weights):
+                weights_class = t
+                break
+
+    if weights_class is None:
+        raise ValueError(
+            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is correct."
+        )
+
+    return weights_class.from_str(weight_name)

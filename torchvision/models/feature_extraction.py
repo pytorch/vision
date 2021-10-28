@@ -26,7 +26,7 @@ class LeafModuleAwareTracer(fx.Tracer):
         if "leaf_modules" in kwargs:
             leaf_modules = kwargs.pop("leaf_modules")
             self.leaf_modules = leaf_modules
-        super(LeafModuleAwareTracer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def is_leaf_module(self, m: nn.Module, module_qualname: str) -> bool:
         if isinstance(m, tuple(self.leaf_modules)):
@@ -54,7 +54,7 @@ class NodePathTracer(LeafModuleAwareTracer):
     """
 
     def __init__(self, *args, **kwargs):
-        super(NodePathTracer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Track the qualified name of the Node being traced
         self.current_module_qualname = ""
         # A map from FX Node to the qualified name\#
@@ -168,7 +168,7 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
             "are a subsequence of those obtained in eval mode. "
         )
     else:
-        msg = "The nodes obtained by tracing the model in train mode " "are different to those obtained in eval mode. "
+        msg = "The nodes obtained by tracing the model in train mode are different to those obtained in eval mode. "
     warnings.warn(msg + suggestion_msg)
 
 
@@ -399,17 +399,17 @@ def create_feature_extractor(
     """
     is_training = model.training
 
-    assert any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]), (
-        "Either `return_nodes` or `train_return_nodes` and " "`eval_return_nodes` together, should be specified"
-    )
+    assert any(
+        arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]
+    ), "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
 
-    assert not ((train_return_nodes is None) ^ (eval_return_nodes is None)), (
-        "If any of `train_return_nodes` and `eval_return_nodes` are " "specified, then both should be specified"
-    )
+    assert not (
+        (train_return_nodes is None) ^ (eval_return_nodes is None)
+    ), "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
 
-    assert (return_nodes is None) ^ (train_return_nodes is None), (
-        "If `train_return_nodes` and `eval_return_nodes` are specified, " "then both should be specified"
-    )
+    assert (return_nodes is None) ^ (
+        train_return_nodes is None
+    ), "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:

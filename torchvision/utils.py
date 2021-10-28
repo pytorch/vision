@@ -1,7 +1,7 @@
 import math
 import pathlib
 import warnings
-from typing import Union, Optional, List, Tuple, Text, BinaryIO
+from typing import Union, Optional, List, Tuple, BinaryIO
 
 import numpy as np
 import torch
@@ -114,7 +114,7 @@ def make_grid(
 @torch.no_grad()
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[Text, pathlib.Path, BinaryIO],
+    fp: Union[str, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
     **kwargs,
 ) -> None:
@@ -303,3 +303,7 @@ def draw_segmentation_masks(
 def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_masks)]
+
+
+def _log_api_usage_once(obj: object) -> None:
+    torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")

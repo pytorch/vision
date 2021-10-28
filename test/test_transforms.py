@@ -1,6 +1,7 @@
 import math
 import os
 import random
+from functools import partial
 
 import numpy as np
 import pytest
@@ -114,7 +115,7 @@ class TestConvertImageDtype:
             output_image,
             rtol=0.0,
             atol=1e-6,
-            msg="{} vs {}".format(output_image_script, output_image),
+            msg=f"{output_image_script} vs {output_image}",
         )
 
         actual_min, actual_max = output_image.tolist()
@@ -368,7 +369,7 @@ def test_resize(height, width, osize, max_size):
     t = transforms.Resize(osize, max_size=max_size)
     result = t(img)
 
-    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
+    msg = f"{height}, {width} - {osize} - {max_size}"
     osize = osize[0] if isinstance(osize, (list, tuple)) else osize
     # If size is an int, smaller edge of the image will be matched to this number.
     # i.e, if height > width, then image will be rescaled to (size * height / width, size).
@@ -469,11 +470,11 @@ class TestPad:
         width = random.randint(10, 32) * 2
         img = transforms.ToPILImage()(torch.ones(3, height, width))
 
-        padding = tuple([random.randint(1, 20) for _ in range(2)])
+        padding = tuple(random.randint(1, 20) for _ in range(2))
         output = transforms.Pad(padding)(img)
         assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
 
-        padding = tuple([random.randint(1, 20) for _ in range(4)])
+        padding = tuple(random.randint(1, 20) for _ in range(4))
         output = transforms.Pad(padding)(img)
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
@@ -541,9 +542,8 @@ class TestPad:
         assert_equal(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
 
 
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
 @pytest.mark.parametrize(
-    "fn, trans, config",
+    "fn, trans, kwargs",
     [
         (F.invert, transforms.RandomInvert, {}),
         (F.posterize, transforms.RandomPosterize, {"bits": 4}),
@@ -551,28 +551,26 @@ class TestPad:
         (F.adjust_sharpness, transforms.RandomAdjustSharpness, {"sharpness_factor": 2.0}),
         (F.autocontrast, transforms.RandomAutocontrast, {}),
         (F.equalize, transforms.RandomEqualize, {}),
+        (F.vflip, transforms.RandomVerticalFlip, {}),
+        (F.hflip, transforms.RandomHorizontalFlip, {}),
+        (partial(F.to_grayscale, num_output_channels=3), transforms.RandomGrayscale, {}),
     ],
 )
-@pytest.mark.parametrize("p", (0.5, 0.7))
-def test_randomness(fn, trans, config, p):
-    random_state = random.getstate()
-    random.seed(42)
+@pytest.mark.parametrize("seed", range(10))
+@pytest.mark.parametrize("p", (0, 1))
+def test_randomness(fn, trans, kwargs, seed, p):
+    torch.manual_seed(seed)
     img = transforms.ToPILImage()(torch.rand(3, 16, 18))
 
-    inv_img = fn(img, **config)
+    expected_transformed_img = fn(img, **kwargs)
+    randomly_transformed_img = trans(p=p, **kwargs)(img)
 
-    num_samples = 250
-    counts = 0
-    for _ in range(num_samples):
-        tranformation = trans(p=p, **config)
-        tranformation.__repr__()
-        out = tranformation(img)
-        if out == inv_img:
-            counts += 1
+    if p == 0:
+        assert randomly_transformed_img == img
+    elif p == 1:
+        assert randomly_transformed_img == expected_transformed_img
 
-    p_value = stats.binom_test(counts, num_samples, p=p)
-    random.setstate(random_state)
-    assert p_value > 0.0001
+    trans(**kwargs).__repr__()
 
 
 class TestToPil:
@@ -1362,160 +1360,42 @@ def test_to_grayscale():
     trans4.__repr__()
 
 
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_grayscale():
-    """Unit tests for random grayscale transform"""
-
-    # Test Set 1: RGB -> 3 channel grayscale
-    np_rng = np.random.RandomState(0)
-    random_state = random.getstate()
-    random.seed(42)
-    x_shape = [2, 2, 3]
-    x_np = np_rng.randint(0, 256, x_shape, np.uint8)
-    x_pil = Image.fromarray(x_np, mode="RGB")
-    x_pil_2 = x_pil.convert("L")
-    gray_np = np.array(x_pil_2)
-
-    num_samples = 250
-    num_gray = 0
-    for _ in range(num_samples):
-        gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
-        gray_np_2 = np.array(gray_pil_2)
-        if (
-            np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
-            and np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-            and np.array_equal(gray_np, gray_np_2[:, :, 0])
-        ):
-            num_gray = num_gray + 1
-
-    p_value = stats.binom_test(num_gray, num_samples, p=0.5)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    # Test Set 2: grayscale -> 1 channel grayscale
-    random_state = random.getstate()
-    random.seed(42)
-    x_shape = [2, 2, 3]
-    x_np = np_rng.randint(0, 256, x_shape, np.uint8)
-    x_pil = Image.fromarray(x_np, mode="RGB")
-    x_pil_2 = x_pil.convert("L")
-    gray_np = np.array(x_pil_2)
-
-    num_samples = 250
-    num_gray = 0
-    for _ in range(num_samples):
-        gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
-        gray_np_3 = np.array(gray_pil_3)
-        if np.array_equal(gray_np, gray_np_3):
-            num_gray = num_gray + 1
-
-    p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    # Test set 3: Explicit tests
-    x_shape = [2, 2, 3]
-    x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
-    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = Image.fromarray(x_np, mode="RGB")
-    x_pil_2 = x_pil.convert("L")
-    gray_np = np.array(x_pil_2)
-
-    # Case 3a: RGB -> 3 channel grayscale (grayscaled)
-    trans2 = transforms.RandomGrayscale(p=1.0)
-    gray_pil_2 = trans2(x_pil)
-    gray_np_2 = np.array(gray_pil_2)
-    assert gray_pil_2.mode == "RGB", "mode should be RGB"
-    assert gray_np_2.shape == tuple(x_shape), "should be 3 channel"
-    assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
-    assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
-    assert_equal(gray_np, gray_np_2[:, :, 0])
-
-    # Case 3b: RGB -> 3 channel grayscale (unchanged)
-    trans2 = transforms.RandomGrayscale(p=0.0)
-    gray_pil_2 = trans2(x_pil)
-    gray_np_2 = np.array(gray_pil_2)
-    assert gray_pil_2.mode == "RGB", "mode should be RGB"
-    assert gray_np_2.shape == tuple(x_shape), "should be 3 channel"
-    assert_equal(x_np, gray_np_2)
-
-    # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
-    trans3 = transforms.RandomGrayscale(p=1.0)
-    gray_pil_3 = trans3(x_pil_2)
-    gray_np_3 = np.array(gray_pil_3)
-    assert gray_pil_3.mode == "L", "mode should be L"
-    assert gray_np_3.shape == tuple(x_shape[0:2]), "should be 1 channel"
-    assert_equal(gray_np, gray_np_3)
-
-    # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
-    trans3 = transforms.RandomGrayscale(p=0.0)
-    gray_pil_3 = trans3(x_pil_2)
-    gray_np_3 = np.array(gray_pil_3)
-    assert gray_pil_3.mode == "L", "mode should be L"
-    assert gray_np_3.shape == tuple(x_shape[0:2]), "should be 1 channel"
-    assert_equal(gray_np, gray_np_3)
-
-    # Checking if RandomGrayscale can be printed as string
-    trans3.__repr__()
-
-
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_apply():
-    random_state = random.getstate()
-    random.seed(42)
-    random_apply_transform = transforms.RandomApply(
-        [
-            transforms.RandomRotation((-45, 45)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-        ],
-        p=0.75,
-    )
-    img = transforms.ToPILImage()(torch.rand(3, 10, 10))
-    num_samples = 250
-    num_applies = 0
-    for _ in range(num_samples):
-        out = random_apply_transform(img)
-        if out != img:
-            num_applies += 1
-
-    p_value = stats.binom_test(num_applies, num_samples, p=0.75)
-    random.setstate(random_state)
-    assert p_value > 0.0001
+@pytest.mark.parametrize("seed", range(10))
+@pytest.mark.parametrize("p", (0, 1))
+def test_random_apply(p, seed):
+    torch.manual_seed(seed)
+    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((1, 45))], p=p)
+    img = transforms.ToPILImage()(torch.rand(3, 30, 40))
+    out = random_apply_transform(img)
+    if p == 0:
+        assert out == img
+    elif p == 1:
+        assert out != img
 
     # Checking if RandomApply can be printed as string
     random_apply_transform.__repr__()
 
 
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_choice():
-    random_state = random.getstate()
-    random.seed(42)
+@pytest.mark.parametrize("seed", range(10))
+@pytest.mark.parametrize("proba_passthrough", (0, 1))
+def test_random_choice(proba_passthrough, seed):
+    random.seed(seed)  # RandomChoice relies on python builtin random.choice, not pytorch
+
     random_choice_transform = transforms.RandomChoice(
-        [transforms.Resize(15), transforms.Resize(20), transforms.CenterCrop(10)], [1 / 3, 1 / 3, 1 / 3]
+        [
+            lambda x: x,  # passthrough
+            transforms.RandomRotation((1, 45)),
+        ],
+        p=[proba_passthrough, 1 - proba_passthrough],
     )
-    img = transforms.ToPILImage()(torch.rand(3, 25, 25))
-    num_samples = 250
-    num_resize_15 = 0
-    num_resize_20 = 0
-    num_crop_10 = 0
-    for _ in range(num_samples):
-        out = random_choice_transform(img)
-        if out.size == (15, 15):
-            num_resize_15 += 1
-        elif out.size == (20, 20):
-            num_resize_20 += 1
-        elif out.size == (10, 10):
-            num_crop_10 += 1
 
-    p_value = stats.binom_test(num_resize_15, num_samples, p=0.33333)
-    assert p_value > 0.0001
-    p_value = stats.binom_test(num_resize_20, num_samples, p=0.33333)
-    assert p_value > 0.0001
-    p_value = stats.binom_test(num_crop_10, num_samples, p=0.33333)
-    assert p_value > 0.0001
+    img = transforms.ToPILImage()(torch.rand(3, 30, 40))
+    out = random_choice_transform(img)
+    if proba_passthrough == 1:
+        assert out == img
+    elif proba_passthrough == 0:
+        assert out != img
 
-    random.setstate(random_state)
     # Checking if RandomChoice can be printed as string
     random_choice_transform.__repr__()
 
@@ -1823,7 +1703,7 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     assert_equal(
         output_tensor,
         output_pil,
-        msg="image_size: {} crop_size: {}".format(input_image_size, crop_size),
+        msg=f"image_size: {input_image_size} crop_size: {crop_size}",
     )
 
     # Check if content in center of both image and cropped output is same.
@@ -1870,8 +1750,10 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
+@pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_erasing():
+def test_random_erasing(seed):
+    torch.random.manual_seed(seed)
     img = torch.ones(3, 128, 128)
 
     t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1 / 3, 3.0))
@@ -1888,6 +1770,7 @@ def test_random_erasing():
     tol = 0.05
     assert 1 / 3 - tol <= aspect_ratio <= 3 + tol
 
+    # Make sure that h > w and h < w are equaly likely (log-scale sampling)
     aspect_ratios = []
     random.seed(42)
     trial = 1000
@@ -1971,8 +1854,10 @@ def test_randomperspective():
         )
 
 
+@pytest.mark.parametrize("seed", range(10))
 @pytest.mark.parametrize("mode", ["L", "RGB", "F"])
-def test_randomperspective_fill(mode):
+def test_randomperspective_fill(mode, seed):
+    torch.random.manual_seed(seed)
 
     # assert fill being either a Sequence or a Number
     with pytest.raises(TypeError):
@@ -2009,72 +1894,6 @@ def test_randomperspective_fill(mode):
     wrong_num_bands = num_bands + 1
     with pytest.raises(ValueError):
         F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
-
-
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_vertical_flip():
-    random_state = random.getstate()
-    random.seed(42)
-    img = transforms.ToPILImage()(torch.rand(3, 10, 10))
-    vimg = img.transpose(Image.FLIP_TOP_BOTTOM)
-
-    num_samples = 250
-    num_vertical = 0
-    for _ in range(num_samples):
-        out = transforms.RandomVerticalFlip()(img)
-        if out == vimg:
-            num_vertical += 1
-
-    p_value = stats.binom_test(num_vertical, num_samples, p=0.5)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    num_samples = 250
-    num_vertical = 0
-    for _ in range(num_samples):
-        out = transforms.RandomVerticalFlip(p=0.7)(img)
-        if out == vimg:
-            num_vertical += 1
-
-    p_value = stats.binom_test(num_vertical, num_samples, p=0.7)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    # Checking if RandomVerticalFlip can be printed as string
-    transforms.RandomVerticalFlip().__repr__()
-
-
-@pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_horizontal_flip():
-    random_state = random.getstate()
-    random.seed(42)
-    img = transforms.ToPILImage()(torch.rand(3, 10, 10))
-    himg = img.transpose(Image.FLIP_LEFT_RIGHT)
-
-    num_samples = 250
-    num_horizontal = 0
-    for _ in range(num_samples):
-        out = transforms.RandomHorizontalFlip()(img)
-        if out == himg:
-            num_horizontal += 1
-
-    p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    num_samples = 250
-    num_horizontal = 0
-    for _ in range(num_samples):
-        out = transforms.RandomHorizontalFlip(p=0.7)(img)
-        if out == himg:
-            num_horizontal += 1
-
-    p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
-    random.setstate(random_state)
-    assert p_value > 0.0001
-
-    # Checking if RandomHorizontalFlip can be printed as string
-    transforms.RandomHorizontalFlip().__repr__()
 
 
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
@@ -2210,9 +2029,9 @@ class TestAffine:
         np_result = np.array(result)
         n_diff_pixels = np.sum(np_result != true_result) / 3
         # Accept 3 wrong pixels
-        error_msg = "angle={}, translate={}, scale={}, shear={}\n".format(
-            angle, translate, scale, shear
-        ) + "n diff pixels={}\n".format(n_diff_pixels)
+        error_msg = (
+            f"angle={angle}, translate={translate}, scale={scale}, shear={shear}\nn diff pixels={n_diff_pixels}\n"
+        )
         assert n_diff_pixels < 3, error_msg
 
     def test_transformation_discrete(self, pil_image, input_img):
@@ -2302,12 +2121,8 @@ def test_random_affine():
     for _ in range(100):
         angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear, img_size=img.size)
         assert -10 < angle < 10
-        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5, "{} vs {}".format(
-            translations[0], img.size[0] * 0.5
-        )
-        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, "{} vs {}".format(
-            translations[1], img.size[1] * 0.5
-        )
+        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5
+        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5
         assert 0.7 < scale < 1.3
         assert -10 < shear[0] < 10
         assert -20 < shear[1] < 40

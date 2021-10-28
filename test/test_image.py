@@ -22,6 +22,7 @@ from torchvision.io.image import (
     write_file,
     ImageReadMode,
     read_image,
+    _read_png_16,
 )
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -156,8 +157,21 @@ def test_decode_png(img_path, pil_mode, mode):
         img_pil = torch.from_numpy(np.array(img))
 
     img_pil = normalize_dimensions(img_pil)
-    data = read_file(img_path)
-    img_lpng = decode_image(data, mode=mode)
+
+    if "16" in img_path:
+        # 16 bits image decoding is supported, but only as a private API
+        # FIXME: see https://github.com/pytorch/vision/issues/4731 for potential solutions to making it public
+        with pytest.raises(RuntimeError, match="At most 8-bit PNG images are supported"):
+            data = read_file(img_path)
+            img_lpng = decode_image(data, mode=mode)
+
+        img_lpng = _read_png_16(img_path, mode=mode)
+        assert img_lpng.dtype == torch.int32
+        # PIL converts 16 bits pngs in uint8
+        img_lpng = torch.round(img_lpng / (2 ** 16 - 1) * 255).to(torch.uint8)
+    else:
+        data = read_file(img_path)
+        img_lpng = decode_image(data, mode=mode)
 
     tol = 0 if pil_mode is None else 1
 
@@ -219,7 +233,7 @@ def test_write_png(img_path, tmpdir):
     img_pil = img_pil.permute(2, 0, 1)
 
     filename, _ = os.path.splitext(os.path.basename(img_path))
-    torch_png = os.path.join(tmpdir, "{0}_torch.png".format(filename))
+    torch_png = os.path.join(tmpdir, f"{filename}_torch.png")
     write_png(img_pil, torch_png, compression_level=6)
     saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
     saved_image = saved_image.permute(2, 0, 1)
@@ -379,10 +393,10 @@ def test_encode_jpeg_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32))
 
-    with pytest.raises(ValueError, match="Image quality should be a positive number " "between 1 and 100"):
+    with pytest.raises(ValueError, match="Image quality should be a positive number between 1 and 100"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=-1)
 
-    with pytest.raises(ValueError, match="Image quality should be a positive number " "between 1 and 100"):
+    with pytest.raises(ValueError, match="Image quality should be a positive number between 1 and 100"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=101)
 
     with pytest.raises(RuntimeError, match="The number of channels should be 1 or 3, got: 5"):
@@ -426,7 +440,7 @@ def test_encode_jpeg_reference(img_path):
     dirname = os.path.dirname(img_path)
     filename, _ = os.path.splitext(os.path.basename(img_path))
     write_folder = os.path.join(dirname, "jpeg_write")
-    expected_file = os.path.join(write_folder, "{0}_pil.jpg".format(filename))
+    expected_file = os.path.join(write_folder, f"{filename}_pil.jpg")
     img = decode_jpeg(read_file(img_path))
 
     with open(expected_file, "rb") as f:
@@ -450,8 +464,8 @@ def test_write_jpeg_reference(img_path, tmpdir):
 
     basedir = os.path.dirname(img_path)
     filename, _ = os.path.splitext(os.path.basename(img_path))
-    torch_jpeg = os.path.join(tmpdir, "{0}_torch.jpg".format(filename))
-    pil_jpeg = os.path.join(basedir, "jpeg_write", "{0}_pil.jpg".format(filename))
+    torch_jpeg = os.path.join(tmpdir, f"{filename}_torch.jpg")
+    pil_jpeg = os.path.join(basedir, "jpeg_write", f"{filename}_pil.jpg")
 
     write_jpeg(img, torch_jpeg, quality=75)
 

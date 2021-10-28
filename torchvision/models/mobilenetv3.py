@@ -7,6 +7,7 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation, SqueezeExcitation as SElayer
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -150,6 +151,7 @@ class MobileNetV3(nn.Module):
             dropout (float): The droupout probability
         """
         super().__init__()
+        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
@@ -276,12 +278,12 @@ def _mobilenet_v3_conf(
         ]
         last_channel = adjust_channels(1024 // reduce_divider)  # C5
     else:
-        raise ValueError("Unsupported model type {}".format(arch))
+        raise ValueError(f"Unsupported model type {arch}")
 
     return inverted_residual_setting, last_channel
 
 
-def _mobilenet_v3_model(
+def _mobilenet_v3(
     arch: str,
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
@@ -292,7 +294,7 @@ def _mobilenet_v3_model(
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
     if pretrained:
         if model_urls.get(arch, None) is None:
-            raise ValueError("No checkpoint is available for model type {}".format(arch))
+            raise ValueError(f"No checkpoint is available for model type {arch}")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
@@ -309,7 +311,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
     """
     arch = "mobilenet_v3_large"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
 
 
 def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
@@ -323,4 +325,4 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
     """
     arch = "mobilenet_v3_small"
     inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)

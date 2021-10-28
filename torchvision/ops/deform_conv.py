@@ -74,7 +74,7 @@ def deform_conv2d(
     pad_h, pad_w = _pair(padding)
     dil_h, dil_w = _pair(dilation)
     weights_h, weights_w = weight.shape[-2:]
-    _, n_in_channels, in_h, in_w = input.shape
+    _, n_in_channels, _, _ = input.shape
 
     n_offset_grps = offset.shape[1] // (2 * weights_h * weights_w)
     n_weight_grps = n_in_channels // weight.shape[1]
@@ -83,9 +83,7 @@ def deform_conv2d(
         raise RuntimeError(
             "the shape of the offset tensor at dimension 1 is not valid. It should "
             "be a multiple of 2 * weight.size[2] * weight.size[3].\n"
-            "Got offset.shape[1]={}, while 2 * weight.size[2] * weight.size[3]={}".format(
-                offset.shape[1], 2 * weights_h * weights_w
-            )
+            f"Got offset.shape[1]={offset.shape[1]}, while 2 * weight.size[2] * weight.size[3]={2 * weights_h * weights_w}"
         )
 
     return torch.ops.torchvision.deform_conv2d(
@@ -122,7 +120,7 @@ class DeformConv2d(nn.Module):
         groups: int = 1,
         bias: bool = True,
     ):
-        super(DeformConv2d, self).__init__()
+        super().__init__()
 
         if in_channels % groups != 0:
             raise ValueError("in_channels must be divisible by groups")

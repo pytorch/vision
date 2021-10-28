@@ -54,7 +54,7 @@ class DistributedSampler(Sampler):
             rank = dist.get_rank()
         assert (
             len(dataset) % group_size == 0
-        ), "dataset length must be a multiplier of group size" "dataset length: %d, group size: %d" % (
+        ), "dataset length must be a multiplier of group size dataset length: %d, group size: %d" % (
             len(dataset),
             group_size,
         )
@@ -117,7 +117,7 @@ class UniformClipSampler(Sampler):
 
     def __init__(self, video_clips: VideoClips, num_clips_per_video: int) -> None:
         if not isinstance(video_clips, VideoClips):
-            raise TypeError("Expected video_clips to be an instance of VideoClips, " "got {}".format(type(video_clips)))
+            raise TypeError(f"Expected video_clips to be an instance of VideoClips, got {type(video_clips)}")
         self.video_clips = video_clips
         self.num_clips_per_video = num_clips_per_video
 
@@ -151,7 +151,7 @@ class RandomClipSampler(Sampler):
 
     def __init__(self, video_clips: VideoClips, max_clips_per_video: int) -> None:
         if not isinstance(video_clips, VideoClips):
-            raise TypeError("Expected video_clips to be an instance of VideoClips, " "got {}".format(type(video_clips)))
+            raise TypeError(f"Expected video_clips to be an instance of VideoClips, got {type(video_clips)}")
         self.video_clips = video_clips
         self.max_clips_per_video = max_clips_per_video
 

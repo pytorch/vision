@@ -89,11 +89,11 @@ class PhotoTour(VisionDataset):
     def __init__(
         self, root: str, name: str, train: bool = True, transform: Optional[Callable] = None, download: bool = False
     ) -> None:
-        super(PhotoTour, self).__init__(root, transform=transform)
+        super().__init__(root, transform=transform)
         self.name = name
         self.data_dir = os.path.join(self.root, name)
-        self.data_down = os.path.join(self.root, "{}.zip".format(name))
-        self.data_file = os.path.join(self.root, "{}.pt".format(name))
+        self.data_down = os.path.join(self.root, f"{name}.zip")
+        self.data_file = os.path.join(self.root, f"{name}.pt")
 
         self.train = train
         self.mean = self.means[name]
@@ -139,7 +139,7 @@ class PhotoTour(VisionDataset):
 
     def download(self) -> None:
         if self._check_datafile_exists():
-            print("# Found cached data {}".format(self.data_file))
+            print(f"# Found cached data {self.data_file}")
             return
 
         if not self._check_downloaded():
@@ -151,7 +151,7 @@ class PhotoTour(VisionDataset):
 
             download_url(url, self.root, filename, md5)
 
-            print("# Extracting data {}\n".format(self.data_down))
+            print(f"# Extracting data {self.data_down}\n")
 
             import zipfile
 
@@ -162,7 +162,7 @@ class PhotoTour(VisionDataset):
 
     def cache(self) -> None:
         # process and save as torch files
-        print("# Caching data {}".format(self.data_file))
+        print(f"# Caching data {self.data_file}")
 
         dataset = (
             read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
@@ -174,7 +174,8 @@ class PhotoTour(VisionDataset):
             torch.save(dataset, f)
 
     def extra_repr(self) -> str:
-        return "Split: {}".format("Train" if self.train is True else "Test")
+        split = "Train" if self.train is True else "Test"
+        return f"Split: {split}"
 
 
 def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
@@ -209,7 +210,7 @@ def read_info_file(data_dir: str, info_file: str) -> torch.Tensor:
     """Return a Tensor containing the list of labels
     Read the file and keep only the ID of the 3D point.
     """
-    with open(os.path.join(data_dir, info_file), "r") as f:
+    with open(os.path.join(data_dir, info_file)) as f:
         labels = [int(line.split()[0]) for line in f]
     return torch.LongTensor(labels)
 
@@ -220,7 +221,7 @@ def read_matches_files(data_dir: str, matches_file: str) -> torch.Tensor:
     Matches are represented with a 1, non matches with a 0.
     """
     matches = []
-    with open(os.path.join(data_dir, matches_file), "r") as f:
+    with open(os.path.join(data_dir, matches_file)) as f:
         for line in f:
             line_split = line.split()
             matches.append([int(line_split[0]), int(line_split[3]), int(line_split[1] == line_split[4])])
