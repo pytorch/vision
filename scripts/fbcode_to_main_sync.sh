@@ -3,26 +3,25 @@
 if [ -z $1 ]
 then
     echo "Commit hash is required to be passed when running this script."
-    echo "./fbcode_to_main_sync.sh <commit_hash> <fork_main_branch> <fork_name>"
+    echo "./fbcode_to_main_sync.sh <commit_hash> <fork_name> <fork_main_branch>"
     exit 1
 fi
 commit_hash=$1
 
 if [ -z $2 ]
 then
-    echo "Fork main branch name is required to be passed when running this script."
-    echo "./fbcode_to_main_sync.sh <commit_hash> <fork_main_branch> <fork_name>"
+    echo "Fork name is required to be passed when running this script."
+    echo "./fbcode_to_main_sync.sh <commit_hash> <fork_name> <fork_main_branch>"
     exit 1
 fi
-fork_main_branch=$2
+fork_name=$2
 
 if [ -z $3 ]
 then
-    echo "Fork name is required to be passed when running this script."
-    echo "./fbcode_to_main_sync.sh <commit_hash> <fork_main_branch> <fork_name>"
-    exit 1
+    fork_main_branch="main"
+else
+    fork_main_branch=$3
 fi
-fork_name=$3
 
 from_branch="fbsync"
 git stash
