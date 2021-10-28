@@ -263,6 +263,17 @@ jobs:
           name: Install torch
           command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - run:
+          name: Find torch.hub dir for caching
+          command: |
+            HUB_DIR=$(python -c 'import torch; print(torch.hub.get_dir())')
+            echo $HUB_DIR
+            echo "export HUB_DIR=$HUB_DIR" >> $BASH_ENV
+      - save_cache:
+          key: torch-hub
+          paths:
+            - ${HUB_DIR}
+      - run: exit 1
+      - run:
           name: Install prototype dependencies
           command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
       - checkout
@@ -278,13 +289,6 @@ jobs:
       - run:
           name: Run tests
           command: pytest --durations=20 test/test_prototype_*.py
-      - run:
-          name: Find torch.hub dir for caching
-          command: echo "export HUB_DIR=$(python -c 'import torch; print(torch.hub.get_dir())')" >> $BASH_ENV
-      - save_cache:
-          key: torch-hub
-          paths:
-            - $HUB_DIR
 
   binary_linux_wheel:
     <<: *binary_common
