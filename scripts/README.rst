@@ -16,11 +16,11 @@ where
 
 ``from_repo`` represents the name of the repository from which commits are to be cherry-picked.
 
-``commit_hash`` represents the commit hash of the PR in fbsync branch from where we should start the sync.
+``commit_hash`` represents the commit hash in fbsync branch from where we should start the sync.
 
 ``fork_main_branch`` is the name of the main branch on your fork.
 
-``fork_name`` is the name assigned to your fork, you can check it by doing `"git remote -v"`.
+``fork_name`` is the name of the remote corresponding to your fork, you can check it by doing `"git remote -v"`.
 
 Example:
 

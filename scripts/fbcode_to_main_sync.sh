@@ -34,7 +34,7 @@ fork_name=$4
 
 git stash
 git checkout $from_repo
-git fetch
+git pull
 prefix=$RANDOM
 IFS='
 '
