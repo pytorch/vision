@@ -277,10 +277,13 @@ jobs:
       - run:
           name: Run tests
           command: pytest test/test_prototype_*.py
+      - run:
+          name: Find torch.hub dir for caching
+          command: export HUB_DIR=$(python -c "import torch; print(torch.hub.get_dir())")
       - save_cache:
           key: torch-hub
           paths:
-            - ~/.cache/torch/hub
+            - $HUB_DIR
 
   binary_linux_wheel:
     <<: *binary_common
