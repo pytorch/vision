@@ -73,7 +73,11 @@ def _validate_pts(pts_range):
     if pts_range[1] > 0:
         assert (
             pts_range[0] <= pts_range[1]
-        ), f"Start pts should not be smaller than end pts, got start pts: {pts_range[0]:d} and end pts: {pts_range[1]:d}"
+        ), """Start pts should not be smaller than end pts, got
+            start pts: {0:d} and end pts: {1:d}""".format(
+            pts_range[0],
+            pts_range[1],
+        )
 
 
 def _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration):
