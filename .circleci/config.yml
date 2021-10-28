@@ -271,15 +271,15 @@ jobs:
       - run:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
-      - run:
-          name: Generate cache key
-          command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
-      - restore_cache:
-          keys:
-
-            - hub-{{ checksum "prototype_model_urls.txt" }}
-
-            - hub-
+#      - run:
+#          name: Generate cache key
+#          command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
+#      - restore_cache:
+#          keys:
+#            
+#            - hub-{{ checksum "prototype_model_urls.txt" }}
+#            
+#            - hub-
       - run:
           name: Install test utilities
           command: pip install --user --progress-bar=off pytest
@@ -288,12 +288,12 @@ jobs:
           command: |
             export PYTORCH_TEST_WITH_PROTOTYPE=1
             pytest -v --durations=20 test/test_prototype_*.py
-      - save_cache:
-
-          key: hub-{{ checksum "prototype_model_urls.txt" }}
-
-          paths:
-            - ~/.cache/torch/hub
+#      - save_cache:
+#          
+#          key: hub-{{ checksum "prototype_model_urls.txt" }}
+#          
+#          paths:
+#            - ~/.cache/torch/hub
 
   binary_linux_wheel:
     <<: *binary_common
