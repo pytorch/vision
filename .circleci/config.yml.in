@@ -277,7 +277,7 @@ jobs:
       - restore_cache:
           keys:
             {% raw %}
-            - weights-{{ checksum weights.lock }}
+            - weights-{{ checksum "weights.lock" }}
             {% endraw %}
             - weights-
       - run:
@@ -288,7 +288,7 @@ jobs:
           command: pytest --durations=20 test/test_prototype_*.py
       - save_cache:
           {% raw %}
-          key: weights-{{ checksum weights.lock}}
+          key: weights-{{ "checksum weights.lock" }}
           {% endraw %}
           paths:
             - ~/.cache/torch/hub
