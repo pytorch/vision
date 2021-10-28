@@ -51,4 +51,4 @@ do
         git checkout $from_repo
     fi
 done
-echo "Please review the PRs, add [FBCode->GH] tag on the title and publish them."
+echo "Please review the PRs, add [FBCode->GH] prefix in the title and publish them."
