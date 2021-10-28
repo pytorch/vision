@@ -557,7 +557,7 @@ class TestNMS:
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
         assert_equal(keep32, keep16)
 
-    @pytest.mark.parametrize("seed", range(20, 30))
+    @pytest.mark.parametrize("seed", range(10))
     def test_batched_nms_implementations(self, seed):
         """Make sure that both implementations of batched_nms yield identical results"""
         torch.random.manual_seed(seed)
