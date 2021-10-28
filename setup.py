@@ -1,7 +1,6 @@
 import distutils.command.clean
 import distutils.spawn
 import glob
-import io
 import os
 import shutil
 import subprocess
@@ -14,7 +13,7 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtensio
 
 
 def read(*names, **kwargs):
-    with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
+    with open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
         return fp.read()
 
 
@@ -28,7 +27,7 @@ def get_dist(pkgname):
 cwd = os.path.dirname(os.path.abspath(__file__))
 
 version_txt = os.path.join(cwd, "version.txt")
-with open(version_txt, "r") as f:
+with open(version_txt) as f:
     version = f.readline().strip()
 sha = "Unknown"
 package_name = "torchvision"
@@ -47,8 +46,8 @@ elif sha != "Unknown":
 def write_version_file():
     version_path = os.path.join(cwd, "torchvision", "version.py")
     with open(version_path, "w") as f:
-        f.write("__version__ = '{}'\n".format(version))
-        f.write("git_version = {}\n".format(repr(sha)))
+        f.write(f"__version__ = '{version}'\n")
+        f.write(f"git_version = {repr(sha)}\n")
         f.write("from torchvision.extension import _check_cuda_version\n")
         f.write("if _check_cuda_version() > 0:\n")
         f.write("    cuda = _check_cuda_version()\n")
@@ -78,7 +77,7 @@ def find_library(name, vision_include):
     conda_installed = False
     lib_folder = None
     include_folder = None
-    library_header = "{0}.h".format(name)
+    library_header = f"{name}.h"
 
     # Lookup in TORCHVISION_INCLUDE or in the package file
     package_path = [os.path.join(this_dir, "torchvision")]
@@ -89,7 +88,7 @@ def find_library(name, vision_include):
             break
 
     if not library_found:
-        print("Running build on conda-build: {0}".format(is_conda_build))
+        print(f"Running build on conda-build: {is_conda_build}")
         if is_conda_build:
             # Add conda headers/libraries
             if os.name == "nt":
@@ -103,7 +102,7 @@ def find_library(name, vision_include):
             # Check if using Anaconda to produce wheels
             conda = distutils.spawn.find_executable("conda")
             is_conda = conda is not None
-            print("Running build on conda: {0}".format(is_conda))
+            print(f"Running build on conda: {is_conda}")
             if is_conda:
                 python_executable = sys.executable
                 py_folder = os.path.dirname(python_executable)
@@ -119,8 +118,8 @@ def find_library(name, vision_include):
 
         if not library_found:
             if sys.platform == "linux":
-                library_found = os.path.exists("/usr/include/{0}".format(library_header))
-                library_found = library_found or os.path.exists("/usr/local/include/{0}".format(library_header))
+                library_found = os.path.exists(f"/usr/include/{library_header}")
+                library_found = library_found or os.path.exists(f"/usr/local/include/{library_header}")
 
     return library_found, conda_installed, include_folder, lib_folder
 
@@ -258,13 +257,13 @@ def get_extensions():
     libpng = distutils.spawn.find_executable("libpng-config")
     pngfix = distutils.spawn.find_executable("pngfix")
     png_found = libpng is not None or pngfix is not None
-    print("PNG found: {0}".format(png_found))
+    print(f"PNG found: {png_found}")
     if png_found:
         if libpng is not None:
             # Linux / Mac
             png_version = subprocess.run([libpng, "--version"], stdout=subprocess.PIPE)
             png_version = png_version.stdout.strip().decode("utf-8")
-            print("libpng version: {0}".format(png_version))
+            print(f"libpng version: {png_version}")
             png_version = parse_version(png_version)
             if png_version >= parse_version("1.6.0"):
                 print("Building torchvision with PNG image support")
@@ -275,11 +274,11 @@ def get_extensions():
                 png_include = subprocess.run([libpng, "--I_opts"], stdout=subprocess.PIPE)
                 png_include = png_include.stdout.strip().decode("utf-8")
                 _, png_include = png_include.split("-I")
-                print("libpng include path: {0}".format(png_include))
+                print(f"libpng include path: {png_include}")
                 image_include += [png_include]
                 image_link_flags.append("png")
             else:
-                print("libpng installed version is less than 1.6.0, " "disabling PNG support")
+                print("libpng installed version is less than 1.6.0, disabling PNG support")
                 png_found = False
         else:
             # Windows
@@ -292,7 +291,7 @@ def get_extensions():
     # Locating libjpeg
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
 
-    print("JPEG found: {0}".format(jpeg_found))
+    print(f"JPEG found: {jpeg_found}")
     image_macros += [("PNG_FOUND", str(int(png_found)))]
     image_macros += [("JPEG_FOUND", str(int(jpeg_found)))]
     if jpeg_found:
@@ -310,7 +309,7 @@ def get_extensions():
         and os.path.exists(os.path.join(CUDA_HOME, "include", "nvjpeg.h"))
     )
 
-    print("NVJPEG found: {0}".format(nvjpeg_found))
+    print(f"NVJPEG found: {nvjpeg_found}")
     image_macros += [("NVJPEG_FOUND", str(int(nvjpeg_found)))]
     if nvjpeg_found:
         print("Building torchvision with NVJPEG image support")
@@ -352,7 +351,7 @@ def get_extensions():
             print("Error fetching ffmpeg version, ignoring ffmpeg.")
             has_ffmpeg = False
 
-    print("FFmpeg found: {}".format(has_ffmpeg))
+    print(f"FFmpeg found: {has_ffmpeg}")
 
     if has_ffmpeg:
         ffmpeg_libraries = {"libavcodec", "libavformat", "libavutil", "libswresample", "libswscale"}
@@ -386,8 +385,8 @@ def get_extensions():
                 has_ffmpeg = False
 
     if has_ffmpeg:
-        print("ffmpeg include path: {}".format(ffmpeg_include_dir))
-        print("ffmpeg library_dir: {}".format(ffmpeg_library_dir))
+        print(f"ffmpeg include path: {ffmpeg_include_dir}")
+        print(f"ffmpeg library_dir: {ffmpeg_library_dir}")
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, "torchvision", "csrc", "io", "video_reader")
@@ -432,7 +431,7 @@ def get_extensions():
 
 class clean(distutils.command.clean.clean):
     def run(self):
-        with open(".gitignore", "r") as f:
+        with open(".gitignore") as f:
             ignores = f.read()
             for wildcard in filter(None, ignores.split("\n")):
                 for filename in glob.glob(wildcard):
@@ -446,7 +445,7 @@ class clean(distutils.command.clean.clean):
 
 
 if __name__ == "__main__":
-    print("Building wheel {}-{}".format(package_name, version))
+    print(f"Building wheel {package_name}-{version}")
 
     write_version_file()
 
@@ -472,6 +471,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=get_extensions(),
+        python_requires=">=3.6",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,

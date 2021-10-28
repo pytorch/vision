@@ -23,20 +23,20 @@ def _is_pil_image(img: Any) -> bool:
 def get_image_size(img: Any) -> List[int]:
     if _is_pil_image(img):
         return list(img.size)
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError(f"Unexpected type {type(img)}")
 
 
 @torch.jit.unused
 def get_image_num_channels(img: Any) -> int:
     if _is_pil_image(img):
         return 1 if img.mode == "L" else 3
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError(f"Unexpected type {type(img)}")
 
 
 @torch.jit.unused
 def hflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     return img.transpose(Image.FLIP_LEFT_RIGHT)
 
@@ -44,7 +44,7 @@ def hflip(img: Image.Image) -> Image.Image:
 @torch.jit.unused
 def vflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     return img.transpose(Image.FLIP_TOP_BOTTOM)
 
@@ -52,7 +52,7 @@ def vflip(img: Image.Image) -> Image.Image:
 @torch.jit.unused
 def adjust_brightness(img: Image.Image, brightness_factor: float) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     enhancer = ImageEnhance.Brightness(img)
     img = enhancer.enhance(brightness_factor)
@@ -62,7 +62,7 @@ def adjust_brightness(img: Image.Image, brightness_factor: float) -> Image.Image
 @torch.jit.unused
 def adjust_contrast(img: Image.Image, contrast_factor: float) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     enhancer = ImageEnhance.Contrast(img)
     img = enhancer.enhance(contrast_factor)
@@ -72,7 +72,7 @@ def adjust_contrast(img: Image.Image, contrast_factor: float) -> Image.Image:
 @torch.jit.unused
 def adjust_saturation(img: Image.Image, saturation_factor: float) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     enhancer = ImageEnhance.Color(img)
     img = enhancer.enhance(saturation_factor)
@@ -82,10 +82,10 @@ def adjust_saturation(img: Image.Image, saturation_factor: float) -> Image.Image
 @torch.jit.unused
 def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
     if not (-0.5 <= hue_factor <= 0.5):
-        raise ValueError("hue_factor ({}) is not in [-0.5, 0.5].".format(hue_factor))
+        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     input_mode = img.mode
     if input_mode in {"L", "1", "I", "F"}:
@@ -111,7 +111,7 @@ def adjust_gamma(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     if gamma < 0:
         raise ValueError("Gamma should be a non-negative real number")
@@ -134,7 +134,7 @@ def pad(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     if not isinstance(padding, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
@@ -147,9 +147,7 @@ def pad(
         padding = tuple(padding)
 
     if isinstance(padding, tuple) and len(padding) not in [1, 2, 4]:
-        raise ValueError(
-            "Padding must be an int or a 1, 2, or 4 element tuple, not a " + "{} element tuple".format(len(padding))
-        )
+        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
 
     if isinstance(padding, tuple) and len(padding) == 1:
         # Compatibility with `functional_tensor.pad`
@@ -217,7 +215,7 @@ def crop(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     return img.crop((left, top, left + width, top + height))
 
@@ -231,9 +229,9 @@ def resize(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
     if not (isinstance(size, int) or (isinstance(size, Sequence) and len(size) in (1, 2))):
-        raise TypeError("Got inappropriate size arg: {}".format(size))
+        raise TypeError(f"Got inappropriate size arg: {size}")
 
     if isinstance(size, Sequence) and len(size) == 1:
         size = size[0]
@@ -281,7 +279,7 @@ def _parse_fill(
         fill = tuple([fill] * num_bands)
     if isinstance(fill, (list, tuple)):
         if len(fill) != num_bands:
-            msg = "The number of elements in 'fill' does not match the number of " "bands of the image ({} != {})"
+            msg = "The number of elements in 'fill' does not match the number of bands of the image ({} != {})"
             raise ValueError(msg.format(len(fill), num_bands))
 
         fill = tuple(fill)
@@ -298,7 +296,7 @@ def affine(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     output_size = img.size
     opts = _parse_fill(fill, img)
@@ -316,7 +314,7 @@ def rotate(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     opts = _parse_fill(fill, img)
     return img.rotate(angle, interpolation, expand, center, **opts)
@@ -331,7 +329,7 @@ def perspective(
 ) -> Image.Image:
 
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     opts = _parse_fill(fill, img)
 
@@ -341,7 +339,7 @@ def perspective(
 @torch.jit.unused
 def to_grayscale(img: Image.Image, num_output_channels: int) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     if num_output_channels == 1:
         img = img.convert("L")
@@ -359,28 +357,28 @@ def to_grayscale(img: Image.Image, num_output_channels: int) -> Image.Image:
 @torch.jit.unused
 def invert(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
     return ImageOps.invert(img)
 
 
 @torch.jit.unused
 def posterize(img: Image.Image, bits: int) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
     return ImageOps.posterize(img, bits)
 
 
 @torch.jit.unused
 def solarize(img: Image.Image, threshold: int) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
     return ImageOps.solarize(img, threshold)
 
 
 @torch.jit.unused
 def adjust_sharpness(img: Image.Image, sharpness_factor: float) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
     enhancer = ImageEnhance.Sharpness(img)
     img = enhancer.enhance(sharpness_factor)
@@ -390,12 +388,12 @@ def adjust_sharpness(img: Image.Image, sharpness_factor: float) -> Image.Image:
 @torch.jit.unused
 def autocontrast(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
     return ImageOps.autocontrast(img)
 
 
 @torch.jit.unused
 def equalize(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
-        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+        raise TypeError(f"img should be PIL Image. Got {type(img)}")
     return ImageOps.equalize(img)

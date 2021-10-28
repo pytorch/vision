@@ -65,7 +65,7 @@ def get_args_parser(add_help=True):
         "--lr",
         default=0.02,
         type=float,
-        help="initial learning rate, 0.02 is the default value for training " "on 8 gpus and 2 images_per_gpu",
+        help="initial learning rate, 0.02 is the default value for training on 8 gpus and 2 images_per_gpu",
     )
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument(
@@ -197,8 +197,7 @@ def main(args):
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     else:
         raise RuntimeError(
-            "Invalid lr scheduler '{}'. Only MultiStepLR and CosineAnnealingLR "
-            "are supported.".format(args.lr_scheduler)
+            f"Invalid lr scheduler '{args.lr_scheduler}'. Only MultiStepLR and CosineAnnealingLR are supported."
         )
 
     if args.resume:
@@ -227,7 +226,7 @@ def main(args):
                 "args": args,
                 "epoch": epoch,
             }
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
         # evaluate after every epoch
@@ -235,7 +234,7 @@ def main(args):
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 if __name__ == "__main__":

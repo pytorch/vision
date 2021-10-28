@@ -58,7 +58,7 @@ class CIFAR10(VisionDataset):
         download: bool = False,
     ) -> None:
 
-        super(CIFAR10, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
 
         self.train = train  # training set or test set
 
@@ -66,7 +66,7 @@ class CIFAR10(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         if self.train:
             downloaded_list = self.train_list
@@ -95,9 +95,7 @@ class CIFAR10(VisionDataset):
     def _load_meta(self) -> None:
         path = os.path.join(self.root, self.base_folder, self.meta["filename"])
         if not check_integrity(path, self.meta["md5"]):
-            raise RuntimeError(
-                "Dataset metadata file not found or corrupted." + " You can use download=True to download it"
-            )
+            raise RuntimeError("Dataset metadata file not found or corrupted. You can use download=True to download it")
         with open(path, "rb") as infile:
             data = pickle.load(infile, encoding="latin1")
             self.classes = data[self.meta["key"]]
@@ -144,7 +142,8 @@ class CIFAR10(VisionDataset):
         download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.tgz_md5)
 
     def extra_repr(self) -> str:
-        return "Split: {}".format("Train" if self.train is True else "Test")
+        split = "Train" if self.train is True else "Test"
+        return f"Split: {split}"
 
 
 class CIFAR100(CIFAR10):
