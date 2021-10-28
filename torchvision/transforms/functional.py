@@ -330,7 +330,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
     if tensor.ndim < 3:
         raise ValueError(
-            "Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = " f"{tensor.size()}"
+            f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {tensor.size()}"
         )
 
     if not inplace:

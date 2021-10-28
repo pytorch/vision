@@ -52,7 +52,7 @@ class Weights(Enum):
                 obj = cls.from_str(obj)
             elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
                 raise TypeError(
-                    f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
+                    f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
         return obj
 
