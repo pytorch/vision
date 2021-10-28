@@ -145,6 +145,9 @@ html_css_files = [
 htmlhelp_basename = "PyTorchdoc"
 
 
+autosummary_generate = True
+
+
 # -- Options for LaTeX output ---------------------------------------------
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').

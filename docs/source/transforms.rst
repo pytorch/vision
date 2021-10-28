@@ -90,131 +90,101 @@ For any custom transformations to be used with ``torch.jit.script``, they should
 Compositions of transforms
 --------------------------
 
-.. autoclass:: Compose
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
+
+    Compose
 
 
 Transforms on PIL Image and torch.\*Tensor
 ------------------------------------------
 
-.. autoclass:: CenterCrop
-    :members:
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: ColorJitter
-    :members:
+    CenterCrop
+    ColorJitter
+    FiveCrop
+    Grayscale
+    Pad
+    RandomAffine
+    RandomApply
+    RandomCrop
+    RandomGrayscale
+    RandomHorizontalFlip
+    RandomPerspective
+    RandomResizedCrop
+    RandomRotation
+    RandomSizedCrop
+    RandomVerticalFlip
+    Resize
+    Scale
+    TenCrop
+    GaussianBlur
+    RandomInvert
+    RandomPosterize
+    RandomSolarize
+    RandomAdjustSharpness
+    RandomAutocontrast
+    RandomEqualize
 
-.. autoclass:: FiveCrop
-    :members:
-
-.. autoclass:: Grayscale
-    :members:
-
-.. autoclass:: Pad
-    :members:
-
-.. autoclass:: RandomAffine
-    :members:
-
-.. autoclass:: RandomApply
-
-.. autoclass:: RandomCrop
-    :members:
-
-.. autoclass:: RandomGrayscale
-    :members:
-
-.. autoclass:: RandomHorizontalFlip
-    :members:
-
-.. autoclass:: RandomPerspective
-    :members:
-
-.. autoclass:: RandomResizedCrop
-    :members:
-
-.. autoclass:: RandomRotation
-    :members:
-
-.. autoclass:: RandomSizedCrop
-    :members:
-
-.. autoclass:: RandomVerticalFlip
-    :members:
-
-.. autoclass:: Resize
-    :members:
-
-.. autoclass:: Scale
-    :members:
-
-.. autoclass:: TenCrop
-    :members:
-
-.. autoclass:: GaussianBlur
-    :members:
-
-.. autoclass:: RandomInvert
-    :members:
-
-.. autoclass:: RandomPosterize
-    :members:
-
-.. autoclass:: RandomSolarize
-    :members:
-
-.. autoclass:: RandomAdjustSharpness
-    :members:
-
-.. autoclass:: RandomAutocontrast
-    :members:
-
-.. autoclass:: RandomEqualize
-    :members:
 
 .. _transforms_pil_only:
 
 Transforms on PIL Image only
 ----------------------------
 
-.. autoclass:: RandomChoice
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: RandomOrder
+    RandomChoice
+    RandomOrder
 
 .. _transforms_tensor_only:
 
 Transforms on torch.\*Tensor only
 ---------------------------------
 
-.. autoclass:: LinearTransformation
-    :members:
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: Normalize
-    :members:
-
-.. autoclass:: RandomErasing
-    :members:
-
-.. autoclass:: ConvertImageDtype
+    LinearTransformation
+    Normalize
+    RandomErasing
+    ConvertImageDtype
 
 .. _conversion_transforms:
 
 Conversion Transforms
 ---------------------
 
-.. autoclass:: ToPILImage
-    :members:
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: ToTensor
-    :members:
-
-.. autoclass:: PILToTensor
-    :members:
+    ToPILImage
+    ToTensor
+    PILToTensor
 
 
 Generic Transforms
 ------------------
 
-.. autoclass:: Lambda
-    :members:
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
+
+    Lambda
 
 
 Automatic Augmentation Transforms
@@ -226,26 +196,22 @@ ImageNet policies provide significant improvements when applied to other dataset
 In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
 The new transform can be used standalone or mixed-and-matched with existing transforms:
 
-.. autoclass:: AutoAugmentPolicy
-    :members:
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: AutoAugment
-    :members:
-
-`RandAugment <https://arxiv.org/abs/1909.13719>`_ is a simple high-performing Data Augmentation technique which improves the accuracy of Image Classification models.
-
-.. autoclass:: RandAugment
-    :members:
-
-`TrivialAugmentWide <https://arxiv.org/abs/2103.10158>`_ is a dataset-independent data-augmentation technique which improves the accuracy of Image Classification models.
-
-.. autoclass:: TrivialAugmentWide
-    :members:
+    AutoAugmentPolicy
+    AutoAugment
+    RandAugment
+    TrivialAugmentWide
 
 .. _functional_transforms:
 
 Functional Transforms
 ---------------------
+
+.. currentmodule:: torchvision.transforms.functional
 
 Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don't contain a random number
@@ -291,5 +257,42 @@ you can use a functional transform to build transform classes with custom behavi
     rotation_transform = MyRotationTransform(angles=[-30, -15, 0, 15, 30])
 
 
-.. automodule:: torchvision.transforms.functional
-    :members:
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+    :template: function.rst
+
+    adjust_brightness
+    adjust_contrast
+    adjust_gamma
+    adjust_hue
+    adjust_saturation
+    adjust_sharpness
+    affine
+    autocontrast
+    center_crop
+    convert_image_dtype
+    crop
+    equalize
+    erase
+    five_crop
+    gaussian_blur
+    get_image_num_channels
+    get_image_size
+    hflip
+    invert
+    normalize
+    pad
+    perspective
+    pil_to_tensor
+    posterize
+    resize
+    resized_crop
+    rgb_to_grayscale
+    rotate
+    solarize
+    ten_crop
+    to_grayscale
+    to_pil_image
+    to_tensor
+    vflip
