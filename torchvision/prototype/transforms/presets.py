@@ -57,12 +57,12 @@ class Kinect400Eval(nn.Module):
         self._crop = T.CenterCrop(crop_size)
 
     def forward(self, vid: Tensor) -> Tensor:
-        vid = vid.permute(0, 3, 1, 2)  # (B, H, W, C) => (B, C, H, W)
+        vid = vid.permute(0, 3, 1, 2)  # (T, H, W, C) => (T, C, H, W)
         vid = self._convert(vid)
         vid = self._resize(vid)
         vid = self._normalize(vid)
         vid = self._crop(vid)
-        return vid.permute(1, 0, 2, 3)  # (B, C, H, W) => (C, B, H, W)
+        return vid.permute(1, 0, 2, 3)  # (T, C, H, W) => (C, T, H, W)
 
 
 class VocEval(nn.Module):
