@@ -160,34 +160,16 @@ class TestVideoTransforms:
 
         trans.__repr__()
 
-    @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-    def test_random_horizontal_flip_video(self):
-        random_state = random.getstate()
-        random.seed(42)
+    @pytest.mark.parametrize("p", (0, 1))
+    def test_random_horizontal_flip_video(self, p):
         clip = torch.rand((3, 4, 112, 112), dtype=torch.float)
-        hclip = clip.flip((-1))
+        hclip = clip.flip(-1)
 
-        num_samples = 250
-        num_horizontal = 0
-        for _ in range(num_samples):
-            out = transforms.RandomHorizontalFlipVideo()(clip)
-            if torch.all(torch.eq(out, hclip)):
-                num_horizontal += 1
-
-        p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
-        random.setstate(random_state)
-        assert p_value > 0.0001
-
-        num_samples = 250
-        num_horizontal = 0
-        for _ in range(num_samples):
-            out = transforms.RandomHorizontalFlipVideo(p=0.7)(clip)
-            if torch.all(torch.eq(out, hclip)):
-                num_horizontal += 1
-
-        p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
-        random.setstate(random_state)
-        assert p_value > 0.0001
+        out = transforms.RandomHorizontalFlipVideo(p=p)(clip)
+        if p == 0:
+            torch.testing.assert_close(out, clip)
+        elif p == 1:
+            torch.testing.assert_close(out, hclip)
 
         transforms.RandomHorizontalFlipVideo().__repr__()
 

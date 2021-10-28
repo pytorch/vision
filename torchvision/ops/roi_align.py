@@ -72,7 +72,7 @@ class RoIAlign(nn.Module):
         sampling_ratio: int,
         aligned: bool = False,
     ):
-        super(RoIAlign, self).__init__()
+        super().__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio

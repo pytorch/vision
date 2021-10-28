@@ -65,7 +65,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         if n is not None:
             warnings.warn("`n` argument is deprecated and has been renamed `num_features`", DeprecationWarning)
             num_features = n
-        super(FrozenBatchNorm2d, self).__init__()
+        super().__init__()
         self.eps = eps
         self.register_buffer("weight", torch.ones(num_features))
         self.register_buffer("bias", torch.zeros(num_features))
@@ -86,7 +86,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         if num_batches_tracked_key in state_dict:
             del state_dict[num_batches_tracked_key]
 
-        super(FrozenBatchNorm2d, self)._load_from_state_dict(
+        super()._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
         )
 
