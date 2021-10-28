@@ -35,8 +35,6 @@ if [ $PYTHON_VERSION == "3.6" ]; then
     pip install pillow>=5.3.0
 fi
 
-source .circleci/unittest/checktorch.sh
-
 source "$this_dir/set_cuda_envs.sh"
 
 printf "* Installing torchvision\n"
