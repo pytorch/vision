@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Callable, List, Type, Any, Union
+from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -191,7 +191,7 @@ class VideoResNet(nn.Module):
     def __init__(
         self,
         block: Type[Union[BasicBlock, Bottleneck]],
-        conv_makers: List[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
+        conv_makers: Sequence[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
         layers: List[int],
         stem: Callable[..., nn.Module],
         num_classes: int = 400,
