@@ -272,7 +272,7 @@ jobs:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
-          name: Prepare caching
+          name: Generate cache key
           command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
       - restore_cache:
           keys:
