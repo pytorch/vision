@@ -59,7 +59,7 @@ if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
 def check_torch():
-    if os.getenv("FORCE_CUDA", "0") == "1" and torch.version.cuda.lower() == "none":
+    if os.getenv("FORCE_CUDA", "0") == "1" and torch.version.cuda is None:
         print("Build torch vision with CUDA but the installed pytorch isn't with CUDA")
         sys.exit(1)
 
