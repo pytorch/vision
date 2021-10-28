@@ -16,7 +16,7 @@ PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
 boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
-keypoints = torch.tensor([[[10, 10], [5, 5]], [[20, 20], [30, 30]]], dtype=torch.float)
+keypoints = torch.tensor([[[10, 10], [5, 5], [2, 2]], [[20, 20], [30, 30], [3, 3]]], dtype=torch.float)
 
 
 def test_make_grid_not_inplace():
@@ -271,7 +271,7 @@ def test_draw_keypoints_vanilla():
 
 
 @pytest.mark.parametrize(
-    "colors", ["red", "#FF00FF", (1, 34, 122), ["red", "blue"], [["red", "blue"], ["orange", "green"]]]
+    "colors", ["red", "#FF00FF", (1, 34, 122), ["red", "blue"], [["red", "blue", "pink"], ["orange", "green", "red"]]]
 )
 def test_draw_keypoints_colored(colors):
     # Keypoints is declared on top as global variable

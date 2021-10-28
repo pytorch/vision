@@ -363,9 +363,9 @@ def draw_keypoints(
     else:
         keypoints_id_color = False
 
-    for i, kpt_inst in enumerate(img_kpts):
+    for kpt_id, kpt_inst in enumerate(img_kpts):
         if keypoints_id_color:
-            colors = colors[i]
+            colors_draw = colors[kpt_id]
         for inst_id, kpt in enumerate(kpt_inst):
             x1 = kpt[0] - radius
             x2 = kpt[0] + radius
@@ -376,7 +376,10 @@ def draw_keypoints(
                 draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
 
             if isinstance(colors, list):
-                draw.ellipse([x1, y1, x2, y2], fill=colors[inst_id], outline=None, width=0)
+                if keypoints_id_color:
+                    draw.ellipse([x1, y1, x2, y2], fill=colors_draw[inst_id], outline=None, width=0)
+                else:
+                    draw.ellipse([x1, y1, x2, y2], fill=colors[kpt_id], outline=None, width=0)
 
         if connectivity:
             for connection in connectivity:
