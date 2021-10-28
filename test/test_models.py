@@ -99,12 +99,12 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
     if not TEST_WITH_SLOW or skip:
         # TorchScript is not enabled, skip these tests
         msg = (
-            "The check_jit_scriptable test for {} was skipped. "
+            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
             "This test checks if the module's results in TorchScript "
             "match eager and that it can be exported. To run these "
             "tests make sure you set the environment variable "
             "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
-            "manually skipped.".format(nn_module.__class__.__name__)
+            "manually skipped."
         )
         warnings.warn(msg, RuntimeWarning)
         return None
@@ -541,10 +541,10 @@ def test_segmentation_model(model_fn, dev):
 
     if not full_validation:
         msg = (
-            "The output of {} could only be partially validated. "
+            f"The output of {test_segmentation_model.__name__} could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
-            "significant changes to the codebase.".format(test_segmentation_model.__name__)
+            "significant changes to the codebase."
         )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
@@ -638,10 +638,10 @@ def test_detection_model(model_fn, dev):
 
     if not full_validation:
         msg = (
-            "The output of {} could only be partially validated. "
+            f"The output of {test_detection_model.__name__} could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
-            "significant changes to the codebase.".format(test_detection_model.__name__)
+            "significant changes to the codebase."
         )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)

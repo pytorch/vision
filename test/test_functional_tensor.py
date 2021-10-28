@@ -225,9 +225,7 @@ class TestAffine:
         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
         # Tolerance : less than 6% of different pixels
-        assert ratio_diff_pixels < 0.06, "{}\n{} vs \n{}".format(
-            ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-        )
+        assert ratio_diff_pixels < 0.06
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("height, width", [(32, 26)])
@@ -258,9 +256,7 @@ class TestAffine:
         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
         # Tolerance : less than 3% of different pixels
-        assert ratio_diff_pixels < 0.03, "{}: {}\n{} vs \n{}".format(
-            angle, ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-        )
+        assert ratio_diff_pixels < 0.03
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("height, width", [(26, 26), (32, 26)])
@@ -346,9 +342,7 @@ class TestAffine:
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
         # Tolerance : less than 5% (cpu), 6% (cuda) of different pixels
         tol = 0.06 if device == "cuda" else 0.05
-        assert ratio_diff_pixels < tol, "{}: {}\n{} vs \n{}".format(
-            (NEAREST, a, t, s, sh, f), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-        )
+        assert ratio_diff_pixels < tol
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dt", ALL_DTYPES)

@@ -195,7 +195,8 @@ class MNIST(VisionDataset):
                 raise RuntimeError(f"Error downloading {filename}")
 
     def extra_repr(self) -> str:
-        return "Split: {}".format("Train" if self.train is True else "Test")
+        split = "Train" if self.train is True else "Test"
+        return f"Split: {split}"
 
 
 class FashionMNIST(MNIST):

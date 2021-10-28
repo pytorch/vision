@@ -1084,22 +1084,18 @@ class LinearTransformation(torch.nn.Module):
         if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError(
                 "transformation_matrix should be square. Got "
-                + "[{} x {}] rectangular matrix.".format(*transformation_matrix.size())
+                f"{tuple(transformation_matrix.size())} rectangular matrix."
             )
 
         if mean_vector.size(0) != transformation_matrix.size(0):
             raise ValueError(
                 f"mean_vector should have the same length {mean_vector.size(0)}"
-                + " as any one of the dimensions of the transformation_matrix [{}]".format(
-                    tuple(transformation_matrix.size())
-                )
+                f" as any one of the dimensions of the transformation_matrix [{tuple(transformation_matrix.size())}]"
             )
 
         if transformation_matrix.device != mean_vector.device:
             raise ValueError(
-                "Input tensors should be on the same device. Got {} and {}".format(
-                    transformation_matrix.device, mean_vector.device
-                )
+                f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
             )
 
         self.transformation_matrix = transformation_matrix
@@ -1125,7 +1121,7 @@ class LinearTransformation(torch.nn.Module):
         if tensor.device.type != self.mean_vector.device.type:
             raise ValueError(
                 "Input tensor should be on the same device as transformation matrix and mean vector. "
-                "Got {} vs {}".format(tensor.device, self.mean_vector.device)
+                f"Got {tensor.device} vs {self.mean_vector.device}"
             )
 
         flat_tensor = tensor.view(-1, n) - self.mean_vector
@@ -1720,7 +1716,7 @@ class RandomErasing(torch.nn.Module):
             if value is not None and not (len(value) in (1, img.shape[-3])):
                 raise ValueError(
                     "If value is a sequence, it should have either a single value or "
-                    "{} (number of input channels)".format(img.shape[-3])
+                    f"{img.shape[-3]} (number of input channels)"
                 )
 
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)

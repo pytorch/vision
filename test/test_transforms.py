@@ -2121,12 +2121,8 @@ def test_random_affine():
     for _ in range(100):
         angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear, img_size=img.size)
         assert -10 < angle < 10
-        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5, "{} vs {}".format(
-            translations[0], img.size[0] * 0.5
-        )
-        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, "{} vs {}".format(
-            translations[1], img.size[1] * 0.5
-        )
+        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5
+        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5
         assert 0.7 < scale < 1.3
         assert -10 < shear[0] < 10
         assert -20 < shear[1] < 40

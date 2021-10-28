@@ -263,9 +263,7 @@ class GeneralizedRCNNTransform(nn.Module):
         format_string = self.__class__.__name__ + "("
         _indent = "\n    "
         format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
-        format_string += "{}Resize(min_size={}, max_size={}, mode='bilinear')".format(
-            _indent, self.min_size, self.max_size
-        )
+        format_string += f"{_indent}Resize(min_size={self.min_size}, max_size={self.max_size}, mode='bilinear')"
         format_string += "\n)"
         return format_string
 

@@ -106,7 +106,7 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
 
     if weights_class is None:
         raise ValueError(
-            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is " "correct."
+            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
     return weights_class.from_str(weight_name)

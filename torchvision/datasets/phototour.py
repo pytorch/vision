@@ -174,7 +174,8 @@ class PhotoTour(VisionDataset):
             torch.save(dataset, f)
 
     def extra_repr(self) -> str:
-        return "Split: {}".format("Train" if self.train is True else "Test")
+        split = "Train" if self.train is True else "Test"
+        return f"Split: {split}"
 
 
 def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:

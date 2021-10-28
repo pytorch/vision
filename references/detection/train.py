@@ -197,8 +197,7 @@ def main(args):
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     else:
         raise RuntimeError(
-            "Invalid lr scheduler '{}'. Only MultiStepLR and CosineAnnealingLR "
-            "are supported.".format(args.lr_scheduler)
+            f"Invalid lr scheduler '{args.lr_scheduler}'. Only MultiStepLR and CosineAnnealingLR are supported."
         )
 
     if args.resume:

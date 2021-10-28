@@ -270,8 +270,8 @@ def main(args):
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
     else:
         raise RuntimeError(
-            "Invalid lr scheduler '{}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
-            "are supported.".format(args.lr_scheduler)
+            f"Invalid lr scheduler '{args.lr_scheduler}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
+            "are supported."
         )
 
     if args.lr_warmup_epochs > 0:
@@ -285,7 +285,7 @@ def main(args):
             )
         else:
             raise RuntimeError(
-                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant " "are supported."
+                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant are supported."
             )
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
             optimizer, schedulers=[warmup_lr_scheduler, main_lr_scheduler], milestones=[args.lr_warmup_epochs]

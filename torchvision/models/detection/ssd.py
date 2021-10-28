@@ -337,7 +337,7 @@ class SSD(nn.Module):
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     raise ValueError(
                         "All bounding boxes should have positive height and width."
-                        " Found invalid box {} for target at index {}.".format(degen_bb, target_idx)
+                        f" Found invalid box {degen_bb} for target at index {target_idx}."
                     )
 
         # get the features from the backbone
