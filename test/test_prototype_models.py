@@ -1,11 +1,14 @@
 import importlib
-import os
 
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu
+from common_utils import cpu_and_gpu, skip_on_env_var
 from torchvision.prototype import models
+
+skip_if_not_test_with_prototype = skip_on_env_var(
+    "PYTORCH_TEST_WITH_PROTOTYPE", reason="Prototype code tests are disabled"
+)
 
 
 def _get_original_model(model_fn):
@@ -33,21 +36,21 @@ def test_get_weight():
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-#@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@skip_if_not_test_with_prototype
 def test_classification_model(model_fn, dev):
     TM.test_classification_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-#@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@skip_if_not_test_with_prototype
 def test_segmentation_model(model_fn, dev):
     TM.test_segmentation_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models) + TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-#@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@skip_if_not_test_with_prototype
 def test_old_vs_new_factory(model_fn, dev):
     defaults = {
         "pretrained": True,
