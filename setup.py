@@ -38,6 +38,12 @@ try:
 except Exception:
     pass
 
+rocm_pytorch = False
+if torch.__version__ >= "1.5":
+    from torch.utils.cpp_extension import ROCM_HOME
+
+    rocm_pytorch = (torch.version.hip is not None) and (ROCM_HOME is not None)
+
 if os.getenv("BUILD_VERSION"):
     version = os.getenv("BUILD_VERSION")
 elif sha != "Unknown":
@@ -58,11 +64,6 @@ pytorch_dep = "torch"
 if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
-def check_torch():
-    if os.getenv("FORCE_CUDA", "0") == "1" and torch.version.cuda is None:
-        print("Build torch vision with CUDA but the installed pytorch isn't with CUDA")
-        sys.exit(1)
-
 requirements = [
     "numpy",
     pytorch_dep,
@@ -72,6 +73,12 @@ requirements = [
 pillow_ver = " >= 5.3.0, !=8.3.0"
 pillow_req = "pillow-simd" if get_dist("pillow-simd") is not None else "pillow"
 requirements.append(pillow_req + pillow_ver)
+
+
+def check_torch():
+    if os.getenv("FORCE_CUDA", "0") == "1" and torch.version.cuda is None:
+        print("Build torch vision with CUDA but the installed pytorch isn't with CUDA")
+        sys.exit(-1)
 
 
 def find_library(name, vision_include):
@@ -130,7 +137,7 @@ def find_library(name, vision_include):
     return library_found, conda_installed, include_folder, lib_folder
 
 
-def get_extensions():
+def get_extensions(is_rocm_pytorch):
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "torchvision", "csrc")
 
@@ -142,13 +149,6 @@ def get_extensions():
         + glob.glob(os.path.join(extensions_dir, "ops", "cpu", "*.cpp"))
         + glob.glob(os.path.join(extensions_dir, "ops", "quantized", "cpu", "*.cpp"))
     )
-
-    is_rocm_pytorch = False
-
-    if torch.__version__ >= "1.5":
-        from torch.utils.cpp_extension import ROCM_HOME
-
-        is_rocm_pytorch = (torch.version.hip is not None) and (ROCM_HOME is not None)
 
     if is_rocm_pytorch:
         from torch.utils.hipify import hipify_python
@@ -453,7 +453,8 @@ class clean(distutils.command.clean.clean):
 if __name__ == "__main__":
     print("Building wheel {}-{}".format(package_name, version))
 
-    check_torch()
+    if not rocm_pytorch:
+        check_torch()
 
     write_version_file()
 
@@ -478,7 +479,7 @@ if __name__ == "__main__":
         extras_require={
             "scipy": ["scipy"],
         },
-        ext_modules=get_extensions(),
+        ext_modules=get_extensions(is_rocm_pytorch=rocm_pytorch),
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,
