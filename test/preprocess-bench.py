@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     if args.accimage:
         torchvision.set_image_backend("accimage")
-    print("Using {}".format(torchvision.get_image_backend()))
+    print(f"Using {torchvision.get_image_backend()}")
 
     # Data loading code
     transform = transforms.Compose(

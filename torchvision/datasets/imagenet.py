@@ -49,7 +49,7 @@ class ImageNet(ImageFolder):
             )
             raise RuntimeError(msg)
         elif download is False:
-            msg = "The use of the download flag is deprecated, since the dataset " "is no longer publicly accessible."
+            msg = "The use of the download flag is deprecated, since the dataset is no longer publicly accessible."
             warnings.warn(msg, RuntimeWarning)
 
         root = self.root = os.path.expanduser(root)
@@ -58,7 +58,7 @@ class ImageNet(ImageFolder):
         self.parse_archives()
         wnid_to_classes = load_meta_file(self.root)[0]
 
-        super(ImageNet, self).__init__(self.split_folder, **kwargs)
+        super().__init__(self.split_folder, **kwargs)
         self.root = root
 
         self.wnids = self.classes
@@ -132,7 +132,7 @@ def parse_devkit_archive(root: str, file: Optional[str] = None) -> None:
 
     def parse_val_groundtruth_txt(devkit_root: str) -> List[int]:
         file = os.path.join(devkit_root, "data", "ILSVRC2012_validation_ground_truth.txt")
-        with open(file, "r") as txtfh:
+        with open(file) as txtfh:
             val_idcs = txtfh.readlines()
         return [int(val_idx) for val_idx in val_idcs]
 
@@ -215,7 +215,7 @@ def parse_val_archive(
     val_root = os.path.join(root, folder)
     extract_archive(os.path.join(root, file), val_root)
 
-    images = sorted([os.path.join(val_root, image) for image in os.listdir(val_root)])
+    images = sorted(os.path.join(val_root, image) for image in os.listdir(val_root))
 
     for wnid in set(wnids):
         os.mkdir(os.path.join(val_root, wnid))

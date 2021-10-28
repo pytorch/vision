@@ -26,7 +26,7 @@ class _DenseLayer(nn.Module):
     def __init__(
         self, num_input_features: int, growth_rate: int, bn_size: int, drop_rate: float, memory_efficient: bool = False
     ) -> None:
-        super(_DenseLayer, self).__init__()
+        super().__init__()
         self.norm1: nn.BatchNorm2d
         self.add_module("norm1", nn.BatchNorm2d(num_input_features))
         self.relu1: nn.ReLU
@@ -107,7 +107,7 @@ class _DenseBlock(nn.ModuleDict):
         drop_rate: float,
         memory_efficient: bool = False,
     ) -> None:
-        super(_DenseBlock, self).__init__()
+        super().__init__()
         for i in range(num_layers):
             layer = _DenseLayer(
                 num_input_features + i * growth_rate,
@@ -128,7 +128,7 @@ class _DenseBlock(nn.ModuleDict):
 
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features: int, num_output_features: int) -> None:
-        super(_Transition, self).__init__()
+        super().__init__()
         self.add_module("norm", nn.BatchNorm2d(num_input_features))
         self.add_module("relu", nn.ReLU(inplace=True))
         self.add_module("conv", nn.Conv2d(num_input_features, num_output_features, kernel_size=1, stride=1, bias=False))
@@ -162,7 +162,7 @@ class DenseNet(nn.Module):
         memory_efficient: bool = False,
     ) -> None:
 
-        super(DenseNet, self).__init__()
+        super().__init__()
         _log_api_usage_once(self)
 
         # First convolution

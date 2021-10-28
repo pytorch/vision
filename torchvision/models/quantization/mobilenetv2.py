@@ -19,7 +19,7 @@ quant_model_urls = {
 
 class QuantizableInvertedResidual(InvertedResidual):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -42,7 +42,7 @@ class QuantizableMobileNetV2(MobileNetV2):
         Args:
            Inherits args from floating point MobileNetV2
         """
-        super(QuantizableMobileNetV2, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.quant = QuantStub()
         self.dequant = DeQuantStub()
 

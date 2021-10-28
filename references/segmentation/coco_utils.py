@@ -9,7 +9,7 @@ from pycocotools import mask as coco_mask
 from transforms import Compose
 
 
-class FilterAndRemapCocoCategories(object):
+class FilterAndRemapCocoCategories:
     def __init__(self, categories, remap=True):
         self.categories = categories
         self.remap = remap
@@ -41,7 +41,7 @@ def convert_coco_poly_to_mask(segmentations, height, width):
     return masks
 
 
-class ConvertCocoPolysToMask(object):
+class ConvertCocoPolysToMask:
     def __call__(self, image, anno):
         w, h = image.size
         segmentations = [obj["segmentation"] for obj in anno]
