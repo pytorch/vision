@@ -273,16 +273,13 @@ jobs:
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Prepare caching
-          # CircleCI's builtin  {{ checksum ... }}  utility
-          # only works for single files, so we create an archive here for all the files
-          # that should be used for the cache key.
-          command: tar -cf weights.lock torchvision/prototype/models
+          command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
       - restore_cache:
           keys:
 
-            - weights-{{ checksum "weights.lock" }}
+            - hub-{{ checksum "prototype_model_urls.txt" }}
 
-            - weights-
+            - hub-
       - run:
           name: Install test utilities
           command: pip install --user --progress-bar=off pytest
@@ -291,7 +288,7 @@ jobs:
           command: pytest -v --durations=20 test/test_prototype_*.py
       - save_cache:
 
-          key: weights-{{ "checksum weights.lock" }}
+          key: hub-{{ checksum "prototype_model_urls.txt" }}
 
           paths:
             - ~/.cache/torch/hub
