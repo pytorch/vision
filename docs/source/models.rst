@@ -697,3 +697,10 @@ ResNet (2+1)D
 -------------
 
 .. autofunction:: torchvision.models.video.r2plus1d_18
+
+
+
+LOLOLOL
+-------
+
+.. autoclass:: torchvision.prototype.models.ResNet101Weights

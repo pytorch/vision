@@ -283,5 +283,14 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         lines.append("\n")
 
 
+def inject_weight_metadata(app, what, name, obj, options, lines):
+
+    if obj.__name__.endswith("Weights"):
+        for field in obj:
+            lines.append(str(field) + "\n")
+            lines.append(f"metadata = {field.meta}")
+
+
 def setup(app):
     app.connect("autodoc-process-docstring", inject_minigalleries)
+    app.connect("autodoc-process-docstring", inject_weight_metadata)
