@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from torchvision.ops.misc import FrozenBatchNorm2d
 
 
-class BalancedPositiveNegativeSampler(object):
+class BalancedPositiveNegativeSampler:
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
@@ -118,7 +118,7 @@ def encode_boxes(reference_boxes: Tensor, proposals: Tensor, weights: Tensor) ->
     return targets
 
 
-class BoxCoder(object):
+class BoxCoder:
     """
     This class encodes and decodes a set of bounding boxes into
     the representation used for training the regressors.
@@ -217,7 +217,7 @@ class BoxCoder(object):
         return pred_boxes
 
 
-class Matcher(object):
+class Matcher:
     """
     This class assigns to each predicted "element" (e.g., a box) a ground-truth
     element. Each predicted element will have exactly zero or one matches; each
@@ -275,9 +275,9 @@ class Matcher(object):
         if match_quality_matrix.numel() == 0:
             # empty targets or proposals not supported during training
             if match_quality_matrix.shape[0] == 0:
-                raise ValueError("No ground-truth boxes available for one of the images " "during training")
+                raise ValueError("No ground-truth boxes available for one of the images during training")
             else:
-                raise ValueError("No proposal boxes available for one of the images " "during training")
+                raise ValueError("No proposal boxes available for one of the images during training")
 
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction

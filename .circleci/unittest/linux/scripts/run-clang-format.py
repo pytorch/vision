@@ -34,7 +34,6 @@ A diff output is produced and a sensible exit code is returned.
 import argparse
 import difflib
 import fnmatch
-import io
 import multiprocessing
 import os
 import signal
@@ -87,20 +86,20 @@ def list_files(files, recursive=False, extensions=None, exclude=None):
 def make_diff(file, original, reformatted):
     return list(
         difflib.unified_diff(
-            original, reformatted, fromfile="{}\t(original)".format(file), tofile="{}\t(reformatted)".format(file), n=3
+            original, reformatted, fromfile=f"{file}\t(original)", tofile=f"{file}\t(reformatted)", n=3
         )
     )
 
 
 class DiffError(Exception):
     def __init__(self, message, errs=None):
-        super(DiffError, self).__init__(message)
+        super().__init__(message)
         self.errs = errs or []
 
 
 class UnexpectedError(Exception):
     def __init__(self, message, exc=None):
-        super(UnexpectedError, self).__init__(message)
+        super().__init__(message)
         self.formatted_traceback = traceback.format_exc()
         self.exc = exc
 
@@ -112,14 +111,14 @@ def run_clang_format_diff_wrapper(args, file):
     except DiffError:
         raise
     except Exception as e:
-        raise UnexpectedError("{}: {}: {}".format(file, e.__class__.__name__, e), e)
+        raise UnexpectedError(f"{file}: {e.__class__.__name__}: {e}", e)
 
 
 def run_clang_format_diff(args, file):
     try:
-        with io.open(file, "r", encoding="utf-8") as f:
+        with open(file, encoding="utf-8") as f:
             original = f.readlines()
-    except IOError as exc:
+    except OSError as exc:
         raise DiffError(str(exc))
     invocation = [args.clang_format_executable, file]
 
@@ -145,7 +144,7 @@ def run_clang_format_diff(args, file):
             invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, encoding="utf-8"
         )
     except OSError as exc:
-        raise DiffError("Command '{}' failed to start: {}".format(subprocess.list2cmdline(invocation), exc))
+        raise DiffError(f"Command '{subprocess.list2cmdline(invocation)}' failed to start: {exc}")
     proc_stdout = proc.stdout
     proc_stderr = proc.stderr
 
@@ -203,7 +202,7 @@ def print_trouble(prog, message, use_colors):
     error_text = "error:"
     if use_colors:
         error_text = bold_red(error_text)
-    print("{}: {} {}".format(prog, error_text, message), file=sys.stderr)
+    print(f"{prog}: {error_text} {message}", file=sys.stderr)
 
 
 def main():
@@ -216,7 +215,7 @@ def main():
     )
     parser.add_argument(
         "--extensions",
-        help="comma separated list of file extensions (default: {})".format(DEFAULT_EXTENSIONS),
+        help=f"comma separated list of file extensions (default: {DEFAULT_EXTENSIONS})",
         default=DEFAULT_EXTENSIONS,
     )
     parser.add_argument("-r", "--recursive", action="store_true", help="run recursively over directories")
@@ -227,7 +226,7 @@ def main():
         metavar="N",
         type=int,
         default=0,
-        help="run N clang-format jobs in parallel" " (default number of cpus + 1)",
+        help="run N clang-format jobs in parallel (default number of cpus + 1)",
     )
     parser.add_argument(
         "--color", default="auto", choices=["auto", "always", "never"], help="show colored diff (default: auto)"
@@ -238,7 +237,7 @@ def main():
         metavar="PATTERN",
         action="append",
         default=[],
-        help="exclude paths matching the given glob-like pattern(s)" " from recursive search",
+        help="exclude paths matching the given glob-like pattern(s) from recursive search",
     )
 
     args = parser.parse_args()
@@ -263,7 +262,7 @@ def main():
         colored_stdout = sys.stdout.isatty()
         colored_stderr = sys.stderr.isatty()
 
-    version_invocation = [args.clang_format_executable, str("--version")]
+    version_invocation = [args.clang_format_executable, "--version"]
     try:
         subprocess.check_call(version_invocation, stdout=DEVNULL)
     except subprocess.CalledProcessError as e:
@@ -272,7 +271,7 @@ def main():
     except OSError as e:
         print_trouble(
             parser.prog,
-            "Command '{}' failed to start: {}".format(subprocess.list2cmdline(version_invocation), e),
+            f"Command '{subprocess.list2cmdline(version_invocation)}' failed to start: {e}",
             use_colors=colored_stderr,
         )
         return ExitStatus.TROUBLE
