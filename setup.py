@@ -58,6 +58,11 @@ pytorch_dep = "torch"
 if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
+def check_torch():
+    if os.getenv("FORCE_CUDA", "0") == "1" and torch.version.cuda.lower() == "none":
+        print("Build torch vision with CUDA but the installed pytorch isn't with CUDA")
+        sys.exit(1)
+
 requirements = [
     "numpy",
     pytorch_dep,
@@ -447,6 +452,8 @@ class clean(distutils.command.clean.clean):
 
 if __name__ == "__main__":
     print("Building wheel {}-{}".format(package_name, version))
+
+    check_torch()
 
     write_version_file()
 
