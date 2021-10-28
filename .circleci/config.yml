@@ -272,24 +272,36 @@ jobs:
 #          name: Install torchvision
 #          command: pip install --user --progress-bar off --no-build-isolation .
       - run:
-          name: Install test utilities
-          command: pip install --user --progress-bar=off pytest
+          name: Prepare caching
+          command: |
+            CACHE_DIR=$(python -c 'import torch; print(torch.hub.get_dir())')
+            echo "CACHE_DIR=CACHE_DIR"
+            echo "export CACHE_DIR=CACHE_DIR" >> $BASH_ENV
+
+            CACHE_FALLBACK_KEY=model-weights
+            echo "CACHE_FALLBACK_KEY=CACHE_FALLBACK_KEY"
+            echo "export CACHE_FALLBACK_KEY=CACHE_FALLBACK_KEY" >> $BASH_ENV
+
+            # Although CircleCI provides a checksum functionality,
+            # we can't use that here, because it only works for single files
+            CHECKSUM=($(tar -cf - torchvision/prototype/models | sha256sum))
+            CACHE_KEY=$CACHE_FALLBACK_KEY-$CHECKSUM
+            echo "CACHE_KEY=CACHE_KEY"
+            echo "export CACHE_KEY=CACHE_KEY" >> $BASH_ENV
       - restore_cache:
           keys:
-            - torch-hub
+            - ${CACHE_KEY}
+            - ${CACHE_FALLBACK_KEY}
+      - run:
+          name: Install test utilities
+          command: pip install --user --progress-bar=off pytest
       - run:
           name: Run tests
           command: pytest --durations=20 test/test_prototype_*.py
-      - run:
-          name: Find torch.hub dir for caching
-          command: |
-            HUB_DIR=$(python -c 'import torch; print(torch.hub.get_dir())')
-            echo "HUB_DIR=$HUB_DIR"
-            echo "export HUB_DIR=$HUB_DIR" >> $BASH_ENV
       - save_cache:
-          key: torch-hub
+          key: ${CACHE_KEY}
           paths:
-            - ${HUB_DIR}
+            - ${CACHE_DIR}
 
   binary_linux_wheel:
     <<: *binary_common
