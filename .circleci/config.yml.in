@@ -276,7 +276,7 @@ jobs:
             - torch-hub
       - run:
           name: Run tests
-          command: pytest test/test_prototype_*.py
+          command: pytest -vvv test/test_prototype_*.py
       - run:
           name: Find torch.hub dir for caching
           command: export HUB_DIR=$(python -c "import torch; print(torch.hub.get_dir())")
