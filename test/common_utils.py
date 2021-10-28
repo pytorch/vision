@@ -215,5 +215,5 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
         torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
 
 
-def skip_on_env_var(name, *, reason, exist_ok=False, default=False):
-    return pytest.mark.skipif(get_bool_env_var(name, exist_ok=exist_ok, default=default), reason=reason)
+def run_on_env_var(name, *, skip_reason=None, exist_ok=False, default=False):
+    return pytest.mark.skipif(not get_bool_env_var(name, exist_ok=exist_ok, default=default), reason=skip_reason)

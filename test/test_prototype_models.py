@@ -3,11 +3,12 @@ import importlib
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu, skip_on_env_var
+from common_utils import cpu_and_gpu, run_on_env_var
 from torchvision.prototype import models
 
-skip_if_not_test_with_prototype = skip_on_env_var(
-    "PYTORCH_TEST_WITH_PROTOTYPE", reason="Prototype code tests are disabled"
+run_if_test_with_prototype = run_on_env_var(
+    "PYTORCH_TEST_WITH_PROTOTYPE",
+    skip_reason="Prototype code tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run it.",
 )
 
 
@@ -41,21 +42,21 @@ def test_get_weight():
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@skip_if_not_test_with_prototype
+@run_if_test_with_prototype
 def test_classification_model(model_fn, dev):
     TM.test_classification_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@skip_if_not_test_with_prototype
+@run_if_test_with_prototype
 def test_segmentation_model(model_fn, dev):
     TM.test_segmentation_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@skip_if_not_test_with_prototype
+@run_if_test_with_prototype
 def test_video_model(model_fn, dev):
     TM.test_video_model(model_fn, dev)
 
@@ -67,7 +68,7 @@ def test_video_model(model_fn, dev):
     + get_models_with_module_names(models.video),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@skip_if_not_test_with_prototype
+@run_if_test_with_prototype
 def test_old_vs_new_factory(model_fn, module_name, dev):
     defaults = {
         "models": {
