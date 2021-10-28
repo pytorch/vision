@@ -313,11 +313,9 @@ class SSD(nn.Module):
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(
-                            "Expected target boxes to be a tensor" "of shape [N, 4], got {:}.".format(boxes.shape)
-                        )
+                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
+                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
@@ -339,7 +337,7 @@ class SSD(nn.Module):
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     raise ValueError(
                         "All bounding boxes should have positive height and width."
-                        " Found invalid box {} for target at index {}.".format(degen_bb, target_idx)
+                        f" Found invalid box {degen_bb} for target at index {target_idx}."
                     )
 
         # get the features from the backbone
@@ -625,7 +623,7 @@ def ssd300_vgg16(
     if pretrained:
         weights_name = "ssd300_vgg16_coco"
         if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+            raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
     return model

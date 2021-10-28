@@ -713,7 +713,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, mask, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg="\nres:\n{}\nexpected:\n{}".format(res, expected)
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
         )
 
         # no modulation test
@@ -721,7 +721,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, None, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg="\nres:\n{}\nexpected:\n{}".format(res, expected)
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
         )
 
     def test_wrong_sizes(self):

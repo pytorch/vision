@@ -39,9 +39,7 @@ class _LFW(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ):
-        super(_LFW, self).__init__(
-            os.path.join(root, self.base_folder), transform=transform, target_transform=target_transform
-        )
+        super().__init__(os.path.join(root, self.base_folder), transform=transform, target_transform=target_transform)
 
         self.image_set = verify_str_arg(image_set.lower(), "image_set", self.file_dict.keys())
         images_dir, self.filename, self.md5 = self.file_dict[self.image_set]
@@ -55,7 +53,7 @@ class _LFW(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.images_dir = os.path.join(self.root, images_dir)
 
@@ -122,14 +120,14 @@ class LFWPeople(_LFW):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ):
-        super(LFWPeople, self).__init__(root, split, image_set, "people", transform, target_transform, download)
+        super().__init__(root, split, image_set, "people", transform, target_transform, download)
 
         self.class_to_idx = self._get_classes()
         self.data, self.targets = self._get_people()
 
     def _get_people(self):
         data, targets = [], []
-        with open(os.path.join(self.root, self.labels_file), "r") as f:
+        with open(os.path.join(self.root, self.labels_file)) as f:
             lines = f.readlines()
             n_folds, s = (int(lines[0]), 1) if self.split == "10fold" else (1, 0)
 
@@ -146,7 +144,7 @@ class LFWPeople(_LFW):
         return data, targets
 
     def _get_classes(self):
-        with open(os.path.join(self.root, self.names), "r") as f:
+        with open(os.path.join(self.root, self.names)) as f:
             lines = f.readlines()
             names = [line.strip().split()[0] for line in lines]
         class_to_idx = {name: i for i, name in enumerate(names)}
@@ -172,7 +170,7 @@ class LFWPeople(_LFW):
         return img, target
 
     def extra_repr(self) -> str:
-        return super().extra_repr() + "\nClasses (identities): {}".format(len(self.class_to_idx))
+        return super().extra_repr() + f"\nClasses (identities): {len(self.class_to_idx)}"
 
 
 class LFWPairs(_LFW):
@@ -204,13 +202,13 @@ class LFWPairs(_LFW):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ):
-        super(LFWPairs, self).__init__(root, split, image_set, "pairs", transform, target_transform, download)
+        super().__init__(root, split, image_set, "pairs", transform, target_transform, download)
 
         self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)
 
     def _get_pairs(self, images_dir):
         pair_names, data, targets = [], [], []
-        with open(os.path.join(self.root, self.labels_file), "r") as f:
+        with open(os.path.join(self.root, self.labels_file)) as f:
             lines = f.readlines()
             if self.split == "10fold":
                 n_folds, n_pairs = lines[0].split("\t")
