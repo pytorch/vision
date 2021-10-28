@@ -278,7 +278,7 @@ jobs:
           name: Run tests
           command: pytest test/test_prototype_*.py
       - save_cache:
-          keys:
+          key:
             - torch-hub
           paths:
             - ~/.cache/torch/hub
