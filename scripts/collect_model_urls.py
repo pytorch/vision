@@ -2,7 +2,7 @@ import pathlib
 import re
 import sys
 
-MODEL_URL_PATTERN = re.compile(r"https://download.pytorch.org/models/\w+-[0-9a-f]{8}[.]pth")
+MODEL_URL_PATTERN = re.compile(r"https://download.pytorch.org/models/.*?[.]pth")
 
 
 def main(root):
