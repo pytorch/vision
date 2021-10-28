@@ -25,8 +25,7 @@ from torchvision.prototype.datasets.utils._internal import (
 
 
 class ImageNet(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         name = "imagenet"
         categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
 

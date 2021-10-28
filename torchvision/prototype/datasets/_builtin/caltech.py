@@ -21,16 +21,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, BUILTIN_DIR, read_mat
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat
 
 
 class Caltech101(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
             type=DatasetType.IMAGE,
-            categories=BUILTIN_DIR / "caltech101.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
 
@@ -144,12 +142,10 @@ class Caltech101(Dataset):
 
 
 class Caltech256(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
             type=DatasetType.IMAGE,
-            categories=BUILTIN_DIR / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
 

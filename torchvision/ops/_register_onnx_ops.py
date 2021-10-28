@@ -26,13 +26,14 @@ def _register_custom_op():
             g, squeeze(g, select(g, rois, 1, g.op("Constant", value_t=torch.tensor([0], dtype=torch.long))), 1), False
         )
         rois = select(g, rois, 1, g.op("Constant", value_t=torch.tensor([1, 2, 3, 4], dtype=torch.long)))
+        # TODO: Remove this warning after ONNX opset 16 is supported.
         if aligned:
             warnings.warn(
-                "ONNX export of ROIAlign with aligned=True does not match PyTorch when using malformed boxes,"
-                " ONNX forces ROIs to be 1x1 or larger."
+                "ROIAlign with aligned=True is not supported in ONNX, but will be supported in opset 16. "
+                "The workaround is that the user need apply the patch "
+                "https://github.com/microsoft/onnxruntime/pull/8564 "
+                "and build ONNXRuntime from source."
             )
-            scale = torch.tensor(0.5 / spatial_scale).to(dtype=torch.float)
-            rois = g.op("Sub", rois, scale)
 
         # ONNX doesn't support negative sampling_ratio
         if sampling_ratio < 0:
