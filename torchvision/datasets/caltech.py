@@ -40,11 +40,9 @@ class Caltech101(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(Caltech101, self).__init__(
-            os.path.join(root, "caltech101"), transform=transform, target_transform=target_transform
-        )
+        super().__init__(os.path.join(root, "caltech101"), transform=transform, target_transform=target_transform)
         os.makedirs(self.root, exist_ok=True)
-        if not isinstance(target_type, list):
+        if isinstance(target_type, str):
             target_type = [target_type]
         self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation")) for t in target_type]
 
@@ -52,7 +50,7 @@ class Caltech101(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "101_ObjectCategories")))
         self.categories.remove("BACKGROUND_Google")  # this is not a real class
@@ -90,7 +88,7 @@ class Caltech101(VisionDataset):
                 self.root,
                 "101_ObjectCategories",
                 self.categories[self.y[index]],
-                "image_{:04d}.jpg".format(self.index[index]),
+                f"image_{self.index[index]:04d}.jpg",
             )
         )
 
@@ -104,7 +102,7 @@ class Caltech101(VisionDataset):
                         self.root,
                         "Annotations",
                         self.annotation_categories[self.y[index]],
-                        "annotation_{:04d}.mat".format(self.index[index]),
+                        f"annotation_{self.index[index]:04d}.mat",
                     )
                 )
                 target.append(data["obj_contour"])
@@ -133,13 +131,11 @@ class Caltech101(VisionDataset):
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             self.root,
-            filename="101_ObjectCategories.tar.gz",
             md5="b224c7392d521a49829488ab0f1120d9",
         )
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
             self.root,
-            filename="101_Annotations.tar",
             md5="6f83eeb1f24d99cab4eb377263132c91",
         )
 
@@ -169,22 +165,26 @@ class Caltech256(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(Caltech256, self).__init__(
-            os.path.join(root, "caltech256"), transform=transform, target_transform=target_transform
-        )
+        super().__init__(os.path.join(root, "caltech256"), transform=transform, target_transform=target_transform)
         os.makedirs(self.root, exist_ok=True)
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "256_ObjectCategories")))
         self.index: List[int] = []
         self.y = []
         for (i, c) in enumerate(self.categories):
-            n = len(os.listdir(os.path.join(self.root, "256_ObjectCategories", c)))
+            n = len(
+                [
+                    item
+                    for item in os.listdir(os.path.join(self.root, "256_ObjectCategories", c))
+                    if item.endswith(".jpg")
+                ]
+            )
             self.index.extend(range(1, n + 1))
             self.y.extend(n * [i])
 
@@ -201,7 +201,7 @@ class Caltech256(VisionDataset):
                 self.root,
                 "256_ObjectCategories",
                 self.categories[self.y[index]],
-                "{:03d}_{:04d}.jpg".format(self.y[index] + 1, self.index[index]),
+                f"{self.y[index] + 1:03d}_{self.index[index]:04d}.jpg",
             )
         )
 

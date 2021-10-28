@@ -114,7 +114,7 @@ class _VOCBase(VisionDataset):
 
         splits_dir = os.path.join(voc_root, "ImageSets", self._SPLITS_DIR)
         split_f = os.path.join(splits_dir, image_set.rstrip("\n") + ".txt")
-        with open(os.path.join(split_f), "r") as f:
+        with open(os.path.join(split_f)) as f:
             file_names = [x.strip() for x in f.readlines()]
 
         image_dir = os.path.join(voc_root, "JPEGImages")
@@ -217,12 +217,13 @@ class VOCDetection(_VOCBase):
 
         return img, target
 
-    def parse_voc_xml(self, node: ET_Element) -> Dict[str, Any]:
+    @staticmethod
+    def parse_voc_xml(node: ET_Element) -> Dict[str, Any]:
         voc_dict: Dict[str, Any] = {}
         children = list(node)
         if children:
             def_dic: Dict[str, Any] = collections.defaultdict(list)
-            for dc in map(self.parse_voc_xml, children):
+            for dc in map(VOCDetection.parse_voc_xml, children):
                 for ind, v in dc.items():
                     def_dic[ind].append(v)
             if node.tag == "annotation":

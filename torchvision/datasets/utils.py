@@ -138,10 +138,10 @@ def download_url(
         try:
             print("Downloading " + url + " to " + fpath)
             _urlretrieve(url, fpath)
-        except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
+        except (urllib.error.URLError, OSError) as e:  # type: ignore[attr-defined]
             if url[:5] == "https":
                 url = url.replace("https:", "http:")
-                print("Failed download. Trying https -> http instead." " Downloading " + url + " to " + fpath)
+                print("Failed download. Trying https -> http instead. Downloading " + url + " to " + fpath)
                 _urlretrieve(url, fpath)
             else:
                 raise e
@@ -428,7 +428,7 @@ def download_and_extract_archive(
     download_url(url, download_root, filename, md5)
 
     archive = os.path.join(download_root, filename)
-    print("Extracting {} to {}".format(archive, extract_root))
+    print(f"Extracting {archive} to {extract_root}")
     extract_archive(archive, extract_root, remove_finished)
 
 
@@ -460,7 +460,7 @@ def verify_str_arg(
         if custom_msg is not None:
             msg = custom_msg
         else:
-            msg = "Unknown value '{value}' for argument {arg}. " "Valid values are {{{valid_values}}}."
+            msg = "Unknown value '{value}' for argument {arg}. Valid values are {{{valid_values}}}."
             msg = msg.format(value=value, arg=arg, valid_values=iterable_to_str(valid_values))
         raise ValueError(msg)
 

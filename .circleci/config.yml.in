@@ -254,6 +254,27 @@ jobs:
             pip install --user pytest
             python test/test_onnx.py
 
+  prototype_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - run:
+          name: Install torch
+          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+      - run:
+          name: Install prototype dependencies
+          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
+      - checkout
+      - run:
+          name: Install torchvision
+          command: pip install --user --progress-bar off --no-build-isolation .
+      - run:
+          name: Install test utilities
+          command: pip install --user --progress-bar=off pytest
+      - run:
+          name: Run tests
+          command: pytest test/test_prototype_*.py
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -917,19 +938,11 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
           name: Build docs
           command: |
             set -ex
-            tag=${CIRCLE_TAG:1:5}
+            # turn v1.12.0rc3 into 1.12.0
+            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9.]*\).*/\1/')
             VERSION=${tag:-main}
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
@@ -937,12 +950,6 @@ jobs:
             pip install -r requirements.txt
             make html
             popd
-      - save_cache:
-          {% raw %}
-          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:
@@ -992,6 +999,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       {{ ios_workflows() }}
       {{ android_workflows() }}
 
@@ -1013,6 +1021,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       {{ ios_workflows(nightly=True) }}
       {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}

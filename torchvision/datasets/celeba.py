@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Optional, Union, Tuple
 import PIL
 import torch
 
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
+from .utils import download_file_from_google_drive, check_integrity, verify_str_arg, extract_archive
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
@@ -66,7 +66,7 @@ class CelebA(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(CelebA, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -80,7 +80,7 @@ class CelebA(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         split_map = {
             "train": 0,
@@ -142,8 +142,6 @@ class CelebA(VisionDataset):
         return os.path.isdir(os.path.join(self.root, self.base_folder, "img_align_celeba"))
 
     def download(self) -> None:
-        import zipfile
-
         if self._check_integrity():
             print("Files already downloaded and verified")
             return
@@ -151,8 +149,7 @@ class CelebA(VisionDataset):
         for (file_id, md5, filename) in self.file_list:
             download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
 
-        with zipfile.ZipFile(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"), "r") as f:
-            f.extractall(os.path.join(self.root, self.base_folder))
+        extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
@@ -169,7 +166,7 @@ class CelebA(VisionDataset):
                 target.append(self.landmarks_align[index, :])
             else:
                 # TODO: refactor with utils.verify_str_arg
-                raise ValueError('Target type "{}" is not recognized.'.format(t))
+                raise ValueError(f'Target type "{t}" is not recognized.')
 
         if self.transform is not None:
             X = self.transform(X)

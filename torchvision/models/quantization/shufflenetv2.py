@@ -26,7 +26,7 @@ quant_model_urls = {
 
 class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -44,9 +44,7 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(QuantizableShuffleNetV2, self).__init__(  # type: ignore[misc]
-            *args, inverted_residual=QuantizableInvertedResidual, **kwargs
-        )
+        super().__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)  # type: ignore[misc]
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
@@ -68,7 +66,7 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
             if name in ["conv1", "conv5"]:
                 torch.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
         for m in self.modules():
-            if type(m) == QuantizableInvertedResidual:
+            if type(m) is QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
                     torch.quantization.fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True)
                 torch.quantization.fuse_modules(

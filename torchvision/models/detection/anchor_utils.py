@@ -37,7 +37,7 @@ class AnchorGenerator(nn.Module):
         sizes=((128, 256, 512),),
         aspect_ratios=((0.5, 1.0, 2.0),),
     ):
-        super(AnchorGenerator, self).__init__()
+        super().__init__()
 
         if not isinstance(sizes[0], (list, tuple)):
             # TODO change this
@@ -104,7 +104,7 @@ class AnchorGenerator(nn.Module):
             # For output anchor, compute [x_center, y_center, x_center, y_center]
             shifts_x = torch.arange(0, grid_width, dtype=torch.int32, device=device) * stride_width
             shifts_y = torch.arange(0, grid_height, dtype=torch.int32, device=device) * stride_height
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
@@ -216,13 +216,14 @@ class DefaultBoxGenerator(nn.Module):
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
             if self.steps is not None:
-                x_f_k, y_f_k = [img_shape / self.steps[k] for img_shape in image_size]
+                x_f_k = image_size[0] / self.steps[k]
+                y_f_k = image_size[1] / self.steps[k]
             else:
                 y_f_k, x_f_k = f_k
 
             shifts_x = ((torch.arange(0, f_k[1]) + 0.5) / x_f_k).to(dtype=dtype)
             shifts_y = ((torch.arange(0, f_k[0]) + 0.5) / y_f_k).to(dtype=dtype)
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
 

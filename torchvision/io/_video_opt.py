@@ -3,7 +3,6 @@ import warnings
 from fractions import Fraction
 from typing import List, Tuple
 
-import numpy as np
 import torch
 
 from .._internally_replaced_utils import _get_extension_path
@@ -21,7 +20,7 @@ default_timebase = Fraction(0, 1)
 
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
-class Timebase(object):
+class Timebase:
     __annotations__ = {"numerator": int, "denominator": int}
     __slots__ = ["numerator", "denominator"]
 
@@ -35,7 +34,7 @@ class Timebase(object):
         self.denominator = denominator
 
 
-class VideoMetaData(object):
+class VideoMetaData:
     __annotations__ = {
         "has_video": bool,
         "video_timebase": Timebase,
@@ -338,7 +337,7 @@ def _read_video_from_memory(
     _validate_pts(audio_pts_range)
 
     if not isinstance(video_data, torch.Tensor):
-        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
+        video_data = torch.frombuffer(video_data, dtype=torch.uint8)
 
     result = torch.ops.video_reader.read_video_from_memory(
         video_data,
@@ -378,7 +377,7 @@ def _read_video_timestamps_from_memory(video_data):
     is much faster than read_video(...)
     """
     if not isinstance(video_data, torch.Tensor):
-        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
+        video_data = torch.frombuffer(video_data, dtype=torch.uint8)
     result = torch.ops.video_reader.read_video_from_memory(
         video_data,
         0,  # seek_frame_margin
@@ -415,7 +414,7 @@ def _probe_video_from_memory(video_data):
     This function is torchscriptable
     """
     if not isinstance(video_data, torch.Tensor):
-        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
+        video_data = torch.frombuffer(video_data, dtype=torch.uint8)
     result = torch.ops.video_reader.probe_video_from_memory(video_data)
     vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)

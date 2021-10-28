@@ -9,11 +9,14 @@ from torch import nn, Tensor
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
+from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
+from ...utils import _log_api_usage_once
+from ..resnet import resnet50
 from . import _utils as det_utils
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
-from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
+from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 
 
@@ -334,6 +337,7 @@ class RetinaNet(nn.Module):
         topk_candidates=1000,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
@@ -489,11 +493,9 @@ class RetinaNet(nn.Module):
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(
-                            "Expected target boxes to be a tensor" "of shape [N, 4], got {:}.".format(boxes.shape)
-                        )
+                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
+                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
@@ -517,7 +519,7 @@ class RetinaNet(nn.Module):
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     raise ValueError(
                         "All bounding boxes should have positive height and width."
-                        " Found invalid box {} for target at index {}.".format(degen_bb, target_idx)
+                        f" Found invalid box {degen_bb} for target at index {target_idx}."
                     )
 
         # get the features from the backbone
@@ -630,13 +632,11 @@ def retinanet_resnet50_fpn(
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
+
+    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
     # skip P2 because it generates too many anchors (according to their paper)
-    backbone = resnet_fpn_backbone(
-        "resnet50",
-        pretrained_backbone,
-        returned_layers=[2, 3, 4],
-        extra_blocks=LastLevelP6P7(256, 256),
-        trainable_layers=trainable_backbone_layers,
+    backbone = _resnet_fpn_extractor(
+        backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
     )
     model = RetinaNet(backbone, num_classes, **kwargs)
     if pretrained:
