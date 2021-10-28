@@ -51,7 +51,7 @@ class Kinect400Eval(nn.Module):
         interpolation: T.InterpolationMode = T.InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self._convert = T.ConvertImageDtype(torch.float32)
+        self._convert = T.ConvertImageDtype(torch.float)
         self._resize = T.Resize(resize_size, interpolation=interpolation)
         self._normalize = T.Normalize(mean=mean, std=std)
         self._crop = T.CenterCrop(crop_size)
