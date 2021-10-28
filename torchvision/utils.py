@@ -305,7 +305,14 @@ def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
     connectivity: Optional[Tuple[Tuple[int, int]]] = None,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    colors: Optional[
+        Union[
+            List[Union[str, Tuple[int, int, int]]],
+            str,
+            Tuple[int, int, int],
+            List[List[Union[str, Tuple[int, int, int]]]],
+        ]
+    ] = None,
     radius: int = 2,
     width: int = 3,
 ) -> torch.Tensor:
@@ -320,8 +327,9 @@ def draw_keypoints(
             in the format [x, y].
         connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
             each tuple contains pair of keypoints to be connected.
-        colors (color or list of colors, optional): List containing the colors
-            of the keypoints or single color for all keypoints. The color can be represented as
+        colors (color or list of colors or list of list containing colors, optional): List containing the colors
+            of each instance of keypoints or a nested list containing color for every keypoint id
+            or single color for all keypoints. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
@@ -349,8 +357,16 @@ def draw_keypoints(
 
     img_kpts = keypoints.to(torch.int64).tolist()
 
-    for kpt_inst in img_kpts:
-        for kpt in kpt_inst:
+    # Specifying color for every keypoint id
+    if isinstance(colors[0], list):
+        keypoints_id_color = True
+    else:
+        keypoints_id_color = False
+
+    for i, kpt_inst in enumerate(img_kpts):
+        if keypoints_id_color:
+            colors = colors[i]
+        for inst_id, kpt in enumerate(kpt_inst):
             x1 = kpt[0] - radius
             x2 = kpt[0] + radius
             y1 = kpt[1] - radius
@@ -358,6 +374,9 @@ def draw_keypoints(
 
             if isinstance(colors, str) or isinstance(colors, tuple):
                 draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
+
+            if isinstance(colors, list):
+                draw.ellipse([x1, y1, x2, y2], fill=colors[inst_id], outline=None, width=0)
 
         if connectivity:
             for connection in connectivity:
