@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -7,7 +7,7 @@ from .._internally_replaced_utils import load_state_dict_from_url
 from ..utils import _log_api_usage_once
 
 
-__all__ = ['AlexNet', "alexnet"]
+__all__ = ["AlexNet", "alexnet"]
 
 
 model_urls = {

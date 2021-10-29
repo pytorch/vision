@@ -188,7 +188,7 @@ jobs:
             pre-commit install-hooks
       - run: pre-commit run --all-files
       - run:
-          name: Modifications
+          name: Required lint modifications
           when: on_fail
           command: git diff
 
