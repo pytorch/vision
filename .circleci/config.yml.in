@@ -271,9 +271,15 @@ jobs:
       - run:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
-#      - run:
-#          name: Generate cache key
-#          command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
+      - run:
+          name: Generate cache key
+          command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
+      - run:
+          name: Download model weights
+          command: |
+            HUB_DIR="~/.cache/torch/hub"
+            wget -P $HUB_DIR -i prototype_model_urls.txt
+            du -hs $HUB_DIR
 #      - restore_cache:
 #          keys:
 #            {% raw %}
