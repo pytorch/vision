@@ -12,8 +12,10 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
 conda activate ./env
 
+# TODO, refactor the below logic to make it easy to understand how to get correct cuda_version.
 if [ "${CU_VERSION:-}" == cpu ] ; then
     cudatoolkit="cpuonly"
+    wheeldir="cpu"
 else
     if [[ ${#CU_VERSION} -eq 4 ]]; then
         CUDA_VERSION="${CU_VERSION:2:1}.${CU_VERSION:3:1}"
@@ -23,11 +25,11 @@ else
     echo "Using CUDA $CUDA_VERSION as determined by CU_VERSION"
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
     cudatoolkit="cudatoolkit=${version}"
+    wheeldir="cu"${version/./}
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-# conda-forge channel is required for cudatoolkit 11.1 on Windows, see https://github.com/pytorch/vision/issues/4458
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
+pip install torch --pre -f https://download.pytorch.org/whl/nightly/${wheeldir}/torch_nightly.html
 
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
