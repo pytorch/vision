@@ -37,7 +37,7 @@ def set_rng_seed(seed):
     random.seed(seed)
 
 
-class MapNestedTensorObjectImpl(object):
+class MapNestedTensorObjectImpl:
     def __init__(self, tensor_map_fn):
         self.tensor_map_fn = tensor_map_fn
 
@@ -152,7 +152,7 @@ def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
         else:
             f = fps[i]
         data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
-        name = os.path.join(tmpdir, "{}.mp4".format(i))
+        name = os.path.join(tmpdir, f"{i}.mp4")
         names.append(name)
         io.write_video(name, data, fps=f)
 
@@ -165,7 +165,7 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
         np_pil_image = np_pil_image[:, :, None]
     pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
     if msg is None:
-        msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+        msg = f"tensor:\n{tensor} \ndid not equal PIL tensor:\n{pil_tensor}"
     assert_equal(tensor.cpu(), pil_tensor, msg=msg)
 
 

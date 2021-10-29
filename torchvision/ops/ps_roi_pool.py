@@ -52,7 +52,7 @@ class PSRoIPool(nn.Module):
     """
 
     def __init__(self, output_size: int, spatial_scale: float):
-        super(PSRoIPool, self).__init__()
+        super().__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
