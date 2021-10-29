@@ -3,7 +3,7 @@ from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
 
-from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
+from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape, _log_api_usage_once
 
 
 def ps_roi_align(
@@ -42,7 +42,7 @@ def ps_roi_align(
     Returns:
         Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]: The pooled RoIs
     """
-    torch._C._log_api_usage_once("torchvision.ops.ps_roi_align")
+    _log_api_usage_once("torchvision.ops.ps_roi_align")
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes

@@ -8,6 +8,8 @@ from torch.nn.modules.utils import _pair
 from torch.nn.parameter import Parameter
 from torchvision.extension import _assert_has_ops
 
+from ..utils import _log_api_usage_once
+
 
 def deform_conv2d(
     input: Tensor,
@@ -59,7 +61,7 @@ def deform_conv2d(
         >>>  torch.Size([4, 5, 8, 8])
     """
 
-    torch._C._log_api_usage_once("torchvision.ops.deform_conv2d")
+    _log_api_usage_once("torchvision.ops.deform_conv2d")
     _assert_has_ops()
     out_channels = weight.shape[0]
 

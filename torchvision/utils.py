@@ -306,4 +306,9 @@ def _generate_color_palette(num_masks: int):
 
 
 def _log_api_usage_once(obj: object) -> None:
-    torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
+    if torch.jit.is_scripting():
+        return
+    if isinstance(obj, str):
+        torch._C._log_api_usage_once(obj)
+    else:
+        torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
