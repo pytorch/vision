@@ -1,7 +1,7 @@
 .. _transforms:
 
-Transforms
-==========
+Transforming and augmenting images
+==================================
 
 .. currentmodule:: torchvision.transforms
 
