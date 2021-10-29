@@ -305,8 +305,9 @@ def _generate_color_palette(num_masks: int):
     return [tuple((i * palette) % 255) for i in range(num_masks)]
 
 
-@torch.jit.ignore
 def _log_api_usage_once(obj: str) -> None:
+    if torch.jit.is_scripting() or torch.jit.is_tracing():
+        return
     # NOTE: obj can be an object as well, but mocking it here to be
     # only a string to appease torchscript
     if isinstance(obj, str):
