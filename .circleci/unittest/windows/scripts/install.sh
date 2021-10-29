@@ -29,6 +29,7 @@ else
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
+pip install pytest
 pip install torch --pre -f https://download.pytorch.org/whl/nightly/${wheeldir}/torch_nightly.html
 
 if [ $PYTHON_VERSION == "3.6" ]; then
