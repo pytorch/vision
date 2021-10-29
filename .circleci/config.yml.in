@@ -276,10 +276,7 @@ jobs:
           command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
       - run:
           name: Download model weights
-          command: |
-            HUB_DIR="~/.cache/torch/hub"
-            wget -P $HUB_DIR -i prototype_model_urls.txt
-            du -hs $HUB_DIR
+          command: wget --no-verbose -P ~/.cache/torch/hub -i prototype_model_urls.txt
 #      - restore_cache:
 #          keys:
 #            {% raw %}
@@ -293,7 +290,7 @@ jobs:
           name: Run tests
           command: |
             export PYTORCH_TEST_WITH_PROTOTYPE=1
-            pytest -v --durations=20 test/test_prototype_*.py
+            pytest -svvv --durations=20 test/test_prototype_*.py
 #      - save_cache:
 #          {% raw %}
 #          key: hub-{{ checksum "prototype_model_urls.txt" }}
