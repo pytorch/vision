@@ -7,6 +7,6 @@
 
 .. autoclass:: {{ name }}
     :members:
-        __getitem__
-        {% if "category_name" in methods %} , category_name {% endif %}
+        __getitem__,
+        {% if "category_name" in methods %} category_name {% endif %}
     :special-members:
