@@ -1,11 +1,13 @@
 .. _transforms:
 
-torchvision.transforms
-======================
+Transforms
+==========
 
 .. currentmodule:: torchvision.transforms
 
-Transforms are common image transformations. They can be chained together using :class:`Compose`.
+Transforms are common image transformations available in the
+``torchvision.transforms`` module. They can be chained together using
+:class:`Compose`.
 Most transform classes have a function equivalent: :ref:`functional
 transforms <functional_transforms>` give fine-grained control over the
 transformations.

@@ -1,5 +1,11 @@
-torchvision.datasets
-====================
+Datasets
+========
+
+Torchvision provides many built-in datasets in the ``torchvision.datasets``
+module, as well as utility classes for building your own datasets.
+
+Built-in datasets
+~~~~~~~~~~~~~~~~~
 
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.
@@ -74,17 +80,3 @@ Base classes for custom datasets
     DatasetFolder
     ImageFolder
     VisionDataset
-
-
-.. .. autoclass:: DatasetFolder
-..   :members: __getitem__, find_classes, make_dataset
-..   :special-members:
-
-
-.. .. autoclass:: ImageFolder
-..   :members: __getitem__
-..   :special-members:
-
-.. .. autoclass:: VisionDataset
-..   :members: __getitem__
-..   :special-members:
