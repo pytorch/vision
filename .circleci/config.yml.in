@@ -187,7 +187,10 @@ jobs:
             pip install --user --progress-bar off pre-commit
             pre-commit install-hooks
       - run: pre-commit run --all-files
-      - run: git diff
+      - run:
+          name: Modifications
+          when: on_fail
+          command: git diff
 
   python_type_check:
     docker:
