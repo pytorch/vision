@@ -1,10 +1,8 @@
-:mod:`{{module}}`.{{objname}}
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+.. role:: hidden
+    :class: hidden-section
 .. currentmodule:: {{ module }}
 
-.. autofunction:: {{ objname }}
 
-.. raw:: html
+{{ name | underline}}
 
-    <div class="clearer"></div>
+.. autofunction:: {{ name }}

@@ -91,7 +91,6 @@ Compositions of transforms
 --------------------------
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -102,7 +101,6 @@ Transforms on PIL Image and torch.\*Tensor
 ------------------------------------------
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -122,7 +120,6 @@ Transforms on PIL Image and torch.\*Tensor
     RandomSizedCrop
     RandomVerticalFlip
     Resize
-    Scale
     TenCrop
     GaussianBlur
     RandomInvert
@@ -139,7 +136,6 @@ Transforms on PIL Image only
 ----------------------------
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -152,7 +148,6 @@ Transforms on torch.\*Tensor only
 ---------------------------------
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -167,7 +162,6 @@ Conversion Transforms
 ---------------------
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -180,7 +174,6 @@ Generic Transforms
 ------------------
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -197,7 +190,6 @@ In TorchVision we implemented 3 policies learned on the following datasets: Imag
 The new transform can be used standalone or mixed-and-matched with existing transforms:
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: class.rst
 
@@ -258,7 +250,6 @@ you can use a functional transform to build transform classes with custom behavi
 
 
 .. autosummary::
-    :nosignatures:
     :toctree: generated/
     :template: function.rst
 
