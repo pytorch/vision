@@ -290,7 +290,7 @@ jobs:
           name: Run tests
           command: |
             export PYTORCH_TEST_WITH_PROTOTYPE=1
-            pytest -v --durations=20 test/test_prototype_*.py
+            pytest -sv --durations=20 test/test_prototype_*.py
 #      - save_cache:
 #          
 #          key: hub-{{ checksum "prototype_model_urls.txt" }}
