@@ -190,7 +190,7 @@ jobs:
       - run:
           name: Required lint modifications
           when: on_fail
-          command: git diff
+          command: git --no-pager diff
 
   python_type_check:
     docker:
