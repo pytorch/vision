@@ -5,7 +5,6 @@ from .vgg import *
 from .efficientnet import *
 from .mobilenetv3 import *
 from .mnasnet import *
-from .shufflenetv2 import *
 from . import detection
 from . import quantization
 from . import segmentation
