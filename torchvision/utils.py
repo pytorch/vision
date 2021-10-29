@@ -1,7 +1,7 @@
 import math
 import pathlib
 import warnings
-from typing import Union, Optional, List, Tuple, BinaryIO
+from typing import Union, Optional, List, Tuple, BinaryIO, no_type_check
 
 import numpy as np
 import torch
@@ -305,7 +305,8 @@ def _generate_color_palette(num_masks: int):
     return [tuple((i * palette) % 255) for i in range(num_masks)]
 
 
-def _log_api_usage_once(obj) -> None:  # type: ignore
+@no_type_check
+def _log_api_usage_once(obj: str) -> None:  # type: ignore
     if torch.jit.is_scripting() or torch.jit.is_tracing():
         return
     # NOTE: obj can be an object as well, but mocking it here to be
