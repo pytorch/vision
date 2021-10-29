@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+4e09470 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+cb7d03b ) &#x25BC</a>
     </div>
     
 
@@ -514,7 +514,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should be None when box_predictor is specified&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">box_predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should not be None when box_predictor &quot;</span> <span class="s2">&quot;is not specified&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should not be None when box_predictor is not specified&quot;</span><span class="p">)</span>
 
         <span class="n">out_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span>
 
@@ -574,7 +574,7 @@
             <span class="n">image_std</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.229</span><span class="p">,</span> <span class="mf">0.224</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">]</span>
         <span class="n">transform</span> <span class="o">=</span> <span class="n">GeneralizedRCNNTransform</span><span class="p">(</span><span class="n">min_size</span><span class="p">,</span> <span class="n">max_size</span><span class="p">,</span> <span class="n">image_mean</span><span class="p">,</span> <span class="n">image_std</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">FasterRCNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">rpn</span><span class="p">,</span> <span class="n">roi_heads</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">rpn</span><span class="p">,</span> <span class="n">roi_heads</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">TwoMLPHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -587,7 +587,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">TwoMLPHead</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">fc6</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fc7</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">representation_size</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">)</span>
@@ -612,7 +612,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">FastRCNNPredictor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cls_score</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bbox_pred</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>
 
@@ -755,7 +755,7 @@
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">model_urls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">weights_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No checkpoint is available for model </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">weights_name</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No checkpoint is available for model </span><span class="si">{</span><span class="n">weights_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="n">weights_name</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span>

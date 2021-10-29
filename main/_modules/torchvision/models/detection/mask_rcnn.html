@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+4e09470 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+cb7d03b ) &#x25BC</a>
     </div>
     
 
@@ -531,7 +531,7 @@
             <span class="n">mask_dim_reduced</span> <span class="o">=</span> <span class="mi">256</span>
             <span class="n">mask_predictor</span> <span class="o">=</span> <span class="n">MaskRCNNPredictor</span><span class="p">(</span><span class="n">mask_predictor_in_channels</span><span class="p">,</span> <span class="n">mask_dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">MaskRCNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">backbone</span><span class="p">,</span>
             <span class="n">num_classes</span><span class="p">,</span>
             <span class="c1"># transform parameters</span>
@@ -582,13 +582,13 @@
         <span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="n">next_feature</span> <span class="o">=</span> <span class="n">in_channels</span>
         <span class="k">for</span> <span class="n">layer_idx</span><span class="p">,</span> <span class="n">layer_features</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;mask_fcn</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer_idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
+            <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;mask_fcn</span><span class="si">{</span><span class="n">layer_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
                 <span class="n">next_feature</span><span class="p">,</span> <span class="n">layer_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span>
             <span class="p">)</span>
-            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;relu</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer_idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;relu</span><span class="si">{</span><span class="n">layer_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">next_feature</span> <span class="o">=</span> <span class="n">layer_features</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">MaskRCNNHeads</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
             <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
@@ -598,7 +598,7 @@
 
 <span class="k">class</span> <span class="nc">MaskRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">dim_reduced</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">MaskRCNNPredictor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">OrderedDict</span><span class="p">(</span>
                 <span class="p">[</span>
                     <span class="p">(</span><span class="s2">&quot;conv5_mask&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ConvTranspose2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">dim_reduced</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
