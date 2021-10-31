@@ -53,16 +53,19 @@ class TestFrozenMapping:
         options = dict(foo="bar", baz=1)
         assert len(FrozenMapping(options)) == len(options)
 
-    @pytest.mark.parametrize(
-        "method",
-        [
-            pytest.param(lambda obj, key, value: FrozenMapping.__setitem__(obj, key, value), id="setitem"),
-            pytest.param(lambda obj, key, value: FrozenMapping.__delitem__(obj, key), id="delitem"),
-        ],
-    )
-    def test_immutable(self, method):
-        with pytest.raises(RuntimeError, match=re.escape("immutable")):
-            method(FrozenMapping(), "foo", "bar")
+    def test_immutable_setitem(self):
+        frozen_mapping = FrozenMapping()
+
+        with pytest.raises(RuntimeError, match="immutable"):
+            frozen_mapping["foo"] = "bar"
+
+    def test_immutable_delitem(
+        self,
+    ):
+        frozen_mapping = FrozenMapping(foo="bar")
+
+        with pytest.raises(RuntimeError, match="immutable"):
+            del frozen_mapping["foo"]
 
     def test_eq(self):
         options = dict(foo="bar", baz=1)
@@ -96,16 +99,19 @@ class TestFrozenBunch:
         with pytest.raises(AttributeError, match=re.escape("no attribute 'unknown'")):
             datasets.utils.DatasetConfig().unknown
 
-    @pytest.mark.parametrize(
-        "method",
-        [
-            pytest.param(lambda obj, key, value: FrozenBunch.__setattr__(obj, key, value), id="setattr"),
-            pytest.param(lambda obj, key, value: FrozenBunch.__delattr__(obj, key), id="delattr"),
-        ],
-    )
-    def test_immutable(self, method):
-        with pytest.raises(RuntimeError, match=re.escape("immutable")):
-            method(FrozenBunch(), "foo", "bar")
+    def test_immutable_setattr(self):
+        frozen_bunch = FrozenBunch()
+
+        with pytest.raises(RuntimeError, match="immutable"):
+            frozen_bunch.foo = "bar"
+
+    def test_immutable_delattr(
+        self,
+    ):
+        frozen_bunch = FrozenBunch(foo="bar")
+
+        with pytest.raises(RuntimeError, match="immutable"):
+            del frozen_bunch.foo
 
     def test_repr(self):
         options = dict(foo="bar", baz=1)
