@@ -175,9 +175,9 @@ class TestDataset:
 
             self.resources = unittest.mock.Mock(return_value=[]) if resources is None else lambda config: resources
             self._make_datapipe = unittest.mock.Mock()
+            super().__init__()
 
-        @property
-        def info(self):
+        def _make_info(self):
             return datasets.utils.DatasetInfo(
                 self._name,
                 type=datasets.utils.DatasetType.RAW,
