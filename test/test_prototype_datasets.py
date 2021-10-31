@@ -3,19 +3,11 @@ import unittest.mock
 
 import pytest
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets import _api
 from torchvision.prototype.datasets.utils._internal import FrozenMapping, FrozenBunch
 
 
 def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
     return datasets.utils.DatasetInfo(name, type=type, categories=categories or [], **kwargs)
-
-
-@pytest.fixture
-def patch_datasets(mocker):
-    registered_datasets = {}
-    mocker.patch.dict(_api.DATASETS, registered_datasets, clear=True)
-    return registered_datasets
 
 
 class TestFrozenMapping:
