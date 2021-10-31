@@ -31,7 +31,7 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
             i += 1
             avg_loss = running_loss / print_freq
             avg_trip = 100.0 * running_frac_pos_triplets / print_freq
-            print("[{:d}, {:d}] | loss: {:.4f} | % avg hard triplets: {:.2f}%".format(epoch, i, avg_loss, avg_trip))
+            print(f"[{epoch:d}, {i:d}] | loss: {avg_loss:.4f} | % avg hard triplets: {avg_trip:.2f}%")
             running_loss = 0
             running_frac_pos_triplets = 0
 
@@ -77,7 +77,7 @@ def evaluate(model, loader, device):
 
     threshold, accuracy = find_best_threshold(dists, targets, device)
 
-    print("accuracy: {:.3f}%, threshold: {:.2f}".format(accuracy, threshold))
+    print(f"accuracy: {accuracy:.3f}%, threshold: {threshold:.2f}")
 
 
 def save(model, epoch, save_dir, file_name):

@@ -54,12 +54,12 @@ def _assert_expected(output, name, prec):
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
-        print("Accepting updated output for {}:\n\n{}".format(filename, output))
+        print(f"Accepting updated output for {filename}:\n\n{output}")
         torch.save(output, expected_file)
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
         if binary_size > MAX_PICKLE_SIZE:
-            raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
+            raise RuntimeError(f"The output for {filename}, is larger than 50kb")
     else:
         expected = torch.load(expected_file)
         rtol = atol = prec
@@ -99,12 +99,12 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
     if not TEST_WITH_SLOW or skip:
         # TorchScript is not enabled, skip these tests
         msg = (
-            "The check_jit_scriptable test for {} was skipped. "
+            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
             "This test checks if the module's results in TorchScript "
             "match eager and that it can be exported. To run these "
             "tests make sure you set the environment variable "
             "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
-            "manually skipped.".format(nn_module.__class__.__name__)
+            "manually skipped."
         )
         warnings.warn(msg, RuntimeWarning)
         return None
@@ -300,11 +300,11 @@ def test_memory_efficient_densenet(model_fn):
 
     model1 = model_fn(num_classes=50, memory_efficient=True)
     params = model1.state_dict()
-    num_params = sum([x.numel() for x in model1.parameters()])
+    num_params = sum(x.numel() for x in model1.parameters())
     model1.eval()
     out1 = model1(x)
     out1.sum().backward()
-    num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
+    num_grad = sum(x.grad.numel() for x in model1.parameters() if x.grad is not None)
 
     model2 = model_fn(num_classes=50, memory_efficient=False)
     model2.load_state_dict(params)
@@ -451,8 +451,8 @@ def test_generalizedrcnn_transform_repr():
     # Check integrity of object __repr__ attribute
     expected_string = "GeneralizedRCNNTransform("
     _indent = "\n    "
-    expected_string += "{0}Normalize(mean={1}, std={2})".format(_indent, image_mean, image_std)
-    expected_string += "{0}Resize(min_size=({1},), max_size={2}, ".format(_indent, min_size, max_size)
+    expected_string += f"{_indent}Normalize(mean={image_mean}, std={image_std})"
+    expected_string += f"{_indent}Resize(min_size=({min_size},), max_size={max_size}, "
     expected_string += "mode='bilinear')\n)"
     assert t.__repr__() == expected_string
 
@@ -541,10 +541,10 @@ def test_segmentation_model(model_fn, dev):
 
     if not full_validation:
         msg = (
-            "The output of {} could only be partially validated. "
+            f"The output of {test_segmentation_model.__name__} could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
-            "significant changes to the codebase.".format(test_segmentation_model.__name__)
+            "significant changes to the codebase."
         )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
@@ -638,10 +638,10 @@ def test_detection_model(model_fn, dev):
 
     if not full_validation:
         msg = (
-            "The output of {} could only be partially validated. "
+            f"The output of {test_detection_model.__name__} could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
-            "significant changes to the codebase.".format(test_detection_model.__name__)
+            "significant changes to the codebase."
         )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)

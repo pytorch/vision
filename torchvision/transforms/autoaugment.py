@@ -76,7 +76,7 @@ def _apply_op(
     elif op_name == "Identity":
         pass
     else:
-        raise ValueError("The provided operator {} is not recognized.".format(op_name))
+        raise ValueError(f"The provided operator {op_name} is not recognized.")
     return img
 
 
@@ -208,7 +208,7 @@ class AutoAugment(torch.nn.Module):
                 (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
             ]
         else:
-            raise ValueError("The provided policy {} is not recognized.".format(policy))
+            raise ValueError(f"The provided policy {policy} is not recognized.")
 
     def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
@@ -270,7 +270,7 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + "(policy={}, fill={})".format(self.policy, self.fill)
+        return self.__class__.__name__ + f"(policy={self.policy}, fill={self.fill})"
 
 
 class RandAugment(torch.nn.Module):

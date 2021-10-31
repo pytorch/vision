@@ -24,7 +24,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{value:.3f}"))
 
-    header = "Epoch: [{}]".format(epoch)
+    header = f"Epoch: [{epoch}]"
     for video, target in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         video, target = video.to(device), target.to(device)
@@ -122,12 +122,12 @@ def main(args):
     transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
-        print("Loading dataset_train from {}".format(cache_path))
+        print(f"Loading dataset_train from {cache_path}")
         dataset, _ = torch.load(cache_path)
         dataset.transform = transform_train
     else:
         if args.distributed:
-            print("It is recommended to pre-compute the dataset cache " "on a single-gpu first, as it will be faster")
+            print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
         dataset = torchvision.datasets.Kinetics400(
             traindir,
             frames_per_clip=args.clip_len,
@@ -140,7 +140,7 @@ def main(args):
             ),
         )
         if args.cache_dataset:
-            print("Saving dataset_train to {}".format(cache_path))
+            print(f"Saving dataset_train to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
 
@@ -152,12 +152,12 @@ def main(args):
     transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
-        print("Loading dataset_test from {}".format(cache_path))
+        print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
         dataset_test.transform = transform_test
     else:
         if args.distributed:
-            print("It is recommended to pre-compute the dataset cache " "on a single-gpu first, as it will be faster")
+            print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
         dataset_test = torchvision.datasets.Kinetics400(
             valdir,
             frames_per_clip=args.clip_len,
@@ -170,7 +170,7 @@ def main(args):
             ),
         )
         if args.cache_dataset:
-            print("Saving dataset_test to {}".format(cache_path))
+            print(f"Saving dataset_test to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
 
@@ -232,8 +232,7 @@ def main(args):
             )
         else:
             raise RuntimeError(
-                "Invalid warmup lr method '{}'. Only linear and constant "
-                "are supported.".format(args.lr_warmup_method)
+                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant are supported."
             )
 
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
@@ -275,12 +274,12 @@ def main(args):
                 "epoch": epoch,
                 "args": args,
             }
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 def parse_args():

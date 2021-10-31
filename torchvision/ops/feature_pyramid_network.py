@@ -4,6 +4,8 @@ from typing import Tuple, List, Dict, Optional
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from ..utils import _log_api_usage_once
+
 
 class ExtraFPNBlock(nn.Module):
     """
@@ -74,7 +76,8 @@ class FeaturePyramidNetwork(nn.Module):
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
     ):
-        super(FeaturePyramidNetwork, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:
@@ -180,7 +183,7 @@ class LastLevelP6P7(ExtraFPNBlock):
     """
 
     def __init__(self, in_channels: int, out_channels: int):
-        super(LastLevelP6P7, self).__init__()
+        super().__init__()
         self.p6 = nn.Conv2d(in_channels, out_channels, 3, 2, 1)
         self.p7 = nn.Conv2d(out_channels, out_channels, 3, 2, 1)
         for module in [self.p6, self.p7]:

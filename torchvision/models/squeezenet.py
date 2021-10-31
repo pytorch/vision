@@ -17,7 +17,7 @@ model_urls = {
 
 class Fire(nn.Module):
     def __init__(self, inplanes: int, squeeze_planes: int, expand1x1_planes: int, expand3x3_planes: int) -> None:
-        super(Fire, self).__init__()
+        super().__init__()
         self.inplanes = inplanes
         self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
         self.squeeze_activation = nn.ReLU(inplace=True)
@@ -35,7 +35,7 @@ class Fire(nn.Module):
 
 class SqueezeNet(nn.Module):
     def __init__(self, version: str = "1_0", num_classes: int = 1000, dropout: float = 0.5) -> None:
-        super(SqueezeNet, self).__init__()
+        super().__init__()
         _log_api_usage_once(self)
         self.num_classes = num_classes
         if version == "1_0":
@@ -74,7 +74,7 @@ class SqueezeNet(nn.Module):
             # FIXME: Is this needed? SqueezeNet should only be called from the
             # FIXME: squeezenet1_x() functions
             # FIXME: This checking is not done for the other models
-            raise ValueError("Unsupported SqueezeNet version {version}:" "1_0 or 1_1 expected".format(version=version))
+            raise ValueError(f"Unsupported SqueezeNet version {version}: 1_0 or 1_1 expected")
 
         # Final convolution is initialized differently from the rest
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)

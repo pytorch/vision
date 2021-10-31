@@ -37,7 +37,7 @@ class AnchorGenerator(nn.Module):
         sizes=((128, 256, 512),),
         aspect_ratios=((0.5, 1.0, 2.0),),
     ):
-        super(AnchorGenerator, self).__init__()
+        super().__init__()
 
         if not isinstance(sizes[0], (list, tuple)):
             # TODO change this
@@ -216,7 +216,8 @@ class DefaultBoxGenerator(nn.Module):
         for k, f_k in enumerate(grid_sizes):
             # Now add the default boxes for each width-height pair
             if self.steps is not None:
-                x_f_k, y_f_k = [img_shape / self.steps[k] for img_shape in image_size]
+                x_f_k = image_size[0] / self.steps[k]
+                y_f_k = image_size[1] / self.steps[k]
             else:
                 y_f_k, x_f_k = f_k
 

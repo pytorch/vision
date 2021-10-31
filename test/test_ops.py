@@ -557,8 +557,10 @@ class TestNMS:
         keep16 = ops.nms(boxes.to(torch.float16), scores.to(torch.float16), iou_thres)
         assert_equal(keep32, keep16)
 
-    def test_batched_nms_implementations(self):
+    @pytest.mark.parametrize("seed", range(10))
+    def test_batched_nms_implementations(self, seed):
         """Make sure that both implementations of batched_nms yield identical results"""
+        torch.random.manual_seed(seed)
 
         num_boxes = 1000
         iou_threshold = 0.9
@@ -711,7 +713,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, mask, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg="\nres:\n{}\nexpected:\n{}".format(res, expected)
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
         )
 
         # no modulation test
@@ -719,7 +721,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, None, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg="\nres:\n{}\nexpected:\n{}".format(res, expected)
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
         )
 
     def test_wrong_sizes(self):
