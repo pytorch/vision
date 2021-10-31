@@ -115,9 +115,14 @@ def test_random(func, method, device, channels, fn_kwargs, match_kwargs):
     _test_op(func, method, device, channels, fn_kwargs, fn_kwargs, **match_kwargs)
 
 
+@pytest.mark.parametrize("seed", range(10))
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("channels", [1, 3])
 class TestColorJitter:
+    @pytest.fixture(autouse=True)
+    def set_random_seed(self, seed):
+        torch.random.manual_seed(seed)
+
     @pytest.mark.parametrize("brightness", [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]])
     def test_color_jitter_brightness(self, brightness, device, channels):
         tol = 1.0 + 1e-10
@@ -366,7 +371,7 @@ def test_x_crop_save(method, tmpdir):
         ]
     )
     scripted_fn = torch.jit.script(fn)
-    scripted_fn.save(os.path.join(tmpdir, "t_op_list_{}.pt".format(method)))
+    scripted_fn.save(os.path.join(tmpdir, f"t_op_list_{method}.pt"))
 
 
 class TestResize:
@@ -811,7 +816,7 @@ def test_compose(device):
     transformed_tensor = transforms(tensor)
     torch.manual_seed(12)
     transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+    assert_equal(transformed_tensor, transformed_tensor_script, msg=f"{transforms}")
 
     t = T.Compose(
         [
@@ -849,7 +854,7 @@ def test_random_apply(device):
     transformed_tensor = transforms(tensor)
     torch.manual_seed(12)
     transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script, msg="{}".format(transforms))
+    assert_equal(transformed_tensor, transformed_tensor_script, msg=f"{transforms}")
 
     if device == "cpu":
         # Can't check this twice, otherwise

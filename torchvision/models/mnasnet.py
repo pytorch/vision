@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 __all__ = ["MNASNet", "mnasnet0_5", "mnasnet0_75", "mnasnet1_0", "mnasnet1_3"]
 
@@ -25,7 +26,7 @@ class _InvertedResidual(nn.Module):
     def __init__(
         self, in_ch: int, out_ch: int, kernel_size: int, stride: int, expansion_factor: int, bn_momentum: float = 0.1
     ) -> None:
-        super(_InvertedResidual, self).__init__()
+        super().__init__()
         assert stride in [1, 2]
         assert kernel_size in [3, 5]
         mid_ch = in_ch * expansion_factor
@@ -96,7 +97,8 @@ class MNASNet(torch.nn.Module):
     _version = 2
 
     def __init__(self, alpha: float, num_classes: int = 1000, dropout: float = 0.2) -> None:
-        super(MNASNet, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         assert alpha > 0.0
         self.alpha = alpha
         self.num_classes = num_classes
@@ -191,14 +193,14 @@ class MNASNet(torch.nn.Module):
                 UserWarning,
             )
 
-        super(MNASNet, self)._load_from_state_dict(
+        super()._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
         )
 
 
 def _load_pretrained(model_name: str, model: nn.Module, progress: bool) -> None:
     if model_name not in _MODEL_URLS or _MODEL_URLS[model_name] is None:
-        raise ValueError("No checkpoint is available for model type {}".format(model_name))
+        raise ValueError(f"No checkpoint is available for model type {model_name}")
     checkpoint_url = _MODEL_URLS[model_name]
     model.load_state_dict(load_state_dict_from_url(checkpoint_url, progress=progress))
 

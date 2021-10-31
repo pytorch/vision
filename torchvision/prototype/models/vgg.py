@@ -2,6 +2,8 @@ import warnings
 from functools import partial
 from typing import Any, Optional
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ...models.vgg import VGG, make_layers, cfgs
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
@@ -38,10 +40,7 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, weights: Optional[Weights], prog
     return model
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-}
+_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 class VGG11Weights(Weights):

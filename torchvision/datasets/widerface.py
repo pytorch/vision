@@ -62,7 +62,7 @@ class WIDERFace(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(WIDERFace, self).__init__(
+        super().__init__(
             root=os.path.join(root, self.BASE_FOLDER), transform=transform, target_transform=target_transform
         )
         # check arguments
@@ -72,9 +72,7 @@ class WIDERFace(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError(
-                "Dataset not found or corrupted. " + "You can use download=True to download and prepare it"
-            )
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download and prepare it")
 
         self.img_info: List[Dict[str, Union[str, Dict[str, torch.Tensor]]]] = []
         if self.split in ("train", "val"):
@@ -115,7 +113,7 @@ class WIDERFace(VisionDataset):
         filename = "wider_face_train_bbx_gt.txt" if self.split == "train" else "wider_face_val_bbx_gt.txt"
         filepath = os.path.join(self.root, "wider_face_split", filename)
 
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             lines = f.readlines()
             file_name_line, num_boxes_line, box_annotation_line = True, False, False
             num_boxes, box_counter = 0, 0
@@ -157,12 +155,12 @@ class WIDERFace(VisionDataset):
                         box_counter = 0
                         labels.clear()
                 else:
-                    raise RuntimeError("Error parsing annotation file {}".format(filepath))
+                    raise RuntimeError(f"Error parsing annotation file {filepath}")
 
     def parse_test_annotations_file(self) -> None:
         filepath = os.path.join(self.root, "wider_face_split", "wider_face_test_filelist.txt")
         filepath = abspath(expanduser(filepath))
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             lines = f.readlines()
             for line in lines:
                 line = line.rstrip()

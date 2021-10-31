@@ -24,6 +24,7 @@ _register_custom_op()
 
 
 __all__ = [
+    "masks_to_boxes",
     "deform_conv2d",
     "DeformConv2d",
     "nms",

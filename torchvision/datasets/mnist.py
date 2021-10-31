@@ -3,6 +3,7 @@ import os
 import os.path
 import shutil
 import string
+import sys
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.error import URLError
@@ -87,7 +88,7 @@ class MNIST(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(MNIST, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.train = train  # training set or test set
 
         if self._check_legacy_exist():
@@ -98,7 +99,7 @@ class MNIST(VisionDataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError("Dataset not found." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         self.data, self.targets = self._load_data()
 
@@ -180,21 +181,22 @@ class MNIST(VisionDataset):
         # download files
         for filename, md5 in self.resources:
             for mirror in self.mirrors:
-                url = "{}{}".format(mirror, filename)
+                url = f"{mirror}{filename}"
                 try:
-                    print("Downloading {}".format(url))
+                    print(f"Downloading {url}")
                     download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
                 except URLError as error:
-                    print("Failed to download (trying next):\n{}".format(error))
+                    print(f"Failed to download (trying next):\n{error}")
                     continue
                 finally:
                     print()
                 break
             else:
-                raise RuntimeError("Error downloading {}".format(filename))
+                raise RuntimeError(f"Error downloading {filename}")
 
     def extra_repr(self) -> str:
-        return "Split: {}".format("Train" if self.train is True else "Test")
+        split = "Train" if self.train is True else "Test"
+        return f"Split: {split}"
 
 
 class FashionMNIST(MNIST):
@@ -292,16 +294,16 @@ class EMNIST(MNIST):
         self.split = verify_str_arg(split, "split", self.splits)
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
-        super(EMNIST, self).__init__(root, **kwargs)
+        super().__init__(root, **kwargs)
         self.classes = self.classes_split_dict[self.split]
 
     @staticmethod
     def _training_file(split) -> str:
-        return "training_{}.pt".format(split)
+        return f"training_{split}.pt"
 
     @staticmethod
     def _test_file(split) -> str:
-        return "test_{}.pt".format(split)
+        return f"test_{split}.pt"
 
     @property
     def _file_prefix(self) -> str:
@@ -423,7 +425,7 @@ class QMNIST(MNIST):
         self.data_file = what + ".pt"
         self.training_file = self.data_file
         self.test_file = self.data_file
-        super(QMNIST, self).__init__(root, train, **kwargs)
+        super().__init__(root, train, **kwargs)
 
     @property
     def images_file(self) -> str:
@@ -481,7 +483,7 @@ class QMNIST(MNIST):
         return img, target
 
     def extra_repr(self) -> str:
-        return "Split: {}".format(self.what)
+        return f"Split: {self.what}"
 
 
 def get_int(b: bytes) -> int:
@@ -489,12 +491,12 @@ def get_int(b: bytes) -> int:
 
 
 SN3_PASCALVINCENT_TYPEMAP = {
-    8: (torch.uint8, np.uint8, np.uint8),
-    9: (torch.int8, np.int8, np.int8),
-    11: (torch.int16, np.dtype(">i2"), "i2"),
-    12: (torch.int32, np.dtype(">i4"), "i4"),
-    13: (torch.float32, np.dtype(">f4"), "f4"),
-    14: (torch.float64, np.dtype(">f8"), "f8"),
+    8: torch.uint8,
+    9: torch.int8,
+    11: torch.int16,
+    12: torch.int32,
+    13: torch.float32,
+    14: torch.float64,
 }
 
 
@@ -511,11 +513,19 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     ty = magic // 256
     assert 1 <= nd <= 3
     assert 8 <= ty <= 14
-    m = SN3_PASCALVINCENT_TYPEMAP[ty]
+    torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
-    parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))
+
+    num_bytes_per_value = torch.iinfo(torch_type).bits // 8
+    # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
+    # we need to reverse the bytes before we can read them with torch.frombuffer().
+    needs_byte_reversal = sys.byteorder == "little" and num_bytes_per_value > 1
+    parsed = torch.frombuffer(bytearray(data), dtype=torch_type, offset=(4 * (nd + 1)))
+    if needs_byte_reversal:
+        parsed = parsed.flip(0)
+
     assert parsed.shape[0] == np.prod(s) or not strict
-    return torch.from_numpy(parsed.astype(m[2])).view(*s)
+    return parsed.view(*s)
 
 
 def read_label_file(path: str) -> torch.Tensor:

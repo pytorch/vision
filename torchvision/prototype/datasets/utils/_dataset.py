@@ -2,6 +2,7 @@ import abc
 import csv
 import enum
 import io
+import os
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
@@ -12,7 +13,8 @@ from torchvision.prototype.datasets.utils._internal import (
     sequence_to_str,
 )
 
-from ._internal import FrozenBunch, make_repr
+from .._home import use_sharded_dataset
+from ._internal import FrozenBunch, make_repr, BUILTIN_DIR, _make_sharded_datapipe
 from ._resource import OnlineResource
 
 
@@ -42,8 +44,9 @@ class DatasetInfo:
         self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
-            categories = []
-        elif isinstance(categories, int):
+            path = BUILTIN_DIR / f"{self.name}.categories"
+            categories = path if path.exists() else []
+        if isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
             path = pathlib.Path(categories).expanduser().resolve()
@@ -70,7 +73,7 @@ class DatasetInfo:
 
     @staticmethod
     def read_categories_file(path: pathlib.Path) -> List[List[str]]:
-        with open(path, "r", newline="") as file:
+        with open(path, newline="") as file:
             return [row for row in csv.reader(file)]
 
     @property
@@ -112,10 +115,16 @@ class DatasetInfo:
 
 
 class Dataset(abc.ABC):
-    @property
+    def __init__(self) -> None:
+        self._info = self._make_info()
+
     @abc.abstractmethod
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         pass
+
+    @property
+    def info(self) -> DatasetInfo:
+        return self._info
 
     @property
     def name(self) -> str:
@@ -143,6 +152,9 @@ class Dataset(abc.ABC):
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
+    def supports_sharded(self) -> bool:
+        return False
+
     def to_datapipe(
         self,
         root: Union[str, pathlib.Path],
@@ -153,6 +165,10 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
+        if use_sharded_dataset() and self.supports_sharded():
+            root = os.path.join(root, *config.values())
+            dataset_size = self.info.extra["sizes"][config]
+            return _make_sharded_datapipe(root, dataset_size)
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 

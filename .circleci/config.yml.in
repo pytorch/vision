@@ -187,6 +187,10 @@ jobs:
             pip install --user --progress-bar off pre-commit
             pre-commit install-hooks
       - run: pre-commit run --all-files
+      - run:
+          name: Required lint modifications
+          when: on_fail
+          command: git --no-pager diff
 
   python_type_check:
     docker:
@@ -941,7 +945,8 @@ jobs:
           name: Build docs
           command: |
             set -ex
-            tag=${CIRCLE_TAG:1:5}
+            # turn v1.12.0rc3 into 1.12.0
+            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9.]*\).*/\1/')
             VERSION=${tag:-main}
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
