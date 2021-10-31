@@ -111,7 +111,7 @@ class Cityscapes(VisionDataset):
         target_transform: Optional[Callable] = None,
         transforms: Optional[Callable] = None,
     ) -> None:
-        super(Cityscapes, self).__init__(root, transforms, transform, target_transform)
+        super().__init__(root, transforms, transform, target_transform)
         self.mode = "gtFine" if mode == "fine" else "gtCoarse"
         self.images_dir = os.path.join(self.root, "leftImg8bit", split)
         self.targets_dir = os.path.join(self.root, self.mode, split)
@@ -125,7 +125,7 @@ class Cityscapes(VisionDataset):
             valid_modes = ("train", "test", "val")
         else:
             valid_modes = ("train", "train_extra", "val")
-        msg = "Unknown value '{}' for argument split if mode is '{}'. " "Valid values are {{{}}}."
+        msg = "Unknown value '{}' for argument split if mode is '{}'. Valid values are {{{}}}."
         msg = msg.format(split, mode, iterable_to_str(valid_modes))
         verify_str_arg(split, "split", valid_modes, msg)
 
@@ -139,14 +139,14 @@ class Cityscapes(VisionDataset):
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
 
             if split == "train_extra":
-                image_dir_zip = os.path.join(self.root, "leftImg8bit{}".format("_trainextra.zip"))
+                image_dir_zip = os.path.join(self.root, "leftImg8bit_trainextra.zip")
             else:
-                image_dir_zip = os.path.join(self.root, "leftImg8bit{}".format("_trainvaltest.zip"))
+                image_dir_zip = os.path.join(self.root, "leftImg8bit_trainvaltest.zip")
 
             if self.mode == "gtFine":
-                target_dir_zip = os.path.join(self.root, "{}{}".format(self.mode, "_trainvaltest.zip"))
+                target_dir_zip = os.path.join(self.root, f"{self.mode}_trainvaltest.zip")
             elif self.mode == "gtCoarse":
-                target_dir_zip = os.path.join(self.root, "{}{}".format(self.mode, ".zip"))
+                target_dir_zip = os.path.join(self.root, f"{self.mode}.zip")
 
             if os.path.isfile(image_dir_zip) and os.path.isfile(target_dir_zip):
                 extract_archive(from_path=image_dir_zip, to_path=self.root)
@@ -206,16 +206,16 @@ class Cityscapes(VisionDataset):
         return "\n".join(lines).format(**self.__dict__)
 
     def _load_json(self, path: str) -> Dict[str, Any]:
-        with open(path, "r") as file:
+        with open(path) as file:
             data = json.load(file)
         return data
 
     def _get_target_suffix(self, mode: str, target_type: str) -> str:
         if target_type == "instance":
-            return "{}_instanceIds.png".format(mode)
+            return f"{mode}_instanceIds.png"
         elif target_type == "semantic":
-            return "{}_labelIds.png".format(mode)
+            return f"{mode}_labelIds.png"
         elif target_type == "color":
-            return "{}_color.png".format(mode)
+            return f"{mode}_color.png"
         else:
-            return "{}_polygons.json".format(mode)
+            return f"{mode}_polygons.json"

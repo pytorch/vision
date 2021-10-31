@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..utils import _log_api_usage_once
 
 
 __all__ = ["Inception3", "inception_v3", "InceptionOutputs", "_InceptionOutputs"]
@@ -72,7 +73,8 @@ class Inception3(nn.Module):
         init_weights: Optional[bool] = None,
         dropout: float = 0.5,
     ) -> None:
-        super(Inception3, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         if inception_blocks is None:
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux]
         if init_weights is None:
@@ -212,7 +214,7 @@ class InceptionA(nn.Module):
     def __init__(
         self, in_channels: int, pool_features: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InceptionA, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1x1 = conv_block(in_channels, 64, kernel_size=1)
@@ -249,7 +251,7 @@ class InceptionA(nn.Module):
 
 class InceptionB(nn.Module):
     def __init__(self, in_channels: int, conv_block: Optional[Callable[..., nn.Module]] = None) -> None:
-        super(InceptionB, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch3x3 = conv_block(in_channels, 384, kernel_size=3, stride=2)
@@ -279,7 +281,7 @@ class InceptionC(nn.Module):
     def __init__(
         self, in_channels: int, channels_7x7: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InceptionC, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1x1 = conv_block(in_channels, 192, kernel_size=1)
@@ -323,7 +325,7 @@ class InceptionC(nn.Module):
 
 class InceptionD(nn.Module):
     def __init__(self, in_channels: int, conv_block: Optional[Callable[..., nn.Module]] = None) -> None:
-        super(InceptionD, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch3x3_1 = conv_block(in_channels, 192, kernel_size=1)
@@ -354,7 +356,7 @@ class InceptionD(nn.Module):
 
 class InceptionE(nn.Module):
     def __init__(self, in_channels: int, conv_block: Optional[Callable[..., nn.Module]] = None) -> None:
-        super(InceptionE, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1x1 = conv_block(in_channels, 320, kernel_size=1)
@@ -403,7 +405,7 @@ class InceptionAux(nn.Module):
     def __init__(
         self, in_channels: int, num_classes: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InceptionAux, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.conv0 = conv_block(in_channels, 128, kernel_size=1)
@@ -432,7 +434,7 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, **kwargs: Any) -> None:
-        super(BasicConv2d, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
 

@@ -5,6 +5,7 @@ import torchvision
 from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
 
+from ..utils import _log_api_usage_once
 from .roi_align import roi_align
 
 
@@ -42,7 +43,7 @@ def initLevelMapper(
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
-class LevelMapper(object):
+class LevelMapper:
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
 
@@ -129,7 +130,8 @@ class MultiScaleRoIAlign(nn.Module):
         canonical_scale: int = 224,
         canonical_level: int = 4,
     ):
-        super(MultiScaleRoIAlign, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
         self.featmap_names = featmap_names

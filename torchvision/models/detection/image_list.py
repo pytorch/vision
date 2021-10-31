@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 
-class ImageList(object):
+class ImageList:
     """
     Structure that holds a list of images (of possibly
     varying sizes) as a single tensor.

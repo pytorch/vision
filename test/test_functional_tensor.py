@@ -111,9 +111,9 @@ class TestRotate:
         if out_tensor.dtype != torch.uint8:
             out_tensor = out_tensor.to(torch.uint8)
 
-        assert out_tensor.shape == out_pil_tensor.shape, (
-            f"{(height, width, NEAREST, dt, angle, expand, center)}: " f"{out_tensor.shape} vs {out_pil_tensor.shape}"
-        )
+        assert (
+            out_tensor.shape == out_pil_tensor.shape
+        ), f"{(height, width, NEAREST, dt, angle, expand, center)}: {out_tensor.shape} vs {out_pil_tensor.shape}"
 
         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
@@ -177,11 +177,11 @@ class TestAffine:
         # 1) identity map
         out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST)
 
-        assert_equal(tensor, out_tensor, msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
+        assert_equal(tensor, out_tensor, msg=f"{out_tensor[0, :5, :5]} vs {tensor[0, :5, :5]}")
         out_tensor = self.scripted_affine(
             tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
         )
-        assert_equal(tensor, out_tensor, msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
+        assert_equal(tensor, out_tensor, msg=f"{out_tensor[0, :5, :5]} vs {tensor[0, :5, :5]}")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("height, width", [(26, 26)])
@@ -225,9 +225,7 @@ class TestAffine:
         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
         # Tolerance : less than 6% of different pixels
-        assert ratio_diff_pixels < 0.06, "{}\n{} vs \n{}".format(
-            ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-        )
+        assert ratio_diff_pixels < 0.06
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("height, width", [(32, 26)])
@@ -258,9 +256,7 @@ class TestAffine:
         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
         # Tolerance : less than 3% of different pixels
-        assert ratio_diff_pixels < 0.03, "{}: {}\n{} vs \n{}".format(
-            angle, ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-        )
+        assert ratio_diff_pixels < 0.03
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("height, width", [(26, 26), (32, 26)])
@@ -346,9 +342,7 @@ class TestAffine:
         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
         # Tolerance : less than 5% (cpu), 6% (cuda) of different pixels
         tol = 0.06 if device == "cuda" else 0.05
-        assert ratio_diff_pixels < tol, "{}: {}\n{} vs \n{}".format(
-            (NEAREST, a, t, s, sh, f), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-        )
+        assert ratio_diff_pixels < tol
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dt", ALL_DTYPES)
@@ -936,7 +930,7 @@ def test_pad(device, dt, pad, config):
     if pad_tensor_8b.dtype != torch.uint8:
         pad_tensor_8b = pad_tensor_8b.to(torch.uint8)
 
-    _assert_equal_tensor_to_pil(pad_tensor_8b, pad_pil_img, msg="{}, {}".format(pad, config))
+    _assert_equal_tensor_to_pil(pad_tensor_8b, pad_pil_img, msg=f"{pad}, {config}")
 
     if isinstance(pad, int):
         script_pad = [
@@ -945,7 +939,7 @@ def test_pad(device, dt, pad, config):
     else:
         script_pad = pad
     pad_tensor_script = script_fn(tensor, script_pad, **config)
-    assert_equal(pad_tensor, pad_tensor_script, msg="{}, {}".format(pad, config))
+    assert_equal(pad_tensor, pad_tensor_script, msg=f"{pad}, {config}")
 
     _test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **config)
 
@@ -958,7 +952,7 @@ def test_resized_crop(device, mode):
     tensor, _ = _create_data(26, 36, device=device)
 
     out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode)
-    assert_equal(tensor, out_tensor, msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
+    assert_equal(tensor, out_tensor, msg=f"{out_tensor[0, :5, :5]} vs {tensor[0, :5, :5]}")
 
     # 2) resize by half and crop a TL corner
     tensor, _ = _create_data(26, 36, device=device)
@@ -967,7 +961,7 @@ def test_resized_crop(device, mode):
     assert_equal(
         expected_out_tensor,
         out_tensor,
-        msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10]),
+        msg=f"{expected_out_tensor[0, :10, :10]} vs {out_tensor[0, :10, :10]}",
     )
 
     batch_tensors = _create_data_batch(26, 36, num_samples=4, device=device)
@@ -1126,7 +1120,7 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     _ksize = (ksize, ksize) if isinstance(ksize, int) else ksize
     _sigma = sigma[0] if sigma is not None else None
     shape = tensor.shape
-    gt_key = "{}_{}_{}__{}_{}_{}".format(shape[-2], shape[-1], shape[-3], _ksize[0], _ksize[1], _sigma)
+    gt_key = f"{shape[-2]}_{shape[-1]}_{shape[-3]}__{_ksize[0]}_{_ksize[1]}_{_sigma}"
     if gt_key not in true_cv2_results:
         return
 
@@ -1135,7 +1129,7 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     )
 
     out = fn(tensor, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg="{}, {}".format(ksize, sigma))
+    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
