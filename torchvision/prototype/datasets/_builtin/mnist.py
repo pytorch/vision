@@ -56,8 +56,17 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
         self.stop = stop
 
     @staticmethod
-    def _decode(bytes: bytes) -> int:
-        return int(codecs.encode(bytes, "hex"), 16)
+    def _decode(input: bytes) -> int:
+        return int(codecs.encode(input, "hex"), 16)
+
+    @staticmethod
+    def _to_tensor(chunk: bytes, *, dtype: torch.dtype, shape: List[int], reverse_bytes: bool) -> torch.Tensor:
+        if not reverse_bytes:
+            return torch.frombuffer(chunk, dtype=dtype).reshape(shape)
+
+        chunk = bytearray(chunk)
+        chunk.reverse()
+        return torch.frombuffer(chunk, dtype=dtype).flip(0).reshape(shape)
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
@@ -71,7 +80,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
             num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
             # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
             # we need to reverse the bytes before we can read them with torch.frombuffer().
-            needs_byte_reversal = sys.byteorder == "little" and num_bytes_per_value > 1
+            reverse_bytes = sys.byteorder == "little" and num_bytes_per_value > 1
             chunk_size = (cast(int, prod(shape)) if shape else 1) * num_bytes_per_value
 
             start = self.start or 0
@@ -79,13 +88,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
             file.seek(start * chunk_size, 1)
             for _ in range(stop - start):
-                chunk = file.read(chunk_size)
-                if not needs_byte_reversal:
-                    yield torch.frombuffer(chunk, dtype=dtype).reshape(shape)
-
-                chunk = bytearray(chunk)
-                chunk.reverse()
-                yield torch.frombuffer(chunk, dtype=dtype).flip(0).reshape(shape)
+                yield self._to_tensor(file.read(chunk_size), dtype=dtype, shape=shape, reverse_bytes=reverse_bytes)
 
 
 class _MNISTBase(Dataset):
