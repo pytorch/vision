@@ -80,14 +80,13 @@ class ucf101(Dataset):
 
         label = annotations_d[1]
         _path, file_handle = file_d
-
-        if decoder.__name__ == "av_kf":
-            pass
-        else:
-            # by default return just a file handle
-            return {"path": _path, "file": file_handle, "target":label}
+        return {"path": _path, "file": file_handle, "target":label}
         
+    def _filtername(self, data, *, tgt):
+        return Path(data[0]).name == tgt
 
+    def _getname(self, data):
+        return Path(data[0]).name
 
     def _make_datapipe(
         self,
@@ -101,12 +100,11 @@ class ucf101(Dataset):
         files = resource_dps[1]
 
         annotations_dp = ZipArchiveReader(annotations)
-        annotations_dp = Filter(annotations_dp, lambda x: Path(x[0]).name == f"{config.split}list0{config.fold}.txt")
+        annotations_dp = Filter(annotations_dp, self._filtername, fn_kwargs=dict(tgt=f"{config.split}list0{config.fold}.txt"))
         annotations_dp = CSVParser(annotations_dp, delimiter=" ")
         # COMMENT FOR TESTING
         # annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        
         files_dp = RarArchiveReader(files)
-        dp = KeyZipper(annotations_dp, files_dp, lambda x: Path(x[0]).name, lambda y: Path(y[0]).name)        
+        dp = KeyZipper(annotations_dp, files_dp, self._getname, self._getname)        
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))

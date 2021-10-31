@@ -48,7 +48,7 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
-    "RarArchiveReader,
+    "RarArchiveReader",
 ]
 
 K = TypeVar("K")
