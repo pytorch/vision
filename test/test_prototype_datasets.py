@@ -1,4 +1,3 @@
-import re
 import unittest.mock
 
 import pytest
@@ -23,7 +22,7 @@ class TestFrozenMapping:
         FrozenMapping(*args, **kwargs)
 
     def test_unhashable_items(self):
-        with pytest.raises(TypeError, match=re.escape("unhashable type")):
+        with pytest.raises(TypeError, match="unhashable type"):
             FrozenMapping(foo=[])
 
     def test_getitem(self):
@@ -88,7 +87,7 @@ class TestFrozenBunch:
             assert getattr(config, key) == value
 
     def test_getattr_unknown(self):
-        with pytest.raises(AttributeError, match=re.escape("no attribute 'unknown'")):
+        with pytest.raises(AttributeError, match="no attribute 'unknown'"):
             datasets.utils.DatasetConfig().unknown
 
     def test_immutable_setattr(self):
@@ -138,7 +137,7 @@ class TestDatasetInfo:
         assert info.default_config.split == "train"
 
     def test_valid_options_split_but_no_train(self):
-        with pytest.raises(ValueError, match=re.escape("'train' has to be a valid argument for option 'split'")):
+        with pytest.raises(ValueError, match="'train' has to be a valid argument for option 'split'"):
             make_minimal_dataset_info(valid_options=dict(split=("test",)))
 
     @pytest.mark.parametrize(
@@ -149,7 +148,7 @@ class TestDatasetInfo:
         ],
     )
     def test_make_config_invalid_inputs(self, info, options, expected_error_msg):
-        with pytest.raises(ValueError, match=re.escape(expected_error_msg)):
+        with pytest.raises(ValueError, match=expected_error_msg):
             info.make_config(**options)
 
     def test_repr(self, info):
