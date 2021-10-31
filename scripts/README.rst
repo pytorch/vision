@@ -20,4 +20,4 @@ where
 
 ``fork_main_branch`` (optional) is the name of the main branch on your fork(default="main").
 
-This script will create PRs corresponding to the commits in fbsync. Please review these, add the [FBCode->GH] prefix on the title and publish them. Most importantly, add the [FBCode->GH] prefix at the beginning of the merge message as well.
+This script will create PRs corresponding to the commits in fbsync. Please review these, add the [FBcode->GH] prefix on the title and publish them. Most importantly, add the [FBcode->GH] prefix at the beginning of the merge message as well.
