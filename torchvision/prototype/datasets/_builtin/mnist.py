@@ -308,7 +308,9 @@ class EMNIST(_MNISTBase):
         # index 39 (10 digits + 26 uppercase letters + 4th lower case letter - 1 for zero indexing)
         # in self.categories. Thus, we need to add 1 to the label to correct this.
         if config.image_set in ("Balanced", "By_Merge"):
-            data[1] += self._LABEL_OFFSETS.get(int(data[1]), 0)
+            image, label = data
+            label += self._LABEL_OFFSETS.get(int(label), 0)
+            data = (image, label)
         return super()._collate_and_decode(data, config=config, decoder=decoder)
 
     def _make_datapipe(
