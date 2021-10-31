@@ -274,7 +274,7 @@ jobs:
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Install test requirements
-          command: pip install --user --progress-bar=off pytest pytest-mock scipy
+          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
       - run:
           name: Run tests
           command: pytest test/test_prototype_*.py
