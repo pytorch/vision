@@ -35,18 +35,14 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
         weights = GoogLeNetWeights.ImageNet1K_TheCodezV1 if kwargs.pop("pretrained") else None
     weights = GoogLeNetWeights.verify(weights)
 
-    remove_aux_logits = False
+    original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
             kwargs["transform_input"] = True
-        if "aux_logits" not in kwargs:
-            kwargs["aux_logits"] = False
-        if kwargs["aux_logits"]:
+        if original_aux_logits:
             warnings.warn(
                 "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
             )
-        if not kwargs["aux_logits"]:
-            remove_aux_logits = True
         kwargs["aux_logits"] = True
         kwargs["init_weights"] = False
         kwargs["num_classes"] = len(weights.meta["categories"])
@@ -55,7 +51,7 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
 
     if weights is not None:
         model.load_state_dict(weights.state_dict(progress=progress))
-        if remove_aux_logits:
+        if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
