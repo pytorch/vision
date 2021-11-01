@@ -52,7 +52,7 @@ class Weights(Enum):
                 obj = cls.from_str(obj)
             elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
                 raise TypeError(
-                    f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
+                    f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
         return obj
 
@@ -106,7 +106,7 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
 
     if weights_class is None:
         raise ValueError(
-            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is " "correct."
+            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
     return weights_class.from_str(weight_name)

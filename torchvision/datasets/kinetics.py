@@ -175,7 +175,7 @@ class Kinetics(VisionDataset):
         split_url_filepath = path.join(file_list_path, path.basename(split_url))
         if not check_integrity(split_url_filepath):
             download_url(split_url, file_list_path)
-        list_video_urls = open(split_url_filepath, "r")
+        list_video_urls = open(split_url_filepath)
 
         if self.num_download_workers == 1:
             for line in list_video_urls.readlines():
@@ -309,7 +309,7 @@ class Kinetics400(Kinetics):
                 "Kinetics400. Please use Kinetics instead."
             )
 
-        super(Kinetics400, self).__init__(
+        super().__init__(
             root=root,
             frames_per_clip=frames_per_clip,
             _legacy=True,

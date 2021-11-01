@@ -36,9 +36,7 @@ class GroupedBatchSampler(BatchSampler):
 
     def __init__(self, sampler, group_ids, batch_size):
         if not isinstance(sampler, Sampler):
-            raise ValueError(
-                "sampler should be an instance of " "torch.utils.data.Sampler, but got sampler={}".format(sampler)
-            )
+            raise ValueError(f"sampler should be an instance of torch.utils.data.Sampler, but got sampler={sampler}")
         self.sampler = sampler
         self.group_ids = group_ids
         self.batch_size = batch_size
@@ -193,6 +191,6 @@ def create_aspect_ratio_groups(dataset, k=0):
     # count number of elements per group
     counts = np.unique(groups, return_counts=True)[1]
     fbins = [0] + bins + [np.inf]
-    print("Using {} as bins for aspect ratio quantization".format(fbins))
-    print("Count of instances per bin: {}".format(counts))
+    print(f"Using {fbins} as bins for aspect ratio quantization")
+    print(f"Count of instances per bin: {counts}")
     return groups

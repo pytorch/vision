@@ -14,6 +14,8 @@ from typing import Callable, List, Optional
 import torch
 from torch import Tensor
 
+from ..utils import _log_api_usage_once
+
 
 class Conv2d(torch.nn.Conv2d):
     def __init__(self, *args, **kwargs):
@@ -65,7 +67,8 @@ class FrozenBatchNorm2d(torch.nn.Module):
         if n is not None:
             warnings.warn("`n` argument is deprecated and has been renamed `num_features`", DeprecationWarning)
             num_features = n
-        super(FrozenBatchNorm2d, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         self.eps = eps
         self.register_buffer("weight", torch.ones(num_features))
         self.register_buffer("bias", torch.zeros(num_features))
@@ -86,7 +89,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         if num_batches_tracked_key in state_dict:
             del state_dict[num_batches_tracked_key]
 
-        super(FrozenBatchNorm2d, self)._load_from_state_dict(
+        super()._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
         )
 
@@ -138,6 +141,7 @@ class ConvNormActivation(torch.nn.Sequential):
         if activation_layer is not None:
             layers.append(activation_layer(inplace=inplace))
         super().__init__(*layers)
+        _log_api_usage_once(self)
         self.out_channels = out_channels
 
 
@@ -150,6 +154,7 @@ class SqueezeExcitation(torch.nn.Module):
         scale_activation: Callable[..., torch.nn.Module] = torch.nn.Sigmoid,
     ) -> None:
         super().__init__()
+        _log_api_usage_once(self)
         self.avgpool = torch.nn.AdaptiveAvgPool2d(1)
         self.fc1 = torch.nn.Conv2d(input_channels, squeeze_channels, 1)
         self.fc2 = torch.nn.Conv2d(squeeze_channels, input_channels, 1)

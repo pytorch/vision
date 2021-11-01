@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # PyTorch documentation build configuration file, created by
 # sphinx-quickstart on Fri Dec 23 13:31:47 2016.
@@ -143,6 +142,9 @@ html_css_files = [
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "PyTorchdoc"
+
+
+autosummary_generate = True
 
 
 # -- Options for LaTeX output ---------------------------------------------
