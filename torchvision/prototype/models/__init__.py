@@ -8,6 +8,7 @@ from .mobilenetv3 import *
 from .regnet import *
 from .resnet import *
 from .shufflenetv2 import *
+from .squeezenet import *
 from .vgg import *
 from . import detection
 from . import quantization
