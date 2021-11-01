@@ -161,12 +161,10 @@ class DeformConv2d(nn.Module):
         """
         Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): offsets to be applied for each position in the
-                convolution kernel.
-            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): masks to be applied for each position in the
-                convolution kernel.
+            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                offsets to be applied for each position in the convolution kernel.
+            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                masks to be applied for each position in the convolution kernel.
         """
         return deform_conv2d(
             input,
