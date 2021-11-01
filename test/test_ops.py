@@ -13,6 +13,8 @@ from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
+from torchvision.models.feature_extraction import create_feature_extractor
+from torchvision.models.feature_extraction import get_graph_node_names
 
 
 class RoIOpTester(ABC):
@@ -45,6 +47,20 @@ class RoIOpTester(ABC):
 
         tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_feature_extractor(self, device):
+        op_obj = self.make_obj().to(device=device)
+        return_nodes = get_graph_node_names(
+            op_obj,
+            tracer_kwargs={
+                "autowrap_modules": (
+                    math,
+                    ops,
+                )
+            },
+        )[1]
+        create_feature_extractor(op_obj, return_nodes=return_nodes)
 
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -92,6 +108,10 @@ class RoIOpTester(ABC):
         pass
 
     @abstractmethod
+    def make_obj(*args, **kwargs):
+        pass
+
+    @abstractmethod
     def get_script_fn(*args, **kwargs):
         pass
 
@@ -103,6 +123,9 @@ class RoIOpTester(ABC):
 class TestRoiPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, **kwargs):
+        return ops.RoIPool((pool_h, pool_w), spatial_scale)
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_pool)
@@ -139,10 +162,27 @@ class TestRoiPool(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_feature_extractor(self, device):
+        op_obj = self.make_obj(5, 5, spatial_scale=1).to(device=device)
+        return_nodes = get_graph_node_names(
+            op_obj,
+            tracer_kwargs={
+                "autowrap_modules": (
+                    math,
+                    ops,
+                )
+            },
+        )[1]
+        create_feature_extractor(op_obj, return_nodes=return_nodes)
+
 
 class TestPSRoIPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, **kwargs):
+        return ops.PSRoIPool((pool_h, pool_w), spatial_scale)
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_pool)
@@ -222,6 +262,11 @@ class TestRoIAlign(RoIOpTester):
         return ops.RoIAlign(
             (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
         )(x, rois)
+
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
+        return ops.RoIAlign(
+            (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
+        )
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_align)
@@ -374,6 +419,9 @@ class TestPSRoIAlign(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)(x, rois)
 
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, **kwargs):
+        return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
+
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_align)
         return lambda x: scriped(x, rois, pool_size)
@@ -422,12 +470,15 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 class TestMultiScaleRoIAlign:
+    def make_obj(fmap_names=["0"], output_size=(7, 7), sampling_ratio=2, **kwargs):
+        return ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+
     def test_msroialign_repr(self):
         fmap_names = ["0"]
         output_size = (7, 7)
         sampling_ratio = 2
         # Pass mock feature map names
-        t = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+        t = TestMultiScaleRoIAlign.make_obj(fmap_names, output_size, sampling_ratio)
 
         # Check integrity of object __repr__ attribute
         expected_string = (
@@ -435,6 +486,20 @@ class TestMultiScaleRoIAlign:
             f"sampling_ratio={sampling_ratio})"
         )
         assert repr(t) == expected_string
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_feature_extractor(self, device):
+        op_obj = TestMultiScaleRoIAlign.make_obj().to(device=device)
+        return_nodes = get_graph_node_names(
+            op_obj,
+            tracer_kwargs={
+                "autowrap_modules": (
+                    math,
+                    ops,
+                )
+            },
+        )[1]
+        create_feature_extractor(op_obj, return_nodes=return_nodes)
 
 
 class TestNMS:
@@ -691,6 +756,36 @@ class TestDeformConv:
 
         return x, weight, offset, mask, bias, stride, pad, dilation
 
+    def make_obj(
+        self, device, contiguous, batch_sz, dtype, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2
+    ):
+        _, _, _, _, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
+        layer = ops.DeformConv2d(
+            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups
+        )
+        return layer
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("contiguous", (True, False))
+    @pytest.mark.parametrize("batch_sz", (0, 33))
+    def test_feature_extractor(
+        self, device, contiguous, batch_sz, dtype=None, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2
+    ):
+        dtype = dtype or self.dtype
+        op_obj = self.make_obj(device, contiguous, batch_sz, dtype, in_channels, out_channels, kernel_size, groups).to(
+            device=device
+        )
+        return_nodes = get_graph_node_names(
+            op_obj,
+            tracer_kwargs={
+                "autowrap_modules": (
+                    math,
+                    ops,
+                )
+            },
+        )[1]
+        create_feature_extractor(op_obj, return_nodes=return_nodes)
+
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
@@ -703,9 +798,9 @@ class TestDeformConv:
         groups = 2
         tol = 2e-3 if dtype is torch.half else 1e-5
 
-        layer = ops.DeformConv2d(
-            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups
-        ).to(device=x.device, dtype=dtype)
+        layer = self.make_obj(device, contiguous, batch_sz, dtype, in_channels, out_channels, kernel_size, groups).to(
+            device=x.device, dtype=dtype
+        )
         res = layer(x, offset, mask)
 
         weight = layer.weight.data
@@ -1197,6 +1292,21 @@ class TestStochasticDepth:
             assert out.equal(x)
         elif p == 1:
             assert out.equal(torch.zeros_like(x))
+
+    @pytest.mark.parametrize("p", (0, 1))
+    @pytest.mark.parametrize("mode", ["batch", "row"])
+    def test_feature_extractor(self, p, mode):
+        op_obj = ops.StochasticDepth(p=p, mode=mode)
+        return_nodes = get_graph_node_names(
+            op_obj,
+            tracer_kwargs={
+                "autowrap_modules": (
+                    math,
+                    ops,
+                )
+            },
+        )[1]
+        create_feature_extractor(op_obj, return_nodes=return_nodes)
 
 
 class TestUtils:

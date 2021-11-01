@@ -1,3 +1,4 @@
+import math
 import re
 import warnings
 from collections import OrderedDict
@@ -6,6 +7,7 @@ from itertools import chain
 from typing import Dict, Callable, List, Union, Optional, Tuple
 
 import torch
+import torchvision
 from torch import fx
 from torch import nn
 from torch.fx.graph_module import _copy_attr
@@ -294,7 +296,12 @@ def create_feature_extractor(
     return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-    tracer_kwargs: Dict = {},
+    tracer_kwargs: Dict = {
+        "autowrap_modules": (
+            math,
+            torchvision.ops,
+        )
+    },
     suppress_diff_warning: bool = False,
 ) -> fx.GraphModule:
     """
