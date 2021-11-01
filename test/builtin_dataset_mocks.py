@@ -309,7 +309,7 @@ class CIFARFakedata:
     NUM_PIXELS = 32 * 32 * 3
 
     @classmethod
-    def _create_batch_file(cls, root, name, *, num_samples, num_categories, labels_key):
+    def _create_batch_file(cls, root, name, *, num_categories, labels_key, num_samples=1):
         content = {
             "data": make_tensor((num_samples, cls.NUM_PIXELS), dtype=torch.uint8).numpy(),
             labels_key: torch.randint(0, num_categories, size=(num_samples,)).tolist(),
@@ -326,7 +326,6 @@ class CIFARFakedata:
         folder,
         train_files,
         test_files,
-        num_samples_per_file,
         num_categories,
         labels_key,
     ):
@@ -337,7 +336,6 @@ class CIFARFakedata:
             cls._create_batch_file(
                 folder,
                 file,
-                num_samples=num_samples_per_file,
                 num_categories=num_categories,
                 labels_key=labels_key,
             )
@@ -349,12 +347,6 @@ class CIFARFakedata:
 def cifar10(info, root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
-    if config.split == "train":
-        num_samples_per_file = 2
-        num_samples = len(train_files) * num_samples_per_file
-    else:
-        num_samples_per_file = 1
-        num_samples = len(test_files) * num_samples_per_file
 
     CIFARFakedata.generate(
         root=root,
@@ -362,23 +354,17 @@ def cifar10(info, root, config):
         folder=pathlib.Path("cifar-10-batches-py"),
         train_files=train_files,
         test_files=test_files,
-        num_samples_per_file=2 if config.split == "train" else 1,
         num_categories=10,
         labels_key="labels",
     )
-    return num_samples
+
+    return len(train_files if config.split == "train" else test_files)
 
 
 @dataset_mocks.register_mock_data_fn
 def cifar100(info, root, config):
     train_files = ["train"]
     test_files = ["test"]
-    if config.split == "train":
-        num_samples_per_file = 2
-        num_samples = len(train_files) * num_samples_per_file
-    else:
-        num_samples_per_file = 1
-        num_samples = len(test_files) * num_samples_per_file
 
     CIFARFakedata.generate(
         root=root,
@@ -386,12 +372,11 @@ def cifar100(info, root, config):
         folder=pathlib.Path("cifar-100-python"),
         train_files=train_files,
         test_files=test_files,
-        num_samples_per_file=num_samples_per_file,
         num_categories=100,
         labels_key="fine_labels",
     )
 
-    return num_samples
+    return len(train_files if config.split == "train" else test_files)
 
 
 @dataset_mocks.register_mock_data_fn
