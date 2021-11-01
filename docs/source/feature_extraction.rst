@@ -1,9 +1,10 @@
-torchvision.models.feature_extraction
-=====================================
+Feature extraction for model inspection
+=======================================
 
 .. currentmodule:: torchvision.models.feature_extraction
 
-Feature extraction utilities let us tap into our models to access intermediate
+The ``torchvision.models.feature_extraction`` package contains
+feature extraction utilities that let us tap into our models to access intermediate
 transformations of our inputs. This could be useful for a variety of
 applications in computer vision. Just a few examples are:
 
@@ -157,6 +158,9 @@ Here is an example of how we might extract features for MaskRCNN:
 API Reference
 -------------
 
-.. autofunction:: create_feature_extractor
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
 
-.. autofunction:: get_graph_node_names
+    create_feature_extractor
+    get_graph_node_names
