@@ -61,12 +61,16 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
     @staticmethod
     def _to_tensor(chunk: bytes, *, dtype: torch.dtype, shape: List[int], reverse_bytes: bool) -> torch.Tensor:
-        if not reverse_bytes:
-            return torch.frombuffer(chunk, dtype=dtype).reshape(shape)
-
+        # As is, the chunk is not writeable, because it is read from a file and not from memory. Thus, we copy here to
+        # avoid the warning that torch.frombuffer would emit otherwise. This also enables inplace operations on the
+        # contents, which would otherwise fail.
         chunk = bytearray(chunk)
-        chunk.reverse()
-        return torch.frombuffer(chunk, dtype=dtype).flip(0).reshape(shape)
+        if reverse_bytes:
+            chunk.reverse()
+            tensor = torch.frombuffer(chunk, dtype=dtype).flip(0)
+        else:
+            tensor = torch.frombuffer(chunk, dtype=dtype)
+        return tensor.reshape(shape)
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
