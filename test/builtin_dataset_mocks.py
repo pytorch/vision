@@ -27,7 +27,7 @@ DEFAULT_TEST_DECODER = object()
 class DatasetMocks:
     def __init__(self):
         self._mock_data_fns = {}
-        self._tmp_dir = pathlib.Path(tempfile.mkdtemp())
+        self._tmp_home = pathlib.Path(tempfile.mkdtemp())
         self._cache = {}
 
     def register_mock_data_fn(self, mock_data_fn):
@@ -82,7 +82,8 @@ class DatasetMocks:
                 f"Did you register the mock data function with `@DatasetMocks.register_mock_data_fn`?"
             )
 
-        root = pathlib.Path(tempfile.mkdtemp(dir=self._tmp_dir))
+        root = self._tmp_home / name
+        root.mkdir(exist_ok=True)
         mock_info = self._parse_mock_info(fakedata_fn(dataset.info, root, config), name=name)
 
         mock_resources = []
