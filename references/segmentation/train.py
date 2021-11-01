@@ -66,7 +66,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
-    header = "Epoch: [{}]".format(epoch)
+    header = f"Epoch: [{epoch}]"
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
         output = model(image)
@@ -152,8 +152,7 @@ def main(args):
             )
         else:
             raise RuntimeError(
-                "Invalid warmup lr method '{}'. Only linear and constant "
-                "are supported.".format(args.lr_warmup_method)
+                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant are supported."
             )
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
             optimizer, schedulers=[warmup_lr_scheduler, main_lr_scheduler], milestones=[warmup_iters]
@@ -188,12 +187,12 @@ def main(args):
             "epoch": epoch,
             "args": args,
         }
-        utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+        utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
         utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 def get_args_parser(add_help=True):

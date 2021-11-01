@@ -54,7 +54,7 @@ class RoIPool(nn.Module):
     """
 
     def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float):
-        super(RoIPool, self).__init__()
+        super().__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 

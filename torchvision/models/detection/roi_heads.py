@@ -517,7 +517,7 @@ class RoIHeads(nn.Module):
         keypoint_head=None,
         keypoint_predictor=None,
     ):
-        super(RoIHeads, self).__init__()
+        super().__init__()
 
         self.box_similarity = box_ops.box_iou
         # assign ground-truth boxes for each proposal

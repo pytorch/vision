@@ -92,7 +92,7 @@ class GeneralizedRCNNTransform(nn.Module):
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
     ):
-        super(GeneralizedRCNNTransform, self).__init__()
+        super().__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)
         self.min_size = min_size
@@ -123,9 +123,7 @@ class GeneralizedRCNNTransform(nn.Module):
             target_index = targets[i] if targets is not None else None
 
             if image.dim() != 3:
-                raise ValueError(
-                    "images is expected to be a list of 3d tensors " "of shape [C, H, W], got {}".format(image.shape)
-                )
+                raise ValueError(f"images is expected to be a list of 3d tensors of shape [C, H, W], got {image.shape}")
             image = self.normalize(image)
             image, target_index = self.resize(image, target_index)
             images[i] = image
@@ -264,10 +262,8 @@ class GeneralizedRCNNTransform(nn.Module):
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         _indent = "\n    "
-        format_string += "{0}Normalize(mean={1}, std={2})".format(_indent, self.image_mean, self.image_std)
-        format_string += "{0}Resize(min_size={1}, max_size={2}, mode='bilinear')".format(
-            _indent, self.min_size, self.max_size
-        )
+        format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
+        format_string += f"{_indent}Resize(min_size={self.min_size}, max_size={self.max_size}, mode='bilinear')"
         format_string += "\n)"
         return format_string
 

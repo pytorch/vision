@@ -163,7 +163,7 @@ class TestVideoTransforms:
     @pytest.mark.parametrize("p", (0, 1))
     def test_random_horizontal_flip_video(self, p):
         clip = torch.rand((3, 4, 112, 112), dtype=torch.float)
-        hclip = clip.flip((-1))
+        hclip = clip.flip(-1)
 
         out = transforms.RandomHorizontalFlipVideo(p=p)(clip)
         if p == 0:
