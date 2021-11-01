@@ -5,14 +5,12 @@ import torch
 from .._internally_replaced_utils import _get_extension_path
 
 
-#try:
-#    lib_path = _get_extension_path("image")
-#    torch.ops.load_library(lib_path)
-#except (ImportError, OSError):
-#    pass
+try:
+    lib_path = _get_extension_path("image")
+    torch.ops.load_library(lib_path)
+except (ImportError, OSError):
+    pass
 
-lib_path = _get_extension_path('image')
-torch.ops.load_library(lib_path)
 
 class ImageReadMode(Enum):
     """
