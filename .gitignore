@@ -3,8 +3,8 @@
 *.vscode
 
 # Additional Ignore to exclude torchvision code and docs.
-docs/
-torchvision/
+/docs/
+/torchvision/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
