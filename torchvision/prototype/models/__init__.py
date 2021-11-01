@@ -8,3 +8,4 @@ from .mnasnet import *
 from . import detection
 from . import quantization
 from . import segmentation
+from . import video
