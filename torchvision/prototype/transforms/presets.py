@@ -7,7 +7,7 @@ from ... import transforms as T
 from ...transforms import functional as F
 
 
-__all__ = ["CocoEval", "ImageNetEval", "VocEval"]
+__all__ = ["CocoEval", "ImageNetEval", "Kinect400Eval", "VocEval"]
 
 
 class CocoEval(nn.Module):
@@ -39,6 +39,30 @@ class ImageNetEval(nn.Module):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
         return self._normalize(img)
+
+
+class Kinect400Eval(nn.Module):
+    def __init__(
+        self,
+        resize_size: Tuple[int, int],
+        crop_size: Tuple[int, int],
+        mean: Tuple[float, ...] = (0.43216, 0.394666, 0.37645),
+        std: Tuple[float, ...] = (0.22803, 0.22145, 0.216989),
+        interpolation: T.InterpolationMode = T.InterpolationMode.BILINEAR,
+    ) -> None:
+        super().__init__()
+        self._convert = T.ConvertImageDtype(torch.float)
+        self._resize = T.Resize(resize_size, interpolation=interpolation)
+        self._normalize = T.Normalize(mean=mean, std=std)
+        self._crop = T.CenterCrop(crop_size)
+
+    def forward(self, vid: Tensor) -> Tensor:
+        vid = vid.permute(0, 3, 1, 2)  # (T, H, W, C) => (T, C, H, W)
+        vid = self._convert(vid)
+        vid = self._resize(vid)
+        vid = self._normalize(vid)
+        vid = self._crop(vid)
+        return vid.permute(1, 0, 2, 3)  # (T, C, H, W) => (C, T, H, W)
 
 
 class VocEval(nn.Module):

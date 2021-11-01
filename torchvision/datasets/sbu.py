@@ -33,13 +33,13 @@ class SBU(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = True,
     ) -> None:
-        super(SBU, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         # Read the caption for each photo
         self.photos = []

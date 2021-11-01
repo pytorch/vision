@@ -16,7 +16,7 @@ def pad_if_smaller(img, size, fill=0):
     return img
 
 
-class Compose(object):
+class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
 
@@ -26,7 +26,7 @@ class Compose(object):
         return image, target
 
 
-class RandomResize(object):
+class RandomResize:
     def __init__(self, min_size, max_size=None):
         self.min_size = min_size
         if max_size is None:
@@ -40,7 +40,7 @@ class RandomResize(object):
         return image, target
 
 
-class RandomHorizontalFlip(object):
+class RandomHorizontalFlip:
     def __init__(self, flip_prob):
         self.flip_prob = flip_prob
 
@@ -51,7 +51,7 @@ class RandomHorizontalFlip(object):
         return image, target
 
 
-class RandomCrop(object):
+class RandomCrop:
     def __init__(self, size):
         self.size = size
 
@@ -64,7 +64,7 @@ class RandomCrop(object):
         return image, target
 
 
-class CenterCrop(object):
+class CenterCrop:
     def __init__(self, size):
         self.size = size
 
@@ -90,7 +90,7 @@ class ConvertImageDtype:
         return image, target
 
 
-class Normalize(object):
+class Normalize:
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
