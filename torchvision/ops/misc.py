@@ -43,8 +43,11 @@ interpolate = torch.nn.functional.interpolate
 # This is not in nn
 class FrozenBatchNorm2d(torch.nn.Module):
     """
-    BatchNorm2d where the batch statistics and the affine parameters
-    are fixed
+    BatchNorm2d where the batch statistics and the affine parameters are fixed
+
+    Args:
+        num_features (int): Number of features ``C`` from an expected input of size ``(N, C, H, W)``
+        eps (float): a value added to the denominator for numerical stability. Default: 1e-5
     """
 
     def __init__(
@@ -99,12 +102,29 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 
 class ConvNormActivation(torch.nn.Sequential):
+    """
+    Configurable block used for Convolution-Normalzation-Activation blocks.
+
+    Args:
+        in_channels (int): Number of channels in the input image
+        out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block
+        kernel_size: (int, optional): Size of the convolving kernel. Default: 3
+        stride (int or tuple, optional): Stride of the convolution. Default: 1
+        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
+        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
+        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolutiuon layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``
+        activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
+        dilation (int): Spacing between kernel elements. Default: 1
+        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
+
+    """
+
     def __init__(
         self,
         in_channels: int,
         out_channels: int,
         kernel_size: int = 3,
-        stride: int = 1,
+        stride: _size_2_t = 1,
         padding: Optional[int] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
@@ -136,6 +156,17 @@ class ConvNormActivation(torch.nn.Sequential):
 
 
 class SqueezeExcitation(torch.nn.Module):
+    """
+    This block implements the Squeeze-and-Excitation block from https://arxiv.org/abs/1709.01507 (see Fig. 1).
+    Parameters ``activation``, and `scale_activation`` correspond to ``delta`` and ``sigma`` in in eq. 3.
+
+    Args:
+        input_channels (int): Number of channels in the input image
+        squeeze_channels (int): Number of squeeze channels
+        activation (Callable[..., torch.nn.Module], optional): ``delta`` activation. Default: ``torch.nn.ReLU``
+        scale_activation (Callable[..., torch.nn.Module]): ``sigma`` activation. Default: ``torch.nn.Sigmoid``
+    """
+
     def __init__(
         self,
         input_channels: int,
