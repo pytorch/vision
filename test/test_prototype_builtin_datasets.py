@@ -12,7 +12,18 @@ _loaders = []
 _datasets = []
 
 # TODO: this can be replaced by torchvision.prototype.datasets.list() as soon as all builtin datasets are supported
-TMP = ["mnist", "fashionmnist", "kmnist", "emnist", "qmnist", "cifar10", "cifar100", "caltech256", "caltech101"]
+TMP = [
+    "mnist",
+    "fashionmnist",
+    "kmnist",
+    "emnist",
+    "qmnist",
+    "cifar10",
+    "cifar100",
+    "caltech256",
+    "caltech101",
+    "imagenet",
+]
 for name in TMP:
     loader = functools.partial(builtin_dataset_mocks.load, name)
     _loaders.append(pytest.param(loader, id=name))

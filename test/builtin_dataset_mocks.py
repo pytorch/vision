@@ -447,3 +447,45 @@ def caltech256(info, root, config):
     make_tar(root, f"{dir.name}.tar", dir)
 
     return num_images_per_category * len(info.categories)
+
+
+@dataset_mocks.register_mock_data_fn
+def imagenet(info, root, config):
+    devkit_root = root / "ILSVRC2012_devkit_t12"
+    devkit_root.mkdir()
+
+    wnids = tuple(info.extra.wnid_to_category.keys())
+
+    if config.split == "train":
+        images_root = root / "ILSVRC2012_img_train"
+
+        num_samples = len(wnids)
+
+        for wnid in wnids:
+            files = create_image_folder(
+                root=images_root,
+                name=wnid,
+                file_name_fn=lambda image_idx: f"{wnid}_{image_idx:04d}.JPEG",
+                num_examples=1,
+            )
+            make_tar(images_root, f"{wnid}.tar", files[0].parent)
+    else:
+        num_samples = 3
+        files = create_image_folder(
+            root=root,
+            name="ILSVRC2012_img_val",
+            file_name_fn=lambda image_idx: f"ILSVRC2012_val_{image_idx + 1:08d}.JPEG",
+            num_examples=num_samples,
+        )
+        images_root = files[0].parent
+
+        data_root = devkit_root / "data"
+        data_root.mkdir()
+        with open(data_root / "ILSVRC2012_validation_ground_truth.txt", "w") as file:
+            for label in torch.randint(0, len(wnids), (num_samples,)).tolist():
+                file.write(f"{label}\n")
+
+    make_tar(root, f"{images_root.name}.tar", images_root)
+    make_tar(root, f"{devkit_root}.tar.gz", devkit_root, compression="gz")
+
+    return num_samples
