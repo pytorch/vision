@@ -562,7 +562,7 @@ class RandomChoice(RandomTransforms):
     def __init__(self, transforms, p=None):
         super().__init__(transforms)
         if p is not None and not isinstance(p, Sequence):
-            raise TypeError("Argument transforms should be a sequence")
+            raise TypeError("Argument p should be a sequence")
         self.p = p
 
     def __call__(self, *args):
