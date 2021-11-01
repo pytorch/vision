@@ -3,6 +3,7 @@ from typing import Callable, List, Optional
 
 import torch
 from torch import Tensor
+from torch.nn.common_types import _size_2_t
 
 from ..utils import _log_api_usage_once
 
