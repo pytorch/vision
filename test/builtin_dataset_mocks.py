@@ -275,10 +275,13 @@ def qmnist(info, root, config):
         suffix = ".gz"
         compressor = gzip.open
     elif config.split.startswith("test"):
-        num_samples = 1
         # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create more
         # than 10000 images for the dataset to not be empty.
-        num_samples_gen = num_samples + (10000 if config.split == "test50k" else 0)
+        num_samples = num_samples_gen = 10001
+        if config.split == "test10k":
+            num_samples = min(num_samples, 10000)
+        if config.split == "test50k":
+            num_samples -= 10000
         prefix = "qmnist-test"
         suffix = ".gz"
         compressor = gzip.open
