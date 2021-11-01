@@ -42,7 +42,7 @@ class Coco(Dataset):
             homepage="https://cocodataset.org/",
             valid_options=dict(
                 split=("train", "val"),
-                year=("2014", "2017"),
+                year=("2017", "2014"),
             ),
         )
 
