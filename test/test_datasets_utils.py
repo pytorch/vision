@@ -129,7 +129,7 @@ class TestDatasetsUtils:
 
         assert os.path.exists(file)
 
-        with open(file, "r") as fh:
+        with open(file) as fh:
             assert fh.read() == content
 
     def test_decompress_no_compression(self):
@@ -179,7 +179,7 @@ class TestDatasetsUtils:
 
         assert os.path.exists(file)
 
-        with open(file, "r") as fh:
+        with open(file) as fh:
             assert fh.read() == content
 
     @pytest.mark.parametrize(
@@ -205,7 +205,7 @@ class TestDatasetsUtils:
 
         assert os.path.exists(file)
 
-        with open(file, "r") as fh:
+        with open(file) as fh:
             assert fh.read() == content
 
     def test_verify_str_arg(self):

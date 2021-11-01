@@ -133,7 +133,7 @@ def test_all_configs(test):
 
     def maybe_remove_duplicates(configs):
         try:
-            return [dict(config_) for config_ in set(tuple(sorted(config.items())) for config in configs)]
+            return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
             # removal would be a lot more elaborate and we simply bail out.

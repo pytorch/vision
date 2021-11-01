@@ -17,7 +17,7 @@ def _flip_coco_person_keypoints(kps, width):
     return flipped_data
 
 
-class Compose(object):
+class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
 
@@ -103,7 +103,7 @@ class RandomIoUCrop(nn.Module):
 
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
-                raise ValueError("image should be 2/3 dimensional. Got {} dimensions.".format(image.ndimension()))
+                raise ValueError(f"image should be 2/3 dimensional. Got {image.ndimension()} dimensions.")
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
@@ -171,7 +171,7 @@ class RandomZoomOut(nn.Module):
         self.fill = fill
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
-            raise ValueError("Invalid canvas side range provided {}.".format(side_range))
+            raise ValueError(f"Invalid canvas side range provided {side_range}.")
         self.p = p
 
     @torch.jit.unused
@@ -185,7 +185,7 @@ class RandomZoomOut(nn.Module):
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
-                raise ValueError("image should be 2/3 dimensional. Got {} dimensions.".format(image.ndimension()))
+                raise ValueError(f"image should be 2/3 dimensional. Got {image.ndimension()} dimensions.")
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
@@ -244,7 +244,7 @@ class RandomPhotometricDistort(nn.Module):
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
-                raise ValueError("image should be 2/3 dimensional. Got {} dimensions.".format(image.ndimension()))
+                raise ValueError(f"image should be 2/3 dimensional. Got {image.ndimension()} dimensions.")
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 

@@ -73,7 +73,7 @@ class DatasetInfo:
 
     @staticmethod
     def read_categories_file(path: pathlib.Path) -> List[List[str]]:
-        with open(path, "r", newline="") as file:
+        with open(path, newline="") as file:
             return [row for row in csv.reader(file)]
 
     @property

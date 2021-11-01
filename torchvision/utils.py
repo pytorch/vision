@@ -1,7 +1,7 @@
 import math
 import pathlib
 import warnings
-from typing import Union, Optional, List, Tuple, Text, BinaryIO
+from typing import Union, Optional, List, Tuple, BinaryIO
 
 import numpy as np
 import torch
@@ -114,7 +114,7 @@ def make_grid(
 @torch.no_grad()
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[Text, pathlib.Path, BinaryIO],
+    fp: Union[str, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
     **kwargs,
 ) -> None:

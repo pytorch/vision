@@ -20,7 +20,7 @@ def main(args):
     print(args)
 
     if args.post_training_quantize and args.distributed:
-        raise RuntimeError("Post training quantization example should not be performed " "on distributed mode")
+        raise RuntimeError("Post training quantization example should not be performed on distributed mode")
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
     if args.backend not in torch.backends.quantized.supported_engines:
@@ -141,13 +141,13 @@ def main(args):
                 "epoch": epoch,
                 "args": args,
             }
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
         print("Saving models after epoch ", epoch)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 def get_args_parser(add_help=True):
