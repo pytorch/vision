@@ -32,11 +32,11 @@ architectures, and common image transformations for computer vision.
    :caption: Package Reference
 
    datasets
-   io
+   transforms
    models
    feature_extraction
    ops
-   transforms
+   io
    utils
 
 .. toctree::

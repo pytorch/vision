@@ -140,7 +140,7 @@ class DatasetFolder(VisionDataset):
         target_transform: Optional[Callable] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
     ) -> None:
-        super(DatasetFolder, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         classes, class_to_idx = self.find_classes(self.root)
         samples = self.make_dataset(self.root, class_to_idx, extensions, is_valid_file)
 
@@ -254,7 +254,7 @@ def accimage_loader(path: str) -> Any:
 
     try:
         return accimage.Image(path)
-    except IOError:
+    except OSError:
         # Potentially a decoding problem, fall back to PIL.Image
         return pil_loader(path)
 
@@ -306,7 +306,7 @@ class ImageFolder(DatasetFolder):
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Optional[Callable[[str], bool]] = None,
     ):
-        super(ImageFolder, self).__init__(
+        super().__init__(
             root,
             loader,
             IMG_EXTENSIONS if is_valid_file is None else None,

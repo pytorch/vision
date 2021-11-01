@@ -2,6 +2,8 @@ import torch
 import torch.fx
 from torch import nn, Tensor
 
+from ..utils import _log_api_usage_once
+
 
 def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) -> Tensor:
     """
@@ -21,10 +23,11 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     Returns:
         Tensor[N, ...]: The randomly zeroed tensor.
     """
+    _log_api_usage_once("torchvision.ops.stochastic_depth")
     if p < 0.0 or p > 1.0:
-        raise ValueError("drop probability has to be between 0 and 1, but got {}".format(p))
+        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
     if mode not in ["batch", "row"]:
-        raise ValueError("mode has to be either 'batch' or 'row', but got {}".format(mode))
+        raise ValueError(f"mode has to be either 'batch' or 'row', but got {mode}")
     if not training or p == 0.0:
         return input
 

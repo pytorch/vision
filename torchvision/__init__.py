@@ -43,7 +43,7 @@ def set_image_backend(backend):
     """
     global _image_backend
     if backend not in ["PIL", "accimage"]:
-        raise ValueError("Invalid backend '{}'. Options are 'PIL' and 'accimage'".format(backend))
+        raise ValueError(f"Invalid backend '{backend}'. Options are 'PIL' and 'accimage'")
     _image_backend = backend
 
 
@@ -74,7 +74,7 @@ def set_video_backend(backend):
     if backend not in ["pyav", "video_reader"]:
         raise ValueError("Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend)
     if backend == "video_reader" and not io._HAS_VIDEO_OPT:
-        message = "video_reader video backend is not available." " Please compile torchvision from source and try again"
+        message = "video_reader video backend is not available. Please compile torchvision from source and try again"
         warnings.warn(message)
     else:
         _video_backend = backend

@@ -8,7 +8,7 @@ import torch
 import torch.distributed as dist
 
 
-class SmoothedValue(object):
+class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
     """
@@ -67,7 +67,7 @@ class SmoothedValue(object):
         )
 
 
-class ConfusionMatrix(object):
+class ConfusionMatrix:
     def __init__(self, num_classes):
         self.num_classes = num_classes
         self.mat = None
@@ -101,15 +101,15 @@ class ConfusionMatrix(object):
 
     def __str__(self):
         acc_global, acc, iu = self.compute()
-        return ("global correct: {:.1f}\n" "average row correct: {}\n" "IoU: {}\n" "mean IoU: {:.1f}").format(
+        return ("global correct: {:.1f}\naverage row correct: {}\nIoU: {}\nmean IoU: {:.1f}").format(
             acc_global.item() * 100,
-            ["{:.1f}".format(i) for i in (acc * 100).tolist()],
-            ["{:.1f}".format(i) for i in (iu * 100).tolist()],
+            [f"{i:.1f}" for i in (acc * 100).tolist()],
+            [f"{i:.1f}" for i in (iu * 100).tolist()],
             iu.mean().item() * 100,
         )
 
 
-class MetricLogger(object):
+class MetricLogger:
     def __init__(self, delimiter="\t"):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
@@ -126,12 +126,12 @@ class MetricLogger(object):
             return self.meters[attr]
         if attr in self.__dict__:
             return self.__dict__[attr]
-        raise AttributeError("'{}' object has no attribute '{}'".format(type(self).__name__, attr))
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def __str__(self):
         loss_str = []
         for name, meter in self.meters.items():
-            loss_str.append("{}: {}".format(name, str(meter)))
+            loss_str.append(f"{name}: {str(meter)}")
         return self.delimiter.join(loss_str)
 
     def synchronize_between_processes(self):
@@ -196,7 +196,7 @@ class MetricLogger(object):
             end = time.time()
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print("{} Total time: {}".format(header, total_time_str))
+        print(f"{header} Total time: {total_time_str}")
 
 
 def cat_list(images, fill_value=0):
@@ -287,7 +287,7 @@ def init_distributed_mode(args):
 
     torch.cuda.set_device(args.gpu)
     args.dist_backend = "nccl"
-    print("| distributed init (rank {}): {}".format(args.rank, args.dist_url), flush=True)
+    print(f"| distributed init (rank {args.rank}): {args.dist_url}", flush=True)
     torch.distributed.init_process_group(
         backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
     )

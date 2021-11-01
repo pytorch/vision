@@ -114,7 +114,7 @@ class _VOCBase(VisionDataset):
 
         splits_dir = os.path.join(voc_root, "ImageSets", self._SPLITS_DIR)
         split_f = os.path.join(splits_dir, image_set.rstrip("\n") + ".txt")
-        with open(os.path.join(split_f), "r") as f:
+        with open(os.path.join(split_f)) as f:
             file_names = [x.strip() for x in f.readlines()]
 
         image_dir = os.path.join(voc_root, "JPEGImages")
