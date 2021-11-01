@@ -1,10 +1,10 @@
 .. _models:
 
-torchvision.models
-##################
+Models and pre-trained weights
+##############################
 
 
-The models subpackage contains definitions of models for addressing
+The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection and video classification.
@@ -256,48 +256,72 @@ regnet_y_32gf                     80.878          95.340
 Alexnet
 -------
 
-.. autofunction:: alexnet
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    alexnet
 
 VGG
 ---
 
-.. autofunction:: vgg11
-.. autofunction:: vgg11_bn
-.. autofunction:: vgg13
-.. autofunction:: vgg13_bn
-.. autofunction:: vgg16
-.. autofunction:: vgg16_bn
-.. autofunction:: vgg19
-.. autofunction:: vgg19_bn
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    vgg11
+    vgg11_bn
+    vgg13
+    vgg13_bn
+    vgg16
+    vgg16_bn
+    vgg19
+    vgg19_bn
 
 
 ResNet
 ------
 
-.. autofunction:: resnet18
-.. autofunction:: resnet34
-.. autofunction:: resnet50
-.. autofunction:: resnet101
-.. autofunction:: resnet152
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    resnet18
+    resnet34
+    resnet50
+    resnet101
+    resnet152
 
 SqueezeNet
 ----------
 
-.. autofunction:: squeezenet1_0
-.. autofunction:: squeezenet1_1
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    squeezenet1_0
+    squeezenet1_1
 
 DenseNet
 ---------
 
-.. autofunction:: densenet121
-.. autofunction:: densenet169
-.. autofunction:: densenet161
-.. autofunction:: densenet201
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    densenet121
+    densenet169
+    densenet161
+    densenet201
 
 Inception v3
 ------------
 
-.. autofunction:: inception_v3
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    inception_v3
 
 .. note ::
     This requires `scipy` to be installed
@@ -306,7 +330,11 @@ Inception v3
 GoogLeNet
 ------------
 
-.. autofunction:: googlenet
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    googlenet
 
 .. note ::
     This requires `scipy` to be installed
@@ -315,71 +343,103 @@ GoogLeNet
 ShuffleNet v2
 -------------
 
-.. autofunction:: shufflenet_v2_x0_5
-.. autofunction:: shufflenet_v2_x1_0
-.. autofunction:: shufflenet_v2_x1_5
-.. autofunction:: shufflenet_v2_x2_0
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    shufflenet_v2_x0_5
+    shufflenet_v2_x1_0
+    shufflenet_v2_x1_5
+    shufflenet_v2_x2_0
 
 MobileNet v2
 -------------
 
-.. autofunction:: mobilenet_v2
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    mobilenet_v2
 
 MobileNet v3
 -------------
 
-.. autofunction:: mobilenet_v3_large
-.. autofunction:: mobilenet_v3_small
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    mobilenet_v3_large
+    mobilenet_v3_small
 
 ResNext
 -------
 
-.. autofunction:: resnext50_32x4d
-.. autofunction:: resnext101_32x8d
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    resnext50_32x4d
+    resnext101_32x8d
 
 Wide ResNet
 -----------
 
-.. autofunction:: wide_resnet50_2
-.. autofunction:: wide_resnet101_2
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    wide_resnet50_2
+    wide_resnet101_2
 
 MNASNet
 --------
 
-.. autofunction:: mnasnet0_5
-.. autofunction:: mnasnet0_75
-.. autofunction:: mnasnet1_0
-.. autofunction:: mnasnet1_3
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    mnasnet0_5
+    mnasnet0_75
+    mnasnet1_0
+    mnasnet1_3
 
 EfficientNet
 ------------
 
-.. autofunction:: efficientnet_b0
-.. autofunction:: efficientnet_b1
-.. autofunction:: efficientnet_b2
-.. autofunction:: efficientnet_b3
-.. autofunction:: efficientnet_b4
-.. autofunction:: efficientnet_b5
-.. autofunction:: efficientnet_b6
-.. autofunction:: efficientnet_b7
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    efficientnet_b0
+    efficientnet_b1
+    efficientnet_b2
+    efficientnet_b3
+    efficientnet_b4
+    efficientnet_b5
+    efficientnet_b6
+    efficientnet_b7
 
 RegNet
 ------------
 
-.. autofunction:: regnet_y_400mf
-.. autofunction:: regnet_y_800mf
-.. autofunction:: regnet_y_1_6gf
-.. autofunction:: regnet_y_3_2gf
-.. autofunction:: regnet_y_8gf
-.. autofunction:: regnet_y_16gf
-.. autofunction:: regnet_y_32gf
-.. autofunction:: regnet_x_400mf
-.. autofunction:: regnet_x_800mf
-.. autofunction:: regnet_x_1_6gf
-.. autofunction:: regnet_x_3_2gf
-.. autofunction:: regnet_x_8gf
-.. autofunction:: regnet_x_16gf
-.. autofunction:: regnet_x_32gf
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    regnet_y_400mf
+    regnet_y_800mf
+    regnet_y_1_6gf
+    regnet_y_3_2gf
+    regnet_y_8gf
+    regnet_y_16gf
+    regnet_y_32gf
+    regnet_x_400mf
+    regnet_x_800mf
+    regnet_x_1_6gf
+    regnet_x_3_2gf
+    regnet_x_8gf
+    regnet_x_16gf
+    regnet_x_32gf
 
 Quantized Models
 ----------------
@@ -473,22 +533,34 @@ LR-ASPP MobileNetV3-Large         57.9           91.2
 Fully Convolutional Networks
 ----------------------------
 
-.. autofunction:: torchvision.models.segmentation.fcn_resnet50
-.. autofunction:: torchvision.models.segmentation.fcn_resnet101
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.segmentation.fcn_resnet50
+    torchvision.models.segmentation.fcn_resnet101
 
 
 DeepLabV3
 ---------
 
-.. autofunction:: torchvision.models.segmentation.deeplabv3_resnet50
-.. autofunction:: torchvision.models.segmentation.deeplabv3_resnet101
-.. autofunction:: torchvision.models.segmentation.deeplabv3_mobilenet_v3_large
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.segmentation.deeplabv3_resnet50
+    torchvision.models.segmentation.deeplabv3_resnet101
+    torchvision.models.segmentation.deeplabv3_mobilenet_v3_large
 
 
 LR-ASPP
 -------
 
-.. autofunction:: torchvision.models.segmentation.lraspp_mobilenet_v3_large
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.segmentation.lraspp_mobilenet_v3_large
 
 .. _object_det_inst_seg_pers_keypoint_det:
 
@@ -615,39 +687,63 @@ Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242             
 Faster R-CNN
 ------------
 
-.. autofunction:: torchvision.models.detection.fasterrcnn_resnet50_fpn
-.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
-.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.fasterrcnn_resnet50_fpn
+    torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
+    torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
 
 
 RetinaNet
 ---------
 
-.. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.retinanet_resnet50_fpn
 
 
 SSD
 ---
 
-.. autofunction:: torchvision.models.detection.ssd300_vgg16
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.ssd300_vgg16
 
 
 SSDlite
 -------
 
-.. autofunction:: torchvision.models.detection.ssdlite320_mobilenet_v3_large
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.ssdlite320_mobilenet_v3_large
 
 
 Mask R-CNN
 ----------
 
-.. autofunction:: torchvision.models.detection.maskrcnn_resnet50_fpn
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.maskrcnn_resnet50_fpn
 
 
 Keypoint R-CNN
 --------------
 
-.. autofunction:: torchvision.models.detection.keypointrcnn_resnet50_fpn
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.keypointrcnn_resnet50_fpn
 
 
 Video classification
@@ -686,14 +782,26 @@ ResNet (2+1)D                     57.50           78.81
 ResNet 3D
 ----------
 
-.. autofunction:: torchvision.models.video.r3d_18
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.video.r3d_18
 
 ResNet Mixed Convolution
 ------------------------
 
-.. autofunction:: torchvision.models.video.mc3_18
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.video.mc3_18
 
 ResNet (2+1)D
 -------------
 
-.. autofunction:: torchvision.models.video.r2plus1d_18
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.video.r2plus1d_18
