@@ -274,7 +274,7 @@ jobs:
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Install test utilities
-          command: pip install --user --progress-bar=off pytest
+          command: pip install --user --progress-bar=off pytest pytest-mock
       - run:
           name: Run tests
           command: pytest test/test_prototype_*.py
