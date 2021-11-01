@@ -12,6 +12,7 @@ conda activate ./env
 
 if [ "${CU_VERSION:-}" == cpu ] ; then
     cudatoolkit="cpuonly"
+    version="cpu"
 else
     if [[ ${#CU_VERSION} -eq 4 ]]; then
         CUDA_VERSION="${CU_VERSION:2:1}.${CU_VERSION:3:1}"
@@ -24,7 +25,7 @@ else
 fi
 
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
+conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}" pytest
 
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
