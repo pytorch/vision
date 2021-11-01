@@ -24,8 +24,17 @@ else
     cudatoolkit="cudatoolkit=${version}"
 fi
 
+case "$(uname -s)" in
+    Darwin*) os=MacOSX;;
+    *) os=Linux
+esac
+
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}" pytest
+if [ "${os}" == "MacOSX" ]; then
+    conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}" pytest
+else
+    conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}" pytest
+fi
 
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
