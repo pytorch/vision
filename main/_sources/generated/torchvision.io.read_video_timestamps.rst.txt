@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.io
+
+
+read_video_timestamps
+=====================
+
+.. autofunction:: read_video_timestamps

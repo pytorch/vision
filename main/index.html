@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchvision.datasets" href="datasets.html" />
+    <link rel="next" title="Datasets" href="datasets.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -197,7 +197,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+205c6c7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+b1bd2f2 ) &#x25BC</a>
     </div>
     
 
@@ -223,13 +223,13 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">torchvision.models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">torchvision.models.feature_extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ops.html">torchvision.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -342,60 +342,12 @@ architectures, and common image transformations for computer vision.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#caltech">Caltech</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#celeba">CelebA</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#cifar">CIFAR</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#cityscapes">Cityscapes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#coco">COCO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#emnist">EMNIST</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#fakedata">FakeData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#fashion-mnist">Fashion-MNIST</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#flickr">Flickr</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#hmdb51">HMDB51</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#imagenet">ImageNet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#inaturalist">iNaturalist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#kinetics-400">Kinetics-400</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#kitti">KITTI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#kmnist">KMNIST</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#lfw">LFW</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#lsun">LSUN</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#mnist">MNIST</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#omniglot">Omniglot</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#phototour">PhotoTour</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#places365">Places365</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#qmnist">QMNIST</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#sbd">SBD</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#sbu">SBU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#semeion">SEMEION</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#stl10">STL10</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#svhn">SVHN</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#ucf101">UCF101</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#usps">USPS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#voc">VOC</a></li>
-<li class="toctree-l2"><a class="reference internal" href="datasets.html#widerface">WIDERFace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html#built-in-datasets">Built-in datasets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datasets.html#base-classes-for-custom-datasets">Base classes for custom datasets</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="io.html#video">Video</a></li>
-<li class="toctree-l2"><a class="reference internal" href="io.html#fine-grained-video-api">Fine-grained video API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="io.html#image">Image</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">torchvision.models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="models.html#classification">Classification</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#semantic-segmentation">Semantic Segmentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="models.html#video-classification">Video classification</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">torchvision.models.feature_extraction</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="feature_extraction.html#api-reference">API Reference</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ops.html">torchvision.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="transforms.html#scriptable-transforms">Scriptable transforms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transforms.html#compositions-of-transforms">Compositions of transforms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transforms.html#transforms-on-pil-image-and-torch-tensor">Transforms on PIL Image and torch.*Tensor</a></li>
@@ -407,7 +359,57 @@ architectures, and common image transformations for computer vision.</p>
 <li class="toctree-l2"><a class="reference internal" href="transforms.html#functional-transforms">Functional Transforms</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#classification">Classification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#semantic-segmentation">Semantic Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#video-classification">Video classification</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="feature_extraction.html#api-reference">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.batched_nms.html">batched_nms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.box_area.html">box_area</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.box_convert.html">box_convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.box_iou.html">box_iou</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.clip_boxes_to_image.html">clip_boxes_to_image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.deform_conv2d.html">deform_conv2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.generalized_box_iou.html">generalized_box_iou</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.masks_to_boxes.html">masks_to_boxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.nms.html">nms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.ps_roi_align.html">ps_roi_align</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.ps_roi_pool.html">ps_roi_pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.remove_small_boxes.html">remove_small_boxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.roi_align.html">roi_align</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.roi_pool.html">roi_pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.sigmoid_focal_loss.html">sigmoid_focal_loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.stochastic_depth.html">stochastic_depth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.RoIAlign.html">RoIAlign</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.PSRoIAlign.html">PSRoIAlign</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.RoIPool.html">RoIPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.PSRoIPool.html">PSRoIPool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.DeformConv2d.html">DeformConv2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.MultiScaleRoIAlign.html">MultiScaleRoIAlign</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.FeaturePyramidNetwork.html">FeaturePyramidNetwork</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.ops.StochasticDepth.html">StochasticDepth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading/Writing images and videos</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="io.html#video">Video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="io.html#fine-grained-video-api">Fine-grained video API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="io.html#image">Image</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.utils.draw_bounding_boxes.html">draw_bounding_boxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.utils.draw_segmentation_masks.html">draw_segmentation_masks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.utils.make_grid.html">make_grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generated/torchvision.utils.save_image.html">save_image</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -499,7 +501,7 @@ backend, please compile torchvision from source.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="datasets.html" class="btn btn-neutral float-right" title="torchvision.datasets" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="datasets.html" class="btn btn-neutral float-right" title="Datasets" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
     </div>

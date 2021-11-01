@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+SBDataset
+=========
+
+.. autoclass:: SBDataset
+    :members:
+        __getitem__,
+        
+    :special-members:

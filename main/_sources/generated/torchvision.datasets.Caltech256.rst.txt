@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Caltech256
+==========
+
+.. autoclass:: Caltech256
+    :members:
+        __getitem__,
+        
+    :special-members:

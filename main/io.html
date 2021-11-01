@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.io &mdash; Torchvision main documentation</title>
+  <title>Reading/Writing images and videos &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchvision.models" href="models.html" />
-    <link rel="prev" title="torchvision.datasets" href="datasets.html" />
+    <link rel="next" title="read_video" href="generated/torchvision.io.read_video.html" />
+    <link rel="prev" title="StochasticDepth" href="generated/torchvision.ops.StochasticDepth.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+205c6c7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+b1bd2f2 ) &#x25BC</a>
     </div>
     
 
@@ -224,13 +224,13 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">torchvision.io</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">torchvision.models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">torchvision.models.feature_extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ops.html">torchvision.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -286,7 +286,7 @@
       </li>
 
         
-      <li>torchvision.io</li>
+      <li>Reading/Writing images and videos</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -318,234 +318,39 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="torchvision-io">
-<h1>torchvision.io<a class="headerlink" href="#torchvision-io" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="reading-writing-images-and-videos">
+<h1>Reading/Writing images and videos<a class="headerlink" href="#reading-writing-images-and-videos" title="Permalink to this headline">¶</a></h1>
 <p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.io</span></code> package provides functions for performing IO
 operations. They are currently specific to reading and writing video and
 images.</p>
 <div class="section" id="video">
 <h2>Video<a class="headerlink" href="#video" title="Permalink to this headline">¶</a></h2>
-<dl class="py function">
-<dt id="torchvision.io.read_video">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">read_video</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_pts</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction" title="(in Python v3.10)"><span class="pre">fractions.Fraction</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_pts</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction" title="(in Python v3.10)"><span class="pre">fractions.Fraction</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pts_unit</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'pts'</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="_modules/torchvision/io/video.html#read_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.read_video" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads a video from a file, returning both the video frames as well as
-the audio frames</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – path to the video file</p></li>
-<li><p><strong>start_pts</strong> (<em>int if pts_unit = 'pts'</em><em>, </em><em>float / Fraction if pts_unit = 'sec'</em><em>, </em><em>optional</em>) – The start presentation time of the video</p></li>
-<li><p><strong>end_pts</strong> (<em>int if pts_unit = 'pts'</em><em>, </em><em>float / Fraction if pts_unit = 'sec'</em><em>, </em><em>optional</em>) – The end presentation time</p></li>
-<li><p><strong>pts_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – unit in which start_pts and end_pts values will be interpreted,
-either ‘pts’ or ‘sec’. Defaults to ‘pts’.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the <cite>T</cite> video frames
-aframes (Tensor[K, L]): the audio frames, where <cite>K</cite> is the number of channels and <cite>L</cite> is the number of points
-info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>vframes (Tensor[T, H, W, C])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.read_video_timestamps">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">read_video_timestamps</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pts_unit</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'pts'</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="_modules/torchvision/io/video.html#read_video_timestamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.read_video_timestamps" title="Permalink to this definition">¶</a></dt>
-<dd><p>List the video frames timestamps.</p>
-<p>Note that the function decodes the whole video frame-by-frame.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – path to the video file</p></li>
-<li><p><strong>pts_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – unit in which timestamp values will be returned
-either ‘pts’ or ‘sec’. Defaults to ‘pts’.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>presentation timestamps for each one of the frames in the video.
-video_fps (float, optional): the frame rate for the video</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pts (List[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a>] if pts_unit = ‘pts’, List[Fraction] if pts_unit = ‘sec’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.write_video">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">write_video</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">video_array</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">video_codec</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'libx264'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_array</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_fps</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_codec</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_options</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><a class="reference internal" href="_modules/torchvision/io/video.html#write_video"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.write_video" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes a 4d tensor in [T, H, W, C] format in a video file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – path where the video will be saved</p></li>
-<li><p><strong>video_array</strong> (<em>Tensor</em><em>[</em><em>T</em><em>, </em><em>H</em><em>, </em><em>W</em><em>, </em><em>C</em><em>]</em>) – tensor containing the individual frames,
-as a uint8 tensor in [T, H, W, C] format</p></li>
-<li><p><strong>fps</strong> (<em>Number</em>) – video frames per second</p></li>
-<li><p><strong>video_codec</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – the name of the video codec, i.e. “libx264”, “h264”, etc.</p></li>
-<li><p><strong>options</strong> (<em>Dict</em>) – dictionary containing options to be passed into the PyAV video stream</p></li>
-<li><p><strong>audio_array</strong> (<em>Tensor</em><em>[</em><em>C</em><em>, </em><em>N</em><em>]</em>) – tensor containing the audio, where C is the number of channels
-and N is the number of samples</p></li>
-<li><p><strong>audio_fps</strong> (<em>Number</em>) – audio sample rate, typically 44100 or 48000</p></li>
-<li><p><strong>audio_codec</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – the name of the audio codec, i.e. “mp3”, “aac”, etc.</p></li>
-<li><p><strong>audio_options</strong> (<em>Dict</em>) – dictionary containing options to be passed into the PyAV audio stream</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_video.html#torchvision.io.read_video" title="torchvision.io.read_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_video</span></code></a>(filename[, start_pts, end_pts, …])</p></td>
+<td><p>Reads a video from a file, returning both the video frames as well as the audio frames</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.read_video_timestamps.html#torchvision.io.read_video_timestamps" title="torchvision.io.read_video_timestamps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_video_timestamps</span></code></a>(filename[, pts_unit])</p></td>
+<td><p>List the video frames timestamps.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_video.html#torchvision.io.write_video" title="torchvision.io.write_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_video</span></code></a>(filename, video_array, fps[, …])</p></td>
+<td><p>Writes a 4d tensor in [T, H, W, C] format in a video file</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="fine-grained-video-api">
 <h2>Fine-grained video API<a class="headerlink" href="#fine-grained-video-api" title="Permalink to this headline">¶</a></h2>
 <p>In addition to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function, we provide a high-performance
 lower-level API for more fine-grained control compared to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function.
 It does all this whilst fully supporting torchscript.</p>
-<dl class="py class">
-<dt id="torchvision.io.VideoReader">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">VideoReader</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'video'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_threads</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io.html#VideoReader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.VideoReader" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fine-grained video-reading API.
-Supports frame-by-frame reading of various streams from a single video
-container.</p>
-<p class="rubric">Example</p>
-<p>The following examples creates a <code class="xref py py-mod docutils literal notranslate"><span class="pre">VideoReader</span></code> object, seeks into 2s
-point, and returns a single frame:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision</span>
-<span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;path_to_a_test_video&quot;</span>
-<span class="n">reader</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">VideoReader</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">)</span>
-<span class="n">reader</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
-<span class="n">frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><code class="xref py py-mod docutils literal notranslate"><span class="pre">VideoReader</span></code> implements the iterable API, which makes it suitable to
-using it in conjunction with <a class="reference external" href="https://docs.python.org/3/library/itertools.html#module-itertools" title="(in Python v3.10)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">itertools</span></code></a> for more advanced reading.
-As such, we can use a <code class="xref py py-mod docutils literal notranslate"><span class="pre">VideoReader</span></code> instance inside for loops:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">reader</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
-    <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
-<span class="c1"># additionally, `seek` implements a fluent API, so we can do</span>
-<span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">reader</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
-    <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
-</pre></div>
-</div>
-<p>With <a class="reference external" href="https://docs.python.org/3/library/itertools.html#module-itertools" title="(in Python v3.10)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">itertools</span></code></a>, we can read all frames between 2 and 5 seconds with the
-following code:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">takewhile</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;pts&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">reader</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">2</span><span class="p">)):</span>
-    <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
-</pre></div>
-</div>
-<p>and similarly, reading 10 frames after the 2s timestamp can be achieved
-as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">10</span><span class="p">):</span>
-    <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
-</pre></div>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Each stream descriptor consists of two parts: stream type (e.g. ‘video’) and
-a unique stream id (which are determined by the video encoding).
-In this way, if the video contaner contains multiple
-streams of the same type, users can acces the one they want.
-If only stream type is passed, the decoder auto-detects first stream of that type.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<em>string</em>) – Path to the video file in supported format</p></li>
-<li><p><strong>stream</strong> (<em>string</em><em>, </em><em>optional</em>) – descriptor of the required stream, followed by the stream id,
-in the format <code class="docutils literal notranslate"><span class="pre">{stream_type}:{stream_id}</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;video:0&quot;</span></code>.
-Currently available options include <code class="docutils literal notranslate"><span class="pre">['video',</span> <span class="pre">'audio']</span></code></p></li>
-<li><p><strong>num_threads</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – number of threads used by the codec to decode video.
-Default value (0) enables multithreading with codec-dependent heuristic. The performance
-will depend on the version of FFMPEG codecs supported.</p></li>
-</ul>
-</dd>
-</dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">VideoReader</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the APIs that torchvision offers for videos, together with the..."><div class="figure align-default" id="id1">
-<img alt="Video API" src="_images/sphx_glr_plot_video_api_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_video_api.html#sphx-glr-auto-examples-plot-video-api-py"><span class="std std-ref">Video API</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div><dl class="py method">
-<dt id="torchvision.io.VideoReader.__next__">
-<code class="sig-name descname"><span class="pre">__next__</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="_modules/torchvision/io.html#VideoReader.__next__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.VideoReader.__next__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decodes and returns the next frame of the current stream.
-Frames are encoded as a dict with mandatory
-data and pts fields, where data is a tensor, and pts is a
-presentation timestamp of the frame expressed in seconds
-as a float.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>a dictionary and containing decoded frame (<code class="docutils literal notranslate"><span class="pre">data</span></code>)
-and corresponding timestamp (<code class="docutils literal notranslate"><span class="pre">pts</span></code>) in seconds</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="torchvision.io.VideoReader.get_metadata">
-<code class="sig-name descname"><span class="pre">get_metadata</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="_modules/torchvision/io.html#VideoReader.get_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.VideoReader.get_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns video metadata</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>dictionary containing duration and frame rate for every stream</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="torchvision.io.VideoReader.seek">
-<code class="sig-name descname"><span class="pre">seek</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_s</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#torchvision.io.VideoReader" title="torchvision.io.VideoReader"><span class="pre">torchvision.io.VideoReader</span></a><a class="reference internal" href="_modules/torchvision/io.html#VideoReader.seek"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.VideoReader.seek" title="Permalink to this definition">¶</a></dt>
-<dd><p>Seek within current stream.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>time_s</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – seek time in seconds</p>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Current implementation is the so-called precise seek. This
-means following seek, call to <code class="xref py py-mod docutils literal notranslate"><span class="pre">next()</span></code> will return the
-frame with the exact timestamp if it exists or
-the first frame with timestamp larger than <code class="docutils literal notranslate"><span class="pre">time_s</span></code>.</p>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt id="torchvision.io.VideoReader.set_current_stream">
-<code class="sig-name descname"><span class="pre">set_current_stream</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stream</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><a class="reference internal" href="_modules/torchvision/io.html#VideoReader.set_current_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.VideoReader.set_current_stream" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set current stream.
-Explicitly define the stream we are operating on.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>stream</strong> (<em>string</em>) – descriptor of the required stream. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;video:0&quot;</span></code>
-Currently available stream types include <code class="docutils literal notranslate"><span class="pre">['video',</span> <span class="pre">'audio']</span></code>.
-Each descriptor consists of two parts: stream type (e.g. ‘video’) and
-a unique stream id (which are determined by video encoding).
-In this way, if the video contaner contains multiple
-streams of the same type, users can acces the one they want.
-If only stream type is passed, the decoder auto-detects first stream
-of that type and returns it.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True on succes, False otherwise</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)">bool</a>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader" title="torchvision.io.VideoReader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VideoReader</span></code></a>(path, stream, num_threads)</p></td>
+<td><p>Fine-grained video-reading API.</p></td>
+</tr>
+</tbody>
+</table>
 <p>Example of inspecting a video:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision</span>
 <span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;path to a test video&quot;</span>
@@ -574,246 +379,47 @@ of that type and returns it.</p>
 </div>
 <div class="section" id="image">
 <h2>Image<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt id="torchvision.io.ImageReadMode">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">ImageReadMode</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io/image.html#ImageReadMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.ImageReadMode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Support for various modes while reading images.</p>
-<p>Use <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code> for loading the image as-is,
-<code class="docutils literal notranslate"><span class="pre">ImageReadMode.GRAY</span></code> for converting to grayscale,
-<code class="docutils literal notranslate"><span class="pre">ImageReadMode.GRAY_ALPHA</span></code> for grayscale with transparency,
-<code class="docutils literal notranslate"><span class="pre">ImageReadMode.RGB</span></code> for RGB and <code class="docutils literal notranslate"><span class="pre">ImageReadMode.RGB_ALPHA</span></code> for
-RGB with transparency.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.read_image">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">read_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">path:</span> <span class="pre">str</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#read_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.read_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
-Optionally converts the image to the desired format.
-The values of the output tensor are uint8 in [0, 255].</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – path of the JPEG or PNG image.</p></li>
-<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally converting the image.
-Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
-See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
-available modes.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>output (Tensor[image_channels, image_height, image_width])</p>
-</dd>
-</dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">read_image</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates various features that are now supported by the image transformations &lt;..."><div class="figure align-default" id="id2">
-<img alt="Tensor transforms and JIT" src="_images/sphx_glr_plot_scripted_tensor_transforms_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_scripted_tensor_transforms.html#sphx-glr-auto-examples-plot-scripted-tensor-transforms-py"><span class="std std-ref">Tensor transforms and JIT</span></a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="The following example illustrates the operations available the ops module for repurposing segme..."><div class="figure align-default" id="id3">
-<img alt="Repurposing masks into bounding boxes" src="_images/sphx_glr_plot_repurposing_annotations_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_repurposing_annotations.html#sphx-glr-auto-examples-plot-repurposing-annotations-py"><span class="std std-ref">Repurposing masks into bounding boxes</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id4">
-<img alt="Visualization utilities" src="_images/sphx_glr_plot_visualization_utils_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.decode_image">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">decode_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">input:</span> <span class="pre">torch.Tensor</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#decode_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Detects whether an image is a JPEG or PNG and performs the appropriate
-operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p>
-<p>Optionally converts the image to the desired format.
-The values of the output tensor are uint8 in [0, 255].</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em>) – a one dimensional uint8 tensor containing the raw bytes of the
-PNG or JPEG image.</p></li>
-<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally converting the image.
-Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
-See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
-available modes.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>output (Tensor[image_channels, image_height, image_width])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.encode_jpeg">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">encode_jpeg</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">75</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#encode_jpeg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.encode_jpeg" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes an input tensor in CHW layout and returns a buffer with the contents
-of its corresponding JPEG file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em><em>)</em>) – int8 image tensor of
-<code class="docutils literal notranslate"><span class="pre">c</span></code> channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must be 1 or 3.</p></li>
-<li><p><strong>quality</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Quality of the resulting JPEG file, it must be a number between
-1 and 100. Default: 75</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>A one dimensional int8 tensor that contains the raw bytes of the</dt><dd><p>JPEG file.</p>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>output (Tensor[1])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.decode_jpeg">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">decode_jpeg</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">input:</span> <span class="pre">torch.Tensor</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em>, <em class="sig-param"><span class="pre">device:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'cpu'</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#decode_jpeg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_jpeg" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
-Optionally converts the image to the desired format.
-The values of the output tensor are uint8 between 0 and 255.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>1</em><em>]</em>) – a one dimensional uint8 tensor containing
-the raw bytes of the JPEG image. This tensor must be on CPU,
-regardless of the <code class="docutils literal notranslate"><span class="pre">device</span></code> parameter.</p></li>
-<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally
-converting the image. Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
-See <code class="docutils literal notranslate"><span class="pre">ImageReadMode</span></code> class for more information on various
-available modes.</p></li>
-<li><p><strong>device</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em> or </em><em>torch.device</em>) – The device on which the decoded image will
-be stored. If a cuda device is specified, the image will be decoded
-with <a class="reference external" href="https://developer.nvidia.com/nvjpeg">nvjpeg</a>. This is only
-supported for CUDA version &gt;= 10.1</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>output (Tensor[image_channels, image_height, image_width])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.write_jpeg">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">write_jpeg</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">75</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io/image.html#write_jpeg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.write_jpeg" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of <code class="docutils literal notranslate"><span class="pre">c</span></code>
-channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must be 1 or 3.</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to save the image.</p></li>
-<li><p><strong>quality</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Quality of the resulting JPEG file, it must be a number
-between 1 and 100. Default: 75</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.encode_png">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">encode_png</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#encode_png"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.encode_png" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes an input tensor in CHW layout and returns a buffer with the contents
-of its corresponding PNG file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of
-<code class="docutils literal notranslate"><span class="pre">c</span></code> channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must 3 or 1.</p></li>
-<li><p><strong>compression_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Compression factor for the resulting file, it must be a number
-between 0 and 9. Default: 6</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>A one dimensional int8 tensor that contains the raw bytes of the</dt><dd><p>PNG file.</p>
-</dd>
-</dl>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[1]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.decode_png">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">decode_png</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">input:</span> <span class="pre">torch.Tensor</span></em>, <em class="sig-param"><span class="pre">mode:</span> <span class="pre">torchvision.io.image.ImageReadMode</span> <span class="pre">=</span> <span class="pre">&lt;ImageReadMode.UNCHANGED:</span> <span class="pre">0&gt;</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#decode_png"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_png" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
-Optionally converts the image to the desired format.
-The values of the output tensor are uint8 in [0, 255].</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>1</em><em>]</em>) – a one dimensional uint8 tensor containing
-the raw bytes of the PNG image.</p></li>
-<li><p><strong>mode</strong> (<a class="reference internal" href="#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – the read mode used for optionally
-converting the image. Default: <code class="docutils literal notranslate"><span class="pre">ImageReadMode.UNCHANGED</span></code>.
-See <cite>ImageReadMode</cite> class for more information on various
-available modes.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>output (Tensor[image_channels, image_height, image_width])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.write_png">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">write_png</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/io/image.html#write_png"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.write_png" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images)
-and saves it in a PNG file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>channels</em><em>, </em><em>image_height</em><em>, </em><em>image_width</em><em>]</em>) – int8 image tensor of
-<code class="docutils literal notranslate"><span class="pre">c</span></code> channels, where <code class="docutils literal notranslate"><span class="pre">c</span></code> must be 1 or 3.</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to save the image.</p></li>
-<li><p><strong>compression_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Compression factor for the resulting file, it must be a number
-between 0 and 9. Default: 6</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.read_file">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">read_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#read_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.read_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads and outputs the bytes contents of a file as a uint8 Tensor
-with one dimension.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – the path to the file to be read</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>data (Tensor)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.io.write_file">
-<code class="sig-prename descclassname"><span class="pre">torchvision.io.</span></code><code class="sig-name descname"><span class="pre">write_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><a class="reference internal" href="_modules/torchvision/io/image.html#write_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.write_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes the contents of a uint8 tensor with one dimension to a
-file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – the path to the file to be written</p></li>
-<li><p><strong>data</strong> (<em>Tensor</em>) – the contents to be written to the output file</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>(value)</p></td>
+<td><p>Support for various modes while reading images.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_image.html#torchvision.io.read_image" title="torchvision.io.read_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_image</span></code></a>(path[, mode])</p></td>
+<td><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_image</span></code></a>(input[, mode])</p></td>
+<td><p>Detects whether an image is a JPEG or PNG and performs the appropriate operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
+<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding JPEG file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg" title="torchvision.io.decode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_jpeg</span></code></a>(input[, mode, device])</p></td>
+<td><p>Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
+<td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
+<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode])</p></td>
+<td><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
+<td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
+<td><p>Reads and outputs the bytes contents of a file as a uint8 Tensor with one dimension.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
+<td><p>Writes the contents of a uint8 tensor with one dimension to a file.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
@@ -825,10 +431,10 @@ file.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="models.html" class="btn btn-neutral float-right" title="torchvision.models" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="generated/torchvision.io.read_video.html" class="btn btn-neutral float-right" title="read_video" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="datasets.html" class="btn btn-neutral" title="torchvision.datasets" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="generated/torchvision.ops.StochasticDepth.html" class="btn btn-neutral" title="StochasticDepth" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -860,10 +466,12 @@ file.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">torchvision.io</a><ul>
+<li><a class="reference internal" href="#">Reading/Writing images and videos</a><ul>
 <li><a class="reference internal" href="#video">Video</a></li>
 <li><a class="reference internal" href="#fine-grained-video-api">Fine-grained video API</a></li>
-<li><a class="reference internal" href="#image">Image</a></li>
+<li><a class="reference internal" href="#image">Image</a><ul>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

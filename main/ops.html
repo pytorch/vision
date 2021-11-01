@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.ops &mdash; Torchvision main documentation</title>
+  <title>Operators &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchvision.transforms" href="transforms.html" />
-    <link rel="prev" title="torchvision.models.feature_extraction" href="feature_extraction.html" />
+    <link rel="next" title="batched_nms" href="generated/torchvision.ops.batched_nms.html" />
+    <link rel="prev" title="get_graph_node_names" href="generated/torchvision.models.feature_extraction.get_graph_node_names.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+205c6c7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+b1bd2f2 ) &#x25BC</a>
     </div>
     
 
@@ -224,13 +224,13 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">torchvision.models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">torchvision.models.feature_extraction</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">torchvision.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -286,7 +286,7 @@
       </li>
 
         
-      <li>torchvision.ops</li>
+      <li>Operators</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -318,598 +318,93 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="torchvision-ops">
-<span id="ops"></span><h1>torchvision.ops<a class="headerlink" href="#torchvision-ops" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="operators">
+<span id="ops"></span><h1>Operators<a class="headerlink" href="#operators" title="Permalink to this headline">¶</a></h1>
 <p><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.ops</span></code> implements operators that are specific for Computer Vision.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>All operators have native support for TorchScript.</p>
 </div>
-<dl class="py function">
-<dt id="torchvision.ops.batched_nms">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">batched_nms</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">idxs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_threshold</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#batched_nms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.batched_nms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs non-maximum suppression in a batched fashion.</p>
-<p>Each index value correspond to a category, and NMS
-will not be applied between elements of different categories.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes where NMS will be performed. They
-are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and
-<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p></li>
-<li><p><strong>scores</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – scores for each one of the boxes</p></li>
-<li><p><strong>idxs</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – indices of the categories for each one of the boxes.</p></li>
-<li><p><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – discards all overlapping boxes with IoU &gt; iou_threshold</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>int64 tensor with the indices of the elements that have been kept by NMS, sorted
-in decreasing order of scores</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.box_area">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">box_area</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.box_area" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes the area of a set of bounding boxes, which are specified by their
-(x1, y1, x2, y2) coordinates.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes for which the area will be computed. They
-are expected to be in (x1, y1, x2, y2) format with
-<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the area for each box</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.box_convert">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">box_convert</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_fmt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_fmt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.box_convert" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts boxes from given in_fmt to out_fmt.
-Supported in_fmt and out_fmt are:</p>
-<p>‘xyxy’: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
-This is the format that torchvision utilities expect.</p>
-<p>‘xywh’ : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.</p>
-<p>‘cxcywh’ : boxes are represented via centre, width and height, cx, cy being center of box, w, h
-being width and height.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes which will be converted.</p></li>
-<li><p><strong>in_fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Input format of given boxes. Supported formats are [‘xyxy’, ‘xywh’, ‘cxcywh’].</p></li>
-<li><p><strong>out_fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Output format of given boxes. Supported formats are [‘xyxy’, ‘xywh’, ‘cxcywh’]</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Boxes into converted format.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N, 4]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.box_iou">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">box_iou</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#box_iou"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.box_iou" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return intersection-over-union (Jaccard index) between two sets of boxes.</p>
-<p>Both sets of boxes are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
-<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes1</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – first set of boxes</p></li>
-<li><p><strong>boxes2</strong> (<em>Tensor</em><em>[</em><em>M</em><em>, </em><em>4</em><em>]</em>) – second set of boxes</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N, M]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.clip_boxes_to_image">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">clip_boxes_to_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#clip_boxes_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.clip_boxes_to_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Clip boxes so that they lie inside an image of size <cite>size</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format
-with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p></li>
-<li><p><strong>size</strong> (<em>Tuple</em><em>[</em><em>height</em><em>, </em><em>width</em><em>]</em>) – size of the image</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>clipped boxes</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N, 4]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.deform_conv2d">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">deform_conv2d</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">(1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">(1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/deform_conv.html#deform_conv2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.deform_conv2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Deformable Convolution v2, described in
-<a class="reference external" href="https://arxiv.org/abs/1811.11168">Deformable ConvNets v2: More Deformable, Better Results</a> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code> and
-Performs Deformable Convolution, described in
-<a class="reference external" href="https://arxiv.org/abs/1703.06211">Deformable Convolutional Networks</a> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>batch_size</em><em>, </em><em>in_channels</em><em>, </em><em>in_height</em><em>, </em><em>in_width</em><em>]</em>) – input tensor</p></li>
-<li><p><strong>offset</strong> (<em>Tensor</em><em>[</em><em>batch_size</em><em>, </em><em>2 * offset_groups * kernel_height * kernel_width</em><em>, </em><em>out_height</em><em>, </em><em>out_width</em><em>]</em>) – offsets to be applied for each position in the convolution kernel.</p></li>
-<li><p><strong>weight</strong> (<em>Tensor</em><em>[</em><em>out_channels</em><em>, </em><em>in_channels // groups</em><em>, </em><em>kernel_height</em><em>, </em><em>kernel_width</em><em>]</em>) – convolution weights,
-split into groups of size (in_channels // groups)</p></li>
-<li><p><strong>bias</strong> (<em>Tensor</em><em>[</em><em>out_channels</em><em>]</em>) – optional bias of shape (out_channels,). Default: None</p></li>
-<li><p><strong>stride</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – distance between convolution centers. Default: 1</p></li>
-<li><p><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – height/width of padding of zeroes around
-each image. Default: 0</p></li>
-<li><p><strong>dilation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – the spacing between kernel elements. Default: 1</p></li>
-<li><p><strong>mask</strong> (<em>Tensor</em><em>[</em><em>batch_size</em><em>, </em><em>offset_groups * kernel_height * kernel_width</em><em>, </em><em>out_height</em><em>, </em><em>out_width</em><em>]</em>) – masks to be applied for each position in the convolution kernel. Default: None</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>result of convolution</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[batch_sz, out_channels, out_h, out_w]</p>
-</dd>
-</dl>
-<dl>
-<dt>Examples::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">kh</span><span class="p">,</span> <span class="n">kw</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">kh</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># offset and mask should have the same spatial size as the output</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># of the convolution. In this case, for an input of 10, stride of 1</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># and kernel size of 3, without padding, the output size is 8</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">kh</span> <span class="o">*</span> <span class="n">kw</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">kh</span> <span class="o">*</span> <span class="n">kw</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">deform_conv2d</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># returns</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
-</pre></div>
-</div>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.generalized_box_iou">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">generalized_box_iou</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#generalized_box_iou"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.generalized_box_iou" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return generalized intersection-over-union (Jaccard index) between two sets of boxes.</p>
-<p>Both sets of boxes are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
-<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes1</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – first set of boxes</p></li>
-<li><p><strong>boxes2</strong> (<em>Tensor</em><em>[</em><em>M</em><em>, </em><em>4</em><em>]</em>) – second set of boxes</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the NxM matrix containing the pairwise generalized IoU values
-for every element in boxes1 and boxes2</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N, M]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.masks_to_boxes">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">masks_to_boxes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">masks</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#masks_to_boxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.masks_to_boxes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the bounding boxes around the provided masks.</p>
-<p>Returns a [N, 4] tensor containing bounding boxes. The boxes are in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with
-<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>masks</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – masks to transform where N is the number of masks
-and (H, W) are the spatial dimensions.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bounding boxes</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N, 4]</p>
-</dd>
-</dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">masks_to_boxes</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="The following example illustrates the operations available the ops module for repurposing segme..."><div class="figure align-default" id="id1">
-<img alt="Repurposing masks into bounding boxes" src="_images/sphx_glr_plot_repurposing_annotations_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="auto_examples/plot_repurposing_annotations.html#sphx-glr-auto-examples-plot-repurposing-annotations-py"><span class="std std-ref">Repurposing masks into bounding boxes</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.nms">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">nms</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_threshold</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#nms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.nms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs non-maximum suppression (NMS) on the boxes according
-to their intersection-over-union (IoU).</p>
-<p>NMS iteratively removes lower scoring boxes which have an
-IoU greater than iou_threshold with another (higher scoring)
-box.</p>
-<p>If multiple boxes have the exact same score and satisfy the IoU
-criterion with respect to a reference box, the selected box is
-not guaranteed to be the same between CPU and GPU. This is similar
-to the behavior of argsort in PyTorch when repeated values are present.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em><em>)</em>) – boxes to perform NMS on. They
-are expected to be in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and
-<code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p></li>
-<li><p><strong>scores</strong> (<em>Tensor</em><em>[</em><em>N</em><em>]</em>) – scores for each one of the boxes</p></li>
-<li><p><strong>iou_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – discards all overlapping boxes with IoU &gt; iou_threshold</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>int64 tensor with the indices of the elements that have been kept
-by NMS, sorted in decreasing order of scores</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.ps_roi_align">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">ps_roi_align</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/ps_roi_align.html#ps_roi_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.ps_roi_align" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Position-Sensitive Region of Interest (RoI) Align operator
-mentioned in Light-Head R-CNN.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
-contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.</p></li>
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from.
-The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed, then the first column should
-contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
-If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
-in the batch.</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – the size of the output (in bins or pixels) after the pooling
-is performed, as (height, width).</p></li>
-<li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – a scaling factor that maps the box coordinates to
-the input coordinates. For example, if your boxes are defined on the scale
-of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
-the original image), you’ll want to set this to 0.5. Default: 1.0</p></li>
-<li><p><strong>sampling_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of sampling points in the interpolation grid
-used to compute the output value of each pooled output bin. If &gt; 0,
-then exactly <code class="docutils literal notranslate"><span class="pre">sampling_ratio</span> <span class="pre">x</span> <span class="pre">sampling_ratio</span></code> sampling points per bin are used. If
-&lt;= 0, then an adaptive number of grid points are used (computed as
-<code class="docutils literal notranslate"><span class="pre">ceil(roi_width</span> <span class="pre">/</span> <span class="pre">output_width)</span></code>, and likewise for height). Default: -1</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The pooled RoIs</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.ps_roi_pool">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">ps_roi_pool</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/ps_roi_pool.html#ps_roi_pool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.ps_roi_pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Position-Sensitive Region of Interest (RoI) Pool operator
-described in R-FCN</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
-contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.</p></li>
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from.
-The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed, then the first column should
-contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
-If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
-in the batch.</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – the size of the output (in bins or pixels) after the pooling
-is performed, as (height, width).</p></li>
-<li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – a scaling factor that maps the box coordinates to
-the input coordinates. For example, if your boxes are defined on the scale
-of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
-the original image), you’ll want to set this to 0.5. Default: 1.0</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The pooled RoIs.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.remove_small_boxes">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">remove_small_boxes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/boxes.html#remove_small_boxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.remove_small_boxes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove boxes which contains at least one side smaller than min_size.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes in <code class="docutils literal notranslate"><span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">x2,</span> <span class="pre">y2)</span></code> format
-with <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.</p></li>
-<li><p><strong>min_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – minimum size</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>indices of the boxes that have both sides
-larger than min_size</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[K]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.roi_align">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">roi_align</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aligned</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/roi_align.html#roi_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.roi_align" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Region of Interest (RoI) Align operator with average pooling, as described in Mask R-CNN.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
-contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.
-If the tensor is quantized, we expect a batch size of <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">==</span> <span class="pre">1</span></code>.</p></li>
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from.
-The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed, then the first column should
-contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
-If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
-in the batch.</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – the size of the output (in bins or pixels) after the pooling
-is performed, as (height, width).</p></li>
-<li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – a scaling factor that maps the box coordinates to
-the input coordinates. For example, if your boxes are defined on the scale
-of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
-the original image), you’ll want to set this to 0.5. Default: 1.0</p></li>
-<li><p><strong>sampling_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of sampling points in the interpolation grid
-used to compute the output value of each pooled output bin. If &gt; 0,
-then exactly <code class="docutils literal notranslate"><span class="pre">sampling_ratio</span> <span class="pre">x</span> <span class="pre">sampling_ratio</span></code> sampling points per bin are used. If
-&lt;= 0, then an adaptive number of grid points are used (computed as
-<code class="docutils literal notranslate"><span class="pre">ceil(roi_width</span> <span class="pre">/</span> <span class="pre">output_width)</span></code>, and likewise for height). Default: -1</p></li>
-<li><p><strong>aligned</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – If False, use the legacy implementation.
-If True, pixel shift the box coordinates it by -0.5 for a better alignment with the two
-neighboring pixel indices. This version is used in Detectron2</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The pooled RoIs.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[K, C, output_size[0], output_size[1]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.roi_pool">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">roi_pool</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/roi_pool.html#roi_pool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.roi_pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs Region of Interest (RoI) Pool operator described in Fast R-CNN</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>C</em><em>, </em><em>H</em><em>, </em><em>W</em><em>]</em>) – The input tensor, i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> elements. Each element
-contains <code class="docutils literal notranslate"><span class="pre">C</span></code> feature maps of dimensions <code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">x</span> <span class="pre">W</span></code>.</p></li>
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>K</em><em>, </em><em>5</em><em>] or </em><em>List</em><em>[</em><em>Tensor</em><em>[</em><em>L</em><em>, </em><em>4</em><em>]</em><em>]</em>) – the box coordinates in (x1, y1, x2, y2)
-format where the regions will be taken from.
-The coordinate must satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">x1</span> <span class="pre">&lt;</span> <span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">y1</span> <span class="pre">&lt;</span> <span class="pre">y2</span></code>.
-If a single Tensor is passed, then the first column should
-contain the index of the corresponding element in the batch, i.e. a number in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">N</span> <span class="pre">-</span> <span class="pre">1]</span></code>.
-If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
-in the batch.</p></li>
-<li><p><strong>output_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – the size of the output after the cropping
-is performed, as (height, width)</p></li>
-<li><p><strong>spatial_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – a scaling factor that maps the box coordinates to
-the input coordinates. For example, if your boxes are defined on the scale
-of a 224x224 image and your input is a 112x112 feature map (resulting from a 0.5x scaling of
-the original image), you’ll want to set this to 0.5. Default: 1.0</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The pooled RoIs.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[K, C, output_size[0], output_size[1]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.sigmoid_focal_loss">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">sigmoid_focal_loss</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'none'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/focal_loss.html#sigmoid_focal_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.sigmoid_focal_loss" title="Permalink to this definition">¶</a></dt>
-<dd><p>Original implementation from <a class="reference external" href="https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py">https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py</a> .
-Loss used in RetinaNet for dense detection: <a class="reference external" href="https://arxiv.org/abs/1708.02002">https://arxiv.org/abs/1708.02002</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>inputs</strong> – A float tensor of arbitrary shape.
-The predictions for each example.</p></li>
-<li><p><strong>targets</strong> – A float tensor with the same shape as inputs. Stores the binary
-classification label for each element in inputs
-(0 for the negative class and 1 for the positive class).</p></li>
-<li><p><strong>alpha</strong> – (optional) Weighting factor in range (0,1) to balance
-positive vs negative examples or -1 for ignore. Default = 0.25</p></li>
-<li><p><strong>gamma</strong> – Exponent of the modulating factor (1 - p_t) to
-balance easy vs hard examples.</p></li>
-<li><p><strong>reduction</strong> – ‘none’ | ‘mean’ | ‘sum’
-‘none’: No reduction will be applied to the output.
-‘mean’: The output will be averaged.
-‘sum’: The output will be summed.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Loss tensor with the reduction option applied.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.ops.stochastic_depth">
-<code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">stochastic_depth</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="_modules/torchvision/ops/stochastic_depth.html#stochastic_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.stochastic_depth" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implements the Stochastic Depth from <a class="reference external" href="https://arxiv.org/abs/1603.09382">“Deep Networks with Stochastic Depth”</a> used for randomly dropping residual
-branches of residual architectures.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>..</em><em>]</em>) – The input tensor or arbitrary dimensions with the first one
-being its batch i.e. a batch with <code class="docutils literal notranslate"><span class="pre">N</span></code> rows.</p></li>
-<li><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – probability of the input to be zeroed.</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">&quot;batch&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;row&quot;</span></code>.
-<code class="docutils literal notranslate"><span class="pre">&quot;batch&quot;</span></code> randomly zeroes the entire input, <code class="docutils literal notranslate"><span class="pre">&quot;row&quot;</span></code> zeroes
-randomly selected rows from the batch.</p></li>
-<li><p><strong>training</strong> – apply stochastic depth if is <code class="docutils literal notranslate"><span class="pre">True</span></code>. Default: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The randomly zeroed tensor.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tensor[N, ..]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.RoIAlign">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">RoIAlign</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">aligned</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/roi_align.html#RoIAlign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.RoIAlign" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_align()</span></code></a>.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.PSRoIAlign">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">PSRoIAlign</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/ps_roi_align.html#PSRoIAlign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.PSRoIAlign" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_align()</span></code></a>.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.RoIPool">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">RoIPool</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/roi_pool.html#RoIPool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.RoIPool" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_pool()</span></code></a>.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.PSRoIPool">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">PSRoIPool</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatial_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/ps_roi_pool.html#PSRoIPool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.PSRoIPool" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#torchvision.ops.ps_roi_pool" title="torchvision.ops.ps_roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_pool()</span></code></a>.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.DeformConv2d">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">DeformConv2d</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_channels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/deform_conv.html#DeformConv2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.DeformConv2d" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-func docutils literal notranslate"><span class="pre">deform_conv2d()</span></code></a>.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.MultiScaleRoIAlign">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">MultiScaleRoIAlign</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">featmap_names</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canonical_scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">224</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canonical_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/poolers.html#MultiScaleRoIAlign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.MultiScaleRoIAlign" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.</p>
-<p>It infers the scale of the pooling via the heuristics specified in eq. 1
-of the <a class="reference external" href="https://arxiv.org/abs/1612.03144">Feature Pyramid Network paper</a>.
-They keyword-only parameters <code class="docutils literal notranslate"><span class="pre">canonical_scale</span></code> and <code class="docutils literal notranslate"><span class="pre">canonical_level</span></code>
-correspond respectively to <code class="docutils literal notranslate"><span class="pre">224</span></code> and <code class="docutils literal notranslate"><span class="pre">k0=4</span></code> in eq. 1, and
-have the following meaning: <code class="docutils literal notranslate"><span class="pre">canonical_level</span></code> is the target level of the pyramid from
-which to pool a region of interest with <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">x</span> <span class="pre">h</span> <span class="pre">=</span> <span class="pre">canonical_scale</span> <span class="pre">x</span> <span class="pre">canonical_scale</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>featmap_names</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>]</em>) – the names of the feature maps that will be used
-for the pooling.</p></li>
-<li><p><strong>output_size</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em><em>] or </em><em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – output size for the pooled region</p></li>
-<li><p><strong>sampling_ratio</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – sampling ratio for ROIAlign</p></li>
-<li><p><strong>canonical_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – canonical_scale for LevelMapper</p></li>
-<li><p><strong>canonical_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – canonical_level for LevelMapper</p></li>
-</ul>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">MultiScaleRoIAlign</span><span class="p">([</span><span class="s1">&#39;feat1&#39;</span><span class="p">,</span> <span class="s1">&#39;feat3&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;feat1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;feat2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>  <span class="c1"># this feature won&#39;t be used in the pooling</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;feat3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create some random bounding boxes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">boxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="mi">256</span><span class="p">;</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># original image size, before computing the feature maps</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">image_sizes</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">)]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">boxes</span><span class="p">],</span> <span class="n">image_sizes</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.FeaturePyramidNetwork">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">FeaturePyramidNetwork</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels_list</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_channels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_blocks</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torchvision.ops.feature_pyramid_network.ExtraFPNBlock</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/feature_pyramid_network.html#FeaturePyramidNetwork"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.FeaturePyramidNetwork" title="Permalink to this definition">¶</a></dt>
-<dd><p>Module that adds a FPN from on top of a set of feature maps. This is based on
-<a class="reference external" href="https://arxiv.org/abs/1612.03144">“Feature Pyramid Network for Object Detection”</a>.</p>
-<p>The feature maps are currently supposed to be in increasing depth
-order.</p>
-<p>The input to the model is expected to be an OrderedDict[Tensor], containing
-the feature maps on top of which the FPN will be added.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>in_channels_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) – number of channels for each feature map that
-is passed to the module</p></li>
-<li><p><strong>out_channels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of channels of the FPN representation</p></li>
-<li><p><strong>extra_blocks</strong> (<em>ExtraFPNBlock</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><em>None</em></a>) – if provided, extra operations will
-be performed. It is expected to take the fpn features, the original
-features and the names of the original features as input, and returns
-a new list of feature maps and their corresponding names</p></li>
-</ul>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">FeaturePyramidNetwork</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span> <span class="mi">5</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># get some dummy data</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;feat0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;feat2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;feat3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># compute the FPN on top of x</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># returns</span>
-<span class="gp">&gt;&gt;&gt; </span>  <span class="p">[(</span><span class="s1">&#39;feat0&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">])),</span>
-<span class="gp">&gt;&gt;&gt; </span>   <span class="p">(</span><span class="s1">&#39;feat2&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">])),</span>
-<span class="gp">&gt;&gt;&gt; </span>   <span class="p">(</span><span class="s1">&#39;feat3&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">]))]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt id="torchvision.ops.StochasticDepth">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">StochasticDepth</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchvision/ops/stochastic_depth.html#StochasticDepth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.StochasticDepth" title="Permalink to this definition">¶</a></dt>
-<dd><p>See <a class="reference internal" href="#torchvision.ops.stochastic_depth" title="torchvision.ops.stochastic_depth"><code class="xref py py-func docutils literal notranslate"><span class="pre">stochastic_depth()</span></code></a>.</p>
-</dd></dl>
-
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.batched_nms.html#torchvision.ops.batched_nms" title="torchvision.ops.batched_nms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batched_nms</span></code></a>(boxes, scores, idxs, iou_threshold)</p></td>
+<td><p>Performs non-maximum suppression in a batched fashion.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.box_area.html#torchvision.ops.box_area" title="torchvision.ops.box_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_area</span></code></a>(boxes)</p></td>
+<td><p>Computes the area of a set of bounding boxes, which are specified by their (x1, y1, x2, y2) coordinates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.box_convert.html#torchvision.ops.box_convert" title="torchvision.ops.box_convert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_convert</span></code></a>(boxes, in_fmt, out_fmt)</p></td>
+<td><p>Converts boxes from given in_fmt to out_fmt.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.box_iou.html#torchvision.ops.box_iou" title="torchvision.ops.box_iou"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_iou</span></code></a>(boxes1, boxes2)</p></td>
+<td><p>Return intersection-over-union (Jaccard index) between two sets of boxes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.clip_boxes_to_image.html#torchvision.ops.clip_boxes_to_image" title="torchvision.ops.clip_boxes_to_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clip_boxes_to_image</span></code></a>(boxes, size)</p></td>
+<td><p>Clip boxes so that they lie inside an image of size <cite>size</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.deform_conv2d.html#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deform_conv2d</span></code></a>(input, offset, weight[, bias, …])</p></td>
+<td><p>Performs Deformable Convolution v2, described in <a class="reference external" href="https://arxiv.org/abs/1811.11168">Deformable ConvNets v2: More Deformable, Better Results</a> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code> and Performs Deformable Convolution, described in <a class="reference external" href="https://arxiv.org/abs/1703.06211">Deformable Convolutional Networks</a> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.generalized_box_iou.html#torchvision.ops.generalized_box_iou" title="torchvision.ops.generalized_box_iou"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generalized_box_iou</span></code></a>(boxes1, boxes2)</p></td>
+<td><p>Return generalized intersection-over-union (Jaccard index) between two sets of boxes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.masks_to_boxes.html#torchvision.ops.masks_to_boxes" title="torchvision.ops.masks_to_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">masks_to_boxes</span></code></a>(masks)</p></td>
+<td><p>Compute the bounding boxes around the provided masks.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.nms.html#torchvision.ops.nms" title="torchvision.ops.nms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nms</span></code></a>(boxes, scores, iou_threshold)</p></td>
+<td><p>Performs non-maximum suppression (NMS) on the boxes according to their intersection-over-union (IoU).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.ps_roi_align.html#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ps_roi_align</span></code></a>(input, boxes, output_size[, …])</p></td>
+<td><p>Performs Position-Sensitive Region of Interest (RoI) Align operator mentioned in Light-Head R-CNN.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.ps_roi_pool.html#torchvision.ops.ps_roi_pool" title="torchvision.ops.ps_roi_pool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ps_roi_pool</span></code></a>(input, boxes, output_size[, …])</p></td>
+<td><p>Performs Position-Sensitive Region of Interest (RoI) Pool operator described in R-FCN</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.remove_small_boxes.html#torchvision.ops.remove_small_boxes" title="torchvision.ops.remove_small_boxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_small_boxes</span></code></a>(boxes, min_size)</p></td>
+<td><p>Remove boxes which contains at least one side smaller than min_size.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_align</span></code></a>(input, boxes, output_size[, …])</p></td>
+<td><p>Performs Region of Interest (RoI) Align operator with average pooling, as described in Mask R-CNN.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.roi_pool.html#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_pool</span></code></a>(input, boxes, output_size[, …])</p></td>
+<td><p>Performs Region of Interest (RoI) Pool operator described in Fast R-CNN</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.sigmoid_focal_loss.html#torchvision.ops.sigmoid_focal_loss" title="torchvision.ops.sigmoid_focal_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sigmoid_focal_loss</span></code></a>(inputs, targets[, alpha, …])</p></td>
+<td><p>Original implementation from <a class="reference external" href="https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py">https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py</a> .</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.stochastic_depth.html#torchvision.ops.stochastic_depth" title="torchvision.ops.stochastic_depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stochastic_depth</span></code></a>(input, p, mode[, training])</p></td>
+<td><p>Implements the Stochastic Depth from <a class="reference external" href="https://arxiv.org/abs/1603.09382">“Deep Networks with Stochastic Depth”</a> used for randomly dropping residual branches of residual architectures.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign" title="torchvision.ops.RoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoIAlign</span></code></a>(output_size, spatial_scale, …)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_align()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.PSRoIAlign.html#torchvision.ops.PSRoIAlign" title="torchvision.ops.PSRoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PSRoIAlign</span></code></a>(output_size, spatial_scale, …)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.ops.ps_roi_align.html#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_align()</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.RoIPool.html#torchvision.ops.RoIPool" title="torchvision.ops.RoIPool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoIPool</span></code></a>(output_size, spatial_scale)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.ops.roi_pool.html#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_pool()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.PSRoIPool.html#torchvision.ops.PSRoIPool" title="torchvision.ops.PSRoIPool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PSRoIPool</span></code></a>(output_size, spatial_scale)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.ops.ps_roi_pool.html#torchvision.ops.ps_roi_pool" title="torchvision.ops.ps_roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_pool()</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.DeformConv2d.html#torchvision.ops.DeformConv2d" title="torchvision.ops.DeformConv2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeformConv2d</span></code></a>(in_channels, out_channels, …)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.ops.deform_conv2d.html#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-func docutils literal notranslate"><span class="pre">deform_conv2d()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.MultiScaleRoIAlign.html#torchvision.ops.MultiScaleRoIAlign" title="torchvision.ops.MultiScaleRoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiScaleRoIAlign</span></code></a>(featmap_names, …)</p></td>
+<td><p>Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.FeaturePyramidNetwork.html#torchvision.ops.FeaturePyramidNetwork" title="torchvision.ops.FeaturePyramidNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FeaturePyramidNetwork</span></code></a>(in_channels_list, …)</p></td>
+<td><p>Module that adds a FPN from on top of a set of feature maps.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.StochasticDepth.html#torchvision.ops.StochasticDepth" title="torchvision.ops.StochasticDepth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StochasticDepth</span></code></a>(p, mode)</p></td>
+<td><p>See <a class="reference internal" href="generated/torchvision.ops.stochastic_depth.html#torchvision.ops.stochastic_depth" title="torchvision.ops.stochastic_depth"><code class="xref py py-func docutils literal notranslate"><span class="pre">stochastic_depth()</span></code></a>.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
@@ -920,10 +415,10 @@ a new list of feature maps and their corresponding names</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="transforms.html" class="btn btn-neutral float-right" title="torchvision.transforms" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="generated/torchvision.ops.batched_nms.html" class="btn btn-neutral float-right" title="batched_nms" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="feature_extraction.html" class="btn btn-neutral" title="torchvision.models.feature_extraction" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="generated/torchvision.models.feature_extraction.get_graph_node_names.html" class="btn btn-neutral" title="get_graph_node_names" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -955,7 +450,9 @@ a new list of feature maps and their corresponding names</p></li>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">torchvision.ops</a></li>
+<li><a class="reference internal" href="#">Operators</a><ul>
+</ul>
+</li>
 </ul>
 
             </div>

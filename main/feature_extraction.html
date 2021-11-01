@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.models.feature_extraction &mdash; Torchvision main documentation</title>
+  <title>Feature extraction for model inspection &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchvision.ops" href="ops.html" />
-    <link rel="prev" title="torchvision.models" href="models.html" />
+    <link rel="next" title="create_feature_extractor" href="generated/torchvision.models.feature_extraction.create_feature_extractor.html" />
+    <link rel="prev" title="r2plus1d_18" href="generated/torchvision.models.video.r2plus1d_18.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+205c6c7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+b1bd2f2 ) &#x25BC</a>
     </div>
     
 
@@ -224,13 +224,13 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="datasets.html">torchvision.datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">torchvision.io</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">torchvision.models</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">torchvision.models.feature_extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ops.html">torchvision.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transforms.html">torchvision.transforms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">torchvision.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Feature extraction for model inspection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -286,7 +286,7 @@
       </li>
 
         
-      <li>torchvision.models.feature_extraction</li>
+      <li>Feature extraction for model inspection</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -318,9 +318,10 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="torchvision-models-feature-extraction">
-<h1>torchvision.models.feature_extraction<a class="headerlink" href="#torchvision-models-feature-extraction" title="Permalink to this headline">¶</a></h1>
-<p>Feature extraction utilities let us tap into our models to access intermediate
+  <div class="section" id="feature-extraction-for-model-inspection">
+<h1>Feature extraction for model inspection<a class="headerlink" href="#feature-extraction-for-model-inspection" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">torchvision.models.feature_extraction</span></code> package contains
+feature extraction utilities that let us tap into our models to access intermediate
 transformations of our inputs. This could be useful for a variety of
 applications in computer vision. Just a few examples are:</p>
 <ul class="simple">
@@ -331,7 +332,7 @@ recognition, copy-detection, or image retrieval.</p></li>
 with a specific task in mind. For example, passing a hierarchy of features
 to a Feature Pyramid Network with object detection heads.</p></li>
 </ul>
-<p>Torchvision provides <a class="reference internal" href="#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a> for this purpose.
+<p>Torchvision provides <a class="reference internal" href="generated/torchvision.models.feature_extraction.create_feature_extractor.html#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a> for this purpose.
 It works by following roughly these steps:</p>
 <ol class="arabic simple">
 <li><p>Symbolically tracing the model to get a graphical representation of
@@ -356,7 +357,7 @@ module down to leaf operation or leaf module. For instance <code class="docutils
 in ResNet-50 represents the output of the ReLU of the 2nd block of the 4th
 layer of the <code class="docutils literal notranslate"><span class="pre">ResNet</span></code> module. Here are some finer points to keep in mind:</p>
 <ul class="simple">
-<li><p>When specifying node names for <a class="reference internal" href="#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a>, you may
+<li><p>When specifying node names for <a class="reference internal" href="generated/torchvision.models.feature_extraction.create_feature_extractor.html#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a>, you may
 provide a truncated version of a node name as a shortcut. To see how this
 works, try creating a ResNet-50 model and printing the node names with
 <code class="docutils literal notranslate"><span class="pre">train_nodes,</span> <span class="pre">_</span> <span class="pre">=</span> <span class="pre">get_graph_node_names(model)</span> <span class="pre">print(train_nodes)</span></code> and
@@ -465,160 +466,16 @@ disambiguate.</p></li>
 </div>
 <div class="section" id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
-<dl class="py function">
-<dt id="torchvision.models.feature_extraction.create_feature_extractor">
-<code class="sig-prename descclassname"><span class="pre">torchvision.models.feature_extraction.</span></code><code class="sig-name descname"><span class="pre">create_feature_extractor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_nodes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_return_nodes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_return_nodes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracer_kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_diff_warning</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torch.fx.graph_module.GraphModule</span><a class="reference internal" href="_modules/torchvision/models/feature_extraction.html#create_feature_extractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.feature_extraction.create_feature_extractor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a new graph module that returns intermediate nodes from a given
-model as dictionary with user specified keys as strings, and the requested
-outputs as values. This is achieved by re-writing the computation graph of
-the model via FX to return the desired nodes as outputs. All unused nodes
-are removed, together with their corresponding parameters.</p>
-<p>Desired output nodes must be specified as a <code class="docutils literal notranslate"><span class="pre">.</span></code> separated
-path walking the module hierarchy from top level module down to leaf
-operation or leaf module. For more details on the node naming conventions
-used here, please see the <a class="reference internal" href="#about-node-names"><span class="std std-ref">relevant subheading</span></a>
-in the <a class="reference external" href="https://pytorch.org/vision/stable/feature_extraction.html">documentation</a>.</p>
-<p>Not all models will be FX traceable, although with some massaging they can
-be made to cooperate. Here’s a (not exhaustive) list of tips:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>If you don’t need to trace through a particular, problematic
-sub-module, turn it into a “leaf module” by passing a list of
-<code class="docutils literal notranslate"><span class="pre">leaf_modules</span></code> as one of the <code class="docutils literal notranslate"><span class="pre">tracer_kwargs</span></code> (see example below).
-It will not be traced through, but rather, the resulting graph will
-hold a reference to that module’s forward method.</p></li>
-<li><p>Likewise, you may turn functions into leaf functions by passing a
-list of <code class="docutils literal notranslate"><span class="pre">autowrap_functions</span></code> as one of the <code class="docutils literal notranslate"><span class="pre">tracer_kwargs</span></code> (see
-example below).</p></li>
-<li><p>Some inbuilt Python functions can be problematic. For instance,
-<code class="docutils literal notranslate"><span class="pre">int</span></code> will raise an error during tracing. You may wrap them in your
-own function and then pass that in <code class="docutils literal notranslate"><span class="pre">autowrap_functions</span></code> as one of
-the <code class="docutils literal notranslate"><span class="pre">tracer_kwargs</span></code>.</p></li>
-</ul>
-</div></blockquote>
-<p>For further information on FX see the
-<a class="reference external" href="https://pytorch.org/docs/stable/fx.html">torch.fx documentation</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<em>nn.Module</em>) – model on which we will extract the features</p></li>
-<li><p><strong>return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – either a <code class="docutils literal notranslate"><span class="pre">List</span></code> or a <code class="docutils literal notranslate"><span class="pre">Dict</span></code>
-containing the names (or partial names - see note above)
-of the nodes for which the activations will be returned. If it is
-a <code class="docutils literal notranslate"><span class="pre">Dict</span></code>, the keys are the node names, and the values
-are the user-specified keys for the graph module’s returned
-dictionary. If it is a <code class="docutils literal notranslate"><span class="pre">List</span></code>, it is treated as a <code class="docutils literal notranslate"><span class="pre">Dict</span></code> mapping
-node specification strings directly to output names. In the case
-that <code class="docutils literal notranslate"><span class="pre">train_return_nodes</span></code> and <code class="docutils literal notranslate"><span class="pre">eval_return_nodes</span></code> are specified,
-this should not be specified.</p></li>
-<li><p><strong>train_return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – similar to
-<code class="docutils literal notranslate"><span class="pre">return_nodes</span></code>. This can be used if the return nodes
-for train mode are different than those from eval mode.
-If this is specified, <code class="docutils literal notranslate"><span class="pre">eval_return_nodes</span></code> must also be specified,
-and <code class="docutils literal notranslate"><span class="pre">return_nodes</span></code> should not be specified.</p></li>
-<li><p><strong>eval_return_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – similar to
-<code class="docutils literal notranslate"><span class="pre">return_nodes</span></code>. This can be used if the return nodes
-for train mode are different than those from eval mode.
-If this is specified, <code class="docutils literal notranslate"><span class="pre">train_return_nodes</span></code> must also be specified,
-and <cite>return_nodes</cite> should not be specified.</p></li>
-<li><p><strong>tracer_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – a dictionary of keywork arguments for
-<code class="docutils literal notranslate"><span class="pre">NodePathTracer</span></code> (which passes them onto it’s parent class
-<a class="reference external" href="https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer">torch.fx.Tracer</a>).</p></li>
-<li><p><strong>suppress_diff_warning</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to suppress a warning
-when there are discrepancies between the train and eval version of
-the graph. Defaults to False.</p></li>
-</ul>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Feature extraction with resnet</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract layer1 and layer3, giving as names `feat1` and feat2`</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">create_feature_extractor</span><span class="p">(</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="n">model</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;layer1&#39;</span><span class="p">:</span> <span class="s1">&#39;feat1&#39;</span><span class="p">,</span> <span class="s1">&#39;layer3&#39;</span><span class="p">:</span> <span class="s1">&#39;feat2&#39;</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">([(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">out</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="p">[(</span><span class="s1">&#39;feat1&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">56</span><span class="p">,</span> <span class="mi">56</span><span class="p">])),</span>
-<span class="gp">&gt;&gt;&gt; </span>     <span class="p">(</span><span class="s1">&#39;feat2&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">14</span><span class="p">]))]</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Specifying leaf modules and leaf functions</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">leaf_function</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># This would raise a TypeError if traced through</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">LeafModule</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="c1"># This would raise a TypeError if traced through</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyModule</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="bp">self</span><span class="o">.</span><span class="n">leaf_module</span> <span class="o">=</span> <span class="n">LeafModule</span><span class="p">()</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="n">leaf_function</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">leaf_module</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">create_feature_extractor</span><span class="p">(</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="n">MyModule</span><span class="p">(),</span> <span class="n">return_nodes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;leaf_module&#39;</span><span class="p">],</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="n">tracer_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;leaf_modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">LeafModule</span><span class="p">],</span>
-<span class="gp">&gt;&gt;&gt; </span>                   <span class="s1">&#39;autowrap_functions&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">leaf_function</span><span class="p">]})</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
-<dt id="torchvision.models.feature_extraction.get_graph_node_names">
-<code class="sig-prename descclassname"><span class="pre">torchvision.models.feature_extraction.</span></code><code class="sig-name descname"><span class="pre">get_graph_node_names</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracer_kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_diff_warning</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="_modules/torchvision/models/feature_extraction.html#get_graph_node_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.feature_extraction.get_graph_node_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dev utility to return node names in order of execution. See note on node
-names under <a class="reference internal" href="#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a>. Useful for seeing which node
-names are available for feature extraction. There are two reasons that
-node names can’t easily be read directly from the code for a model:</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li><p>Not all submodules are traced through. Modules from <code class="docutils literal notranslate"><span class="pre">torch.nn</span></code> all
-fall within this category.</p></li>
-<li><p>Nodes representing the repeated application of the same operation
-or leaf module get a <code class="docutils literal notranslate"><span class="pre">_{counter}</span></code> postfix.</p></li>
-</ol>
-</div></blockquote>
-<p>The model is traced twice: once in train mode, and once in eval mode. Both
-sets of node names are returned.</p>
-<p>For more details on the node naming conventions used here, please see the
-<a class="reference internal" href="#about-node-names"><span class="std std-ref">relevant subheading</span></a> in the
-<a class="reference external" href="https://pytorch.org/vision/stable/feature_extraction.html">documentation</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<em>nn.Module</em>) – model for which we’d like to print node names</p></li>
-<li><p><strong>tracer_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – <p>a dictionary of keywork arguments for
-<code class="docutils literal notranslate"><span class="pre">NodePathTracer</span></code> (they are eventually passed onto
-<a class="reference external" href="https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer">torch.fx.Tracer</a>).</p>
-</p></li>
-<li><p><strong>suppress_diff_warning</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to suppress a warning
-when there are discrepancies between the train and eval version of
-the graph. Defaults to False.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a list of node names from tracing the model in
-train mode, and another from tracing the model in eval mode.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">train_nodes</span><span class="p">,</span> <span class="n">eval_nodes</span> <span class="o">=</span> <span class="n">get_graph_node_names</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.feature_extraction.create_feature_extractor.html#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_feature_extractor</span></code></a>(model[, …])</p></td>
+<td><p>Creates a new graph module that returns intermediate nodes from a given model as dictionary with user specified keys as strings, and the requested outputs as values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.feature_extraction.get_graph_node_names.html#torchvision.models.feature_extraction.get_graph_node_names" title="torchvision.models.feature_extraction.get_graph_node_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_graph_node_names</span></code></a>(model[, tracer_kwargs, …])</p></td>
+<td><p>Dev utility to return node names in order of execution.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
@@ -630,10 +487,10 @@ train mode, and another from tracing the model in eval mode.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ops.html" class="btn btn-neutral float-right" title="torchvision.ops" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="generated/torchvision.models.feature_extraction.create_feature_extractor.html" class="btn btn-neutral float-right" title="create_feature_extractor" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="models.html" class="btn btn-neutral" title="torchvision.models" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="generated/torchvision.models.video.r2plus1d_18.html" class="btn btn-neutral" title="r2plus1d_18" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -665,7 +522,7 @@ train mode, and another from tracing the model in eval mode.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">torchvision.models.feature_extraction</a><ul>
+<li><a class="reference internal" href="#">Feature extraction for model inspection</a><ul>
 <li><a class="reference internal" href="#api-reference">API Reference</a></li>
 </ul>
 </li>

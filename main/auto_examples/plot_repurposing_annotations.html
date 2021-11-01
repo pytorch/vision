@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+205c6c7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+b1bd2f2 ) &#x25BC</a>
     </div>
     
 
@@ -224,13 +224,13 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../datasets.html">torchvision.datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../io.html">torchvision.io</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../models.html">torchvision.models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">torchvision.models.feature_extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ops.html">torchvision.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../transforms.html">torchvision.transforms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../utils.html">torchvision.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul class="current">
@@ -376,7 +376,7 @@ localization tasks.</p>
 </div>
 <div class="section" id="converting-masks-to-bounding-boxes">
 <h2>Converting Masks to Bounding Boxes<a class="headerlink" href="#converting-masks-to-bounding-boxes" title="Permalink to this headline">¶</a></h2>
-<p>For example, the <a class="reference internal" href="../ops.html#torchvision.ops.masks_to_boxes" title="torchvision.ops.masks_to_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">masks_to_boxes()</span></code></a> operation can be used to
+<p>For example, the <a class="reference internal" href="../generated/torchvision.ops.masks_to_boxes.html#torchvision.ops.masks_to_boxes" title="torchvision.ops.masks_to_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">masks_to_boxes()</span></code></a> operation can be used to
 transform masks into bounding boxes that can be
 used as input to detection models such as FasterRCNN and RetinaNet.
 We will take images and masks from the <a class="reference external" href="https://www.cis.upenn.edu/~jshi/ped_html/">PenFudan Dataset</a>.</p>
@@ -456,7 +456,7 @@ tensor([[[False, False, False,  ..., False, False, False],
 </pre></div>
 </div>
 <p>Let us visualize an image and plot its corresponding segmentation masks.
-We will use the <a class="reference internal" href="../utils.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> to draw the segmentation masks.</p>
+We will use the <a class="reference internal" href="../generated/torchvision.utils.draw_segmentation_masks.html#torchvision.utils.draw_segmentation_masks" title="torchvision.utils.draw_segmentation_masks"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_segmentation_masks()</span></code></a> to draw the segmentation masks.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_segmentation_masks</span>
 
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">drawn_masks</span></a> <span class="o">=</span> <span class="p">[]</span>
@@ -467,7 +467,7 @@ We will use the <a class="reference internal" href="../utils.html#torchvision.ut
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_repurposing_annotations_001.png" srcset="../_images/sphx_glr_plot_repurposing_annotations_001.png" alt="plot repurposing annotations" class = "sphx-glr-single-img"/><p>To convert the boolean masks into bounding boxes.
-We will use the <a class="reference internal" href="../ops.html#torchvision.ops.masks_to_boxes" title="torchvision.ops.masks_to_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">masks_to_boxes()</span></code></a> from the torchvision.ops module
+We will use the <a class="reference internal" href="../generated/torchvision.ops.masks_to_boxes.html#torchvision.ops.masks_to_boxes" title="torchvision.ops.masks_to_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">masks_to_boxes()</span></code></a> from the torchvision.ops module
 It returns the boxes in <code class="docutils literal notranslate"><span class="pre">(xmin,</span> <span class="pre">ymin,</span> <span class="pre">xmax,</span> <span class="pre">ymax)</span></code> format.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">masks_to_boxes</span>
 
@@ -484,7 +484,7 @@ tensor([[ 96., 134., 181., 417.],
 </pre></div>
 </div>
 <p>As the shape denotes, there are 3 boxes and in <code class="docutils literal notranslate"><span class="pre">(xmin,</span> <span class="pre">ymin,</span> <span class="pre">xmax,</span> <span class="pre">ymax)</span></code> format.
-These can be visualized very easily with <a class="reference internal" href="../utils.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a> utility
+These can be visualized very easily with <a class="reference internal" href="../generated/torchvision.utils.draw_bounding_boxes.html#torchvision.utils.draw_bounding_boxes" title="torchvision.utils.draw_bounding_boxes"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code></a> utility
 provided in <a class="reference internal" href="../utils.html#utils"><span class="std std-ref">torchvision.utils</span></a>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_bounding_boxes</span>
 
@@ -494,7 +494,7 @@ provided in <a class="reference internal" href="../utils.html#utils"><span class
 </div>
 <img src="../_images/sphx_glr_plot_repurposing_annotations_002.png" srcset="../_images/sphx_glr_plot_repurposing_annotations_002.png" alt="plot repurposing annotations" class = "sphx-glr-single-img"/><p>These boxes can now directly be used by detection models in torchvision.
 Here is demo with a Faster R-CNN model loaded from
-<a class="reference internal" href="../models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a></p>
+<a class="reference internal" href="../generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">fasterrcnn_resnet50_fpn()</span></code></a></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models.detection</span> <span class="kn">import</span> <span class="n">fasterrcnn_resnet50_fpn</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">fasterrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -564,7 +564,7 @@ Here is an example where we re-purpose the dataset from the
         <span class="k">return</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">target</span></a>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.251 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.453 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-repurposing-annotations-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/b8b00ddf3e9bca37ad16e1aced1e3ea4/plot_repurposing_annotations.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_repurposing_annotations.py</span></code></a></p>
