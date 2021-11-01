@@ -26,43 +26,6 @@ InceptionOutputs.__annotations__ = {"logits": Tensor, "aux_logits": Optional[Ten
 _InceptionOutputs = InceptionOutputs
 
 
-def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "Inception3":
-    r"""Inception v3 model architecture from
-    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
-    The required minimum input size of the model is 75x75.
-
-    .. note::
-        **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
-        N x 3 x 299 x 299, so ensure your images are sized accordingly.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, add an auxiliary branch that can improve training.
-            Default: *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
-    """
-    if pretrained:
-        if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" in kwargs:
-            original_aux_logits = kwargs["aux_logits"]
-            kwargs["aux_logits"] = True
-        else:
-            original_aux_logits = True
-        kwargs["init_weights"] = False  # we are loading weights from a pretrained model
-        model = Inception3(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls["inception_v3_google"], progress=progress)
-        model.load_state_dict(state_dict)
-        if not original_aux_logits:
-            model.aux_logits = False
-            model.AuxLogits = None
-        return model
-
-    return Inception3(**kwargs)
-
-
 class Inception3(nn.Module):
     def __init__(
         self,
@@ -73,7 +36,7 @@ class Inception3(nn.Module):
         init_weights: Optional[bool] = None,
         dropout: float = 0.5,
     ) -> None:
-        super(Inception3, self).__init__()
+        super().__init__()
         _log_api_usage_once(self)
         if inception_blocks is None:
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux]
@@ -214,7 +177,7 @@ class InceptionA(nn.Module):
     def __init__(
         self, in_channels: int, pool_features: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InceptionA, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1x1 = conv_block(in_channels, 64, kernel_size=1)
@@ -251,7 +214,7 @@ class InceptionA(nn.Module):
 
 class InceptionB(nn.Module):
     def __init__(self, in_channels: int, conv_block: Optional[Callable[..., nn.Module]] = None) -> None:
-        super(InceptionB, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch3x3 = conv_block(in_channels, 384, kernel_size=3, stride=2)
@@ -281,7 +244,7 @@ class InceptionC(nn.Module):
     def __init__(
         self, in_channels: int, channels_7x7: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InceptionC, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1x1 = conv_block(in_channels, 192, kernel_size=1)
@@ -325,7 +288,7 @@ class InceptionC(nn.Module):
 
 class InceptionD(nn.Module):
     def __init__(self, in_channels: int, conv_block: Optional[Callable[..., nn.Module]] = None) -> None:
-        super(InceptionD, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch3x3_1 = conv_block(in_channels, 192, kernel_size=1)
@@ -356,7 +319,7 @@ class InceptionD(nn.Module):
 
 class InceptionE(nn.Module):
     def __init__(self, in_channels: int, conv_block: Optional[Callable[..., nn.Module]] = None) -> None:
-        super(InceptionE, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1x1 = conv_block(in_channels, 320, kernel_size=1)
@@ -405,7 +368,7 @@ class InceptionAux(nn.Module):
     def __init__(
         self, in_channels: int, num_classes: int, conv_block: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InceptionAux, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.conv0 = conv_block(in_channels, 128, kernel_size=1)
@@ -434,7 +397,7 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, **kwargs: Any) -> None:
-        super(BasicConv2d, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
 
@@ -442,3 +405,40 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)
+
+
+def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> Inception3:
+    r"""Inception v3 model architecture from
+    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
+    The required minimum input size of the model is 75x75.
+
+    .. note::
+        **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
+        N x 3 x 299 x 299, so ensure your images are sized accordingly.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+        aux_logits (bool): If True, add an auxiliary branch that can improve training.
+            Default: *True*
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+            was trained on ImageNet. Default: *False*
+    """
+    if pretrained:
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
+        if "aux_logits" in kwargs:
+            original_aux_logits = kwargs["aux_logits"]
+            kwargs["aux_logits"] = True
+        else:
+            original_aux_logits = True
+        kwargs["init_weights"] = False  # we are loading weights from a pretrained model
+        model = Inception3(**kwargs)
+        state_dict = load_state_dict_from_url(model_urls["inception_v3_google"], progress=progress)
+        model.load_state_dict(state_dict)
+        if not original_aux_logits:
+            model.aux_logits = False
+            model.AuxLogits = None
+        return model
+
+    return Inception3(**kwargs)

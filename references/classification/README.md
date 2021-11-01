@@ -38,7 +38,7 @@ The weights of the Inception V3 model are ported from the original paper rather 
 Since it expects tensors with a size of N x 3 x 299 x 299, to validate the model use the following command:
 
 ```
-torchrun --nproc_per_node=8 train.py --model inception_v3
+torchrun --nproc_per_node=8 train.py --model inception_v3\
       --val-resize-size 342 --val-crop-size 299 --train-crop-size 299 --test-only --pretrained
 ```
 

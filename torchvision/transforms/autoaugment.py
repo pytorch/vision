@@ -76,7 +76,7 @@ def _apply_op(
     elif op_name == "Identity":
         pass
     else:
-        raise ValueError("The provided operator {} is not recognized.".format(op_name))
+        raise ValueError(f"The provided operator {op_name} is not recognized.")
     return img
 
 
@@ -208,7 +208,7 @@ class AutoAugment(torch.nn.Module):
                 (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
             ]
         else:
-            raise ValueError("The provided policy {} is not recognized.".format(policy))
+            raise ValueError(f"The provided policy {policy} is not recognized.")
 
     def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
@@ -223,7 +223,7 @@ class AutoAugment(torch.nn.Module):
             "Contrast": (torch.linspace(0.0, 0.9, num_bins), True),
             "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
             "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)).round().int(), False),
-            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
+            "Solarize": (torch.linspace(255.0, 0.0, num_bins), False),
             "AutoContrast": (torch.tensor(0.0), False),
             "Equalize": (torch.tensor(0.0), False),
             "Invert": (torch.tensor(0.0), False),
@@ -270,7 +270,7 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + "(policy={}, fill={})".format(self.policy, self.fill)
+        return self.__class__.__name__ + f"(policy={self.policy}, fill={self.fill})"
 
 
 class RandAugment(torch.nn.Module):
@@ -321,7 +321,7 @@ class RandAugment(torch.nn.Module):
             "Contrast": (torch.linspace(0.0, 0.9, num_bins), True),
             "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
             "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)).round().int(), False),
-            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
+            "Solarize": (torch.linspace(255.0, 0.0, num_bins), False),
             "AutoContrast": (torch.tensor(0.0), False),
             "Equalize": (torch.tensor(0.0), False),
         }
@@ -404,7 +404,7 @@ class TrivialAugmentWide(torch.nn.Module):
             "Contrast": (torch.linspace(0.0, 0.99, num_bins), True),
             "Sharpness": (torch.linspace(0.0, 0.99, num_bins), True),
             "Posterize": (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)).round().int(), False),
-            "Solarize": (torch.linspace(256.0, 0.0, num_bins), False),
+            "Solarize": (torch.linspace(255.0, 0.0, num_bins), False),
             "AutoContrast": (torch.tensor(0.0), False),
             "Equalize": (torch.tensor(0.0), False),
         }

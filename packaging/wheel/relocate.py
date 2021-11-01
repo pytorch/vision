@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Helper script to package wheels and relocate binaries."""
 
 import glob
@@ -157,7 +155,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
     rename and copy them into the wheel while updating their respective rpaths.
     """
 
-    print("Relocating {0}".format(binary))
+    print(f"Relocating {binary}")
     binary_path = osp.join(output_library, binary)
 
     ld_tree = lddtree(binary_path)
@@ -173,12 +171,12 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
         print(library)
 
         if library_info["path"] is None:
-            print("Omitting {0}".format(library))
+            print(f"Omitting {library}")
             continue
 
         if library in ALLOWLIST:
             # Omit glibc/gcc/system libraries
-            print("Omitting {0}".format(library))
+            print(f"Omitting {library}")
             continue
 
         parent_dependencies = binary_dependencies.get(parent, [])
@@ -201,7 +199,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
         if library != binary:
             library_path = binary_paths[library]
             new_library_path = patch_new_path(library_path, new_libraries_path)
-            print("{0} -> {1}".format(library, new_library_path))
+            print(f"{library} -> {new_library_path}")
             shutil.copyfile(library_path, new_library_path)
             new_names[library] = new_library_path
 
@@ -214,7 +212,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
             new_library_name = new_names[library]
             for dep in library_dependencies:
                 new_dep = osp.basename(new_names[dep])
-                print("{0}: {1} -> {2}".format(library, dep, new_dep))
+                print(f"{library}: {dep} -> {new_dep}")
                 subprocess.check_output(
                     [patchelf, "--replace-needed", dep, new_dep, new_library_name], cwd=new_libraries_path
                 )
@@ -228,7 +226,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
     library_dependencies = binary_dependencies[binary]
     for dep in library_dependencies:
         new_dep = osp.basename(new_names[dep])
-        print("{0}: {1} -> {2}".format(binary, dep, new_dep))
+        print(f"{binary}: {dep} -> {new_dep}")
         subprocess.check_output([patchelf, "--replace-needed", dep, new_dep, binary], cwd=output_library)
 
     print("Update library rpath")
@@ -244,7 +242,7 @@ def relocate_dll_library(dumpbin, output_dir, output_library, binary):
     Given a shared library, find the transitive closure of its dependencies,
     rename and copy them into the wheel.
     """
-    print("Relocating {0}".format(binary))
+    print(f"Relocating {binary}")
     binary_path = osp.join(output_library, binary)
 
     library_dlls = find_dll_dependencies(dumpbin, binary_path)
@@ -255,18 +253,18 @@ def relocate_dll_library(dumpbin, output_dir, output_library, binary):
     while binary_queue != []:
         library, parent = binary_queue.pop(0)
         if library in WINDOWS_ALLOWLIST or library.startswith("api-ms-win"):
-            print("Omitting {0}".format(library))
+            print(f"Omitting {library}")
             continue
 
         library_path = find_program(library)
         if library_path is None:
-            print("{0} not found".format(library))
+            print(f"{library} not found")
             continue
 
         if osp.basename(osp.dirname(library_path)) == "system32":
             continue
 
-        print("{0}: {1}".format(library, library_path))
+        print(f"{library}: {library_path}")
         parent_dependencies = binary_dependencies.get(parent, [])
         parent_dependencies.append(library)
         binary_dependencies[parent] = parent_dependencies
@@ -284,7 +282,7 @@ def relocate_dll_library(dumpbin, output_dir, output_library, binary):
         if library != binary:
             library_path = binary_paths[library]
             new_library_path = osp.join(package_dir, library)
-            print("{0} -> {1}".format(library, new_library_path))
+            print(f"{library} -> {new_library_path}")
             shutil.copyfile(library_path, new_library_path)
 
 
@@ -300,16 +298,16 @@ def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
                 full_file = osp.join(root, this_file)
                 rel_file = osp.relpath(full_file, output_dir)
                 if full_file == record_file:
-                    f.write("{0},,\n".format(rel_file))
+                    f.write(f"{rel_file},,\n")
                 else:
                     digest, size = rehash(full_file)
-                    f.write("{0},{1},{2}\n".format(rel_file, digest, size))
+                    f.write(f"{rel_file},{digest},{size}\n")
 
     print("Compressing wheel")
     base_wheel_name = osp.join(wheel_dir, wheel_name)
     shutil.make_archive(base_wheel_name, "zip", output_dir)
     os.remove(wheel)
-    shutil.move("{0}.zip".format(base_wheel_name), wheel)
+    shutil.move(f"{base_wheel_name}.zip", wheel)
     shutil.rmtree(output_dir)
 
 
@@ -317,9 +315,7 @@ def patch_linux():
     # Get patchelf location
     patchelf = find_program("patchelf")
     if patchelf is None:
-        raise FileNotFoundError(
-            "Patchelf was not found in the system, please" " make sure that is available on the PATH."
-        )
+        raise FileNotFoundError("Patchelf was not found in the system, please make sure that is available on the PATH.")
 
     # Find wheel
     print("Finding wheels...")
@@ -338,7 +334,7 @@ def patch_linux():
         print("Unzipping wheel...")
         wheel_file = osp.basename(wheel)
         wheel_dir = osp.dirname(wheel)
-        print("{0}".format(wheel_file))
+        print(f"{wheel_file}")
         wheel_name, _ = osp.splitext(wheel_file)
         unzip_file(wheel, output_dir)
 
@@ -355,9 +351,7 @@ def patch_win():
     # Get dumpbin location
     dumpbin = find_program("dumpbin")
     if dumpbin is None:
-        raise FileNotFoundError(
-            "Dumpbin was not found in the system, please" " make sure that is available on the PATH."
-        )
+        raise FileNotFoundError("Dumpbin was not found in the system, please make sure that is available on the PATH.")
 
     # Find wheel
     print("Finding wheels...")
@@ -376,7 +370,7 @@ def patch_win():
         print("Unzipping wheel...")
         wheel_file = osp.basename(wheel)
         wheel_dir = osp.dirname(wheel)
-        print("{0}".format(wheel_file))
+        print(f"{wheel_file}")
         wheel_name, _ = osp.splitext(wheel_file)
         unzip_file(wheel, output_dir)
 
