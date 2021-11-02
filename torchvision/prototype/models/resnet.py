@@ -160,6 +160,16 @@ class ResNeXt50_32x4dWeights(Weights):
             "acc@5": 93.698,
         },
     )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/resnext50_32x4d-b260af35.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "acc@1": 81.116,
+            "acc@5": 95.478,
+        },
+    )
 
 
 class ResNeXt101_32x8dWeights(Weights):
