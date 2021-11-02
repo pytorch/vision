@@ -153,7 +153,7 @@ def load_data(traindir, valdir, args):
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
             )
         else:
-            fn = PM.__dict__[args.model]
+            fn = PM.quantization.__dict__[args.model] if hasattr(args, "backend") else PM.__dict__[args.model]
             weights = PM._api.get_weight(fn, args.weights)
             preprocessing = weights.transforms()
 
