@@ -63,16 +63,20 @@ def _densenet(
     return model
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_common_meta = {
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": None,  # weights ported from LuaTorch
+}
 
 
 class DenseNet121Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/densenet121-a639ec97.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
             "acc@1": 74.434,
             "acc@5": 91.972,
         },
@@ -80,12 +84,11 @@ class DenseNet121Weights(Weights):
 
 
 class DenseNet161Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/densenet161-8d451a50.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
             "acc@1": 77.138,
             "acc@5": 93.560,
         },
@@ -93,12 +96,11 @@ class DenseNet161Weights(Weights):
 
 
 class DenseNet169Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/densenet169-b2777c0a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
             "acc@1": 75.600,
             "acc@5": 92.806,
         },
@@ -106,12 +108,11 @@ class DenseNet169Weights(Weights):
 
 
 class DenseNet201Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/densenet201-c1103571.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
             "acc@1": 76.896,
             "acc@5": 93.370,
         },
@@ -121,7 +122,7 @@ class DenseNet201Weights(Weights):
 def densenet121(weights: Optional[DenseNet121Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = DenseNet121Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = DenseNet121Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = DenseNet121Weights.verify(weights)
 
     return _densenet(32, (6, 12, 24, 16), 64, weights, progress, **kwargs)
@@ -130,7 +131,7 @@ def densenet121(weights: Optional[DenseNet121Weights] = None, progress: bool = T
 def densenet161(weights: Optional[DenseNet161Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = DenseNet161Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = DenseNet161Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = DenseNet161Weights.verify(weights)
 
     return _densenet(48, (6, 12, 36, 24), 96, weights, progress, **kwargs)
@@ -139,7 +140,7 @@ def densenet161(weights: Optional[DenseNet161Weights] = None, progress: bool = T
 def densenet169(weights: Optional[DenseNet169Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = DenseNet169Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = DenseNet169Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = DenseNet169Weights.verify(weights)
 
     return _densenet(32, (6, 12, 32, 32), 64, weights, progress, **kwargs)
@@ -148,7 +149,7 @@ def densenet169(weights: Optional[DenseNet169Weights] = None, progress: bool = T
 def densenet201(weights: Optional[DenseNet201Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = DenseNet201Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = DenseNet201Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = DenseNet201Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)

@@ -13,15 +13,14 @@ from ._meta import _IMAGENET_CATEGORIES
 __all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "Inception3Weights", "inception_v3"]
 
 
-_common_meta = {"size": (299, 299), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
-
-
 class Inception3Weights(Weights):
     ImageNet1K_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
-            **_common_meta,
+            "size": (299, 299),
+            "categories": _IMAGENET_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
             "acc@1": 77.294,
             "acc@5": 93.450,
