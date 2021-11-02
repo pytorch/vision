@@ -158,7 +158,7 @@ class ConvNormActivation(torch.nn.Sequential):
 class SqueezeExcitation(torch.nn.Module):
     """
     This block implements the Squeeze-and-Excitation block from https://arxiv.org/abs/1709.01507 (see Fig. 1).
-    Parameters ``activation``, and `scale_activation`` correspond to ``delta`` and ``sigma`` in in eq. 3.
+    Parameters ``activation``, and ``scale_activation`` correspond to ``delta`` and ``sigma`` in in eq. 3.
 
     Args:
         input_channels (int): Number of channels in the input image
