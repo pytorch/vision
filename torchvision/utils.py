@@ -365,6 +365,7 @@ def draw_keypoints(
 
     for kpt_id, kpt_inst in enumerate(img_kpts):
         if keypoints_id_color:
+            # Get the color from nested list.
             colors_draw = colors[kpt_id]
         for inst_id, kpt in enumerate(kpt_inst):
             x1 = kpt[0] - radius
