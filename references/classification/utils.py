@@ -418,9 +418,10 @@ try:
 except ImportError:
     apex_available = False
 
+
 def master_params(optimizer):
     """Generator to iterate over all parameters in the optimizer param_groups."""
-    
+
     if apex_available:
         yield from apex.amp.master_params(optimizer)
     else:
