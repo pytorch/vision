@@ -8,6 +8,8 @@ from torch.nn.modules.utils import _pair
 from torch.nn.parameter import Parameter
 from torchvision.extension import _assert_has_ops
 
+from ..utils import _log_api_usage_once
+
 
 def deform_conv2d(
     input: Tensor,
@@ -59,6 +61,7 @@ def deform_conv2d(
         >>>  torch.Size([4, 5, 8, 8])
     """
 
+    _log_api_usage_once("torchvision.ops.deform_conv2d")
     _assert_has_ops()
     out_channels = weight.shape[0]
 
@@ -158,12 +161,10 @@ class DeformConv2d(nn.Module):
         """
         Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): offsets to be applied for each position in the
-                convolution kernel.
-            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): masks to be applied for each position in the
-                convolution kernel.
+            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                offsets to be applied for each position in the convolution kernel.
+            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                masks to be applied for each position in the convolution kernel.
         """
         return deform_conv2d(
             input,
