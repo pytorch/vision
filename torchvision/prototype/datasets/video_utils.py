@@ -4,10 +4,17 @@ import av
 import numpy as np
 import torch
 from torchdata.datapipes.iter import IterDataPipe
-from torchvision.io import video, _video_opt 
+from torchvision.io import video, _video_opt
 
 class AVKeyframeReader(IterDataPipe[Dict[str, Any]]):
     def __init__(self, video_dp: IterDataPipe[Dict[str, Any]], transform=None) -> None:
+        """TorchData Iterdatapype that takes in video datapipe
+        and yields all keyframes in a video
+
+        Args:
+            video_dp (IterDataPipe[Dict[str, Any]]): Video dataset IterDataPipe
+            transform ([type], optional): Transform to be applied to every frame. Defaults to None.
+        """
         self.datapipe = video_dp
         self.transform = transform
 
@@ -35,6 +42,14 @@ class AVKeyframeReader(IterDataPipe[Dict[str, Any]]):
 
 class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
     def __init__(self, video_dp: IterDataPipe[Dict[str, Any]], num_samples=1, transform=None) -> None:
+        """TorchData Iterdatapype that takes in video datapipe
+        and yields `num_samples` random frames from a video.
+
+        Args:
+            video_dp (IterDataPipe[Dict[str, Any]]): Video dataset IterDataPipe
+            num_samples (int, optional): Number of frames to sample from each video. Defaults to 1.
+            transform ([type], optional): Transform to be applied to every frame . Defaults to None.
+        """
         self.datapipe = video_dp
         self.transform = transform
         self.num_samples = num_samples
@@ -54,26 +69,45 @@ class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
                     img = frame.to_image()
                     if self.transform is not None:
                         img = self.transform(img)
+
+                    video_meta = {"time_base": float(frame.time_base),
+                                  "guessed_fps": float(stream.guessed_rate),
+                        }
                     yield {
                         "frame": img,
                         "pts": frame.pts,
-                        "video_meta": {
-                            "time_base": float(frame.time_base),
-                            "guessed_fps": float(stream.guessed_rate),
-                        },
+                        "video_meta": video_meta,
                         "path": video_d["path"],
-                        "target": video_d["target"]
+                        "target": video_d["target"],
                     }
 
 
 class AVClipReader(IterDataPipe[Dict[str, Any]]):
-    def __init__(self, video_dp: IterDataPipe[Dict[str, Any]], num_frames_per_clip=8, num_clips_per_video=1, step_between_clips=1, transform=None) -> None:
+    def __init__(
+            self,
+            video_dp: IterDataPipe[Dict[str, Any]],
+            num_frames_per_clip=8,
+            num_clips_per_video=1,
+            step_between_clips=1,
+            transform=None) -> None:
+        """TorchData Iterdatapype that takes in video datapipe
+        and yields `num_clips_per_video` video clips (sequences of `num_frames_per_clip` frames) from a video.
+        Clips are sampled from all possible clips of length `num_frames_per_clip` spaced `step_between_clips` apart.
+
+        Args:
+            video_dp (IterDataPipe[Dict[str, Any]]): Video dataset IterDataPipe
+            num_frames_per_clip (int, optional): Length of a video clip in frames. Defaults to 8.
+            num_clips_per_video (int, optional): How many clips to sample from each video. Defaults to 1.
+            step_between_clips (int, optional): Minimum spacing between two clips. Defaults to 1.
+            transform ([type], optional): Transform to be applied to each clip. Defaults to None.
+        """
+
         self.datapipe = video_dp
         self.transform = transform
         self.num_frames_per_clip = num_frames_per_clip
         self.num_clips_per_video = num_clips_per_video
         self.step_between_clips = step_between_clips
-    
+
     def _unfold(self, tensor, dilation=1):
         """
         similar to tensor.unfold, but with the dilation
@@ -101,7 +135,7 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
                 # duration is given in time_base units as int
                 duration = stream.duration
 
-                # get video_stream timestramps 
+                # get video_stream timestramps
                 # with a tolerance for pyav imprecission
                 _ptss = torch.arange(duration - 7)
                 _ptss = self._unfold(_ptss)
@@ -124,7 +158,7 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
                         stream,
                         {"video": 0},
                     )
-                    
+
                     vframes_list = [frame.to_ndarray(format='rgb24') for frame in video_frames]
 
                     if vframes_list:
@@ -136,7 +170,7 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
                     else:
                         vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
                         print("FAIL")
-                    
+
                     # [N,H,W,C] to [N,C,H,W]
                     vframes = vframes.permute(0, 3, 1, 2)
                     print(vframes.size())
