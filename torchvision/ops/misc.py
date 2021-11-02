@@ -3,7 +3,6 @@ from typing import Callable, List, Optional
 
 import torch
 from torch import Tensor
-from torch.nn.common_types import _size_2_t
 
 from ..utils import _log_api_usage_once
 
@@ -110,7 +109,7 @@ class ConvNormActivation(torch.nn.Sequential):
         in_channels (int): Number of channels in the input image
         out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block
         kernel_size: (int, optional): Size of the convolving kernel. Default: 3
-        stride (int or tuple, optional): Stride of the convolution. Default: 1
+        stride (int, optional): Stride of the convolution. Default: 1
         padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
         groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolutiuon layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``
@@ -125,7 +124,7 @@ class ConvNormActivation(torch.nn.Sequential):
         in_channels: int,
         out_channels: int,
         kernel_size: int = 3,
-        stride: _size_2_t = 1,
+        stride: int = 1,
         padding: Optional[int] = None,
         groups: int = 1,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
