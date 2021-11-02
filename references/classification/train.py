@@ -44,7 +44,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
             loss.backward()
 
         if args.clip_grad_norm is not None:
-            nn.utils.clip_grad_norm_(utils.master_params(optimizer), args.clip_grad_norm)
+            nn.utils.clip_grad_norm_(utils.get_optimizer_params(optimizer), args.clip_grad_norm)
 
         optimizer.step()
 

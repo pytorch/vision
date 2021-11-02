@@ -411,7 +411,7 @@ def reduce_across_processes(val):
     return t
 
 
-def master_params(optimizer):
+def get_optimizer_params(optimizer):
     """Generator to iterate over all parameters in the optimizer param_groups."""
 
     for group in optimizer.param_groups:
