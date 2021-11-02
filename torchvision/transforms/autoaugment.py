@@ -365,7 +365,7 @@ class RandAugment(torch.nn.Module):
 
 class TrivialAugmentWide(torch.nn.Module):
     r"""Dataset-independent data-augmentation with TrivialAugment Wide, as described in
-    `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`.
+    `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
