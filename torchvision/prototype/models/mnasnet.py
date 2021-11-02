@@ -23,7 +23,12 @@ __all__ = [
 ]
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_common_meta = {
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/1e100/mnasnet_trainer",
+}
 
 
 class MNASNet0_5Weights(Weights):
@@ -32,7 +37,6 @@ class MNASNet0_5Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/1e100/mnasnet_trainer",
             "acc@1": 67.734,
             "acc@5": 87.490,
         },
@@ -50,7 +54,6 @@ class MNASNet1_0Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/1e100/mnasnet_trainer",
             "acc@1": 73.456,
             "acc@5": 91.510,
         },
