@@ -411,20 +411,9 @@ def reduce_across_processes(val):
     return t
 
 
-try:
-    import apex
-
-    apex_available = True
-except ImportError:
-    apex_available = False
-
-
 def master_params(optimizer):
     """Generator to iterate over all parameters in the optimizer param_groups."""
 
-    if apex_available:
-        yield from apex.amp.master_params(optimizer)
-    else:
-        for group in optimizer.param_groups:
-            for p in group["params"]:
-                yield p
+    for group in optimizer.param_groups:
+        for p in group["params"]:
+            yield p
