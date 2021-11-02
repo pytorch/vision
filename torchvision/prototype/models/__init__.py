@@ -2,6 +2,7 @@ from .alexnet import *
 from .densenet import *
 from .efficientnet import *
 from .googlenet import *
+from .inception import *
 from .mnasnet import *
 from .mobilenetv2 import *
 from .mobilenetv3 import *
