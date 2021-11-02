@@ -5,6 +5,7 @@ import torchvision
 from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
 
+from ..utils import _log_api_usage_once
 from .roi_align import roi_align
 
 
@@ -130,6 +131,7 @@ class MultiScaleRoIAlign(nn.Module):
         canonical_level: int = 4,
     ):
         super().__init__()
+        _log_api_usage_once(self)
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
         self.featmap_names = featmap_names
