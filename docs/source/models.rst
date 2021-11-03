@@ -127,7 +127,7 @@ These can be constructed by passing ``pretrained=True``:
     regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
-This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
+This directory can be set using the `TORCH_HOME` environment variable. See
 :func:`torch.utils.model_zoo.load_url` for details.
 
 Some models use modules which have different training and evaluation
