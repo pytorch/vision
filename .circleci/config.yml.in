@@ -355,10 +355,10 @@ jobs:
             packaging/build_wheel.sh
       - store_artifacts:
           path: dist
-	  - run:
-	      name: smoke_test
-		  command: |
-	        packaging/smoke_test.sh		  
+      - run:
+          name: Smoke Test
+          command: |
+             packaging/smoke_test.sh
       - persist_to_workspace:
           root: dist
           paths:
