@@ -19,6 +19,8 @@ except ImportError:
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -55,8 +57,6 @@ def main(args):
     if not args.weights:
         model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
     else:
-        if PM is None:
-            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
         model = PM.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 

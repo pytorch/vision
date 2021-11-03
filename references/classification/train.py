@@ -182,6 +182,8 @@ def load_data(traindir, valdir, args):
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -226,8 +228,6 @@ def main(args):
     if not args.weights:
         model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
     else:
-        if PM is None:
-            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
         model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 

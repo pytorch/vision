@@ -99,6 +99,8 @@ def collate_fn(batch):
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.apex and amp is None:
         raise RuntimeError(
             "Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
@@ -214,8 +216,6 @@ def main(args):
     if not args.weights:
         model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
     else:
-        if PM is None:
-            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
         model = PM.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
