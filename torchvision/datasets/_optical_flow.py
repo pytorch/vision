@@ -18,6 +18,11 @@ __all__ = (
 
 
 class FlowDataset(ABC, VisionDataset):
+    # Some datasets like Kitti have a built-in valid mask, indicating which flow values are valid
+    # For those we return (img1, img2, flow, valid), and for the rest we return (img1, img2, flow),
+    # and it's up to whatever consumes the dataset to decide what `valid` should be.
+    _has_builtin_flow_mask = False
+
     def __init__(self, root, transforms=None):
 
         super().__init__(root=root)
@@ -31,30 +36,30 @@ class FlowDataset(ABC, VisionDataset):
 
     @abstractmethod
     def _read_flow(self, file_name):
-        # Return the flow or a tuple (flow, valid) for datasets where the valid mask is built-in
+        # Return the flow or a tuple with the flow and the valid mask if _has_builtin_flow_mask is True
         pass
 
     def __getitem__(self, index):
-        # Some datasets like Kitti have a built-in valid mask, indicating which flow values are valid
-        # For those we return (img1, img2, flow, valid), and for the rest we return (img1, img2, flow),
-        # and it's up to whatever consumes the dataset to decide what `valid` should be.
 
         img1 = self._read_img(self._image_list[index][0])
         img2 = self._read_img(self._image_list[index][1])
-        flow = self._read_flow(self._flow_list[index]) if self._flow_list else None
 
-        if isinstance(flow, tuple):
-            flow, valid = flow
+        if self._flow_list:  # it will be empty for some dataset when split="test"
+            flow = self._read_flow(self._flow_list[index])
+            if self._has_builtin_flow_mask:
+                flow, valid = flow
+            else:
+                valid = None
         else:
-            valid = None
+            flow = valid = None
 
         if self.transforms is not None:
             img1, img2, flow, valid = self.transforms(img1, img2, flow, valid)
 
-        if valid is None:
-            return img1, img2, flow
-        else:
+        if self._has_builtin_flow_mask:
             return img1, img2, flow, valid
+        else:
+            return img1, img2, flow
 
     def __len__(self):
         return len(self._image_list)
@@ -65,7 +70,7 @@ class Sintel(FlowDataset):
         self,
         root,
         split="train",
-        dstype="clean",
+        pass_name="clean",
         transforms=None,
     ):
 
@@ -74,12 +79,14 @@ class Sintel(FlowDataset):
         if split not in ("train", "test"):
             raise ValueError("split must be either 'train' or 'test'")
 
-        if dstype not in ("clean", "final"):
-            raise ValueError("dstype must be either 'clean' or 'final'")
+        if pass_name not in ("clean", "final"):
+            raise ValueError("pass_name must be either 'clean' or 'final'")
+
+        root = Path(root) / "Sintel"
 
         split_dir = "training" if split == "train" else split
-        flow_root = Path(root) / split_dir / "flow"
-        image_root = Path(root) / split_dir / dstype
+        image_root = root / split_dir / pass_name
+        flow_root = root / "training" / "flow"
 
         for scene in os.listdir(image_root):
             image_list = sorted(glob(str(image_root / scene / "*.png")))
@@ -94,6 +101,8 @@ class Sintel(FlowDataset):
 
 
 class KittiFlow(FlowDataset):
+    _has_builtin_flow_mask = True
+
     def __init__(
         self,
         root,
@@ -105,9 +114,14 @@ class KittiFlow(FlowDataset):
         if split not in ("train", "test"):
             raise ValueError("split must be either 'train' or 'test'")
 
-        root = Path(root) / ("training" if split == "train" else split)
+        root = Path(root) / "Kitti" / ("training" if split == "train" else split)
         images1 = sorted(glob(str(root / "image_2" / "*_10.png")))
         images2 = sorted(glob(str(root / "image_2" / "*_11.png")))
+
+        if not images1 or not images2:
+            raise FileNotFoundError(
+                "Could not find the Kitti flow images. Please make sure the directory structure is correct."
+            )
 
         for img1, img2 in zip(images1, images2):
             self._image_list += [[img1, img2]]
@@ -137,7 +151,7 @@ def _read_flo(file_name):
         data = np.fromfile(f, np.float32, count=2 * int(w) * int(h))
         # Reshape data into 3D array (columns, rows, bands)
         # The reshape here is for visualization, the original code is (w,h,2)
-        return np.resize(data, (int(h), int(w), 2))
+        return np.resize(data, (2, int(h), int(w)))
 
 
 def _read_16bits_png_with_flow_and_valid_mask(file_name):
@@ -146,4 +160,5 @@ def _read_16bits_png_with_flow_and_valid_mask(file_name):
     flow, valid = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]
     flow = (flow - 2 ** 15) / 64  # This conversion is explained somewhere on the kitti archive
 
-    return flow, valid
+    # For consistency with other datasets, we convert to numpy
+    return flow.numpy(), valid.numpy()

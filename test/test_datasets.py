@@ -1871,5 +1871,132 @@ class LFWPairsTestCase(LFWPeopleTestCase):
             datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
 
 
+class SintelTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Sintel
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final"))
+    # We patch the flow reader, because this would otherwise force us to generate fake (but readable) .flo files,
+    # which is something we want to # avoid.
+    _FAKE_FLOW = "Fake Flow"
+    EXTRA_PATCHES = {unittest.mock.patch("torchvision.datasets.Sintel._read_flow", return_value=_FAKE_FLOW)}
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (type(_FAKE_FLOW), type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "Sintel"
+
+        num_images_per_scene = 3 if config["split"] == "train" else 4
+        num_scenes = 2
+
+        for split_dir in ("training", "test"):
+            for pass_name in ("clean", "final"):
+                image_root = root / split_dir / pass_name
+
+                for scene_id in range(num_scenes):
+                    scene_dir = image_root / f"scene_{scene_id}"
+                    datasets_utils.create_image_folder(
+                        image_root,
+                        name=str(scene_dir),
+                        file_name_fn=lambda image_idx: f"frame_000{image_idx}.png",
+                        num_examples=num_images_per_scene,
+                    )
+
+        # For the ground truth flow value we just create empty files so that they're properly discovered,
+        # see comment above about EXTRA_PATCHES
+        flow_root = root / "training" / "flow"
+        for scene_id in range(num_scenes):
+            scene_dir = flow_root / f"scene_{scene_id}"
+            os.makedirs(scene_dir)
+            for i in range(num_images_per_scene - 1):
+                open(str(scene_dir / f"frame_000{i}.flo"), "a").close()
+
+        # with e.g. num_images_per_scene = 3, for a single scene with have 3 images
+        # which are frame_0000, frame_0001 and frame_0002
+        # They will be consecutively paired as (frame_0000, frame_0001), (frame_0001, frame_0002),
+        # that is 3 - 1 = 2 examples. Hence the formula below
+        num_examples = (num_images_per_scene - 1) * num_scenes
+        return num_examples
+
+    def test_flow(self):
+        # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
+        with self.create_dataset(split="train") as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow == self._FAKE_FLOW
+
+        # Make sure flow is always None for test split
+        with self.create_dataset(split="test") as (dataset, _):
+            assert dataset._image_list and not dataset._flow_list
+            for _, _, flow in dataset:
+                assert flow is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="split must be either"):
+            with self.create_dataset(split="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="pass_name must be either"):
+            with self.create_dataset(pass_name="bad"):
+                pass
+
+
+class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.KittiFlow
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "Kitti"
+
+        num_examples = 2 if config["split"] == "train" else 3
+        for split_dir in ("training", "test"):
+
+            datasets_utils.create_image_folder(
+                root / split_dir,
+                name="image_2",
+                file_name_fn=lambda image_idx: f"{image_idx}_10.png",
+                num_examples=num_examples,
+            )
+            datasets_utils.create_image_folder(
+                root / split_dir,
+                name="image_2",
+                file_name_fn=lambda image_idx: f"{image_idx}_11.png",
+                num_examples=num_examples,
+            )
+
+        # For kitti the ground truth flows are encoded as 16-bits pngs.
+        # create_image_folder() will actually create 8-bits pngs, but it doesn't
+        # matter much: the flow reader will still be able to read the files, it
+        # will just be garbage flow value - but we don't care about that here.
+        datasets_utils.create_image_folder(
+            root / "training",
+            name="flow_occ",
+            file_name_fn=lambda image_idx: f"{image_idx}_10.png",
+            num_examples=num_examples,
+        )
+
+        return num_examples
+
+    def test_flow_and_valid(self):
+        # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
+        # Also assert flow and valid are of the expected shape
+        with self.create_dataset(split="train") as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow, valid in dataset:
+                two, h, w = flow.shape
+                assert two == 2
+                assert valid.shape == (h, w)
+
+        # Make sure flow and valid are always None for test split
+        with self.create_dataset(split="test") as (dataset, _):
+            assert dataset._image_list and not dataset._flow_list
+            for _, _, flow, valid in dataset:
+                assert flow is None
+                assert valid is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="split must be either"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
 if __name__ == "__main__":
     unittest.main()
