@@ -40,16 +40,20 @@ def _shufflenetv2(
     return model
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_common_meta = {
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
+}
 
 
 class ShuffleNetV2_x0_5Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
             "acc@1": 69.362,
             "acc@5": 88.316,
         },
@@ -57,12 +61,11 @@ class ShuffleNetV2_x0_5Weights(Weights):
 
 
 class ShuffleNetV2_x1_0Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
             "acc@1": 60.552,
             "acc@5": 81.746,
         },
@@ -82,7 +85,7 @@ def shufflenet_v2_x0_5(
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = ShuffleNetV2_x0_5Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = ShuffleNetV2_x0_5Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = ShuffleNetV2_x0_5Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
@@ -93,7 +96,7 @@ def shufflenet_v2_x1_0(
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = ShuffleNetV2_x1_0Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = ShuffleNetV2_x1_0Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = ShuffleNetV2_x1_0Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)

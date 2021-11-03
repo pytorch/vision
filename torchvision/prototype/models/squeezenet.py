@@ -13,7 +13,12 @@ from ._meta import _IMAGENET_CATEGORIES
 __all__ = ["SqueezeNet", "SqueezeNet1_0Weights", "SqueezeNet1_1Weights", "squeezenet1_0", "squeezenet1_1"]
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_common_meta = {
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
+}
 
 
 class SqueezeNet1_0Weights(Weights):
@@ -22,7 +27,6 @@ class SqueezeNet1_0Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
             "acc@1": 58.092,
             "acc@5": 80.420,
         },
@@ -35,7 +39,6 @@ class SqueezeNet1_1Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
             "acc@1": 58.178,
             "acc@5": 80.624,
         },

@@ -40,7 +40,12 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, weights: Optional[Weights], prog
     return model
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_common_meta = {
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
+}
 
 
 class VGG11Weights(Weights):
@@ -49,7 +54,6 @@ class VGG11Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 69.020,
             "acc@5": 88.628,
         },
@@ -62,7 +66,6 @@ class VGG11BNWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 70.370,
             "acc@5": 89.810,
         },
@@ -75,7 +78,6 @@ class VGG13Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 69.928,
             "acc@5": 89.246,
         },
@@ -88,7 +90,6 @@ class VGG13BNWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 71.586,
             "acc@5": 90.374,
         },
@@ -101,7 +102,6 @@ class VGG16Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 71.592,
             "acc@5": 90.382,
         },
@@ -114,7 +114,6 @@ class VGG16BNWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 73.360,
             "acc@5": 91.516,
         },
@@ -127,7 +126,6 @@ class VGG19Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 72.376,
             "acc@5": 90.876,
         },
@@ -140,7 +138,6 @@ class VGG19BNWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 74.218,
             "acc@5": 91.842,
         },
