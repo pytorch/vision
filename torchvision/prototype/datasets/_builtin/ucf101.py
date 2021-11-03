@@ -81,9 +81,7 @@ class ucf101(Dataset):
         files = resource_dps[1]
 
         annotations_dp = ZipArchiveReader(annotations)
-        annotations_dp = Filter(annotations_dp,
-                                self._filtername,
-                                fn_kwargs=dict(tgt=f"{config.split}list0{config.fold}.txt"))
+        annotations_dp = Filter(annotations_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
         annotations_dp = CSVParser(annotations_dp, delimiter=" ")
         # COMMENT OUT FOR TESTING
         annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
