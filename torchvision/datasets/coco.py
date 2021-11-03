@@ -1,12 +1,16 @@
-from .vision import VisionDataset
-from PIL import Image
 import os
 import os.path
 from typing import Any, Callable, Optional, Tuple, List
 
+from PIL import Image
+
+from .vision import VisionDataset
+
 
 class CocoDetection(VisionDataset):
     """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
+
+    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
 
     Args:
         root (string): Root directory where images are downloaded to.
@@ -56,6 +60,8 @@ class CocoDetection(VisionDataset):
 
 class CocoCaptions(CocoDetection):
     """`MS Coco Captions <https://cocodataset.org/#captions-2015>`_ Dataset.
+
+    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
 
     Args:
         root (string): Root directory where images are downloaded to.

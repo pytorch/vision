@@ -1,9 +1,12 @@
-import torch
-from torch import Tensor
 from typing import Tuple
-from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
+
+import torch
 import torchvision
+from torch import Tensor
 from torchvision.extension import _assert_has_ops
+
+from ..utils import _log_api_usage_once
+from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 
 
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
@@ -31,6 +34,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
         Tensor: int64 tensor with the indices of the elements that have been kept
         by NMS, sorted in decreasing order of scores
     """
+    _log_api_usage_once("torchvision.ops.nms")
     _assert_has_ops()
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
@@ -59,6 +63,7 @@ def batched_nms(
         Tensor: int64 tensor with the indices of the elements that have been kept by NMS, sorted
         in decreasing order of scores
     """
+    _log_api_usage_once("torchvision.ops.batched_nms")
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
     # Ideally for GPU we'd use a higher threshold
@@ -118,6 +123,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
         Tensor[K]: indices of the boxes that have both sides
         larger than min_size
     """
+    _log_api_usage_once("torchvision.ops.remove_small_boxes")
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
     keep = torch.where(keep)[0]
@@ -136,6 +142,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     Returns:
         Tensor[N, 4]: clipped boxes
     """
+    _log_api_usage_once("torchvision.ops.clip_boxes_to_image")
     dim = boxes.dim()
     boxes_x = boxes[..., 0::2]
     boxes_y = boxes[..., 1::2]
@@ -176,6 +183,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         Tensor[N, 4]: Boxes into converted format.
     """
 
+    _log_api_usage_once("torchvision.ops.box_convert")
     allowed_fmts = ("xyxy", "xywh", "cxcywh")
     if in_fmt not in allowed_fmts or out_fmt not in allowed_fmts:
         raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
@@ -183,13 +191,13 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     if in_fmt == out_fmt:
         return boxes.clone()
 
-    if in_fmt != 'xyxy' and out_fmt != 'xyxy':
+    if in_fmt != "xyxy" and out_fmt != "xyxy":
         # convert to xyxy and change in_fmt xyxy
         if in_fmt == "xywh":
             boxes = _box_xywh_to_xyxy(boxes)
         elif in_fmt == "cxcywh":
             boxes = _box_cxcywh_to_xyxy(boxes)
-        in_fmt = 'xyxy'
+        in_fmt = "xyxy"
 
     if in_fmt == "xyxy":
         if out_fmt == "xywh":
@@ -225,6 +233,7 @@ def box_area(boxes: Tensor) -> Tensor:
     Returns:
         Tensor[N]: the area for each box
     """
+    _log_api_usage_once("torchvision.ops.box_area")
     boxes = _upcast(boxes)
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
@@ -260,6 +269,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     Returns:
         Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
+    _log_api_usage_once("torchvision.ops.box_iou")
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
     return iou
@@ -282,6 +292,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         for every element in boxes1 and boxes2
     """
 
+    _log_api_usage_once("torchvision.ops.generalized_box_iou")
     # degenerate boxes gives inf / nan results
     # so do an early check
     assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
@@ -313,6 +324,7 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     Returns:
         Tensor[N, 4]: bounding boxes
     """
+    _log_api_usage_once("torchvision.ops.masks_to_boxes")
     if masks.numel() == 0:
         return torch.zeros((0, 4), device=masks.device, dtype=torch.float)
 
@@ -321,7 +333,7 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     bounding_boxes = torch.zeros((n, 4), device=masks.device, dtype=torch.float)
 
     for index, mask in enumerate(masks):
-        y, x = torch.where(masks[index] != 0)
+        y, x = torch.where(mask != 0)
 
         bounding_boxes[index, 0] = torch.min(x)
         bounding_boxes[index, 1] = torch.min(y)

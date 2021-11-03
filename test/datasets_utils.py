@@ -18,7 +18,6 @@ import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
-
 from common_utils import get_tmp_dir, disable_console_output
 
 
@@ -134,7 +133,7 @@ def test_all_configs(test):
 
     def maybe_remove_duplicates(configs):
         try:
-            return [dict(config_) for config_ in set(tuple(sorted(config.items())) for config in configs)]
+            return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
             # removal would be a lot more elaborate and we simply bail out.
@@ -419,7 +418,7 @@ class DatasetTestCase(unittest.TestCase):
             defaults.append(
                 {
                     kwarg: default
-                    for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
+                    for kwarg, default in zip(argspec.args[-len(argspec.defaults) :], argspec.defaults)
                     if not kwarg.startswith("_")
                 }
             )
@@ -640,7 +639,7 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
-        args_without_default = argspec.args[1:(-len(argspec.defaults) if argspec.defaults else None)]
+        args_without_default = argspec.args[1 : (-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
         @functools.wraps(inject_fake_data)

@@ -1,20 +1,28 @@
 import os
-import pathlib
-from typing import Optional, Union
+from typing import Optional
 
-from torch.hub import _get_torch_home
-
-HOME = pathlib.Path(_get_torch_home()) / "datasets" / "vision"
+import torchvision._internally_replaced_utils as _iru
 
 
-def home(home: Optional[Union[str, pathlib.Path]] = None) -> pathlib.Path:
-    global HOME
-    if home is not None:
-        HOME = pathlib.Path(home).expanduser().resolve()
-        return HOME
+def home(root: Optional[str] = None) -> str:
+    if root is not None:
+        _iru._HOME = root
+        return _iru._HOME
 
-    home = os.getenv("TORCHVISION_DATASETS_HOME")
-    if home is not None:
-        return pathlib.Path(home)
+    root = os.getenv("TORCHVISION_DATASETS_HOME")
+    if root is not None:
+        return root
 
-    return HOME
+    return _iru._HOME
+
+
+def use_sharded_dataset(use: Optional[bool] = None) -> bool:
+    if use is not None:
+        _iru._USE_SHARDED_DATASETS = use
+        return _iru._USE_SHARDED_DATASETS
+
+    use = os.getenv("TORCHVISION_SHARDED_DATASETS")
+    if use is not None:
+        return use == "1"
+
+    return _iru._USE_SHARDED_DATASETS

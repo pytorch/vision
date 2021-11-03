@@ -1,5 +1,11 @@
-torchvision.datasets
-====================
+Datasets
+========
+
+Torchvision provides many built-in datasets in the ``torchvision.datasets``
+module, as well as utility classes for building your own datasets.
+
+Built-in datasets
+~~~~~~~~~~~~~~~~~
 
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.
@@ -19,263 +25,58 @@ All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
 You can also create your own datasets using the provided :ref:`base classes <base_classes_datasets>`.
 
-Caltech
-~~~~~~~
 
-.. autoclass:: Caltech101
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: Caltech256
-  :members: __getitem__
-  :special-members:
-
-CelebA
-~~~~~~
-
-.. autoclass:: CelebA
-  :members: __getitem__
-  :special-members:
-
-CIFAR
-~~~~~
-
-.. autoclass:: CIFAR10
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: CIFAR100
-
-Cityscapes
-~~~~~~~~~~
-
-.. note ::
-    Requires Cityscape to be downloaded.
-
-.. autoclass:: Cityscapes
-  :members: __getitem__
-  :special-members:
-
-COCO
-~~~~
-
-.. note ::
-    These require the `COCO API to be installed`_
-
-.. _COCO API to be installed: https://github.com/pdollar/coco/tree/master/PythonAPI
-
-
-Captions
-^^^^^^^^
-
-.. autoclass:: CocoCaptions
-  :members: __getitem__
-  :special-members:
-
-
-Detection
-^^^^^^^^^
-
-.. autoclass:: CocoDetection
-  :members: __getitem__
-  :special-members:
-
-
-EMNIST
-~~~~~~
-
-.. autoclass:: EMNIST
-
-FakeData
-~~~~~~~~
-
-.. autoclass:: FakeData
-
-Fashion-MNIST
-~~~~~~~~~~~~~
-
-.. autoclass:: FashionMNIST
-
-Flickr
-~~~~~~
-
-.. autoclass:: Flickr8k
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: Flickr30k
-  :members: __getitem__
-  :special-members:
-
-HMDB51
-~~~~~~~
-
-.. autoclass:: HMDB51
-  :members: __getitem__
-  :special-members:
-
-ImageNet
-~~~~~~~~~~~
-
-.. autoclass:: ImageNet
-
-.. note ::
-    This requires `scipy` to be installed
-
-iNaturalist
-~~~~~~~~~~~
-
-.. autoclass:: INaturalist
-  :members: __getitem__, category_name
-
-Kinetics-400
-~~~~~~~~~~~~
-
-.. autoclass:: Kinetics400
-  :members: __getitem__
-  :special-members:
-
-KITTI
-~~~~~~~~~
-
-.. autoclass:: Kitti
-  :members: __getitem__
-  :special-members:
-
-KMNIST
-~~~~~~~~~~~~~
-
-.. autoclass:: KMNIST
-
-LFW
-~~~~~
-
-.. autoclass:: LFWPeople
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: LFWPairs
-  :members: __getitem__
-  :special-members:
-
-LSUN
-~~~~
-
-.. autoclass:: LSUN
-  :members: __getitem__
-  :special-members:
-
-MNIST
-~~~~~
-
-.. autoclass:: MNIST
-
-Omniglot
-~~~~~~~~
-
-.. autoclass:: Omniglot
-
-PhotoTour
-~~~~~~~~~
-
-.. autoclass:: PhotoTour
-  :members: __getitem__
-  :special-members:
-
-Places365
-~~~~~~~~~
-
-.. autoclass:: Places365
-  :members: __getitem__
-  :special-members:
-
-QMNIST
-~~~~~~
-
-.. autoclass:: QMNIST
-
-SBD
-~~~~~~
-
-.. autoclass:: SBDataset
-  :members: __getitem__
-  :special-members:
-
-SBU
-~~~
-
-.. autoclass:: SBU
-  :members: __getitem__
-  :special-members:
-
-SEMEION
-~~~~~~~
-
-.. autoclass:: SEMEION
-  :members: __getitem__
-  :special-members:
-
-STL10
-~~~~~
-
-.. autoclass:: STL10
-  :members: __getitem__
-  :special-members:
-
-SVHN
-~~~~~
-
-.. autoclass:: SVHN
-  :members: __getitem__
-  :special-members:
-
-UCF101
-~~~~~~~
-
-.. autoclass:: UCF101
-  :members: __getitem__
-  :special-members:
-
-USPS
-~~~~~
-
-.. autoclass:: USPS
-  :members: __getitem__
-  :special-members:
-
-VOC
-~~~~~~
-
-.. autoclass:: VOCSegmentation
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: VOCDetection
-  :members: __getitem__
-  :special-members:
-
-WIDERFace
-~~~~~~~~~
-
-.. autoclass:: WIDERFace
-  :members: __getitem__
-  :special-members:
-
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    Caltech101
+    Caltech256
+    CelebA
+    CIFAR10
+    CIFAR100
+    Cityscapes
+    CocoCaptions
+    CocoDetection
+    EMNIST
+    FakeData
+    FashionMNIST
+    Flickr8k
+    Flickr30k
+    HMDB51
+    ImageNet
+    INaturalist
+    Kinetics400
+    Kitti
+    KMNIST
+    LFWPeople
+    LFWPairs
+    LSUN
+    MNIST
+    Omniglot
+    PhotoTour
+    Places365
+    QMNIST
+    SBDataset
+    SBU
+    SEMEION
+    STL10
+    SVHN
+    UCF101
+    USPS
+    VOCSegmentation
+    VOCDetection
+    WIDERFace
 
 .. _base_classes_datasets:
 
 Base classes for custom datasets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: DatasetFolder
-  :members: __getitem__, find_classes, make_dataset
-  :special-members:
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-
-.. autoclass:: ImageFolder
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: VisionDataset
-  :members: __getitem__
-  :special-members:
+    DatasetFolder
+    ImageFolder
+    VisionDataset

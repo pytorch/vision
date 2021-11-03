@@ -32,18 +32,19 @@ architectures, and common image transformations for computer vision.
    :caption: Package Reference
 
    datasets
-   io
+   transforms
    models
    feature_extraction
    ops
-   transforms
+   io
    utils
 
 .. toctree::
    :maxdepth: 1
-   :caption: Examples
+   :caption: Examples and training references
 
    auto_examples/index
+   training_references
 
 .. automodule:: torchvision
    :members:

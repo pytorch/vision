@@ -100,6 +100,7 @@ void Video::_getDecoderParams(
     long stream_id = -1,
     bool fastSeek = true,
     bool all_streams = false,
+    int64_t num_threads = 1,
     double seekFrameMarginUs = 10) {
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
 
@@ -108,6 +109,7 @@ void Video::_getDecoderParams(
   params.seekAccuracy = seekFrameMarginUs;
   params.fastSeek = fastSeek;
   params.headerOnly = false;
+  params.numThreads = num_threads;
 
   params.preventStaleness = false; // not sure what this is about
 
@@ -154,7 +156,9 @@ void Video::_getDecoderParams(
 
 } // _get decoder params
 
-Video::Video(std::string videoPath, std::string stream) {
+Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
+  // set number of threads global
+  numThreads_ = numThreads;
   // parse stream information
   current_stream = _parseStream(stream);
   // note that in the initial call we want to get all streams
@@ -164,7 +168,8 @@ Video::Video(std::string videoPath, std::string stream) {
       std::get<0>(current_stream), // stream info - remove that
       long(-1), // stream_id parsed from info above change to -2
       false, // fastseek: we're using the default param here
-      true // read all streams
+      true, // read all streams
+      numThreads_ // global number of Threads for decoding
   );
 
   std::string logMessage, logType;
@@ -245,7 +250,8 @@ bool Video::setCurrentStream(std::string stream = "video") {
       long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       false, // fastseek param set to 0 false by default (changed in seek)
-      false // read all streams
+      false, // read all streams
+      numThreads_ // global number of threads
   );
 
   // calback and metadata defined in Video.h
@@ -270,7 +276,8 @@ void Video::Seek(double ts, bool fastSeek = false) {
       long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       fastSeek, // fastseek
-      false // read all streams
+      false, // read all streams
+      numThreads_ // global number of threads
   );
 
   // calback and metadata defined in Video.h
@@ -336,7 +343,7 @@ std::tuple<torch::Tensor, double> Video::Next() {
 
 static auto registerVideo =
     torch::class_<Video>("torchvision", "Video")
-        .def(torch::init<std::string, std::string>())
+        .def(torch::init<std::string, std::string, int64_t>())
         .def("get_current_stream", &Video::getCurrentStream)
         .def("set_current_stream", &Video::setCurrentStream)
         .def("get_metadata", &Video::getStreamMetadata)

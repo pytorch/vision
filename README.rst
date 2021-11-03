@@ -23,7 +23,11 @@ supported Python versions.
 +==========================+==========================+=================================+
 | ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.10.0``               | ``0.11.1``               | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
 | ``1.9.0``                | ``0.10.0``               | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.8.2``                | ``0.9.2``                | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.8.1``                | ``0.9.1``                | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
@@ -105,6 +109,22 @@ otherwise, add the include and library paths in the environment variables ``TORC
 .. _accimage: https://github.com/pytorch/accimage
 .. _libjpeg: http://ijg.org/
 .. _libjpeg-turbo: https://libjpeg-turbo.org/
+
+Video Backend
+=============
+Torchvision currently supports the following video backends:
+
+* `pyav`_ (default) - Pythonic binding for ffmpeg libraries.
+
+.. _pyav : https://github.com/PyAV-Org/PyAV
+
+* video_reader - This needs ffmpeg to be installed and torchvision to be built from source. There shouldn't be any conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
+
+.. code:: bash
+
+     conda install -c conda-forge ffmpeg
+     python setup.py install
+
 
 Using the models on C++
 =======================

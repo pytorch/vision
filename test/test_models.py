@@ -1,47 +1,26 @@
-import os
-import io
-import sys
-from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
-from _utils_internal import get_relative_path
-from collections import OrderedDict
 import functools
+import io
 import operator
+import os
+import traceback
+import warnings
+from collections import OrderedDict
+
+import pytest
 import torch
 import torch.fx
 import torch.nn as nn
-import torchvision
+from _utils_internal import get_relative_path
+from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from torchvision import models
-import pytest
-import warnings
-import traceback
 
 
-ACCEPT = os.getenv('EXPECTTEST_ACCEPT', '0') == '1'
+ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 
-def get_available_classification_models():
+def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
-
-
-def get_available_segmentation_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.segmentation.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
-
-
-def get_available_detection_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.detection.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
-
-
-def get_available_video_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
-
-
-def get_available_quantizable_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
 def _get_expected_file(name=None):
@@ -50,7 +29,7 @@ def _get_expected_file(name=None):
 
     # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
     # We hardcode it here to avoid having to re-generate the reference files
-    expected_file = expected_file = os.path.join(expected_file_base, 'ModelTester.test_' + name)
+    expected_file = expected_file = os.path.join(expected_file_base, "ModelTester.test_" + name)
     expected_file += "_expect.pkl"
 
     if not ACCEPT and not os.path.exists(expected_file):
@@ -75,12 +54,12 @@ def _assert_expected(output, name, prec):
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
-        print("Accepting updated output for {}:\n\n{}".format(filename, output))
+        print(f"Accepting updated output for {filename}:\n\n{output}")
         torch.save(output, expected_file)
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
         if binary_size > MAX_PICKLE_SIZE:
-            raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
+            raise RuntimeError(f"The output for {filename}, is larger than 50kb")
     else:
         expected = torch.load(expected_file)
         rtol = atol = prec
@@ -92,6 +71,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
     def assert_export_import_module(m, args):
         """Check that the results of a model are the same after saving and loading"""
+
         def get_export_import_copy(m):
             """Save and load a TorchScript model"""
             buffer = io.BytesIO()
@@ -115,15 +95,17 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
                 if a is not None:
                     torch.testing.assert_close(a, b, atol=tol, rtol=tol)
 
-    TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
+    TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
     if not TEST_WITH_SLOW or skip:
         # TorchScript is not enabled, skip these tests
-        msg = "The check_jit_scriptable test for {} was skipped. " \
-              "This test checks if the module's results in TorchScript " \
-              "match eager and that it can be exported. To run these " \
-              "tests make sure you set the environment variable " \
-              "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
-              "manually skipped.".format(nn_module.__class__.__name__)
+        msg = (
+            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
+            "This test checks if the module's results in TorchScript "
+            "match eager and that it can be exported. To run these "
+            "tests make sure you set the environment variable "
+            "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
+            "manually skipped."
+        )
         warnings.warn(msg, RuntimeWarning)
         return None
 
@@ -181,8 +163,8 @@ def _check_input_backprop(model, inputs):
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
 script_model_unwrapper = {
-    'googlenet': lambda x: x.logits,
-    'inception_v3': lambda x: x.logits,
+    "googlenet": lambda x: x.logits,
+    "inception_v3": lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
@@ -217,47 +199,87 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
 )
 
+# The tests for the following quantized models are flaky possibly due to inconsistent
+# rounding errors in different platforms. For this reason the input/output consistency
+# tests under test_quantized_classification_model will be skipped for the following models.
+quantized_flaky_models = ("inception_v3", "resnet50")
+
 
 # The following contains configuration parameters for all models which are used by
 # the _test_*_model methods.
 _model_params = {
-    'inception_v3': {
-        'input_shape': (1, 3, 299, 299)
+    "inception_v3": {"input_shape": (1, 3, 299, 299)},
+    "retinanet_resnet50_fpn": {
+        "num_classes": 20,
+        "score_thresh": 0.01,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
     },
-    'retinanet_resnet50_fpn': {
-        'num_classes': 20,
-        'score_thresh': 0.01,
-        'min_size': 224,
-        'max_size': 224,
-        'input_shape': (3, 224, 224),
+    "keypointrcnn_resnet50_fpn": {
+        "num_classes": 2,
+        "min_size": 224,
+        "max_size": 224,
+        "box_score_thresh": 0.15,
+        "input_shape": (3, 224, 224),
     },
-    'keypointrcnn_resnet50_fpn': {
-        'num_classes': 2,
-        'min_size': 224,
-        'max_size': 224,
-        'box_score_thresh': 0.15,
-        'input_shape': (3, 224, 224),
+    "fasterrcnn_resnet50_fpn": {
+        "num_classes": 20,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
     },
-    'fasterrcnn_resnet50_fpn': {
-        'num_classes': 20,
-        'min_size': 224,
-        'max_size': 224,
-        'input_shape': (3, 224, 224),
+    "maskrcnn_resnet50_fpn": {
+        "num_classes": 10,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
     },
-    'maskrcnn_resnet50_fpn': {
-        'num_classes': 10,
-        'min_size': 224,
-        'max_size': 224,
-        'input_shape': (3, 224, 224),
+    "fasterrcnn_mobilenet_v3_large_fpn": {
+        "box_score_thresh": 0.02076,
     },
-    'fasterrcnn_mobilenet_v3_large_fpn': {
-        'box_score_thresh': 0.02076,
+    "fasterrcnn_mobilenet_v3_large_320_fpn": {
+        "box_score_thresh": 0.02076,
+        "rpn_pre_nms_top_n_test": 1000,
+        "rpn_post_nms_top_n_test": 1000,
     },
-    'fasterrcnn_mobilenet_v3_large_320_fpn': {
-        'box_score_thresh': 0.02076,
-        'rpn_pre_nms_top_n_test': 1000,
-        'rpn_post_nms_top_n_test': 1000,
-    }
+}
+
+
+# The following contains configuration and expected values to be used tests that are model specific
+_model_tests_values = {
+    "retinanet_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [36, 46, 65, 78, 88, 89],
+    },
+    "keypointrcnn_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [48, 58, 77, 90, 100, 101],
+    },
+    "fasterrcnn_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [30, 40, 59, 72, 82, 83],
+    },
+    "maskrcnn_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [42, 52, 71, 84, 94, 95],
+    },
+    "fasterrcnn_mobilenet_v3_large_fpn": {
+        "max_trainable": 6,
+        "n_trn_params_per_layer": [22, 23, 44, 70, 91, 97, 100],
+    },
+    "fasterrcnn_mobilenet_v3_large_320_fpn": {
+        "max_trainable": 6,
+        "n_trn_params_per_layer": [22, 23, 44, 70, 91, 97, 100],
+    },
+    "ssd300_vgg16": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [45, 51, 57, 63, 67, 71],
+    },
+    "ssdlite320_mobilenet_v3_large": {
+        "max_trainable": 6,
+        "n_trn_params_per_layer": [96, 99, 138, 200, 239, 257, 266],
+    },
 }
 
 
@@ -271,20 +293,20 @@ def _make_sliced_model(model, stop_layer):
     return new_model
 
 
-@pytest.mark.parametrize('model_name', ['densenet121', 'densenet169', 'densenet201', 'densenet161'])
-def test_memory_efficient_densenet(model_name):
+@pytest.mark.parametrize("model_fn", [models.densenet121, models.densenet169, models.densenet201, models.densenet161])
+def test_memory_efficient_densenet(model_fn):
     input_shape = (1, 3, 300, 300)
     x = torch.rand(input_shape)
 
-    model1 = models.__dict__[model_name](num_classes=50, memory_efficient=True)
+    model1 = model_fn(num_classes=50, memory_efficient=True)
     params = model1.state_dict()
-    num_params = sum([x.numel() for x in model1.parameters()])
+    num_params = sum(x.numel() for x in model1.parameters())
     model1.eval()
     out1 = model1(x)
     out1.sum().backward()
-    num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
+    num_grad = sum(x.grad.numel() for x in model1.parameters() if x.grad is not None)
 
-    model2 = models.__dict__[model_name](num_classes=50, memory_efficient=False)
+    model2 = model_fn(num_classes=50, memory_efficient=False)
     model2.load_state_dict(params)
     model2.eval()
     out2 = model2(x)
@@ -296,12 +318,12 @@ def test_memory_efficient_densenet(model_name):
     _check_input_backprop(model2, x)
 
 
-@pytest.mark.parametrize('dilate_layer_2', (True, False))
-@pytest.mark.parametrize('dilate_layer_3', (True, False))
-@pytest.mark.parametrize('dilate_layer_4', (True, False))
+@pytest.mark.parametrize("dilate_layer_2", (True, False))
+@pytest.mark.parametrize("dilate_layer_3", (True, False))
+@pytest.mark.parametrize("dilate_layer_4", (True, False))
 def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
     # TODO improve tests to also check that each layer has the right dimensionality
-    model = models.__dict__["resnet50"](replace_stride_with_dilation=(dilate_layer_2, dilate_layer_3, dilate_layer_4))
+    model = models.resnet50(replace_stride_with_dilation=(dilate_layer_2, dilate_layer_3, dilate_layer_4))
     model = _make_sliced_model(model, stop_layer="layer4")
     model.eval()
     x = torch.rand(1, 3, 224, 224)
@@ -311,32 +333,32 @@ def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
 
 
 def test_mobilenet_v2_residual_setting():
-    model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
+    model = models.mobilenet_v2(inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
     model.eval()
     x = torch.rand(1, 3, 224, 224)
     out = model(x)
     assert out.shape[-1] == 1000
 
 
-@pytest.mark.parametrize('model_name', ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"])
-def test_mobilenet_norm_layer(model_name):
-    model = models.__dict__[model_name]()
+@pytest.mark.parametrize("model_fn", [models.mobilenet_v2, models.mobilenet_v3_large, models.mobilenet_v3_small])
+def test_mobilenet_norm_layer(model_fn):
+    model = model_fn()
     assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
 
     def get_gn(num_channels):
         return nn.GroupNorm(32, num_channels)
 
-    model = models.__dict__[model_name](norm_layer=get_gn)
-    assert not(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+    model = model_fn(norm_layer=get_gn)
+    assert not (any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
     assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
 
 
 def test_inception_v3_eval():
     # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
-    kwargs['transform_input'] = True
-    kwargs['aux_logits'] = True
-    kwargs['init_weights'] = False
+    kwargs["transform_input"] = True
+    kwargs["aux_logits"] = True
+    kwargs["init_weights"] = False
     name = "inception_v3"
     model = models.Inception3(**kwargs)
     model.aux_logits = False
@@ -366,9 +388,9 @@ def test_fasterrcnn_double():
 def test_googlenet_eval():
     # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
-    kwargs['transform_input'] = True
-    kwargs['aux_logits'] = True
-    kwargs['init_weights'] = False
+    kwargs["transform_input"] = True
+    kwargs["aux_logits"] = True
+    kwargs["init_weights"] = False
     name = "googlenet"
     model = models.GoogLeNet(**kwargs)
     model.aux_logits = False
@@ -392,7 +414,7 @@ def test_fasterrcnn_switch_devices():
     model.cuda()
     model.eval()
     input_shape = (3, 300, 300)
-    x = torch.rand(input_shape, device='cuda')
+    x = torch.rand(input_shape, device="cuda")
     model_input = [x]
     out = model(model_input)
     assert model_input[0] is x
@@ -422,32 +444,32 @@ def test_generalizedrcnn_transform_repr():
     image_mean = [0.485, 0.456, 0.406]
     image_std = [0.229, 0.224, 0.225]
 
-    t = models.detection.transform.GeneralizedRCNNTransform(min_size=min_size,
-                                                            max_size=max_size,
-                                                            image_mean=image_mean,
-                                                            image_std=image_std)
+    t = models.detection.transform.GeneralizedRCNNTransform(
+        min_size=min_size, max_size=max_size, image_mean=image_mean, image_std=image_std
+    )
 
     # Check integrity of object __repr__ attribute
-    expected_string = 'GeneralizedRCNNTransform('
-    _indent = '\n    '
-    expected_string += '{0}Normalize(mean={1}, std={2})'.format(_indent, image_mean, image_std)
-    expected_string += '{0}Resize(min_size=({1},), max_size={2}, '.format(_indent, min_size, max_size)
+    expected_string = "GeneralizedRCNNTransform("
+    _indent = "\n    "
+    expected_string += f"{_indent}Normalize(mean={image_mean}, std={image_std})"
+    expected_string += f"{_indent}Resize(min_size=({min_size},), max_size={max_size}, "
     expected_string += "mode='bilinear')\n)"
     assert t.__repr__() == expected_string
 
 
-@pytest.mark.parametrize('model_name', get_available_classification_models())
-@pytest.mark.parametrize('dev', cpu_and_gpu())
-def test_classification_model(model_name, dev):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_classification_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
-        'num_classes': 50,
-        'input_shape': (1, 3, 224, 224),
+        "num_classes": 50,
+        "input_shape": (1, 3, 224, 224),
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
-    input_shape = kwargs.pop('input_shape')
+    input_shape = kwargs.pop("input_shape")
 
-    model = models.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -468,19 +490,20 @@ def test_classification_model(model_name, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.parametrize('model_name', get_available_segmentation_models())
-@pytest.mark.parametrize('dev', cpu_and_gpu())
-def test_segmentation_model(model_name, dev):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.segmentation))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
-        'num_classes': 10,
-        'pretrained_backbone': False,
-        'input_shape': (1, 3, 32, 32),
+        "num_classes": 10,
+        "pretrained_backbone": False,
+        "input_shape": (1, 3, 32, 32),
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
-    input_shape = kwargs.pop('input_shape')
+    input_shape = kwargs.pop("input_shape")
 
-    model = models.segmentation.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -517,29 +540,32 @@ def test_segmentation_model(model_name, dev):
                 full_validation &= check_out(out)
 
     if not full_validation:
-        msg = "The output of {} could only be partially validated. " \
-              "This is likely due to unit-test flakiness, but you may " \
-              "want to do additional manual checks if you made " \
-              "significant changes to the codebase.".format(test_segmentation_model.__name__)
+        msg = (
+            f"The output of {test_segmentation_model.__name__} could only be partially validated. "
+            "This is likely due to unit-test flakiness, but you may "
+            "want to do additional manual checks if you made "
+            "significant changes to the codebase."
+        )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
 
     _check_input_backprop(model, x)
 
 
-@pytest.mark.parametrize('model_name', get_available_detection_models())
-@pytest.mark.parametrize('dev', cpu_and_gpu())
-def test_detection_model(model_name, dev):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
-        'num_classes': 50,
-        'pretrained_backbone': False,
-        'input_shape': (3, 300, 300),
+        "num_classes": 50,
+        "pretrained_backbone": False,
+        "input_shape": (3, 300, 300),
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
-    input_shape = kwargs.pop('input_shape')
+    input_shape = kwargs.pop("input_shape")
 
-    model = models.detection.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -565,7 +591,7 @@ def test_detection_model(model_name, dev):
                 return tensor
 
             ith_index = num_elems // num_samples
-            return tensor[ith_index - 1::ith_index]
+            return tensor[ith_index - 1 :: ith_index]
 
         def compute_mean_std(tensor):
             # can't compute mean of integral tensor
@@ -588,8 +614,9 @@ def test_detection_model(model_name, dev):
             # scores.
             expected_file = _get_expected_file(model_name)
             expected = torch.load(expected_file)
-            torch.testing.assert_close(output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec,
-                                       check_device=False, check_dtype=False)
+            torch.testing.assert_close(
+                output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
+            )
 
             # Note: Fmassa proposed turning off NMS by adapting the threshold
             # and then using the Hungarian algorithm as in DETR to find the
@@ -610,20 +637,22 @@ def test_detection_model(model_name, dev):
                 full_validation &= check_out(out)
 
     if not full_validation:
-        msg = "The output of {} could only be partially validated. " \
-              "This is likely due to unit-test flakiness, but you may " \
-              "want to do additional manual checks if you made " \
-              "significant changes to the codebase.".format(test_detection_model.__name__)
+        msg = (
+            f"The output of {test_detection_model.__name__} could only be partially validated. "
+            "This is likely due to unit-test flakiness, but you may "
+            "want to do additional manual checks if you made "
+            "significant changes to the codebase."
+        )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
 
     _check_input_backprop(model, model_input)
 
 
-@pytest.mark.parametrize('model_name', get_available_detection_models())
-def test_detection_model_validation(model_name):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
+def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = models.detection.__dict__[model_name](num_classes=50, pretrained_backbone=False)
+    model = model_fn(num_classes=50, pretrained_backbone=False)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
@@ -632,31 +661,32 @@ def test_detection_model_validation(model_name):
         model(x)
 
     # validate type
-    targets = [{'boxes': 0.}]
+    targets = [{"boxes": 0.0}]
     with pytest.raises(ValueError):
         model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
-        targets = [{'boxes': boxes}]
+        targets = [{"boxes": boxes}]
         with pytest.raises(ValueError):
             model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
-    targets = [{'boxes': boxes}]
+    targets = [{"boxes": boxes}]
     with pytest.raises(ValueError):
         model(x, targets=targets)
 
 
-@pytest.mark.parametrize('model_name', get_available_video_models())
-@pytest.mark.parametrize('dev', cpu_and_gpu())
-def test_video_model(model_name, dev):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.video))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_video_model(model_fn, dev):
     # the default input shape is
     # bs * num_channels * clip_len * h *w
     input_shape = (1, 3, 4, 112, 112)
+    model_name = model_fn.__name__
     # test both basicblock and Bottleneck
-    model = models.video.__dict__[model_name](num_classes=50)
+    model = model_fn(num_classes=50)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -673,27 +703,41 @@ def test_video_model(model_name, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.skipif(not ('fbgemm' in torch.backends.quantized.supported_engines and
-                         'qnnpack' in torch.backends.quantized.supported_engines),
-                    reason="This Pytorch Build has not been built with fbgemm and qnnpack")
-@pytest.mark.parametrize('model_name', get_available_quantizable_models())
-def test_quantized_classification_model(model_name):
+@pytest.mark.skipif(
+    not (
+        "fbgemm" in torch.backends.quantized.supported_engines
+        and "qnnpack" in torch.backends.quantized.supported_engines
+    ),
+    reason="This Pytorch Build has not been built with fbgemm and qnnpack",
+)
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.quantization))
+def test_quantized_classification_model(model_fn):
+    set_rng_seed(0)
     defaults = {
-        'input_shape': (1, 3, 224, 224),
-        'pretrained': False,
-        'quantize': True,
+        "num_classes": 5,
+        "input_shape": (1, 3, 224, 224),
+        "pretrained": False,
+        "quantize": True,
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
-    input_shape = kwargs.pop('input_shape')
+    input_shape = kwargs.pop("input_shape")
 
     # First check if quantize=True provides models that can run with input data
-    model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
+    model.eval()
     x = torch.rand(input_shape)
-    model(x)
+    out = model(x)
 
-    kwargs['quantize'] = False
+    if model_name not in quantized_flaky_models:
+        _assert_expected(out, model_name + "_quantized", prec=0.1)
+        assert out.shape[-1] == 5
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
+        _check_fx_compatible(model, x)
+
+    kwargs["quantize"] = False
     for eval_mode in [True, False]:
-        model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+        model = model_fn(**kwargs)
         if eval_mode:
             model.eval()
             model.qconfig = torch.quantization.default_qconfig
@@ -717,5 +761,17 @@ def test_quantized_classification_model(model_name):
         raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
 
 
-if __name__ == '__main__':
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
+def test_detection_model_trainable_backbone_layers(model_fn):
+    model_name = model_fn.__name__
+    max_trainable = _model_tests_values[model_name]["max_trainable"]
+    n_trainable_params = []
+    for trainable_layers in range(0, max_trainable + 1):
+        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+
+        n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
+    assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
+
+
+if __name__ == "__main__":
     pytest.main([__file__])
