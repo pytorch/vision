@@ -128,7 +128,7 @@ These can be constructed by passing ``pretrained=True``:
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
-:func:`torch.utils.model_zoo.load_url` for details.
+:func:`torch.hub.load_state_dict_from_url` for details.
 
 Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
