@@ -20,7 +20,7 @@ class AVKeyframeReader(IterDataPipe[Dict[str, Any]]):
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:
         for video_d in self.datapipe:
-            buffer = video_d["file"]
+            buffer = video_d.pop("file")
             with av.open(buffer, metadata_errors="ignore") as container:
                 stream = container.streams.video[0]
                 stream.codec_context.skip_frame = 'NONKEY'
