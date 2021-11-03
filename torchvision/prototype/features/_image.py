@@ -1,5 +1,4 @@
-from typing import Dict, Any
-from typing import Union, Tuple
+from typing import Dict, Any, Union, Tuple
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
@@ -20,7 +19,10 @@ class Image(Feature):
     color_space: ColorSpace
 
     @classmethod
-    def _parse_meta_data(cls, color_space: Union[str, ColorSpace] = DEFAULT) -> Dict[str, Tuple[Any, Any]]:
+    def _parse_meta_data(
+        cls,
+        color_space: Union[str, ColorSpace] = DEFAULT,  # type: ignore[assignment]
+    ) -> Dict[str, Tuple[Any, Any]]:
         if isinstance(color_space, str):
             color_space = ColorSpace[color_space]
         return dict(color_space=(color_space, cls.guess_color_space))

@@ -1,5 +1,4 @@
-from typing import Dict, Any, Optional
-from typing import Tuple
+from typing import Dict, Any, Optional, Tuple
 
 from ._feature import Feature, DEFAULT
 
@@ -10,6 +9,6 @@ class Label(Feature):
     @classmethod
     def _parse_meta_data(
         cls,
-        category: Optional[str] = DEFAULT,
+        category: Optional[str] = DEFAULT,  # type: ignore[assignment]
     ) -> Dict[str, Tuple[Any, Any]]:
         return dict(category=(category, None))

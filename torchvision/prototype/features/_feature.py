@@ -1,5 +1,4 @@
-from typing import Tuple
-from typing import cast, TypeVar, Set, Dict, Any, Callable, Optional, Mapping, Type, Sequence
+from typing import Tuple, cast, TypeVar, Set, Dict, Any, Callable, Optional, Mapping, Type, Sequence
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
@@ -43,7 +42,7 @@ class Feature(torch.Tensor):
             device = device or like.device
         data = cls._to_tensor(data, dtype=dtype, device=device)
         requires_grad = False
-        self = cast(F, torch.Tensor._make_subclass(cast(_TensorBase, cls), data, requires_grad))
+        self = torch.Tensor._make_subclass(cast(_TensorBase, cls), data, requires_grad)
 
         meta_data = dict()
         for attr, (explicit, fallback) in cls._parse_meta_data(**kwargs).items():

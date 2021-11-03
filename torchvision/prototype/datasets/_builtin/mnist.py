@@ -6,7 +6,7 @@ import operator
 import pathlib
 import string
 import sys
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
 
 import torch
 from torchdata.datapipes.iter import (
@@ -119,7 +119,6 @@ class _MNISTBase(Dataset):
     ) -> Dict[str, Any]:
         image, label = data
 
-        image: Union[Image, io.IOBase]
         if decoder is raw:
             image = Image(image)
         else:

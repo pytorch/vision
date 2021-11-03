@@ -1,8 +1,6 @@
 import enum
 import functools
-from typing import Callable
-from typing import Dict, Any, Optional
-from typing import Union, Tuple
+from typing import Callable, Union, Tuple, Dict, Any, Optional, cast
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
@@ -19,7 +17,7 @@ class BoundingBoxFormat(StrEnum):
 
 
 def to_parts(input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    return input.unbind(dim=-1)
+    return input.unbind(dim=-1)  # type: ignore[return-value]
 
 
 def from_parts(a: torch.Tensor, b: torch.Tensor, c: torch.Tensor, d: torch.Tensor) -> torch.Tensor:
@@ -27,7 +25,12 @@ def from_parts(a: torch.Tensor, b: torch.Tensor, c: torch.Tensor, d: torch.Tenso
 
 
 # FIXME: kwargs and name
-def foo(part_converter: Callable[[Tuple[torch.Tensor, ...]], Tuple[torch.Tensor, ...]]):
+def foo(
+    part_converter: Callable[
+        [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+    ]
+):
     def wrapper(input: torch.Tensor) -> torch.Tensor:
         return from_parts(*part_converter(*to_parts(input)))
 
@@ -86,8 +89,8 @@ class BoundingBox(Feature):
     @classmethod
     def _parse_meta_data(
         cls,
-        format: Union[str, BoundingBoxFormat] = DEFAULT,
-        image_size: Optional[Tuple[int, int]] = DEFAULT,
+        format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
+        image_size: Optional[Tuple[int, int]] = DEFAULT,  # type: ignore[assignment]
     ) -> Dict[str, Tuple[Any, Any]]:
         if isinstance(format, str):
             format = BoundingBoxFormat[format]
@@ -123,8 +126,8 @@ class BoundingBox(Feature):
         d,
         *,
         like: Optional["BoundingBox"] = None,
-        format: Union[str, BoundingBoxFormat] = DEFAULT,
-        image_size: Optional[Tuple[int, int]] = DEFAULT,
+        format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
+        image_size: Optional[Tuple[int, int]] = DEFAULT,  # type: ignore[assignment]
     ) -> "BoundingBox":
         return cls(from_parts(a, b, c, d), like=like, image_size=image_size, format=format)
 
@@ -136,7 +139,7 @@ class BoundingBox(Feature):
             format = BoundingBoxFormat[format]
 
         if format == self.format:
-            return self.clone()
+            return cast(BoundingBox, self.clone())
 
         data = self
 
