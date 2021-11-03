@@ -21,6 +21,7 @@ class GoogLeNetWeights(Weights):
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
             "acc@1": 69.778,
             "acc@5": 89.530,
         },
