@@ -162,7 +162,7 @@ def _shufflenetv2(arch: str, pretrained: bool, progress: bool, *args: Any, **kwa
     if pretrained:
         model_url = model_urls[arch]
         if model_url is None:
-            raise NotImplementedError(f"pretrained {arch} is not supported as of now")
+            raise ValueError(f"No checkpoint is available for model type {arch}")
         else:
             state_dict = load_state_dict_from_url(model_url, progress=progress)
             model.load_state_dict(state_dict)
