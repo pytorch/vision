@@ -9,10 +9,6 @@ def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, 
     return datasets.utils.DatasetInfo(name, type=type, categories=categories or [], **kwargs)
 
 
-def test_debug():
-    assert False, "If you can see this in the CircleCI 'Tests' tab, everything is working as expected!"
-
-
 class TestFrozenMapping:
     @pytest.mark.parametrize(
         ("args", "kwargs"),
