@@ -65,7 +65,6 @@ def inception_v3(
         if "transform_input" not in kwargs:
             kwargs["transform_input"] = True
         kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
         kwargs["num_classes"] = len(weights.meta["categories"])
         if "backend" in weights.meta:
             kwargs["backend"] = weights.meta["backend"]
