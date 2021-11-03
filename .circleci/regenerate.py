@@ -49,7 +49,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                             and os_type == "win"
                             and filter_branch is None
                             and (
-                                python_version != python_versions[-1]
+                                ( python_version != python_versions[-1] and python_version != "3.7" )
                                 or (cu_version not in [cu_versions[0], cu_versions[-1]])
                             )
                         ):

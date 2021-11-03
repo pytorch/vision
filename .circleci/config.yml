@@ -1185,11 +1185,6 @@ workflows:
           python_version: '3.6'
       - binary_win_wheel:
           cu_version: cpu
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_wheel_py3.7_cpu
           python_version: '3.7'
       - binary_win_wheel:
@@ -1203,11 +1198,6 @@ workflows:
           python_version: '3.7'
       - binary_win_wheel:
           cu_version: cu113
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_wheel_py3.7_cu113
           python_version: '3.7'
       - binary_win_wheel:
@@ -1403,11 +1393,6 @@ workflows:
           python_version: '3.6'
       - binary_win_conda:
           cu_version: cpu
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.7_cpu
           python_version: '3.7'
       - binary_win_conda:
@@ -1421,11 +1406,6 @@ workflows:
           python_version: '3.7'
       - binary_win_conda:
           cu_version: cu113
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.7_cu113
           python_version: '3.7'
       - binary_win_conda:
