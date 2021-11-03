@@ -42,7 +42,7 @@ class SEMEION(Dataset):
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        image_data = torch.tensor([float(pixel) for pixel in data[:256]]).reshape(16, 16).to(torch.uint8)
+        image_data = torch.tensor([float(pixel) for pixel in data[:256]], dtype=torch.uint8).reshape(16, 16)
         label_data = [int(label) for label in data[256:] if label]
 
         if decoder is raw:
