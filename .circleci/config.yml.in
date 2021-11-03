@@ -358,7 +358,7 @@ jobs:
 	  - run:
 	      name: smoke_test
 		  command: |
-			packaging/smoke_test.sh		  
+	        packaging/smoke_test.sh		  
       - persist_to_workspace:
           root: dist
           paths:
