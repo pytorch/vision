@@ -25,17 +25,17 @@ __all__ = [
 class QuantizedInceptionV3Weights(Weights):
     ImageNet1K_FBGEMM_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
-            "size": (224, 224),
+            "size": (299, 299),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
             "quantization": "ptq",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": InceptionV3Weights.ImageNet1K_TFV1,
-            "acc@1": 69.826,
-            "acc@5": 89.404,
+            "acc@1": 77.176,
+            "acc@5": 93.354,
         },
     )
 
