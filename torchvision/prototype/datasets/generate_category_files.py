@@ -52,7 +52,7 @@ def parse_args(argv=None):
 
 
 if __name__ == "__main__":
-    args = parse_args(["-f", "sbd"])
+    args = parse_args()
 
     try:
         main(*args.names, force=args.force)

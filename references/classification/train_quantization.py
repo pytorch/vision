@@ -12,6 +12,12 @@ from torch import nn
 from train import train_one_epoch, evaluate, load_data
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def main(args):
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -46,7 +52,12 @@ def main(args):
 
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
+    if not args.weights:
+        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
+    else:
+        if PM is None:
+            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+        model = PM.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
@@ -250,6 +261,9 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser
 

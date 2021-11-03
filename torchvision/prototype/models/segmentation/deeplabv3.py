@@ -22,12 +22,15 @@ __all__ = [
 ]
 
 
+_common_meta = {"categories": _VOC_CATEGORIES}
+
+
 class DeepLabV3ResNet50Weights(Weights):
     CocoWithVocLabels_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
-            "categories": _VOC_CATEGORIES,
+            **_common_meta,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
             "mIoU": 66.4,
             "acc": 92.4,
@@ -40,7 +43,7 @@ class DeepLabV3ResNet101Weights(Weights):
         url="https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
-            "categories": _VOC_CATEGORIES,
+            **_common_meta,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
             "mIoU": 67.4,
             "acc": 92.4,
@@ -53,7 +56,7 @@ class DeepLabV3MobileNetV3LargeWeights(Weights):
         url="https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
-            "categories": _VOC_CATEGORIES,
+            **_common_meta,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
             "mIoU": 60.3,
             "acc": 91.2,
