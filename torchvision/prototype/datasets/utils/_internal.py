@@ -8,8 +8,8 @@ import lzma
 import os
 import os.path
 import pathlib
+import pickle
 import textwrap
-from collections.abc import Mapping
 from typing import (
     Collection,
     Sequence,
@@ -22,12 +22,19 @@ from typing import (
     Dict,
     Optional,
     NoReturn,
+    IO,
     Iterable,
+    Mapping,
+    Sized,
 )
+from typing import cast
 
 import numpy as np
 import PIL.Image
+import torch.distributed as dist
+import torch.utils.data
 from torch.utils.data import IterDataPipe
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
 
 
 __all__ = [
@@ -64,7 +71,7 @@ def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
     if len(seq) == 1:
         return f"'{seq[0]}'"
 
-    return f"""'{"', '".join([str(item) for item in seq[:-1]])}', """ f"""{separate_last}'{seq[-1]}'."""
+    return f"""'{"', '".join([str(item) for item in seq[:-1]])}', {separate_last}'{seq[-1]}'."""
 
 
 def add_suggestion(
@@ -84,7 +91,7 @@ def add_suggestion(
     return f"{msg.strip()} {hint}"
 
 
-def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
+def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
     def to_str(sep: str) -> str:
         return sep.join([f"{key}={value}" for key, value in items])
 
@@ -102,29 +109,29 @@ def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
     return f"{prefix}\n{body}\n{postfix}"
 
 
-class FrozenMapping(Mapping):
-    def __init__(self, *args, **kwargs):
+class FrozenMapping(Mapping[K, D]):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         data = dict(*args, **kwargs)
         self.__dict__["__data__"] = data
         self.__dict__["__final_hash__"] = hash(tuple(data.items()))
 
-    def __getitem__(self, name: str) -> Any:
-        return self.__dict__["__data__"][name]
+    def __getitem__(self, item: K) -> D:
+        return cast(Mapping[K, D], self.__dict__["__data__"])[item]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[K]:
         return iter(self.__dict__["__data__"].keys())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__dict__["__data__"])
 
-    def __setitem__(self, key: Any, value: Any) -> NoReturn:
+    def __setitem__(self, key: K, value: Any) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
-    def __delitem__(self, key: Any) -> NoReturn:
+    def __delitem__(self, key: K) -> NoReturn:
         raise RuntimeError(f"'{type(self).__name__}' object is immutable")
 
     def __hash__(self) -> int:
-        return self.__dict__["__final_hash__"]
+        return cast(int, self.__dict__["__final_hash__"])
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, FrozenMapping):
@@ -132,7 +139,7 @@ class FrozenMapping(Mapping):
 
         return hash(self) == hash(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.__dict__["__data__"])
 
 
@@ -206,7 +213,7 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
 
 
 def getitem(*items: Any) -> Callable[[Any], Any]:
-    def wrapper(obj: Any):
+    def wrapper(obj: Any) -> Any:
         for item in items:
             obj = obj[item]
         return obj
@@ -219,7 +226,7 @@ def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[
         name = getter
 
         def getter(path: pathlib.Path) -> D:
-            return getattr(path, name)
+            return cast(D, getattr(path, name))
 
     def wrapper(data: Tuple[str, Any]) -> D:
         return getter(pathlib.Path(data[0]))  # type: ignore[operator]
@@ -312,3 +319,77 @@ class RarArchiveReader(IterDataPipe[Tuple[str, io.BufferedIOBase]]):
                 file_obj = rar.open(info)
 
                 yield inner_path, file_obj
+class PicklerDataPipe(IterDataPipe):
+    def __init__(self, source_datapipe: IterDataPipe[Tuple[str, IO[bytes]]]) -> None:
+        self.source_datapipe = source_datapipe
+
+    def __iter__(self) -> Iterator[Any]:
+        for _, fobj in self.source_datapipe:
+            data = pickle.load(fobj)
+            for _, d in enumerate(data):
+                yield d
+
+
+class SharderDataPipe(torch.utils.data.datapipes.iter.grouping.ShardingFilterIterDataPipe):
+    def __init__(self, source_datapipe: IterDataPipe) -> None:
+        super().__init__(source_datapipe)
+        self.rank = 0
+        self.world_size = 1
+        if dist.is_available() and dist.is_initialized():
+            self.rank = dist.get_rank()
+            self.world_size = dist.get_world_size()
+        self.apply_sharding(self.world_size, self.rank)
+
+    def __iter__(self) -> Iterator[Any]:
+        num_workers = self.world_size
+        worker_id = self.rank
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is not None:
+            worker_id = worker_id + worker_info.id * num_workers
+            num_workers *= worker_info.num_workers
+        self.apply_sharding(num_workers, worker_id)
+        yield from super().__iter__()
+
+
+class TakerDataPipe(IterDataPipe):
+    def __init__(self, source_datapipe: IterDataPipe, num_take: int) -> None:
+        super().__init__()
+        self.source_datapipe = source_datapipe
+        self.num_take = num_take
+        self.world_size = 1
+        if dist.is_available() and dist.is_initialized():
+            self.world_size = dist.get_world_size()
+
+    def __iter__(self) -> Iterator[Any]:
+        num_workers = self.world_size
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is not None:
+            num_workers *= worker_info.num_workers
+
+        # TODO: this is weird as it drops more elements than it should
+        num_take = self.num_take // num_workers
+
+        for i, data in enumerate(self.source_datapipe):
+            if i < num_take:
+                yield data
+            else:
+                break
+
+    def __len__(self) -> int:
+        num_take = self.num_take // self.world_size
+        if isinstance(self.source_datapipe, Sized):
+            if len(self.source_datapipe) < num_take:
+                num_take = len(self.source_datapipe)
+        # TODO: might be weird to not take `num_workers` into account
+        return num_take
+
+
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+    dp = IoPathFileLister(root=root)
+    dp = SharderDataPipe(dp)
+    dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
+    dp = IoPathFileLoader(dp, mode="rb")
+    dp = PicklerDataPipe(dp)
+    # dp = dp.cycle(2)
+    dp = TakerDataPipe(dp, dataset_size)
+    return dp

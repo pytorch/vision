@@ -8,6 +8,7 @@ from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation
+from ...utils import _log_api_usage_once
 from .. import mobilenet
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
@@ -119,6 +120,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         min_depth: int = 16,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
@@ -266,7 +268,7 @@ def ssdlite320_mobilenet_v3_large(
     if pretrained:
         weights_name = "ssdlite320_mobilenet_v3_large_coco"
         if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+            raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
     return model

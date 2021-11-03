@@ -35,13 +35,13 @@ class SEMEION(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = True,
     ) -> None:
-        super(SEMEION, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
 
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         fp = os.path.join(self.root, self.filename)
         data = np.loadtxt(fp)

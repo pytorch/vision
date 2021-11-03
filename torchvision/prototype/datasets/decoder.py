@@ -1,6 +1,5 @@
 import io
-import unittest.mock
-from typing import Dict, Any
+from typing import cast
 
 import av
 import PIL.Image
@@ -15,18 +14,4 @@ def raw(buffer: io.IOBase) -> torch.Tensor:
 
 
 def pil(buffer: io.IOBase, mode: str = "RGB") -> torch.Tensor:
-    return pil_to_tensor(PIL.Image.open(buffer).convert(mode.upper()))
-
-
-def av_kf(buffer: io.IOBase, **read_video_kwargs: Any) -> Dict[str, Any]:
-    with unittest.mock.patch("torchvision.io.video.os.path.exists", return_value=True):
-        keyframes, pts = [], []
-        with av.open(buffer) as container:
-            stream = container.streams.video[0]
-            stream.codec_context.skip_frame = 'NONKEY'
-            for frame in container.decode(stream):
-                keyframes.append(frame.to_image())
-                # TODO: convert to seconds
-                pts.append(frame.pts)
-
-        return {"keyframes": keyframes, "pts": pts}
+    return cast(torch.Tensor, pil_to_tensor(PIL.Image.open(buffer).convert(mode.upper())))

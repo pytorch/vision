@@ -2,6 +2,8 @@ import warnings
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
 from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
@@ -49,10 +51,7 @@ def _resnet(
     return model
 
 
-_common_meta = {
-    "size": (224, 224),
-    "categories": _IMAGENET_CATEGORIES,
-}
+_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 class ResNet18Weights(Weights):
@@ -61,7 +60,7 @@ class ResNet18Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 69.758,
             "acc@5": 89.078,
         },
@@ -74,7 +73,7 @@ class ResNet34Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 73.314,
             "acc@5": 91.420,
         },
@@ -87,19 +86,19 @@ class ResNet50Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 76.130,
             "acc@5": 92.862,
         },
     )
     ImageNet1K_RefV2 = WeightEntry(
-        url="https://download.pytorch.org/models/resnet50-tmp.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        url="https://download.pytorch.org/models/resnet50-f46c3f97.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_common_meta,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 80.352,
-            "acc@5": 95.148,
+            "acc@1": 80.674,
+            "acc@5": 95.166,
         },
     )
 
@@ -110,9 +109,19 @@ class ResNet101Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 77.374,
             "acc@5": 93.546,
+        },
+    )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/resnet101-b641f3a9.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "acc@1": 81.728,
+            "acc@5": 95.670,
         },
     )
 
@@ -123,9 +132,19 @@ class ResNet152Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 78.312,
             "acc@5": 94.046,
+        },
+    )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/resnet152-089c0848.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "acc@1": 82.042,
+            "acc@5": 95.926,
         },
     )
 
@@ -136,9 +155,19 @@ class ResNeXt50_32x4dWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 77.618,
             "acc@5": 93.698,
+        },
+    )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/resnext50_32x4d-b260af35.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "acc@1": 81.116,
+            "acc@5": 95.478,
         },
     )
 
@@ -149,7 +178,7 @@ class ResNeXt101_32x8dWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 79.312,
             "acc@5": 94.526,
         },
@@ -157,12 +186,12 @@ class ResNeXt101_32x8dWeights(Weights):
 
 
 class WideResNet50_2Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.468,
             "acc@5": 94.086,
         },
@@ -170,12 +199,12 @@ class WideResNet50_2Weights(Weights):
 
 
 class WideResNet101_2Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.848,
             "acc@5": 94.284,
         },
@@ -256,7 +285,7 @@ def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress
 def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = WideResNet50_2Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = WideResNet50_2Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
 
     weights = WideResNet50_2Weights.verify(weights)
     kwargs["width_per_group"] = 64 * 2
@@ -266,7 +295,7 @@ def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: b
 def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = WideResNet101_2Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = WideResNet101_2Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
 
     weights = WideResNet101_2Weights.verify(weights)
     kwargs["width_per_group"] = 64 * 2

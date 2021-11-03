@@ -18,13 +18,19 @@ except ImportError:
     amp = None
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, apex=False):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{value:.3f}"))
 
-    header = "Epoch: [{}]".format(epoch)
+    header = f"Epoch: [{epoch}]"
     for video, target in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         video, target = video.to(device), target.to(device)
@@ -93,6 +99,8 @@ def collate_fn(batch):
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.apex and amp is None:
         raise RuntimeError(
             "Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
@@ -122,12 +130,12 @@ def main(args):
     transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
 
     if args.cache_dataset and os.path.exists(cache_path):
-        print("Loading dataset_train from {}".format(cache_path))
+        print(f"Loading dataset_train from {cache_path}")
         dataset, _ = torch.load(cache_path)
         dataset.transform = transform_train
     else:
         if args.distributed:
-            print("It is recommended to pre-compute the dataset cache " "on a single-gpu first, as it will be faster")
+            print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
         dataset = torchvision.datasets.Kinetics400(
             traindir,
             frames_per_clip=args.clip_len,
@@ -140,7 +148,7 @@ def main(args):
             ),
         )
         if args.cache_dataset:
-            print("Saving dataset_train to {}".format(cache_path))
+            print(f"Saving dataset_train to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
 
@@ -149,15 +157,20 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
+    if not args.weights:
+        transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
+    else:
+        fn = PM.video.__dict__[args.model]
+        weights = PM._api.get_weight(fn, args.weights)
+        transform_test = weights.transforms()
 
     if args.cache_dataset and os.path.exists(cache_path):
-        print("Loading dataset_test from {}".format(cache_path))
+        print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
         dataset_test.transform = transform_test
     else:
         if args.distributed:
-            print("It is recommended to pre-compute the dataset cache " "on a single-gpu first, as it will be faster")
+            print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
         dataset_test = torchvision.datasets.Kinetics400(
             valdir,
             frames_per_clip=args.clip_len,
@@ -170,7 +183,7 @@ def main(args):
             ),
         )
         if args.cache_dataset:
-            print("Saving dataset_test to {}".format(cache_path))
+            print(f"Saving dataset_test to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
 
@@ -200,7 +213,10 @@ def main(args):
     )
 
     print("Creating model")
-    model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
+    if not args.weights:
+        model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
+    else:
+        model = PM.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -232,8 +248,7 @@ def main(args):
             )
         else:
             raise RuntimeError(
-                "Invalid warmup lr method '{}'. Only linear and constant "
-                "are supported.".format(args.lr_warmup_method)
+                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant are supported."
             )
 
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
@@ -275,12 +290,12 @@ def main(args):
                 "epoch": epoch,
                 "args": args,
             }
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 def parse_args():
@@ -288,16 +303,18 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description="PyTorch Video Classification Training")
 
-    parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", help="dataset")
-    parser.add_argument("--train-dir", default="train_avi-480p", help="name of train dir")
-    parser.add_argument("--val-dir", default="val_avi-480p", help="name of val dir")
-    parser.add_argument("--model", default="r2plus1d_18", help="model")
-    parser.add_argument("--device", default="cuda", help="device")
+    parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
+    parser.add_argument("--train-dir", default="train_avi-480p", type=str, help="name of train dir")
+    parser.add_argument("--val-dir", default="val_avi-480p", type=str, help="name of val dir")
+    parser.add_argument("--model", default="r2plus1d_18", type=str, help="model name")
+    parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument("--clip-len", default=16, type=int, metavar="N", help="number of frames per clip")
     parser.add_argument(
         "--clips-per-video", default=5, type=int, metavar="N", help="maximum number of clips per video to consider"
     )
-    parser.add_argument("-b", "--batch-size", default=24, type=int)
+    parser.add_argument(
+        "-b", "--batch-size", default=24, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+    )
     parser.add_argument("--epochs", default=45, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument(
         "-j", "--workers", default=10, type=int, metavar="N", help="number of data loading workers (default: 10)"
@@ -319,8 +336,8 @@ def parse_args():
     parser.add_argument("--lr-warmup-method", default="linear", type=str, help="the warmup method (default: linear)")
     parser.add_argument("--lr-warmup-decay", default=0.001, type=float, help="the decay for lr")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
-    parser.add_argument("--output-dir", default=".", help="path where to save")
-    parser.add_argument("--resume", default="", help="resume from checkpoint")
+    parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
+    parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start-epoch", default=0, type=int, metavar="N", help="start epoch")
     parser.add_argument(
         "--cache-dataset",
@@ -360,7 +377,10 @@ def parse_args():
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
-    parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
+    parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     args = parser.parse_args()
 
