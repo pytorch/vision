@@ -18,6 +18,12 @@ except ImportError:
     amp = None
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, apex=False):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -149,7 +155,12 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
+    if not args.weights:
+        transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
+    else:
+        fn = PM.video.__dict__[args.model]
+        weights = PM._api.get_weight(fn, args.weights)
+        transform_test = weights.transforms()
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -200,7 +211,12 @@ def main(args):
     )
 
     print("Creating model")
-    model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
+    if not args.weights:
+        model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
+    else:
+        if PM is None:
+            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+        model = PM.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -362,6 +378,9 @@ def parse_args():
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     args = parser.parse_args()
 

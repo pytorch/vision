@@ -13,15 +13,14 @@ from ._meta import _IMAGENET_CATEGORIES
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeights", "googlenet"]
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
-
-
 class GoogLeNetWeights(Weights):
     ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            "size": (224, 224),
+            "categories": _IMAGENET_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/TheCodez/examples/blob/inception/imagenet/README.md#googlenet",
             "acc@1": 69.778,
             "acc@5": 89.530,

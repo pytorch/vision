@@ -11,6 +11,12 @@ from coco_utils import get_coco
 from torch import nn
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def get_dataset(dir_path, name, image_set, transform):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
@@ -26,11 +32,15 @@ def get_dataset(dir_path, name, image_set, transform):
     return ds, num_classes
 
 
-def get_transform(train):
-    base_size = 520
-    crop_size = 480
-
-    return presets.SegmentationPresetTrain(base_size, crop_size) if train else presets.SegmentationPresetEval(base_size)
+def get_transform(train, args):
+    if train:
+        return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
+    elif not args.weights:
+        return presets.SegmentationPresetEval(base_size=520)
+    else:
+        fn = PM.segmentation.__dict__[args.model]
+        weights = PM._api.get_weight(fn, args.weights)
+        return weights.transforms()
 
 
 def criterion(inputs, target):
@@ -90,8 +100,8 @@ def main(args):
 
     device = torch.device(args.device)
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(train=True))
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(train=False))
+    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
+    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -113,9 +123,18 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    model = torchvision.models.segmentation.__dict__[args.model](
-        num_classes=num_classes, aux_loss=args.aux_loss, pretrained=args.pretrained
-    )
+    if not args.weights:
+        model = torchvision.models.segmentation.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=num_classes,
+            aux_loss=args.aux_loss,
+        )
+    else:
+        if PM is None:
+            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+        model = PM.segmentation.__dict__[args.model](
+            weights=args.weights, num_classes=num_classes, aux_loss=args.aux_loss
+        )
     model.to(device)
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -246,6 +265,9 @@ def get_args_parser(add_help=True):
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser
 
