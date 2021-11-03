@@ -9,6 +9,7 @@ from torchvision.ops import StochasticDepth
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -169,6 +170,7 @@ class EfficientNet(nn.Module):
             norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
         """
         super().__init__()
+        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
@@ -195,7 +197,7 @@ class EfficientNet(nn.Module):
         )
 
         # building inverted residual blocks
-        total_stage_blocks = sum([cnf.num_layers for cnf in inverted_residual_setting])
+        total_stage_blocks = sum(cnf.num_layers for cnf in inverted_residual_setting)
         stage_block_id = 0
         for cnf in inverted_residual_setting:
             stage: List[nn.Module] = []
@@ -285,7 +287,7 @@ def _efficientnet(
     model = EfficientNet(inverted_residual_setting, dropout, **kwargs)
     if pretrained:
         if model_urls.get(arch, None) is None:
-            raise ValueError("No checkpoint is available for model type {}".format(arch))
+            raise ValueError(f"No checkpoint is available for model type {arch}")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model

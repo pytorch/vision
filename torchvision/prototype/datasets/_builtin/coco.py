@@ -35,36 +35,42 @@ HERE = pathlib.Path(__file__).parent
 
 
 class Coco(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "coco",
             type=DatasetType.IMAGE,
             homepage="https://cocodataset.org/",
             valid_options=dict(
-                split=("train",),
-                year=("2014",),
+                split=("train", "val"),
+                year=("2017", "2014"),
             ),
         )
 
+    _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
+
+    _IMAGES_CHECKSUMS = {
+        ("2014", "train"): "ede4087e640bddba550e090eae701092534b554b42b05ac33f0300b984b31775",
+        ("2014", "val"): "fe9be816052049c34717e077d9e34aa60814a55679f804cd043e3cbee3b9fde0",
+        ("2017", "train"): "69a8bb58ea5f8f99d24875f21416de2e9ded3178e903f1f7603e283b9e06d929",
+        ("2017", "val"): "4f7e2ccb2866ec5041993c9cf2a952bbed69647b115d0f74da7ce8f4bef82f05",
+    }
+
+    _META_URL_BASE = "http://images.cocodataset.org/annotations"
+
+    _META_CHECKSUMS = {
+        "2014": "031296bbc80c45a1d1f76bf9a90ead27e94e99ec629208449507a4917a3bf009",
+        "2017": "113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268",
+    }
+
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        if config.year == "2014":
-            if config.split in ("train", "val"):
-                if config.split == "train":
-                    images = HttpResource(
-                        "http://images.cocodataset.org/zips/train2014.zip",
-                        sha256="ede4087e640bddba550e090eae701092534b554b42b05ac33f0300b984b31775",
-                    )
-                else:
-                    raise RuntimeError("FIXME")
-                meta = HttpResource(
-                    "http://images.cocodataset.org/annotations/annotations_trainval2014.zip",
-                    sha256="031296bbc80c45a1d1f76bf9a90ead27e94e99ec629208449507a4917a3bf009",
-                )
-            else:
-                raise RuntimeError("FIXME")
-        else:
-            raise RuntimeError("FIXME")
+        images = HttpResource(
+            f"{self._IMAGE_URL_BASE}/{config.split}{config.year}.zip",
+            sha256=self._IMAGES_CHECKSUMS[(config.year, config.split)],
+        )
+        meta = HttpResource(
+            f"{self._META_URL_BASE}/annotations_trainval{config.year}.zip",
+            sha256=self._META_CHECKSUMS[config.year],
+        )
         return [images, meta]
 
     def _classify_meta(self, data: Tuple[str, Any]) -> Optional[int]:

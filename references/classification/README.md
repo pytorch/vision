@@ -38,24 +38,24 @@ The weights of the Inception V3 model are ported from the original paper rather 
 Since it expects tensors with a size of N x 3 x 299 x 299, to validate the model use the following command:
 
 ```
-torchrun --nproc_per_node=8 train.py --model inception_v3
+torchrun --nproc_per_node=8 train.py --model inception_v3\
       --val-resize-size 342 --val-crop-size 299 --train-crop-size 299 --test-only --pretrained
 ```
 
-### ResNext-50 32x4d
+### ResNet
+```
+torchrun --nproc_per_node=8 train.py --model $MODEL
+```
+
+Here `$MODEL` is one of `resnet18`, `resnet34`, `resnet50`, `resnet101` or `resnet152`.
+
+### ResNext
 ```
 torchrun --nproc_per_node=8 train.py\
-    --model resnext50_32x4d --epochs 100
+    --model $MODEL --epochs 100
 ```
 
-
-### ResNext-101 32x8d
-
-```
-torchrun --nproc_per_node=8 train.py\
-    --model resnext101_32x8d --epochs 100
-```
-
+Here `$MODEL` is one of `resnext50_32x4d` or `resnext101_32x8d`.
 Note that the above command corresponds to a single node with 8 GPUs. If you use
 a different number of GPUs and/or a different batch size, then the learning rate
 should be scaled accordingly. For example, the pretrained model provided by
@@ -151,9 +151,9 @@ torchrun --nproc_per_node=8 train.py\
 
 ## Quantized
 
-### Parameters used for generating quantized models:
+### Post training quantized models
 
-For all post training quantized models (All quantized models except mobilenet-v2), the settings are:
+For all post training quantized models, the settings are:
 
 1. num_calibration_batches: 32
 2. num_workers: 16
@@ -162,8 +162,11 @@ For all post training quantized models (All quantized models except mobilenet-v2
 5. backend: 'fbgemm'
 
 ```
-python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='<model_name>'
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
+Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d` and `shufflenet_v2_x1_0`.
+
+### QAT MobileNetV2
 
 For Mobilenet-v2, the model was trained with quantization aware training, the settings used are:
 1. num_workers: 16
@@ -184,6 +187,8 @@ torchrun --nproc_per_node=8 train_quantization.py --model='mobilenet_v2'
 ```
 
 Training converges at about 10 epochs.
+
+### QAT MobileNetV3
 
 For Mobilenet-v3 Large, the model was trained with quantization aware training, the settings used are:
 1. num_workers: 16

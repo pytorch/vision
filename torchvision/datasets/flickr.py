@@ -13,7 +13,7 @@ class Flickr8kParser(HTMLParser):
     """Parser for extracting captions from the Flickr8k dataset web page."""
 
     def __init__(self, root: str) -> None:
-        super(Flickr8kParser, self).__init__()
+        super().__init__()
 
         self.root = root
 
@@ -71,7 +71,7 @@ class Flickr8k(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
-        super(Flickr8k, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
@@ -127,7 +127,7 @@ class Flickr30k(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
-        super(Flickr30k, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict

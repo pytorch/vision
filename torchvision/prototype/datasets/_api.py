@@ -1,4 +1,5 @@
 import io
+import os
 from typing import Any, Callable, Dict, List, Optional
 
 import torch
@@ -63,12 +64,13 @@ def load(
     split: str = "train",
     **options: Any,
 ) -> IterDataPipe[Dict[str, Any]]:
+    name = name.lower()
     dataset = find(name)
 
     if decoder is default:
         decoder = DEFAULT_DECODER.get(dataset.info.type)
 
     config = dataset.info.make_config(split=split, **options)
-    root = home() / name
+    root = os.path.join(home(), name)
 
     return dataset.to_datapipe(root, config=config, decoder=decoder)

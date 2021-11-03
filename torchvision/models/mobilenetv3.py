@@ -7,6 +7,7 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation, SqueezeExcitation as SElayer
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -150,6 +151,7 @@ class MobileNetV3(nn.Module):
             dropout (float): The droupout probability
         """
         super().__init__()
+        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
@@ -276,7 +278,7 @@ def _mobilenet_v3_conf(
         ]
         last_channel = adjust_channels(1024 // reduce_divider)  # C5
     else:
-        raise ValueError("Unsupported model type {}".format(arch))
+        raise ValueError(f"Unsupported model type {arch}")
 
     return inverted_residual_setting, last_channel
 
@@ -292,7 +294,7 @@ def _mobilenet_v3(
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
     if pretrained:
         if model_urls.get(arch, None) is None:
-            raise ValueError("No checkpoint is available for model type {}".format(arch))
+            raise ValueError(f"No checkpoint is available for model type {arch}")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model

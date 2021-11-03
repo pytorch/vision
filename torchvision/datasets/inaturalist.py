@@ -74,16 +74,14 @@ class INaturalist(VisionDataset):
     ) -> None:
         self.version = verify_str_arg(version, "version", DATASET_URLS.keys())
 
-        super(INaturalist, self).__init__(
-            os.path.join(root, version), transform=transform, target_transform=target_transform
-        )
+        super().__init__(os.path.join(root, version), transform=transform, target_transform=target_transform)
 
         os.makedirs(root, exist_ok=True)
         if download:
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted." + " You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.all_categories: List[str] = []
 
