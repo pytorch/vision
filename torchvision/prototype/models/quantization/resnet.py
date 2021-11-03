@@ -2,6 +2,8 @@ import warnings
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ....models.quantization.resnet import (
     QuantizableBasicBlock,
     QuantizableBottleneck,
@@ -54,7 +56,9 @@ def _resnet(
 _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
     "backend": "fbgemm",
+    "quantization": "ptq",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
 }
 
@@ -65,6 +69,7 @@ class QuantizedResNet18Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "unquantized": ResNet18Weights.ImageNet1K_RefV1,
             "acc@1": 69.494,
             "acc@5": 88.882,
         },
@@ -77,6 +82,7 @@ class QuantizedResNet50Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "unquantized": ResNet50Weights.ImageNet1K_RefV1,
             "acc@1": 75.920,
             "acc@5": 92.814,
         },
@@ -89,6 +95,7 @@ class QuantizedResNeXt101_32x8dWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "unquantized": ResNeXt101_32x8dWeights.ImageNet1K_RefV1,
             "acc@1": 78.986,
             "acc@5": 94.480,
         },
