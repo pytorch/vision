@@ -84,6 +84,7 @@ def test_old_vs_new_factory(model_fn, module_name, dev):
         },
         "quantization": {
             "input_shape": (1, 3, 224, 224),
+            "quantize": True,
         },
         "segmentation": {
             "input_shape": (1, 3, 520, 520),
