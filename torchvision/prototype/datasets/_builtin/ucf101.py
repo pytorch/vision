@@ -36,7 +36,6 @@ class ucf101(Dataset):
             "ucf101",
             type=DatasetType.VIDEO,
             valid_options={'split': ["train", "test"], 'fold': ["1", "2", "3"]},
-            # categories=HERE / "ucf101.categories",
             homepage="https://www.crcv.ucf.edu/data/UCF101.php",
         )
 
