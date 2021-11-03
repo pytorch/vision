@@ -148,6 +148,8 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -194,8 +196,6 @@ def main(args):
             pretrained=args.pretrained, num_classes=num_classes, **kwargs
         )
     else:
-        if PM is None:
-            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
         model = PM.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
     model.to(device)
     if args.distributed and args.sync_bn:
