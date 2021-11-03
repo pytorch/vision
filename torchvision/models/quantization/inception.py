@@ -24,72 +24,6 @@ quant_model_urls = {
 }
 
 
-def inception_v3(
-    pretrained: bool = False,
-    progress: bool = True,
-    quantize: bool = False,
-    **kwargs: Any,
-) -> "QuantizableInception3":
-
-    r"""Inception v3 model architecture from
-    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
-
-    .. note::
-        **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
-        N x 3 x 299 x 299, so ensure your images are sized accordingly.
-
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-        aux_logits (bool): If True, add an auxiliary branch that can improve training.
-            Default: *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
-    """
-    if pretrained:
-        if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" in kwargs:
-            original_aux_logits = kwargs["aux_logits"]
-            kwargs["aux_logits"] = True
-        else:
-            original_aux_logits = False
-
-    model = QuantizableInception3(**kwargs)
-    _replace_relu(model)
-
-    if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "fbgemm"
-        quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
-
-    if pretrained:
-        if quantize:
-            if not original_aux_logits:
-                model.aux_logits = False
-                model.AuxLogits = None
-            model_url = quant_model_urls["inception_v3_google_" + backend]
-        else:
-            model_url = inception_module.model_urls["inception_v3_google"]
-
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
-
-        if not quantize:
-            if not original_aux_logits:
-                model.aux_logits = False
-                model.AuxLogits = None
-    return model
-
-
 class QuantizableBasicConv2d(inception_module.BasicConv2d):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -237,3 +171,68 @@ class QuantizableInception3(inception_module.Inception3):
         for m in self.modules():
             if type(m) is QuantizableBasicConv2d:
                 m.fuse_model()
+
+
+def inception_v3(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableInception3:
+    r"""Inception v3 model architecture from
+    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
+
+    .. note::
+        **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
+        N x 3 x 299 x 299, so ensure your images are sized accordingly.
+
+    Note that quantize = True returns a quantized model with 8 bit
+    weights. Quantized models only support inference and run on CPUs.
+    GPU inference is not yet supported
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
+        aux_logits (bool): If True, add an auxiliary branch that can improve training.
+            Default: *True*
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+            was trained on ImageNet. Default: *False*
+    """
+    if pretrained:
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
+        if "aux_logits" in kwargs:
+            original_aux_logits = kwargs["aux_logits"]
+            kwargs["aux_logits"] = True
+        else:
+            original_aux_logits = False
+
+    model = QuantizableInception3(**kwargs)
+    _replace_relu(model)
+
+    if quantize:
+        # TODO use pretrained as a string to specify the backend
+        backend = "fbgemm"
+        quantize_model(model, backend)
+    else:
+        assert pretrained in [True, False]
+
+    if pretrained:
+        if quantize:
+            if not original_aux_logits:
+                model.aux_logits = False
+                model.AuxLogits = None
+            model_url = quant_model_urls["inception_v3_google_" + backend]
+        else:
+            model_url = inception_module.model_urls["inception_v3_google"]
+
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
+
+        model.load_state_dict(state_dict)
+
+        if not quantize:
+            if not original_aux_logits:
+                model.aux_logits = False
+                model.AuxLogits = None
+    return model
