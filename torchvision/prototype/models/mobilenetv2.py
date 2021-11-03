@@ -13,15 +13,14 @@ from ._meta import _IMAGENET_CATEGORIES
 __all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
-
-
 class MobileNetV2Weights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            "size": (224, 224),
+            "categories": _IMAGENET_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
             "acc@1": 71.878,
             "acc@5": 90.286,

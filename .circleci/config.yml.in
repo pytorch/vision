@@ -187,6 +187,10 @@ jobs:
             pip install --user --progress-bar off pre-commit
             pre-commit install-hooks
       - run: pre-commit run --all-files
+      - run:
+          name: Required lint modifications
+          when: on_fail
+          command: git --no-pager diff
 
   python_type_check:
     docker:
@@ -270,7 +274,7 @@ jobs:
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Install test utilities
-          command: pip install --user --progress-bar=off pytest
+          command: pip install --user --progress-bar=off pytest pytest-mock
       - run:
           name: Run tests
           command: pytest test/test_prototype_*.py

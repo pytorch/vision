@@ -12,12 +12,15 @@ from ..resnet import ResNet50Weights, ResNet101Weights, resnet50, resnet101
 __all__ = ["FCN", "FCNResNet50Weights", "FCNResNet101Weights", "fcn_resnet50", "fcn_resnet101"]
 
 
+_common_meta = {"categories": _VOC_CATEGORIES}
+
+
 class FCNResNet50Weights(Weights):
     CocoWithVocLabels_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
-            "categories": _VOC_CATEGORIES,
+            **_common_meta,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
             "mIoU": 60.5,
             "acc": 91.4,
@@ -30,7 +33,7 @@ class FCNResNet101Weights(Weights):
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
-            "categories": _VOC_CATEGORIES,
+            **_common_meta,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
             "mIoU": 63.7,
             "acc": 91.9,

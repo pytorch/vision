@@ -4,6 +4,8 @@ from typing import Tuple, List, Dict, Optional
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from ..utils import _log_api_usage_once
+
 
 class ExtraFPNBlock(nn.Module):
     """
@@ -75,6 +77,7 @@ class FeaturePyramidNetwork(nn.Module):
         extra_blocks: Optional[ExtraFPNBlock] = None,
     ):
         super().__init__()
+        _log_api_usage_once(self)
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:
