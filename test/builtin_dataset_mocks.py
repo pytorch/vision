@@ -15,7 +15,7 @@ from torch.testing import make_tensor as _make_tensor
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
 from torchvision.prototype.datasets._api import find
-from torchvision.prototype.datasets.utils._internal import add_suggestion
+from torchvision.prototype.utils._internal import add_suggestion
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 
