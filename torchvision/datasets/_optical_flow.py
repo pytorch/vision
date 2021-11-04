@@ -101,6 +101,29 @@ class Sintel(FlowDataset):
 
 
 class KittiFlow(FlowDataset):
+    """Kitti Dataset for optical flow (2015)
+
+    The dataset can be downloaded `from here
+    <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`_.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            Kitti
+                testing
+                    image_2
+                training
+                    image_2
+                    flow_occ
+
+
+    Args:
+        root (string): Root directory of the KittiFlow Dataset.
+        split (string, optional): The dataset split, either "train" (default) or "test"
+        transforms (callable, optional): A function/transform that takes in
+            ``img1, img2, flow, valid`` and returns a transformed version.
+    """
+
     _has_builtin_flow_mask = True
 
     def __init__(
@@ -129,6 +152,21 @@ class KittiFlow(FlowDataset):
         if split == "train":
             self._flow_list = sorted(glob(str(root / "flow_occ" / "*_10.png")))
 
+    def __getitem__(self, index):
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: If ``split="train"`` a 4-tuple with ``(img1, img2, flow,
+            valid)`` where ``valid`` is a numpy boolean mask of shape (H, W)
+            indicating which flow values are valid. The flow is a numpy array of
+            shape (2, H, W) and the images are PIL images. If `split="test"`, a
+            4-tuple with ``(img1, img2, None, None)`` is returned.
+        """
+        return super().__getitem__(index)
+
     def _read_flow(self, file_name):
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
@@ -137,21 +175,16 @@ def _read_flo(file_name):
     """Read .flo file in Middlebury format"""
     # Code adapted from:
     # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
-
     # WARNING: this will work on little-endian architectures (eg Intel x86) only!
-    # print 'fn = %s'%(fn)
     with open(file_name, "rb") as f:
         magic = np.fromfile(f, np.float32, count=1)
         if 202021.25 != magic:
             raise ValueError("Magic number incorrect. Invalid .flo file")
 
-        w = np.fromfile(f, np.int32, count=1)
-        h = np.fromfile(f, np.int32, count=1)
-        # print 'Reading %d x %d flo file\n' % (w, h)
-        data = np.fromfile(f, np.float32, count=2 * int(w) * int(h))
-        # Reshape data into 3D array (columns, rows, bands)
-        # The reshape here is for visualization, the original code is (w,h,2)
-        return np.resize(data, (2, int(h), int(w)))
+        w = int(np.fromfile(f, np.int32, count=1))
+        h = int(np.fromfile(f, np.int32, count=1))
+        data = np.fromfile(f, np.float32, count=2 * w * h)
+        return data.reshape(2, h, w)
 
 
 def _read_16bits_png_with_flow_and_valid_mask(file_name):
