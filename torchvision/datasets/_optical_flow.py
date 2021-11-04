@@ -186,7 +186,7 @@ class KittiFlow(FlowDataset):
         if split not in ("train", "test"):
             raise ValueError("split must be either 'train' or 'test'")
 
-        root = Path(root) / "Kitti" / ("training" if split == "train" else split)
+        root = Path(root) / "Kitti" / (split + "ing")
         images1 = sorted(glob(str(root / "image_2" / "*_10.png")))
         images2 = sorted(glob(str(root / "image_2" / "*_11.png")))
 

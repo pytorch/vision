@@ -1947,7 +1947,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
         root = pathlib.Path(tmpdir) / "Kitti"
 
         num_examples = 2 if config["split"] == "train" else 3
-        for split_dir in ("training", "test"):
+        for split_dir in ("training", "testing"):
 
             datasets_utils.create_image_folder(
                 root / split_dir,
