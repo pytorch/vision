@@ -1998,5 +1998,58 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class FlyingChairsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FlyingChairs
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val"))
+    # We patch the flow reader, because this would otherwise force us to generate fake (but readable) .flo files,
+    # which is something we want to avoid.
+    _FAKE_FLOW = "Fake Flow"
+    EXTRA_PATCHES = {unittest.mock.patch("torchvision.datasets.FlyingChairs._read_flow", return_value=_FAKE_FLOW)}
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (type(_FAKE_FLOW), type(None)))
+
+    def _make_split_file(self, root, num_examples):
+        # We create a fake split file here, but users are asked to download the real one from the authors website
+        split_ids = [1] * num_examples["train"] + [2] * num_examples["val"]
+        random.shuffle(split_ids)
+        with open(str(root / "FlyingChairs_train_val.txt"), "w+") as split_file:
+            for split_id in split_ids:
+                split_file.write(f"{split_id}\n")
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "FlyingChairs"
+
+        num_examples = {"train": 5, "val": 3}
+        num_examples_total = sum(num_examples.values())
+
+        datasets_utils.create_image_folder(  # img1
+            root,
+            name="data",
+            file_name_fn=lambda image_idx: f"00{image_idx}_img1.ppm",
+            num_examples=num_examples_total,
+        )
+        datasets_utils.create_image_folder(  # img2
+            root,
+            name="data",
+            file_name_fn=lambda image_idx: f"00{image_idx}_img2.ppm",
+            num_examples=num_examples_total,
+        )
+        # For the ground truth flow value we just create empty files so that they're properly discovered,
+        # see comment above about EXTRA_PATCHES
+        for i in range(num_examples_total):
+            open(str(root / "data" / f"00{i}_flow.flo"), "a").close()
+
+        self._make_split_file(root, num_examples)
+
+        return num_examples[config["split"]]
+
+    @datasets_utils.test_all_configs
+    def test_flow(self, config):
+        # Make sure flow always exists, and make sure there are as many flow values as (pairs of) images
+        with self.create_dataset(config=config) as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow == self._FAKE_FLOW
+
+
 if __name__ == "__main__":
     unittest.main()

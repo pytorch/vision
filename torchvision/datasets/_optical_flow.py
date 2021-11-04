@@ -14,6 +14,7 @@ from .vision import VisionDataset
 __all__ = (
     "KittiFlow",
     "Sintel",
+    "FlyingChairs",
 )
 
 
@@ -206,6 +207,76 @@ class KittiFlow(FlowDataset):
 
     def _read_flow(self, file_name):
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
+
+
+class FlyingChairs(FlowDataset):
+    """`FlyingChairs <https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs>`_ Dataset for optical flow.
+
+    You will also need to download the FlyingChairs_train_val.txt file from the dataset page.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            FlyingChairs
+                data
+                    00001_flow.flo
+                    00001_img1.ppm
+                    00001_img2.ppm
+                    ...
+                FlyingChairs_train_val.txt
+
+
+    Args:
+        root (string): Root directory of the FlyingChairs Dataset.
+        split (string, optional): The dataset split, either "train" (default) or "val"
+        transforms (callable, optional): A function/transform that takes in
+            ``img1, img2, flow, valid`` and returns a transformed version.
+            ``valid`` is expected for consistency with other datasets which
+            return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
+    """
+
+    def __init__(self, root, split="train", transforms=None):
+        super().__init__(root=root, transforms=transforms)
+
+        if split not in ("train", "val"):
+            raise ValueError("split must be either 'train' or 'val'")
+
+        root = Path(root) / "FlyingChairs"
+        images = sorted(glob(str(root / "data" / "*.ppm")))
+        flows = sorted(glob(str(root / "data" / "*.flo")))
+
+        split_file_name = "FlyingChairs_train_val.txt"
+
+        if not os.path.exists(root / split_file_name):
+            raise FileNotFoundError(
+                "The FlyingChairs_train_val.txt file was not found - please download it from the dataset page (see docstring)."
+            )
+
+        split_list = np.loadtxt(str(root / split_file_name), dtype=np.int32)
+        for i in range(len(flows)):
+            split_id = split_list[i]
+            if (split == "train" and split_id == 1) or (split == "val" and split_id == 2):
+                self._flow_list += [flows[i]]
+                self._image_list += [[images[2 * i], images[2 * i + 1]]]
+
+    def _read_flow(self, file_name):
+        return _read_flo(file_name)
+
+    def __getitem__(self, index):
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: If ``split="train"`` a 3-tuple with ``(img1, img2, flow)``.
+            The flow is a numpy array of shape (2, H, W) and the images are PIL images. If `split="test"`, a
+            3-tuple with ``(img1, img2, None)`` is returned.
+        """
+        return super().__getitem__(index)
+
+    def _read_flow(self, file_name):
+        return _read_flo(file_name)
 
 
 def _read_flo(file_name):
