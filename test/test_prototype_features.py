@@ -126,6 +126,9 @@ class TestBoundingBox:
         assert_close(input, output)
 
 
+# For now, tensor subclasses with additional meta data do not work with torchscript.
+# See https://github.com/pytorch/vision/pull/4721#discussion_r741676037.
+@pytest.mark.xfail
 class TestJit:
     def test_bounding_box(self):
         def resize(input: features.BoundingBox, size: torch.Tensor) -> features.BoundingBox:
@@ -165,6 +168,4 @@ class TestJit:
 
         sample_inputs = (features.BoundingBox(torch.zeros((4,)), image_size=(10, 10)), torch.tensor((20, 5)))
         actual_jit = torch.jit.trace(compose, sample_inputs, check_trace=False)(input, size)
-        print(actual_jit)
-        print(expected)
         assert_close(actual_jit, expected)
