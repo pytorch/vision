@@ -1998,5 +1998,79 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FlyingThings3D
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test"), pass_name=("clean", "final", "both"), camera=("left", "right", "both")
+    )
+    # We patch the flow reader, because this would otherwise force us to generate fake (but readable) .PFM files,
+    # which is something we want to avoid.
+    _FAKE_FLOW = "Fake Flow"
+    EXTRA_PATCHES = {unittest.mock.patch("torchvision.datasets.FlyingThings3D._read_flow", return_value=_FAKE_FLOW)}
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (type(_FAKE_FLOW), type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "FlyingThings3D"
+
+        num_images_per_camera = 3 if config["split"] == "train" else 4
+        passes = ("frames_cleanpass", "frames_finalpass")
+        splits = ("TRAIN", "TEST")
+        letters = ("A", "B", "C")
+        subfolders = ("0000", "0001")
+        cameras = ("left", "right")
+        for pass_name in passes:
+            for split in splits:
+                for letter in letters:
+                    for subfolder in subfolders:
+                        current_folder = root / pass_name / split / letter / subfolder
+                        for camera in cameras:
+                            datasets_utils.create_image_folder(
+                                current_folder,
+                                name=camera,
+                                file_name_fn=lambda image_idx: f"00{image_idx}.png",
+                                num_examples=num_images_per_camera,
+                            )
+
+        # For the ground truth flow value we just create empty files so that they're properly discovered,
+        # see comment above about EXTRA_PATCHES
+        directions = ("into_future", "into_past")
+        for split in splits:
+            for letter in letters:
+                for subfolder in subfolders:
+                    for direction in directions:
+                        current_folder = root / "optical_flow" / split / letter / subfolder / direction
+                        for camera in cameras:
+                            os.makedirs(str(current_folder / camera))
+                            for i in range(num_images_per_camera):
+                                open(str(current_folder / camera / f"{i}.pfm"), "a").close()
+
+        num_cameras = 2 if config["camera"] == "both" else 1
+        num_passes = 2 if config["pass_name"] == "both" else 1
+        num_examples = (
+            (num_images_per_camera - 1) * num_cameras * len(subfolders) * len(letters) * len(splits) * num_passes
+        )
+        return num_examples
+
+    @datasets_utils.test_all_configs
+    def test_flow(self, config):
+        with self.create_dataset(config=config) as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow == self._FAKE_FLOW
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="split must be either"):
+            with self.create_dataset(split="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="pass_name must be either"):
+            with self.create_dataset(pass_name="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="camera must be either"):
+            with self.create_dataset(camera="bad"):
+                pass
+
+
 if __name__ == "__main__":
     unittest.main()
