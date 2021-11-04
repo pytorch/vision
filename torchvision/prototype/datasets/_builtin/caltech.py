@@ -81,11 +81,11 @@ class Caltech101(Dataset):
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[str, str], Tuple[str, io.IOBase], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[str, str], Tuple[Tuple[str, io.IOBase], Tuple[str, io.IOBase]]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        key, image_data, ann_data = data
+        key, (image_data, ann_data) = data
         category, _ = key
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data

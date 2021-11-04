@@ -9,7 +9,7 @@ from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
 
 
-class FilterAndRemapCocoCategories(object):
+class FilterAndRemapCocoCategories:
     def __init__(self, categories, remap=True):
         self.categories = categories
         self.remap = remap
@@ -44,7 +44,7 @@ def convert_coco_poly_to_mask(segmentations, height, width):
     return masks
 
 
-class ConvertCocoPolysToMask(object):
+class ConvertCocoPolysToMask:
     def __call__(self, image, target):
         w, h = image.size
 
@@ -205,11 +205,11 @@ def get_coco_api_from_dataset(dataset):
 
 class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, ann_file, transforms):
-        super(CocoDetection, self).__init__(img_folder, ann_file)
+        super().__init__(img_folder, ann_file)
         self._transforms = transforms
 
     def __getitem__(self, idx):
-        img, target = super(CocoDetection, self).__getitem__(idx)
+        img, target = super().__getitem__(idx)
         image_id = self.ids[idx]
         target = dict(image_id=image_id, annotations=target)
         if self._transforms is not None:

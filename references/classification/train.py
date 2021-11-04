@@ -26,7 +26,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     metric_logger.add_meter("img/s", utils.SmoothedValue(window_size=10, fmt="{value}"))
 
-    header = "Epoch: [{}]".format(epoch)
+    header = f"Epoch: [{epoch}]"
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
@@ -42,6 +42,10 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
         else:
             loss = criterion(output, target)
             loss.backward()
+
+        if args.clip_grad_norm is not None:
+            nn.utils.clip_grad_norm_(utils.get_optimizer_params(optimizer), args.clip_grad_norm)
+
         optimizer.step()
 
         if model_ema and i % args.model_ema_steps == 0:
@@ -121,7 +125,7 @@ def load_data(traindir, valdir, args):
     cache_path = _get_cache_path(traindir)
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
-        print("Loading dataset_train from {}".format(cache_path))
+        print(f"Loading dataset_train from {cache_path}")
         dataset, _ = torch.load(cache_path)
     else:
         auto_augment_policy = getattr(args, "auto_augment", None)
@@ -136,7 +140,7 @@ def load_data(traindir, valdir, args):
             ),
         )
         if args.cache_dataset:
-            print("Saving dataset_train to {}".format(cache_path))
+            print(f"Saving dataset_train to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
     print("Took", time.time() - st)
@@ -145,7 +149,7 @@ def load_data(traindir, valdir, args):
     cache_path = _get_cache_path(valdir)
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
-        print("Loading dataset_test from {}".format(cache_path))
+        print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
     else:
         if not args.weights:
@@ -153,7 +157,7 @@ def load_data(traindir, valdir, args):
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
             )
         else:
-            fn = PM.__dict__[args.model]
+            fn = PM.quantization.__dict__[args.model] if hasattr(args, "backend") else PM.__dict__[args.model]
             weights = PM._api.get_weight(fn, args.weights)
             preprocessing = weights.transforms()
 
@@ -162,7 +166,7 @@ def load_data(traindir, valdir, args):
             preprocessing,
         )
         if args.cache_dataset:
-            print("Saving dataset_test to {}".format(cache_path))
+            print(f"Saving dataset_test to {cache_path}")
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
 
@@ -178,6 +182,8 @@ def load_data(traindir, valdir, args):
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -222,8 +228,6 @@ def main(args):
     if not args.weights:
         model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
     else:
-        if PM is None:
-            raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
         model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
@@ -270,8 +274,8 @@ def main(args):
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
     else:
         raise RuntimeError(
-            "Invalid lr scheduler '{}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
-            "are supported.".format(args.lr_scheduler)
+            f"Invalid lr scheduler '{args.lr_scheduler}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
+            "are supported."
         )
 
     if args.lr_warmup_epochs > 0:
@@ -285,7 +289,7 @@ def main(args):
             )
         else:
             raise RuntimeError(
-                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant " "are supported."
+                f"Invalid warmup lr method '{args.lr_warmup_method}'. Only linear and constant are supported."
             )
         lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
             optimizer, schedulers=[warmup_lr_scheduler, main_lr_scheduler], milestones=[args.lr_warmup_epochs]
@@ -351,12 +355,12 @@ def main(args):
             }
             if model_ema:
                 checkpoint["model_ema"] = model_ema.state_dict()
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 def get_args_parser(add_help=True):
@@ -472,6 +476,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+    parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
 
     # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")

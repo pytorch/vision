@@ -101,4 +101,4 @@ def hflip(clip):
         flipped clip (torch.tensor): Size is (C, T, H, W)
     """
     assert _is_tensor_video_clip(clip), "clip should be a 4D torch.tensor"
-    return clip.flip((-1))
+    return clip.flip(-1)

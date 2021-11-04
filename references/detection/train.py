@@ -33,6 +33,12 @@ from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def get_dataset(name, image_set, transform, data_path):
     paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
     p, ds_fn, num_classes = paths[name]
@@ -41,8 +47,15 @@ def get_dataset(name, image_set, transform, data_path):
     return ds, num_classes
 
 
-def get_transform(train, data_augmentation):
-    return presets.DetectionPresetTrain(data_augmentation) if train else presets.DetectionPresetEval()
+def get_transform(train, args):
+    if train:
+        return presets.DetectionPresetTrain(args.data_augmentation)
+    elif not args.weights:
+        return presets.DetectionPresetEval()
+    else:
+        fn = PM.detection.__dict__[args.model]
+        weights = PM._api.get_weight(fn, args.weights)
+        return weights.transforms()
 
 
 def get_args_parser(add_help=True):
@@ -65,7 +78,7 @@ def get_args_parser(add_help=True):
         "--lr",
         default=0.02,
         type=float,
-        help="initial learning rate, 0.02 is the default value for training " "on 8 gpus and 2 images_per_gpu",
+        help="initial learning rate, 0.02 is the default value for training on 8 gpus and 2 images_per_gpu",
     )
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument(
@@ -128,10 +141,15 @@ def get_args_parser(add_help=True):
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+
     return parser
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -143,10 +161,8 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(
-        args.dataset, "train", get_transform(True, args.data_augmentation), args.data_path
-    )
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args.data_augmentation), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
@@ -175,9 +191,12 @@ def main(args):
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    model = torchvision.models.detection.__dict__[args.model](
-        num_classes=num_classes, pretrained=args.pretrained, **kwargs
-    )
+    if not args.weights:
+        model = torchvision.models.detection.__dict__[args.model](
+            pretrained=args.pretrained, num_classes=num_classes, **kwargs
+        )
+    else:
+        model = PM.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -197,8 +216,7 @@ def main(args):
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     else:
         raise RuntimeError(
-            "Invalid lr scheduler '{}'. Only MultiStepLR and CosineAnnealingLR "
-            "are supported.".format(args.lr_scheduler)
+            f"Invalid lr scheduler '{args.lr_scheduler}'. Only MultiStepLR and CosineAnnealingLR are supported."
         )
 
     if args.resume:
@@ -227,7 +245,7 @@ def main(args):
                 "args": args,
                 "epoch": epoch,
             }
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, "model_{}.pth".format(epoch)))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
         # evaluate after every epoch
@@ -235,7 +253,7 @@ def main(args):
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print("Training time {}".format(total_time_str))
+    print(f"Training time {total_time_str}")
 
 
 if __name__ == "__main__":
