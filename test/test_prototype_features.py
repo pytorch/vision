@@ -57,6 +57,7 @@ class TestCommon:
             (features.Image, dict(color_space=features.ColorSpace._SENTINEL)),
             (features.Label, dict(category="category")),
             (features.BoundingBox, dict(format=features.BoundingBoxFormat._SENTINEL, image_size=(-1, -1))),
+            (features.Pixels, dict()),
         )
     )
     feature_types = pytest.mark.parametrize(
