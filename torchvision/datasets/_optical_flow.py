@@ -66,9 +66,7 @@ class FlowDataset(ABC, VisionDataset):
 
 
 class Sintel(FlowDataset):
-    """Sintel Dataset for optical flow.
-
-    The dataset can be downloaded `from here <http://sintel.is.tue.mpg.de/>`_.
+    """`Sintel <http://sintel.is.tue.mpg.de/>`_ Dataset for optical flow.
 
     The dataset is expected to have the following structure: ::
 
@@ -100,11 +98,14 @@ class Sintel(FlowDataset):
     Args:
         root (string): Root directory of the Sintel Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
+        pass_name (string, optional): The pass to use, either "clean" (default) or "final". See link above for
+            details on the different passes.
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid`` and returns a transformed version.
             ``valid`` is expected for consistency with other datasets which
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
+
     def __init__(
         self,
         root,
@@ -144,7 +145,7 @@ class Sintel(FlowDataset):
         Returns:
             tuple: If ``split="train"`` a 3-tuple with ``(img1, img2, flow).
             The flow is a numpy array of shape (2, H, W) and the images are PIL images. If `split="test"`, a
-            4-tuple with ``(img1, img2, None)`` is returned.
+            3-tuple with ``(img1, img2, None)`` is returned.
         """
         return super().__getitem__(index)
 
@@ -153,10 +154,7 @@ class Sintel(FlowDataset):
 
 
 class KittiFlow(FlowDataset):
-    """Kitti Dataset for optical flow (2015)
-
-    The dataset can be downloaded `from here
-    <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`_.
+    """`Kitti <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`_ dataset for optical flow (2015).
 
     The dataset is expected to have the following structure: ::
 
