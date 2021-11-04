@@ -259,9 +259,6 @@ class FlyingChairs(FlowDataset):
                 self._flow_list += [flows[i]]
                 self._image_list += [[images[2 * i], images[2 * i + 1]]]
 
-    def _read_flow(self, file_name):
-        return _read_flo(file_name)
-
     def __getitem__(self, index):
         """Return example at given index.
 
