@@ -2003,11 +2003,9 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "test"), pass_name=("clean", "final", "both"), camera=("left", "right", "both")
     )
-    # We patch the flow reader, because this would otherwise force us to generate fake (but readable) .PFM files,
-    # which is something we want to avoid.
-    _FAKE_FLOW = "Fake Flow"
-    EXTRA_PATCHES = {unittest.mock.patch("torchvision.datasets.FlyingThings3D._read_flow", return_value=_FAKE_FLOW)}
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (type(_FAKE_FLOW), type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "FlyingThings3D"
@@ -2031,8 +2029,6 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                                 num_examples=num_images_per_camera,
                             )
 
-        # For the ground truth flow value we just create empty files so that they're properly discovered,
-        # see comment above about EXTRA_PATCHES
         directions = ("into_future", "into_past")
         for split in splits:
             for letter in letters:
@@ -2042,7 +2038,9 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                         for camera in cameras:
                             os.makedirs(str(current_folder / camera))
                             for i in range(num_images_per_camera):
-                                open(str(current_folder / camera / f"{i}.pfm"), "a").close()
+                                datasets_utils.make_fake_pfm_file(
+                                    self.FLOW_H, self.FLOW_W, file_name=str(current_folder / camera / f"{i}.pfm")
+                                )
 
         num_cameras = 2 if config["camera"] == "both" else 1
         num_passes = 2 if config["pass_name"] == "both" else 1
@@ -2056,7 +2054,8 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(config=config) as (dataset, _):
             assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
             for _, _, flow in dataset:
-                assert flow == self._FAKE_FLOW
+                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
+                # We don't check the values because the reshaping and flipping makes it hard to figure out
 
     def test_bad_input(self):
         with pytest.raises(ValueError, match="split must be either"):
