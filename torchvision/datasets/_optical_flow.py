@@ -66,6 +66,45 @@ class FlowDataset(ABC, VisionDataset):
 
 
 class Sintel(FlowDataset):
+    """Sintel Dataset for optical flow.
+
+    The dataset can be downloaded `from here <http://sintel.is.tue.mpg.de/>`_.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            Sintel
+                testing
+                    clean
+                        scene_1
+                        scene_2
+                        ...
+                    final
+                        scene_1
+                        scene_2
+                        ...
+                training
+                    clean
+                        scene_1
+                        scene_2
+                        ...
+                    final
+                        scene_1
+                        scene_2
+                        ...
+                    flow
+                        scene_1
+                        scene_2
+                        ...
+
+    Args:
+        root (string): Root directory of the Sintel Dataset.
+        split (string, optional): The dataset split, either "train" (default) or "test"
+        transforms (callable, optional): A function/transform that takes in
+            ``img1, img2, flow, valid`` and returns a transformed version.
+            ``valid`` is expected for consistency with other datasets which
+            return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
+    """
     def __init__(
         self,
         root,
@@ -96,6 +135,19 @@ class Sintel(FlowDataset):
             if split == "train":
                 self._flow_list += sorted(glob(str(flow_root / scene / "*.flo")))
 
+    def __getitem__(self, index):
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: If ``split="train"`` a 3-tuple with ``(img1, img2, flow).
+            The flow is a numpy array of shape (2, H, W) and the images are PIL images. If `split="test"`, a
+            4-tuple with ``(img1, img2, None)`` is returned.
+        """
+        return super().__getitem__(index)
+
     def _read_flow(self, file_name):
         return _read_flo(file_name)
 
@@ -115,7 +167,6 @@ class KittiFlow(FlowDataset):
                 training
                     image_2
                     flow_occ
-
 
     Args:
         root (string): Root directory of the KittiFlow Dataset.
