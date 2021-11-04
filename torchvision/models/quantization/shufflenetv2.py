@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -12,15 +12,11 @@ __all__ = [
     "QuantizableShuffleNetV2",
     "shufflenet_v2_x0_5",
     "shufflenet_v2_x1_0",
-    "shufflenet_v2_x1_5",
-    "shufflenet_v2_x2_0",
 ]
 
 quant_model_urls = {
-    "shufflenetv2_x0.5_fbgemm": None,
+    "shufflenetv2_x0.5_fbgemm": "https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
     "shufflenetv2_x1.0_fbgemm": "https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
-    "shufflenetv2_x1.5_fbgemm": None,
-    "shufflenetv2_x2.0_fbgemm": None,
 }
 
 
@@ -96,6 +92,7 @@ def _shufflenetv2(
         assert pretrained in [True, False]
 
     if pretrained:
+        model_url: Optional[str] = None
         if quantize:
             model_url = quant_model_urls[arch + "_" + backend]
         else:
@@ -146,46 +143,4 @@ def shufflenet_v2_x1_0(
     """
     return _shufflenetv2(
         "shufflenetv2_x1.0", pretrained, progress, quantize, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs
-    )
-
-
-def shufflenet_v2_x1_5(
-    pretrained: bool = False,
-    progress: bool = True,
-    quantize: bool = False,
-    **kwargs: Any,
-) -> QuantizableShuffleNetV2:
-    """
-    Constructs a ShuffleNetV2 with 1.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-    """
-    return _shufflenetv2(
-        "shufflenetv2_x1.5", pretrained, progress, quantize, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs
-    )
-
-
-def shufflenet_v2_x2_0(
-    pretrained: bool = False,
-    progress: bool = True,
-    quantize: bool = False,
-    **kwargs: Any,
-) -> QuantizableShuffleNetV2:
-    """
-    Constructs a ShuffleNetV2 with 2.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-    """
-    return _shufflenetv2(
-        "shufflenetv2_x2.0", pretrained, progress, quantize, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs
     )

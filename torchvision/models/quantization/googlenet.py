@@ -19,69 +19,6 @@ quant_model_urls = {
 }
 
 
-def googlenet(
-    pretrained: bool = False,
-    progress: bool = True,
-    quantize: bool = False,
-    **kwargs: Any,
-) -> "QuantizableGoogLeNet":
-
-    r"""GoogLeNet (Inception v1) model architecture from
-    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
-
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
-            Default: *False* when pretrained is True otherwise *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
-    """
-    if pretrained:
-        if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" not in kwargs:
-            kwargs["aux_logits"] = False
-        if kwargs["aux_logits"]:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
-        original_aux_logits = kwargs["aux_logits"]
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-
-    model = QuantizableGoogLeNet(**kwargs)
-    _replace_relu(model)
-
-    if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "fbgemm"
-        quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
-
-    if pretrained:
-        if quantize:
-            model_url = quant_model_urls["googlenet_" + backend]
-        else:
-            model_url = model_urls["googlenet"]
-
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
-
-        if not original_aux_logits:
-            model.aux_logits = False
-            model.aux1 = None  # type: ignore[assignment]
-            model.aux2 = None  # type: ignore[assignment]
-    return model
-
-
 class QuantizableBasicConv2d(BasicConv2d):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -164,3 +101,65 @@ class QuantizableGoogLeNet(GoogLeNet):
         for m in self.modules():
             if type(m) is QuantizableBasicConv2d:
                 m.fuse_model()
+
+
+def googlenet(
+    pretrained: bool = False,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableGoogLeNet:
+    r"""GoogLeNet (Inception v1) model architecture from
+    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+
+    Note that quantize = True returns a quantized model with 8 bit
+    weights. Quantized models only support inference and run on CPUs.
+    GPU inference is not yet supported
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
+        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
+            Default: *False* when pretrained is True otherwise *True*
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+            was trained on ImageNet. Default: *False*
+    """
+    if pretrained:
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
+        if "aux_logits" not in kwargs:
+            kwargs["aux_logits"] = False
+        if kwargs["aux_logits"]:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
+        original_aux_logits = kwargs["aux_logits"]
+        kwargs["aux_logits"] = True
+        kwargs["init_weights"] = False
+
+    model = QuantizableGoogLeNet(**kwargs)
+    _replace_relu(model)
+
+    if quantize:
+        # TODO use pretrained as a string to specify the backend
+        backend = "fbgemm"
+        quantize_model(model, backend)
+    else:
+        assert pretrained in [True, False]
+
+    if pretrained:
+        if quantize:
+            model_url = quant_model_urls["googlenet_" + backend]
+        else:
+            model_url = model_urls["googlenet"]
+
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
+
+        model.load_state_dict(state_dict)
+
+        if not original_aux_logits:
+            model.aux_logits = False
+            model.aux1 = None  # type: ignore[assignment]
+            model.aux2 = None  # type: ignore[assignment]
+    return model

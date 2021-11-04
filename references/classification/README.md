@@ -31,6 +31,10 @@ Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg13`, `vgg16` or `vgg19`. Note
 that `vgg11_bn`, `vgg13_bn`, `vgg16_bn`, and `vgg19_bn` include batch
 normalization and thus are trained with the default parameters.
 
+### GoogLeNet
+
+The weights of the GoogLeNet model are ported from the original paper rather than trained from scratch.
+
 ### Inception V3
 
 The weights of the Inception V3 model are ported from the original paper rather than trained from scratch.
@@ -164,7 +168,7 @@ For all post training quantized models, the settings are:
 ```
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
-Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d` and `shufflenet_v2_x1_0`.
+Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
 
 ### QAT MobileNetV2
 

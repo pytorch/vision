@@ -479,7 +479,8 @@ Model                             Acc@1          Acc@5
 ================================  =============  =============
 MobileNet V2                      71.658         90.150
 MobileNet V3 Large                73.004         90.858
-ShuffleNet V2                     68.360         87.582
+ShuffleNet V2 x1.0                68.360         87.582
+ShuffleNet V2 x0.5                57.972         79.780
 ResNet 18                         69.494         88.882
 ResNet 50                         75.920         92.814
 ResNext 101 32x8d                 78.986         94.480

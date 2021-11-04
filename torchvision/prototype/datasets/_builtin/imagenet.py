@@ -127,7 +127,7 @@ class ImageNet(Dataset):
         if config.split == "train":
             # the train archive is a tar of tars
             dp = TarArchiveReader(images_dp)
-            # dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+            dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_train_data)
         else:
             devkit_dp = TarArchiveReader(devkit_dp)
