@@ -269,9 +269,8 @@ class FlyingChairs(FlowDataset):
             index(int): The index of the example to retrieve
 
         Returns:
-            tuple: If ``split="train"`` a 3-tuple with ``(img1, img2, flow)``.
-            The flow is a numpy array of shape (2, H, W) and the images are PIL images. If `split="test"`, a
-            3-tuple with ``(img1, img2, None)`` is returned.
+            tuple: A 3-tuple with ``(img1, img2, flow)``.
+            The flow is a numpy array of shape (2, H, W) and the images are PIL images.
         """
         return super().__getitem__(index)
 
