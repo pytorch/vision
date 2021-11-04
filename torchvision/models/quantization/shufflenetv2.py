@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -92,6 +92,7 @@ def _shufflenetv2(
         assert pretrained in [True, False]
 
     if pretrained:
+        model_url: Optional[str] = None
         if quantize:
             model_url = quant_model_urls[arch + "_" + backend]
         else:
