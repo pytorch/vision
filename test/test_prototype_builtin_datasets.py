@@ -3,6 +3,7 @@ import io
 
 import builtin_dataset_mocks
 import pytest
+import torch
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
 from torchvision.prototype.utils._internal import sequence_to_str
@@ -74,6 +75,15 @@ class TestCommon:
             raise AssertionError(
                 f"The values of key(s) "
                 f"{sequence_to_str(sorted(undecoded_features), separate_last='and ')} were not decoded."
+            )
+
+    @builtin_datasets
+    def test_no_vanilla_tensors(self, dataset, mock_info):
+        vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
+        if vanilla_tensors:
+            raise AssertionError(
+                f"The values of key(s) "
+                f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
 
 

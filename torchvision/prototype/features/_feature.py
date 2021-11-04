@@ -16,14 +16,16 @@ class Feature(torch.Tensor):
     _meta_data: Dict[str, Any]
 
     def __init_subclass__(cls):
-        if not hasattr(cls, "_META_ATTRS"):
-            cls._META_ATTRS = {
-                attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")
-            }
+        meta_attrs = {attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")}
+        for super_cls in cls.__mro__[1:]:
+            if super_cls is Feature:
+                break
 
-        for attr in cls._META_ATTRS:
-            if not hasattr(cls, attr):
-                setattr(cls, attr, property(lambda self, attr=attr: self._meta_data[attr]))
+            meta_attrs.update(super_cls._META_ATTRS)
+
+        cls._META_ATTRS = meta_attrs
+        for attr in meta_attrs:
+            setattr(cls, attr, property(lambda self, attr=attr: self._meta_data[attr]))
 
     def __new__(cls, data, *, dtype=None, device=None, like=None, **kwargs):
         unknown_meta_attrs = kwargs.keys() - cls._META_ATTRS
