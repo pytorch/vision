@@ -35,6 +35,7 @@ import torch.distributed as dist
 import torch.utils.data
 from torch.utils.data import IterDataPipe
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.utils import StreamWrapper
 
 
 __all__ = [
@@ -87,6 +88,9 @@ def add_suggestion(
         possibilities = sorted(possibilities)
     suggestions = difflib.get_close_matches(word, possibilities, 1)
     hint = close_match_hint(suggestions[0]) if suggestions else alternative_hint(possibilities)
+    if not hint:
+        return msg
+
     return f"{msg.strip()} {hint}"
 
 
@@ -171,6 +175,9 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
         import scipy.io as sio
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
+
+    if isinstance(buffer, StreamWrapper):
+        buffer = buffer.file_obj
 
     return sio.loadmat(buffer, **kwargs)
 
