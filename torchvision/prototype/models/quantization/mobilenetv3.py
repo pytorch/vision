@@ -57,7 +57,7 @@ def _mobilenet_v3_model(
 
 
 class QuantizedMobileNetV3LargeWeights(Weights):
-    ImageNet1K_FBGEMM_RefV1 = WeightEntry(
+    ImageNet1K_QNNPACK_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -84,7 +84,7 @@ def mobilenet_v3_large(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
-                QuantizedMobileNetV3LargeWeights.ImageNet1K_FBGEMM_RefV1
+                QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
                 if quantize
                 else MobileNetV3LargeWeights.ImageNet1K_RefV1
             )

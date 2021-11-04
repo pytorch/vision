@@ -24,7 +24,7 @@ __all__ = [
 
 
 class QuantizedMobileNetV2Weights(Weights):
-    ImageNet1K_FBGEMM_RefV1 = WeightEntry(
+    ImageNet1K_QNNPACK_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -51,7 +51,7 @@ def mobilenet_v2(
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
-                QuantizedMobileNetV2Weights.ImageNet1K_FBGEMM_RefV1 if quantize else MobileNetV2Weights.ImageNet1K_RefV1
+                QuantizedMobileNetV2Weights.ImageNet1K_QNNPACK_RefV1 if quantize else MobileNetV2Weights.ImageNet1K_RefV1
             )
         else:
             weights = None
