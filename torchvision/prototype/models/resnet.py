@@ -196,6 +196,16 @@ class WideResNet50_2Weights(Weights):
             "acc@5": 94.086,
         },
     )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/wide_resnet50_2-8be09fd8.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "acc@1": 81.604,
+            "acc@5": 95.756,
+        },
+    )
 
 
 class WideResNet101_2Weights(Weights):
