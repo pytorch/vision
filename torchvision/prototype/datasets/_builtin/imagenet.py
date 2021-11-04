@@ -20,8 +20,8 @@ from torchvision.prototype.datasets.utils._internal import (
     Enumerator,
     getitem,
     read_mat,
-    FrozenMapping,
 )
+from torchvision.prototype.utils._internal import FrozenMapping
 
 
 class ImageNet(Dataset):

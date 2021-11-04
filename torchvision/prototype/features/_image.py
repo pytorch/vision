@@ -19,6 +19,15 @@ class Image(Feature):
     color_space: ColorSpace
 
     @classmethod
+    def _to_tensor(cls, data, *, dtype, device):
+        tensor = torch.as_tensor(data, dtype=dtype, device=device)
+        if tensor.ndim == 2:
+            tensor = tensor.unsqueeze(0)
+        elif tensor.ndim != 3:
+            raise ValueError()
+        return tensor
+
+    @classmethod
     def _parse_meta_data(
         cls,
         color_space: Union[str, ColorSpace] = DEFAULT,  # type: ignore[assignment]
