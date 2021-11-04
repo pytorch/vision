@@ -48,6 +48,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     INaturalist
     Kinetics400
     Kitti
+    KittiFlow
     KMNIST
     LFWPeople
     LFWPairs
@@ -60,6 +61,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SBDataset
     SBU
     SEMEION
+    Sintel
     STL10
     SVHN
     UCF101
