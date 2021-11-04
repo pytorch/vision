@@ -32,6 +32,7 @@ import torch.distributed as dist
 import torch.utils.data
 from torch.utils.data import IterDataPipe
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.utils import StreamWrapper
 
 
 __all__ = [
@@ -142,6 +143,9 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
         import scipy.io as sio
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
+
+    if isinstance(buffer, StreamWrapper):
+        buffer = buffer.file_obj
 
     return sio.loadmat(buffer, **kwargs)
 

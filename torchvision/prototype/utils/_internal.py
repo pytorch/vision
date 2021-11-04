@@ -36,4 +36,7 @@ def add_suggestion(
         possibilities = sorted(possibilities)
     suggestions = difflib.get_close_matches(word, possibilities, 1)
     hint = close_match_hint(suggestions[0]) if suggestions else alternative_hint(possibilities)
+    if not hint:
+        return msg
+
     return f"{msg.strip()} {hint}"

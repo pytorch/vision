@@ -48,6 +48,13 @@ def test_classification_model(model_fn, dev):
     TM.test_classification_model(model_fn, dev)
 
 
+@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.detection))
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+def test_detection_model(model_fn, dev):
+    TM.test_detection_model(model_fn, dev)
+
+
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.quantization))
 @pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
 def test_quantized_classification_model(model_fn):
@@ -71,6 +78,7 @@ def test_video_model(model_fn, dev):
 @pytest.mark.parametrize(
     "model_fn, module_name",
     get_models_with_module_names(models)
+    + get_models_with_module_names(models.detection)
     + get_models_with_module_names(models.quantization)
     + get_models_with_module_names(models.segmentation)
     + get_models_with_module_names(models.video),
@@ -82,8 +90,12 @@ def test_old_vs_new_factory(model_fn, module_name, dev):
         "models": {
             "input_shape": (1, 3, 224, 224),
         },
+        "detection": {
+            "input_shape": (3, 300, 300),
+        },
         "quantization": {
             "input_shape": (1, 3, 224, 224),
+            "quantize": True,
         },
         "segmentation": {
             "input_shape": (1, 3, 520, 520),
@@ -95,7 +107,10 @@ def test_old_vs_new_factory(model_fn, module_name, dev):
     model_name = model_fn.__name__
     kwargs = {"pretrained": True, **defaults[module_name], **TM._model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
+    kwargs.pop("num_classes", None)  # ignore this as it's an incompatible speed optimization for pre-trained models
     x = torch.rand(input_shape).to(device=dev)
+    if module_name == "detection":
+        x = [x]
 
     # compare with new model builder parameterized in the old fashion way
     model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)

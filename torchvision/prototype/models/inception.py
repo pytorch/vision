@@ -10,10 +10,10 @@ from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
 
 
-__all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "Inception3Weights", "inception_v3"]
+__all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "InceptionV3Weights", "inception_v3"]
 
 
-class Inception3Weights(Weights):
+class InceptionV3Weights(Weights):
     ImageNet1K_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
@@ -28,11 +28,11 @@ class Inception3Weights(Weights):
     )
 
 
-def inception_v3(weights: Optional[Inception3Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
+def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = Inception3Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
-    weights = Inception3Weights.verify(weights)
+        weights = InceptionV3Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
+    weights = InceptionV3Weights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", True)
     if weights is not None:
