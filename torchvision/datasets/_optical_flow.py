@@ -106,14 +106,7 @@ class Sintel(FlowDataset):
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
 
-    def __init__(
-        self,
-        root,
-        split="train",
-        pass_name="clean",
-        transforms=None,
-    ):
-
+    def __init__(self, root, split="train", pass_name="clean", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
         if split not in ("train", "test"):
@@ -175,12 +168,7 @@ class KittiFlow(FlowDataset):
 
     _has_builtin_flow_mask = True
 
-    def __init__(
-        self,
-        root,
-        split="train",
-        transforms=None,
-    ):
+    def __init__(self, root, split="train", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
         if split not in ("train", "test"):
