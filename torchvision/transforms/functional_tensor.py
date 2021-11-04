@@ -15,10 +15,12 @@ def _assert_image_tensor(img: Tensor) -> None:
     if not _is_tensor_a_torch_image(img):
         raise TypeError("Tensor is not a torch image.")
 
-def _assert_threshold(img: Tensor, threshold:int) -> None:
+
+def _assert_threshold(img: Tensor, threshold: float) -> None:
     bound = 1 if img.is_floating_point() else 255
-    if threshold >= bound:
+    if threshold > bound:
         raise TypeError("Threshold should be less than bound of img.")
+
 
 def get_image_size(img: Tensor) -> List[int]:
     # Returns (w, h) of tensor image
