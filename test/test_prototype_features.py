@@ -11,6 +11,46 @@ from torchvision.prototype.utils._internal import sequence_to_str
 make_tensor = functools.partial(_make_tensor, device="cpu", dtype=torch.float32)
 
 
+def make_bounding_box(*, format="xyxy", image_size=(10, 10)):
+    if isinstance(format, str):
+        format = features.BoundingBoxFormat[format]
+
+    height, width = image_size
+
+    if format == features.BoundingBoxFormat.XYXY:
+        x1 = torch.randint(0, width // 2, ())
+        y1 = torch.randint(0, height // 2, ())
+        x2 = torch.randint(int(x1) + 1, width - int(x1), ()) + x1
+        y2 = torch.randint(int(y1) + 1, height - int(y1), ()) + y1
+        parts = (x1, y1, x2, y2)
+    elif format == features.BoundingBoxFormat.XYWH:
+        x = torch.randint(0, width // 2, ())
+        y = torch.randint(0, height // 2, ())
+        w = torch.randint(1, width - int(x), ())
+        h = torch.randint(1, height - int(y), ())
+        parts = (x, y, w, h)
+    elif format == features.BoundingBoxFormat.CXCYWH:
+        cx = torch.randint(1, width - 1, ())
+        cy = torch.randint(1, height - 1, ())
+        w = torch.randint(1, min(int(cx), width - int(cx)), ())
+        h = torch.randint(1, min(int(cy), height - int(cy)), ())
+        parts = (cx, cy, w, h)
+    else:  # format == features.BoundingBoxFormat._SENTINEL:
+        parts = make_tensor((4,)).unbind()
+
+    return features.BoundingBox.from_parts(*parts, format=format, image_size=image_size)
+
+
+MAKE_DATA_MAP = {
+    features.BoundingBox: make_bounding_box,
+}
+
+
+def make_feature(feature_type, **meta_data):
+    maker = MAKE_DATA_MAP.get(feature_type, lambda **meta_data: feature_type(make_tensor(()), **meta_data))
+    return maker(**meta_data)
+
+
 class TestCommon:
     FEATURE_TYPES, NON_DEFAULT_META_DATA = zip(
         *(
@@ -25,14 +65,10 @@ class TestCommon:
     features = pytest.mark.parametrize(
         "feature",
         [
-            pytest.param(feature_type(make_tensor(()), **meta_data), id=feature_type.__name__)
+            pytest.param(make_feature(feature_type, **meta_data), id=feature_type.__name__)
             for feature_type, meta_data in zip(FEATURE_TYPES, NON_DEFAULT_META_DATA)
         ],
     )
-
-    @pytest.fixture
-    def data(self):
-        return make_tensor(())
 
     def test_consistency(self):
         builtin_feature_types = {
@@ -58,7 +94,7 @@ class TestCommon:
 
     @feature_types
     def test_torch_function(self, feature_type):
-        input = feature_type(make_tensor(()))
+        input = make_feature(feature_type)
         # This can be any Tensor operation besides clone
         output = input + 1
 
@@ -67,7 +103,7 @@ class TestCommon:
 
     @feature_types
     def test_clone(self, feature_type):
-        input = feature_type(make_tensor(()))
+        input = make_feature(feature_type)
         output = input.clone()
 
         assert type(output) is feature_type
@@ -91,38 +127,10 @@ class TestCommon:
 
 
 class TestBoundingBox:
-    def make_bounding_box(self, *, format, image_size=(10, 10)):
-        if isinstance(format, str):
-            format = features.BoundingBoxFormat[format]
-
-        height, width = image_size
-
-        if format == features.BoundingBoxFormat.XYXY:
-            x1 = torch.randint(0, width // 2, ())
-            y1 = torch.randint(0, height // 2, ())
-            x2 = torch.randint(int(x1) + 1, width - int(x1), ()) + x1
-            y2 = torch.randint(int(y1) + 1, height - int(y1), ()) + y1
-            parts = (x1, y1, x2, y2)
-        elif format == features.BoundingBoxFormat.XYWH:
-            x = torch.randint(0, width // 2, ())
-            y = torch.randint(0, height // 2, ())
-            w = torch.randint(1, width - int(x), ())
-            h = torch.randint(1, height - int(y), ())
-            parts = (x, y, w, h)
-        elif format == features.BoundingBoxFormat.CXCYWH:
-            cx = torch.randint(1, width - 1, ())
-            cy = torch.randint(1, height - 1, ())
-            w = torch.randint(1, min(int(cx), width - int(cx)), ())
-            h = torch.randint(1, min(int(cy), height - int(cy)), ())
-            parts = (cx, cy, w, h)
-
-        return features.BoundingBox.from_parts(*parts, format=format, image_size=image_size)
-
     @pytest.mark.parametrize(("format", "intermediate_format"), itertools.permutations(("xyxy", "xywh"), 2))
     def test_cycle_consistency(self, format, intermediate_format):
-        input = self.make_bounding_box(format=format)
-        a = input.convert(intermediate_format)
-        output = a.convert(format)
+        input = make_bounding_box(format=format)
+        output = input.convert(intermediate_format).convert(format)
         assert_close(input, output)
 
 

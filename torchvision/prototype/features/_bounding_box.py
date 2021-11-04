@@ -24,8 +24,7 @@ def from_parts(a: torch.Tensor, b: torch.Tensor, c: torch.Tensor, d: torch.Tenso
     return torch.stack((a, b, c, d), dim=-1)
 
 
-# FIXME: kwargs and name
-def foo(
+def format_converter_wrapper(
     part_converter: Callable[
         [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
         Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
@@ -37,7 +36,7 @@ def foo(
     return wrapper
 
 
-@foo
+@format_converter_wrapper
 def xywh_to_xyxy(
     x: torch.Tensor, y: torch.Tensor, w: torch.Tensor, h: torch.Tensor
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -48,7 +47,7 @@ def xywh_to_xyxy(
     return x1, y1, x2, y2
 
 
-@foo
+@format_converter_wrapper
 def xyxy_to_xywh(
     x1: torch.Tensor, y1: torch.Tensor, x2: torch.Tensor, y2: torch.Tensor
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -59,7 +58,7 @@ def xyxy_to_xywh(
     return x, y, w, h
 
 
-@foo
+@format_converter_wrapper
 def cxcywh_to_xyxy(
     cx: torch.Tensor, cy: torch.Tensor, w: torch.Tensor, h: torch.Tensor
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -70,7 +69,7 @@ def cxcywh_to_xyxy(
     return x1, y1, x2, y2
 
 
-@foo
+@format_converter_wrapper
 def xyxy_to_cxcywh(
     x1: torch.Tensor, y1: torch.Tensor, x2: torch.Tensor, y2: torch.Tensor
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -94,9 +93,10 @@ class BoundingBox(Feature):
     ) -> Dict[str, Tuple[Any, Any]]:
         if isinstance(format, str):
             format = BoundingBoxFormat[format]
+        format_fallback = BoundingBoxFormat.XYXY
         return dict(
-            format=(format, BoundingBoxFormat.XYXY),
-            image_size=(image_size, functools.partial(cls._guess_image_size, format=format)),
+            format=(format, format_fallback),
+            image_size=(image_size, functools.partial(cls.guess_image_size, format=format_fallback)),
         )
 
     _TO_XYXY_MAP = {
@@ -109,7 +109,7 @@ class BoundingBox(Feature):
     }
 
     @classmethod
-    def _guess_image_size(cls, data: torch.Tensor, *, format: BoundingBoxFormat) -> Tuple[int, int]:
+    def guess_image_size(cls, data: torch.Tensor, *, format: BoundingBoxFormat) -> Tuple[int, int]:
         if format not in (BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH):
             if format != BoundingBoxFormat.XYXY:
                 data = cls._TO_XYXY_MAP[format](data)
