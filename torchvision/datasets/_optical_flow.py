@@ -143,7 +143,7 @@ class Sintel(FlowDataset):
             index(int): The index of the example to retrieve
 
         Returns:
-            tuple: If ``split="train"`` a 3-tuple with ``(img1, img2, flow).
+            tuple: If ``split="train"`` a 3-tuple with ``(img1, img2, flow)``.
             The flow is a numpy array of shape (2, H, W) and the images are PIL images. If `split="test"`, a
             3-tuple with ``(img1, img2, None)`` is returned.
         """
@@ -154,7 +154,7 @@ class Sintel(FlowDataset):
 
 
 class KittiFlow(FlowDataset):
-    """`Kitti <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`_ dataset for optical flow (2015).
+    """`KITTI <http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow>`__ dataset for optical flow (2015).
 
     The dataset is expected to have the following structure: ::
 

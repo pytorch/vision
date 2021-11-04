@@ -6,9 +6,12 @@ import itertools
 import os
 import pathlib
 import random
+import shutil
 import string
+import tarfile
 import unittest
 import unittest.mock
+import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -33,6 +36,8 @@ __all__ = [
     "create_image_folder",
     "create_video_file",
     "create_video_folder",
+    "make_tar",
+    "make_zip",
     "create_random_string",
 ]
 
@@ -839,6 +844,69 @@ def create_video_folder(
         create_video_file(root, file_name_fn(idx), size=size(idx) if callable(size) else size, **kwargs)
         for idx in range(num_examples)
     ]
+
+
+def _split_files_or_dirs(root, *files_or_dirs):
+    files = set()
+    dirs = set()
+    for file_or_dir in files_or_dirs:
+        path = pathlib.Path(file_or_dir)
+        if not path.is_absolute():
+            path = root / path
+        if path.is_file():
+            files.add(path)
+        else:
+            dirs.add(path)
+            for sub_file_or_dir in path.glob("**/*"):
+                if sub_file_or_dir.is_file():
+                    files.add(sub_file_or_dir)
+                else:
+                    dirs.add(sub_file_or_dir)
+
+    if root in dirs:
+        dirs.remove(root)
+
+    return files, dirs
+
+
+def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
+    archive = pathlib.Path(root) / name
+    files, dirs = _split_files_or_dirs(root, *files_or_dirs)
+
+    with opener(archive) as fh:
+        for file in files:
+            adder(fh, file, file.relative_to(root))
+
+    if remove:
+        for file in files:
+            os.remove(file)
+        for dir in dirs:
+            shutil.rmtree(dir, ignore_errors=True)
+
+    return archive
+
+
+def make_tar(root, name, *files_or_dirs, remove=True, compression=None):
+    # TODO: detect compression from name
+    return _make_archive(
+        root,
+        name,
+        *files_or_dirs,
+        opener=lambda archive: tarfile.open(archive, f"w:{compression}" if compression else "w"),
+        adder=lambda fh, file, relative_file: fh.add(file, arcname=relative_file),
+        remove=remove,
+    )
+
+
+def make_zip(root, name, *files_or_dirs, remove=True):
+    return _make_archive(
+        root,
+        name,
+        *files_or_dirs,
+        opener=lambda archive: zipfile.ZipFile(archive, "w"),
+        adder=lambda fh, file, relative_file: fh.write(file, arcname=relative_file),
+        remove=remove,
+    )
 
 
 def create_random_string(length: int, *digits: str) -> str:
