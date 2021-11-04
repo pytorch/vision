@@ -31,6 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     Decompressor,
     INFINITE_BUFFER_SIZE,
 )
+from torchvision.prototype.features import Image, Label
 
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
@@ -126,15 +127,14 @@ class _MNISTBase(Dataset):
         image, label = data
 
         if decoder is raw:
-            image = image.unsqueeze(0)
+            image = Image(image)
         else:
             image_buffer = image_buffer_from_array(image.numpy())
             image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        category = self.info.categories[int(label)]
-        label = label.to(torch.int64)
+        label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
 
-        return dict(image=image, category=category, label=label)
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
