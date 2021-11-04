@@ -5,7 +5,7 @@ import builtin_dataset_mocks
 import pytest
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets.utils._internal import sequence_to_str
+from torchvision.prototype.utils._internal import sequence_to_str
 
 
 _loaders = []
