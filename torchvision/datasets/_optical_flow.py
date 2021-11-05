@@ -233,6 +233,7 @@ class FlyingChairs(FlowDataset):
             ``valid`` is expected for consistency with other datasets which
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
+
     def __init__(self, root, split="train", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
@@ -300,6 +301,7 @@ class FlyingThings3D(FlowDataset):
             ``valid`` is expected for consistency with other datasets which
             return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.
     """
+
     def __init__(self, root, split="train", pass_name="clean", camera="left", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
@@ -343,6 +345,7 @@ class FlyingThings3D(FlowDataset):
                             elif direction == "into_past":
                                 self._image_list += [[images[i + 1], images[i]]]
                                 self._flow_list += [flows[i + 1]]
+
     def __getitem__(self, index):
         """Return example at given index.
 
