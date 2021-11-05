@@ -803,7 +803,6 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
         model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
-
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
 
 
