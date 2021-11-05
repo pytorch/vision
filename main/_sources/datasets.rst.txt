@@ -43,11 +43,14 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FashionMNIST
     Flickr8k
     Flickr30k
+    FlyingChairs
+    FlyingThings3D
     HMDB51
     ImageNet
     INaturalist
     Kinetics400
     Kitti
+    KittiFlow
     KMNIST
     LFWPeople
     LFWPairs
@@ -60,6 +63,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SBDataset
     SBU
     SEMEION
+    Sintel
     STL10
     SVHN
     UCF101
