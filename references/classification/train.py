@@ -30,17 +30,16 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
-        output = model(image)
+        with torch.cuda.amp.autocast(enabled=args.amp):
+            output = model(image)
+            loss = criterion(output, target)
 
         optimizer.zero_grad()
         if args.amp:
-            with torch.cuda.amp.autocast():
-                loss = criterion(output, target)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
         else:
-            loss = criterion(output, target)
             loss.backward()
 
         if args.clip_grad_norm is not None:
