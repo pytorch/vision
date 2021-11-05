@@ -1,8 +1,11 @@
+import contextlib
 import functools
 import io
 import operator
 import os
+import sys
 import traceback
+import unittest.mock
 import warnings
 from collections import OrderedDict
 
@@ -14,13 +17,30 @@ from _utils_internal import get_relative_path
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from torchvision import models
 
-
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 
 def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
     return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+
+
+@contextlib.contextmanager
+def disable_weight_loading(model_fn):
+    model_type = model_fn.__annotations__.get("return")
+    module_name = model_fn.__module__
+    module = sys.modules[module_name]
+
+    with contextlib.ExitStack() as stack:
+        function_name = "load_state_dict_from_url"
+        module_target = module_name if function_name in dir(module) else "torchvision._internally_replaced_utils"
+        download_mock = stack.enter_context(unittest.mock.patch(f"{module_target}.{function_name}"))
+
+        method_name = "load_state_dict"
+        type_target = f"{model_type.__module__}.{model_type.__name__}" if model_type else "torch.nn.Module"
+        load_mock = stack.enter_context(unittest.mock.patch(f"{type_target}.{method_name}"))
+
+        yield download_mock, load_mock
 
 
 def _get_expected_file(name=None):
@@ -766,8 +786,9 @@ def test_detection_model_trainable_backbone_layers(model_fn):
     model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
-    for trainable_layers in range(0, max_trainable + 1):
-        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+    with disable_weight_loading(model_fn):
+        for trainable_layers in range(0, max_trainable + 1):
+            model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
