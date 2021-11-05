@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Callable, Optional
 
 from torch import nn
+from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.ssdlite import (
     _mobilenet_extractor,
@@ -32,6 +33,7 @@ class SSDlite320MobileNetV3LargeFPNWeights(Weights):
         meta={
             "size": (320, 320),
             "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
             "map": 21.3,
         },
