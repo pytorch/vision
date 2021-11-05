@@ -229,7 +229,7 @@ class FlyingThings3D(FlowDataset):
                     TRAIN
 
     Args:
-        root (string): Root directory of the Sintel Dataset.
+        root (string): Root directory of the intel FlyingThings3D Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
         pass_name (string, optional): The pass to use, either "clean" (default) or "final" or "both". See link above for
             details on the different passes.
