@@ -1,4 +1,4 @@
-import os
+import io
 import os.path
 import pickle
 import string
