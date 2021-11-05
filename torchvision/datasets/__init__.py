@@ -1,4 +1,4 @@
-from ._optical_flow import KittiFlow, Sintel, FlyingChairs
+from ._optical_flow import KittiFlow, Sintel, FlyingChairs, FlyingThings3D
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .cifar import CIFAR10, CIFAR100
@@ -75,4 +75,5 @@ __all__ = (
     "KittiFlow",
     "Sintel",
     "FlyingChairs",
+    "FlyingThings3D",
 )
