@@ -1,7 +1,8 @@
 import warnings
 from functools import partial
-from torch import nn
 from typing import Any, Callable, Optional
+
+from torch import nn
 
 from ....models.detection.ssdlite import (
     _mobilenet_extractor,
@@ -57,8 +58,6 @@ def ssdlite320_mobilenet_v3_large(
     if "size" in kwargs:
         warnings.warn("The size of the model is already fixed; ignoring the argument.")
 
-
-
     if weights is not None:
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
@@ -101,7 +100,7 @@ def ssdlite320_mobilenet_v3_large(
         "image_mean": [0.5, 0.5, 0.5],
         "image_std": [0.5, 0.5, 0.5],
     }
-    kwargs = {**defaults, **kwargs}
+    kwargs: Any = {**defaults, **kwargs}
     model = SSD(
         backbone,
         anchor_generator,
