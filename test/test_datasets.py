@@ -1927,11 +1927,11 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
                 assert flow is None
 
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="split must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
 
-        with pytest.raises(ValueError, match="pass_name must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
             with self.create_dataset(pass_name="bad"):
                 pass
 
@@ -1991,7 +1991,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
                 assert valid is None
 
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="split must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
 

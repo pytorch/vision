@@ -9,6 +9,7 @@ from PIL import Image
 
 from ..io.image import _read_png_16
 from .vision import VisionDataset
+from .utils import verify_str_arg
 
 
 __all__ = (
@@ -110,11 +111,8 @@ class Sintel(FlowDataset):
     def __init__(self, root, split="train", pass_name="clean", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
-        if split not in ("train", "test"):
-            raise ValueError("split must be either 'train' or 'test'")
-
-        if pass_name not in ("clean", "final"):
-            raise ValueError("pass_name must be either 'clean' or 'final'")
+        verify_str_arg(split, "split", valid_values=("train", "test"))
+        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final"))
 
         root = Path(root) / "Sintel"
 
@@ -172,8 +170,7 @@ class KittiFlow(FlowDataset):
     def __init__(self, root, split="train", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
-        if split not in ("train", "test"):
-            raise ValueError("split must be either 'train' or 'test'")
+        verify_str_arg(split, "split", valid_values=("train", "test"))
 
         root = Path(root) / "Kitti" / (split + "ing")
         images1 = sorted(glob(str(root / "image_2" / "*_10.png")))
@@ -238,8 +235,7 @@ class FlyingChairs(FlowDataset):
     def __init__(self, root, split="train", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
-        if split not in ("train", "val"):
-            raise ValueError("split must be either 'train' or 'val'")
+        verify_str_arg(split, "split", valid_values=("train", "val"))
 
         root = Path(root) / "FlyingChairs"
         images = sorted(glob(str(root / "data" / "*.ppm")))
