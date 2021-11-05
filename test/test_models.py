@@ -786,11 +786,14 @@ def test_detection_model_trainable_backbone_layers(model_fn):
     model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
-    with disable_weight_loading(model_fn):
+    with disable_weight_loading(model_fn) as (download_mock, load_mock):
         for trainable_layers in range(0, max_trainable + 1):
             model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
 
             n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
+
+    download_mock.assert_called()
+    load_mock.assert_called()
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
 
 
