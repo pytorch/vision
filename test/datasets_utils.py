@@ -204,7 +204,6 @@ class DatasetTestCase(unittest.TestCase):
             ``transforms``, or ``download``.
         - REQUIRED_PACKAGES (Iterable[str]): Additional dependencies to use the dataset. If these packages are not
             available, the tests are skipped.
-        - EXTRA_PATCHES(set): Additional patches to add for each test, to e.g. mock a specific function
 
     Additionally, you need to overwrite the ``inject_fake_data()`` method that provides the data that the tests rely on.
     The fake data should resemble the original data as close as necessary, while containing only few examples. During
@@ -255,8 +254,6 @@ class DatasetTestCase(unittest.TestCase):
     DEFAULT_CONFIG = None
     ADDITIONAL_CONFIGS = None
     REQUIRED_PACKAGES = None
-
-    EXTRA_PATCHES = None
 
     # These keyword arguments are checked by test_transforms in case they are available in DATASET_CLASS.
     _TRANSFORM_KWARGS = {
@@ -383,9 +380,6 @@ class DatasetTestCase(unittest.TestCase):
         if patch_checks:
             patchers.update(self._patch_checks())
 
-        if self.EXTRA_PATCHES is not None:
-            patchers.update(self.EXTRA_PATCHES)
-
         with get_tmp_dir() as tmpdir:
             args = self.dataset_args(tmpdir, complete_config)
             info = self._inject_fake_data(tmpdir, complete_config) if inject_fake_data else None
@@ -393,7 +387,7 @@ class DatasetTestCase(unittest.TestCase):
             with self._maybe_apply_patches(patchers), disable_console_output():
                 dataset = self.DATASET_CLASS(*args, **complete_config, **special_kwargs)
 
-                yield dataset, info
+            yield dataset, info
 
     @classmethod
     def setUpClass(cls):
