@@ -32,7 +32,7 @@ def disable_weight_loading(mocker):
     drawbacks.
 
     Including this fixture into the signature of your test, i.e. `test_foo(disable_weight_loading)`, will recurse
-    through all modules in `torchvision.modules` and will patch all occurrences of the function
+    through all models in `torchvision.models` and will patch all occurrences of the function
     `download_state_dict_from_url` as well as the method `load_state_dict` on all subclasses of `nn.Module` to be
     no-ops.
 
