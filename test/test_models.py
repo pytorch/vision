@@ -27,11 +27,26 @@ def get_models_from_module(module):
 
 @pytest.fixture
 def disable_weight_loading(mocker):
-    starting_point = models
-    module_names = {info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")}
+    """When testing models, the two slowest operations are the downloading of the weights to a file and loading them
+    into the model. Unless, you want to test against specific weights, these steps can be disabled without any
+    drawbacks.
 
+    Including this fixture into the signature of your test, i.e. `test_foo(disable_weight_loading)`, will recurse
+    through all modules in `torchvision.modules` and will patch all occurrences of the function
+    `download_state_dict_from_url` as well as the method `load_state_dict` on all subclasses of `nn.Module` to be
+    no-ops.
+
+    .. warning:
+
+        Loaded models are still executable as normal, but will always have random weights. Make sure to not use this
+        fixture if you want to compare the model output against reference values.
+
+    """
+    starting_point = models
     function_name = "load_state_dict_from_url"
     method_name = "load_state_dict"
+
+    module_names = {info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")}
     targets = {f"torchvision._internally_replaced_utils.{function_name}", f"torch.nn.Module.{method_name}"}
     for name in module_names:
         module = sys.modules.get(name)
