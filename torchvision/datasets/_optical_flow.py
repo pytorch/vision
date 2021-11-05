@@ -8,8 +8,8 @@ import torch
 from PIL import Image
 
 from ..io.image import _read_png_16
-from .vision import VisionDataset
 from .utils import verify_str_arg
+from .vision import VisionDataset
 
 
 __all__ = (
