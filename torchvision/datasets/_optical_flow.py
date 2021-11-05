@@ -1,3 +1,4 @@
+import itertools
 import os
 import re
 from abc import ABC, abstractmethod
@@ -320,31 +321,30 @@ class FlyingThings3D(FlowDataset):
 
         root = Path(root) / "FlyingThings3D"
 
-        for pass_name in passes:
-            for camera in cameras:
-                for direction in ["into_future", "into_past"]:
-                    image_dirs = sorted(glob(str(root / pass_name / split / "*/*")))
-                    image_dirs = sorted([Path(image_dir) / camera for image_dir in image_dirs])
+        directions = ("into_future", "into_past")
+        for pass_name, camera, direction in itertools.product(passes, cameras, directions):
+            image_dirs = sorted(glob(str(root / pass_name / split / "*/*")))
+            image_dirs = sorted([Path(image_dir) / camera for image_dir in image_dirs])
 
-                    flow_dirs = sorted(glob(str(root / "optical_flow" / split / "*/*")))
-                    flow_dirs = sorted([Path(flow_dir) / direction / camera for flow_dir in flow_dirs])
+            flow_dirs = sorted(glob(str(root / "optical_flow" / split / "*/*")))
+            flow_dirs = sorted([Path(flow_dir) / direction / camera for flow_dir in flow_dirs])
 
-                    if not image_dirs or not flow_dirs:
-                        raise FileNotFoundError(
-                            "Could not find the FlyingThings3D flow images. "
-                            "Please make sure the directory structure is correct."
-                        )
+            if not image_dirs or not flow_dirs:
+                raise FileNotFoundError(
+                    "Could not find the FlyingThings3D flow images. "
+                    "Please make sure the directory structure is correct."
+                )
 
-                    for image_dir, flow_dir in zip(image_dirs, flow_dirs):
-                        images = sorted(glob(str(image_dir / "*.png")))
-                        flows = sorted(glob(str(flow_dir / "*.pfm")))
-                        for i in range(len(flows) - 1):
-                            if direction == "into_future":
-                                self._image_list += [[images[i], images[i + 1]]]
-                                self._flow_list += [flows[i]]
-                            elif direction == "into_past":
-                                self._image_list += [[images[i + 1], images[i]]]
-                                self._flow_list += [flows[i + 1]]
+            for image_dir, flow_dir in zip(image_dirs, flow_dirs):
+                images = sorted(glob(str(image_dir / "*.png")))
+                flows = sorted(glob(str(flow_dir / "*.pfm")))
+                for i in range(len(flows) - 1):
+                    if direction == "into_future":
+                        self._image_list += [[images[i], images[i + 1]]]
+                        self._flow_list += [flows[i]]
+                    elif direction == "into_past":
+                        self._image_list += [[images[i + 1], images[i]]]
+                        self._flow_list += [flows[i + 1]]
 
     def __getitem__(self, index):
         """Return example at given index.
