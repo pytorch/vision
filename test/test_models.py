@@ -28,30 +28,29 @@ def get_models_from_module(module):
 @pytest.fixture
 def disable_weight_loading(mocker):
     starting_point = models
-    python_module_names = {
-        info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")
-    }
+    module_names = {info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")}
 
     function_name = "load_state_dict_from_url"
     method_name = "load_state_dict"
     targets = {f"torchvision._internally_replaced_utils.{function_name}", f"torch.nn.Module.{method_name}"}
-    for name in python_module_names:
-        python_module = sys.modules.get(name)
-        if not python_module:
+    for name in module_names:
+        module = sys.modules.get(name)
+        if not module:
             continue
 
-        if function_name in python_module.__dict__:
-            targets.add(f"{python_module.__name__}.{function_name}")
+        if function_name in module.__dict__:
+            targets.add(f"{module.__name__}.{function_name}")
 
         targets.update(
             {
-                f"{python_module.__name__}.{obj.__name__}.{method_name}"
-                for obj in python_module.__dict__.values()
+                f"{module.__name__}.{obj.__name__}.{method_name}"
+                for obj in module.__dict__.values()
                 if isinstance(obj, type) and issubclass(obj, nn.Module) and method_name in obj.__dict__
             }
         )
 
     for target in targets:
+        # See https://github.com/pytorch/vision/pull/4867#discussion_r743677802 for details
         with contextlib.suppress(AttributeError):
             mocker.patch(target)
 
