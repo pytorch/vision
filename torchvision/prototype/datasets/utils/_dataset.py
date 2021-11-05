@@ -2,16 +2,14 @@ import abc
 import csv
 import enum
 import io
+import itertools
 import os
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
 import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.datasets.utils._internal import (
-    add_suggestion,
-    sequence_to_str,
-)
+from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
 
 from .._home import use_sharded_dataset
 from ._internal import FrozenBunch, make_repr, BUILTIN_DIR, _make_sharded_datapipe
@@ -68,17 +66,21 @@ class DatasetInfo:
                 f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
             )
         self._valid_options: Dict[str, Sequence] = valid_options
+        self._configs = tuple(
+            DatasetConfig(**dict(zip(valid_options.keys(), combination)))
+            for combination in itertools.product(*valid_options.values())
+        )
 
         self.extra = FrozenBunch(extra or dict())
+
+    @property
+    def default_config(self) -> DatasetConfig:
+        return self._configs[0]
 
     @staticmethod
     def read_categories_file(path: pathlib.Path) -> List[List[str]]:
         with open(path, newline="") as file:
             return [row for row in csv.reader(file)]
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return DatasetConfig({name: valid_args[0] for name, valid_args in self._valid_options.items()})
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():

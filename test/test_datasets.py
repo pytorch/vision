@@ -1871,5 +1871,249 @@ class LFWPairsTestCase(LFWPeopleTestCase):
             datasets_utils.create_image_folder(root, name2, lambda _: f"{name2}_{no2:04d}.jpg", 1, 250)
 
 
+class SintelTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Sintel
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "Sintel"
+
+        num_images_per_scene = 3 if config["split"] == "train" else 4
+        num_scenes = 2
+
+        for split_dir in ("training", "test"):
+            for pass_name in ("clean", "final"):
+                image_root = root / split_dir / pass_name
+
+                for scene_id in range(num_scenes):
+                    scene_dir = image_root / f"scene_{scene_id}"
+                    datasets_utils.create_image_folder(
+                        image_root,
+                        name=str(scene_dir),
+                        file_name_fn=lambda image_idx: f"frame_000{image_idx}.png",
+                        num_examples=num_images_per_scene,
+                    )
+
+        flow_root = root / "training" / "flow"
+        for scene_id in range(num_scenes):
+            scene_dir = flow_root / f"scene_{scene_id}"
+            os.makedirs(scene_dir)
+            for i in range(num_images_per_scene - 1):
+                file_name = str(scene_dir / f"frame_000{i}.flo")
+                datasets_utils.make_fake_flo_file(h=self.FLOW_H, w=self.FLOW_W, file_name=file_name)
+
+        # with e.g. num_images_per_scene = 3, for a single scene with have 3 images
+        # which are frame_0000, frame_0001 and frame_0002
+        # They will be consecutively paired as (frame_0000, frame_0001), (frame_0001, frame_0002),
+        # that is 3 - 1 = 2 examples. Hence the formula below
+        num_examples = (num_images_per_scene - 1) * num_scenes
+        return num_examples
+
+    def test_flow(self):
+        # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
+        with self.create_dataset(split="train") as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
+                np.testing.assert_allclose(flow, np.arange(flow.size).reshape(flow.shape))
+
+        # Make sure flow is always None for test split
+        with self.create_dataset(split="test") as (dataset, _):
+            assert dataset._image_list and not dataset._flow_list
+            for _, _, flow in dataset:
+                assert flow is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
+            with self.create_dataset(pass_name="bad"):
+                pass
+
+
+class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.KittiFlow
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "Kitti"
+
+        num_examples = 2 if config["split"] == "train" else 3
+        for split_dir in ("training", "testing"):
+
+            datasets_utils.create_image_folder(
+                root / split_dir,
+                name="image_2",
+                file_name_fn=lambda image_idx: f"{image_idx}_10.png",
+                num_examples=num_examples,
+            )
+            datasets_utils.create_image_folder(
+                root / split_dir,
+                name="image_2",
+                file_name_fn=lambda image_idx: f"{image_idx}_11.png",
+                num_examples=num_examples,
+            )
+
+        # For kitti the ground truth flows are encoded as 16-bits pngs.
+        # create_image_folder() will actually create 8-bits pngs, but it doesn't
+        # matter much: the flow reader will still be able to read the files, it
+        # will just be garbage flow value - but we don't care about that here.
+        datasets_utils.create_image_folder(
+            root / "training",
+            name="flow_occ",
+            file_name_fn=lambda image_idx: f"{image_idx}_10.png",
+            num_examples=num_examples,
+        )
+
+        return num_examples
+
+    def test_flow_and_valid(self):
+        # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
+        # Also assert flow and valid are of the expected shape
+        with self.create_dataset(split="train") as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow, valid in dataset:
+                two, h, w = flow.shape
+                assert two == 2
+                assert valid.shape == (h, w)
+
+        # Make sure flow and valid are always None for test split
+        with self.create_dataset(split="test") as (dataset, _):
+            assert dataset._image_list and not dataset._flow_list
+            for _, _, flow, valid in dataset:
+                assert flow is None
+                assert valid is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
+class FlyingChairsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FlyingChairs
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
+
+    def _make_split_file(self, root, num_examples):
+        # We create a fake split file here, but users are asked to download the real one from the authors website
+        split_ids = [1] * num_examples["train"] + [2] * num_examples["val"]
+        random.shuffle(split_ids)
+        with open(str(root / "FlyingChairs_train_val.txt"), "w+") as split_file:
+            for split_id in split_ids:
+                split_file.write(f"{split_id}\n")
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "FlyingChairs"
+
+        num_examples = {"train": 5, "val": 3}
+        num_examples_total = sum(num_examples.values())
+
+        datasets_utils.create_image_folder(  # img1
+            root,
+            name="data",
+            file_name_fn=lambda image_idx: f"00{image_idx}_img1.ppm",
+            num_examples=num_examples_total,
+        )
+        datasets_utils.create_image_folder(  # img2
+            root,
+            name="data",
+            file_name_fn=lambda image_idx: f"00{image_idx}_img2.ppm",
+            num_examples=num_examples_total,
+        )
+        for i in range(num_examples_total):
+            file_name = str(root / "data" / f"00{i}_flow.flo")
+            datasets_utils.make_fake_flo_file(h=self.FLOW_H, w=self.FLOW_W, file_name=file_name)
+
+        self._make_split_file(root, num_examples)
+
+        return num_examples[config["split"]]
+
+    @datasets_utils.test_all_configs
+    def test_flow(self, config):
+        # Make sure flow always exists, and make sure there are as many flow values as (pairs of) images
+        # Also make sure the flow is properly decoded
+        with self.create_dataset(config=config) as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
+                np.testing.assert_allclose(flow, np.arange(flow.size).reshape(flow.shape))
+
+
+class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FlyingThings3D
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test"), pass_name=("clean", "final", "both"), camera=("left", "right", "both")
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "FlyingThings3D"
+
+        num_images_per_camera = 3 if config["split"] == "train" else 4
+        passes = ("frames_cleanpass", "frames_finalpass")
+        splits = ("TRAIN", "TEST")
+        letters = ("A", "B", "C")
+        subfolders = ("0000", "0001")
+        cameras = ("left", "right")
+        for pass_name, split, letter, subfolder, camera in itertools.product(
+            passes, splits, letters, subfolders, cameras
+        ):
+            current_folder = root / pass_name / split / letter / subfolder
+            datasets_utils.create_image_folder(
+                current_folder,
+                name=camera,
+                file_name_fn=lambda image_idx: f"00{image_idx}.png",
+                num_examples=num_images_per_camera,
+            )
+
+        directions = ("into_future", "into_past")
+        for split, letter, subfolder, direction, camera in itertools.product(
+            splits, letters, subfolders, directions, cameras
+        ):
+            current_folder = root / "optical_flow" / split / letter / subfolder / direction / camera
+            os.makedirs(str(current_folder), exist_ok=True)
+            for i in range(num_images_per_camera):
+                datasets_utils.make_fake_pfm_file(self.FLOW_H, self.FLOW_W, file_name=str(current_folder / f"{i}.pfm"))
+
+        num_cameras = 2 if config["camera"] == "both" else 1
+        num_passes = 2 if config["pass_name"] == "both" else 1
+        num_examples = (
+            (num_images_per_camera - 1) * num_cameras * len(subfolders) * len(letters) * len(splits) * num_passes
+        )
+        return num_examples
+
+    @datasets_utils.test_all_configs
+    def test_flow(self, config):
+        with self.create_dataset(config=config) as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
+                # We don't check the values because the reshaping and flipping makes it hard to figure out
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
+            with self.create_dataset(pass_name="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument camera"):
+            with self.create_dataset(camera="bad"):
+                pass
+
+
 if __name__ == "__main__":
     unittest.main()
