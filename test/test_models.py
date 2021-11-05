@@ -3,9 +3,9 @@ import functools
 import io
 import operator
 import os
+import pkgutil
 import sys
 import traceback
-import unittest.mock
 import warnings
 from collections import OrderedDict
 
@@ -25,22 +25,35 @@ def get_models_from_module(module):
     return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-@contextlib.contextmanager
-def disable_weight_loading(model_fn):
-    model_type = model_fn.__annotations__.get("return")
-    module_name = model_fn.__module__
-    module = sys.modules[module_name]
+@pytest.fixture
+def disable_weight_loading(mocker):
+    starting_point = models
+    python_module_names = {
+        info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")
+    }
 
-    with contextlib.ExitStack() as stack:
-        function_name = "load_state_dict_from_url"
-        module_target = module_name if function_name in dir(module) else "torchvision._internally_replaced_utils"
-        download_mock = stack.enter_context(unittest.mock.patch(f"{module_target}.{function_name}"))
+    function_name = "load_state_dict_from_url"
+    method_name = "load_state_dict"
+    targets = {f"torchvision._internally_replaced_utils.{function_name}", f"torch.nn.Module.{method_name}"}
+    for name in python_module_names:
+        python_module = sys.modules.get(name)
+        if not python_module:
+            continue
 
-        method_name = "load_state_dict"
-        type_target = f"{model_type.__module__}.{model_type.__name__}" if model_type else "torch.nn.Module"
-        load_mock = stack.enter_context(unittest.mock.patch(f"{type_target}.{method_name}"))
+        if function_name in python_module.__dict__:
+            targets.add(f"{python_module.__name__}.{function_name}")
 
-        yield download_mock, load_mock
+        targets.update(
+            {
+                f"{python_module.__name__}.{obj.__name__}.{method_name}"
+                for obj in python_module.__dict__.values()
+                if isinstance(obj, type) and issubclass(obj, nn.Module) and method_name in obj.__dict__
+            }
+        )
+
+    for target in targets:
+        with contextlib.suppress(AttributeError):
+            mocker.patch(target)
 
 
 def _get_expected_file(name=None):
@@ -782,18 +795,15 @@ def test_quantized_classification_model(model_fn):
 
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
-def test_detection_model_trainable_backbone_layers(model_fn):
+def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
     model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
-    with disable_weight_loading(model_fn) as (download_mock, load_mock):
-        for trainable_layers in range(0, max_trainable + 1):
-            model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+    for trainable_layers in range(0, max_trainable + 1):
+        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
 
-            n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
+        n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
 
-    download_mock.assert_called()
-    load_mock.assert_called()
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
 
 
