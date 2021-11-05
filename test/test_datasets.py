@@ -2016,31 +2016,23 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
         letters = ("A", "B", "C")
         subfolders = ("0000", "0001")
         cameras = ("left", "right")
-        for pass_name in passes:
-            for split in splits:
-                for letter in letters:
-                    for subfolder in subfolders:
-                        current_folder = root / pass_name / split / letter / subfolder
-                        for camera in cameras:
-                            datasets_utils.create_image_folder(
-                                current_folder,
-                                name=camera,
-                                file_name_fn=lambda image_idx: f"00{image_idx}.png",
-                                num_examples=num_images_per_camera,
-                            )
+        for pass_name, split, letter, subfolder, camera in itertools.product(passes, splits, letters, subfolders, cameras):
+            current_folder = root / pass_name / split / letter / subfolder
+            datasets_utils.create_image_folder(
+                current_folder,
+                name=camera,
+                file_name_fn=lambda image_idx: f"00{image_idx}.png",
+                num_examples=num_images_per_camera,
+            )
 
         directions = ("into_future", "into_past")
-        for split in splits:
-            for letter in letters:
-                for subfolder in subfolders:
-                    for direction in directions:
-                        current_folder = root / "optical_flow" / split / letter / subfolder / direction
-                        for camera in cameras:
-                            os.makedirs(str(current_folder / camera))
-                            for i in range(num_images_per_camera):
-                                datasets_utils.make_fake_pfm_file(
-                                    self.FLOW_H, self.FLOW_W, file_name=str(current_folder / camera / f"{i}.pfm")
-                                )
+        for split, letter, subfolder, direction, camera in itertools.product(splits, letters, subfolders, directions, cameras):
+            current_folder = root / "optical_flow" / split / letter / subfolder / direction / camera
+            os.makedirs(str(current_folder), exist_ok=True)
+            for i in range(num_images_per_camera):
+                datasets_utils.make_fake_pfm_file(
+                    self.FLOW_H, self.FLOW_W, file_name=str(current_folder / f"{i}.pfm")
+                )
 
         num_cameras = 2 if config["camera"] == "both" else 1
         num_passes = 2 if config["pass_name"] == "both" else 1
