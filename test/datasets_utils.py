@@ -929,7 +929,14 @@ def make_fake_pfm_file(h, w, file_name):
 
 def make_fake_flo_file(h, w, file_name):
     """Creates a fake flow file in .flo format."""
+    # Everything needs to be in little Endian according to
+    # https://vision.middlebury.edu/flow/code/flow-code/README.txt
     values = list(range(2 * h * w))
-    content = b"PIEH" + struct.pack("i", w) + struct.pack("i", h) + struct.pack("f" * len(values), *values)
+    content = (
+        struct.pack("<4c", *(c.encode() for c in "PIEH"))
+        + struct.pack("<i", w)
+        + struct.pack("<i", h)
+        + struct.pack("<" + "f" * len(values), *values)
+    )
     with open(file_name, "wb") as f:
         f.write(content)
