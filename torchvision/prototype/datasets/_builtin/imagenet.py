@@ -153,7 +153,7 @@ class ImageNet(Dataset):
             )
             dp = Mapper(dp, self._collate_val_data)
         else:  # config.split == "test"
-            dp = Shuffler(images_dp)
+            dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_test_data)
 
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
