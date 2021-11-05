@@ -30,6 +30,7 @@ class SSDlite320MobileNetV3LargeFPNWeights(Weights):
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=CocoEval,
         meta={
+            "size": (320, 320),
             "categories": _COCO_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
             "map": 21.3,
