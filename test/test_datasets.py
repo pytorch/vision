@@ -2058,15 +2058,15 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                 # We don't check the values because the reshaping and flipping makes it hard to figure out
 
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="split must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
 
-        with pytest.raises(ValueError, match="pass_name must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
             with self.create_dataset(pass_name="bad"):
                 pass
 
-        with pytest.raises(ValueError, match="camera must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument camera"):
             with self.create_dataset(camera="bad"):
                 pass
 

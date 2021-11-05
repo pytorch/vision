@@ -9,6 +9,7 @@ import torch
 from PIL import Image
 
 from ..io.image import _read_png_16
+from .utils import verify_str_arg
 from .vision import VisionDataset
 
 
@@ -217,6 +218,15 @@ class FlyingThings3D(FlowDataset):
 
         root
             FlyingThings3D
+                frames_cleanpass
+                    TEST
+                    TRAIN
+                frames_finalpass
+                    TEST
+                    TRAIN
+                optical_flow
+                    TEST
+                    TRAIN
 
     Args:
         root (string): Root directory of the Sintel Dataset.
@@ -233,20 +243,17 @@ class FlyingThings3D(FlowDataset):
     def __init__(self, root, split="train", pass_name="clean", camera="left", transforms=None):
         super().__init__(root=root, transforms=transforms)
 
-        if split not in ("train", "test"):
-            raise ValueError("split must be either 'train' or 'test'")
+        verify_str_arg(split, "split", valid_values=("train", "test"))
         split = split.upper()
 
-        if pass_name not in ("clean", "final", "both"):
-            raise ValueError("pass_name must be either 'clean', 'final', or 'both'")
+        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final", "both"))
         passes = {
             "clean": ["frames_cleanpass"],
             "final": ["frames_finalpass"],
             "both": ["frames_cleanpass", "frames_finalpass"],
         }[pass_name]
 
-        if camera not in ("left", "right", "both"):
-            raise ValueError("camera must be either 'left', 'right', or 'both'")
+        verify_str_arg(camera, "camera", valid_values=("left", "right", "both"))
         cameras = ["left", "right"] if camera == "both" else [camera]
 
         root = Path(root) / "FlyingThings3D"
