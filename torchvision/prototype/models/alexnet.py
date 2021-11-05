@@ -13,15 +13,14 @@ from ._meta import _IMAGENET_CATEGORIES
 __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
 
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
-
-
 class AlexNetWeights(Weights):
     ImageNet1K_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            "size": (224, 224),
+            "categories": _IMAGENET_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
             "acc@1": 56.522,
             "acc@5": 79.066,

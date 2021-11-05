@@ -1,3 +1,4 @@
+from ._optical_flow import KittiFlow, Sintel, FlyingChairs
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .cifar import CIFAR10, CIFAR100
@@ -71,4 +72,7 @@ __all__ = (
     "INaturalist",
     "LFWPeople",
     "LFWPairs",
+    "KittiFlow",
+    "Sintel",
+    "FlyingChairs",
 )

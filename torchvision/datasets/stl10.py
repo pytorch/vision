@@ -53,14 +53,14 @@ class STL10(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
-        super(STL10, self).__init__(root, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = verify_str_arg(split, "split", self.splits)
         self.folds = self._verify_folds(folds)
 
         if download:
             self.download()
         elif not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted. " "You can use download=True to download it")
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         # now load the picked numpy arrays
         self.labels: Optional[np.ndarray]
@@ -92,7 +92,7 @@ class STL10(VisionDataset):
         elif isinstance(folds, int):
             if folds in range(10):
                 return folds
-            msg = "Value for argument folds should be in the range [0, 10), " "but got {}."
+            msg = "Value for argument folds should be in the range [0, 10), but got {}."
             raise ValueError(msg.format(folds))
         else:
             msg = "Expected type None or int for argument folds, but got type {}."
@@ -167,7 +167,7 @@ class STL10(VisionDataset):
         if folds is None:
             return
         path_to_folds = os.path.join(self.root, self.base_folder, self.folds_list_file)
-        with open(path_to_folds, "r") as f:
+        with open(path_to_folds) as f:
             str_idx = f.read().splitlines()[folds]
             list_idx = np.fromstring(str_idx, dtype=np.int64, sep=" ")
             self.data = self.data[list_idx, :, :, :]

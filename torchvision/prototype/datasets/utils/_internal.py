@@ -1,6 +1,4 @@
-import collections.abc
 import csv
-import difflib
 import enum
 import gzip
 import io
@@ -8,9 +6,9 @@ import lzma
 import os
 import os.path
 import pathlib
+import pickle
 import textwrap
 from typing import (
-    Collection,
     Sequence,
     Callable,
     Union,
@@ -21,20 +19,25 @@ from typing import (
     Dict,
     Optional,
     NoReturn,
+    IO,
     Iterable,
     Mapping,
+    Sized,
 )
 from typing import cast
 
 import numpy as np
 import PIL.Image
+import torch.distributed as dist
+import torch.utils.data
 from torch.utils.data import IterDataPipe
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.utils import StreamWrapper
+
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
     "BUILTIN_DIR",
-    "sequence_to_str",
-    "add_suggestion",
     "make_repr",
     "FrozenMapping",
     "FrozenBunch",
@@ -57,30 +60,6 @@ D = TypeVar("D")
 INFINITE_BUFFER_SIZE = 1_000_000_000
 
 BUILTIN_DIR = pathlib.Path(__file__).parent.parent / "_builtin"
-
-
-def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
-    if len(seq) == 1:
-        return f"'{seq[0]}'"
-
-    return f"""'{"', '".join([str(item) for item in seq[:-1]])}', """ f"""{separate_last}'{seq[-1]}'."""
-
-
-def add_suggestion(
-    msg: str,
-    *,
-    word: str,
-    possibilities: Collection[str],
-    close_match_hint: Callable[[str], str] = lambda close_match: f"Did you mean '{close_match}'?",
-    alternative_hint: Callable[
-        [Sequence[str]], str
-    ] = lambda possibilities: f"Can be {sequence_to_str(possibilities, separate_last='or ')}.",
-) -> str:
-    if not isinstance(possibilities, collections.abc.Sequence):
-        possibilities = sorted(possibilities)
-    suggestions = difflib.get_close_matches(word, possibilities, 1)
-    hint = close_match_hint(suggestions[0]) if suggestions else alternative_hint(possibilities)
-    return f"{msg.strip()} {hint}"
 
 
 def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
@@ -164,6 +143,9 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
         import scipy.io as sio
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
+
+    if isinstance(buffer, StreamWrapper):
+        buffer = buffer.file_obj
 
     return sio.loadmat(buffer, **kwargs)
 
@@ -277,3 +259,79 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
             type = self._detect_compression_type(path)
             decompressor = self._DECOMPRESSORS[type]
             yield path, decompressor(file)
+
+
+class PicklerDataPipe(IterDataPipe):
+    def __init__(self, source_datapipe: IterDataPipe[Tuple[str, IO[bytes]]]) -> None:
+        self.source_datapipe = source_datapipe
+
+    def __iter__(self) -> Iterator[Any]:
+        for _, fobj in self.source_datapipe:
+            data = pickle.load(fobj)
+            for _, d in enumerate(data):
+                yield d
+
+
+class SharderDataPipe(torch.utils.data.datapipes.iter.grouping.ShardingFilterIterDataPipe):
+    def __init__(self, source_datapipe: IterDataPipe) -> None:
+        super().__init__(source_datapipe)
+        self.rank = 0
+        self.world_size = 1
+        if dist.is_available() and dist.is_initialized():
+            self.rank = dist.get_rank()
+            self.world_size = dist.get_world_size()
+        self.apply_sharding(self.world_size, self.rank)
+
+    def __iter__(self) -> Iterator[Any]:
+        num_workers = self.world_size
+        worker_id = self.rank
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is not None:
+            worker_id = worker_id + worker_info.id * num_workers
+            num_workers *= worker_info.num_workers
+        self.apply_sharding(num_workers, worker_id)
+        yield from super().__iter__()
+
+
+class TakerDataPipe(IterDataPipe):
+    def __init__(self, source_datapipe: IterDataPipe, num_take: int) -> None:
+        super().__init__()
+        self.source_datapipe = source_datapipe
+        self.num_take = num_take
+        self.world_size = 1
+        if dist.is_available() and dist.is_initialized():
+            self.world_size = dist.get_world_size()
+
+    def __iter__(self) -> Iterator[Any]:
+        num_workers = self.world_size
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is not None:
+            num_workers *= worker_info.num_workers
+
+        # TODO: this is weird as it drops more elements than it should
+        num_take = self.num_take // num_workers
+
+        for i, data in enumerate(self.source_datapipe):
+            if i < num_take:
+                yield data
+            else:
+                break
+
+    def __len__(self) -> int:
+        num_take = self.num_take // self.world_size
+        if isinstance(self.source_datapipe, Sized):
+            if len(self.source_datapipe) < num_take:
+                num_take = len(self.source_datapipe)
+        # TODO: might be weird to not take `num_workers` into account
+        return num_take
+
+
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+    dp = IoPathFileLister(root=root)
+    dp = SharderDataPipe(dp)
+    dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
+    dp = IoPathFileLoader(dp, mode="rb")
+    dp = PicklerDataPipe(dp)
+    # dp = dp.cycle(2)
+    dp = TakerDataPipe(dp, dataset_size)
+    return dp

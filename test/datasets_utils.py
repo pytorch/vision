@@ -6,9 +6,13 @@ import itertools
 import os
 import pathlib
 import random
+import shutil
 import string
+import struct
+import tarfile
 import unittest
 import unittest.mock
+import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -33,6 +37,8 @@ __all__ = [
     "create_image_folder",
     "create_video_file",
     "create_video_folder",
+    "make_tar",
+    "make_zip",
     "create_random_string",
 ]
 
@@ -133,7 +139,7 @@ def test_all_configs(test):
 
     def maybe_remove_duplicates(configs):
         try:
-            return [dict(config_) for config_ in set(tuple(sorted(config.items())) for config in configs)]
+            return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
             # removal would be a lot more elaborate and we simply bail out.
@@ -198,6 +204,7 @@ class DatasetTestCase(unittest.TestCase):
             ``transforms``, or ``download``.
         - REQUIRED_PACKAGES (Iterable[str]): Additional dependencies to use the dataset. If these packages are not
             available, the tests are skipped.
+        - EXTRA_PATCHES(set): Additional patches to add for each test, to e.g. mock a specific function
 
     Additionally, you need to overwrite the ``inject_fake_data()`` method that provides the data that the tests rely on.
     The fake data should resemble the original data as close as necessary, while containing only few examples. During
@@ -248,6 +255,8 @@ class DatasetTestCase(unittest.TestCase):
     DEFAULT_CONFIG = None
     ADDITIONAL_CONFIGS = None
     REQUIRED_PACKAGES = None
+
+    EXTRA_PATCHES = None
 
     # These keyword arguments are checked by test_transforms in case they are available in DATASET_CLASS.
     _TRANSFORM_KWARGS = {
@@ -374,6 +383,9 @@ class DatasetTestCase(unittest.TestCase):
         if patch_checks:
             patchers.update(self._patch_checks())
 
+        if self.EXTRA_PATCHES is not None:
+            patchers.update(self.EXTRA_PATCHES)
+
         with get_tmp_dir() as tmpdir:
             args = self.dataset_args(tmpdir, complete_config)
             info = self._inject_fake_data(tmpdir, complete_config) if inject_fake_data else None
@@ -381,7 +393,7 @@ class DatasetTestCase(unittest.TestCase):
             with self._maybe_apply_patches(patchers), disable_console_output():
                 dataset = self.DATASET_CLASS(*args, **complete_config, **special_kwargs)
 
-            yield dataset, info
+                yield dataset, info
 
     @classmethod
     def setUpClass(cls):
@@ -835,6 +847,69 @@ def create_video_folder(
     ]
 
 
+def _split_files_or_dirs(root, *files_or_dirs):
+    files = set()
+    dirs = set()
+    for file_or_dir in files_or_dirs:
+        path = pathlib.Path(file_or_dir)
+        if not path.is_absolute():
+            path = root / path
+        if path.is_file():
+            files.add(path)
+        else:
+            dirs.add(path)
+            for sub_file_or_dir in path.glob("**/*"):
+                if sub_file_or_dir.is_file():
+                    files.add(sub_file_or_dir)
+                else:
+                    dirs.add(sub_file_or_dir)
+
+    if root in dirs:
+        dirs.remove(root)
+
+    return files, dirs
+
+
+def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
+    archive = pathlib.Path(root) / name
+    files, dirs = _split_files_or_dirs(root, *files_or_dirs)
+
+    with opener(archive) as fh:
+        for file in files:
+            adder(fh, file, file.relative_to(root))
+
+    if remove:
+        for file in files:
+            os.remove(file)
+        for dir in dirs:
+            shutil.rmtree(dir, ignore_errors=True)
+
+    return archive
+
+
+def make_tar(root, name, *files_or_dirs, remove=True, compression=None):
+    # TODO: detect compression from name
+    return _make_archive(
+        root,
+        name,
+        *files_or_dirs,
+        opener=lambda archive: tarfile.open(archive, f"w:{compression}" if compression else "w"),
+        adder=lambda fh, file, relative_file: fh.add(file, arcname=relative_file),
+        remove=remove,
+    )
+
+
+def make_zip(root, name, *files_or_dirs, remove=True):
+    return _make_archive(
+        root,
+        name,
+        *files_or_dirs,
+        opener=lambda archive: zipfile.ZipFile(archive, "w"),
+        adder=lambda fh, file, relative_file: fh.write(file, arcname=relative_file),
+        remove=remove,
+    )
+
+
 def create_random_string(length: int, *digits: str) -> str:
     """Create a random string.
 
@@ -848,3 +923,11 @@ def create_random_string(length: int, *digits: str) -> str:
         digits = "".join(itertools.chain(*digits))
 
     return "".join(random.choice(digits) for _ in range(length))
+
+
+def make_fake_flo_file(h, w, file_name):
+    """Creates a fake flow file in .flo format."""
+    values = list(range(2 * h * w))
+    content = b"PIEH" + struct.pack("i", w) + struct.pack("i", h) + struct.pack("f" * len(values), *values)
+    with open(file_name, "wb") as f:
+        f.write(content)

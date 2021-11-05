@@ -8,6 +8,8 @@ from torch.nn.modules.utils import _pair
 from torch.nn.parameter import Parameter
 from torchvision.extension import _assert_has_ops
 
+from ..utils import _log_api_usage_once
+
 
 def deform_conv2d(
     input: Tensor,
@@ -59,6 +61,7 @@ def deform_conv2d(
         >>>  torch.Size([4, 5, 8, 8])
     """
 
+    _log_api_usage_once("torchvision.ops.deform_conv2d")
     _assert_has_ops()
     out_channels = weight.shape[0]
 
@@ -83,9 +86,7 @@ def deform_conv2d(
         raise RuntimeError(
             "the shape of the offset tensor at dimension 1 is not valid. It should "
             "be a multiple of 2 * weight.size[2] * weight.size[3].\n"
-            "Got offset.shape[1]={}, while 2 * weight.size[2] * weight.size[3]={}".format(
-                offset.shape[1], 2 * weights_h * weights_w
-            )
+            f"Got offset.shape[1]={offset.shape[1]}, while 2 * weight.size[2] * weight.size[3]={2 * weights_h * weights_w}"
         )
 
     return torch.ops.torchvision.deform_conv2d(
@@ -122,7 +123,7 @@ class DeformConv2d(nn.Module):
         groups: int = 1,
         bias: bool = True,
     ):
-        super(DeformConv2d, self).__init__()
+        super().__init__()
 
         if in_channels % groups != 0:
             raise ValueError("in_channels must be divisible by groups")
@@ -160,12 +161,10 @@ class DeformConv2d(nn.Module):
         """
         Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): offsets to be applied for each position in the
-                convolution kernel.
-            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): masks to be applied for each position in the
-                convolution kernel.
+            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                offsets to be applied for each position in the convolution kernel.
+            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                masks to be applied for each position in the convolution kernel.
         """
         return deform_conv2d(
             input,

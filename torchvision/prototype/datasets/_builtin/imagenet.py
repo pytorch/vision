@@ -38,8 +38,12 @@ class ImageNet(Dataset):
             extra=dict(
                 wnid_to_category=FrozenMapping(zip(wnids, categories)),
                 category_to_wnid=FrozenMapping(zip(categories, wnids)),
+                sizes=FrozenMapping([(DatasetConfig(split="train"), 1281167), (DatasetConfig(split="val"), 50000)]),
             ),
         )
+
+    def supports_sharded(self) -> bool:
+        return True
 
     @property
     def category_to_wnid(self) -> Dict[str, str]:
@@ -123,7 +127,7 @@ class ImageNet(Dataset):
         if config.split == "train":
             # the train archive is a tar of tars
             dp = TarArchiveReader(images_dp)
-            # dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+            dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_train_data)
         else:
             devkit_dp = TarArchiveReader(devkit_dp)

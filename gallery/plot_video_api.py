@@ -137,7 +137,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
     if end < start:
         raise ValueError(
             "end time should be larger than start time, got "
-            "start time={} and end time={}".format(start, end)
+            f"start time={start} and end time={end}"
         )
 
     video_frames = torch.empty(0)

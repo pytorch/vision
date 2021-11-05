@@ -115,7 +115,7 @@ class TestConvertImageDtype:
             output_image,
             rtol=0.0,
             atol=1e-6,
-            msg="{} vs {}".format(output_image_script, output_image),
+            msg=f"{output_image_script} vs {output_image}",
         )
 
         actual_min, actual_max = output_image.tolist()
@@ -369,7 +369,7 @@ def test_resize(height, width, osize, max_size):
     t = transforms.Resize(osize, max_size=max_size)
     result = t(img)
 
-    msg = "{}, {} - {} - {}".format(height, width, osize, max_size)
+    msg = f"{height}, {width} - {osize} - {max_size}"
     osize = osize[0] if isinstance(osize, (list, tuple)) else osize
     # If size is an int, smaller edge of the image will be matched to this number.
     # i.e, if height > width, then image will be rescaled to (size * height / width, size).
@@ -470,11 +470,11 @@ class TestPad:
         width = random.randint(10, 32) * 2
         img = transforms.ToPILImage()(torch.ones(3, height, width))
 
-        padding = tuple([random.randint(1, 20) for _ in range(2)])
+        padding = tuple(random.randint(1, 20) for _ in range(2))
         output = transforms.Pad(padding)(img)
         assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
 
-        padding = tuple([random.randint(1, 20) for _ in range(4)])
+        padding = tuple(random.randint(1, 20) for _ in range(4))
         output = transforms.Pad(padding)(img)
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
@@ -1364,7 +1364,7 @@ def test_to_grayscale():
 @pytest.mark.parametrize("p", (0, 1))
 def test_random_apply(p, seed):
     torch.manual_seed(seed)
-    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((1, 45))], p=p)
+    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((45, 50))], p=p)
     img = transforms.ToPILImage()(torch.rand(3, 30, 40))
     out = random_apply_transform(img)
     if p == 0:
@@ -1384,7 +1384,7 @@ def test_random_choice(proba_passthrough, seed):
     random_choice_transform = transforms.RandomChoice(
         [
             lambda x: x,  # passthrough
-            transforms.RandomRotation((1, 45)),
+            transforms.RandomRotation((45, 50)),
         ],
         p=[proba_passthrough, 1 - proba_passthrough],
     )
@@ -1703,7 +1703,7 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     assert_equal(
         output_tensor,
         output_pil,
-        msg="image_size: {} crop_size: {}".format(input_image_size, crop_size),
+        msg=f"image_size: {input_image_size} crop_size: {crop_size}",
     )
 
     # Check if content in center of both image and cropped output is same.
@@ -1750,8 +1750,10 @@ def test_color_jitter():
     color_jitter.__repr__()
 
 
+@pytest.mark.parametrize("seed", range(10))
 @pytest.mark.skipif(stats is None, reason="scipy.stats not available")
-def test_random_erasing():
+def test_random_erasing(seed):
+    torch.random.manual_seed(seed)
     img = torch.ones(3, 128, 128)
 
     t = transforms.RandomErasing(scale=(0.1, 0.1), ratio=(1 / 3, 3.0))
@@ -2027,9 +2029,9 @@ class TestAffine:
         np_result = np.array(result)
         n_diff_pixels = np.sum(np_result != true_result) / 3
         # Accept 3 wrong pixels
-        error_msg = "angle={}, translate={}, scale={}, shear={}\n".format(
-            angle, translate, scale, shear
-        ) + "n diff pixels={}\n".format(n_diff_pixels)
+        error_msg = (
+            f"angle={angle}, translate={translate}, scale={scale}, shear={shear}\nn diff pixels={n_diff_pixels}\n"
+        )
         assert n_diff_pixels < 3, error_msg
 
     def test_transformation_discrete(self, pil_image, input_img):
@@ -2119,12 +2121,8 @@ def test_random_affine():
     for _ in range(100):
         angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear, img_size=img.size)
         assert -10 < angle < 10
-        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5, "{} vs {}".format(
-            translations[0], img.size[0] * 0.5
-        )
-        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, "{} vs {}".format(
-            translations[1], img.size[1] * 0.5
-        )
+        assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5
+        assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5
         assert 0.7 < scale < 1.3
         assert -10 < shear[0] < 10
         assert -20 < shear[1] < 40
