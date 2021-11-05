@@ -1874,11 +1874,9 @@ class LFWPairsTestCase(LFWPeopleTestCase):
 class SintelTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Sintel
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final"))
-    # We patch the flow reader, because this would otherwise force us to generate fake (but readable) .flo files,
-    # which is something we want to # avoid.
-    _FAKE_FLOW = "Fake Flow"
-    EXTRA_PATCHES = {unittest.mock.patch("torchvision.datasets.Sintel._read_flow", return_value=_FAKE_FLOW)}
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (type(_FAKE_FLOW), type(None)))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "Sintel"
@@ -1899,14 +1897,13 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
                         num_examples=num_images_per_scene,
                     )
 
-        # For the ground truth flow value we just create empty files so that they're properly discovered,
-        # see comment above about EXTRA_PATCHES
         flow_root = root / "training" / "flow"
         for scene_id in range(num_scenes):
             scene_dir = flow_root / f"scene_{scene_id}"
             os.makedirs(scene_dir)
             for i in range(num_images_per_scene - 1):
-                open(str(scene_dir / f"frame_000{i}.flo"), "a").close()
+                file_name = str(scene_dir / f"frame_000{i}.flo")
+                datasets_utils.make_fake_flo_file(h=self.FLOW_H, w=self.FLOW_W, file_name=file_name)
 
         # with e.g. num_images_per_scene = 3, for a single scene with have 3 images
         # which are frame_0000, frame_0001 and frame_0002
@@ -1920,7 +1917,8 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
         with self.create_dataset(split="train") as (dataset, _):
             assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
             for _, _, flow in dataset:
-                assert flow == self._FAKE_FLOW
+                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
+                np.testing.assert_allclose(flow, np.arange(flow.size).reshape(flow.shape))
 
         # Make sure flow is always None for test split
         with self.create_dataset(split="test") as (dataset, _):
@@ -1929,11 +1927,11 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
                 assert flow is None
 
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="split must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
 
-        with pytest.raises(ValueError, match="pass_name must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
             with self.create_dataset(pass_name="bad"):
                 pass
 
@@ -1993,9 +1991,61 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
                 assert valid is None
 
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="split must be either"):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
             with self.create_dataset(split="bad"):
                 pass
+
+
+class FlyingChairsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FlyingChairs
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
+
+    def _make_split_file(self, root, num_examples):
+        # We create a fake split file here, but users are asked to download the real one from the authors website
+        split_ids = [1] * num_examples["train"] + [2] * num_examples["val"]
+        random.shuffle(split_ids)
+        with open(str(root / "FlyingChairs_train_val.txt"), "w+") as split_file:
+            for split_id in split_ids:
+                split_file.write(f"{split_id}\n")
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "FlyingChairs"
+
+        num_examples = {"train": 5, "val": 3}
+        num_examples_total = sum(num_examples.values())
+
+        datasets_utils.create_image_folder(  # img1
+            root,
+            name="data",
+            file_name_fn=lambda image_idx: f"00{image_idx}_img1.ppm",
+            num_examples=num_examples_total,
+        )
+        datasets_utils.create_image_folder(  # img2
+            root,
+            name="data",
+            file_name_fn=lambda image_idx: f"00{image_idx}_img2.ppm",
+            num_examples=num_examples_total,
+        )
+        for i in range(num_examples_total):
+            file_name = str(root / "data" / f"00{i}_flow.flo")
+            datasets_utils.make_fake_flo_file(h=self.FLOW_H, w=self.FLOW_W, file_name=file_name)
+
+        self._make_split_file(root, num_examples)
+
+        return num_examples[config["split"]]
+
+    @datasets_utils.test_all_configs
+    def test_flow(self, config):
+        # Make sure flow always exists, and make sure there are as many flow values as (pairs of) images
+        # Also make sure the flow is properly decoded
+        with self.create_dataset(config=config) as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
+                np.testing.assert_allclose(flow, np.arange(flow.size).reshape(flow.shape))
 
 
 class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):

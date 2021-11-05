@@ -927,7 +927,15 @@ def create_random_string(length: int, *digits: str) -> str:
 
 def make_fake_pfm_file(h, w, file_name):
     values = list(range(3 * h * w))
-    # Note: we pack everything in little endian: -1, and "<"
+    # Note: we pack everything in little endian: -1.0, and "<"
     content = f"PF \n{w} {h} \n-1.0\n".encode() + struct.pack("<" + "f" * len(values), *values)
+    with open(file_name, "wb") as f:
+        f.write(content)
+
+
+def make_fake_flo_file(h, w, file_name):
+    """Creates a fake flow file in .flo format."""
+    values = list(range(2 * h * w))
+    content = b"PIEH" + struct.pack("i", w) + struct.pack("i", h) + struct.pack("f" * len(values), *values)
     with open(file_name, "wb") as f:
         f.write(content)
