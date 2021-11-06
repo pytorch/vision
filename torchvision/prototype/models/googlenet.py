@@ -17,7 +17,7 @@ _common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpo
 
 
 class GoogLeNetWeights(Weights):
-    ImageNet1K_TheCodezV1 = WeightEntry(
+    ImageNet1K_Community = WeightEntry(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -32,7 +32,7 @@ class GoogLeNetWeights(Weights):
 def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = GoogLeNetWeights.ImageNet1K_TheCodezV1 if kwargs.pop("pretrained") else None
+        weights = GoogLeNetWeights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = GoogLeNetWeights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)
