@@ -3,10 +3,11 @@ from typing import Any, Optional
 
 from torchvision.transforms.functional import InterpolationMode
 
-from ....models.detection.mask_rcnn import (
+from ....models.detection.retinanet import (
     _resnet_fpn_extractor,
     _validate_trainable_layers,
-    MaskRCNN,
+    RetinaNet,
+    LastLevelP6P7,
     misc_nn_ops,
     overwrite_eps,
 )
@@ -17,38 +18,37 @@ from ..resnet import ResNet50Weights, resnet50
 
 
 __all__ = [
-    "MaskRCNN",
-    "MaskRCNNResNet50FPNWeights",
-    "maskrcnn_resnet50_fpn",
+    "RetinaNet",
+    "RetinaNetResNet50FPNWeights",
+    "retinanet_resnet50_fpn",
 ]
 
 
-class MaskRCNNResNet50FPNWeights(Weights):
+class RetinaNetResNet50FPNWeights(Weights):
     Coco_RefV1 = WeightEntry(
-        url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
+        url="https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
         transforms=CocoEval,
         meta={
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
-            "box_map": 37.9,
-            "mask_map": 34.6,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
+            "map": 36.4,
         },
     )
 
 
-def maskrcnn_resnet50_fpn(
-    weights: Optional[MaskRCNNResNet50FPNWeights] = None,
+def retinanet_resnet50_fpn(
+    weights: Optional[RetinaNetResNet50FPNWeights] = None,
     weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
     num_classes: int = 91,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
-) -> MaskRCNN:
+) -> RetinaNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = MaskRCNNResNet50FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
-    weights = MaskRCNNResNet50FPNWeights.verify(weights)
+        weights = RetinaNetResNet50FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
+    weights = RetinaNetResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
@@ -63,12 +63,15 @@ def maskrcnn_resnet50_fpn(
     )
 
     backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
-    backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
-    model = MaskRCNN(backbone, num_classes=num_classes, **kwargs)
+    # skip P2 because it generates too many anchors (according to their paper)
+    backbone = _resnet_fpn_extractor(
+        backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
+    )
+    model = RetinaNet(backbone, num_classes, **kwargs)
 
     if weights is not None:
         model.load_state_dict(weights.state_dict(progress=progress))
-        if weights == MaskRCNNResNet50FPNWeights.Coco_RefV1:
+        if weights == RetinaNetResNet50FPNWeights.Coco_RefV1:
             overwrite_eps(model, 0.0)
 
     return model
