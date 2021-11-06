@@ -151,9 +151,9 @@ torchrun --nproc_per_node=8 train.py\
 
 ## Quantized
 
-### Parameters used for generating quantized models:
+### Post training quantized models
 
-For all post training quantized models (All quantized models except mobilenet-v2), the settings are:
+For all post training quantized models, the settings are:
 
 1. num_calibration_batches: 32
 2. num_workers: 16
@@ -162,8 +162,11 @@ For all post training quantized models (All quantized models except mobilenet-v2
 5. backend: 'fbgemm'
 
 ```
-python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='<model_name>'
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
+Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d` and `shufflenet_v2_x1_0`.
+
+### QAT MobileNetV2
 
 For Mobilenet-v2, the model was trained with quantization aware training, the settings used are:
 1. num_workers: 16
@@ -184,6 +187,8 @@ torchrun --nproc_per_node=8 train_quantization.py --model='mobilenet_v2'
 ```
 
 Training converges at about 10 epochs.
+
+### QAT MobileNetV3
 
 For Mobilenet-v3 Large, the model was trained with quantization aware training, the settings used are:
 1. num_workers: 16
