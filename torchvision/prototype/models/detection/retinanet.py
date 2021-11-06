@@ -1,6 +1,8 @@
 import warnings
 from typing import Any, Optional
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ....models.detection.retinanet import (
     _resnet_fpn_extractor,
     _validate_trainable_layers,
@@ -28,6 +30,7 @@ class RetinaNetResNet50FPNWeights(Weights):
         transforms=CocoEval,
         meta={
             "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
             "map": 36.4,
         },
