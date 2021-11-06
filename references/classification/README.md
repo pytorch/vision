@@ -42,20 +42,20 @@ torchrun --nproc_per_node=8 train.py --model inception_v3\
       --val-resize-size 342 --val-crop-size 299 --train-crop-size 299 --test-only --pretrained
 ```
 
-### ResNext-50 32x4d
+### ResNet
+```
+torchrun --nproc_per_node=8 train.py --model $MODEL
+```
+
+Here `$MODEL` is one of `resnet18`, `resnet34`, `resnet50`, `resnet101` or `resnet152`.
+
+### ResNext
 ```
 torchrun --nproc_per_node=8 train.py\
-    --model resnext50_32x4d --epochs 100
+    --model $MODEL --epochs 100
 ```
 
-
-### ResNext-101 32x8d
-
-```
-torchrun --nproc_per_node=8 train.py\
-    --model resnext101_32x8d --epochs 100
-```
-
+Here `$MODEL` is one of `resnext50_32x4d` or `resnext101_32x8d`.
 Note that the above command corresponds to a single node with 8 GPUs. If you use
 a different number of GPUs and/or a different batch size, then the learning rate
 should be scaled accordingly. For example, the pretrained model provided by
