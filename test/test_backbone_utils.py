@@ -150,8 +150,6 @@ class TestFxFeatureExtraction:
     def test_forward_backward(self, model_name):
         model = models.__dict__[model_name](**self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
-        print("train_return_nodes = ", train_return_nodes)
-        print("eval_return_nodes = ", eval_return_nodes)
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
