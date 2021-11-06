@@ -89,7 +89,17 @@ class TestFxFeatureExtraction:
 
     def _get_return_nodes(self, model):
         set_rng_seed(0)
-        exclude_nodes_filter = ["getitem", "floordiv", "size", "chunk"]
+        exclude_nodes_filter = [
+            "getitem",
+            "floordiv",
+            "size",
+            "chunk",
+            "_assert",
+            "eq",
+            "dim",
+            "getattr",
+            "self_attention",
+        ]
         train_nodes, eval_nodes = get_graph_node_names(
             model, tracer_kwargs={"leaf_modules": self.leaf_modules}, suppress_diff_warning=True
         )
@@ -140,6 +150,8 @@ class TestFxFeatureExtraction:
     def test_forward_backward(self, model_name):
         model = models.__dict__[model_name](**self.model_defaults).train()
         train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
+        print("train_return_nodes = ", train_return_nodes)
+        print("eval_return_nodes = ", eval_return_nodes)
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
