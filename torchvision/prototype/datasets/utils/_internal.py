@@ -14,17 +14,20 @@ import textwrap
 from typing import (
     Sequence,
     Callable,
+    Union,
     Any,
+    Tuple,
     TypeVar,
+    Iterator,
     Dict,
     Optional,
     NoReturn,
+    IO,
     Iterable,
     Mapping,
     Sized,
+    cast,
 )
-from typing import Tuple, IO, Iterator, Union
-from typing import cast
 
 import numpy as np
 import PIL.Image

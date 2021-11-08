@@ -1,7 +1,6 @@
 import abc
 import functools
 import io
-import operator
 import pathlib
 import string
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
@@ -34,8 +33,6 @@ from torchvision.prototype.features import Image, Label
 
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
-
-prod = functools.partial(functools.reduce, operator.mul)
 
 
 class MNISTFileReader(IterDataPipe[torch.Tensor]):
