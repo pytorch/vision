@@ -364,7 +364,7 @@ def binary_to_tensor(
     if byteorder != sys.byteorder:
         array = array.astype(np_dtype[1:])
 
-    return torch.from_numpy(array).reshape(shape)
+    return torch.from_numpy(array).reshape(tuple(shape))
 
 
 def read_flo(file: IO) -> torch.Tensor:
