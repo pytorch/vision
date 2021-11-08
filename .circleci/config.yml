@@ -277,7 +277,9 @@ jobs:
           command: pip install --user --progress-bar=off pytest pytest-mock
       - run:
           name: Run tests
-          command: pytest test/test_prototype_*.py
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
+      - store_test_results:
+          path: test-results
 
   binary_linux_wheel:
     <<: *binary_common
