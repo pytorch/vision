@@ -1,33 +1,34 @@
 import csv
 import enum
+import functools
 import gzip
 import io
 import lzma
+import operator
 import os
 import os.path
 import pathlib
 import pickle
+import sys
 import textwrap
 from typing import (
     Sequence,
     Callable,
-    Union,
     Any,
-    Tuple,
     TypeVar,
-    Iterator,
     Dict,
     Optional,
     NoReturn,
-    IO,
     Iterable,
     Mapping,
     Sized,
 )
+from typing import Tuple, IO, Iterator, Union
 from typing import cast
 
 import numpy as np
 import PIL.Image
+import torch
 import torch.distributed as dist
 import torch.utils.data
 from torch.utils.data import IterDataPipe
@@ -51,6 +52,7 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
+    "read_flo",
 ]
 
 K = TypeVar("K")
@@ -335,3 +337,45 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)
     return dp
+
+
+prod = functools.partial(functools.reduce, operator.mul)
+
+
+class NumericBinaryReader:
+    def __init__(self, file: IO, *, byte_order: str = sys.byteorder) -> None:
+        self._file = file
+        self._reverse = byte_order != sys.byteorder
+
+    def _compute_params(self, dtype: torch.dtype, shape: Sequence[int]) -> Tuple[int, bool]:
+        num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+        num_values = prod(shape) if shape else 1
+        chunk_size = num_bytes_per_value * num_values
+        reverse = num_bytes_per_value > 1 and self._reverse
+        return chunk_size, reverse
+
+    def read(self, dtype: torch.dtype, *, shape: Sequence[int] = ()) -> torch.Tensor:
+        chunk_size, reverse = self._compute_params(dtype, shape)
+        # As is, the chunk we read is not writeable, because it is read from a file and not from memory. Thus, we copy
+        # here to a bytearray in order to avoid the warning that torch.frombuffer would emit otherwise. This also
+        # enables inplace operations on the contents, which would otherwise fail.
+        chunk = bytearray(self._file.read(chunk_size))
+        if reverse:
+            chunk.reverse()
+            tensor = torch.frombuffer(chunk, dtype=dtype).flip(0)
+        else:
+            tensor = torch.frombuffer(chunk, dtype=dtype)
+        return tensor.reshape(tuple(shape))
+
+    def skip(self, dtype: torch.dtype, *, shape: Sequence[int] = ()) -> None:
+        chunk_size, _ = self._compute_params(dtype, shape)
+        self._file.seek(chunk_size, 1)
+
+
+def read_flo(file: IO) -> torch.Tensor:
+    if file.read(4) != b"PIEH":
+        raise ValueError("Magic number incorrect. Invalid .flo file")
+
+    reader = NumericBinaryReader(file, byte_order="little")
+    width, height = reader.read(torch.int32, shape=(2,)).tolist()
+    return reader.read(torch.float32, shape=(height, width, 2)).permute((2, 0, 1))
