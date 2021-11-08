@@ -271,7 +271,7 @@ def test_draw_keypoints_vanilla():
 
 
 @pytest.mark.parametrize(
-    "colors", ["red", "#FF00FF", (1, 34, 122), ["red", "blue"], [["red", "blue", "pink"], ["orange", "green", "red"]]]
+    "colors", ["red", "#FF00FF", (1, 34, 122), [["red", "blue", "pink"], ["orange", "green", "red"]]]
 )
 def test_draw_keypoints_colored(colors):
     # Keypoints is declared on top as global variable

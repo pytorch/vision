@@ -307,7 +307,6 @@ def draw_keypoints(
     connectivity: Optional[Tuple[Tuple[int, int]]] = None,
     colors: Optional[
         Union[
-            List[Union[str, Tuple[int, int, int]]],
             str,
             Tuple[int, int, int],
             List[List[Union[str, Tuple[int, int, int]]]],
@@ -327,8 +326,7 @@ def draw_keypoints(
             in the format [x, y].
         connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
             each tuple contains pair of keypoints to be connected.
-        colors (color or list of colors or list of list containing colors, optional): List containing the colors
-            of each instance of keypoints or a nested list containing color for every keypoint id
+        colors (color list of list containing colors, optional): A nested list containing color for every keypoint id
             or single color for all keypoints. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
@@ -355,32 +353,34 @@ def draw_keypoints(
     draw = ImageDraw.Draw(img_to_draw)
     out_dtype = torch.uint8
 
+    num_instances = keypoints.shape[0]
+    num_keypoints = keypoints.shape[1]
+
     img_kpts = keypoints.to(torch.int64).tolist()
 
-    # Specifying color for every keypoint id
-    if isinstance(colors[0], list):
-        keypoints_id_color = True
+    # need to use np.array to handle strings as well
+    colors = np.array(colors)
+
+    # if colors is specified as a string, the number of elements n = 1
+    if issubclass(colors.dtype.type, np.integer):
+        shape = (num_instances, num_keypoints, 3)
     else:
-        keypoints_id_color = False
+        shape = (num_instances, num_keypoints)
+
+    colors = np.broadcast_to(colors, shape)
 
     for kpt_id, kpt_inst in enumerate(img_kpts):
-        if keypoints_id_color:
-            # Get the color from nested list.
-            colors_draw = colors[kpt_id]
         for inst_id, kpt in enumerate(kpt_inst):
+            color = colors[kpt_id, inst_id]
             x1 = kpt[0] - radius
             x2 = kpt[0] + radius
             y1 = kpt[1] - radius
             y2 = kpt[1] + radius
 
-            if isinstance(colors, str) or isinstance(colors, tuple):
-                draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
+            if isinstance(color, np.ndarray):
+                color = tuple(color)
 
-            if isinstance(colors, list):
-                if keypoints_id_color:
-                    draw.ellipse([x1, y1, x2, y2], fill=colors_draw[inst_id], outline=None, width=0)
-                else:
-                    draw.ellipse([x1, y1, x2, y2], fill=colors[kpt_id], outline=None, width=0)
+            draw.ellipse([x1, y1, x2, y2], fill=color, outline=None, width=0)
 
         if connectivity:
             for connection in connectivity:
