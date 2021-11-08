@@ -181,13 +181,11 @@ def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
     eval_imgs = list(eval_imgs.flatten())
 
     coco_eval.evalImgs = eval_imgs
-    coco_eval._compute_params.imgIds = img_ids
-    coco_eval._paramsEval = copy.deepcopy(coco_eval._compute_params)
+    coco_eval.params.imgIds = img_ids
+    coco_eval._paramsEval = copy.deepcopy(coco_eval.params)
 
 
 def evaluate(imgs):
     with redirect_stdout(io.StringIO()):
         imgs.evaluate()
-    return imgs._compute_params.imgIds, np.asarray(imgs.evalImgs).reshape(
-        -1, len(imgs._compute_params.areaRng), len(imgs._compute_params.imgIds)
-    )
+    return imgs.params.imgIds, np.asarray(imgs.evalImgs).reshape(-1, len(imgs.params.areaRng), len(imgs.params.imgIds))
