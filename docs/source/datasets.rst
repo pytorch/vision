@@ -43,6 +43,8 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FashionMNIST
     Flickr8k
     Flickr30k
+    FlyingChairs
+    FlyingThings3D
     HMDB51
     ImageNet
     INaturalist
