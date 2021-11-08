@@ -9,10 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
 import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.datasets.utils._internal import (
-    add_suggestion,
-    sequence_to_str,
-)
+from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
 
 from .._home import use_sharded_dataset
 from ._internal import FrozenBunch, make_repr, BUILTIN_DIR, _make_sharded_datapipe
