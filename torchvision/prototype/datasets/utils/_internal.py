@@ -26,8 +26,8 @@ from typing import (
     Iterable,
     Mapping,
     Sized,
-    cast,
 )
+from typing import cast
 
 import numpy as np
 import PIL.Image
