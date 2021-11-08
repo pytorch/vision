@@ -273,8 +273,8 @@ jobs:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
-          name: Install test utilities
-          command: pip install --user --progress-bar=off pytest pytest-mock
+          name: Install test requirements
+          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
       - run:
           name: Run tests
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
