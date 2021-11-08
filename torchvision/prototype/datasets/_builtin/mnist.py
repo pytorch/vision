@@ -27,12 +27,14 @@ from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     Decompressor,
     INFINITE_BUFFER_SIZE,
-    NumericBinaryReader,
+    binary_to_tensor,
 )
 from torchvision.prototype.features import Image, Label
 
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
+
+big_endian_binary_to_tensor = functools.partial(binary_to_tensor, byte_order="big")
 
 
 class MNISTFileReader(IterDataPipe[torch.Tensor]):
@@ -54,23 +56,23 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
-            reader = NumericBinaryReader(file, byte_order="big")
-
-            magic = int(reader.read(torch.int32))
+            magic = int(big_endian_binary_to_tensor(file, dtype=torch.int32))
             dtype = self._DTYPE_MAP[magic // 256]
             ndim = magic % 256 - 1
 
-            num_samples = int(reader.read(torch.int32))
-            shape = cast(List[int], reader.read(torch.int32, shape=(ndim,)).tolist()) if ndim else []
+            num_samples = int(big_endian_binary_to_tensor(file, dtype=torch.int32))
+            shape = (
+                cast(List[int], big_endian_binary_to_tensor(file, dtype=torch.int32, shape=(ndim,)).tolist())
+                if ndim
+                else []
+            )
 
             start = self.start or 0
             stop = min(self.stop, num_samples) if self.stop else num_samples
 
-            if start:
-                reader.skip(dtype, shape=(start,))
-
-            for _ in range(stop - start):
-                yield reader.read(dtype, shape=shape)
+            yield big_endian_binary_to_tensor(file, dtype=dtype, shape=shape, skip=start)
+            for _ in range(stop - start - 1):
+                yield big_endian_binary_to_tensor(file, dtype=dtype, shape=shape)
 
 
 class _MNISTBase(Dataset):
