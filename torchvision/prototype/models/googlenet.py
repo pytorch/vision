@@ -14,14 +14,14 @@ __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeigh
 
 
 class GoogLeNetWeights(Weights):
-    ImageNet1K_Community = WeightEntry(
+    ImageNet1K_TFV1 = WeightEntry(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
-            "recipe": "https://github.com/TheCodez/examples/blob/inception/imagenet/README.md#googlenet",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
             "acc@1": 69.778,
             "acc@5": 89.530,
         },
@@ -31,7 +31,7 @@ class GoogLeNetWeights(Weights):
 def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     if "pretrained" in kwargs:
         warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = GoogLeNetWeights.ImageNet1K_Community if kwargs.pop("pretrained") else None
+        weights = GoogLeNetWeights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = GoogLeNetWeights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)

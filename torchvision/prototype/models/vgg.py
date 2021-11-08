@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-def _vgg(arch: str, cfg: str, batch_norm: bool, weights: Optional[Weights], progress: bool, **kwargs: Any) -> VGG:
+def _vgg(cfg: str, batch_norm: bool, weights: Optional[Weights], progress: bool, **kwargs: Any) -> VGG:
     if weights is not None:
         kwargs["num_classes"] = len(weights.meta["categories"])
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
@@ -150,7 +150,7 @@ def vgg11(weights: Optional[VGG11Weights] = None, progress: bool = True, **kwarg
         weights = VGG11Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG11Weights.verify(weights)
 
-    return _vgg("vgg11", "A", False, weights, progress, **kwargs)
+    return _vgg("A", False, weights, progress, **kwargs)
 
 
 def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -159,7 +159,7 @@ def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **
         weights = VGG11BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG11BNWeights.verify(weights)
 
-    return _vgg("vgg11_bn", "A", True, weights, progress, **kwargs)
+    return _vgg("A", True, weights, progress, **kwargs)
 
 
 def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -168,7 +168,7 @@ def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwarg
         weights = VGG13Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG13Weights.verify(weights)
 
-    return _vgg("vgg13", "B", False, weights, progress, **kwargs)
+    return _vgg("B", False, weights, progress, **kwargs)
 
 
 def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -177,7 +177,7 @@ def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **
         weights = VGG13BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG13BNWeights.verify(weights)
 
-    return _vgg("vgg13_bn", "B", True, weights, progress, **kwargs)
+    return _vgg("B", True, weights, progress, **kwargs)
 
 
 def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -186,7 +186,7 @@ def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwarg
         weights = VGG16Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG16Weights.verify(weights)
 
-    return _vgg("vgg16", "D", False, weights, progress, **kwargs)
+    return _vgg("D", False, weights, progress, **kwargs)
 
 
 def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -195,7 +195,7 @@ def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **
         weights = VGG16BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG16BNWeights.verify(weights)
 
-    return _vgg("vgg16_bn", "D", True, weights, progress, **kwargs)
+    return _vgg("D", True, weights, progress, **kwargs)
 
 
 def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -204,7 +204,7 @@ def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwarg
         weights = VGG19Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG19Weights.verify(weights)
 
-    return _vgg("vgg19", "E", False, weights, progress, **kwargs)
+    return _vgg("E", False, weights, progress, **kwargs)
 
 
 def vgg19_bn(weights: Optional[VGG19BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
@@ -213,4 +213,4 @@ def vgg19_bn(weights: Optional[VGG19BNWeights] = None, progress: bool = True, **
         weights = VGG19BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG19BNWeights.verify(weights)
 
-    return _vgg("vgg19_bn", "E", True, weights, progress, **kwargs)
+    return _vgg("E", True, weights, progress, **kwargs)
