@@ -16,6 +16,20 @@ class Feature(torch.Tensor):
     _meta_data: Dict[str, Any]
 
     def __init_subclass__(cls):
+        # In order to help static type checkers, we require subclasses of `Feature` add the meta data attributes
+        # as static class annotations:
+        #
+        # >>> class Foo(Feature):
+        # ...     bar: str
+        # ...     baz: Optional[str]
+        #
+        # Internally, this information is used twofold:
+        #
+        # 1. A class annotation is contained in `cls.__annotations__` but not in `cls.__dict__`. We use this difference
+        #    to automatically detect the meta data attributes and expose them as `@property`'s for convenient runtime
+        #    access. This happens in this method.
+        # 2. The information extracted in 1. is also used at creation (`__new__`) to perform an input parsing for
+        #    unknown arguments.
         meta_attrs = {attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")}
         for super_cls in cls.__mro__[1:]:
             if super_cls is Feature:
@@ -35,7 +49,7 @@ class Feature(torch.Tensor):
                 add_suggestion(
                     f"{cls.__name__}() got unexpected keyword '{unknown_meta_attr}'.",
                     word=unknown_meta_attr,
-                    possibilities=cls._META_ATTRS,
+                    possibilities=sorted(cls._META_ATTRS),
                 )
             )
 
