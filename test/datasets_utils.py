@@ -8,6 +8,7 @@ import pathlib
 import random
 import shutil
 import string
+import struct
 import tarfile
 import unittest
 import unittest.mock
@@ -916,3 +917,26 @@ def create_random_string(length: int, *digits: str) -> str:
         digits = "".join(itertools.chain(*digits))
 
     return "".join(random.choice(digits) for _ in range(length))
+
+
+def make_fake_pfm_file(h, w, file_name):
+    values = list(range(3 * h * w))
+    # Note: we pack everything in little endian: -1.0, and "<"
+    content = f"PF \n{w} {h} \n-1.0\n".encode() + struct.pack("<" + "f" * len(values), *values)
+    with open(file_name, "wb") as f:
+        f.write(content)
+
+
+def make_fake_flo_file(h, w, file_name):
+    """Creates a fake flow file in .flo format."""
+    # Everything needs to be in little Endian according to
+    # https://vision.middlebury.edu/flow/code/flow-code/README.txt
+    values = list(range(2 * h * w))
+    content = (
+        struct.pack("<4c", *(c.encode() for c in "PIEH"))
+        + struct.pack("<i", w)
+        + struct.pack("<i", h)
+        + struct.pack("<" + "f" * len(values), *values)
+    )
+    with open(file_name, "wb") as f:
+        f.write(content)

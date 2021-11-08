@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Optional
 
 from torchvision.prototype.transforms import VocEval
+from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.deeplabv3 import DeepLabV3, _deeplabv3_mobilenetv3, _deeplabv3_resnet
 from .._api import Weights, WeightEntry
@@ -23,7 +24,10 @@ __all__ = [
 ]
 
 
-_common_meta = {"categories": _VOC_CATEGORIES}
+_common_meta = {
+    "categories": _VOC_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
 
 
 class DeepLabV3ResNet50Weights(Weights):

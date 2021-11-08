@@ -2,6 +2,7 @@ import warnings
 from typing import Any, Optional, Union
 
 from torchvision.prototype.transforms import CocoEval
+from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.faster_rcnn import (
     _mobilenet_extractor,
@@ -29,7 +30,10 @@ __all__ = [
 ]
 
 
-_common_meta = {"categories": _COCO_CATEGORIES}
+_common_meta = {
+    "categories": _COCO_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
 
 
 class FasterRCNNResNet50FPNWeights(Weights):

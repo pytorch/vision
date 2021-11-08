@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Optional
 
 from torchvision.prototype.transforms import VocEval
+from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
 from .._api import Weights, WeightEntry
@@ -19,6 +20,7 @@ class LRASPPMobileNetV3LargeWeights(Weights):
         transforms=partial(VocEval, resize_size=520),
         meta={
             "categories": _VOC_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
             "mIoU": 57.9,
             "acc": 91.2,
