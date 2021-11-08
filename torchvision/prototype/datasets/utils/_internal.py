@@ -348,6 +348,8 @@ prod = functools.partial(functools.reduce, operator.mul)
 class NumericBinaryReader:
     def __init__(self, file: IO, *, byte_order: str = sys.byteorder) -> None:
         self._file = file
+        # torch.frombuffer interprets the bytes in the same byte order as the system. Thus, if the data is stored in
+        # the opposite byte order, we need to reverse the bytes before feeding them to torch.frombuffer().
         self._reverse = byte_order != sys.byteorder
 
     def _compute_params(self, dtype: torch.dtype, shape: Sequence[int]) -> Tuple[int, bool]:
