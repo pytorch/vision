@@ -24,7 +24,7 @@ class Image(Feature):
         if tensor.ndim == 2:
             tensor = tensor.unsqueeze(0)
         elif tensor.ndim != 3:
-            raise ValueError()
+            raise ValueError("Only single images with 2 or 3 dimensions are allowed.")
         return tensor
 
     @classmethod
