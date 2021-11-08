@@ -366,15 +366,16 @@ def _read_flo(file_name):
     """Read .flo file in Middlebury format"""
     # Code adapted from:
     # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
-    # WARNING: this will work on little-endian architectures (eg Intel x86) only!
+    # Everything needs to be in little Endian according to
+    # https://vision.middlebury.edu/flow/code/flow-code/README.txt
     with open(file_name, "rb") as f:
-        magic = np.fromfile(f, np.float32, count=1)
-        if 202021.25 != magic:
+        magic = np.fromfile(f, "c", count=4).tobytes()
+        if magic != b"PIEH":
             raise ValueError("Magic number incorrect. Invalid .flo file")
 
-        w = int(np.fromfile(f, np.int32, count=1))
-        h = int(np.fromfile(f, np.int32, count=1))
-        data = np.fromfile(f, np.float32, count=2 * w * h)
+        w = int(np.fromfile(f, "<i4", count=1))
+        h = int(np.fromfile(f, "<i4", count=1))
+        data = np.fromfile(f, "<f4", count=2 * w * h)
         return data.reshape(2, h, w)
 
 
