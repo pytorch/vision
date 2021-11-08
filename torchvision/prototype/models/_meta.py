@@ -1102,6 +1102,28 @@ _COCO_CATEGORIES = [
     "toothbrush",
 ]
 
+# To be replaced with torchvision.datasets.info("coco_kp")
+_COCO_PERSON_CATEGORIES = ["no person", "person"]
+_COCO_PERSON_KEYPOINT_NAMES = [
+    "nose",
+    "left_eye",
+    "right_eye",
+    "left_ear",
+    "right_ear",
+    "left_shoulder",
+    "right_shoulder",
+    "left_elbow",
+    "right_elbow",
+    "left_wrist",
+    "right_wrist",
+    "left_hip",
+    "right_hip",
+    "left_knee",
+    "right_knee",
+    "left_ankle",
+    "right_ankle",
+]
+
 # To be replaced with torchvision.datasets.info("voc").categories
 _VOC_CATEGORIES = [
     "__background__",
