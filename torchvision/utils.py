@@ -305,13 +305,7 @@ def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
     connectivity: Optional[Tuple[Tuple[int, int]]] = None,
-    colors: Optional[
-        Union[
-            str,
-            Tuple[int, int, int],
-            List[List[Union[str, Tuple[int, int, int]]]],
-        ]
-    ] = None,
+    colors: Optional[Union[str, Tuple[int, int, int]]] = None,
     radius: int = 2,
     width: int = 3,
 ) -> torch.Tensor:
@@ -326,8 +320,7 @@ def draw_keypoints(
             in the format [x, y].
         connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
             each tuple contains pair of keypoints to be connected.
-        colors (color list of list containing colors, optional): A nested list containing color for every keypoint id
-            or single color for all keypoints. The color can be represented as
+        colors (str, Tuple): The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         radius (int): Integer denoting radius of keypoint.
         width (int): Integer denoting width of line connecting keypoints.
@@ -352,35 +345,15 @@ def draw_keypoints(
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
     out_dtype = torch.uint8
-
-    num_instances = keypoints.shape[0]
-    num_keypoints = keypoints.shape[1]
-
     img_kpts = keypoints.to(torch.int64).tolist()
-
-    # need to use np.array to handle strings as well
-    colors = np.array(colors)
-
-    # if colors is specified as a string, the number of elements n = 1
-    if issubclass(colors.dtype.type, np.integer):
-        shape = (num_instances, num_keypoints, 3)
-    else:
-        shape = (num_instances, num_keypoints)
-
-    colors = np.broadcast_to(colors, shape)
 
     for kpt_id, kpt_inst in enumerate(img_kpts):
         for inst_id, kpt in enumerate(kpt_inst):
-            color = colors[kpt_id, inst_id]
             x1 = kpt[0] - radius
             x2 = kpt[0] + radius
             y1 = kpt[1] - radius
             y2 = kpt[1] + radius
-
-            if isinstance(color, np.ndarray):
-                color = tuple(color)
-
-            draw.ellipse([x1, y1, x2, y2], fill=color, outline=None, width=0)
+            draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
 
         if connectivity:
             for connection in connectivity:

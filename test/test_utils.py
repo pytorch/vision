@@ -270,9 +270,7 @@ def test_draw_keypoints_vanilla():
     assert_equal(img, img_cp)
 
 
-@pytest.mark.parametrize(
-    "colors", ["red", "#FF00FF", (1, 34, 122), [["red", "blue", "pink"], ["orange", "green", "red"]]]
-)
+@pytest.mark.parametrize("colors", ["red", "#FF00FF", (1, 34, 122)])
 def test_draw_keypoints_colored(colors):
     # Keypoints is declared on top as global variable
     keypoints_cp = keypoints.clone()
