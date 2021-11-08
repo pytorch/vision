@@ -376,7 +376,7 @@ def _read_flo(file_name):
         w = int(np.fromfile(f, "<i4", count=1))
         h = int(np.fromfile(f, "<i4", count=1))
         data = np.fromfile(f, "<f4", count=2 * w * h)
-        return data.reshape(2, h, w)
+        return data.reshape(h, w, 2).transpose(2, 0, 1)
 
 
 def _read_16bits_png_with_flow_and_valid_mask(file_name):
