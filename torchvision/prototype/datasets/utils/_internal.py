@@ -357,13 +357,9 @@ def binary_to_tensor(
     if skip:
         file.seek(skip * itemsize, 1)
     buffer = file.read((prod(shape) if shape else 1) * itemsize)
-    array = np.frombuffer(buffer, dtype=np_dtype)
-
-    # PyTorch can only deal with with the native byte order,
-    # so we need to convert in case the file uses a different byte order
-    if byteorder != sys.byteorder:
-        array = array.astype(np_dtype[1:])
-
+    # PyTorch can only deal with with the native byte order, so we need to convert to it in case the file uses a
+    # different one.
+    array = np.frombuffer(buffer, dtype=np_dtype).astype(np.dtype[1:], copy=False)
     return torch.from_numpy(array).reshape(tuple(shape))
 
 
@@ -371,5 +367,5 @@ def read_flo(file: IO) -> torch.Tensor:
     if file.read(4) != b"PIEH":
         raise ValueError("Magic number incorrect. Invalid .flo file")
 
-    width, height = binary_to_tensor(file, dtype=torch.int32, shape=(2,)).tolist()
-    return binary_to_tensor(file, dtype=torch.float32, shape=(height, width, 2)).permute((2, 0, 1))
+    width, height = binary_to_tensor(file, dtype=torch.int32, shape=(2,), byte_order="little").tolist()
+    return binary_to_tensor(file, dtype=torch.float32, shape=(height, width, 2), byte_order="little").permute((2, 0, 1))
