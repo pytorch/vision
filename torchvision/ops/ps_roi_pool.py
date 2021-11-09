@@ -3,6 +3,7 @@ from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
 
+from ..utils import _log_api_usage_once
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
@@ -36,6 +37,7 @@ def ps_roi_pool(
     Returns:
         Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]: The pooled RoIs.
     """
+    _log_api_usage_once("torchvision.ops.ps_roi_pool")
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
@@ -52,7 +54,7 @@ class PSRoIPool(nn.Module):
     """
 
     def __init__(self, output_size: int, spatial_scale: float):
-        super(PSRoIPool, self).__init__()
+        super().__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 

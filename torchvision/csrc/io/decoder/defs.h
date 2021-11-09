@@ -190,10 +190,15 @@ struct DecoderParameters {
   bool listen{false};
   // don't copy frame body, only header
   bool headerOnly{false};
+  // enable fast seek (seek only to keyframes)
+  bool fastSeek{false};
   // interrupt init method on timeout
   bool preventStaleness{true};
   // seek tolerated accuracy (us)
   double seekAccuracy{1000000.0};
+  // Allow multithreaded decoding for numThreads > 1;
+  // 0 numThreads=0 sets up sensible defaults
+  int numThreads{1};
   // what media types should be processed, default none
   std::set<MediaFormat> formats;
 

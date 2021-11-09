@@ -1,13 +1,20 @@
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import Mapper, TarArchiveReader, Shuffler, Demultiplexer, Filter
-from torchdata.datapipes.iter import KeyZipper, LineReader
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    TarArchiveReader,
+    Shuffler,
+    Demultiplexer,
+    Filter,
+    KeyZipper,
+    LineReader,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -17,7 +24,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    create_categories_file,
     INFINITE_BUFFER_SIZE,
     read_mat,
     getitem,
@@ -25,16 +31,12 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
 )
 
-HERE = pathlib.Path(__file__).parent
-
 
 class SBD(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "sbd",
             type=DatasetType.IMAGE,
-            categories=HERE / "caltech256.categories",
             homepage="http://home.bharathh.info/pubs/codes/SBD/download.html",
             valid_options=dict(
                 split=("train", "val", "train_noval"),
@@ -130,7 +132,7 @@ class SBD(Dataset):
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
-            self._classify_archive,  # type: ignore[arg-type]
+            self._classify_archive,
             buffer_size=INFINITE_BUFFER_SIZE,
             drop_none=True,
         )
@@ -151,29 +153,24 @@ class SBD(Dataset):
             )
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
 
-    def generate_categories_file(self, root: Union[str, pathlib.Path]) -> None:
+    def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, path_comparator("name", "category_names.m"))
+        dp = Filter(dp, path_comparator("name", "category_names.m"))
         dp = LineReader(dp)
-        dp: IterDataPipe = Mapper(dp, bytes.decode, input_col=1)
+        dp = Mapper(dp, bytes.decode, input_col=1)
         lines = tuple(zip(*iter(dp)))[1]
 
         pattern = re.compile(r"\s*'(?P<category>\w+)';\s*%(?P<label>\d+)")
-        categories_and_labels = [
-            pattern.match(line).groups()  # type: ignore[union-attr]
-            # the first and last line contain no information
-            for line in lines[1:-1]
-        ]
-        categories = tuple(
-            zip(*sorted(categories_and_labels, key=lambda category_and_label: int(category_and_label[1])))
-        )[0]
+        categories_and_labels = cast(
+            List[Tuple[str, ...]],
+            [
+                pattern.match(line).groups()  # type: ignore[union-attr]
+                # the first and last line contain no information
+                for line in lines[1:-1]
+            ],
+        )
+        categories_and_labels.sort(key=lambda category_and_label: int(category_and_label[1]))
+        categories, _ = zip(*categories_and_labels)
 
-        create_categories_file(HERE, self.name, categories)
-
-
-if __name__ == "__main__":
-    from torchvision.prototype.datasets import home
-
-    root = home()
-    SBD().generate_categories_file(root)
+        return categories

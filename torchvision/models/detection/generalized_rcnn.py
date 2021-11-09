@@ -9,6 +9,8 @@ from typing import Tuple, List, Dict, Optional, Union
 import torch
 from torch import nn, Tensor
 
+from ...utils import _log_api_usage_once
+
 
 class GeneralizedRCNN(nn.Module):
     """
@@ -23,8 +25,9 @@ class GeneralizedRCNN(nn.Module):
             the model
     """
 
-    def __init__(self, backbone, rpn, roi_heads, transform):
-        super(GeneralizedRCNN, self).__init__()
+    def __init__(self, backbone: nn.Module, rpn: nn.Module, roi_heads: nn.Module, transform: nn.Module) -> None:
+        super().__init__()
+        _log_api_usage_once(self)
         self.transform = transform
         self.backbone = backbone
         self.rpn = rpn
@@ -45,7 +48,7 @@ class GeneralizedRCNN(nn.Module):
         """
         Args:
             images (list[Tensor]): images to be processed
-            targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
+            targets (list[Dict[str, Tensor]]): ground-truth boxes present in the image (optional)
 
         Returns:
             result (list[BoxList] or dict[Tensor]): the output from the model.
@@ -62,11 +65,9 @@ class GeneralizedRCNN(nn.Module):
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(
-                            "Expected target boxes to be a tensor" "of shape [N, 4], got {:}.".format(boxes.shape)
-                        )
+                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError("Expected target boxes to be of type " "Tensor, got {:}.".format(type(boxes)))
+                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
@@ -88,7 +89,7 @@ class GeneralizedRCNN(nn.Module):
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     raise ValueError(
                         "All bounding boxes should have positive height and width."
-                        " Found invalid box {} for target at index {}.".format(degen_bb, target_idx)
+                        f" Found invalid box {degen_bb} for target at index {target_idx}."
                     )
 
         features = self.backbone(images.tensors)
@@ -96,7 +97,7 @@ class GeneralizedRCNN(nn.Module):
             features = OrderedDict([("0", features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
+        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
 
         losses = {}
         losses.update(detector_losses)

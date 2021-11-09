@@ -5,12 +5,12 @@ import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, Union
+import sys
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
 
-import numpy as np
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
+from torchdata.datapipes.iter import (
+    IterDataPipe,
     Demultiplexer,
     Mapper,
     ZipArchiveReader,
@@ -31,6 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     Decompressor,
     INFINITE_BUFFER_SIZE,
 )
+from torchvision.prototype.features import Image, Label
 
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
@@ -38,49 +39,64 @@ __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 prod = functools.partial(functools.reduce, operator.mul)
 
 
-class MNISTFileReader(IterDataPipe):
+class MNISTFileReader(IterDataPipe[torch.Tensor]):
     _DTYPE_MAP = {
-        8: "u1",  # uint8
-        9: "i1",  # int8
-        11: "i2",  # int16
-        12: "i4",  # int32
-        13: "f4",  # float32
-        14: "f8",  # float64
+        8: torch.uint8,
+        9: torch.int8,
+        11: torch.int16,
+        12: torch.int32,
+        13: torch.float32,
+        14: torch.float64,
     }
 
-    def __init__(self, datapipe: IterDataPipe, *, start: Optional[int], stop: Optional[int]) -> None:
+    def __init__(
+        self, datapipe: IterDataPipe[Tuple[Any, io.IOBase]], *, start: Optional[int], stop: Optional[int]
+    ) -> None:
         self.datapipe = datapipe
         self.start = start
         self.stop = stop
 
     @staticmethod
-    def _decode(bytes):
-        return int(codecs.encode(bytes, "hex"), 16)
+    def _decode(input: bytes) -> int:
+        return int(codecs.encode(input, "hex"), 16)
 
-    def __iter__(self) -> Iterator[np.ndarray]:
+    @staticmethod
+    def _to_tensor(chunk: bytes, *, dtype: torch.dtype, shape: List[int], reverse_bytes: bool) -> torch.Tensor:
+        # As is, the chunk is not writeable, because it is read from a file and not from memory. Thus, we copy here to
+        # avoid the warning that torch.frombuffer would emit otherwise. This also enables inplace operations on the
+        # contents, which would otherwise fail.
+        chunk = bytearray(chunk)
+        if reverse_bytes:
+            chunk.reverse()
+            tensor = torch.frombuffer(chunk, dtype=dtype).flip(0)
+        else:
+            tensor = torch.frombuffer(chunk, dtype=dtype)
+        return tensor.reshape(shape)
+
+    def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
             magic = self._decode(file.read(4))
-            dtype_type = self._DTYPE_MAP[magic // 256]
+            dtype = self._DTYPE_MAP[magic // 256]
             ndim = magic % 256 - 1
 
             num_samples = self._decode(file.read(4))
             shape = [self._decode(file.read(4)) for _ in range(ndim)]
 
-            in_dtype = np.dtype(f">{dtype_type}")
-            out_dtype = np.dtype(dtype_type)
-            chunk_size = (cast(int, prod(shape)) if shape else 1) * in_dtype.itemsize
+            num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+            # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
+            # we need to reverse the bytes before we can read them with torch.frombuffer().
+            reverse_bytes = sys.byteorder == "little" and num_bytes_per_value > 1
+            chunk_size = (cast(int, prod(shape)) if shape else 1) * num_bytes_per_value
 
             start = self.start or 0
-            stop = self.stop or num_samples
+            stop = min(self.stop, num_samples) if self.stop else num_samples
 
             file.seek(start * chunk_size, 1)
             for _ in range(stop - start):
-                chunk = file.read(chunk_size)
-                yield np.frombuffer(chunk, dtype=in_dtype).astype(out_dtype).reshape(shape)
+                yield self._to_tensor(file.read(chunk_size), dtype=dtype, shape=shape, reverse_bytes=reverse_bytes)
 
 
 class _MNISTBase(Dataset):
-    _FORMAT = "png"
     _URL_BASE: str
 
     @abc.abstractmethod
@@ -103,24 +119,22 @@ class _MNISTBase(Dataset):
 
     def _collate_and_decode(
         self,
-        data: Tuple[np.ndarray, np.ndarray],
+        data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ):
-        image_array, label_array = data
+    ) -> Dict[str, Any]:
+        image, label = data
 
-        image: Union[torch.Tensor, io.BytesIO]
         if decoder is raw:
-            image = torch.from_numpy(image_array)
+            image = Image(image)
         else:
-            image_buffer = image_buffer_from_array(image_array)
-            image = decoder(image_buffer) if decoder else image_buffer
+            image_buffer = image_buffer_from_array(image.numpy())
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        label = torch.tensor(label_array, dtype=torch.int64)
-        category = self.info.categories[int(label)]
+        label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
 
-        return dict(image=image, label=label, category=category)
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
@@ -138,14 +152,13 @@ class _MNISTBase(Dataset):
         labels_dp = Decompressor(labels_dp)
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
-        dp: IterDataPipe = Zipper(images_dp, labels_dp)
+        dp = Zipper(images_dp, labels_dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 
 
 class MNIST(_MNISTBase):
-    @property
-    def info(self):
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "mnist",
             type=DatasetType.RAW,
@@ -175,8 +188,7 @@ class MNIST(_MNISTBase):
 
 
 class FashionMNIST(MNIST):
-    @property
-    def info(self):
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "fashionmnist",
             type=DatasetType.RAW,
@@ -208,8 +220,7 @@ class FashionMNIST(MNIST):
 
 
 class KMNIST(MNIST):
-    @property
-    def info(self):
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "kmnist",
             type=DatasetType.RAW,
@@ -230,8 +241,7 @@ class KMNIST(MNIST):
 
 
 class EMNIST(_MNISTBase):
-    @property
-    def info(self):
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "emnist",
             type=DatasetType.RAW,
@@ -291,12 +301,11 @@ class EMNIST(_MNISTBase):
 
     def _collate_and_decode(
         self,
-        data: Tuple[np.ndarray, np.ndarray],
+        data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ):
-        image_array, label_array = data
+    ) -> Dict[str, Any]:
         # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
         # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
         # i.e. no gaps between 0 and 46 for 47 total classes, we need to add an offset to create this gaps. For example,
@@ -306,8 +315,10 @@ class EMNIST(_MNISTBase):
         # index 39 (10 digits + 26 uppercase letters + 4th lower case letter - 1 for zero indexing)
         # in self.categories. Thus, we need to add 1 to the label to correct this.
         if config.image_set in ("Balanced", "By_Merge"):
-            label_array += np.array(self._LABEL_OFFSETS.get(int(label_array), 0), dtype=label_array.dtype)
-        return super()._collate_and_decode((image_array, label_array), config=config, decoder=decoder)
+            image, label = data
+            label += self._LABEL_OFFSETS.get(int(label), 0)
+            data = (image, label)
+        return super()._collate_and_decode(data, config=config, decoder=decoder)
 
     def _make_datapipe(
         self,
@@ -321,7 +332,7 @@ class EMNIST(_MNISTBase):
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,
-            functools.partial(self._classify_archive, config=config),  # type:ignore[arg-type]
+            functools.partial(self._classify_archive, config=config),
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
@@ -329,8 +340,7 @@ class EMNIST(_MNISTBase):
 
 
 class QMNIST(_MNISTBase):
-    @property
-    def info(self):
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "qmnist",
             type=DatasetType.RAW,
@@ -377,22 +387,22 @@ class QMNIST(_MNISTBase):
 
     def _collate_and_decode(
         self,
-        data: Tuple[np.ndarray, np.ndarray],
+        data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ):
-        image_array, label_array = data
-        label_parts = label_array.tolist()
-        sample = super()._collate_and_decode((image_array, label_parts[0]), config=config, decoder=decoder)
+    ) -> Dict[str, Any]:
+        image, ann = data
+        label, *extra_anns = ann
+        sample = super()._collate_and_decode((image, label), config=config, decoder=decoder)
 
         sample.update(
             dict(
                 zip(
                     ("nist_hsf_series", "nist_writer_id", "digit_index", "nist_label", "global_digit_index"),
-                    label_parts[1:6],
+                    [int(value) for value in extra_anns[:5]],
                 )
             )
         )
-        sample.update(dict(zip(("duplicate", "unused"), [bool(value) for value in label_parts[-2:]])))
+        sample.update(dict(zip(("duplicate", "unused"), [bool(value) for value in extra_anns[-2:]])))
         return sample
