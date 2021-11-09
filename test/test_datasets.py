@@ -1873,7 +1873,7 @@ class LFWPairsTestCase(LFWPeopleTestCase):
 
 class SintelTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Sintel
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final", "both"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     FLOW_H, FLOW_W = 3, 4
@@ -1909,7 +1909,8 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
         # which are frame_0000, frame_0001 and frame_0002
         # They will be consecutively paired as (frame_0000, frame_0001), (frame_0001, frame_0002),
         # that is 3 - 1 = 2 examples. Hence the formula below
-        num_examples = (num_images_per_scene - 1) * num_scenes
+        num_passes = 2 if config["pass_name"] == "both" else 1
+        num_examples = (num_images_per_scene - 1) * num_scenes * num_passes
         return num_examples
 
     def test_flow(self):
