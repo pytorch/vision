@@ -368,17 +368,87 @@ show(dogs_with_masks)
 # instance with class 15 (which corresponds to 'bench') was not selected.
 
 #####################################
-# Visualizing Keypoints
+# Visualizing keypoints
 # ------------------------------
 # The :func:`~torchvision.utils.draw_keypoints` function can be used to
 # draw keypoints on images. We will see how to use it with
 # torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`
-# We will first have a look at output of the model. Note that these models do not need normalized images.
+# We will first have a look at output of the model.
+#
+# Note that these models do not need normalized images.
 #
 
 from torchvision.models.detection import keypointrcnn_resnet50_fpn
 from torchvision.io import read_image
 
-child_int = read_image(str(Path("assets") / "child.jpg"))
+person_int = read_image(str(Path("assets") / "person1.jpg"))
+person_int = convert_image_dtype(person_int, dtype=torch.float)
+
 model = keypointrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
+
+outputs = model([person_int])
+print(outputs)
+
+#####################################
+# Some desc
+#
+#
+kpts = outputs[0]['keypoints']
+scores = outputs[0]['scores']
+
+#####################################
+# Some desc
+#
+#
+
+detect_threshold = 0.75
+idx = torch.where(scores > detect_threshold)
+keypoints = kpts[idx]
+
+from torchvision.utils import draw_keypoints
+
+res = draw_keypoints(person_int, keypoints, colors="blue", radius=3)
+show(res)
+
+#####################################
+# Some desc
+# The coco keypoints blah
+#
+
+coco_keypoints = [
+    "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+    "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+    "left_wrist", "right_wrist", "left_hip", "right_hip",
+    "left_knee", "right_knee", "left_ankle", "right_ankle",
+]
+
+#####################################
+# To connect and create a skeleton we would need to join the following keypoints.
+#
+# nose -> left_eye -> left_ear
+#
+# nose -> right_eye -> right_ear
+#
+# nose -> left_shoulder -> left_elbow -> left_wrist\
+#
+# nose -> right_shoulder -> right_elbow -> right_wrist
+#
+# left_shoulder -> left_hip -> left_knee -> left_ankle
+#
+# right_shoulder -> right_hip -> right_knee -> right_ankle
+#
+# We pass a list contain the tuple of keypoint IDs we wish to join.
+
+connect_skeleton = [
+    (0, 1), (0, 2), (1, 3), (2, 4), (0, 5), (0, 6), (5, 7), (6, 8),
+    (7, 9), (8, 10), (5, 11), (6, 12), (11, 13), (12, 14), (13, 15), (14, 16)
+]
+
+#####################################
+# Using the connectivity argument we can now join the above skeleton
+#
+#
+
+res = draw_keypoints(person_int, keypoints, connectivity=connect_skeleton, colors="blue", radius=4, width=3)
+show(res)

@@ -256,7 +256,14 @@ def test_draw_keypoints_vanilla():
 
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
-    result = utils.draw_keypoints(img, keypoints, colors="red", connectivity=((0, 1),))
+    result = utils.draw_keypoints(
+        img,
+        keypoints,
+        colors="red",
+        connectivity=[
+            (0, 1),
+        ],
+    )
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_keypoint_vanilla.png")
     if not os.path.exists(path):
         res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
@@ -277,7 +284,14 @@ def test_draw_keypoints_colored(colors):
 
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
-    result = utils.draw_keypoints(img, keypoints, colors=colors, connectivity=((0, 1),))
+    result = utils.draw_keypoints(
+        img,
+        keypoints,
+        colors=colors,
+        connectivity=[
+            (0, 1),
+        ],
+    )
     assert result.size(0) == 3
     assert_equal(keypoints, keypoints_cp)
     assert_equal(img, img_cp)
