@@ -344,7 +344,6 @@ def draw_keypoints(
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
-    out_dtype = torch.uint8
     img_kpts = keypoints.to(torch.int64).tolist()
 
     for kpt_id, kpt_inst in enumerate(img_kpts):
@@ -368,7 +367,7 @@ def draw_keypoints(
                     width=width,
                 )
 
-    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=out_dtype)
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
 def _generate_color_palette(num_masks: int):
