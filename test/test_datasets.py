@@ -2125,5 +2125,71 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class HD1KFlowTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.HD1K
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "hd1k"
+
+        num_sequences = 4 if config["split"] == "train" else 3
+        num_examples_per_train_sequence = 3
+
+        for seq_idx in range(num_sequences):
+            # Training data
+            datasets_utils.create_image_folder(
+                root / "hd1k_input",
+                name="image_2",
+                file_name_fn=lambda image_idx: f"{seq_idx:06d}_{image_idx}.png",
+                num_examples=num_examples_per_train_sequence,
+            )
+            datasets_utils.create_image_folder(
+                root / "hd1k_flow_gt",
+                name="flow_occ",
+                file_name_fn=lambda image_idx: f"{seq_idx:06d}_{image_idx}.png",
+                num_examples=num_examples_per_train_sequence,
+            )
+
+            # Test data
+            datasets_utils.create_image_folder(
+                root / "hd1k_challenge",
+                name="image_2",
+                file_name_fn=lambda _: f"{seq_idx:06d}_10.png",
+                num_examples=1,
+            )
+            datasets_utils.create_image_folder(
+                root / "hd1k_challenge",
+                name="image_2",
+                file_name_fn=lambda _: f"{seq_idx:06d}_11.png",
+                num_examples=1,
+            )
+
+        num_examples_per_sequence = num_examples_per_train_sequence if config["split"] == "train" else 2
+        return num_sequences * (num_examples_per_sequence - 1)
+
+    def test_flow_and_valid(self):
+        # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
+        # Also assert flow and valid are of the expected shape
+        with self.create_dataset(split="train") as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow, valid in dataset:
+                two, h, w = flow.shape
+                assert two == 2
+                assert valid.shape == (h, w)
+
+        # Make sure flow and valid are always None for test split
+        with self.create_dataset(split="test") as (dataset, _):
+            assert dataset._image_list and not dataset._flow_list
+            for _, _, flow, valid in dataset:
+                assert flow is None
+                assert valid is None
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+
 if __name__ == "__main__":
     unittest.main()
