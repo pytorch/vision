@@ -375,36 +375,55 @@ show(dogs_with_masks)
 # torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`
 # We will first have a look at output of the model.
 #
-# Note that these models do not need normalized images.
+# Note that the keypoint detection model does not need normalized images.
 #
 
 from torchvision.models.detection import keypointrcnn_resnet50_fpn
 from torchvision.io import read_image
 
 person_int = read_image(str(Path("assets") / "person1.jpg"))
-person_int = convert_image_dtype(person_int, dtype=torch.float)
+person_float = convert_image_dtype(person_int, dtype=torch.float)
 
 model = keypointrcnn_resnet50_fpn(pretrained=True, progress=False)
 model = model.eval()
 
-outputs = model([person_int])
+outputs = model([person_float])
 print(outputs)
 
 #####################################
-# Some desc
-#
-#
+# As we see the output contains a list of dictionary.
+# The output list is of length batch_size.
+# We currently have just a single image so length of list is 1.
+# Each entry in the list corresponds to an input image,
+# and it is a dict with keys `boxes`, `labels`, `scores`, `keypoints` and `keypoint_scores`.
+# Each value associated to those keys has `num_instances` elements in it.
+# In our case above there are 2 instances detected in the image.
+
 kpts = outputs[0]['keypoints']
 scores = outputs[0]['scores']
 
+print(kpts)
+print(scores)
+
 #####################################
-# Some desc
-#
-#
+# The KeypointRCNN model detects there are two instances in the image.
+# If you plot the boxes by using :func:`~draw_bounding_boxes`
+# you would recognize they are the person and the surfboard.
+# If we look at the scores, we will realize that the model is much more confident about the person than surfboard.
+# We could now set a threshold confidence and plot instances which we are confident enough.
+# Let us set a threshold of 0.75 and filter out the keypoints corresponding to the person.
 
 detect_threshold = 0.75
 idx = torch.where(scores > detect_threshold)
 keypoints = kpts[idx]
+
+print(keypoints)
+
+#####################################
+# Great, now we have the keypoints corresponding to the person.
+# Each keypoint is represented by x, y coordinates and the visibility.
+# We can now use the :func:`~torchvision.utils.draw_keypoints` function to draw keypoints.
+# Note that the utility expects uint8 images.
 
 from torchvision.utils import draw_keypoints
 
@@ -412,9 +431,8 @@ res = draw_keypoints(person_int, keypoints, colors="blue", radius=3)
 show(res)
 
 #####################################
-# Some desc
-# The coco keypoints blah
-#
+# As we see the keypoints appear as colored circles over the image.
+# The coco keypoints for a person are ordered and represent the following list.\
 
 coco_keypoints = [
     "nose", "left_eye", "right_eye", "left_ear", "right_ear",
@@ -424,21 +442,25 @@ coco_keypoints = [
 ]
 
 #####################################
-# To connect and create a skeleton we would need to join the following keypoints.
+# What if we are interested in joining the keypoints?
+# This is especially useful in creating pose detection or action recognition.
+# We can join the keypoints easily using the `connectivity` parameter.
+# A close observation would reveal that we would need to join the points in below
+# order to construct human skeleton.
 #
-# nose -> left_eye -> left_ear
+# nose -> left_eye -> left_ear.                              (0, 1), (1, 3)
 #
-# nose -> right_eye -> right_ear
+# nose -> right_eye -> right_ear.                            (0, 2), (2, 4)
 #
-# nose -> left_shoulder -> left_elbow -> left_wrist\
+# nose -> left_shoulder -> left_elbow -> left_wrist.         (0, 5), (5, 7), (7, 9)
 #
-# nose -> right_shoulder -> right_elbow -> right_wrist
+# nose -> right_shoulder -> right_elbow -> right_wrist.      (0, 6), (6, 8), (8, 10)
 #
-# left_shoulder -> left_hip -> left_knee -> left_ankle
+# left_shoulder -> left_hip -> left_knee -> left_ankle.      (5, 11), (11, 13), (13, 15)
 #
-# right_shoulder -> right_hip -> right_knee -> right_ankle
+# right_shoulder -> right_hip -> right_knee -> right_ankle.  (6, 12), (12, 14), (14, 16)
 #
-# We pass a list contain the tuple of keypoint IDs we wish to join.
+# We will create a list containing these keypoint ids to be connected.
 
 connect_skeleton = [
     (0, 1), (0, 2), (1, 3), (2, 4), (0, 5), (0, 6), (5, 7), (6, 8),
@@ -446,8 +468,7 @@ connect_skeleton = [
 ]
 
 #####################################
-# Using the connectivity argument we can now join the above skeleton
-#
+# We pass the above list to the connectivity parameter to connect the keypoints.
 #
 
 res = draw_keypoints(person_int, keypoints, connectivity=connect_skeleton, colors="blue", radius=4, width=3)
