@@ -347,15 +347,33 @@ prod = functools.partial(functools.reduce, operator.mul)
 
 
 def binary_to_tensor(
-    file: IO, *, dtype: torch.dtype, shape: Sequence[int] = (), byte_order: str = sys.byteorder, skip: int = 0
+    file: IO,
+    *,
+    dtype: torch.dtype,
+    shape: Union[int, Sequence[int]] = (),
+    byte_order: str = sys.byteorder,
+    skip: int = 0,
 ) -> torch.Tensor:
+    """Construct a tensor from a binary file.
+
+    Args:
+        file (IO): Open file.
+        dtype (torch.dtype): Data type of the returned tensor.
+        shape (Union[Sequence[int], int]): Shape of the returned tensor. If `int`, the tensor will return a 1D tensor
+            with as many elements. Defaults to reading a single value and returns it as 0D tensor.
+        byte_order (str): Byte order of the data. Can be ``"little"`` or ``"big"`` endian. Defaults to the native byte
+            order of the system.
+        skip (int): Number of values to skip before values are read.
+    """
+    if isinstance(shape, int):
+        shape = (shape,)
+
     byteorder = "<" if byte_order == "little" else ">"
     char = "f" if dtype.is_floating_point else ("i" if dtype.is_signed else "u")
     itemsize = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
     np_dtype = byteorder + char + str(itemsize)
 
-    if skip:
-        file.seek(skip * itemsize, 1)
+    file.seek(skip * itemsize, 1)
     buffer = file.read((prod(shape) if shape else 1) * itemsize)
     # PyTorch can only deal with with the native byte order, so we need to convert to it in case the file uses a
     # different one.
@@ -367,5 +385,5 @@ def read_flo(file: IO) -> torch.Tensor:
     if file.read(4) != b"PIEH":
         raise ValueError("Magic number incorrect. Invalid .flo file")
 
-    width, height = binary_to_tensor(file, dtype=torch.int32, shape=(2,), byte_order="little").tolist()
+    width, height = binary_to_tensor(file, dtype=torch.int32, shape=2, byte_order="little").tolist()
     return binary_to_tensor(file, dtype=torch.float32, shape=(height, width, 2), byte_order="little").permute((2, 0, 1))
