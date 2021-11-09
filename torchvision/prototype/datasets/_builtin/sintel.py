@@ -14,6 +14,7 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     Mapper,
     Shuffler,
+    Filter,
     Zipper,
     KeyZipper,
     LineReader,
@@ -78,7 +79,6 @@ class SINTEL(Dataset):
             "http://sintel.cs.washington.edu/MPI-Sintel-complete.zip",
             sha256="",
         )
-        # return [training_images_archive, testing_images_archive], self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
         return [archive]
 
     def _collate_and_decode_sample(
@@ -108,13 +108,7 @@ class SINTEL(Dataset):
 
     def _classify_train_test(self, data: Dict[str, Any], *, config: DatasetConfig):
         path = pathlib.Path(data[0])
-        path_str = str(path.absolute())
-        if "/training/" in path_str:
-            return 0
-        elif "/test/" in path_str:
-            return 1
-        else:
-            return None
+        return config.split in str(path.parent)
 
     def _classify_archive(self, data: Dict[str, Any], *, config: DatasetConfig):
         path = pathlib.Path(data[0])
@@ -159,19 +153,7 @@ class SINTEL(Dataset):
         dp = resource_dps[0]
         archive_dp = ZipArchiveReader(dp)
 
-        # Use a Filter
-        train_dp, test_dp = Demultiplexer(
-            archive_dp,
-            2,
-            partial(self._classify_train_test, config=config),
-            drop_none=True,
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
-
-        if config.split == "train":
-            curr_split = train_dp
-        else:
-            curr_split = test_dp
+        curr_split = Filter(archive_dp, partial(self._classify_train_test, config=config))
 
         pass_images_dp, flo_dp = Demultiplexer(
             curr_split,
@@ -180,7 +162,7 @@ class SINTEL(Dataset):
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        # flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         pass_images_dp = IntCategoryGrouper(pass_images_dp)
         zipped_dp = KeyZipper(
