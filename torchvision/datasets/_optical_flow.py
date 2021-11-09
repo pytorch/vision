@@ -155,7 +155,7 @@ class KittiFlow(FlowDataset):
     The dataset is expected to have the following structure: ::
 
         root
-            Kitti
+            KittiFlow
                 testing
                     image_2
                 training
@@ -176,7 +176,7 @@ class KittiFlow(FlowDataset):
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
 
-        root = Path(root) / "Kitti" / (split + "ing")
+        root = Path(root) / "KittiFlow" / (split + "ing")
         images1 = sorted(glob(str(root / "image_2" / "*_10.png")))
         images2 = sorted(glob(str(root / "image_2" / "*_11.png")))
 

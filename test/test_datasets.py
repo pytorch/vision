@@ -1945,7 +1945,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):
-        root = pathlib.Path(tmpdir) / "Kitti"
+        root = pathlib.Path(tmpdir) / "KittiFlow"
 
         num_examples = 2 if config["split"] == "train" else 3
         for split_dir in ("training", "testing"):
