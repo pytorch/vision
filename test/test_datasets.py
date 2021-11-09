@@ -2126,10 +2126,8 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
-class HD1KFlowTestCase(datasets_utils.ImageDatasetTestCase):
+class HD1KTestCase(KittiFlowTestCase):
     DATASET_CLASS = datasets.HD1K
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
-    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "hd1k"
@@ -2168,28 +2166,6 @@ class HD1KFlowTestCase(datasets_utils.ImageDatasetTestCase):
 
         num_examples_per_sequence = num_examples_per_train_sequence if config["split"] == "train" else 2
         return num_sequences * (num_examples_per_sequence - 1)
-
-    def test_flow_and_valid(self):
-        # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
-        # Also assert flow and valid are of the expected shape
-        with self.create_dataset(split="train") as (dataset, _):
-            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
-            for _, _, flow, valid in dataset:
-                two, h, w = flow.shape
-                assert two == 2
-                assert valid.shape == (h, w)
-
-        # Make sure flow and valid are always None for test split
-        with self.create_dataset(split="test") as (dataset, _):
-            assert dataset._image_list and not dataset._flow_list
-            for _, _, flow, valid in dataset:
-                assert flow is None
-                assert valid is None
-
-    def test_bad_input(self):
-        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
-            with self.create_dataset(split="bad"):
-                pass
 
 
 if __name__ == "__main__":
