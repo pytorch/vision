@@ -81,31 +81,6 @@ class SINTEL(Dataset):
         )
         return [archive]
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[str, ...],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
-        # Read images and flo file here
-        # Use decoder for images if available
-        # Return dict
-        flo, images = data
-        img1, img2 = images
-
-        print(img1)
-        path1, buffer1 = img1
-        path2, buffer2 = img2
-
-        flow_arr = self.read_flo(flo)
-        obj = Image.open(buffer1)
-
-        return dict(
-            image1=decoder(buffer1) if decoder else buffer1,
-            image2=decoder(buffer2) if decoder else buffer2,
-            label=flow_arr,
-        )
-
     def _classify_train_test(self, data: Dict[str, Any], *, config: DatasetConfig):
         path = pathlib.Path(data[0])
         return config.split in str(path.parent)
@@ -120,7 +95,7 @@ class SINTEL(Dataset):
         else:
             return None
 
-    def read_flo(self, data: IterDataPipe[Tuple[Any, io.IOBase]]) -> Iterable[np.ndarray]:
+    def _read_flo(self, data: IterDataPipe[Tuple[Any, io.IOBase]]) -> Iterable[np.ndarray]:
         count_flo = 0
         for _, file in data:
             f = file.file_obj
@@ -134,14 +109,34 @@ class SINTEL(Dataset):
             count_flo += 1
             yield _data.reshape(2, h, w)
 
-    def flows_key(self, data: Tuple[str, Any]) -> Tuple[str, int]:
+    def _flows_key(self, data: Tuple[str, Any]) -> Tuple[str, int]:
         path = pathlib.Path(data[0])
         category = path.parent.name
         idx = int(FILE_NAME_PATTERN.match(path.name).group("idx"))  # type: ignore[union-attr]
         return category, idx
 
-    def images_key(self, data: Tuple[Tuple[str, Any], Tuple[str, Any]]) -> Tuple[str, int]:
-        return self.flows_key(data[0])
+    def _images_key(self, data: Tuple[Tuple[str, Any], Tuple[str, Any]]) -> Tuple[str, int]:
+        return self._flows_key(data[0])
+
+    def _collate_and_decode_sample(
+        self,
+        data: Tuple[str, ...],
+        *,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+    ) -> Dict[str, Any]:
+        flo, images = data
+        img1, img2 = images
+
+        path1, buffer1 = img1
+        path2, buffer2 = img2
+
+        flow_arr = self._read_flo(flo)
+
+        return dict(
+            image1=decoder(buffer1) if decoder else buffer1,
+            image2=decoder(buffer2) if decoder else buffer2,
+            label=flow_arr,
+        )
 
     def _make_datapipe(
         self,
@@ -168,8 +163,8 @@ class SINTEL(Dataset):
         zipped_dp = KeyZipper(
             flo_dp,
             pass_images_dp,
-            key_fn=self.flows_key,
-            ref_key_fn=self.images_key,
+            key_fn=self._flows_key,
+            ref_key_fn=self._images_key,
         )
 
         return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
