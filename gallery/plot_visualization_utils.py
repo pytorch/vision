@@ -366,3 +366,19 @@ show(dogs_with_masks)
 # The two 'people' masks in the first image where not selected because they have
 # a lower score than the score threshold. Similarly in the second image, the
 # instance with class 15 (which corresponds to 'bench') was not selected.
+
+#####################################
+# Visualizing Keypoints
+# ------------------------------
+# The :func:`~torchvision.utils.draw_keypoints` function can be used to
+# draw keypoints on images. We will see how to use it with
+# torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`
+# We will first have a look at output of the model. Note that these models do not need normalized images.
+#
+
+from torchvision.models.detection import keypointrcnn_resnet50_fpn
+from torchvision.io import read_image
+
+child_int = read_image(str(Path("assets") / "child.jpg"))
+model = keypointrcnn_resnet50_fpn(pretrained=True, progress=False)
+model = model.eval()
