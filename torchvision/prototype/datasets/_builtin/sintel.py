@@ -93,12 +93,13 @@ class SINTEL(Dataset):
         flo, images = data
         img1, img2 = images
 
+        print(img1)
         path1, buffer1 = img1
         path2, buffer2 = img2
 
         flow_arr = self.read_flo(flo)
+        obj = Image.open(buffer1)
 
-        print(buffer1, buffer2)
         return dict(
             image1=decoder(buffer1) if decoder else buffer1,
             image2=decoder(buffer2) if decoder else buffer2,
@@ -141,7 +142,6 @@ class SINTEL(Dataset):
 
     def flows_key(self, data: Tuple[str, Any]) -> Tuple[str, int]:
         path = pathlib.Path(data[0])
-        print('path: ', path.name)
         category = path.parent.name
         idx = int(FILE_NAME_PATTERN.match(path.name).group("idx"))  # type: ignore[union-attr]
         return category, idx
@@ -180,7 +180,7 @@ class SINTEL(Dataset):
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        # flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         pass_images_dp = IntCategoryGrouper(pass_images_dp)
         zipped_dp = KeyZipper(
