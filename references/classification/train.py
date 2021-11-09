@@ -37,6 +37,10 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
         optimizer.zero_grad()
         if args.amp:
             scaler.scale(loss).backward()
+            if args.clip_grad_norm is not None:
+                # we should unscale the gradients of optimizer's assigned params if do gradient clipping
+                scaler.unscale_(optimizer)
+                nn.utils.clip_grad_norm_(utils.get_optimizer_params(optimizer), args.clip_grad_norm)
             scaler.step(optimizer)
             scaler.update()
         else:
