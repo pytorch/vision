@@ -1,6 +1,4 @@
-import collections.abc
 import csv
-import difflib
 import enum
 import gzip
 import io
@@ -11,7 +9,6 @@ import pathlib
 import pickle
 import textwrap
 from typing import (
-    Collection,
     Sequence,
     Callable,
     Union,
@@ -35,13 +32,12 @@ import torch.distributed as dist
 import torch.utils.data
 from torch.utils.data import IterDataPipe
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.utils import StreamWrapper
 
 
 __all__ = [
     "INFINITE_BUFFER_SIZE",
     "BUILTIN_DIR",
-    "sequence_to_str",
-    "add_suggestion",
     "make_repr",
     "FrozenMapping",
     "FrozenBunch",
@@ -64,30 +60,6 @@ D = TypeVar("D")
 INFINITE_BUFFER_SIZE = 1_000_000_000
 
 BUILTIN_DIR = pathlib.Path(__file__).parent.parent / "_builtin"
-
-
-def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
-    if len(seq) == 1:
-        return f"'{seq[0]}'"
-
-    return f"""'{"', '".join([str(item) for item in seq[:-1]])}', {separate_last}'{seq[-1]}'."""
-
-
-def add_suggestion(
-    msg: str,
-    *,
-    word: str,
-    possibilities: Collection[str],
-    close_match_hint: Callable[[str], str] = lambda close_match: f"Did you mean '{close_match}'?",
-    alternative_hint: Callable[
-        [Sequence[str]], str
-    ] = lambda possibilities: f"Can be {sequence_to_str(possibilities, separate_last='or ')}.",
-) -> str:
-    if not isinstance(possibilities, collections.abc.Sequence):
-        possibilities = sorted(possibilities)
-    suggestions = difflib.get_close_matches(word, possibilities, 1)
-    hint = close_match_hint(suggestions[0]) if suggestions else alternative_hint(possibilities)
-    return f"{msg.strip()} {hint}"
 
 
 def make_repr(name: str, items: Iterable[Tuple[str, Any]]) -> str:
@@ -171,6 +143,9 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
         import scipy.io as sio
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
+
+    if isinstance(buffer, StreamWrapper):
+        buffer = buffer.file_obj
 
     return sio.loadmat(buffer, **kwargs)
 
