@@ -364,7 +364,8 @@ class FlyingThings3D(FlowDataset):
 
 def _read_flo(f):
     """Read .flo file in Middlebury format"""
-    # Code adapted from:flow-files-with-python-bytes-array-numpy
+    # Code adapted from:
+    # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
     # Everything needs to be in little Endian according to
     # https://vision.middlebury.edu/flow/code/flow-code/README.txt
     if isinstance(f, (str, Path)):
@@ -372,7 +373,6 @@ def _read_flo(f):
         close = True
     else:
         close = False
-    # http://stackoverflow.com/questions/28013200/reading-middlebury-
 
     try:
         magic = np.fromfile(f, "c", count=4).tobytes()
