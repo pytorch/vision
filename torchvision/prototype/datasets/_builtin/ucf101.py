@@ -88,5 +88,5 @@ class ucf101(Dataset):
         annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         files_dp = RarArchiveReader(files)
-        dp = KeyZipper(annotations_dp, files_dp, self._getname, self._getname)
+        dp = KeyZipper(annotations_dp, files_dp, path_accessor("name"))
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
