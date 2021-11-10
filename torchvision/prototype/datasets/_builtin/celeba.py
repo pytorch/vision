@@ -10,7 +10,7 @@ from torchdata.datapipes.iter import (
     Filter,
     ZipArchiveReader,
     Zipper,
-    KeyZipper,
+    IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -169,7 +169,7 @@ class CelebA(Dataset):
         )
         anns_dp = Mapper(anns_dp, self._collate_anns)
 
-        dp = KeyZipper(
+        dp = IterKeyZipper(
             splits_dp,
             images_dp,
             key_fn=getitem(0),
@@ -177,5 +177,5 @@ class CelebA(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        dp = KeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
+        dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
