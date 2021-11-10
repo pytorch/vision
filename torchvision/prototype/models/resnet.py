@@ -189,8 +189,8 @@ class ResNeXt101_32x8dWeights(Weights):
         meta={
             **_common_meta,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 82.284,
-            "acc@5": 96.002,
+            "acc@1": 82.834,
+            "acc@5": 96.228,
         },
     )
 
