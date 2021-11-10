@@ -106,6 +106,23 @@ class VGG16Weights(Weights):
             "acc@5": 90.382,
         },
     )
+    # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
+    # same input standardization method as the paper. Only the `features` weights have proper values, those on the
+    # `classifier` module are filled with nans.
+    ImageNet1K_Features = WeightEntry(
+        url="https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth",
+        transforms=partial(
+            ImageNetEval, crop_size=224, mean=(0.48235, 0.45882, 0.40784), std=(1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0)
+        ),
+        meta={
+            "size": (224, 224),
+            "categories": None,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/amdegroot/ssd.pytorch#training-ssd",
+            "acc@1": float("nan"),
+            "acc@5": float("nan"),
+        },
+    )
 
 
 class VGG16BNWeights(Weights):
