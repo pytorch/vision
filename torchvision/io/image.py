@@ -1,4 +1,8 @@
+import ctypes
+import os
+import sys
 from enum import Enum
+from warnings import warn
 
 import torch
 
@@ -13,22 +17,16 @@ try:
     # explicitly calling `LoadLibraryExW` with the following flags:
     #  - LOAD_LIBRARY_SEARCH_DEFAULT_DIRS (0x1000)
     #  - LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR (0x100)
-    import os as _os, _sys as _sys
-    if _os.name == "nt" and sys.version_info < (3, 8):
+    if os.name == "nt" and sys.version_info < (3, 8):
 
-        from ctypes.windll import kernel32 as _kernel32
+        _kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
         if hasattr(_kernel32, "LoadLibraryExW"):
-            _image_lib_handle = _kernel32.LoadLibraryExW(lib_path,
-                                                         None,
-                                                         0x00001100)
+            _image_lib_handle = _kernel32.LoadLibraryExW(lib_path, None, 0x00001100)
         else:
-            import warnings
-            warnings.warn("LoadLibraryExW is missing in kernel32.dll")
+            warn("LoadLibraryExW is missing in kernel32.dll")
     torch.ops.load_library(lib_path)
 except (ImportError, OSError) as e:
-    import warnings
-    warnings.warn(f"Failed to load {global().get('lib_path','image.pyd')}: {e}")
-    pass
+    warn(f"Failed to load {globals().get('lib_path','image.pyd')}: {e}")
 
 
 class ImageReadMode(Enum):

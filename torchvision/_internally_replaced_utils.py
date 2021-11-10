@@ -22,7 +22,7 @@ except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url  # noqa: 401
 
 
-def _get_extension_path(lib_name):
+def _get_extension_path(lib_name) -> str:
 
     lib_dir = os.path.dirname(__file__)
     if os.name == "nt":
