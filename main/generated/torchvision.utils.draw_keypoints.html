@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>LFWPairs &mdash; Torchvision main documentation</title>
+  <title>draw_keypoints &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="LSUN" href="torchvision.datasets.LSUN.html" />
-    <link rel="prev" title="LFWPeople" href="torchvision.datasets.LFWPeople.html" />
+    <link rel="next" title="make_grid" href="torchvision.utils.make_grid.html" />
+    <link rel="prev" title="draw_segmentation_masks" href="torchvision.utils.draw_segmentation_masks.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -224,13 +224,13 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../utils.html">Utils</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -286,15 +286,15 @@
       </li>
 
         
-          <li><a href="../datasets.html">Datasets</a> &gt;</li>
+          <li><a href="../utils.html">Utils</a> &gt;</li>
         
-      <li>LFWPairs</li>
+      <li>draw_keypoints</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="../_sources/generated/torchvision.datasets.LFWPairs.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
+            <a href="../_sources/generated/torchvision.utils.draw_keypoints.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -320,51 +320,34 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="lfwpairs">
-<h1>LFWPairs<a class="headerlink" href="#lfwpairs" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="torchvision.datasets.LFWPairs">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.datasets.</span></code><code class="sig-name descname"><span class="pre">LFWPairs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'10fold'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_set</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'funneled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/lfw.html#LFWPairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.LFWPairs" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference external" href="http://vis-www.cs.umass.edu/lfw/">LFW</a> Dataset.</p>
+  <div class="section" id="draw-keypoints">
+<h1>draw_keypoints<a class="headerlink" href="#draw-keypoints" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="torchvision.utils.draw_keypoints">
+<code class="sig-prename descclassname"><span class="pre">torchvision.utils.</span></code><code class="sig-name descname"><span class="pre">draw_keypoints</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">keypoints</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectivity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="../_modules/torchvision/utils.html#draw_keypoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.utils.draw_keypoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws Keypoints on given RGB image.
+The values of the input image should be uint8 between 0 and 255.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>root</strong> (<em>string</em>) – Root directory of dataset where directory
-<code class="docutils literal notranslate"><span class="pre">lfw-py</span></code> exists or will be saved to if download is set to True.</p></li>
-<li><p><strong>split</strong> (<em>string</em><em>, </em><em>optional</em>) – The image split to use. Can be one of <code class="docutils literal notranslate"><span class="pre">train</span></code>, <code class="docutils literal notranslate"><span class="pre">test</span></code>,
-<code class="docutils literal notranslate"><span class="pre">10fold</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">10fold</span></code>.</p></li>
-<li><p><strong>image_set</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Type of image funneling to use, <code class="docutils literal notranslate"><span class="pre">original</span></code>, <code class="docutils literal notranslate"><span class="pre">funneled</span></code> or
-<code class="docutils literal notranslate"><span class="pre">deepfunneled</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">funneled</span></code>.</p></li>
-<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that  takes in an PIL image
-and returns a transformed version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomRotation</span></code></p></li>
-<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the
-target and transforms it.</p></li>
-<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – If true, downloads the dataset from the internet and
-puts it in root directory. If dataset is already downloaded, it is not
-downloaded again.</p></li>
+<li><p><strong>image</strong> (<em>Tensor</em>) – Tensor of shape (3, H, W) and dtype uint8.</p></li>
+<li><p><strong>keypoints</strong> (<em>Tensor</em>) – Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
+in the format [x, y].</p></li>
+<li><p><strong>connectivity</strong> (<em>Tuple</em><em>[</em><em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – A Tuple of tuple where,
+each tuple contains pair of keypoints to be connected.</p></li>
+<li><p><strong>colors</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>Tuple</em>) – The color can be represented as
+PIL strings e.g. “red” or “#FF00FF”, or as RGB tuples e.g. <code class="docutils literal notranslate"><span class="pre">(240,</span> <span class="pre">10,</span> <span class="pre">157)</span></code>.</p></li>
+<li><p><strong>radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Integer denoting radius of keypoint.</p></li>
+<li><p><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Integer denoting width of line connecting keypoints.</p></li>
 </ul>
 </dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Special-members</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<dl class="py method">
-<dt id="torchvision.datasets.LFWPairs.__getitem__">
-<code class="sig-name descname"><span class="pre">__getitem__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/torchvision/datasets/lfw.html#LFWPairs.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.LFWPairs.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Index</p>
-</dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>(image1, image2, target) where target is <cite>0</cite> for different indentities and <cite>1</cite> for same identities.</p>
+<dd class="field-even"><p>Image Tensor of dtype uint8 with keypoints drawn.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+<dd class="field-odd"><p>img (Tensor[C, H, W])</p>
 </dd>
 </dl>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -377,10 +360,10 @@ downloaded again.</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="torchvision.datasets.LSUN.html" class="btn btn-neutral float-right" title="LSUN" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.utils.make_grid.html" class="btn btn-neutral float-right" title="make_grid" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.datasets.LFWPeople.html" class="btn btn-neutral" title="LFWPeople" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.utils.draw_segmentation_masks.html" class="btn btn-neutral" title="draw_segmentation_masks" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -412,7 +395,7 @@ downloaded again.</p></li>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">LFWPairs</a></li>
+<li><a class="reference internal" href="#">draw_keypoints</a></li>
 </ul>
 
             </div>
