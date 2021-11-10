@@ -24,17 +24,14 @@ class AVKeyframeReader(IterDataPipe[Dict[str, Any]]):
                 stream.codec_context.skip_frame = 'NONKEY'
                 for frame in container.decode(stream):
                     img = frame.to_image()
-                    yield {
-                        "frame": img,
-                        "pts": frame.pts,
-                        "video_meta": {
+                    yield dict(
+                        video_d,
+                        frame=img,
+                        pts=frame.pts,
+                        video_meta={
                             "time_base": float(frame.time_base),
                             "guessed_fps": float(stream.guessed_rate),
-                        },
-                        "path": video_d["path"],
-                        "target": video_d["target"]
-                    }
-
+                        })
 
 class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
     def __init__(self, video_dp: IterDataPipe[Dict[str, Any]], num_samples=1, transform=None) -> None:
@@ -50,7 +47,7 @@ class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:
         for video_d in self.datapipe:
-            buffer = video_d["file"]
+            buffer = video_d.pop("file")
             with av.open(buffer, metadata_errors="ignore") as container:
                 stream = container.streams.video[0]
                 # duration is given in time_base units as int
@@ -63,16 +60,9 @@ class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
                     img = frame.to_image()
 
                     video_meta = {"time_base": float(frame.time_base),
-                                  "guessed_fps": float(stream.guessed_rate),
-                        }
-                    yield {
-                        "frame": img,
-                        "pts": frame.pts,
-                        "video_meta": video_meta,
-                        "path": video_d["path"],
-                        "target": video_d["target"],
-                    }
-
+                                  "guessed_fps": float(stream.guessed_rate),}
+                    
+                    yield dict(video_d, frame=img, pts=frame.pts, video_meta=video_meta)
 
 class AVClipReader(IterDataPipe[Dict[str, Any]]):
     def __init__(
@@ -80,7 +70,7 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
             video_dp: IterDataPipe[Dict[str, Any]],
             num_frames_per_clip=8,
             num_clips_per_video=1,
-            step_between_clips=1e) -> None:
+            step_between_clips=1) -> None:
         """TorchData Iterdatapype that takes in video datapipe
         and yields `num_clips_per_video` video clips (sequences of `num_frames_per_clip` frames) from a video.
         Clips are sampled from all possible clips of length `num_frames_per_clip` spaced `step_between_clips` apart.
@@ -109,7 +99,8 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
         o_stride = tensor.stride(0)
         numel = tensor.numel()
         new_stride = (self.step_between_clips * o_stride, dilation * o_stride)
-        new_size = ((numel - (dilation * (self.num_frames_per_clip - 1) + 1)) // self.step_between_clips + 1, self.num_frames_per_clip)
+        new_size = ((numel - (dilation * (self.num_frames_per_clip - 1) + 1)) // self.step_between_clips + 1, 
+                    self.num_frames_per_clip)
         if new_size[0] < 1:
             new_size = (0, self.num_frames_per_clip)
         return torch.as_strided(tensor, new_size, new_stride)
