@@ -1,26 +1,20 @@
 import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar
 import pathlib
-from functools import partial
 import re
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar, Union
 
-import torch
-from PIL import Image
 import numpy as np
-
+import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
-    IterableWrapper,
     Demultiplexer,
     Mapper,
     Shuffler,
     Filter,
-    Zipper,
-    KeyZipper,
-    LineReader,
+    IterKeyZipper,
     ZipArchiveReader,
 )
-from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -29,19 +23,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import (
-    image_buffer_from_array,
-    Decompressor,
-    INFINITE_BUFFER_SIZE,
-)
-from torchvision import transforms
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 T = TypeVar("T")
 
 FILE_NAME_PATTERN = re.compile(r"(frame|image)_(?P<idx>\d+)[.](flo|png)")
 
 try:
-    from itertools import pairwise
+    from itertools import pairwise  # type: ignore
 except ImportError:
     from itertools import tee
 
@@ -50,11 +39,12 @@ except ImportError:
         next(b, None)
         return zip(a, b)
 
+
 class IntCategoryGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
     def __init__(self, datapipe: IterDataPipe[Tuple[str, T]]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[Tuple[str, Any], Tuple[str, Any]]]:
         for item1, item2 in pairwise(sorted(self.datapipe)):
             if pathlib.Path(item1[0]).parent != pathlib.Path(item2[0]).parent:
                 continue
@@ -71,7 +61,7 @@ class SINTEL(Dataset):
             valid_options=dict(
                 split=("train", "test"),
                 pass_=("clean", "final"),
-            )
+            ),
         )
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -81,33 +71,28 @@ class SINTEL(Dataset):
         )
         return [archive]
 
-    def _classify_train_test(self, data: Dict[str, Any], *, config: DatasetConfig):
+    def _classify_train_test(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
         path = pathlib.Path(data[0])
         return config.split in str(path.parent)
 
-    def _classify_archive(self, data: Dict[str, Any], *, config: DatasetConfig):
+    def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Union[int, None]:
         path = pathlib.Path(data[0])
-        path_str = str(path.absolute())
-        if config.pass_ in path_str and ".png" in path_str:
+        if config.pass_ == path.parent.parent.name and path.suffix == ".png":
             return 0
-        elif ".flo" in path_str:
+        elif path.suffix == ".flo":
             return 1
         else:
             return None
 
-    def _read_flo(self, data: IterDataPipe[Tuple[Any, io.IOBase]]) -> Iterable[np.ndarray]:
-        count_flo = 0
-        for _, file in data:
-            f = file.file_obj
-            magic = np.fromfile(f, np.float32, count=1)
-            if 202021.25 != magic:
-                raise ValueError("Magic number incorrect. Invalid .flo file")
-
-            w = int(np.fromfile(f, np.int32, count=1))
-            h = int(np.fromfile(f, np.int32, count=1))
-            _data = np.fromfile(f, np.float32, count=2 * w * h)
-            count_flo += 1
-            yield _data.reshape(2, h, w)
+    def _read_flo(self, file: IterDataPipe[Tuple[Any, io.IOBase]]) -> Any:
+        magic = file.read(4)
+        if magic != b"PIEH":
+            raise ValueError("Magic number incorrect. Invalid .flo file")
+        w = int.from_bytes(file.read(4), "little")
+        h = int.from_bytes(file.read(4), "little")
+        data = file.read(2 * w * h * 4)
+        data = np.frombuffer(data, dtype=np.float32)
+        return data.reshape(h, w, 2).transpose(2, 0, 1)
 
     def _flows_key(self, data: Tuple[str, Any]) -> Tuple[str, int]:
         path = pathlib.Path(data[0])
@@ -120,22 +105,29 @@ class SINTEL(Dataset):
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[str, ...],
+        data: Tuple[Tuple[str, io.IOBase], Any],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        config: DatasetConfig,
     ) -> Dict[str, Any]:
-        flo, images = data
-        img1, img2 = images
+        if config.split == "train":
+            flo, images = data
+            img1, img2 = images
+            flow_arr = self._read_flo(flo[1])
+            del images, flo
+        else:
+            # When split is `test`
+            img1, img2 = data
+
+        del data
 
         path1, buffer1 = img1
         path2, buffer2 = img2
 
-        flow_arr = self._read_flo(flo)
-
         return dict(
             image1=decoder(buffer1) if decoder else buffer1,
             image2=decoder(buffer2) if decoder else buffer2,
-            label=flow_arr,
+            flow=flow_arr if config.split == "train" else None,
         )
 
     def _make_datapipe(
@@ -143,7 +135,7 @@ class SINTEL(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Tuple[Dict[str, Any], Dict[str, Any]]]:
         dp = resource_dps[0]
         archive_dp = ZipArchiveReader(dp)
@@ -159,12 +151,17 @@ class SINTEL(Dataset):
         )
         flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        pass_images_dp = IntCategoryGrouper(pass_images_dp)
-        zipped_dp = KeyZipper(
-            flo_dp,
-            pass_images_dp,
-            key_fn=self._flows_key,
-            ref_key_fn=self._images_key,
-        )
-
-        return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[stry, Any]] = IntCategoryGrouper(pass_images_dp)
+        if config.split == "train":
+            zipped_dp = IterKeyZipper(
+                flo_dp,
+                pass_images_dp,
+                key_fn=self._flows_key,
+                ref_key_fn=self._images_key,
+            )
+            return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config))
+        else:
+            # When split is `test`, flo_dp will be empty and thus should not be zipped with pass_images_dp
+            return Mapper(
+                pass_images_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config)
+            )
