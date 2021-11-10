@@ -372,7 +372,7 @@ show(dogs_with_masks)
 # ------------------------------
 # The :func:`~torchvision.utils.draw_keypoints` function can be used to
 # draw keypoints on images. We will see how to use it with
-# torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`
+# torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`.
 # We will first have a look at output of the model.
 #
 # Note that the keypoint detection model does not need normalized images.
@@ -391,7 +391,7 @@ outputs = model([person_float])
 print(outputs)
 
 #####################################
-# As we see the output contains a list of dictionary.
+# As we see the output contains a list of dictionaries.
 # The output list is of length batch_size.
 # We currently have just a single image so length of list is 1.
 # Each entry in the list corresponds to an input image,
