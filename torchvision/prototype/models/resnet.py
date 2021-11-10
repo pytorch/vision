@@ -120,8 +120,8 @@ class ResNet101Weights(Weights):
         meta={
             **_common_meta,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 81.890,
-            "acc@5": 95.776,
+            "acc@1": 81.886,
+            "acc@5": 95.780,
         },
     )
 
@@ -143,8 +143,8 @@ class ResNet152Weights(Weights):
         meta={
             **_common_meta,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 82.286,
-            "acc@5": 96.008,
+            "acc@1": 82.284,
+            "acc@5": 96.002,
         },
     )
 
