@@ -4,10 +4,10 @@ Visualization utilities
 =======================
 
 This example illustrates some of the utilities that torchvision offers for
-visualizing images, bounding boxes, and segmentation masks.
+visualizing images, bounding boxes, segmentation masks and keypoints.
 """
 
-# sphinx_gallery_thumbnail_path = "../../gallery/assets/visualization_utils_thumbnail.png"
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/visualization_utils_thumbnail2.png"
 
 import torch
 import numpy as np
