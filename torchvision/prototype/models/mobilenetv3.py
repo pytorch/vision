@@ -41,7 +41,6 @@ _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
-    "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
 }
 
 
@@ -51,8 +50,19 @@ class MobileNetV3LargeWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 74.042,
             "acc@5": 91.340,
+        },
+    )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/mobilenet_v3_large-d7307c3f.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "acc@1": 75.152,
+            "acc@5": 92.634,
         },
     )
 
@@ -63,6 +73,7 @@ class MobileNetV3SmallWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_common_meta,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 67.668,
             "acc@5": 87.402,
         },
