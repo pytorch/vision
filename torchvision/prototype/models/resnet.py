@@ -225,8 +225,8 @@ class WideResNet101_2Weights(Weights):
         meta={
             **_common_meta,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 82.498,
-            "acc@5": 96.114,
+            "acc@1": 82.492,
+            "acc@5": 96.110,
         },
     )
 
