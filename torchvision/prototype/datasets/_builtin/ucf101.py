@@ -64,12 +64,6 @@ class ucf101(Dataset):
         file = decoder(file_handle) if decoder else file_handle
         return {"path": _path, "file": file, "target": label}
 
-    def _filtername(self, data, *, tgt):
-        return Path(data[0]).name == tgt
-
-    def _getname(self, data):
-        return Path(data[0]).name
-
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
