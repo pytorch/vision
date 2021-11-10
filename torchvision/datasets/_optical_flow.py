@@ -103,7 +103,7 @@ class Sintel(FlowDataset):
     Args:
         root (string): Root directory of the Sintel Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
-        pass_name (string, optional): The pass to use, either "clean" (default) or "final". See link above for
+        pass_name (string, optional): The pass to use, either "clean" (default), "final", or "both". See link above for
             details on the different passes.
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid`` and returns a transformed version.
@@ -115,21 +115,22 @@ class Sintel(FlowDataset):
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
-        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final"))
+        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final", "both"))
+        passes = ["clean", "final"] if pass_name == "both" else [pass_name]
 
         root = Path(root) / "Sintel"
-
-        split_dir = "training" if split == "train" else split
-        image_root = root / split_dir / pass_name
         flow_root = root / "training" / "flow"
 
-        for scene in os.listdir(image_root):
-            image_list = sorted(glob(str(image_root / scene / "*.png")))
-            for i in range(len(image_list) - 1):
-                self._image_list += [[image_list[i], image_list[i + 1]]]
+        for pass_name in passes:
+            split_dir = "training" if split == "train" else split
+            image_root = root / split_dir / pass_name
+            for scene in os.listdir(image_root):
+                image_list = sorted(glob(str(image_root / scene / "*.png")))
+                for i in range(len(image_list) - 1):
+                    self._image_list += [[image_list[i], image_list[i + 1]]]
 
-            if split == "train":
-                self._flow_list += sorted(glob(str(flow_root / scene / "*.flo")))
+                if split == "train":
+                    self._flow_list += sorted(glob(str(flow_root / scene / "*.flo")))
 
     def __getitem__(self, index):
         """Return example at given index.
@@ -154,7 +155,7 @@ class KittiFlow(FlowDataset):
     The dataset is expected to have the following structure: ::
 
         root
-            Kitti
+            KittiFlow
                 testing
                     image_2
                 training
@@ -175,7 +176,7 @@ class KittiFlow(FlowDataset):
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
 
-        root = Path(root) / "Kitti" / (split + "ing")
+        root = Path(root) / "KittiFlow" / (split + "ing")
         images1 = sorted(glob(str(root / "image_2" / "*_10.png")))
         images2 = sorted(glob(str(root / "image_2" / "*_11.png")))
 

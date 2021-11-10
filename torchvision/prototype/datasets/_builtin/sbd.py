@@ -12,7 +12,7 @@ from torchdata.datapipes.iter import (
     Shuffler,
     Demultiplexer,
     Filter,
-    KeyZipper,
+    IterKeyZipper,
     LineReader,
 )
 from torchvision.prototype.datasets.utils import (
@@ -144,7 +144,7 @@ class SBD(Dataset):
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
-            dp = KeyZipper(
+            dp = IterKeyZipper(
                 dp,
                 data_dp,
                 key_fn=getitem(*[0] * level, 1),
