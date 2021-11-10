@@ -55,13 +55,14 @@ class ucf101(Dataset):
         self,
         data: Tuple[np.ndarray, int],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]=None,
     ) -> Dict[str, Any]:
         annotations_d, file_d = data
 
         label = annotations_d[1]
         _path, file_handle = file_d
-        return {"path": _path, "file": file_handle, "target": label}
+        file = decoder(file_handle) if decoder else file_handle
+        return {"path": _path, "file": file, "target": label}
 
     def _filtername(self, data, *, tgt):
         return Path(data[0]).name == tgt
