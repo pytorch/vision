@@ -1,6 +1,7 @@
 import warnings
 from typing import Any, Optional
 
+from torchvision.prototype.transforms import CocoEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.ssd import (
@@ -9,7 +10,6 @@ from ....models.detection.ssd import (
     DefaultBoxGenerator,
     SSD,
 )
-from ...transforms.presets import CocoEval
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
 from ..vgg import VGG16Weights, vgg16

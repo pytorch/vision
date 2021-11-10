@@ -1,6 +1,7 @@
 import warnings
 from typing import Any, Optional
 
+from torchvision.prototype.transforms import CocoEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.mask_rcnn import (
@@ -10,7 +11,6 @@ from ....models.detection.mask_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from ...transforms.presets import CocoEval
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
 from ..resnet import ResNet50Weights, resnet50
