@@ -14,7 +14,7 @@ from torch.utils.data.datapipes.iter import (
     ZipArchiveReader,
     Shuffler,
 )
-from torchvision.prototype.datasets.decoder import raw
+from torchvision.prototype.datasets.utils._internal import path_accessor, path_comparator
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
