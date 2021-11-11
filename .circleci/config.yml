@@ -917,9 +917,6 @@ jobs:
     <<: *binary_common
     executor:
       name: windows-gpu
-    environment:
-      CU_VERSION: "cu111"
-      CUDA_VERSION: "11.1"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -1645,7 +1642,7 @@ workflows:
           name: cmake_linux_cpu
           python_version: '3.8'
       - cmake_linux_gpu:
-          cu_version: cu102
+          cu_version: cu111
           name: cmake_linux_gpu
           python_version: '3.8'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -1654,7 +1651,7 @@ workflows:
           name: cmake_windows_cpu
           python_version: '3.8'
       - cmake_windows_gpu:
-          cu_version: cu102
+          cu_version: cu111
           name: cmake_windows_gpu
           python_version: '3.8'
       - cmake_macos_cpu:
