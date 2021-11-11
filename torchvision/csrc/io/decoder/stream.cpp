@@ -74,15 +74,6 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
     }
   }
 
-  // print codec type and number of threads
-  LOG(INFO) << "Codec " << codecCtx_->codec->long_name
-            << " Codec id: " << codecCtx_->codec_id
-            << " Codec tag: " << codecCtx_->codec_tag
-            << " Codec type: " << codecCtx_->codec_type
-            << " Codec extradata: " << codecCtx_->extradata
-            << " Number of threads: " << codecCtx_->thread_count
-            << " Thread type: " << codecCtx_->thread_type;
-
   int ret;
   // Copy codec parameters from input stream to output codec context
   if ((ret = avcodec_parameters_to_context(codecCtx_, steam->codecpar)) < 0) {
