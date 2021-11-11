@@ -5,16 +5,16 @@
 
 Computation times
 =================
-**00:27.389** total execution time for **auto_examples** files:
+**00:27.762** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 00:10.126 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_visualization_utils.py` (``plot_visualization_utils.py``)               | 00:11.561 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_transforms.py` (``plot_transforms.py``)                                 | 00:08.738 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_transforms.py` (``plot_transforms.py``)                                 | 00:08.150 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_video_api.py` (``plot_video_api.py``)                                   | 00:04.382 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_video_api.py` (``plot_video_api.py``)                                   | 00:04.003 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_repurposing_annotations.py` (``plot_repurposing_annotations.py``)       | 00:02.290 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_repurposing_annotations.py` (``plot_repurposing_annotations.py``)       | 00:02.286 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:01.852 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_scripted_tensor_transforms.py` (``plot_scripted_tensor_transforms.py``) | 00:01.762 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------------------+-----------+--------+

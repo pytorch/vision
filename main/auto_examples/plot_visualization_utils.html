@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Video API" href="plot_video_api.html" />
-    <link rel="prev" title="Illustration of transforms" href="plot_transforms.html" />
+    <link rel="next" title="Training references" href="../training_references.html" />
+    <link rel="prev" title="Video API" href="plot_video_api.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+55d7242 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+c425035 ) &#x25BC</a>
     </div>
     
 
@@ -328,8 +328,8 @@ to download the full example code</p>
 <div class="sphx-glr-example-title section" id="visualization-utilities">
 <span id="sphx-glr-auto-examples-plot-visualization-utils-py"></span><h1>Visualization utilities<a class="headerlink" href="#visualization-utilities" title="Permalink to this headline">¶</a></h1>
 <p>This example illustrates some of the utilities that torchvision offers for
-visualizing images, bounding boxes, and segmentation masks.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_path = &quot;../../gallery/assets/visualization_utils_thumbnail.png&quot;</span>
+visualizing images, bounding boxes, segmentation masks and keypoints.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># sphinx_gallery_thumbnail_path = &quot;../../gallery/assets/visualization_utils_thumbnail2.png&quot;</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -468,7 +468,7 @@ boat class:</p>
     <span class="s1">&#39;car&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;chair&#39;</span><span class="p">,</span> <span class="s1">&#39;cow&#39;</span><span class="p">,</span> <span class="s1">&#39;diningtable&#39;</span><span class="p">,</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;horse&#39;</span><span class="p">,</span> <span class="s1">&#39;motorbike&#39;</span><span class="p">,</span>
     <span class="s1">&#39;person&#39;</span><span class="p">,</span> <span class="s1">&#39;pottedplant&#39;</span><span class="p">,</span> <span class="s1">&#39;sheep&#39;</span><span class="p">,</span> <span class="s1">&#39;sofa&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;tvmonitor&#39;</span>
 <span class="p">]</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_class_to_idx</span></a> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_classes</span></a><span class="p">)}</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_class_to_idx</span></a> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">idx</span></a> <span class="k">for</span> <span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">idx</span></a><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sem_classes</span></a><span class="p">)}</span>
 
 <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">normalized_masks</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html#torch.nn.functional.softmax" title="torch.nn.functional.softmax" class="sphx-glr-backref-module-torch-nn-functional sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">softmax</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
@@ -683,7 +683,7 @@ Let’s see which labels were predicted for the instances of the first image.</p
     <span class="s1">&#39;clock&#39;</span><span class="p">,</span> <span class="s1">&#39;vase&#39;</span><span class="p">,</span> <span class="s1">&#39;scissors&#39;</span><span class="p">,</span> <span class="s1">&#39;teddy bear&#39;</span><span class="p">,</span> <span class="s1">&#39;hair drier&#39;</span><span class="p">,</span> <span class="s1">&#39;toothbrush&#39;</span>
 <span class="p">]</span>
 
-<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_class_to_idx</span></a> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_classes</span></a><span class="p">)}</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_class_to_idx</span></a> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">idx</span></a> <span class="k">for</span> <span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">idx</span></a><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_classes</span></a><span class="p">)}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;For the first dog, the following instances were detected:&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">inst_classes</span></a><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dog1_output</span></a><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">]])</span>
@@ -746,7 +746,203 @@ here, and also plot the masks of the second dog.</p>
 <img src="../_images/sphx_glr_plot_visualization_utils_010.png" srcset="../_images/sphx_glr_plot_visualization_utils_010.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>The two ‘people’ masks in the first image where not selected because they have
 a lower score than the score threshold. Similarly in the second image, the
 instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  10.126 seconds)</p>
+</div>
+</div>
+<div class="section" id="visualizing-keypoints">
+<h2>Visualizing keypoints<a class="headerlink" href="#visualizing-keypoints" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../generated/torchvision.utils.draw_keypoints.html#torchvision.utils.draw_keypoints" title="torchvision.utils.draw_keypoints"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_keypoints()</span></code></a> function can be used to
+draw keypoints on images. We will see how to use it with
+torchvision’s KeypointRCNN loaded with <a class="reference internal" href="../generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.keypointrcnn_resnet50_fpn" title="torchvision.models.detection.keypointrcnn_resnet50_fpn"><code class="xref py py-func docutils literal notranslate"><span class="pre">keypointrcnn_resnet50_fpn()</span></code></a>.
+We will first have a look at output of the model.</p>
+<p>Note that the keypoint detection model does not need normalized images.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models.detection</span> <span class="kn">import</span> <span class="n">keypointrcnn_resnet50_fpn</span>
+<span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">read_image</span>
+
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_int</span></a> <span class="o">=</span> <span class="n">read_image</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a><span class="p">(</span><span class="s2">&quot;assets&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;person1.jpg&quot;</span><span class="p">))</span>
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_float</span></a> <span class="o">=</span> <span class="n">convert_image_dtype</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_int</span></a><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">keypointrcnn_resnet50_fpn</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval" title="torch.nn.Module.eval" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">model</span><span class="o">.</span><span class="n">eval</span></a><span class="p">()</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">([</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_float</span></a><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading: &quot;https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth&quot; to /root/.cache/torch/hub/checkpoints/keypointrcnn_resnet50_fpn_coco-fc266e95.pth
+[{&#39;boxes&#39;: tensor([[124.3751, 177.9242, 327.6353, 574.7064],
+        [124.3625, 180.7574, 290.1061, 390.7958]], grad_fn=&lt;StackBackward0&gt;), &#39;labels&#39;: tensor([1, 1]), &#39;scores&#39;: tensor([0.9998, 0.1070], grad_fn=&lt;IndexBackward0&gt;), &#39;keypoints&#39;: tensor([[[208.0176, 214.2408,   1.0000],
+         [208.0176, 207.0375,   1.0000],
+         [197.8246, 210.6392,   1.0000],
+         [208.0176, 211.8398,   1.0000],
+         [178.6378, 217.8425,   1.0000],
+         [221.2085, 253.8590,   1.0000],
+         [160.6502, 269.4662,   1.0000],
+         [243.9929, 304.2822,   1.0000],
+         [138.4654, 328.8935,   1.0000],
+         [277.5698, 340.8990,   1.0000],
+         [153.4551, 374.5144,   1.0000],
+         [226.0052, 375.7150,   1.0000],
+         [226.0052, 370.3125,   1.0000],
+         [221.8081, 455.5516,   1.0000],
+         [273.9723, 448.9486,   1.0000],
+         [193.6275, 546.1932,   1.0000],
+         [273.3727, 545.5930,   1.0000]],
+
+        [[207.8327, 214.6636,   1.0000],
+         [207.2343, 207.4622,   1.0000],
+         [198.2590, 209.8627,   1.0000],
+         [208.4310, 210.4628,   1.0000],
+         [178.5134, 218.2642,   1.0000],
+         [219.7997, 251.8704,   1.0000],
+         [162.3579, 269.2736,   1.0000],
+         [245.5289, 304.6800,   1.0000],
+         [138.4238, 330.4848,   1.0000],
+         [278.4382, 346.0876,   1.0000],
+         [153.3826, 374.8929,   1.0000],
+         [233.5618, 368.2917,   1.0000],
+         [225.7832, 367.6916,   1.0000],
+         [289.8069, 357.4897,   1.0000],
+         [245.5289, 389.8956,   1.0000],
+         [281.4300, 349.0882,   1.0000],
+         [209.0294, 389.8956,   1.0000]]], grad_fn=&lt;CopySlices&gt;), &#39;keypoints_scores&#39;: tensor([[16.0163, 16.6672, 15.8312,  4.6510, 14.2053,  8.8280,  9.1136, 12.2084,
+         12.1901, 13.8453, 10.7090,  5.5852,  7.5005, 11.3378,  9.3700,  8.2987,
+          8.4479],
+        [12.9326, 13.8158, 14.9053,  3.9368, 12.9585,  6.4240,  6.8328, 10.4227,
+          9.2907, 10.1066, 10.1019,  0.1822,  4.3057, -4.9904, -2.7409, -2.7874,
+         -3.9329]], grad_fn=&lt;CopySlices&gt;)}]
+</pre></div>
+</div>
+<p>As we see the output contains a list of dictionaries.
+The output list is of length batch_size.
+We currently have just a single image so length of list is 1.
+Each entry in the list corresponds to an input image,
+and it is a dict with keys <cite>boxes</cite>, <cite>labels</cite>, <cite>scores</cite>, <cite>keypoints</cite> and <cite>keypoint_scores</cite>.
+Each value associated to those keys has <cite>num_instances</cite> elements in it.
+In our case above there are 2 instances detected in the image.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">kpts</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;keypoints&#39;</span><span class="p">]</span>
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">scores</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">outputs</span></a><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;scores&#39;</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">kpts</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">scores</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([[[208.0176, 214.2408,   1.0000],
+         [208.0176, 207.0375,   1.0000],
+         [197.8246, 210.6392,   1.0000],
+         [208.0176, 211.8398,   1.0000],
+         [178.6378, 217.8425,   1.0000],
+         [221.2085, 253.8590,   1.0000],
+         [160.6502, 269.4662,   1.0000],
+         [243.9929, 304.2822,   1.0000],
+         [138.4654, 328.8935,   1.0000],
+         [277.5698, 340.8990,   1.0000],
+         [153.4551, 374.5144,   1.0000],
+         [226.0052, 375.7150,   1.0000],
+         [226.0052, 370.3125,   1.0000],
+         [221.8081, 455.5516,   1.0000],
+         [273.9723, 448.9486,   1.0000],
+         [193.6275, 546.1932,   1.0000],
+         [273.3727, 545.5930,   1.0000]],
+
+        [[207.8327, 214.6636,   1.0000],
+         [207.2343, 207.4622,   1.0000],
+         [198.2590, 209.8627,   1.0000],
+         [208.4310, 210.4628,   1.0000],
+         [178.5134, 218.2642,   1.0000],
+         [219.7997, 251.8704,   1.0000],
+         [162.3579, 269.2736,   1.0000],
+         [245.5289, 304.6800,   1.0000],
+         [138.4238, 330.4848,   1.0000],
+         [278.4382, 346.0876,   1.0000],
+         [153.3826, 374.8929,   1.0000],
+         [233.5618, 368.2917,   1.0000],
+         [225.7832, 367.6916,   1.0000],
+         [289.8069, 357.4897,   1.0000],
+         [245.5289, 389.8956,   1.0000],
+         [281.4300, 349.0882,   1.0000],
+         [209.0294, 389.8956,   1.0000]]], grad_fn=&lt;CopySlices&gt;)
+tensor([0.9998, 0.1070], grad_fn=&lt;IndexBackward0&gt;)
+</pre></div>
+</div>
+<p>The KeypointRCNN model detects there are two instances in the image.
+If you plot the boxes by using <code class="xref py py-func docutils literal notranslate"><span class="pre">draw_bounding_boxes()</span></code>
+you would recognize they are the person and the surfboard.
+If we look at the scores, we will realize that the model is much more confident about the person than surfboard.
+We could now set a threshold confidence and plot instances which we are confident enough.
+Let us set a threshold of 0.75 and filter out the keypoints corresponding to the person.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">detect_threshold</span></a> <span class="o">=</span> <span class="mf">0.75</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">idx</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.where.html#torch.where" title="torch.where" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">where</span></a><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">scores</span></a> <span class="o">&gt;</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">detect_threshold</span></a><span class="p">)</span>
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">keypoints</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">kpts</span></a><span class="p">[</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">idx</span></a><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">keypoints</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([[[208.0176, 214.2408,   1.0000],
+         [208.0176, 207.0375,   1.0000],
+         [197.8246, 210.6392,   1.0000],
+         [208.0176, 211.8398,   1.0000],
+         [178.6378, 217.8425,   1.0000],
+         [221.2085, 253.8590,   1.0000],
+         [160.6502, 269.4662,   1.0000],
+         [243.9929, 304.2822,   1.0000],
+         [138.4654, 328.8935,   1.0000],
+         [277.5698, 340.8990,   1.0000],
+         [153.4551, 374.5144,   1.0000],
+         [226.0052, 375.7150,   1.0000],
+         [226.0052, 370.3125,   1.0000],
+         [221.8081, 455.5516,   1.0000],
+         [273.9723, 448.9486,   1.0000],
+         [193.6275, 546.1932,   1.0000],
+         [273.3727, 545.5930,   1.0000]]], grad_fn=&lt;IndexBackward0&gt;)
+</pre></div>
+</div>
+<p>Great, now we have the keypoints corresponding to the person.
+Each keypoint is represented by x, y coordinates and the visibility.
+We can now use the <a class="reference internal" href="../generated/torchvision.utils.draw_keypoints.html#torchvision.utils.draw_keypoints" title="torchvision.utils.draw_keypoints"><code class="xref py py-func docutils literal notranslate"><span class="pre">draw_keypoints()</span></code></a> function to draw keypoints.
+Note that the utility expects uint8 images.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_keypoints</span>
+
+<a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a> <span class="o">=</span> <span class="n">draw_keypoints</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_int</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">keypoints</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">colors</span></a><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_visualization_utils_011.png" srcset="../_images/sphx_glr_plot_visualization_utils_011.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p>As we see the keypoints appear as colored circles over the image.
+The coco keypoints for a person are ordered and represent the following list.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coco_keypoints</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;nose&quot;</span><span class="p">,</span> <span class="s2">&quot;left_eye&quot;</span><span class="p">,</span> <span class="s2">&quot;right_eye&quot;</span><span class="p">,</span> <span class="s2">&quot;left_ear&quot;</span><span class="p">,</span> <span class="s2">&quot;right_ear&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;left_shoulder&quot;</span><span class="p">,</span> <span class="s2">&quot;right_shoulder&quot;</span><span class="p">,</span> <span class="s2">&quot;left_elbow&quot;</span><span class="p">,</span> <span class="s2">&quot;right_elbow&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;left_wrist&quot;</span><span class="p">,</span> <span class="s2">&quot;right_wrist&quot;</span><span class="p">,</span> <span class="s2">&quot;left_hip&quot;</span><span class="p">,</span> <span class="s2">&quot;right_hip&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;left_knee&quot;</span><span class="p">,</span> <span class="s2">&quot;right_knee&quot;</span><span class="p">,</span> <span class="s2">&quot;left_ankle&quot;</span><span class="p">,</span> <span class="s2">&quot;right_ankle&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>What if we are interested in joining the keypoints?
+This is especially useful in creating pose detection or action recognition.
+We can join the keypoints easily using the <cite>connectivity</cite> parameter.
+A close observation would reveal that we would need to join the points in below
+order to construct human skeleton.</p>
+<p>nose -&gt; left_eye -&gt; left_ear.                              (0, 1), (1, 3)</p>
+<p>nose -&gt; right_eye -&gt; right_ear.                            (0, 2), (2, 4)</p>
+<p>nose -&gt; left_shoulder -&gt; left_elbow -&gt; left_wrist.         (0, 5), (5, 7), (7, 9)</p>
+<p>nose -&gt; right_shoulder -&gt; right_elbow -&gt; right_wrist.      (0, 6), (6, 8), (8, 10)</p>
+<p>left_shoulder -&gt; left_hip -&gt; left_knee -&gt; left_ankle.      (5, 11), (11, 13), (13, 15)</p>
+<p>right_shoulder -&gt; right_hip -&gt; right_knee -&gt; right_ankle.  (6, 12), (12, 14), (14, 16)</p>
+<p>We will create a list containing these keypoint ids to be connected.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">connect_skeleton</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>We pass the above list to the connectivity parameter to connect the keypoints.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a> <span class="o">=</span> <span class="n">draw_keypoints</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">person_int</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">keypoints</span></a><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">connect_skeleton</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">colors</span></a><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">res</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_visualization_utils_012.png" srcset="../_images/sphx_glr_plot_visualization_utils_012.png" alt="plot visualization utils" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  11.561 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-visualization-utils-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/1031091ece7f376de0a2c941f5c11f30/plot_visualization_utils.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_visualization_utils.py</span></code></a></p>
@@ -758,7 +954,6 @@ instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 </div>
-</div>
 
 
              </article>
@@ -768,10 +963,10 @@ instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="plot_video_api.html" class="btn btn-neutral float-right" title="Video API" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="../training_references.html" class="btn btn-neutral float-right" title="Training references" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="plot_transforms.html" class="btn btn-neutral" title="Illustration of transforms" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="plot_video_api.html" class="btn btn-neutral" title="Video API" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -811,6 +1006,7 @@ instance with class 15 (which corresponds to ‘bench’) was not selected.</p>
 <li><a class="reference internal" href="#instance-segmentation-models">Instance segmentation models</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#visualizing-keypoints">Visualizing keypoints</a></li>
 </ul>
 </li>
 </ul>
