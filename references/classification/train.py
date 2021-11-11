@@ -9,6 +9,7 @@ import torch.utils.data
 import torchvision
 import transforms
 import utils
+from loss import SoftTargetCrossEntropy
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
@@ -207,9 +208,9 @@ def main(args):
     num_classes = len(dataset.classes)
     mixup_transforms = []
     if args.mixup_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha))
+        mixup_transforms.append(transforms.RandomMixup(num_classes, p=1.0, alpha=args.mixup_alpha, smoothing=args.label_smoothing))
     if args.cutmix_alpha > 0.0:
-        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha))
+        mixup_transforms.append(transforms.RandomCutmix(num_classes, p=1.0, alpha=args.cutmix_alpha, smoothing=args.label_smoothing))
     if mixup_transforms:
         mixupcutmix = torchvision.transforms.RandomChoice(mixup_transforms)
         collate_fn = lambda batch: mixupcutmix(*default_collate(batch))  # noqa: E731
@@ -235,7 +236,10 @@ def main(args):
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
+    if args.mixup_alpha > 0.0 or args.cutmix_alpha > 0.0:
+        criterion = SoftTargetCrossEntropy()
+    else:
+        criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     if args.norm_weight_decay is None:
         parameters = model.parameters()
