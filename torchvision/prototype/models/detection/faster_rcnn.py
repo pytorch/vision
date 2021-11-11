@@ -1,6 +1,7 @@
 import warnings
 from typing import Any, Optional, Union
 
+from torchvision.prototype.transforms import CocoEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.faster_rcnn import (
@@ -12,7 +13,6 @@ from ....models.detection.faster_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from ...transforms.presets import CocoEval
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large

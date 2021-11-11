@@ -2,10 +2,10 @@ import warnings
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
-from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
 
