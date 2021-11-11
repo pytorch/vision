@@ -1,7 +1,7 @@
 import collections.abc
 import inspect
 import re
-from typing import Any, Callable, Dict, Optional, Type, Union, cast, Set
+from typing import Any, Callable, Dict, Optional, Type, Union, cast, Set, Collection
 
 import torch
 from torch import nn
@@ -130,10 +130,6 @@ class Transform(nn.Module):
         sample = dict(input=Image(torch.tensor(...)), target=BoundingBox(torch.tensor(...)), ...)
         transformed_sample = transform(sample)
 
-    By default elements in the ``sample`` that are not supported by the transform are returned without modification.
-    You can set the ``strict=True`` flag to force a transformation of every element or bail out in case one is not
-    supported.
-
     .. note::
 
         To use a :class:`Transform` with a dataset, simply use it as map:
@@ -153,6 +149,8 @@ class Transform(nn.Module):
         for feature_type in _BUILTIN_FEATURE_TYPES
     }
     _feature_transforms: Dict[Type[features.Feature], Callable]
+
+    NO_OP_FEATURE_TYPES: Collection[Type[features.Feature]] = ()
 
     def __init_subclass__(
         cls, *, wraps: Optional[Type["Transform"]] = None, auto_register: bool = True, verbose: bool = False
@@ -342,7 +340,7 @@ class Transform(nn.Module):
             output = feature_type(output, like=input)
         return output
 
-    def _transform_recursively(self, sample: Any, *, params: Dict[str, Any], strict: bool) -> Any:
+    def _transform_recursively(self, sample: Any, *, params: Dict[str, Any]) -> Any:
         """Recurses through a sample and invokes :meth:`Transform.transform` on non-container elements.
 
         If an element is not supported by the transform, it is returned untransformed.
@@ -350,25 +348,21 @@ class Transform(nn.Module):
         Args:
             sample: Sample.
             params: Parameter dictionary ``params`` that will be passed to ``feature_transform(input, **params)``.
-            strict: If ``True``, raises an error in case a non-container element of the ``sample`` is not supported by
-                the transform.
-
-        Raises:
-            TypeError: If ``strict=True`` and a non-container element of the ``sample`` is not supported.
         """
         if isinstance(sample, collections.abc.Sequence):
-            return [self._transform_recursively(item, params=params, strict=strict) for item in sample]
+            return [self._transform_recursively(item, params=params) for item in sample]
         elif isinstance(sample, collections.abc.Mapping):
-            return {
-                name: self._transform_recursively(item, params=params, strict=strict) for name, item in sample.items()
-            }
+            return {name: self._transform_recursively(item, params=params) for name, item in sample.items()}
         else:
             feature_type = type(sample)
             if not self.supports(feature_type):
-                if not strict:
+                if feature_type in self.NO_OP_FEATURE_TYPES:
                     return sample
 
-                raise TypeError(f"{type(self).__name__}() is not able to handle inputs of type {feature_type}.")
+                raise TypeError(
+                    f"{type(self).__name__}() is not able to handle inputs of type {feature_type}. "
+                    f"If you want it to be a no-op, add the feature type to {type(self).__name__}.NO_OP_FEATURE_TYPES."
+                )
 
             return self.transform(sample, **params)
 
@@ -392,7 +386,6 @@ class Transform(nn.Module):
         self,
         *inputs: Any,
         params: Optional[Dict[str, Any]] = None,
-        strict: bool = True,
     ) -> Any:
         if not self._feature_transforms:
             raise RuntimeError(f"{type(self).__name__}() has no registered feature transform.")
@@ -400,4 +393,4 @@ class Transform(nn.Module):
         sample = inputs if len(inputs) > 1 else inputs[0]
         if params is None:
             params = self.get_params(sample)
-        return self._transform_recursively(sample, params=params, strict=strict)
+        return self._transform_recursively(sample, params=params)

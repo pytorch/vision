@@ -9,7 +9,7 @@ class ContainerTransform(nn.Module):
     def supports(self, obj: Any) -> bool:
         raise NotImplementedError()
 
-    def forward(self, *inputs: Any, strict: bool = False) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         raise NotImplementedError()
 
     def _make_repr(self, lines: List[str]) -> str:
@@ -39,9 +39,8 @@ class MultiTransform(ContainerTransform):
         super().__init__()
         self._transforms = transforms
 
-    def supports(self, obj: Any, *, strict: bool = False) -> bool:
-        aggregator = all if strict else any
-        return aggregator(transform.supports(obj) for transform in self._transforms)
+    def supports(self, obj: Any) -> bool:
+        return all(transform.supports(obj) for transform in self._transforms)
 
     def __repr__(self) -> str:
         lines = []
@@ -53,10 +52,10 @@ class MultiTransform(ContainerTransform):
 
 
 class Compose(MultiTransform):
-    def forward(self, *inputs: Any, strict: bool = False) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self._transforms:
-            sample = transform(sample, strict=strict)
+            sample = transform(sample)
         return sample
 
 
@@ -65,28 +64,27 @@ class RandomApply(WrapperTransform):
         super().__init__(transform)
         self._p = p
 
-    def forward(self, *inputs: Any, strict: bool = False) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         if float(torch.rand(())) < self._p:
-            # TODO: Should we check here is sample is supported if strict=True?
             return sample
 
-        return self._transform(sample, strict=strict)
+        return self._transform(sample)
 
     def extra_repr(self) -> str:
         return f"p={self._p}"
 
 
 class RandomChoice(MultiTransform):
-    def forward(self, *inputs: Any, strict: bool = False) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         idx = int(torch.randint(len(self._transforms), size=()))
         transform = self._transforms[idx]
-        return transform(*inputs, strict=strict)
+        return transform(*inputs)
 
 
 class RandomOrder(MultiTransform):
-    def forward(self, *inputs: Any, strict: bool = False) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         for idx in torch.randperm(len(self._transforms)):
             transform = self._transforms[idx]
-            inputs = transform(*inputs, strict=strict)
+            inputs = transform(*inputs)
         return inputs
