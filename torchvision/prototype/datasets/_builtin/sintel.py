@@ -40,7 +40,7 @@ except ImportError:
         return zip(a, b)
 
 
-class IntCategoryGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
+class InSceneGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
     def __init__(self, datapipe: IterDataPipe[Tuple[str, T]]) -> None:
         self.datapipe = datapipe
 
@@ -57,25 +57,25 @@ class SINTEL(Dataset):
         return DatasetInfo(
             "sintel",
             type=DatasetType.IMAGE,
-            homepage="",
+            homepage="http://sintel.is.tue.mpg.de/",
             valid_options=dict(
                 split=("train", "test"),
-                pass_=("clean", "final"),
+                pass_name=("clean", "final"),
             ),
         )
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         archive = HttpResource(
-            "http://sintel.cs.washington.edu/MPI-Sintel-complete.zip",
-            sha256="",
+            "http://files.is.tue.mpg.de/sintel/MPI-Sintel-complete.zip",
+            sha256="bdc80abbe6ae13f96f6aa02e04d98a251c017c025408066a00204cd2c7104c5f",
         )
         return [archive]
 
-    def _classify_train_test(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
+    def _filter_split(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
         path = pathlib.Path(data[0])
         return config.split in str(path.parent)
 
-    def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Union[int, None]:
+    def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Optional[int]:
         path = pathlib.Path(data[0])
         if config.pass_ == path.parent.parent.name and path.suffix == ".png":
             return 0
@@ -84,7 +84,7 @@ class SINTEL(Dataset):
         else:
             return None
 
-    def _read_flo(self, file: IterDataPipe[Tuple[Any, io.IOBase]]) -> Any:
+    def _read_flo(self, file: io.IOBase) -> torch.Tensor:
         magic = file.read(4)
         if magic != b"PIEH":
             raise ValueError("Magic number incorrect. Invalid .flo file")
@@ -136,11 +136,11 @@ class SINTEL(Dataset):
         *,
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Tuple[Dict[str, Any], Dict[str, Any]]]:
+    ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         archive_dp = ZipArchiveReader(dp)
 
-        curr_split = Filter(archive_dp, partial(self._classify_train_test, config=config))
+        curr_split = Filter(archive_dp, self._classify_train_test, fn_kwargs=dict(split=split))
 
         pass_images_dp, flo_dp = Demultiplexer(
             curr_split,
