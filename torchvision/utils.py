@@ -304,7 +304,7 @@ def draw_segmentation_masks(
 def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
-    connectivity: Optional[Tuple[Tuple[int, int]]] = None,
+    connectivity: Optional[List[Tuple[int, int]]] = None,
     colors: Optional[Union[str, Tuple[int, int, int]]] = None,
     radius: int = 2,
     width: int = 3,
@@ -318,7 +318,7 @@ def draw_keypoints(
         image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
         keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
             in the format [x, y].
-        connectivity (Tuple[Tuple[int, int]]]): A Tuple of tuple where,
+        connectivity (List[Tuple[int, int]]]): A List of tuple where,
             each tuple contains pair of keypoints to be connected.
         colors (str, Tuple): The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
