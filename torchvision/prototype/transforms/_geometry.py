@@ -18,7 +18,7 @@ class HorizontalFlip(Transform):
     def bounding_box(input: BoundingBox) -> BoundingBox:
         x, y, w, h = input.convert("xywh").to_parts()
         x = input.image_size[1] - (x + w)
-        return BoundingBox.from_parts(x, y, w, h, like=input, format="xywh")
+        return BoundingBox.from_parts(x, y, w, h, like=input, format="xywh").convert(input.format)
 
 
 class Resize(Transform):
@@ -57,7 +57,9 @@ class Resize(Transform):
         new_x2 = old_x2 * width_scale
         new_y2 = old_y2 * height_scale
 
-        return BoundingBox.from_parts(new_x1, new_y1, new_x2, new_y2, like=input, format="xyxy", image_size=size)
+        return BoundingBox.from_parts(
+            new_x1, new_y1, new_x2, new_y2, like=input, format="xyxy", image_size=size
+        ).convert(input.format)
 
     def extra_repr(self) -> str:
         extra_repr = f"size={self.size}"
@@ -112,7 +114,7 @@ class CenterCrop(Transform, wraps=Crop):
         cy = image_height // 2
         h, w = self.crop_size
         crop_box = BoundingBox.from_parts(cx, cy, w, h, image_size=image_size, format="cxcywh")
-        return dict(crop_box=crop_box.convert("xyxy"))
+        return dict(crop_box=crop_box)
 
     def extra_repr(self) -> str:
         return f"crop_size={self.crop_size}"
@@ -130,7 +132,7 @@ class RandomCrop(Transform, wraps=Crop):
         x = torch.randint(0, image_width - crop_width + 1, size=()) if crop_width < image_width else 0
         y = torch.randint(0, image_height - crop_height + 1, size=()) if crop_height < image_height else 0
         crop_box = BoundingBox.from_parts(x, y, crop_width, crop_height, image_size=image_size, format="xywh")
-        return dict(crop_box=crop_box.convert("xyxy"))
+        return dict(crop_box=crop_box)
 
     def extra_repr(self) -> str:
         return f"crop_size={self.crop_size}"

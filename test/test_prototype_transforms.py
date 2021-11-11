@@ -35,11 +35,7 @@ def test_feature_type_support():
 
 @pytest.mark.parametrize(
     "transform_type",
-    [
-        transform_type
-        for transform_type in TRANSFORM_TYPES
-        if transform_type not in (transforms.Lambda, transforms.Identity)
-    ],
+    [transform_type for transform_type in TRANSFORM_TYPES if transform_type is not transforms.Identity],
     ids=lambda transform_type: transform_type.__name__,
 )
 def test_no_op(transform_type):

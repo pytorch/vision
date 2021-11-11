@@ -1,6 +1,4 @@
-import warnings
 from typing import Any, Dict, Sequence
-from typing import Callable
 
 import torch
 from torchvision.prototype.features import Image, BoundingBox, Label
@@ -14,15 +12,6 @@ class Identity(Transform):
         super().__init__()
         for feature_type in self._BUILTIN_FEATURE_TYPES:
             self.register_feature_transform(feature_type, lambda input, **params: input)
-
-
-class Lambda(Transform):
-    def __new__(cls, lambd: Callable) -> Transform:  # type: ignore[misc]
-        warnings.warn("transforms.Lambda(...) is deprecated. Use transforms.Transform.from_callable(...) instead.")
-        # We need to generate a new class everytime a Lambda transform is created, since the feature transforms are
-        # registered on the class rather than on the instance. If we didn't, registering a feature transform will
-        # overwrite it on **all** Lambda transform instances.
-        return Transform.from_callable(lambd, name="Lambda")
 
 
 class Normalize(Transform):
