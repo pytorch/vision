@@ -6,6 +6,13 @@ from torch import Tensor
 from torchvision.transforms import functional as F
 
 
+def one_hot(x, num_classes, on_value=1.0, off_value=0.0, device="cuda"):
+    x = x.long().view(-1, 1)
+    return torch.full((x.size()[0], num_classes), off_value, device=device).scatter_(
+        1, x, on_value
+    )
+
+
 class RandomMixup(torch.nn.Module):
     """Randomly apply Mixup to the provided batch and targets.
     The class implements the data augmentations as described in the paper
@@ -17,9 +24,11 @@ class RandomMixup(torch.nn.Module):
         alpha (float): hyperparameter of the Beta distribution used for mixup.
             Default value is 1.0.
         inplace (bool): boolean to make this transform inplace. Default set to False.
+        smoothing (float): specifies the amount of smoothing when computing the loss, where 0.0 means no smoothing.
     """
 
-    def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
+    def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False,
+                smoothing: float = 0.0) -> None:
         super().__init__()
         assert num_classes > 0, "Please provide a valid positive value for the num_classes."
         assert alpha > 0, "Alpha param can't be zero."
@@ -28,6 +37,7 @@ class RandomMixup(torch.nn.Module):
         self.p = p
         self.alpha = alpha
         self.inplace = inplace
+        self.smoothing = smoothing
 
     def forward(self, batch: Tensor, target: Tensor) -> Tuple[Tensor, Tensor]:
         """
@@ -52,7 +62,9 @@ class RandomMixup(torch.nn.Module):
             target = target.clone()
 
         if target.ndim == 1:
-            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=batch.dtype)
+            off_value = self.smoothing / self.num_classes
+            on_value = 1.0 - self.smoothing + off_value
+            target = one_hot(target, self.num_classes, on_value, off_value, target.device)
 
         if torch.rand(1).item() >= self.p:
             return batch, target
@@ -93,9 +105,11 @@ class RandomCutmix(torch.nn.Module):
         alpha (float): hyperparameter of the Beta distribution used for cutmix.
             Default value is 1.0.
         inplace (bool): boolean to make this transform inplace. Default set to False.
+        smoothing (float): specifies the amount of smoothing when computing the loss, where 0.0 means no smoothing.
     """
 
-    def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
+    def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False,
+                smoothing: float = 0.0) -> None:
         super().__init__()
         assert num_classes > 0, "Please provide a valid positive value for the num_classes."
         assert alpha > 0, "Alpha param can't be zero."
@@ -104,6 +118,7 @@ class RandomCutmix(torch.nn.Module):
         self.p = p
         self.alpha = alpha
         self.inplace = inplace
+        self.smoothing = smoothing
 
     def forward(self, batch: Tensor, target: Tensor) -> Tuple[Tensor, Tensor]:
         """
@@ -128,7 +143,9 @@ class RandomCutmix(torch.nn.Module):
             target = target.clone()
 
         if target.ndim == 1:
-            target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).to(dtype=batch.dtype)
+            off_value = self.smoothing / self.num_classes
+            on_value = 1.0 - self.smoothing + off_value
+            target = one_hot(target, self.num_classes, on_value, off_value, target.device)
 
         if torch.rand(1).item() >= self.p:
             return batch, target
