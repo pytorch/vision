@@ -237,9 +237,10 @@ def main(args):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     if args.mixup_alpha > 0.0 or args.cutmix_alpha > 0.0:
-        criterion = SoftTargetCrossEntropy()
+        train_criterion = SoftTargetCrossEntropy()
     else:
-        criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
+        train_criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
+    test_criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     if args.norm_weight_decay is None:
         parameters = model.parameters()
@@ -335,9 +336,9 @@ def main(args):
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
         if model_ema:
-            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
+            evaluate(model_ema, test_criterion, data_loader_test, device=device, log_suffix="EMA")
         else:
-            evaluate(model, criterion, data_loader_test, device=device)
+            evaluate(model, test_criterion, data_loader_test, device=device)
         return
 
     print("Start training")
@@ -345,11 +346,11 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
+        train_one_epoch(model, train_criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
         lr_scheduler.step()
-        evaluate(model, criterion, data_loader_test, device=device)
+        evaluate(model, test_criterion, data_loader_test, device=device)
         if model_ema:
-            evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
+            evaluate(model_ema, test_criterion, data_loader_test, device=device, log_suffix="EMA")
         if args.output_dir:
             checkpoint = {
                 "model": model_without_ddp.state_dict(),
