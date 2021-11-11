@@ -3,11 +3,13 @@ from typing import Any, Dict, Tuple, Union
 import torch
 from torch.nn.functional import interpolate
 from torchvision.prototype.datasets.utils import SampleQuery
-from torchvision.prototype.features import BoundingBox, Image
+from torchvision.prototype.features import BoundingBox, Image, Label
 from torchvision.prototype.transforms import Transform
 
 
 class HorizontalFlip(Transform):
+    NO_OP_FEATURE_TYPES = {Label}
+
     @staticmethod
     def image(input: Image) -> Image:
         return Image(input.flip((-1,)), like=input)
@@ -20,6 +22,8 @@ class HorizontalFlip(Transform):
 
 
 class Resize(Transform):
+    NO_OP_FEATURE_TYPES = {Label}
+
     def __init__(
         self,
         size: Union[int, Tuple[int, int]],
@@ -80,6 +84,8 @@ class RandomResize(Transform, wraps=Resize):
 
 
 class Crop(Transform):
+    NO_OP_FEATURE_TYPES = {BoundingBox, Label}
+
     def __init__(self, crop_box: BoundingBox) -> None:
         super().__init__()
         self.crop_box = crop_box.convert("xyxy")

@@ -3,7 +3,7 @@ from typing import Any, Dict, Sequence
 from typing import Callable
 
 import torch
-from torchvision.prototype.features import Image
+from torchvision.prototype.features import Image, BoundingBox, Label
 from torchvision.prototype.transforms import Transform
 
 
@@ -26,6 +26,8 @@ class Lambda(Transform):
 
 
 class Normalize(Transform):
+    NO_OP_FEATURE_TYPES = {BoundingBox, Label}
+
     def __init__(self, mean: Sequence[float], std: Sequence[float]):
         super().__init__()
         self.mean = mean

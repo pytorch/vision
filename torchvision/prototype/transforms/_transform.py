@@ -156,6 +156,8 @@ class Transform(nn.Module):
         cls, *, wraps: Optional[Type["Transform"]] = None, auto_register: bool = True, verbose: bool = False
     ):
         cls._feature_transforms = {} if wraps is None else wraps._feature_transforms.copy()
+        if wraps:
+            cls.NO_OP_FEATURE_TYPES = wraps.NO_OP_FEATURE_TYPES
         if auto_register:
             cls._auto_register(verbose=verbose)
 
