@@ -2,7 +2,7 @@ import io
 import pathlib
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar
 
 import numpy as np
 import torch
@@ -27,10 +27,8 @@ from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
 T = TypeVar("T")
 
-FILE_NAME_PATTERN = re.compile(r"(frame|image)_(?P<idx>\d+)[.](flo|png)")
-
 try:
-    from itertools import pairwise  # type: ignore
+    from itertools import pairwise  # type: ignore[attr-defined]
 except ImportError:
     from itertools import tee
 
@@ -53,6 +51,9 @@ class InSceneGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
 
 
 class SINTEL(Dataset):
+
+    _FILE_NAME_PATTERN = re.compile(r"(frame|image)_(?P<idx>\d+)[.](flo|png)")
+
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "sintel",
@@ -71,15 +72,23 @@ class SINTEL(Dataset):
         )
         return [archive]
 
-    def _filter_split(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
+    def _filter_split(self, data: Tuple[str, Any], *, split: str) -> bool:
         path = pathlib.Path(data[0])
-        return config.split in str(path.parent)
+        # The dataset contains has the folder "training", while allowed options for `split` are
+        # "train" and "test", we don't check for equality here ("train" != "training") and instead
+        # check if split is in the folder name
+        return split in path.parent.parent.parent.name
 
-    def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Optional[int]:
+    def _filter_images(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
-        if config.pass_ == path.parent.parent.name and path.suffix == ".png":
+        return pass_name in str(path.parent) and path.suffix == ".png"
+
+    def _classify_archive(self, data: Tuple[str, Any], *, pass_name: str) -> Optional[int]:
+        path = pathlib.Path(data[0])
+        suffix = path.suffix
+        if suffix == ".flo":
             return 0
-        elif path.suffix == ".flo":
+        elif pass_name == path.parent.parent.name and suffix == ".png":
             return 1
         else:
             return None
@@ -91,13 +100,15 @@ class SINTEL(Dataset):
         w = int.from_bytes(file.read(4), "little")
         h = int.from_bytes(file.read(4), "little")
         data = file.read(2 * w * h * 4)
-        data = np.frombuffer(data, dtype=np.float32)
-        return data.reshape(h, w, 2).transpose(2, 0, 1)
+        data_arr = np.frombuffer(data, dtype=np.float32)
+        # Creating a copy of the underlying array, to avoid UserWarning: "The given NumPy array
+        #     is not writeable, and PyTorch does not support non-writeable tensors."
+        return torch.from_numpy(np.copy(data_arr.reshape(h, w, 2).transpose(2, 0, 1)))
 
     def _flows_key(self, data: Tuple[str, Any]) -> Tuple[str, int]:
         path = pathlib.Path(data[0])
         category = path.parent.name
-        idx = int(FILE_NAME_PATTERN.match(path.name).group("idx"))  # type: ignore[union-attr]
+        idx = int(self._FILE_NAME_PATTERN.match(path.name).group("idx"))  # type: ignore[union-attr]
         return category, idx
 
     def _images_key(self, data: Tuple[Tuple[str, Any], Tuple[str, Any]]) -> Tuple[str, int]:
@@ -110,24 +121,24 @@ class SINTEL(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
         config: DatasetConfig,
     ) -> Dict[str, Any]:
+        # flo, images = data
+        # img1, img2 = images
+
         if config.split == "train":
             flo, images = data
             img1, img2 = images
             flow_arr = self._read_flo(flo[1])
-            del images, flo
         else:
             # When split is `test`
             img1, img2 = data
-
-        del data
 
         path1, buffer1 = img1
         path2, buffer2 = img2
 
         return dict(
-            image1=decoder(buffer1) if decoder else buffer1,
-            image2=decoder(buffer2) if decoder else buffer2,
-            flow=flow_arr if config.split == "train" else None,
+            image1=(path1, decoder(buffer1)) if decoder else (path1, buffer1),
+            image2=(path2, decoder(buffer2)) if decoder else (path2, buffer2),
+            flow=(flo[0], flow_arr) if config.split == "train" else ("", None),
         )
 
     def _make_datapipe(
@@ -140,19 +151,17 @@ class SINTEL(Dataset):
         dp = resource_dps[0]
         archive_dp = ZipArchiveReader(dp)
 
-        curr_split = Filter(archive_dp, self._classify_train_test, fn_kwargs=dict(split=split))
-
-        pass_images_dp, flo_dp = Demultiplexer(
-            curr_split,
-            2,
-            partial(self._classify_archive, config=config),
-            drop_none=True,
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
-        flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
-
-        pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[stry, Any]] = IntCategoryGrouper(pass_images_dp)
+        curr_split = Filter(archive_dp, self._filter_split, fn_kwargs=dict(split=config.split))
         if config.split == "train":
+            flo_dp, pass_images_dp = Demultiplexer(
+                curr_split,
+                2,
+                partial(self._classify_archive, pass_name=config.pass_name),
+                drop_none=True,
+                buffer_size=INFINITE_BUFFER_SIZE,
+            )
+            flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
+            pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[stry, Any]] = InSceneGrouper(pass_images_dp)
             zipped_dp = IterKeyZipper(
                 flo_dp,
                 pass_images_dp,
@@ -161,7 +170,13 @@ class SINTEL(Dataset):
             )
             return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config))
         else:
-            # When split is `test`, flo_dp will be empty and thus should not be zipped with pass_images_dp
+            # When config.split is "test"
+            # There are no flow files for test split
+            # TODO: How to zip an empty IterDataPipe and pass to the Mapper?
+            # flo_dp = IterDataPipe()
+            pass_images_dp = Filter(curr_split, self._filter_images, fn_kwargs=dict(pass_name=config.pass_name))
+            pass_images_dp = Shuffler(pass_images_dp, buffer_size=INFINITE_BUFFER_SIZE)
+            pass_images_dp = InSceneGrouper(pass_images_dp)
             return Mapper(
                 pass_images_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config)
             )
