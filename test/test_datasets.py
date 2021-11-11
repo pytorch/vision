@@ -1873,7 +1873,7 @@ class LFWPairsTestCase(LFWPeopleTestCase):
 
 class SintelTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Sintel
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"), pass_name=("clean", "final", "both"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     FLOW_H, FLOW_W = 3, 4
@@ -1909,16 +1909,19 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
         # which are frame_0000, frame_0001 and frame_0002
         # They will be consecutively paired as (frame_0000, frame_0001), (frame_0001, frame_0002),
         # that is 3 - 1 = 2 examples. Hence the formula below
-        num_examples = (num_images_per_scene - 1) * num_scenes
+        num_passes = 2 if config["pass_name"] == "both" else 1
+        num_examples = (num_images_per_scene - 1) * num_scenes * num_passes
         return num_examples
 
     def test_flow(self):
         # Make sure flow exists for train split, and make sure there are as many flow values as (pairs of) images
+        h, w = self.FLOW_H, self.FLOW_W
+        expected_flow = np.arange(2 * h * w).reshape(h, w, 2).transpose(2, 0, 1)
         with self.create_dataset(split="train") as (dataset, _):
             assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
             for _, _, flow in dataset:
-                assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
-                np.testing.assert_allclose(flow, np.arange(flow.size).reshape(flow.shape))
+                assert flow.shape == (2, h, w)
+                np.testing.assert_allclose(flow, expected_flow)
 
         # Make sure flow is always None for test split
         with self.create_dataset(split="test") as (dataset, _):
@@ -1942,7 +1945,7 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
 
     def inject_fake_data(self, tmpdir, config):
-        root = pathlib.Path(tmpdir) / "Kitti"
+        root = pathlib.Path(tmpdir) / "KittiFlow"
 
         num_examples = 2 if config["split"] == "train" else 3
         for split_dir in ("training", "testing"):
@@ -2041,11 +2044,86 @@ class FlyingChairsTestCase(datasets_utils.ImageDatasetTestCase):
     def test_flow(self, config):
         # Make sure flow always exists, and make sure there are as many flow values as (pairs of) images
         # Also make sure the flow is properly decoded
+
+        h, w = self.FLOW_H, self.FLOW_W
+        expected_flow = np.arange(2 * h * w).reshape(h, w, 2).transpose(2, 0, 1)
+        with self.create_dataset(config=config) as (dataset, _):
+            assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
+            for _, _, flow in dataset:
+                assert flow.shape == (2, h, w)
+                np.testing.assert_allclose(flow, expected_flow)
+
+
+class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FlyingThings3D
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test"), pass_name=("clean", "final", "both"), camera=("left", "right", "both")
+    )
+    FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
+
+    FLOW_H, FLOW_W = 3, 4
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "FlyingThings3D"
+
+        num_images_per_camera = 3 if config["split"] == "train" else 4
+        passes = ("frames_cleanpass", "frames_finalpass")
+        splits = ("TRAIN", "TEST")
+        letters = ("A", "B", "C")
+        subfolders = ("0000", "0001")
+        cameras = ("left", "right")
+        for pass_name, split, letter, subfolder, camera in itertools.product(
+            passes, splits, letters, subfolders, cameras
+        ):
+            current_folder = root / pass_name / split / letter / subfolder
+            datasets_utils.create_image_folder(
+                current_folder,
+                name=camera,
+                file_name_fn=lambda image_idx: f"00{image_idx}.png",
+                num_examples=num_images_per_camera,
+            )
+
+        directions = ("into_future", "into_past")
+        for split, letter, subfolder, direction, camera in itertools.product(
+            splits, letters, subfolders, directions, cameras
+        ):
+            current_folder = root / "optical_flow" / split / letter / subfolder / direction / camera
+            os.makedirs(str(current_folder), exist_ok=True)
+            for i in range(num_images_per_camera):
+                datasets_utils.make_fake_pfm_file(self.FLOW_H, self.FLOW_W, file_name=str(current_folder / f"{i}.pfm"))
+
+        num_cameras = 2 if config["camera"] == "both" else 1
+        num_passes = 2 if config["pass_name"] == "both" else 1
+        num_examples = (
+            (num_images_per_camera - 1) * num_cameras * len(subfolders) * len(letters) * len(splits) * num_passes
+        )
+        return num_examples
+
+    @datasets_utils.test_all_configs
+    def test_flow(self, config):
+        h, w = self.FLOW_H, self.FLOW_W
+        expected_flow = np.arange(3 * h * w).reshape(h, w, 3).transpose(2, 0, 1)
+        expected_flow = np.flip(expected_flow, axis=1)
+        expected_flow = expected_flow[:2, :, :]
+
         with self.create_dataset(config=config) as (dataset, _):
             assert dataset._flow_list and len(dataset._flow_list) == len(dataset._image_list)
             for _, _, flow in dataset:
                 assert flow.shape == (2, self.FLOW_H, self.FLOW_W)
-                np.testing.assert_allclose(flow, np.arange(flow.size).reshape(flow.shape))
+                np.testing.assert_allclose(flow, expected_flow)
+
+    def test_bad_input(self):
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument split"):
+            with self.create_dataset(split="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument pass_name"):
+            with self.create_dataset(pass_name="bad"):
+                pass
+
+        with pytest.raises(ValueError, match="Unknown value 'bad' for argument camera"):
+            with self.create_dataset(camera="bad"):
+                pass
 
 
 if __name__ == "__main__":
