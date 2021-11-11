@@ -917,6 +917,8 @@ jobs:
     <<: *binary_common
     executor:
       name: windows-gpu
+    environment:
+      cu_version: "cu111"
     steps:
       - checkout_merge
       - designate_upload_channel
