@@ -11,6 +11,11 @@ from torchvision.prototype.utils._internal import sequence_to_str
 make_tensor = functools.partial(_make_tensor, device="cpu", dtype=torch.float32)
 
 
+def make_image(**kwargs):
+    data = make_tensor((3, *torch.randint(16, 33, (2,)).tolist()))
+    return features.Image(data, **kwargs)
+
+
 def make_bounding_box(*, format="xyxy", image_size=(10, 10)):
     if isinstance(format, str):
         format = features.BoundingBoxFormat[format]
@@ -42,6 +47,7 @@ def make_bounding_box(*, format="xyxy", image_size=(10, 10)):
 
 
 MAKE_DATA_MAP = {
+    features.Image: make_image,
     features.BoundingBox: make_bounding_box,
 }
 
