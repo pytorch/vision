@@ -1,6 +1,8 @@
 import warnings
 from typing import Any, Optional
 
+from torchvision.prototype.transforms import CocoEval
+
 from ....models.detection.keypoint_rcnn import (
     _resnet_fpn_extractor,
     _validate_trainable_layers,
@@ -8,7 +10,6 @@ from ....models.detection.keypoint_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from ...transforms.presets import CocoEval
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
 from ..resnet import ResNet50Weights, resnet50
