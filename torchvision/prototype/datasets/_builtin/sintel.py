@@ -77,7 +77,7 @@ class SINTEL(Dataset):
         # The dataset contains has the folder "training", while allowed options for `split` are
         # "train" and "test", we don't check for equality here ("train" != "training") and instead
         # check if split is in the folder name
-        return split in path.parent.parent.parent.name
+        return split in path.parents[2].name
 
     def _filter_images(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
