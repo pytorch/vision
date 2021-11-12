@@ -2126,5 +2126,47 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
                 pass
 
 
+class HD1KTestCase(KittiFlowTestCase):
+    DATASET_CLASS = datasets.HD1K
+
+    def inject_fake_data(self, tmpdir, config):
+        root = pathlib.Path(tmpdir) / "hd1k"
+
+        num_sequences = 4 if config["split"] == "train" else 3
+        num_examples_per_train_sequence = 3
+
+        for seq_idx in range(num_sequences):
+            # Training data
+            datasets_utils.create_image_folder(
+                root / "hd1k_input",
+                name="image_2",
+                file_name_fn=lambda image_idx: f"{seq_idx:06d}_{image_idx}.png",
+                num_examples=num_examples_per_train_sequence,
+            )
+            datasets_utils.create_image_folder(
+                root / "hd1k_flow_gt",
+                name="flow_occ",
+                file_name_fn=lambda image_idx: f"{seq_idx:06d}_{image_idx}.png",
+                num_examples=num_examples_per_train_sequence,
+            )
+
+            # Test data
+            datasets_utils.create_image_folder(
+                root / "hd1k_challenge",
+                name="image_2",
+                file_name_fn=lambda _: f"{seq_idx:06d}_10.png",
+                num_examples=1,
+            )
+            datasets_utils.create_image_folder(
+                root / "hd1k_challenge",
+                name="image_2",
+                file_name_fn=lambda _: f"{seq_idx:06d}_11.png",
+                num_examples=1,
+            )
+
+        num_examples_per_sequence = num_examples_per_train_sequence if config["split"] == "train" else 2
+        return num_sequences * (num_examples_per_sequence - 1)
+
+
 if __name__ == "__main__":
     unittest.main()
