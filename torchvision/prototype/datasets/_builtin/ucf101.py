@@ -41,11 +41,11 @@ class ucf101(Dataset):
         return [
             HttpResource(
                 "https://www.crcv.ucf.edu/data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip",
-                sha256="",
+                sha256="5c0d1a53b8ed364a2ac830a73f405e51bece7d98ce1254fd19ed4a36b224bd27",
             ),
             HttpResource(
                 "https://www.crcv.ucf.edu/data/UCF101/UCF101.rar",
-                sha256="",
+                sha256="ca8dfadb4c891cb11316f94d52b6b0ac2a11994e67a0cae227180cd160bd8e55",
             )
         ]
 
