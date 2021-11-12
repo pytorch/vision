@@ -25,11 +25,10 @@ from torchvision.prototype.datasets.utils import (
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
-T = TypeVar("T")
-
 try:
     from itertools import pairwise  # type: ignore[attr-defined]
 except ImportError:
+    T = TypeVar("T")
     from itertools import tee
 
     def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
@@ -53,6 +52,7 @@ class InSceneGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
 class SINTEL(Dataset):
 
     _FILE_NAME_PATTERN = re.compile(r"(frame|image)_(?P<idx>\d+)[.](flo|png)")
+    _PASS_NAME_BOTH = re.compile(r"clean|final")
 
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -61,7 +61,7 @@ class SINTEL(Dataset):
             homepage="http://sintel.is.tue.mpg.de/",
             valid_options=dict(
                 split=("train", "test"),
-                pass_name=("clean", "final"),
+                pass_name=("clean", "final", "both"),
             ),
         )
 
@@ -81,15 +81,19 @@ class SINTEL(Dataset):
 
     def _filter_images(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
-        return pass_name in str(path.parent) and path.suffix == ".png"
+        regexp = self._PASS_NAME_BOTH if pass_name == "both" else re.compile(pass_name)
+        matched = regexp.search(str(path.parent))
+        return (True if matched else False) and path.suffix == ".png"
 
     def _classify_archive(self, data: Tuple[str, Any], *, pass_name: str) -> Optional[int]:
         path = pathlib.Path(data[0])
         suffix = path.suffix
         if suffix == ".flo":
             return 0
-        elif pass_name == path.parent.parent.name and suffix == ".png":
-            return 1
+        elif suffix == ".png":
+            regexp = self._PASS_NAME_BOTH if pass_name == "both" else re.compile(pass_name)
+            matched = regexp.search(path.parents[1].name)
+            return 1 if matched else None
         else:
             return None
 
@@ -121,24 +125,20 @@ class SINTEL(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
         config: DatasetConfig,
     ) -> Dict[str, Any]:
-        # flo, images = data
-        # img1, img2 = images
-
-        if config.split == "train":
-            flo, images = data
-            img1, img2 = images
-            flow_arr = self._read_flo(flo[1])
-        else:
-            # When split is `test`
-            img1, img2 = data
+        flo, images = data
+        img1, img2 = images
+        flow_arr = self._read_flo(flo[1]) if flo[1] else None
 
         path1, buffer1 = img1
         path2, buffer2 = img2
 
         return dict(
-            image1=(path1, decoder(buffer1)) if decoder else (path1, buffer1),
-            image2=(path2, decoder(buffer2)) if decoder else (path2, buffer2),
-            flow=(flo[0], flow_arr) if config.split == "train" else ("", None),
+            image1=decoder(buffer1) if decoder else buffer1,
+            image1_path=path1,
+            image2=decoder(buffer2) if decoder else buffer2,
+            image2_path=path2,
+            flow=flow_arr,
+            flow_path=flo[0] or "",
         )
 
     def _make_datapipe(
@@ -168,15 +168,12 @@ class SINTEL(Dataset):
                 key_fn=self._flows_key,
                 ref_key_fn=self._images_key,
             )
-            return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config))
         else:
-            # When config.split is "test"
-            # There are no flow files for test split
-            # TODO: How to zip an empty IterDataPipe and pass to the Mapper?
-            # flo_dp = IterDataPipe()
             pass_images_dp = Filter(curr_split, self._filter_images, fn_kwargs=dict(pass_name=config.pass_name))
             pass_images_dp = Shuffler(pass_images_dp, buffer_size=INFINITE_BUFFER_SIZE)
             pass_images_dp = InSceneGrouper(pass_images_dp)
-            return Mapper(
-                pass_images_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config)
-            )
+            # When config.split is "test"
+            # There are no flow files for test split, hence we create a fake flow data
+            zipped_dp = Mapper(pass_images_dp, lambda data: ((None, None), data))
+
+        return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config))
