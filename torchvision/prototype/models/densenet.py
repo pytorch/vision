@@ -4,10 +4,10 @@ from functools import partial
 from typing import Any, Optional, Tuple
 
 import torch.nn as nn
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.densenet import DenseNet
-from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
 
