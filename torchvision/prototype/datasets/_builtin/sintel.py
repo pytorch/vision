@@ -83,8 +83,8 @@ class SINTEL(Dataset):
     def _filter_images(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
         regexp = self._PASS_NAME_BOTH if pass_name == "both" else re.compile(pass_name)
-        matched = regexp.search(str(path.parent))
-        return (True if matched else False) and path.suffix == ".png"
+        matched = bool(regexp.search(str(path.parent)))
+        return matched and path.suffix == ".png"
 
     def _classify_archive(self, data: Tuple[str, Any], *, pass_name: str) -> Optional[int]:
         path = pathlib.Path(data[0])
