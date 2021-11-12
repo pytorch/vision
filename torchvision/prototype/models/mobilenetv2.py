@@ -2,10 +2,10 @@ import warnings
 from functools import partial
 from typing import Any, Optional
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv2 import MobileNetV2
-from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
 
