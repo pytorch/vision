@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
 
-import numpy as np
 import torch
 from torchdata.datapipes.iter import CSVParser, KeyZipper
 from torch.utils.data import IterDataPipe
@@ -58,12 +57,11 @@ class ucf101(Dataset):
 
     def _collate_and_decode(
         self,
-        data: Tuple[np.ndarray, int],
+        data: Tuple[Tuple[str, int], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         annotations_d, file_d = data
-
         label = annotations_d[1]
         _path, file_handle = file_d
         file = decoder(file_handle) if decoder else file_handle
