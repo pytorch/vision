@@ -28,8 +28,9 @@ from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 try:
     from itertools import pairwise  # type: ignore[attr-defined]
 except ImportError:
-    T = TypeVar("T")
     from itertools import tee
+
+    T = TypeVar("T")
 
     def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
         a, b = tee(iterable)
