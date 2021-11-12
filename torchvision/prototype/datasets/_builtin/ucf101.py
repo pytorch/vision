@@ -49,7 +49,7 @@ class ucf101(Dataset):
                 sha256="",
             )
         ]
-    
+
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[1].to_datapipe(pathlib.Path(root) / self.name)
         dp = RarArchiveReader(dp)

@@ -60,8 +60,8 @@ class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
                     img = frame.to_image()
 
                     video_meta = {"time_base": float(frame.time_base),
-                                  "guessed_fps": float(stream.guessed_rate),}
-                    
+                                  "guessed_fps": float(stream.guessed_rate)}
+
                     yield dict(video_d, frame=img, pts=frame.pts, video_meta=video_meta)
 
 class AVClipReader(IterDataPipe[Dict[str, Any]]):
@@ -99,7 +99,7 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
         o_stride = tensor.stride(0)
         numel = tensor.numel()
         new_stride = (self.step_between_clips * o_stride, dilation * o_stride)
-        new_size = ((numel - (dilation * (self.num_frames_per_clip - 1) + 1)) // self.step_between_clips + 1, 
+        new_size = ((numel - (dilation * (self.num_frames_per_clip - 1) + 1)) // self.step_between_clips + 1,
                     self.num_frames_per_clip)
         if new_size[0] < 1:
             new_size = (0, self.num_frames_per_clip)
