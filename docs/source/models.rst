@@ -323,10 +323,6 @@ Inception v3
 
     inception_v3
 
-.. note ::
-    This requires `scipy` to be installed
-
-
 GoogLeNet
 ------------
 
@@ -335,10 +331,6 @@ GoogLeNet
     :template: function.rst
 
     googlenet
-
-.. note ::
-    This requires `scipy` to be installed
-
 
 ShuffleNet v2
 -------------

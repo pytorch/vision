@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     TarArchiveReader,
     Shuffler,
     Filter,
-    KeyZipper,
+    IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -124,7 +124,7 @@ class Caltech101(Dataset):
         anns_dp = TarArchiveReader(anns_dp)
         anns_dp = Filter(anns_dp, self._is_ann)
 
-        dp = KeyZipper(
+        dp = IterKeyZipper(
             images_dp,
             anns_dp,
             key_fn=self._images_key_fn,
