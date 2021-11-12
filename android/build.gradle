@@ -15,13 +15,16 @@ allprojects {
             androidSupportAppCompatV7Version = "28.0.0"
             fbjniJavaOnlyVersion = "0.0.3"
             soLoaderNativeLoaderVersion = "0.8.0"
-            pytorchAndroidVersion = "1.10.0"
+            pytorchAndroidVersion = "1.11.0-SNAPSHOT"
         }
 
         repositories {
             google()
             mavenCentral()
             jcenter()
+            maven {
+                url 'http://oss.sonatype.org/content/repositories/snapshots'
+            }
         }
 
         dependencies {
@@ -33,6 +36,9 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven {
+            url 'http://oss.sonatype.org/content/repositories/snapshots'
+        }
     }
 }
 
