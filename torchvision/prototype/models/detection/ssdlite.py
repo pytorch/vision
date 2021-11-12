@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Callable, Optional
 
 from torch import nn
+from torchvision.prototype.transforms import CocoEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.ssdlite import (
@@ -14,7 +15,6 @@ from ....models.detection.ssdlite import (
     SSD,
     SSDLiteHead,
 )
-from ...transforms.presets import CocoEval
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
