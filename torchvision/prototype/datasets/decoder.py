@@ -1,7 +1,6 @@
 import io
 from typing import cast
 
-import av
 import PIL.Image
 import torch
 from torchvision.transforms.functional import pil_to_tensor
