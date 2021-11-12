@@ -54,6 +54,7 @@ default = object()
 DEFAULT_DECODER: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
     DatasetType.RAW: raw,
     DatasetType.IMAGE: pil,
+    DatasetType.VIDEO: None,
 }
 
 
