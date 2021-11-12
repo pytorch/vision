@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+c425035 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+3dd4891 ) &#x25BC</a>
     </div>
     
 
@@ -338,6 +338,7 @@
     <span class="s2">&quot;Sintel&quot;</span><span class="p">,</span>
     <span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">,</span>
     <span class="s2">&quot;FlyingChairs&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HD1K&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -680,6 +681,73 @@
 
     <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_read_pfm</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">HD1K</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;`HD1K &lt;http://hci-benchmark.iwr.uni-heidelberg.de/&gt;`__ dataset for optical flow.</span>
+
+<span class="sd">    The dataset is expected to have the following structure: ::</span>
+
+<span class="sd">        root</span>
+<span class="sd">            hd1k</span>
+<span class="sd">                hd1k_challenge</span>
+<span class="sd">                    image_2</span>
+<span class="sd">                hd1k_flow_gt</span>
+<span class="sd">                    flow_occ</span>
+<span class="sd">                hd1k_input</span>
+<span class="sd">                    image_2</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root (string): Root directory of the HD1K Dataset.</span>
+<span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
+<span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
+<span class="sd">            ``img1, img2, flow, valid`` and returns a transformed version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">)</span>
+
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;hd1k&quot;</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+            <span class="c1"># There are 36 &quot;sequences&quot; and we don&#39;t want seq i to overlap with seq i + 1, so we need this for loop</span>
+            <span class="k">for</span> <span class="n">seq_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">36</span><span class="p">):</span>
+                <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_flow_gt&quot;</span> <span class="o">/</span> <span class="s2">&quot;flow_occ&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seq_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">_*.png&quot;</span><span class="p">)))</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_input&quot;</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seq_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">_*.png&quot;</span><span class="p">)))</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flows</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">images1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_challenge&quot;</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*10.png&quot;</span><span class="p">)))</span>
+            <span class="n">images2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_challenge&quot;</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*11.png&quot;</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">image1</span><span class="p">,</span> <span class="n">image2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">images1</span><span class="p">,</span> <span class="n">images2</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">image1</span><span class="p">,</span> <span class="n">image2</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not find the HD1K images. Please make sure the directory structure is correct.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_read_16bits_png_with_flow_and_valid_mask</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index(int): The index of the example to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: If ``split=&quot;train&quot;`` a 4-tuple with ``(img1, img2, flow,</span>
+<span class="sd">            valid)`` where ``valid`` is a numpy boolean mask of shape (H, W)</span>
+<span class="sd">            indicating which flow values are valid. The flow is a numpy array of</span>
+<span class="sd">            shape (2, H, W) and the images are PIL images. If `split=&quot;test&quot;`, a</span>
+<span class="sd">            4-tuple with ``(img1, img2, None, None)`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_read_flo</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>

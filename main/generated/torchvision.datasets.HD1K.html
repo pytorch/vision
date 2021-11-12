@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>get_graph_node_names &mdash; Torchvision main documentation</title>
+  <title>HD1K &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Operators" href="../ops.html" />
-    <link rel="prev" title="create_feature_extractor" href="torchvision.models.feature_extraction.create_feature_extractor.html" />
+    <link rel="next" title="HMDB51" href="torchvision.datasets.HMDB51.html" />
+    <link rel="prev" title="FlyingThings3D" href="torchvision.datasets.FlyingThings3D.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -224,10 +224,10 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
@@ -286,15 +286,15 @@
       </li>
 
         
-          <li><a href="../feature_extraction.html">Feature extraction for model inspection</a> &gt;</li>
+          <li><a href="../datasets.html">Datasets</a> &gt;</li>
         
-      <li>get_graph_node_names</li>
+      <li>HD1K</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="../_sources/generated/torchvision.models.feature_extraction.get_graph_node_names.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
+            <a href="../_sources/generated/torchvision.datasets.HD1K.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -320,53 +320,58 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="get-graph-node-names">
-<h1>get_graph_node_names<a class="headerlink" href="#get-graph-node-names" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt id="torchvision.models.feature_extraction.get_graph_node_names">
-<code class="sig-prename descclassname"><span class="pre">torchvision.models.feature_extraction.</span></code><code class="sig-name descname"><span class="pre">get_graph_node_names</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.nn.modules.module.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracer_kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_diff_warning</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/torchvision/models/feature_extraction.html#get_graph_node_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.feature_extraction.get_graph_node_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dev utility to return node names in order of execution. See note on node
-names under <a class="reference internal" href="torchvision.models.feature_extraction.create_feature_extractor.html#torchvision.models.feature_extraction.create_feature_extractor" title="torchvision.models.feature_extraction.create_feature_extractor"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_feature_extractor()</span></code></a>. Useful for seeing which node
-names are available for feature extraction. There are two reasons that
-node names can’t easily be read directly from the code for a model:</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li><p>Not all submodules are traced through. Modules from <code class="docutils literal notranslate"><span class="pre">torch.nn</span></code> all
-fall within this category.</p></li>
-<li><p>Nodes representing the repeated application of the same operation
-or leaf module get a <code class="docutils literal notranslate"><span class="pre">_{counter}</span></code> postfix.</p></li>
-</ol>
-</div></blockquote>
-<p>The model is traced twice: once in train mode, and once in eval mode. Both
-sets of node names are returned.</p>
-<p>For more details on the node naming conventions used here, please see the
-<a class="reference internal" href="../feature_extraction.html#about-node-names"><span class="std std-ref">relevant subheading</span></a> in the
-<a class="reference external" href="https://pytorch.org/vision/stable/feature_extraction.html">documentation</a>.</p>
+  <div class="section" id="hd1k">
+<h1>HD1K<a class="headerlink" href="#hd1k" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="torchvision.datasets.HD1K">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.datasets.</span></code><code class="sig-name descname"><span class="pre">HD1K</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/_optical_flow.html#HD1K"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.HD1K" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://hci-benchmark.iwr.uni-heidelberg.de/">HD1K</a> dataset for optical flow.</p>
+<p>The dataset is expected to have the following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span>
+    <span class="n">hd1k</span>
+        <span class="n">hd1k_challenge</span>
+            <span class="n">image_2</span>
+        <span class="n">hd1k_flow_gt</span>
+            <span class="n">flow_occ</span>
+        <span class="n">hd1k_input</span>
+            <span class="n">image_2</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<em>nn.Module</em>) – model for which we’d like to print node names</p></li>
-<li><p><strong>tracer_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – a dictionary of keywork arguments for
-<code class="docutils literal notranslate"><span class="pre">NodePathTracer</span></code> (they are eventually passed onto
-<a class="reference external" href="https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer">torch.fx.Tracer</a>).</p></li>
-<li><p><strong>suppress_diff_warning</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – whether to suppress a warning
-when there are discrepancies between the train and eval version of
-the graph. Defaults to False.</p></li>
+<li><p><strong>root</strong> (<em>string</em>) – Root directory of the HD1K Dataset.</p></li>
+<li><p><strong>split</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset split, either “train” (default) or “test”</p></li>
+<li><p><strong>transforms</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in
+<code class="docutils literal notranslate"><span class="pre">img1,</span> <span class="pre">img2,</span> <span class="pre">flow,</span> <span class="pre">valid</span></code> and returns a transformed version.</p></li>
 </ul>
 </dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Special-members</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<dl class="py method">
+<dt id="torchvision.datasets.HD1K.__getitem__">
+<code class="sig-name descname"><span class="pre">__getitem__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/_optical_flow.html#HD1K.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.HD1K.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return example at given index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The index of the example to retrieve</p>
+</dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a list of node names from tracing the model in
-train mode, and another from tracing the model in eval mode.</p>
+<dd class="field-even"><p>If <code class="docutils literal notranslate"><span class="pre">split=&quot;train&quot;</span></code> a 4-tuple with <code class="docutils literal notranslate"><span class="pre">(img1,</span> <span class="pre">img2,</span> <span class="pre">flow,</span>
+<span class="pre">valid)</span></code> where <code class="docutils literal notranslate"><span class="pre">valid</span></code> is a numpy boolean mask of shape (H, W)
+indicating which flow values are valid. The flow is a numpy array of
+shape (2, H, W) and the images are PIL images. If <cite>split=”test”</cite>, a
+4-tuple with <code class="docutils literal notranslate"><span class="pre">(img1,</span> <span class="pre">img2,</span> <span class="pre">None,</span> <span class="pre">None)</span></code> is returned.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
 </dd>
 </dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">train_nodes</span><span class="p">,</span> <span class="n">eval_nodes</span> <span class="o">=</span> <span class="n">get_graph_node_names</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-</pre></div>
-</div>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -379,10 +384,10 @@ train mode, and another from tracing the model in eval mode.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../ops.html" class="btn btn-neutral float-right" title="Operators" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.datasets.HMDB51.html" class="btn btn-neutral float-right" title="HMDB51" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.models.feature_extraction.create_feature_extractor.html" class="btn btn-neutral" title="create_feature_extractor" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.datasets.FlyingThings3D.html" class="btn btn-neutral" title="FlyingThings3D" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -414,7 +419,7 @@ train mode, and another from tracing the model in eval mode.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">get_graph_node_names</a></li>
+<li><a class="reference internal" href="#">HD1K</a></li>
 </ul>
 
             </div>
