@@ -409,11 +409,3 @@ def reduce_across_processes(val):
     dist.barrier()
     dist.all_reduce(t)
     return t
-
-
-def get_optimizer_params(optimizer):
-    """Generator to iterate over all parameters in the optimizer param_groups."""
-
-    for group in optimizer.param_groups:
-        for p in group["params"]:
-            yield p

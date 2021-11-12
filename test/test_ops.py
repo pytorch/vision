@@ -479,7 +479,9 @@ class TestNMS:
         return boxes, scores
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
-    def test_nms_ref(self, iou):
+    @pytest.mark.parametrize("seed", range(10))
+    def test_nms_ref(self, iou, seed):
+        torch.random.manual_seed(seed)
         err_msg = "NMS incompatible between CPU and reference implementation for IoU={}"
         boxes, scores = self._create_tensors_with_iou(1000, iou)
         keep_ref = self._reference_nms(boxes, scores, iou)
