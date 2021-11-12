@@ -1,5 +1,5 @@
 import io
-from pathlib import Path
+import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
@@ -30,8 +30,7 @@ class ucf101(Dataset):
     What we want to do is implement either several decoder options or additional
     datapipe extensions to make this work.
     """
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "ucf101",
             type=DatasetType.VIDEO,
@@ -50,12 +49,18 @@ class ucf101(Dataset):
                 sha256="",
             )
         ]
+    
+    def _generate_categories(self, root: pathlib.Path) -> List[str]:
+        dp = self.resources(self.default_config)[1].to_datapipe(pathlib.Path(root) / self.name)
+        dp = RarArchiveReader(dp)
+        dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
+        return [name.split(".")[1] for name in sorted(dir_names)]
 
     def _collate_and_decode(
         self,
         data: Tuple[np.ndarray, int],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]=None,
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         annotations_d, file_d = data
 
