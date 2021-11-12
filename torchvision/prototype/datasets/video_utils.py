@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Mapping, Union, Iterator
+from typing import Any, Dict, Iterator
 import random
 import av
 import numpy as np
