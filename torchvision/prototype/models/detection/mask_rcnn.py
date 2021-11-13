@@ -1,6 +1,8 @@
 import warnings
 from typing import Any, Optional
 
+from torchvision.transforms.functional import InterpolationMode
+
 from ....models.detection.mask_rcnn import (
     _resnet_fpn_extractor,
     _validate_trainable_layers,
@@ -27,6 +29,7 @@ class MaskRCNNResNet50FPNWeights(Weights):
         transforms=CocoEval,
         meta={
             "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
             "box_map": 37.9,
             "mask_map": 34.6,
