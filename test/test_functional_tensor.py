@@ -799,7 +799,7 @@ def test_solarize2(device, dtype, config, channels):
 @pytest.mark.parametrize("dtype", (torch.float32, torch.float64))
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0, 1.5]])
 def test_solarize_threshold1(config):
-    img = torch.rand((3,12,23)).to("cpu")
+    img = torch.rand((3, 12, 23)).to("cpu")
     with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value or 3"):
         F_t.solarize(img, **config)
 
@@ -807,7 +807,7 @@ def test_solarize_threshold1(config):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255, 260]])
 def test_solarize_threshold2(config):
-    img = torch.randint(0, 256, (3,12,23)).to("cpu")
+    img = torch.randint(0, 256, (3, 12, 23)).to("cpu")
     with pytest.raises(TypeError, match="If value is a sequence, it should have either a single value or 3"):
         F_t.solarize(img, **config)
 
