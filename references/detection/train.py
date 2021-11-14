@@ -253,7 +253,7 @@ def main(args):
                 "epoch": epoch,
             }
             if args.amp:
-                scaler.load_state_dict(checkpoint["scaler"])
+                checkpoint['scaler'] = scaler.state_dict()
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
