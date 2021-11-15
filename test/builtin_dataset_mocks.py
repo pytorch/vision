@@ -1,5 +1,6 @@
 import functools
 import gzip
+import json
 import lzma
 import pathlib
 import pickle
@@ -17,7 +18,9 @@ from torchvision.prototype import datasets
 from torchvision.prototype.datasets._api import find
 from torchvision.prototype.utils._internal import add_suggestion
 
+
 make_tensor = functools.partial(_make_tensor, device="cpu")
+make_scalar = functools.partial(make_tensor, ())
 
 __all__ = ["load"]
 
@@ -504,3 +507,96 @@ def imagenet(info, root, config):
     make_tar(root, f"{devkit_root}.tar.gz", devkit_root, compression="gz")
 
     return num_samples
+
+
+class CocoMockData:
+    @classmethod
+    def _make_annotations_json(
+        cls,
+        root,
+        name,
+        *,
+        images_meta,
+        fn,
+    ):
+        image_ids = [image_meta["id"] for image_meta in images_meta]
+
+        num_anns_per_image = torch.randint(1, 5, (len(image_ids),))
+        # Force one unannotated image
+        num_anns_per_image[0] = 0
+
+        num_anns_total = int(num_anns_per_image.sum())
+        ann_ids_iter = iter(torch.arange(num_anns_total)[torch.randperm(num_anns_total)])
+
+        anns_meta = []
+        for image_id, num_anns in zip(image_ids, num_anns_per_image):
+            for _ in range(num_anns):
+                ann_id = int(next(ann_ids_iter))
+                anns_meta.append(dict(fn(ann_id, image_id), id=ann_id, image_id=image_id))
+        anns_meta.sort(key=lambda ann: ann["id"])
+
+        with open(root / name, "w") as file:
+            json.dump(dict(images=images_meta, annotations=anns_meta), file)
+
+        return num_anns_per_image
+
+    @staticmethod
+    def _make_instances_data(ann_id, image_id):
+        return dict(
+            bbox=make_tensor((4,), dtype=torch.float32, low=0).tolist(),
+            iscrowd=bool(make_scalar(dtype=torch.bool)),
+            area=float(make_scalar(dtype=torch.float32)),
+            category_id=int(make_scalar(dtype=torch.int64)),
+        )
+
+    @staticmethod
+    def _make_captions_data(ann_id, image_id):
+        return dict(caption=f"Caption {ann_id} describing image {image_id}.")
+
+    _DATA_FNS = dict(
+        instances=_make_instances_data,
+        captions=_make_captions_data,
+    )
+
+    @classmethod
+    def generate(
+        cls,
+        root,
+        *,
+        split,
+        year,
+        num_samples,
+    ):
+        annotations_dir = root / "annotations"
+        annotations_dir.mkdir()
+
+        num_annotated_samples_per_split = {}
+        for split_ in ("train", "val"):
+            config_name = f"{split_}{year}"
+            image_paths = create_image_folder(
+                root, config_name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
+            )
+            make_zip(root, f"{config_name}.zip")
+            images_meta = [dict(file_name=path.name, id=int(path.stem)) for path in image_paths]
+
+            num_anns_per_image = torch.zeros((num_samples,), dtype=torch.int64)
+            for ann_type, fn in (
+                ("instances", cls._make_instances_data),
+                ("captions", cls._make_captions_data),
+            ):
+                num_anns_per_image += cls._make_annotations_json(
+                    annotations_dir, f"{ann_type}_{config_name}.json", images_meta=images_meta, fn=fn
+                )
+
+            num_annotated_samples_per_split[split_] = int(num_anns_per_image.gt(0).sum())
+
+        make_zip(root, f"annotations_trainval{year}.zip", annotations_dir)
+
+        return num_annotated_samples_per_split[split]
+
+
+@dataset_mocks.register_mock_data_fn
+def coco(info, root, config):
+    num_samples = 5
+    num_annotated_samples = CocoMockData.generate(root, split=config.split, year=config.year, num_samples=num_samples)
+    return num_annotated_samples if any(config[ann_type] for ann_type in ("instances", "captions")) else num_samples

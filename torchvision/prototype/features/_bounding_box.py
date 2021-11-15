@@ -86,6 +86,15 @@ class BoundingBox(Feature):
     image_size: Tuple[int, int]
 
     @classmethod
+    def _to_tensor(cls, data, *, dtype, device):
+        tensor = torch.as_tensor(data, dtype=dtype, device=device)
+        if tensor.ndim == 2:
+            tensor = tensor.unsqueeze(0)
+        elif tensor.ndim != 3:
+            raise ValueError("Only single images with 2 or 3 dimensions are allowed.")
+        return tensor
+
+    @classmethod
     def _parse_meta_data(
         cls,
         format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
@@ -115,7 +124,10 @@ class BoundingBox(Feature):
                 data = cls._TO_XYXY_MAP[format](data)
             data = cls._FROM_XYXY_MAP[BoundingBoxFormat.XYWH](data)
         *_, w, h = to_parts(data)
-        return int(h.ceil()), int(w.ceil())
+        if data.dtype.is_floating_point:
+            w = w.ceil()
+            h = h.ceil()
+        return int(h.max()), int(w.max())
 
     @classmethod
     def from_parts(

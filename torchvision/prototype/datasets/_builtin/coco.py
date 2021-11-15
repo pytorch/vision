@@ -2,13 +2,13 @@ import functools
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    # Shuffler,
+    Shuffler,
     Filter,
     Demultiplexer,
     ZipArchiveReader,
@@ -34,48 +34,77 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
 )
+from torchvision.prototype.features import BoundingBox, Label
+from torchvision.prototype.features._feature import DEFAULT
+from torchvision.prototype.utils._internal import FrozenMapping
+
+
+class CocoLabel(Label):
+    super_category: Optional[str]
+
+    @classmethod
+    def _parse_meta_data(
+        cls,
+        category: Optional[str] = DEFAULT,  # type: ignore[assignment]
+        super_category: Optional[str] = DEFAULT,  # type: ignore[assignment]
+    ) -> Dict[str, Tuple[Any, Any]]:
+        return dict(category=(category, None), super_category=(super_category, None))
 
 
 class Coco(Dataset):
-    def _decode_instances_ann(self, ann: Dict[str, Any]) -> Dict[str, Any]:
-        area = ann["area"]
-        iscrowd = bool(ann["iscrowd"])
-        bbox = torch.tensor(ann["bbox"])
-        category = self.categories.index(ann["category_id"])
-        id = ann["id"]
+    def _decode_instances_anns(self, anns: List[Dict[str, Any]]) -> Dict[str, Any]:
+        labels = [ann["category_id"] for ann in anns]
+        categories = [self.info.categories[label] for label in labels]
         return dict(
-            area=area,
-            iscrowd=iscrowd,
-            bbox=bbox,
-            category=category,
-            id=id,
+            areas=torch.tensor([ann["area"] for ann in anns]),
+            iscrowd=torch.tensor([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            # FIXME: set the proper image_size here
+            bounding_boxes=BoundingBox([ann["bbox"] for ann in anns], format="xywh") if anns else [],
+            labels=[
+                CocoLabel(
+                    label,
+                    category=category,
+                    super_category=self.info.extra.category_to_super_category[category],
+                )
+                for label, category in zip(labels, categories)
+            ],
+            instances_ann_ids=[ann["id"] for ann in anns],
         )
 
-    def _decode_captions_ann(self, ann: Dict[str, Any]) -> Dict[str, Any]:
-        ann = ann.copy()
-        ann.pop("image_id")
-        return ann
+    def _decode_captions_ann(self, anns: List[Dict[str, Any]]) -> Dict[str, Any]:
+        return dict(
+            captions=[ann["caption"] for ann in anns],
+            captions_ann_ids=[ann["id"] for ann in anns],
+        )
 
     _ANN_TYPES, _ANN_TYPE_DEFAULTS, _ANN_DECODERS = zip(
         *(
-            ("instances", True, _decode_instances_ann),
+            ("instances", True, _decode_instances_anns),
             ("captions", False, _decode_captions_ann),
         )
     )
+    _ANN_TYPES: Tuple[str, ...]
+    _ANN_TYPE_DEFAULTS: Tuple[bool, ...]
+    _ANN_DECODERS: Tuple[Callable[["Coco", List[Dict[str, Any]]], Dict[str, Any]], ...]
+
     _ANN_TYPE_OPTIONS = dict(zip(_ANN_TYPES, [(default, not default) for default in _ANN_TYPE_DEFAULTS]))
     _ANN_DECODER_MAP = dict(zip(_ANN_TYPES, _ANN_DECODERS))
 
     def _make_info(self) -> DatasetInfo:
+        name = "coco"
+        categories, super_categories = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
+
         return DatasetInfo(
-            "coco",
+            name,
             type=DatasetType.IMAGE,
-            categories=BUILTIN_DIR / "coco.categories",
+            categories=categories,
             homepage="https://cocodataset.org/",
             valid_options=dict(
                 self._ANN_TYPE_OPTIONS,
                 split=("train", "val"),
                 year=("2017", "2014"),
             ),
+            extra=dict(category_to_super_category=FrozenMapping(zip(categories, super_categories))),
         )
 
     _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
@@ -157,13 +186,17 @@ class Coco(Dataset):
         self, data: List[Tuple[List[Dict[str, Any]], Dict[str, Any]]], *, types: List[str]
     ) -> Tuple[str, Dict[str, Dict[str, Any]]]:
         ann_data, (image_data, *_) = zip(*data)
-        return image_data["file_name"], dict(zip(types, ann_data))
+        anns = dict(zip(types, ann_data))
+        for empty_ann_types in set(self._ANN_TYPES) - set(types):
+            anns[empty_ann_types] = []
+        return image_data["file_name"], anns
 
-    def _make_anns_dp(self, meta_dp, *, config):
-        ann_types = [type for type in self._ANN_TYPES if config[type]]
-
+    def _make_anns_dp(
+        self, meta_dp: IterDataPipe[Tuple[str, io.IOBase]], *, config: DatasetConfig
+    ) -> IterDataPipe[Tuple[str, Dict[str, Dict[str, Any]]]]:
         meta_dp = ZipArchiveReader(meta_dp)
 
+        ann_types = [type for type in self._ANN_TYPES if config[type]]
         partial_anns_dps = Demultiplexer(
             meta_dp,
             len(ann_types),
@@ -171,7 +204,7 @@ class Coco(Dataset):
                 self._classifiy_meta_files,
                 split=config.split,
                 year=config.year,
-                type_idcs=dict(zip(ann_types, range(len(ann_types)))),
+                ann_type_idcs=dict(zip(ann_types, range(len(ann_types)))),
             ),
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
@@ -180,12 +213,16 @@ class Coco(Dataset):
 
         anns_dp = Concater(*partial_anns_dps)
         anns_dp = Grouper(anns_dp, group_key_fn=getitem(1, "id"), buffer_size=INFINITE_BUFFER_SIZE)
-        # Can this be empty ? if yes, drop
         return Mapper(anns_dp, self._precollate_anns, fn_kwargs=dict(types=ann_types))
+
+    def _add_empty_anns(
+        self, data: Tuple[str, io.IOBase]
+    ) -> Tuple[Tuple[str, Dict[str, List[Dict[str, Any]]]], Tuple[str, io.IOBase]]:
+        return (pathlib.Path(data[0]).name, {ann_type: [] for ann_type in self._ANN_TYPES}), data
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[str, Dict[str, Dict[str, Any]]], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[str, Dict[str, List[Dict[str, Any]]]], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
@@ -193,11 +230,12 @@ class Coco(Dataset):
         _, anns = ann_data
         path, buffer = image_data
 
-        anns = {type: self._ANN_DECODER_MAP[type](self, ann) for type, ann in anns.items()}
+        sample = dict(path=path, image=decoder(buffer) if decoder else buffer)
 
-        image = decoder(buffer) if decoder else buffer
+        for type, partial_anns in anns.items():
+            sample.update(self._ANN_DECODER_MAP[type](self, partial_anns))
 
-        return dict(anns, path=path, image=image)
+        return sample
 
     def _make_datapipe(
         self,
@@ -208,19 +246,25 @@ class Coco(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 
-        anns_dp = self._make_anns_dp(meta_dp, config=config)
-        # anns_dp = Shuffler(anns_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        images_dp = ZipArchiveReader(images_dp)
 
-        dp = IterKeyZipper(
-            anns_dp,
-            images_dp,
-            key_fn=getitem(0),
-            ref_key_fn=path_accessor("name"),
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
+        if any(config[ann_type] for ann_type in self._ANN_TYPES):
+            anns_dp = self._make_anns_dp(meta_dp, config=config)
+            anns_dp = Shuffler(anns_dp, buffer_size=INFINITE_BUFFER_SIZE)
+
+            dp = IterKeyZipper(
+                anns_dp,
+                images_dp,
+                key_fn=getitem(0),
+                ref_key_fn=path_accessor("name"),
+                buffer_size=INFINITE_BUFFER_SIZE,
+            )
+        else:
+            images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
+            dp = Mapper(images_dp, self._add_empty_anns)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
+    def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
         config = self.default_config
         resources = self.resources(config)
 
@@ -230,7 +274,19 @@ class Coco(Dataset):
         dp = JsonParser(dp)
 
         _, meta = next(iter(dp))
-        categories_and_ids = [(info["name"], info["id"]) for info in meta["categories"]]
-        categories, _ = zip(*sorted(categories_and_ids, key=lambda category_and_id: category_and_id[1]))
+        # List[Tuple[super_category, id, category]]
+        label_data = [cast(Tuple[str, int, str], tuple(info.values())) for info in meta["categories"]]
 
-        return categories
+        # COCO actually defines 91 categories, but only 80 of them have instances. Still, the category_id refers to the
+        # full set. To keep the labels dense, we fill the gaps with N/A. Note that there are only 10 gaps, so the total
+        # number of categories is 90 rather than 91.
+        _, ids, _ = zip(*label_data)
+        missing_ids = set(range(1, max(ids) + 1)) - set(ids)
+        label_data.extend([("N/A", id, "N/A") for id in missing_ids])
+
+        # We also add a background category to be used during segmentation.
+        label_data.append(("N/A", 0, "__background__"))
+
+        super_categories, _, categories = zip(*sorted(label_data, key=lambda info: info[1]))
+
+        return cast(Tuple[Tuple[str, str]], tuple(zip(categories, super_categories)))

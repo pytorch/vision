@@ -11,6 +11,18 @@ from torchvision.prototype.utils._internal import sequence_to_str
 _loaders = []
 _datasets = []
 
+
+def config_id(config):
+    parts = []
+    for name, value in config.items():
+        if isinstance(value, bool):
+            part = ("" if value else "no_") + name
+        else:
+            part = str(value)
+        parts.append(part)
+    return "-".join(parts)
+
+
 # TODO: this can be replaced by torchvision.prototype.datasets.list() as soon as all builtin datasets are supported
 TMP = [
     "mnist",
@@ -23,18 +35,14 @@ TMP = [
     "caltech256",
     "caltech101",
     "imagenet",
+    "coco",
 ]
 for name in TMP:
     loader = functools.partial(builtin_dataset_mocks.load, name)
     _loaders.append(pytest.param(loader, id=name))
 
     info = datasets.info(name)
-    _datasets.extend(
-        [
-            pytest.param(*loader(**config), id=f"{name}-{'-'.join([str(value) for value in config.values()])}")
-            for config in info._configs
-        ]
-    )
+    _datasets.extend([pytest.param(*loader(**config), id=f"{name}-{config_id(config)}") for config in info._configs])
 
 loaders = pytest.mark.parametrize("loader", _loaders)
 builtin_datasets = pytest.mark.parametrize(("dataset", "mock_info"), _datasets)
