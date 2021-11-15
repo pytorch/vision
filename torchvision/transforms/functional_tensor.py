@@ -1002,7 +1002,9 @@ def elastic_deformation(
     shape = list(img.shape[-2:])
 
     if isinstance(control_point_spacing, float) or isinstance(control_point_spacing, int):
-        control_point_spacing = [control_point_spacing,] * 2
+        control_point_spacing = [
+            control_point_spacing,
+        ] * 2
 
     if isinstance(sigma, float) or isinstance(sigma, int):
         sigma = [sigma] * 2
