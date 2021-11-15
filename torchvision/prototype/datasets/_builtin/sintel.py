@@ -101,8 +101,8 @@ class SINTEL(Dataset):
         magic = file.read(4)
         if magic != b"PIEH":
             raise ValueError("Magic number incorrect. Invalid .flo file")
-        w = int.from_bytes(file.read(4), "little")
-        h = int.from_bytes(file.read(4), "little")
+        w = np.frombufer(file.read(4), dtype="<i4")
+        h = np.frombuffer(file.read(4), dtype="<i4")
 
         data = file.read(2 * w * h * 4)
         data_arr = np.frombuffer(data, dtype="<f4")
