@@ -290,6 +290,11 @@ _model_params = {
         "rpn_pre_nms_top_n_test": 1000,
         "rpn_post_nms_top_n_test": 1000,
     },
+    "vit_h_14": {
+        "num_classes": 5,
+        "image_size": 28,
+        "input_shape": (1, 3, 28, 28),
+    },
 }
 
 
@@ -514,6 +519,7 @@ def test_classification_model(model_fn, dev):
     }
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
+    num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
 
     model = model_fn(**kwargs)
@@ -522,7 +528,7 @@ def test_classification_model(model_fn, dev):
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
-    assert out.shape[-1] == 50
+    assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
 
