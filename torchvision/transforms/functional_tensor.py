@@ -6,8 +6,6 @@ from torch import Tensor
 from torch.jit.annotations import BroadcastingList2
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 
-from .functional import InterpolationMode
-
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
@@ -1003,13 +1001,14 @@ def elastic_deformation(
 
     shape = img.shape[-2:]
 
-    try:
+    if isinstance(control_point_spacing, list) or isinstance(control_point_spacing, tuple):
         spacing = tuple((d for d in control_point_spacing))
-    except:
+    else:
         spacing = (control_point_spacing,) * 2
-    try:
+
+    if isinstance(sigma, list) or isinstance(sigma, tuple):
         sigmas = [s for s in sigma]
-    except:
+    else:
         sigmas = [sigma] * 2
 
     control_points = tuple(max(1, int(round(float(shape[d]) / spacing[d]))) for d in range(2))
@@ -1019,7 +1018,7 @@ def elastic_deformation(
         if sigmas[d] > 0:
             control_point_offsets[d] = torch.randn(size=control_points) * sigmas[d] * 1 / (0.5 * shape[d])
     displacement = (
-        resize(control_point_offsets, shape, interpolation=InterpolationMode("bicubic")).unsqueeze(-1).transpose(0, -1)
+        resize(control_point_offsets, shape, interpolation="bicubic").unsqueeze(-1).transpose(0, -1)
     )  # 1 x H x W x 2
 
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in shape]
