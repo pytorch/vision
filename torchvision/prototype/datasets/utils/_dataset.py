@@ -2,17 +2,18 @@ import abc
 import csv
 import enum
 import io
+import itertools
+import os
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
 import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.datasets.utils._internal import (
-    add_suggestion,
-    sequence_to_str,
-)
+from torchvision.prototype.utils._internal import FrozenBunch, make_repr
+from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
 
-from ._internal import FrozenBunch, make_repr, BUILTIN_DIR
+from .._home import use_sharded_dataset
+from ._internal import BUILTIN_DIR, _make_sharded_datapipe
 from ._resource import OnlineResource
 
 
@@ -66,17 +67,21 @@ class DatasetInfo:
                 f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
             )
         self._valid_options: Dict[str, Sequence] = valid_options
+        self._configs = tuple(
+            DatasetConfig(**dict(zip(valid_options.keys(), combination)))
+            for combination in itertools.product(*valid_options.values())
+        )
 
         self.extra = FrozenBunch(extra or dict())
+
+    @property
+    def default_config(self) -> DatasetConfig:
+        return self._configs[0]
 
     @staticmethod
     def read_categories_file(path: pathlib.Path) -> List[List[str]]:
         with open(path, newline="") as file:
             return [row for row in csv.reader(file)]
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return DatasetConfig({name: valid_args[0] for name, valid_args in self._valid_options.items()})
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():
@@ -150,6 +155,9 @@ class Dataset(abc.ABC):
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
+    def supports_sharded(self) -> bool:
+        return False
+
     def to_datapipe(
         self,
         root: Union[str, pathlib.Path],
@@ -160,6 +168,10 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
+        if use_sharded_dataset() and self.supports_sharded():
+            root = os.path.join(root, *config.values())
+            dataset_size = self.info.extra["sizes"][config]
+            return _make_sharded_datapipe(root, dataset_size)
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 

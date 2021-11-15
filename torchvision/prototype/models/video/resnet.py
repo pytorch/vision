@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 from torch import nn
+from torchvision.prototype.transforms import Kinect400Eval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.video.resnet import (
@@ -15,7 +16,6 @@ from ....models.video.resnet import (
     R2Plus1dStem,
     VideoResNet,
 )
-from ...transforms.presets import Kinect400Eval
 from .._api import Weights, WeightEntry
 from .._meta import _KINETICS400_CATEGORIES
 
@@ -51,7 +51,12 @@ def _video_resnet(
     return model
 
 
-_common_meta = {"size": (112, 112), "categories": _KINETICS400_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_common_meta = {
+    "size": (112, 112),
+    "categories": _KINETICS400_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
+}
 
 
 class R3D_18Weights(Weights):
@@ -60,7 +65,6 @@ class R3D_18Weights(Weights):
         transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
             "acc@1": 52.75,
             "acc@5": 75.45,
         },
@@ -73,7 +77,6 @@ class MC3_18Weights(Weights):
         transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
             "acc@1": 53.90,
             "acc@5": 76.29,
         },
@@ -86,7 +89,6 @@ class R2Plus1D_18Weights(Weights):
         transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
         meta={
             **_common_meta,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
             "acc@1": 57.50,
             "acc@5": 78.81,
         },
