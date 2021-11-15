@@ -105,7 +105,7 @@ class SINTEL(Dataset):
         h = int.from_bytes(file.read(4), "little")
 
         data = file.read(2 * w * h * 4)
-        data_arr = np.frombuffer(data, dtype=np.float32)
+        data_arr = np.frombuffer(data, dtype="<f4")
 
         # Creating a copy of the underlying array, to avoid UserWarning: "The given NumPy array
         #     is not writeable, and PyTorch does not support non-writeable tensors."
