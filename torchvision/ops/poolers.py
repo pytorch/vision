@@ -303,10 +303,11 @@ class MultiScaleRoIAlign(nn.Module):
             boxes,
             image_shapes,
             self.featmap_names,
-            self.canonical_level,
             self.canonical_scale,
-            self.scales,
+            self.canonical_level,
+            self.output_size,
             self.sampling_ratio,
+            self.scales,
         )
 
     def __repr__(self) -> str:
