@@ -7,6 +7,7 @@ from torch import nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation
+from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
 
@@ -41,7 +42,7 @@ class InvertedResidual(nn.Module):
     def __init__(
         self, inp: int, oup: int, stride: int, expand_ratio: int, norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
-        super(InvertedResidual, self).__init__()
+        super().__init__()
         self.stride = stride
         assert stride in [1, 2]
 
@@ -109,7 +110,8 @@ class MobileNetV2(nn.Module):
             dropout (float): The droupout probability
 
         """
-        super(MobileNetV2, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
 
         if block is None:
             block = InvertedResidual
@@ -135,8 +137,7 @@ class MobileNetV2(nn.Module):
         # only check the first element, assuming user knows t,c,n,s are required
         if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
             raise ValueError(
-                "inverted_residual_setting should be non-empty "
-                "or a 4-element list, got {}".format(inverted_residual_setting)
+                f"inverted_residual_setting should be non-empty or a 4-element list, got {inverted_residual_setting}"
             )
 
         # building first layer

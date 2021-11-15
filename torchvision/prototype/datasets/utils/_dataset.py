@@ -1,50 +1,20 @@
 import abc
+import csv
 import enum
 import io
+import itertools
 import os
 import pathlib
-import textwrap
-import warnings
-from collections import Mapping
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    NoReturn,
-    Iterable,
-    Tuple,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
 import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.datasets.utils._internal import (
-    add_suggestion,
-    sequence_to_str,
-)
+from torchvision.prototype.utils._internal import FrozenBunch, make_repr
+from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
 
+from .._home import use_sharded_dataset
+from ._internal import BUILTIN_DIR, _make_sharded_datapipe
 from ._resource import OnlineResource
-
-
-def make_repr(name: str, items: Iterable[Tuple[str, Any]]):
-    def to_str(sep: str) -> str:
-        return sep.join([f"{key}={value}" for key, value in items])
-
-    prefix = f"{name}("
-    postfix = ")"
-    body = to_str(", ")
-
-    line_length = int(os.environ.get("COLUMNS", 80))
-    body_too_long = (len(prefix) + len(body) + len(postfix)) > line_length
-    multiline_body = len(str(body).splitlines()) > 1
-    if not (body_too_long or multiline_body):
-        return prefix + body + postfix
-
-    body = textwrap.indent(to_str(",\n"), " " * 2)
-    return f"{prefix}\n{body}\n{postfix}"
 
 
 class DatasetType(enum.Enum):
@@ -52,50 +22,8 @@ class DatasetType(enum.Enum):
     IMAGE = enum.auto()
 
 
-class DatasetConfig(Mapping):
-    def __init__(self, *args, **kwargs):
-        data = dict(*args, **kwargs)
-        self.__dict__["__data__"] = data
-        self.__dict__["__final_hash__"] = hash(tuple(data.items()))
-
-    def __getitem__(self, name: str) -> Any:
-        return self.__dict__["__data__"][name]
-
-    def __iter__(self):
-        return iter(self.__dict__["__data__"].keys())
-
-    def __len__(self):
-        return len(self.__dict__["__data__"])
-
-    def __getattr__(self, name: str) -> Any:
-        try:
-            return self[name]
-        except KeyError as error:
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'") from error
-
-    def __setitem__(self, key: Any, value: Any) -> NoReturn:
-        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
-
-    def __setattr__(self, key: Any, value: Any) -> NoReturn:
-        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
-
-    def __delitem__(self, key: Any) -> NoReturn:
-        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
-
-    def __delattr__(self, item: Any) -> NoReturn:
-        raise RuntimeError(f"'{type(self).__name__}' object is immutable")
-
-    def __hash__(self) -> int:
-        return self.__dict__["__final_hash__"]
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, DatasetConfig):
-            return NotImplemented
-
-        return hash(self) == hash(other)
-
-    def __repr__(self) -> str:
-        return make_repr(type(self).__name__, self.items())
+class DatasetConfig(FrozenBunch):
+    pass
 
 
 class DatasetInfo:
@@ -109,16 +37,19 @@ class DatasetInfo:
         homepage: Optional[str] = None,
         license: Optional[str] = None,
         valid_options: Optional[Dict[str, Sequence]] = None,
+        extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.name = name.lower()
         self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         if categories is None:
-            categories = []
-        elif isinstance(categories, int):
+            path = BUILTIN_DIR / f"{self.name}.categories"
+            categories = path if path.exists() else []
+        if isinstance(categories, int):
             categories = [str(label) for label in range(categories)]
         elif isinstance(categories, (str, pathlib.Path)):
-            categories = self._read_categories_file(pathlib.Path(categories).expanduser().resolve())
+            path = pathlib.Path(categories).expanduser().resolve()
+            categories, *_ = zip(*self.read_categories_file(path))
         self.categories = tuple(categories)
 
         self.citation = citation
@@ -136,21 +67,21 @@ class DatasetInfo:
                 f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
             )
         self._valid_options: Dict[str, Sequence] = valid_options
+        self._configs = tuple(
+            DatasetConfig(**dict(zip(valid_options.keys(), combination)))
+            for combination in itertools.product(*valid_options.values())
+        )
 
-    @staticmethod
-    def _read_categories_file(path: pathlib.Path) -> List[str]:
-        if not path.exists() or not path.is_file():
-            warnings.warn(
-                f"The categories file {path} does not exist. Continuing without loaded categories.", UserWarning
-            )
-            return []
-
-        with open(path, "r") as file:
-            return [line.strip() for line in file]
+        self.extra = FrozenBunch(extra or dict())
 
     @property
     def default_config(self) -> DatasetConfig:
-        return DatasetConfig({name: valid_args[0] for name, valid_args in self._valid_options.items()})
+        return self._configs[0]
+
+    @staticmethod
+    def read_categories_file(path: pathlib.Path) -> List[List[str]]:
+        with open(path, newline="") as file:
+            return [row for row in csv.reader(file)]
 
     def make_config(self, **options: Any) -> DatasetConfig:
         for name, arg in options.items():
@@ -187,10 +118,16 @@ class DatasetInfo:
 
 
 class Dataset(abc.ABC):
-    @property
+    def __init__(self) -> None:
+        self._info = self._make_info()
+
     @abc.abstractmethod
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         pass
+
+    @property
+    def info(self) -> DatasetInfo:
+        return self._info
 
     @property
     def name(self) -> str:
@@ -218,6 +155,9 @@ class Dataset(abc.ABC):
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
+    def supports_sharded(self) -> bool:
+        return False
+
     def to_datapipe(
         self,
         root: Union[str, pathlib.Path],
@@ -228,8 +168,12 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
+        if use_sharded_dataset() and self.supports_sharded():
+            root = os.path.join(root, *config.values())
+            dataset_size = self.info.extra["sizes"][config]
+            return _make_sharded_datapipe(root, dataset_size)
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 
-    def _generate_categories(self, root: pathlib.Path) -> Sequence[str]:
+    def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
         raise NotImplementedError

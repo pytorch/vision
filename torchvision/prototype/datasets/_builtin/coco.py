@@ -13,7 +13,7 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     ZipArchiveReader,
     Grouper,
-    KeyZipper,
+    IterKeyZipper,
     JsonParser,
     UnBatcher,
     Concater,
@@ -65,8 +65,7 @@ class Coco(Dataset):
     _ANN_TYPE_OPTIONS = dict(zip(_ANN_TYPES, [(default, not default) for default in _ANN_TYPE_DEFAULTS]))
     _ANN_DECODER_MAP = dict(zip(_ANN_TYPES, _ANN_DECODERS))
 
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "coco",
             type=DatasetType.IMAGE,
@@ -74,8 +73,8 @@ class Coco(Dataset):
             homepage="https://cocodataset.org/",
             valid_options=dict(
                 self._ANN_TYPE_OPTIONS,
-                split=("train",),
-                year=("2014", "2017"),
+                split=("train", "val"),
+                year=("2017", "2014"),
             ),
         )
 
@@ -83,7 +82,9 @@ class Coco(Dataset):
 
     _IMAGES_CHECKSUMS = {
         ("2014", "train"): "ede4087e640bddba550e090eae701092534b554b42b05ac33f0300b984b31775",
-        ("2017", "train"): "ADDME",
+        ("2014", "val"): "fe9be816052049c34717e077d9e34aa60814a55679f804cd043e3cbee3b9fde0",
+        ("2017", "train"): "69a8bb58ea5f8f99d24875f21416de2e9ded3178e903f1f7603e283b9e06d929",
+        ("2017", "val"): "4f7e2ccb2866ec5041993c9cf2a952bbed69647b115d0f74da7ce8f4bef82f05",
     }
 
     _META_URL_BASE = "http://images.cocodataset.org/annotations"
@@ -144,7 +145,7 @@ class Coco(Dataset):
 
         partial_anns_dp = Grouper(anns_meta_dp, group_key_fn=getitem("image_id"), buffer_size=INFINITE_BUFFER_SIZE)
 
-        return KeyZipper(
+        return IterKeyZipper(
             partial_anns_dp,
             images_meta_dp,
             key_fn=getitem(0, "image_id"),
@@ -210,7 +211,7 @@ class Coco(Dataset):
         anns_dp = self._make_anns_dp(meta_dp, config=config)
         # anns_dp = Shuffler(anns_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        dp = KeyZipper(
+        dp = IterKeyZipper(
             anns_dp,
             images_dp,
             key_fn=getitem(0),

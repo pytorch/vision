@@ -4,8 +4,10 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ..._internally_replaced_utils import load_state_dict_from_url
+from ...ops import misc as misc_nn_ops
+from ..resnet import resnet50
 from ._utils import overwrite_eps
-from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
+from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN
 
 __all__ = [
@@ -210,7 +212,7 @@ class MaskRCNN(FasterRCNN):
             mask_dim_reduced = 256
             mask_predictor = MaskRCNNPredictor(mask_predictor_in_channels, mask_dim_reduced, num_classes)
 
-        super(MaskRCNN, self).__init__(
+        super().__init__(
             backbone,
             num_classes,
             # transform parameters
@@ -261,13 +263,13 @@ class MaskRCNNHeads(nn.Sequential):
         d = OrderedDict()
         next_feature = in_channels
         for layer_idx, layer_features in enumerate(layers, 1):
-            d["mask_fcn{}".format(layer_idx)] = nn.Conv2d(
+            d[f"mask_fcn{layer_idx}"] = nn.Conv2d(
                 next_feature, layer_features, kernel_size=3, stride=1, padding=dilation, dilation=dilation
             )
-            d["relu{}".format(layer_idx)] = nn.ReLU(inplace=True)
+            d[f"relu{layer_idx}"] = nn.ReLU(inplace=True)
             next_feature = layer_features
 
-        super(MaskRCNNHeads, self).__init__(d)
+        super().__init__(d)
         for name, param in self.named_parameters():
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
@@ -277,7 +279,7 @@ class MaskRCNNHeads(nn.Sequential):
 
 class MaskRCNNPredictor(nn.Sequential):
     def __init__(self, in_channels, dim_reduced, num_classes):
-        super(MaskRCNNPredictor, self).__init__(
+        super().__init__(
             OrderedDict(
                 [
                     ("conv5_mask", nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
@@ -355,7 +357,8 @@ def maskrcnn_resnet50_fpn(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
     """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
@@ -364,7 +367,9 @@ def maskrcnn_resnet50_fpn(
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone("resnet50", pretrained_backbone, trainable_layers=trainable_backbone_layers)
+
+    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = MaskRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls["maskrcnn_resnet50_fpn_coco"], progress=progress)

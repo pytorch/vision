@@ -1,13 +1,14 @@
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation
+from ...utils import _log_api_usage_once
 from .. import mobilenet
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
@@ -117,9 +118,9 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         norm_layer: Callable[..., nn.Module],
         width_mult: float = 1.0,
         min_depth: int = 16,
-        **kwargs: Any,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
@@ -156,20 +157,11 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
 
 def _mobilenet_extractor(
-    backbone_name: str,
-    progress: bool,
-    pretrained: bool,
+    backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
     trainable_layers: int,
     norm_layer: Callable[..., nn.Module],
-    **kwargs: Any,
 ):
-    backbone = mobilenet.__dict__[backbone_name](
-        pretrained=pretrained, progress=progress, norm_layer=norm_layer, **kwargs
-    ).features
-    if not pretrained:
-        # Change the default initialization scheme if not pretrained
-        _normal_init(backbone)
-
+    backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
@@ -183,7 +175,7 @@ def _mobilenet_extractor(
         for parameter in b.parameters():
             parameter.requires_grad_(False)
 
-    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer, **kwargs)
+    return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer)
 
 
 def ssdlite320_mobilenet_v3_large(
@@ -216,7 +208,8 @@ def ssdlite320_mobilenet_v3_large(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
     """
     if "size" in kwargs:
@@ -235,14 +228,16 @@ def ssdlite320_mobilenet_v3_large(
     if norm_layer is None:
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
+    backbone = mobilenet.mobilenet_v3_large(
+        pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer, reduced_tail=reduce_tail, **kwargs
+    )
+    if not pretrained_backbone:
+        # Change the default initialization scheme if not pretrained
+        _normal_init(backbone)
     backbone = _mobilenet_extractor(
-        "mobilenet_v3_large",
-        progress,
-        pretrained_backbone,
+        backbone,
         trainable_backbone_layers,
         norm_layer,
-        reduced_tail=reduce_tail,
-        **kwargs,
     )
 
     size = (320, 320)
@@ -274,7 +269,7 @@ def ssdlite320_mobilenet_v3_large(
     if pretrained:
         weights_name = "ssdlite320_mobilenet_v3_large_coco"
         if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+            raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
     return model

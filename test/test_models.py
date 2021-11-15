@@ -1,7 +1,10 @@
+import contextlib
 import functools
 import io
 import operator
 import os
+import pkgutil
+import sys
 import traceback
 import warnings
 from collections import OrderedDict
@@ -10,38 +13,61 @@ import pytest
 import torch
 import torch.fx
 import torch.nn as nn
-import torchvision
 from _utils_internal import get_relative_path
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from torchvision import models
 
-
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 
-def get_available_classification_models():
+def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-def get_available_segmentation_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.segmentation.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+@pytest.fixture
+def disable_weight_loading(mocker):
+    """When testing models, the two slowest operations are the downloading of the weights to a file and loading them
+    into the model. Unless, you want to test against specific weights, these steps can be disabled without any
+    drawbacks.
 
+    Including this fixture into the signature of your test, i.e. `test_foo(disable_weight_loading)`, will recurse
+    through all models in `torchvision.models` and will patch all occurrences of the function
+    `download_state_dict_from_url` as well as the method `load_state_dict` on all subclasses of `nn.Module` to be
+    no-ops.
 
-def get_available_detection_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.detection.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    .. warning:
 
+        Loaded models are still executable as normal, but will always have random weights. Make sure to not use this
+        fixture if you want to compare the model output against reference values.
 
-def get_available_video_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    """
+    starting_point = models
+    function_name = "load_state_dict_from_url"
+    method_name = "load_state_dict"
 
+    module_names = {info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")}
+    targets = {f"torchvision._internally_replaced_utils.{function_name}", f"torch.nn.Module.{method_name}"}
+    for name in module_names:
+        module = sys.modules.get(name)
+        if not module:
+            continue
 
-def get_available_quantizable_models():
-    # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+        if function_name in module.__dict__:
+            targets.add(f"{module.__name__}.{function_name}")
+
+        targets.update(
+            {
+                f"{module.__name__}.{obj.__name__}.{method_name}"
+                for obj in module.__dict__.values()
+                if isinstance(obj, type) and issubclass(obj, nn.Module) and method_name in obj.__dict__
+            }
+        )
+
+    for target in targets:
+        # See https://github.com/pytorch/vision/pull/4867#discussion_r743677802 for details
+        with contextlib.suppress(AttributeError):
+            mocker.patch(target)
 
 
 def _get_expected_file(name=None):
@@ -75,12 +101,12 @@ def _assert_expected(output, name, prec):
 
     if ACCEPT:
         filename = {os.path.basename(expected_file)}
-        print("Accepting updated output for {}:\n\n{}".format(filename, output))
+        print(f"Accepting updated output for {filename}:\n\n{output}")
         torch.save(output, expected_file)
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
         if binary_size > MAX_PICKLE_SIZE:
-            raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
+            raise RuntimeError(f"The output for {filename}, is larger than 50kb")
     else:
         expected = torch.load(expected_file)
         rtol = atol = prec
@@ -120,12 +146,12 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
     if not TEST_WITH_SLOW or skip:
         # TorchScript is not enabled, skip these tests
         msg = (
-            "The check_jit_scriptable test for {} was skipped. "
+            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
             "This test checks if the module's results in TorchScript "
             "match eager and that it can be exported. To run these "
             "tests make sure you set the environment variable "
             "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
-            "manually skipped.".format(nn_module.__class__.__name__)
+            "manually skipped."
         )
         warnings.warn(msg, RuntimeWarning)
         return None
@@ -223,7 +249,7 @@ autocast_flaky_numerics = (
 # The tests for the following quantized models are flaky possibly due to inconsistent
 # rounding errors in different platforms. For this reason the input/output consistency
 # tests under test_quantized_classification_model will be skipped for the following models.
-quantized_flaky_models = ("inception_v3",)
+quantized_flaky_models = ("inception_v3", "resnet50")
 
 
 # The following contains configuration parameters for all models which are used by
@@ -314,20 +340,20 @@ def _make_sliced_model(model, stop_layer):
     return new_model
 
 
-@pytest.mark.parametrize("model_name", ["densenet121", "densenet169", "densenet201", "densenet161"])
-def test_memory_efficient_densenet(model_name):
+@pytest.mark.parametrize("model_fn", [models.densenet121, models.densenet169, models.densenet201, models.densenet161])
+def test_memory_efficient_densenet(model_fn):
     input_shape = (1, 3, 300, 300)
     x = torch.rand(input_shape)
 
-    model1 = models.__dict__[model_name](num_classes=50, memory_efficient=True)
+    model1 = model_fn(num_classes=50, memory_efficient=True)
     params = model1.state_dict()
-    num_params = sum([x.numel() for x in model1.parameters()])
+    num_params = sum(x.numel() for x in model1.parameters())
     model1.eval()
     out1 = model1(x)
     out1.sum().backward()
-    num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
+    num_grad = sum(x.grad.numel() for x in model1.parameters() if x.grad is not None)
 
-    model2 = models.__dict__[model_name](num_classes=50, memory_efficient=False)
+    model2 = model_fn(num_classes=50, memory_efficient=False)
     model2.load_state_dict(params)
     model2.eval()
     out2 = model2(x)
@@ -344,7 +370,7 @@ def test_memory_efficient_densenet(model_name):
 @pytest.mark.parametrize("dilate_layer_4", (True, False))
 def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
     # TODO improve tests to also check that each layer has the right dimensionality
-    model = models.__dict__["resnet50"](replace_stride_with_dilation=(dilate_layer_2, dilate_layer_3, dilate_layer_4))
+    model = models.resnet50(replace_stride_with_dilation=(dilate_layer_2, dilate_layer_3, dilate_layer_4))
     model = _make_sliced_model(model, stop_layer="layer4")
     model.eval()
     x = torch.rand(1, 3, 224, 224)
@@ -354,22 +380,22 @@ def test_resnet_dilation(dilate_layer_2, dilate_layer_3, dilate_layer_4):
 
 
 def test_mobilenet_v2_residual_setting():
-    model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
+    model = models.mobilenet_v2(inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
     model.eval()
     x = torch.rand(1, 3, 224, 224)
     out = model(x)
     assert out.shape[-1] == 1000
 
 
-@pytest.mark.parametrize("model_name", ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"])
-def test_mobilenet_norm_layer(model_name):
-    model = models.__dict__[model_name]()
+@pytest.mark.parametrize("model_fn", [models.mobilenet_v2, models.mobilenet_v3_large, models.mobilenet_v3_small])
+def test_mobilenet_norm_layer(model_fn):
+    model = model_fn()
     assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
 
     def get_gn(num_channels):
         return nn.GroupNorm(32, num_channels)
 
-    model = models.__dict__[model_name](norm_layer=get_gn)
+    model = model_fn(norm_layer=get_gn)
     assert not (any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
     assert any(isinstance(x, nn.GroupNorm) for x in model.modules())
 
@@ -472,24 +498,25 @@ def test_generalizedrcnn_transform_repr():
     # Check integrity of object __repr__ attribute
     expected_string = "GeneralizedRCNNTransform("
     _indent = "\n    "
-    expected_string += "{0}Normalize(mean={1}, std={2})".format(_indent, image_mean, image_std)
-    expected_string += "{0}Resize(min_size=({1},), max_size={2}, ".format(_indent, min_size, max_size)
+    expected_string += f"{_indent}Normalize(mean={image_mean}, std={image_std})"
+    expected_string += f"{_indent}Resize(min_size=({min_size},), max_size={max_size}, "
     expected_string += "mode='bilinear')\n)"
     assert t.__repr__() == expected_string
 
 
-@pytest.mark.parametrize("model_name", get_available_classification_models())
+@pytest.mark.parametrize("model_fn", get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-def test_classification_model(model_name, dev):
+def test_classification_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
         "input_shape": (1, 3, 224, 224),
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
 
-    model = models.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -510,19 +537,20 @@ def test_classification_model(model_name, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.parametrize("model_name", get_available_segmentation_models())
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-def test_segmentation_model(model_name, dev):
+def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
         "pretrained_backbone": False,
         "input_shape": (1, 3, 32, 32),
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
 
-    model = models.segmentation.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -560,10 +588,10 @@ def test_segmentation_model(model_name, dev):
 
     if not full_validation:
         msg = (
-            "The output of {} could only be partially validated. "
+            f"The output of {test_segmentation_model.__name__} could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
-            "significant changes to the codebase.".format(test_segmentation_model.__name__)
+            "significant changes to the codebase."
         )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
@@ -571,19 +599,20 @@ def test_segmentation_model(model_name, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.parametrize("model_name", get_available_detection_models())
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-def test_detection_model(model_name, dev):
+def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
         "pretrained_backbone": False,
         "input_shape": (3, 300, 300),
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
 
-    model = models.detection.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -656,10 +685,10 @@ def test_detection_model(model_name, dev):
 
     if not full_validation:
         msg = (
-            "The output of {} could only be partially validated. "
+            f"The output of {test_detection_model.__name__} could only be partially validated. "
             "This is likely due to unit-test flakiness, but you may "
             "want to do additional manual checks if you made "
-            "significant changes to the codebase.".format(test_detection_model.__name__)
+            "significant changes to the codebase."
         )
         warnings.warn(msg, RuntimeWarning)
         pytest.skip(msg)
@@ -667,10 +696,10 @@ def test_detection_model(model_name, dev):
     _check_input_backprop(model, model_input)
 
 
-@pytest.mark.parametrize("model_name", get_available_detection_models())
-def test_detection_model_validation(model_name):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
+def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = models.detection.__dict__[model_name](num_classes=50, pretrained_backbone=False)
+    model = model_fn(num_classes=50, pretrained_backbone=False)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
@@ -696,14 +725,15 @@ def test_detection_model_validation(model_name):
         model(x, targets=targets)
 
 
-@pytest.mark.parametrize("model_name", get_available_video_models())
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-def test_video_model(model_name, dev):
+def test_video_model(model_fn, dev):
     # the default input shape is
     # bs * num_channels * clip_len * h *w
     input_shape = (1, 3, 4, 112, 112)
+    model_name = model_fn.__name__
     # test both basicblock and Bottleneck
-    model = models.video.__dict__[model_name](num_classes=50)
+    model = model_fn(num_classes=50)
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
@@ -727,8 +757,8 @@ def test_video_model(model_name, dev):
     ),
     reason="This Pytorch Build has not been built with fbgemm and qnnpack",
 )
-@pytest.mark.parametrize("model_name", get_available_quantizable_models())
-def test_quantized_classification_model(model_name):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.quantization))
+def test_quantized_classification_model(model_fn):
     set_rng_seed(0)
     defaults = {
         "num_classes": 5,
@@ -736,11 +766,12 @@ def test_quantized_classification_model(model_name):
         "pretrained": False,
         "quantize": True,
     }
+    model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
 
     # First check if quantize=True provides models that can run with input data
-    model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+    model = model_fn(**kwargs)
     model.eval()
     x = torch.rand(input_shape)
     out = model(x)
@@ -753,7 +784,7 @@ def test_quantized_classification_model(model_name):
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
-        model = torchvision.models.quantization.__dict__[model_name](**kwargs)
+        model = model_fn(**kwargs)
         if eval_mode:
             model.eval()
             model.qconfig = torch.quantization.default_qconfig
@@ -777,14 +808,13 @@ def test_quantized_classification_model(model_name):
         raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
 
 
-@pytest.mark.parametrize("model_name", get_available_detection_models())
-def test_detection_model_trainable_backbone_layers(model_name):
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
+def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
+    model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
-        model = torchvision.models.detection.__dict__[model_name](
-            pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers
-        )
+        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]

@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     TarArchiveReader,
     Shuffler,
     Filter,
-    KeyZipper,
+    IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -21,16 +21,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, BUILTIN_DIR, read_mat
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat
 
 
 class Caltech101(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
             type=DatasetType.IMAGE,
-            categories=BUILTIN_DIR / "caltech101.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
 
@@ -82,9 +80,12 @@ class Caltech101(Dataset):
         return category, id
 
     def _collate_and_decode_sample(
-        self, data, *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self,
+        data: Tuple[Tuple[str, str], Tuple[Tuple[str, io.IOBase], Tuple[str, io.IOBase]]],
+        *,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        key, image_data, ann_data = data
+        key, (image_data, ann_data) = data
         category, _ = key
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
@@ -117,13 +118,13 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = TarArchiveReader(images_dp)
-        images_dp: IterDataPipe = Filter(images_dp, self._is_not_background_image)
+        images_dp = Filter(images_dp, self._is_not_background_image)
         images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = TarArchiveReader(anns_dp)
-        anns_dp: IterDataPipe = Filter(anns_dp, self._is_ann)
+        anns_dp = Filter(anns_dp, self._is_ann)
 
-        dp = KeyZipper(
+        dp = IterKeyZipper(
             images_dp,
             anns_dp,
             key_fn=self._images_key_fn,
@@ -136,17 +137,15 @@ class Caltech101(Dataset):
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
         dp = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, self._is_not_background_image)
+        dp = Filter(dp, self._is_not_background_image)
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
 class Caltech256(Dataset):
-    @property
-    def info(self) -> DatasetInfo:
+    def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
             type=DatasetType.IMAGE,
-            categories=BUILTIN_DIR / "caltech256.categories",
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
 
@@ -185,7 +184,7 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)
-        dp: IterDataPipe = Filter(dp, self._is_not_rogue_file)
+        dp = Filter(dp, self._is_not_rogue_file)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 

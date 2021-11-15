@@ -6,6 +6,7 @@ from torch.jit.annotations import BroadcastingList2
 from torch.nn.modules.utils import _pair
 from torchvision.extension import _assert_has_ops
 
+from ..utils import _log_api_usage_once
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
@@ -38,6 +39,7 @@ def roi_pool(
     Returns:
         Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.
     """
+    _log_api_usage_once("torchvision.ops.roi_pool")
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
@@ -54,7 +56,7 @@ class RoIPool(nn.Module):
     """
 
     def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float):
-        super(RoIPool, self).__init__()
+        super().__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
