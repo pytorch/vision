@@ -48,6 +48,14 @@ class KeypointRCNNResNet50FPNWeights(Weights):
     )
 
 
+# This is BC breaking too, and unfortunately I'm not sure we can raise warnings
+# like in fasterrcnn_mobilenet_v3_large_fpn because we wouldn't be able
+# to differentiate num_keypoints from num_classes.
+#
+# I'm not sure what the best course of action could be here
+#
+# Not a solution, but related: these issues are a strong argument in favour of
+# forcing keyword-only parameters in new APIs.
 def keypointrcnn_resnet50_fpn(
     weights: Optional[KeypointRCNNResNet50FPNWeights] = None,
     weights_backbone: Optional[ResNet50Weights] = None,

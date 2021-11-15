@@ -26,6 +26,8 @@ __all__ = [
 
 
 def _load_state_dict(model: nn.Module, weights: Weights, progress: bool) -> None:
+    # Could you explain the comments below a bit more? Why are dots no longer allowed?
+
     # '.'s are no longer allowed in module names, but previous _DenseLayer
     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
     # They are also in the checkpoints in model_urls. This pattern is used
@@ -67,6 +69,9 @@ _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
+    # Is this worth adding literally this comment as the value? e.g.
+    # "recipe": "weights ported from LuaTorch",
+    # ?
     "recipe": None,  # weights ported from LuaTorch
 }
 

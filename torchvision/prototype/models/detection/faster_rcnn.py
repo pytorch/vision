@@ -147,11 +147,25 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     return model
 
 
+# Unfortunately, the addition and removal of parameters here is BC breaking for
+# users that are using positional arguments.
+#
+# It might be possible to preserve BC by allowing:
+# weights to be a bool - it maps to pretrained
+# weights_backbone to be a bool - it maps to progress
+# progress to be an int - it maps to num_classes
+# num_classes to be a bool: it maps to pretrained_backbones
+# And to raise a warning in all these cases.
+#
+# That will complicate the code though, we should only do this if we are 100%
+# sure to remove these deprecated behaviours in 1 or 2 versions.
+# Also, this only works because the types of the new vs old parameters order
+# don't overlap.
 def fasterrcnn_mobilenet_v3_large_fpn(
     weights: Optional[FasterRCNNMobileNetV3LargeFPNWeights] = None,
     weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: int = 91,  # just wondering why num_classes is a parameter here instead of being part of kwargs like for other models?
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:

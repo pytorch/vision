@@ -37,8 +37,10 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
+            # Similar to the comment about num_classes, I think we should raise and error if the user manually specified transform_input=False
             kwargs["transform_input"] = True
         if original_aux_logits:
+            # Nit: maybe move this as an `else` clause below
             warnings.warn(
                 "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
             )
@@ -50,6 +52,7 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
 
     if weights is not None:
         model.load_state_dict(weights.state_dict(progress=progress))
+        # I understand this is present in the current code, just curious why this is needed?
         if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]

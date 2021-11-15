@@ -51,6 +51,19 @@ class Weights(Enum):
             if type(obj) is str:
                 obj = cls.from_str(obj)
             elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
+                # Allowing WeightEntry to pass-through is unexpected IMHO.
+                # Since verify() is a factory method, we would expect it to
+                # return only Weights instances, not WeightsEntry instances.
+                # This could lead to bugs if the caller is unaware of that
+                # subtly hidden detail.
+                # From what I understand the motivation for allowing WeightEntry
+                # is for user convenience when calling model builder functions
+                # like resnet18(). IMO for a first version, it's perfectly
+                # reasonable to expect users to write a small wrapper class that
+                # inherits from Weights instead. Maybe this could be re-visited
+                # in the future, but for a first version, I think we should try
+                # to be conservative: if there's a decent way of achieving a
+                # somewhat rare use-case, it's not worth worrying about for now.
                 raise TypeError(
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
@@ -63,6 +76,11 @@ class Weights(Enum):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
+    # Nit: I would expect 'state_dict' to be an attribute, not a method.
+    # I understand we want to avoid
+    # model.load_state_dict(weights.load_state_dict(progress=progress))
+    # which reads strangely.
+    # Maybe `get_state_dict()` would better convey the idea that this is a procedure?
     def state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
 

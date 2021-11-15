@@ -41,6 +41,16 @@ def _resnet(
     **kwargs: Any,
 ) -> ResNet:
     if weights is not None:
+        # I remember Francisco raising concern about overriding num_class.
+        # IMHO this is fine, I would consider this to be a case of
+        # "we have param A and param B, param B's default depends on the value of A."
+        # which is a very common pattern.
+        # However, in order to prevent users to do wrong things, I think we could raise
+        # an error if the user specified an incorrect 'num_classes':
+        if "num_classes" in kwargs and kwargs["num_classes"] != len(weights.meta["categories"]):
+            raise ValueError(
+                f"Oops, you specified num_classes={blah} but this is incompatible with the pre-trained weights which support {blop} classes."
+            )
         kwargs["num_classes"] = len(weights.meta["categories"])
 
     model = ResNet(block, layers, **kwargs)
@@ -51,6 +61,7 @@ def _resnet(
     return model
 
 
+# Nit: upper-case for global vars?
 _common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
@@ -231,10 +242,27 @@ class WideResNet101_2Weights(Weights):
     )
 
 
+# Maybe we should rename kwargs into model_kwargs to be more explicit? This is not a BC-breaking change I believe.
 def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    # Considering we're showing this warning literally everywhere, it might be worth writing a helper for it
+    # This would make sure the warning message is consistent, avoid code duplication, etc.
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        # Nit: "argument" should probably be "parameter", since the term
+        # "argument" refers to the _value_ of the parameter at call time.
+        warnings.warn("The 'pretrained' parameter is deprecated, please use the 'weights' parameter instead.")
         weights = ResNet18Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+
+    # To preserve full BC with the current resnet18, weights coudl also accept
+    # a boolean and this would issue deprecation warning as well. This is for
+    # cases where resnet18 is called with resnet18(True) or resnet18(False)
+    # something like this:
+    if isinstance(weights, bool):
+        warnings.warn("The 'pretrained' parameter is deprecated, please use the 'weights' parameter instead.")
+        weights = ResNet18Weights.ImageNet1K_RefV1 if weights else None
+
+    # I remember we discussed this before: before releasing this new API, we
+    # mght want to try to allow users to pass simple stuff like e.g.
+    # resnet18(weights='pretrained') or resnet18(weights='latest')
 
     weights = ResNet18Weights.verify(weights)
 
