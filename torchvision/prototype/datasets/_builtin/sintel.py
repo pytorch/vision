@@ -25,12 +25,12 @@ from torchvision.prototype.datasets.utils import (
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
+T = TypeVar("T")
+
 try:
     from itertools import pairwise  # type: ignore[attr-defined]
 except ImportError:
     from itertools import tee
-
-    T = TypeVar("T")
 
     def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
         a, b = tee(iterable)
@@ -53,7 +53,6 @@ class InSceneGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
 class SINTEL(Dataset):
 
     _FILE_NAME_PATTERN = re.compile(r"(frame|image)_(?P<idx>\d+)[.](flo|png)")
-    _PASS_NAME_BOTH = re.compile(r"clean|final")
 
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -82,8 +81,10 @@ class SINTEL(Dataset):
 
     def _filter_images(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
-        regexp = self._PASS_NAME_BOTH if pass_name == "both" else re.compile(pass_name)
-        matched = bool(regexp.search(str(path.parent)))
+        if pass_name == "both":
+            matched = path.parents[1].name in ["clean", "final"]
+        else:
+            matched = path.parents[1].name == pass_name
         return matched and path.suffix == ".png"
 
     def _classify_archive(self, data: Tuple[str, Any], *, pass_name: str) -> Optional[int]:
@@ -92,9 +93,7 @@ class SINTEL(Dataset):
         if suffix == ".flo":
             return 0
         elif suffix == ".png":
-            regexp = self._PASS_NAME_BOTH if pass_name == "both" else re.compile(pass_name)
-            matched = regexp.search(path.parents[1].name)
-            return 1 if matched else None
+            return 1
         else:
             return None
 
@@ -104,8 +103,10 @@ class SINTEL(Dataset):
             raise ValueError("Magic number incorrect. Invalid .flo file")
         w = int.from_bytes(file.read(4), "little")
         h = int.from_bytes(file.read(4), "little")
+
         data = file.read(2 * w * h * 4)
         data_arr = np.frombuffer(data, dtype=np.float32)
+
         # Creating a copy of the underlying array, to avoid UserWarning: "The given NumPy array
         #     is not writeable, and PyTorch does not support non-writeable tensors."
         return torch.from_numpy(np.copy(data_arr.reshape(h, w, 2).transpose(2, 0, 1)))
@@ -115,6 +116,9 @@ class SINTEL(Dataset):
         category = path.parent.name
         idx = int(self._FILE_NAME_PATTERN.match(path.name).group("idx"))  # type: ignore[union-attr]
         return category, idx
+
+    def _add_fake_flow_data(self, data: Tuple[str, Any]) -> Tuple[tuple, Tuple[str, Any]]:
+        return ((None, None), data)
 
     def _images_key(self, data: Tuple[Tuple[str, Any], Tuple[str, Any]]) -> Tuple[str, int]:
         return self._flows_key(data[0])
@@ -139,7 +143,7 @@ class SINTEL(Dataset):
             image2=decoder(buffer2) if decoder else buffer2,
             image2_path=path2,
             flow=flow_arr,
-            flow_path=flo[0] or "",
+            flow_path=flo[0],
         )
 
     def _make_datapipe(
@@ -153,9 +157,10 @@ class SINTEL(Dataset):
         archive_dp = ZipArchiveReader(dp)
 
         curr_split = Filter(archive_dp, self._filter_split, fn_kwargs=dict(split=config.split))
+        filtered_curr_split = Filter(curr_split, self._filter_images, fn_kwargs=dict(pass_name=config.pass_name))
         if config.split == "train":
             flo_dp, pass_images_dp = Demultiplexer(
-                curr_split,
+                filtered_curr_split,
                 2,
                 partial(self._classify_archive, pass_name=config.pass_name),
                 drop_none=True,
@@ -170,11 +175,8 @@ class SINTEL(Dataset):
                 ref_key_fn=self._images_key,
             )
         else:
-            pass_images_dp = Filter(curr_split, self._filter_images, fn_kwargs=dict(pass_name=config.pass_name))
-            pass_images_dp = Shuffler(pass_images_dp, buffer_size=INFINITE_BUFFER_SIZE)
+            pass_images_dp = Shuffler(filtered_curr_split, buffer_size=INFINITE_BUFFER_SIZE)
             pass_images_dp = InSceneGrouper(pass_images_dp)
-            # When config.split is "test"
-            # There are no flow files for test split, hence we create a fake flow data
-            zipped_dp = Mapper(pass_images_dp, lambda data: ((None, None), data))
+            zipped_dp = Mapper(pass_images_dp, self._add_fake_flow_data)
 
         return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config))
