@@ -2029,6 +2029,8 @@ class ElasticDeformation(torch.nn.Module):
     Args:
         control_point_spacing: List [spacing of control_points H, spacing of control_points W] or (int), spacing between control_points in H and W direction
         sigma: List [sigma H, sigma W] or (float) defining the standard deviation of the control_point random offsets
+        interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample
+        fill: Pixel fill value for the area outside the transformed image. Default is 0.
     """
 
     def __init__(self, control_point_spacing, sigma, interpolation="nearest", fill=0):
@@ -2050,7 +2052,7 @@ class ElasticDeformation(torch.nn.Module):
     def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
-            tensor (Tensor): Tensor image to be whitened.
+            tensor (Tensor): Tensor image to be transformed.
 
         Returns:
             Tensor: Transformed image.
