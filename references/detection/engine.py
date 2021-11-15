@@ -43,7 +43,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             sys.exit(1)
 
         optimizer.zero_grad()
-        if scaler:
+        if scaler is not None:
             scaler.scale(losses).backward()
             scaler.step(optimizer)
             scaler.update()
