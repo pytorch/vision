@@ -999,24 +999,20 @@ def elastic_deformation(
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
-    shape = img.shape[-2:]
+    shape = list(img.shape[-2:])
 
-    if isinstance(control_point_spacing, list) or isinstance(control_point_spacing, tuple):
-        spacing = tuple((d for d in control_point_spacing))
-    else:
-        spacing = (control_point_spacing,) * 2
+    if isinstance(control_point_spacing, float) or isinstance(control_point_spacing, int):
+        control_point_spacing = [control_point_spacing,] * 2
 
-    if isinstance(sigma, list) or isinstance(sigma, tuple):
-        sigmas = [s for s in sigma]
-    else:
-        sigmas = [sigma] * 2
+    if isinstance(sigma, float) or isinstance(sigma, int):
+        sigma = [sigma] * 2
 
-    control_points = tuple(max(1, int(round(float(shape[d]) / spacing[d]))) for d in range(2))
+    control_points = tuple(max(1, int(round(float(shape[d]) / control_point_spacing[d]))) for d in range(2))
 
     control_point_offsets = torch.zeros((2,) + control_points)
     for d in range(2):
-        if sigmas[d] > 0:
-            control_point_offsets[d] = torch.randn(size=control_points) * sigmas[d] * 1 / (0.5 * shape[d])
+        if sigma[d] > 0:
+            control_point_offsets[d] = torch.randn(size=control_points) * sigma[d] * 1 / (0.5 * shape[d])
     displacement = (
         resize(control_point_offsets, shape, interpolation="bicubic").unsqueeze(-1).transpose(0, -1)
     )  # 1 x H x W x 2
