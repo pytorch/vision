@@ -2015,6 +2015,7 @@ class RandomEqualize(torch.nn.Module):
     def __repr__(self):
         return self.__class__.__name__ + f"(p={self.p})"
 
+
 class ElasticDeformation(torch.nn.Module):
     """Transform a tensor image with elastic deformations.
     This transform does not support PIL Image.
@@ -2030,13 +2031,7 @@ class ElasticDeformation(torch.nn.Module):
         sigma: List [sigma H, sigma W] or (float) defining the standard deviation of the control_point random offsets
     """
 
-    def __init__(
-        self,
-        control_point_spacing,
-        sigma,
-        interpolation='nearest',
-        fill=0
-    ):
+    def __init__(self, control_point_spacing, sigma, interpolation="nearest", fill=0):
         super().__init__()
         if isinstance(control_point_spacing, list) and len(control_point_spacing) != 2:
             raise ValueError(
@@ -2045,11 +2040,8 @@ class ElasticDeformation(torch.nn.Module):
             )
 
         if isinstance(sigma, list) and len(sigma) != 2:
-            raise ValueError(
-                "sigma should be a float or a list of two. Got a list of"
-                f"{len(sigma)}."
-            )
-        
+            raise ValueError("sigma should be a float or a list of two. Got a list of" f"{len(sigma)}.")
+
         self.control_point_spacing = control_point_spacing
         self.sigma = sigma
         self.interpolation = interpolation
