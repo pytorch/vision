@@ -33,7 +33,7 @@ jobs:
         run: pip install --no-build-isolation --editable .
 
       - name: Install all optional dataset requirements
-        run: pip install scipy pandas pycocotools lmdb requests
+        run: pip install scipy pycocotools lmdb requests
 
       - name: Install tests requirements
         run: pip install pytest
