@@ -207,7 +207,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
         # I don't have a better proposal TBH.
         # I think the complexity of those weight names can be greatly reduced by:
         # - good docs (which I know is part of the future work)
-        # - good defaults like "pretrained" or "latest" or whatever is easy to remember for the user, as suggested in another comment
+        # - good "preset values" like "pretrained" or "latest" or whatever is easy to remember for the user, as suggested in another comment
         weights = FasterRCNNMobileNetV3Large320FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
     weights = FasterRCNNMobileNetV3Large320FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
