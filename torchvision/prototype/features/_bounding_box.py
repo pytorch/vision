@@ -86,15 +86,6 @@ class BoundingBox(Feature):
     image_size: Tuple[int, int]
 
     @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
-        tensor = torch.as_tensor(data, dtype=dtype, device=device)
-        if tensor.ndim == 2:
-            tensor = tensor.unsqueeze(0)
-        elif tensor.ndim != 3:
-            raise ValueError("Only single images with 2 or 3 dimensions are allowed.")
-        return tensor
-
-    @classmethod
     def _parse_meta_data(
         cls,
         format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
