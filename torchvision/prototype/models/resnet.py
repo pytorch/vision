@@ -248,7 +248,7 @@ def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, *
     # This would make sure the warning message is consistent, avoid code duplication, etc.
     if "pretrained" in kwargs:
         # Nit: "argument" should probably be "parameter", since the term
-        # "argument" refers to the _value_ of the parameter at call time.
+        # "argument" refers to the *value* of the parameter at call time.
         warnings.warn("The 'pretrained' parameter is deprecated, please use the 'weights' parameter instead.")
         weights = ResNet18Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
