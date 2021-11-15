@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 from torch.jit.annotations import BroadcastingList2
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
+from .functional import InterpolationMode
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
@@ -985,3 +986,44 @@ def equalize(img: Tensor) -> Tensor:
         return _equalize_single_image(img)
 
     return torch.stack([_equalize_single_image(x) for x in img])
+
+
+def elastic_deformation(
+    img: Tensor,
+    control_point_spacing: List[int],
+    sigma: List[float],
+    interpolation: str = "nearest",
+    fill: Optional[List[float]] = None
+) -> Tensor:
+    # inspired by Jan Funkes implementation https://github.com/funkey/augment
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError(f"img should be Tensor. Got {type(img)}")
+
+    shape = img.shape[-2:]
+    
+    try:
+        spacing = tuple((d for d in control_point_spacing))
+    except:
+        spacing = (control_point_spacing,)*2
+    try:
+        sigmas = [ s for s in sigma ]
+    except:
+        sigmas = [sigma]*2
+    
+    control_points = tuple(
+            max(1,int(round(float(shape[d])/spacing[d])))
+            for d in range(2)
+    )
+
+    control_point_offsets = torch.zeros((2,) + control_points)
+    for d in range(2):
+        if sigmas[d] > 0:
+            control_point_offsets[d] = torch.randn(size=control_points)*sigmas[d]*1/(0.5*shape[d])
+    displacement = resize(control_point_offsets, shape, interpolation=InterpolationMode('bicubic')).unsqueeze(-1).transpose(0,-1) # 1 x H x W x 2
+
+    hw_space = [torch.linspace((-s+1)/s, (s-1)/s, s) for s in shape]
+    grid_y, grid_x = torch.meshgrid(hw_space, indexing='ij')
+    identity_grid = torch.stack([grid_x, grid_y], -1).unsqueeze(0) # 1 x H x W x 2
+    grid = identity_grid.to(img.device) + displacement.to(img.device)
+    return _apply_grid_transform(img, grid, interpolation, fill)

@@ -2014,3 +2014,59 @@ class RandomEqualize(torch.nn.Module):
 
     def __repr__(self):
         return self.__class__.__name__ + f"(p={self.p})"
+
+class ElasticDeformation(torch.nn.Module):
+    """Transform a tensor image with elastic deformations.
+    This transform does not support PIL Image.
+    Given control_point_spacing and sigma, it will generate displacement
+    vectors for all pixels based on the random offsets of the control_points.
+    The displacements are added to an identity grid and the resulting grid is
+    used to grid_sample from the image.
+    Applications:
+        Randomly transforms the morphology of objects in images and produces a
+        see-through-water-like effect
+    Args:
+        control_point_spacing: List [spacing of control_points H, spacing of control_points W] or (int), spacing between control_points in H and W direction
+        sigma: List [sigma H, sigma W] or (float) defining the standard deviation of the control_point random offsets
+    """
+
+    def __init__(
+        self,
+        control_point_spacing,
+        sigma,
+        interpolation='nearest',
+        fill=0
+    ):
+        super().__init__()
+        if isinstance(control_point_spacing, list) and len(control_point_spacing) != 2:
+            raise ValueError(
+                "control_point_spacing should be an integer or a list of two. Got a list of"
+                f"{len(control_point_spacing)}."
+            )
+
+        if isinstance(sigma, list) and len(sigma) != 2:
+            raise ValueError(
+                "sigma should be a float or a list of two. Got a list of"
+                f"{len(sigma)}."
+            )
+        
+        self.control_point_spacing = control_point_spacing
+        self.sigma = sigma
+        self.interpolation = interpolation
+        self.fill = fill
+
+    def forward(self, tensor: Tensor) -> Tensor:
+        """
+        Args:
+            tensor (Tensor): Tensor image to be whitened.
+
+        Returns:
+            Tensor: Transformed image.
+        """
+        return elastic_deformation(tensor, self.control_point_spacing, self.sigma, self.interpolation, self.fill)
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + "(control_point_spacing="
+        format_string += str(self.control_point_spacing) + ")"
+        format_string += ", (sigma=" + str(self.sigma) + ")"
+        return format_string
