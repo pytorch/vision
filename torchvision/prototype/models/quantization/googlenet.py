@@ -47,7 +47,7 @@ def googlenet(
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
         else:

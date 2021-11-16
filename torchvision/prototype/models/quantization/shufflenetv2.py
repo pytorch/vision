@@ -92,7 +92,7 @@ def shufflenet_v2_x0_5(
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
                 QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
@@ -117,7 +117,7 @@ def shufflenet_v2_x1_0(
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
                 QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community

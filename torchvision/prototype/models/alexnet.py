@@ -30,7 +30,7 @@ class AlexNetWeights(Weights):
 
 def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = AlexNetWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = AlexNetWeights.verify(weights)
     if weights is not None:

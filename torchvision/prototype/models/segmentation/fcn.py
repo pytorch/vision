@@ -55,11 +55,11 @@ def fcn_resnet50(
     **kwargs: Any,
 ) -> FCN:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = FCNResNet50Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
     weights = FCNResNet50Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -86,11 +86,11 @@ def fcn_resnet101(
     **kwargs: Any,
 ) -> FCN:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = FCNResNet101Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
     weights = FCNResNet101Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = ResNet101Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 

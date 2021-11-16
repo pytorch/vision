@@ -90,7 +90,7 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
     """
     sig = signature(fn)
     if "weights" not in sig.parameters:
-        raise ValueError("The method is missing the 'weights' argument.")
+        raise ValueError("The method is missing the 'weights' parameter.")
 
     ann = signature(fn).parameters["weights"].annotation
     weights_class = None

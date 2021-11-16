@@ -81,11 +81,11 @@ def fasterrcnn_resnet50_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = FasterRCNNResNet50FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
     weights = FasterRCNNResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -156,11 +156,11 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = FasterRCNNMobileNetV3LargeFPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
     weights = FasterRCNNMobileNetV3LargeFPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
@@ -188,11 +188,11 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = FasterRCNNMobileNetV3Large320FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
     weights = FasterRCNNMobileNetV3Large320FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

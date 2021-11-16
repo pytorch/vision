@@ -78,12 +78,12 @@ def deeplabv3_resnet50(
     **kwargs: Any,
 ) -> DeepLabV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = DeepLabV3ResNet50Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
 
     weights = DeepLabV3ResNet50Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -110,12 +110,12 @@ def deeplabv3_resnet101(
     **kwargs: Any,
 ) -> DeepLabV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = DeepLabV3ResNet101Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
 
     weights = DeepLabV3ResNet101Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = ResNet101Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 
@@ -142,12 +142,12 @@ def deeplabv3_mobilenet_v3_large(
     **kwargs: Any,
 ) -> DeepLabV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = DeepLabV3MobileNetV3LargeWeights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
 
     weights = DeepLabV3MobileNetV3LargeWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

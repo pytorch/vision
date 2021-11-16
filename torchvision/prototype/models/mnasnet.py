@@ -79,7 +79,7 @@ def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs:
 
 def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MNASNet0_5Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
 
     weights = MNASNet0_5Weights.verify(weights)
@@ -89,7 +89,7 @@ def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = Tru
 
 def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             raise ValueError("No checkpoint is available for model type mnasnet0_75")
 
@@ -100,7 +100,7 @@ def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = T
 
 def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MNASNet1_0Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = MNASNet1_0Weights.verify(weights)
 
@@ -109,7 +109,7 @@ def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = Tru
 
 def mnasnet1_3(weights: Optional[MNASNet1_3Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             raise ValueError("No checkpoint is available for model type mnasnet1_3")
 

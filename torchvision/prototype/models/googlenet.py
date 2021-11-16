@@ -30,7 +30,7 @@ class GoogLeNetWeights(Weights):
 
 def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = GoogLeNetWeights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = GoogLeNetWeights.verify(weights)
 

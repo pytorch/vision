@@ -44,16 +44,16 @@ def ssd300_vgg16(
     **kwargs: Any,
 ) -> SSD:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = SSD300VGG16Weights.Coco_RefV1 if kwargs.pop("pretrained") else None
     weights = SSD300VGG16Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = VGG16Weights.ImageNet1K_Features if kwargs.pop("pretrained_backbone") else None
     weights_backbone = VGG16Weights.verify(weights_backbone)
 
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
 
     if weights is not None:
         weights_backbone = None

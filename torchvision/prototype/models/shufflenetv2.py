@@ -84,7 +84,7 @@ def shufflenet_v2_x0_5(
     weights: Optional[ShuffleNetV2_x0_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ShuffleNetV2_x0_5Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = ShuffleNetV2_x0_5Weights.verify(weights)
 
@@ -95,7 +95,7 @@ def shufflenet_v2_x1_0(
     weights: Optional[ShuffleNetV2_x1_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ShuffleNetV2_x1_0Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = ShuffleNetV2_x1_0Weights.verify(weights)
 
@@ -106,7 +106,7 @@ def shufflenet_v2_x1_5(
     weights: Optional[ShuffleNetV2_x1_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             raise ValueError("No checkpoint is available for model type shufflenet_v2_x1_5")
     weights = ShuffleNetV2_x1_5Weights.verify(weights)
@@ -118,7 +118,7 @@ def shufflenet_v2_x2_0(
     weights: Optional[ShuffleNetV2_x2_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             raise ValueError("No checkpoint is available for model type shufflenet_v2_x2_0")
     weights = ShuffleNetV2_x2_0Weights.verify(weights)

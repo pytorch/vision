@@ -73,7 +73,7 @@ def mobilenet_v3_large(
     weights: Optional[MobileNetV3LargeWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = MobileNetV3LargeWeights.verify(weights)
 
@@ -85,7 +85,7 @@ def mobilenet_v3_small(
     weights: Optional[MobileNetV3SmallWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MobileNetV3SmallWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = MobileNetV3SmallWeights.verify(weights)
 

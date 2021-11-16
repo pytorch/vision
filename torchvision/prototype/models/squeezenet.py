@@ -47,7 +47,7 @@ class SqueezeNet1_1Weights(Weights):
 
 def squeezenet1_0(weights: Optional[SqueezeNet1_0Weights] = None, progress: bool = True, **kwargs: Any) -> SqueezeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = SqueezeNet1_0Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = SqueezeNet1_0Weights.verify(weights)
     if weights is not None:
@@ -63,7 +63,7 @@ def squeezenet1_0(weights: Optional[SqueezeNet1_0Weights] = None, progress: bool
 
 def squeezenet1_1(weights: Optional[SqueezeNet1_1Weights] = None, progress: bool = True, **kwargs: Any) -> SqueezeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = SqueezeNet1_1Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = SqueezeNet1_1Weights.verify(weights)
     if weights is not None:

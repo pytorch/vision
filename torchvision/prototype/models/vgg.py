@@ -163,7 +163,7 @@ class VGG19BNWeights(Weights):
 
 def vgg11(weights: Optional[VGG11Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG11Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG11Weights.verify(weights)
 
@@ -172,7 +172,7 @@ def vgg11(weights: Optional[VGG11Weights] = None, progress: bool = True, **kwarg
 
 def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG11BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG11BNWeights.verify(weights)
 
@@ -181,7 +181,7 @@ def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **
 
 def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG13Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG13Weights.verify(weights)
 
@@ -190,7 +190,7 @@ def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwarg
 
 def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG13BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG13BNWeights.verify(weights)
 
@@ -199,7 +199,7 @@ def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **
 
 def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG16Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG16Weights.verify(weights)
 
@@ -208,7 +208,7 @@ def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwarg
 
 def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG16BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG16BNWeights.verify(weights)
 
@@ -217,7 +217,7 @@ def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **
 
 def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG19Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG19Weights.verify(weights)
 
@@ -226,7 +226,7 @@ def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwarg
 
 def vgg19_bn(weights: Optional[VGG19BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = VGG19BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = VGG19BNWeights.verify(weights)
 

@@ -97,7 +97,7 @@ class R2Plus1D_18Weights(Weights):
 
 def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = R3D_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
     weights = R3D_18Weights.verify(weights)
 
@@ -114,7 +114,7 @@ def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwa
 
 def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MC3_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
     weights = MC3_18Weights.verify(weights)
 
@@ -131,7 +131,7 @@ def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwa
 
 def r2plus1d_18(weights: Optional[R2Plus1D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = R2Plus1D_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
     weights = R2Plus1D_18Weights.verify(weights)
 

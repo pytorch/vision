@@ -233,7 +233,7 @@ class WideResNet101_2Weights(Weights):
 
 def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNet18Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
     weights = ResNet18Weights.verify(weights)
@@ -243,7 +243,7 @@ def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, *
 
 def resnet34(weights: Optional[ResNet34Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNet34Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
     weights = ResNet34Weights.verify(weights)
@@ -253,7 +253,7 @@ def resnet34(weights: Optional[ResNet34Weights] = None, progress: bool = True, *
 
 def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = ResNet50Weights.verify(weights)
 
@@ -262,7 +262,7 @@ def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, *
 
 def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNet101Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
     weights = ResNet101Weights.verify(weights)
@@ -272,7 +272,7 @@ def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True,
 
 def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNet152Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
     weights = ResNet152Weights.verify(weights)
@@ -282,7 +282,7 @@ def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True,
 
 def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNeXt50_32x4dWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
     weights = ResNeXt50_32x4dWeights.verify(weights)
@@ -293,7 +293,7 @@ def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: 
 
 def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ResNeXt101_32x8dWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
 
     weights = ResNeXt101_32x8dWeights.verify(weights)
@@ -304,7 +304,7 @@ def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress
 
 def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = WideResNet50_2Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
 
     weights = WideResNet50_2Weights.verify(weights)
@@ -314,7 +314,7 @@ def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: b
 
 def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = WideResNet101_2Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
 
     weights = WideResNet101_2Weights.verify(weights)

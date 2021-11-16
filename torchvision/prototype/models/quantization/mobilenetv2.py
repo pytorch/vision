@@ -48,7 +48,7 @@ def mobilenet_v2(
     **kwargs: Any,
 ) -> QuantizableMobileNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
                 QuantizedMobileNetV2Weights.ImageNet1K_QNNPACK_RefV1
