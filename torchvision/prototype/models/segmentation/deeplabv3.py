@@ -96,7 +96,7 @@ def deeplabv3_resnet50(
     model = _deeplabv3_resnet(backbone, num_classes, aux_loss)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
@@ -128,7 +128,7 @@ def deeplabv3_resnet101(
     model = _deeplabv3_resnet(backbone, num_classes, aux_loss)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
@@ -160,6 +160,6 @@ def deeplabv3_mobilenet_v3_large(
     model = _deeplabv3_mobilenetv3(backbone, num_classes, aux_loss)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model

@@ -63,7 +63,7 @@ class Weights(Enum):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
-    def state_dict(self, progress: bool) -> OrderedDict:
+    def get_state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
 
     def __repr__(self):

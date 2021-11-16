@@ -45,7 +45,7 @@ def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = 
     model = Inception3(**kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None

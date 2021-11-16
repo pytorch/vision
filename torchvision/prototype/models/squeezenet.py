@@ -56,7 +56,7 @@ def squeezenet1_0(weights: Optional[SqueezeNet1_0Weights] = None, progress: bool
     model = SqueezeNet("1_0", **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
@@ -72,6 +72,6 @@ def squeezenet1_1(weights: Optional[SqueezeNet1_1Weights] = None, progress: bool
     model = SqueezeNet("1_1", **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model

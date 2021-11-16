@@ -67,7 +67,7 @@ def maskrcnn_resnet50_fpn(
     model = MaskRCNN(backbone, num_classes=num_classes, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if weights == MaskRCNNResNet50FPNWeights.Coco_RefV1:
             overwrite_eps(model, 0.0)
 

@@ -36,7 +36,7 @@ def _vgg(cfg: str, batch_norm: bool, weights: Optional[Weights], progress: bool,
         kwargs["num_classes"] = len(weights.meta["categories"])
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
     return model
 
 

@@ -79,7 +79,7 @@ def inception_v3(
         if quantize and not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not quantize and not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None

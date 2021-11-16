@@ -70,7 +70,7 @@ def retinanet_resnet50_fpn(
     model = RetinaNet(backbone, num_classes, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if weights == RetinaNetResNet50FPNWeights.Coco_RefV1:
             overwrite_eps(model, 0.0)
 

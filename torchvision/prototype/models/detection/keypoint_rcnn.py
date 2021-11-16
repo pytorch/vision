@@ -86,7 +86,7 @@ def keypointrcnn_resnet50_fpn(
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if weights == KeypointRCNNResNet50FPNWeights.Coco_RefV1:
             overwrite_eps(model, 0.0)
 
