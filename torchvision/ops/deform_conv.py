@@ -1,12 +1,14 @@
 import math
+from typing import Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 from torch.nn import init
-from torch.nn.parameter import Parameter
 from torch.nn.modules.utils import _pair
-from typing import Optional, Tuple
+from torch.nn.parameter import Parameter
 from torchvision.extension import _assert_has_ops
+
+from ..utils import _log_api_usage_once
 
 
 def deform_conv2d(
@@ -59,6 +61,7 @@ def deform_conv2d(
         >>>  torch.Size([4, 5, 8, 8])
     """
 
+    _log_api_usage_once("torchvision.ops.deform_conv2d")
     _assert_has_ops()
     out_channels = weight.shape[0]
 
@@ -74,7 +77,7 @@ def deform_conv2d(
     pad_h, pad_w = _pair(padding)
     dil_h, dil_w = _pair(dilation)
     weights_h, weights_w = weight.shape[-2:]
-    _, n_in_channels, in_h, in_w = input.shape
+    _, n_in_channels, _, _ = input.shape
 
     n_offset_grps = offset.shape[1] // (2 * weights_h * weights_w)
     n_weight_grps = n_in_channels // weight.shape[1]
@@ -83,8 +86,8 @@ def deform_conv2d(
         raise RuntimeError(
             "the shape of the offset tensor at dimension 1 is not valid. It should "
             "be a multiple of 2 * weight.size[2] * weight.size[3].\n"
-            "Got offset.shape[1]={}, while 2 * weight.size[2] * weight.size[3]={}".format(
-                offset.shape[1], 2 * weights_h * weights_w))
+            f"Got offset.shape[1]={offset.shape[1]}, while 2 * weight.size[2] * weight.size[3]={2 * weights_h * weights_w}"
+        )
 
     return torch.ops.torchvision.deform_conv2d(
         input,
@@ -92,12 +95,16 @@ def deform_conv2d(
         offset,
         mask,
         bias,
-        stride_h, stride_w,
-        pad_h, pad_w,
-        dil_h, dil_w,
+        stride_h,
+        stride_w,
+        pad_h,
+        pad_w,
+        dil_h,
+        dil_w,
         n_weight_grps,
         n_offset_grps,
-        use_mask,)
+        use_mask,
+    )
 
 
 class DeformConv2d(nn.Module):
@@ -116,12 +123,12 @@ class DeformConv2d(nn.Module):
         groups: int = 1,
         bias: bool = True,
     ):
-        super(DeformConv2d, self).__init__()
+        super().__init__()
 
         if in_channels % groups != 0:
-            raise ValueError('in_channels must be divisible by groups')
+            raise ValueError("in_channels must be divisible by groups")
         if out_channels % groups != 0:
-            raise ValueError('out_channels must be divisible by groups')
+            raise ValueError("out_channels must be divisible by groups")
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -131,13 +138,14 @@ class DeformConv2d(nn.Module):
         self.dilation = _pair(dilation)
         self.groups = groups
 
-        self.weight = Parameter(torch.empty(out_channels, in_channels // groups,
-                                            self.kernel_size[0], self.kernel_size[1]))
+        self.weight = Parameter(
+            torch.empty(out_channels, in_channels // groups, self.kernel_size[0], self.kernel_size[1])
+        )
 
         if bias:
             self.bias = Parameter(torch.empty(out_channels))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
         self.reset_parameters()
 
@@ -153,25 +161,31 @@ class DeformConv2d(nn.Module):
         """
         Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): offsets to be applied for each position in the
-                convolution kernel.
-            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): masks to be applied for each position in the
-                convolution kernel.
+            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                offsets to be applied for each position in the convolution kernel.
+            mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width, out_height, out_width]):
+                masks to be applied for each position in the convolution kernel.
         """
-        return deform_conv2d(input, offset, self.weight, self.bias, stride=self.stride,
-                             padding=self.padding, dilation=self.dilation, mask=mask)
+        return deform_conv2d(
+            input,
+            offset,
+            self.weight,
+            self.bias,
+            stride=self.stride,
+            padding=self.padding,
+            dilation=self.dilation,
+            mask=mask,
+        )
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + '('
-        s += '{in_channels}'
-        s += ', {out_channels}'
-        s += ', kernel_size={kernel_size}'
-        s += ', stride={stride}'
-        s += ', padding={padding}' if self.padding != (0, 0) else ''
-        s += ', dilation={dilation}' if self.dilation != (1, 1) else ''
-        s += ', groups={groups}' if self.groups != 1 else ''
-        s += ', bias=False' if self.bias is None else ''
-        s += ')'
+        s = self.__class__.__name__ + "("
+        s += "{in_channels}"
+        s += ", {out_channels}"
+        s += ", kernel_size={kernel_size}"
+        s += ", stride={stride}"
+        s += ", padding={padding}" if self.padding != (0, 0) else ""
+        s += ", dilation={dilation}" if self.dilation != (1, 1) else ""
+        s += ", groups={groups}" if self.groups != 1 else ""
+        s += ", bias=False" if self.bias is None else ""
+        s += ")"
         return s.format(**self.__dict__)

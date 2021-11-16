@@ -15,7 +15,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
 export BUILD_TYPE=conda
-setup_env 0.11.0
+setup_env 0.12.0
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
@@ -36,7 +36,13 @@ else
   MKL_CONSTRAINT=''
 fi
 
-conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
+if [[ $CONDA_BUILD_VARIANT == "cpu" ]]; then
+  PYTORCH_MUTEX_CONSTRAINT='pytorch-mutex=1.0=cpu'
+else
+  PYTORCH_MUTEX_CONSTRAINT=''
+fi
+
+conda install -yq \pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $PYTORCH_MUTEX_CONSTRAINT $MKL_CONSTRAINT -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then

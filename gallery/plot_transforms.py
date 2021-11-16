@@ -7,6 +7,8 @@ This example illustrates the various transforms available in :ref:`the
 torchvision.transforms module <transforms>`.
 """
 
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/transforms_thumbnail.png"
+
 from PIL import Image
 from pathlib import Path
 import matplotlib.pyplot as plt

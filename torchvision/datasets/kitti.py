@@ -73,9 +73,7 @@ class Kitti(VisionDataset):
         if download:
             self.download()
         if not self._check_exists():
-            raise RuntimeError(
-                "Dataset not found. You may use download=True to download it."
-            )
+            raise RuntimeError("Dataset not found. You may use download=True to download it.")
 
         image_dir = os.path.join(self._raw_folder, self._location, self.image_dir_name)
         if self.train:
@@ -83,9 +81,7 @@ class Kitti(VisionDataset):
         for img_file in os.listdir(image_dir):
             self.images.append(os.path.join(image_dir, img_file))
             if self.train:
-                self.targets.append(
-                    os.path.join(labels_dir, f"{img_file.split('.')[0]}.txt")
-                )
+                self.targets.append(os.path.join(labels_dir, f"{img_file.split('.')[0]}.txt"))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """Get item at a given index.
@@ -117,16 +113,18 @@ class Kitti(VisionDataset):
         with open(self.targets[index]) as inp:
             content = csv.reader(inp, delimiter=" ")
             for line in content:
-                target.append({
-                    "type": line[0],
-                    "truncated": float(line[1]),
-                    "occluded": int(line[2]),
-                    "alpha": float(line[3]),
-                    "bbox": [float(x) for x in line[4:8]],
-                    "dimensions": [float(x) for x in line[8:11]],
-                    "location": [float(x) for x in line[11:14]],
-                    "rotation_y": float(line[14]),
-                })
+                target.append(
+                    {
+                        "type": line[0],
+                        "truncated": float(line[1]),
+                        "occluded": int(line[2]),
+                        "alpha": float(line[3]),
+                        "bbox": [float(x) for x in line[4:8]],
+                        "dimensions": [float(x) for x in line[8:11]],
+                        "location": [float(x) for x in line[11:14]],
+                        "rotation_y": float(line[14]),
+                    }
+                )
         return target
 
     def __len__(self) -> int:
@@ -141,10 +139,7 @@ class Kitti(VisionDataset):
         folders = [self.image_dir_name]
         if self.train:
             folders.append(self.labels_dir_name)
-        return all(
-            os.path.isdir(os.path.join(self._raw_folder, self._location, fname))
-            for fname in folders
-        )
+        return all(os.path.isdir(os.path.join(self._raw_folder, self._location, fname)) for fname in folders)
 
     def download(self) -> None:
         """Download the KITTI data if it doesn't exist already."""

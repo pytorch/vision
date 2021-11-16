@@ -287,9 +287,9 @@ setup_conda_pytorch_constraint() {
 
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
 setup_conda_cudatoolkit_constraint() {
-  export CONDA_CPUONLY_FEATURE=""
+  export CONDA_BUILD_VARIANT="cuda"
   if [[ "$(uname)" == Darwin ]]; then
-    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CONDA_BUILD_VARIANT="cpu"
   else
     case "$CU_VERSION" in
       cu113)
@@ -318,7 +318,7 @@ setup_conda_cudatoolkit_constraint() {
         ;;
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
-        export CONDA_CPUONLY_FEATURE="- cpuonly"
+        export CONDA_BUILD_VARIANT="cpu"
         ;;
       *)
         echo "Unrecognized CU_VERSION=$CU_VERSION"
@@ -329,10 +329,10 @@ setup_conda_cudatoolkit_constraint() {
 }
 
 setup_conda_cudatoolkit_plain_constraint() {
-  export CONDA_CPUONLY_FEATURE=""
+  export CONDA_BUILD_VARIANT="cuda"
   export CMAKE_USE_CUDA=1
   if [[ "$(uname)" == Darwin ]]; then
-    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CONDA_BUILD_VARIANT="cpu"
     export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
@@ -359,7 +359,7 @@ setup_conda_cudatoolkit_plain_constraint() {
         ;;
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
-        export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CONDA_BUILD_VARIANT="cpu"
         export CMAKE_USE_CUDA=0
         ;;
       *)

@@ -1,6 +1,7 @@
 import glob
 import os
 from typing import Optional, Callable, Tuple, Dict, Any, List
+
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
@@ -49,7 +50,7 @@ class HMDB51(VisionDataset):
     data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
     splits = {
         "url": "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
-        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5"
+        "md5": "15e67781e70dcfbdce2d7dbb9b3344b5",
     }
     TRAIN_TAG = 1
     TEST_TAG = 2
@@ -71,11 +72,11 @@ class HMDB51(VisionDataset):
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
     ) -> None:
-        super(HMDB51, self).__init__(root)
+        super().__init__(root)
         if fold not in (1, 2, 3):
-            raise ValueError("fold should be between 1 and 3, got {}".format(fold))
+            raise ValueError(f"fold should be between 1 and 3, got {fold}")
 
-        extensions = ('avi',)
+        extensions = ("avi",)
         self.classes, class_to_idx = find_classes(self.root)
         self.samples = make_dataset(
             self.root,
@@ -112,7 +113,7 @@ class HMDB51(VisionDataset):
 
     def _select_fold(self, video_list: List[str], annotations_dir: str, fold: int, train: bool) -> List[int]:
         target_tag = self.TRAIN_TAG if train else self.TEST_TAG
-        split_pattern_name = "*test_split{}.txt".format(fold)
+        split_pattern_name = f"*test_split{fold}.txt"
         split_pattern_path = os.path.join(annotations_dir, split_pattern_name)
         annotation_paths = glob.glob(split_pattern_path)
         selected_files = set()
