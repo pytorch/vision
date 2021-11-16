@@ -362,19 +362,13 @@ class FlyingThings3D(FlowDataset):
         return _read_pfm(file_name)
 
 
-def _read_flo(f):
+def _read_flo(file_name):
     """Read .flo file in Middlebury format"""
     # Code adapted from:
     # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
     # Everything needs to be in little Endian according to
     # https://vision.middlebury.edu/flow/code/flow-code/README.txt
-    if isinstance(f, (str, Path)):
-        f = open(f, "rb")
-        close = True
-    else:
-        close = False
-
-    try:
+    with open(file_name, "rb") as f:
         magic = np.fromfile(f, "c", count=4).tobytes()
         if magic != b"PIEH":
             raise ValueError("Magic number incorrect. Invalid .flo file")
@@ -382,10 +376,7 @@ def _read_flo(f):
         w = int(np.fromfile(f, "<i4", count=1))
         h = int(np.fromfile(f, "<i4", count=1))
         data = np.fromfile(f, "<f4", count=2 * w * h)
-        return data.reshape(h, w, 2).transpose(2, 0, 1).astype("f4", copy=False)
-    finally:
-        if close:
-            f.close()
+        return data.reshape(h, w, 2).transpose(2, 0, 1)
 
 
 def _read_16bits_png_with_flow_and_valid_mask(file_name):
