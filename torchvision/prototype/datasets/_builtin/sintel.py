@@ -79,13 +79,13 @@ class SINTEL(Dataset):
         # check if split is in the folder name
         return split in path.parents[2].name
 
-    def _filter_images(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
+    def _filter_pass_name(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
         if pass_name == "both":
-            matched = path.parents[1].name in ["clean", "final"]
+            matched = path.parents[1].name in ["clean", "final", "flow"]
         else:
-            matched = path.parents[1].name == pass_name
-        return matched and path.suffix == ".png"
+            matched = path.parents[1].name in [pass_name, "flow"]
+        return matched
 
     def _classify_archive(self, data: Tuple[str, Any], *, pass_name: str) -> Optional[int]:
         path = pathlib.Path(data[0])
@@ -101,8 +101,8 @@ class SINTEL(Dataset):
         magic = file.read(4)
         if magic != b"PIEH":
             raise ValueError("Magic number incorrect. Invalid .flo file")
-        w = np.frombufer(file.read(4), dtype="<i4")
-        h = np.frombuffer(file.read(4), dtype="<i4")
+        w = np.frombuffer(file.read(4), dtype="<i4")[0]
+        h = np.frombuffer(file.read(4), dtype="<i4")[0]
 
         data = file.read(2 * w * h * 4)
         data_arr = np.frombuffer(data, dtype="<f4")
@@ -157,7 +157,7 @@ class SINTEL(Dataset):
         archive_dp = ZipArchiveReader(dp)
 
         curr_split = Filter(archive_dp, self._filter_split, fn_kwargs=dict(split=config.split))
-        filtered_curr_split = Filter(curr_split, self._filter_images, fn_kwargs=dict(pass_name=config.pass_name))
+        filtered_curr_split = Filter(curr_split, self._filter_pass_name, fn_kwargs=dict(pass_name=config.pass_name))
         if config.split == "train":
             flo_dp, pass_images_dp = Demultiplexer(
                 filtered_curr_split,
@@ -167,7 +167,7 @@ class SINTEL(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
             flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
-            pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[stry, Any]] = InSceneGrouper(pass_images_dp)
+            pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[str, Any]] = InSceneGrouper(pass_images_dp)
             zipped_dp = IterKeyZipper(
                 flo_dp,
                 pass_images_dp,
