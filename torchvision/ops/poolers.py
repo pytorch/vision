@@ -7,6 +7,7 @@ from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
 
 from ..utils import _log_api_usage_once
+from .poolers import LevelMapper
 from .roi_align import roi_align
 
 
@@ -35,7 +36,7 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
 
 def _setup_scales(
     features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
-):
+) -> Tuple[List[float], LevelMapper]:
     assert len(image_shapes) != 0
     max_x = 0
     max_y = 0
@@ -49,7 +50,7 @@ def _setup_scales(
     # downsamples by a factor of 2 at each level.
     lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
     lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
-    scales = scales
+
     map_levels = initLevelMapper(
         int(lvl_min),
         int(lvl_max),
