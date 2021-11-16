@@ -32,12 +32,12 @@ def _mobilenet_v3(
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -49,7 +49,7 @@ class MobileNetV3LargeWeights(Weights):
         url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 74.042,
             "acc@5": 91.340,
@@ -59,7 +59,7 @@ class MobileNetV3LargeWeights(Weights):
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
             "acc@1": 75.274,
             "acc@5": 92.566,
@@ -72,7 +72,7 @@ class MobileNetV3SmallWeights(Weights):
         url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 67.668,
             "acc@5": 87.402,
@@ -84,7 +84,7 @@ def mobilenet_v3_large(
     weights: Optional[MobileNetV3LargeWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = MobileNetV3LargeWeights.verify(weights)
 
@@ -96,7 +96,7 @@ def mobilenet_v3_small(
     weights: Optional[MobileNetV3SmallWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MobileNetV3SmallWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = MobileNetV3SmallWeights.verify(weights)
 
