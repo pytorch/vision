@@ -7,8 +7,47 @@ from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
 
 from ..utils import _log_api_usage_once
-from .poolers import LevelMapper
 from .roi_align import roi_align
+
+
+class LevelMapper:
+    """Determine which FPN level each RoI in a set of RoIs should map to based
+    on the heuristic in the FPN paper.
+
+    Args:
+        k_min (int)
+        k_max (int)
+        canonical_scale (int)
+        canonical_level (int)
+        eps (float)
+    """
+
+    def __init__(
+        self,
+        k_min: int,
+        k_max: int,
+        canonical_scale: int = 224,
+        canonical_level: int = 4,
+        eps: float = 1e-6,
+    ):
+        self.k_min = k_min
+        self.k_max = k_max
+        self.s0 = canonical_scale
+        self.lvl0 = canonical_level
+        self.eps = eps
+
+    def __call__(self, boxlists: List[Tensor]) -> Tensor:
+        """
+        Args:
+            boxlists (list[BoxList])
+        """
+        # Compute level ids
+        s = torch.sqrt(torch.cat([box_area(boxlist) for boxlist in boxlists]))
+
+        # Eqn.(1) in FPN paper
+        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=s.dtype))
+        target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
+        return (target_lvls.to(torch.int64) - self.k_min).to(torch.int64)
 
 
 def _convert_to_roi_format(boxes: List[Tensor]) -> Tensor:
@@ -195,46 +234,6 @@ def initLevelMapper(
     eps: float = 1e-6,
 ):
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
-
-
-class LevelMapper:
-    """Determine which FPN level each RoI in a set of RoIs should map to based
-    on the heuristic in the FPN paper.
-
-    Args:
-        k_min (int)
-        k_max (int)
-        canonical_scale (int)
-        canonical_level (int)
-        eps (float)
-    """
-
-    def __init__(
-        self,
-        k_min: int,
-        k_max: int,
-        canonical_scale: int = 224,
-        canonical_level: int = 4,
-        eps: float = 1e-6,
-    ):
-        self.k_min = k_min
-        self.k_max = k_max
-        self.s0 = canonical_scale
-        self.lvl0 = canonical_level
-        self.eps = eps
-
-    def __call__(self, boxlists: List[Tensor]) -> Tensor:
-        """
-        Args:
-            boxlists (list[BoxList])
-        """
-        # Compute level ids
-        s = torch.sqrt(torch.cat([box_area(boxlist) for boxlist in boxlists]))
-
-        # Eqn.(1) in FPN paper
-        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=s.dtype))
-        target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
-        return (target_lvls.to(torch.int64) - self.k_min).to(torch.int64)
 
 
 class MultiScaleRoIAlign(nn.Module):
