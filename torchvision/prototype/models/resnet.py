@@ -96,7 +96,7 @@ class ResNet50Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 80.674,
             "acc@5": 95.166,
         },
@@ -115,13 +115,13 @@ class ResNet101Weights(Weights):
         },
     )
     ImageNet1K_RefV2 = WeightEntry(
-        url="https://download.pytorch.org/models/resnet101-b641f3a9.pth",
+        url="https://download.pytorch.org/models/resnet101-cd907fc2.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 81.728,
-            "acc@5": 95.670,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.886,
+            "acc@5": 95.780,
         },
     )
 
@@ -138,13 +138,13 @@ class ResNet152Weights(Weights):
         },
     )
     ImageNet1K_RefV2 = WeightEntry(
-        url="https://download.pytorch.org/models/resnet152-089c0848.pth",
+        url="https://download.pytorch.org/models/resnet152-f82ba261.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 82.042,
-            "acc@5": 95.926,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.284,
+            "acc@5": 96.002,
         },
     )
 
@@ -161,13 +161,13 @@ class ResNeXt50_32x4dWeights(Weights):
         },
     )
     ImageNet1K_RefV2 = WeightEntry(
-        url="https://download.pytorch.org/models/resnext50_32x4d-b260af35.pth",
+        url="https://download.pytorch.org/models/resnext50_32x4d-1a0047aa.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
-            "acc@1": 81.116,
-            "acc@5": 95.478,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.198,
+            "acc@5": 95.340,
         },
     )
 
@@ -181,6 +181,16 @@ class ResNeXt101_32x8dWeights(Weights):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 79.312,
             "acc@5": 94.526,
+        },
+    )
+    ImageNet1K_RefV2 = WeightEntry(
+        url="https://download.pytorch.org/models/resnext101_32x8d-110c445d.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 82.834,
+            "acc@5": 96.228,
         },
     )
 
@@ -201,7 +211,7 @@ class WideResNet50_2Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 81.602,
             "acc@5": 95.758,
         },
@@ -224,7 +234,7 @@ class WideResNet101_2Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 82.492,
             "acc@5": 96.110,
         },
