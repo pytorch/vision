@@ -430,7 +430,12 @@ def _probe_video_from_memory(
     return info
 
 
-def _convert_to_sec(start_pts: float, end_pts: float, pts_unit: str, time_base: Fraction) -> Tuple[float, float, str]:
+def _convert_to_sec(
+    start_pts: Union[float, Fraction],
+    end_pts: Union[float, Fraction],
+    pts_unit: str,
+    time_base: Fraction
+) -> Tuple[Union[float, Fraction], Union[float, Fraction], str]:
     if pts_unit == 'pts':
         start_pts = float(start_pts * time_base)
         end_pts = float(end_pts * time_base)
@@ -441,7 +446,7 @@ def _convert_to_sec(start_pts: float, end_pts: float, pts_unit: str, time_base: 
 def _read_video(
     filename: str,
     start_pts: int = 0,
-    end_pts: Optional[float] = None,
+    end_pts: Optional[Union[float, Fraction]] = None,
     pts_unit: str = "pts"
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
     if end_pts is None:
