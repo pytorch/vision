@@ -9,6 +9,7 @@ from collections import defaultdict
 from typing import Any, Dict, Tuple
 
 import numpy as np
+import PIL.Image
 import pytest
 import torch
 from datasets_utils import create_image_folder, make_tar, make_zip
@@ -511,6 +512,22 @@ def imagenet(info, root, config):
 
 class CocoMockData:
     @classmethod
+    def _make_images_archive(cls, root, name, *, num_samples):
+        image_paths = create_image_folder(
+            root, name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
+        )
+
+        images_meta = []
+        for path in image_paths:
+            with PIL.Image.open(path) as image:
+                width, height = image.size
+            images_meta.append(dict(file_name=path.name, id=int(path.stem), width=width, height=height))
+
+        make_zip(root, f"{name}.zip")
+
+        return images_meta
+
+    @classmethod
     def _make_annotations_json(
         cls,
         root,
@@ -553,10 +570,18 @@ class CocoMockData:
     def _make_captions_data(ann_id, image_id):
         return dict(caption=f"Caption {ann_id} describing image {image_id}.")
 
-    _DATA_FNS = dict(
-        instances=_make_instances_data,
-        captions=_make_captions_data,
-    )
+    @classmethod
+    def _make_annotations(cls, root, name, *, images_meta):
+        num_anns_per_image = torch.zeros((len(images_meta),), dtype=torch.int64)
+        for ann_type, fn in (
+            ("instances", cls._make_instances_data),
+            ("captions", cls._make_captions_data),
+        ):
+            num_anns_per_image += cls._make_annotations_json(
+                root, f"{ann_type}_{name}.json", images_meta=images_meta, fn=fn
+            )
+
+        return int(num_anns_per_image.gt(0).sum())
 
     @classmethod
     def generate(
@@ -573,22 +598,14 @@ class CocoMockData:
         num_annotated_samples_per_split = {}
         for split_ in ("train", "val"):
             config_name = f"{split_}{year}"
-            image_paths = create_image_folder(
-                root, config_name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
+
+            images_meta = cls._make_images_archive(root, config_name, num_samples=num_samples)
+
+            num_annotated_samples_per_split[split_] = cls._make_annotations(
+                annotations_dir,
+                config_name,
+                images_meta=images_meta,
             )
-            make_zip(root, f"{config_name}.zip")
-            images_meta = [dict(file_name=path.name, id=int(path.stem)) for path in image_paths]
-
-            num_anns_per_image = torch.zeros((num_samples,), dtype=torch.int64)
-            for ann_type, fn in (
-                ("instances", cls._make_instances_data),
-                ("captions", cls._make_captions_data),
-            ):
-                num_anns_per_image += cls._make_annotations_json(
-                    annotations_dir, f"{ann_type}_{config_name}.json", images_meta=images_meta, fn=fn
-                )
-
-            num_annotated_samples_per_split[split_] = int(num_anns_per_image.gt(0).sum())
 
         make_zip(root, f"annotations_trainval{year}.zip", annotations_dir)
 

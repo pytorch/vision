@@ -52,14 +52,17 @@ class CocoLabel(Label):
 
 
 class Coco(Dataset):
-    def _decode_instances_anns(self, anns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _decode_instances_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
         labels = [ann["category_id"] for ann in anns]
         categories = [self.info.categories[label] for label in labels]
         return dict(
             areas=torch.tensor([ann["area"] for ann in anns]),
             iscrowd=torch.tensor([ann["iscrowd"] for ann in anns], dtype=torch.bool),
-            # FIXME: set the proper image_size here
-            bounding_boxes=BoundingBox([ann["bbox"] for ann in anns], format="xywh") if anns else [],
+            bounding_boxes=BoundingBox(
+                [ann["bbox"] for ann in anns], format="xywh", image_size=(image_meta["height"], image_meta["width"])
+            )
+            if anns
+            else [],
             labels=[
                 CocoLabel(
                     label,
@@ -71,7 +74,7 @@ class Coco(Dataset):
             instances_ann_ids=[ann["id"] for ann in anns],
         )
 
-    def _decode_captions_ann(self, anns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _decode_captions_ann(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
         return dict(
             captions=[ann["caption"] for ann in anns],
             captions_ann_ids=[ann["id"] for ann in anns],
@@ -85,7 +88,7 @@ class Coco(Dataset):
     )
     _ANN_TYPES: Tuple[str, ...]
     _ANN_TYPE_DEFAULTS: Tuple[bool, ...]
-    _ANN_DECODERS: Tuple[Callable[["Coco", List[Dict[str, Any]]], Dict[str, Any]], ...]
+    _ANN_DECODERS: Tuple[Callable[["Coco", List[Dict[str, Any]], Dict[str, Any]], Dict[str, Any]], ...]
 
     _ANN_TYPE_OPTIONS = dict(zip(_ANN_TYPES, [(default, not default) for default in _ANN_TYPE_DEFAULTS]))
     _ANN_DECODER_MAP = dict(zip(_ANN_TYPES, _ANN_DECODERS))
@@ -154,7 +157,9 @@ class Coco(Dataset):
         else:
             return None
 
-    def _make_partial_anns_dp(self, meta_dp: IterDataPipe[Tuple[str, io.IOBase]]) -> IterDataPipe:
+    def _make_partial_anns_dp(
+        self, meta_dp: IterDataPipe[Tuple[str, io.IOBase]]
+    ) -> IterDataPipe[Tuple[List[Dict[str, Any]], Dict[str, Any]]]:
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
         meta_dp = MappingIterator(meta_dp)
@@ -184,12 +189,12 @@ class Coco(Dataset):
 
     def _precollate_anns(
         self, data: List[Tuple[List[Dict[str, Any]], Dict[str, Any]]], *, types: List[str]
-    ) -> Tuple[str, Dict[str, Dict[str, Any]]]:
-        ann_data, (image_data, *_) = zip(*data)
+    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
+        ann_data, (image_meta, *_) = zip(*data)
         anns = dict(zip(types, ann_data))
         for empty_ann_types in set(self._ANN_TYPES) - set(types):
             anns[empty_ann_types] = []
-        return image_data["file_name"], anns
+        return image_meta, anns
 
     def _make_anns_dp(
         self, meta_dp: IterDataPipe[Tuple[str, io.IOBase]], *, config: DatasetConfig
@@ -222,18 +227,18 @@ class Coco(Dataset):
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[str, Dict[str, List[Dict[str, Any]]]], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[Dict[str, Any], Dict[str, List[Dict[str, Any]]]], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
-        _, anns = ann_data
+        image_meta, anns = ann_data
         path, buffer = image_data
 
         sample = dict(path=path, image=decoder(buffer) if decoder else buffer)
 
         for type, partial_anns in anns.items():
-            sample.update(self._ANN_DECODER_MAP[type](self, partial_anns))
+            sample.update(self._ANN_DECODER_MAP[type](self, partial_anns, image_meta))
 
         return sample
 
@@ -255,7 +260,7 @@ class Coco(Dataset):
             dp = IterKeyZipper(
                 anns_dp,
                 images_dp,
-                key_fn=getitem(0),
+                key_fn=getitem(0, "file_name"),
                 ref_key_fn=path_accessor("name"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
