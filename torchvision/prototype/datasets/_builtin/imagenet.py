@@ -113,12 +113,12 @@ class ImageNet(Dataset):
         wnid = self.category_to_wnid[category]
         return ImageNetLabel(label, category=category, wnid=wnid), image_data
 
-    def _collate_test_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[None, None, None], Tuple[str, io.IOBase]]:
-        return (None, None, None), data
+    def _collate_test_data(self, data: Tuple[str, io.IOBase]) -> Tuple[None, Tuple[str, io.IOBase]]:
+        return None, data
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[ImageNetLabel, Tuple[str, io.IOBase]],
+        data: Tuple[Optional[ImageNetLabel], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
