@@ -1,14 +1,12 @@
 import enum
-import functools
 import gzip
 import io
 import lzma
-import operator
 import os
 import os.path
 import pathlib
 import pickle
-import sys
+from typing import BinaryIO
 from typing import (
     Sequence,
     Callable,
@@ -46,7 +44,7 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
-    "binary_to_tensor",
+    "fromfile",
     "read_flo",
 ]
 
@@ -65,6 +63,7 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
 
+    # TODO: This can be removed as soon as https://github.com/pytorch/pytorch/pull/67718 is merged
     if isinstance(buffer, StreamWrapper):
         buffer = buffer.file_obj
 
@@ -258,47 +257,44 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
     return dp
 
 
-prod = functools.partial(functools.reduce, operator.mul)
-
-
-def binary_to_tensor(
-    file: IO,
+def fromfile(
+    file: BinaryIO,
     *,
     dtype: torch.dtype,
-    shape: Union[int, Sequence[int]] = (),
-    byte_order: str = sys.byteorder,
-    skip: int = 0,
+    byte_order: str,
+    count: int = -1,
 ) -> torch.Tensor:
     """Construct a tensor from a binary file.
 
-    Args:
-        file (IO): Open file.
-        dtype (torch.dtype): Data type of the returned tensor.
-        shape (Union[Sequence[int], int]): Shape of the returned tensor. If `int`, the tensor will return a 1D tensor
-            with as many elements. Defaults to reading a single value and returns it as 0D tensor.
-        byte_order (str): Byte order of the data. Can be ``"little"`` or ``"big"`` endian. Defaults to the native byte
-            order of the system.
-        skip (int): Number of values to skip before values are read.
-    """
-    if isinstance(shape, int):
-        shape = (shape,)
+    .. note::
 
+        This function is similar to :func:`numpy.fromfile` with two notable differences:
+
+        1. This function only accepts an open binary file, but not a path to it.
+        2. This function has an additional ``byte_order`` parameter, since PyTorch's ``dtype``'s do not support that
+            concept.
+
+    Args:
+        file (IO): Open binary file.
+        dtype (torch.dtype): Data type of the returned tensor.
+        byte_order (str): Byte order of the data. Can be ``"little"`` or ``"big"`` endian.
+        count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
+    """
     byteorder = "<" if byte_order == "little" else ">"
     char = "f" if dtype.is_floating_point else ("i" if dtype.is_signed else "u")
     itemsize = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
     np_dtype = byteorder + char + str(itemsize)
 
-    file.seek(skip * itemsize, 1)
-    buffer = file.read((prod(shape) if shape else 1) * itemsize)
-    # PyTorch can only deal with with the native byte order, so we need to convert to it in case the file uses a
-    # different one.
-    array = np.frombuffer(buffer, dtype=np_dtype).astype(np.dtype[1:], copy=False)
-    return torch.from_numpy(array).reshape(tuple(shape))
+    buffer = file.read(-1 if count == -1 else count * itemsize)
+    # torch.frombuffer can only deal with with the native byte order,
+    # so we use numpy for the I/O and convert to a tensor.
+    return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype).astype(np_dtype[1:]))
 
 
-def read_flo(file: IO) -> torch.Tensor:
+def read_flo(file: BinaryIO) -> torch.Tensor:
     if file.read(4) != b"PIEH":
         raise ValueError("Magic number incorrect. Invalid .flo file")
 
-    width, height = binary_to_tensor(file, dtype=torch.int32, shape=2, byte_order="little").tolist()
-    return binary_to_tensor(file, dtype=torch.float32, shape=(height, width, 2), byte_order="little").permute((2, 0, 1))
+    width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
+    flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
+    return flow.reshape((height, width, 2)).permute((2, 0, 1))
