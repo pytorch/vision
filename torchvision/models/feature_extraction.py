@@ -1,3 +1,4 @@
+import inspect
 import math
 import re
 import warnings
@@ -175,7 +176,19 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
 
 
 def get_graph_node_names(
-    model: nn.Module, tracer_kwargs: Dict = {}, suppress_diff_warning: bool = False
+    model: nn.Module,
+    tracer_kwargs: Dict = {
+        "autowrap_modules": (
+            math,
+            torchvision.ops,
+        ),
+        "leaf_modules": tuple(
+            obj
+            for _, obj in inspect.getmembers(torchvision.ops)
+            if inspect.isclass(obj) and issubclass(obj, torch.nn.Module)
+        ),
+    },
+    suppress_diff_warning: bool = False,
 ) -> Tuple[List[str], List[str]]:
     """
     Dev utility to return node names in order of execution. See note on node
@@ -300,7 +313,12 @@ def create_feature_extractor(
         "autowrap_modules": (
             math,
             torchvision.ops,
-        )
+        ),
+        "leaf_modules": tuple(
+            obj
+            for _, obj in inspect.getmembers(torchvision.ops)
+            if inspect.isclass(obj) and issubclass(obj, torch.nn.Module)
+        ),
     },
     suppress_diff_warning: bool = False,
 ) -> fx.GraphModule:

@@ -68,6 +68,7 @@ def multiscale_roi_align(
     canonical_scale: int,
     canonical_level: int,
     output_size: List[int],
+    sampling_ratio: int,
     scales: Optional[List[float]] = None,
 ) -> Tensor:
     """

@@ -51,15 +51,9 @@ class RoIOpTester(ABC):
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_feature_extractor(self, device):
         op_obj = self.make_obj().to(device=device)
-        return_nodes = get_graph_node_names(
-            op_obj,
-            tracer_kwargs={
-                "autowrap_modules": (
-                    math,
-                    ops,
-                )
-            },
-        )[1]
+        return_nodes = get_graph_node_names(op_obj,)[
+            1
+        ][-1:]
         create_feature_extractor(op_obj, return_nodes=return_nodes)
 
     @pytest.mark.parametrize("seed", range(10))
@@ -165,15 +159,9 @@ class TestRoiPool(RoIOpTester):
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_feature_extractor(self, device):
         op_obj = self.make_obj(5, 5, spatial_scale=1).to(device=device)
-        return_nodes = get_graph_node_names(
-            op_obj,
-            tracer_kwargs={
-                "autowrap_modules": (
-                    math,
-                    ops,
-                )
-            },
-        )[1]
+        return_nodes = get_graph_node_names(op_obj,)[
+            1
+        ][-1:]
         create_feature_extractor(op_obj, return_nodes=return_nodes)
 
 
@@ -490,15 +478,7 @@ class TestMultiScaleRoIAlign:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_feature_extractor(self, device):
         op_obj = TestMultiScaleRoIAlign.make_obj().to(device=device)
-        return_nodes = get_graph_node_names(
-            op_obj,
-            tracer_kwargs={
-                "autowrap_modules": (
-                    math,
-                    ops,
-                )
-            },
-        )[1]
+        return_nodes = get_graph_node_names(op_obj)[1][-1:]
         create_feature_extractor(op_obj, return_nodes=return_nodes)
 
 
@@ -777,15 +757,9 @@ class TestDeformConv:
         op_obj = self.make_obj(device, contiguous, batch_sz, dtype, in_channels, out_channels, kernel_size, groups).to(
             device=device
         )
-        return_nodes = get_graph_node_names(
-            op_obj,
-            tracer_kwargs={
-                "autowrap_modules": (
-                    math,
-                    ops,
-                )
-            },
-        )[1]
+        return_nodes = get_graph_node_names(op_obj,)[
+            1
+        ][-1:]
         create_feature_extractor(op_obj, return_nodes=return_nodes)
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1299,15 +1273,9 @@ class TestStochasticDepth:
     @pytest.mark.parametrize("mode", ["batch", "row"])
     def test_feature_extractor(self, p, mode):
         op_obj = ops.StochasticDepth(p=p, mode=mode)
-        return_nodes = get_graph_node_names(
-            op_obj,
-            tracer_kwargs={
-                "autowrap_modules": (
-                    math,
-                    ops,
-                )
-            },
-        )[1]
+        return_nodes = get_graph_node_names(op_obj,)[
+            1
+        ][-1:]
         create_feature_extractor(op_obj, return_nodes=return_nodes)
 
 
