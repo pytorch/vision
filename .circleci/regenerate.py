@@ -268,9 +268,9 @@ def cmake_workflows(indentation=6):
         for device in device_types:
             job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 
-            job["cu_version"] = "cu102" if device == "gpu" else "cpu"
+            job["cu_version"] = "cu113" if device == "gpu" else "cpu"
             if device == "gpu" and os_type == "linux":
-                job["wheel_docker_image"] = "pytorch/manylinux-cuda102"
+                job["wheel_docker_image"] = "pytorch/manylinux-cuda113"
             jobs.append({f"cmake_{os_type}_{device}": job})
     return indent(indentation, jobs)
 
