@@ -67,7 +67,7 @@ _common_meta = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
-    "recipe": None,  # weights ported from LuaTorch
+    "recipe": None,  # TODO: add here a URL to documentation stating that the weights were ported from LuaTorch
 }
 
 
