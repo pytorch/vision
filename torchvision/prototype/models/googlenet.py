@@ -38,10 +38,6 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
     if weights is not None:
         if "transform_input" not in kwargs:
             kwargs["transform_input"] = True
-        if original_aux_logits:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
         kwargs["aux_logits"] = True
         kwargs["init_weights"] = False
         kwargs["num_classes"] = len(weights.meta["categories"])
@@ -54,5 +50,9 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
+        else:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
 
     return model
