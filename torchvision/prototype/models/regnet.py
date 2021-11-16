@@ -43,7 +43,7 @@ __all__ = [
     "regnet_x_32gf",
 ]
 
-_common_meta = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
 def _regnet(
@@ -69,7 +69,7 @@ class RegNet_y_400mfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 74.046,
             "acc@5": 91.716,
@@ -82,7 +82,7 @@ class RegNet_y_800mfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 76.420,
             "acc@5": 93.136,
@@ -95,7 +95,7 @@ class RegNet_y_1_6gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 77.950,
             "acc@5": 93.966,
@@ -108,7 +108,7 @@ class RegNet_y_3_2gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 78.948,
             "acc@5": 94.576,
@@ -121,7 +121,7 @@ class RegNet_y_8gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 80.032,
             "acc@5": 95.048,
@@ -134,7 +134,7 @@ class RegNet_y_16gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "acc@1": 80.424,
             "acc@5": 95.240,
@@ -147,7 +147,7 @@ class RegNet_y_32gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "acc@1": 80.878,
             "acc@5": 95.340,
@@ -160,7 +160,7 @@ class RegNet_x_400mfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 72.834,
             "acc@5": 90.950,
@@ -173,7 +173,7 @@ class RegNet_x_800mfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 75.212,
             "acc@5": 92.348,
@@ -186,7 +186,7 @@ class RegNet_x_1_6gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 77.040,
             "acc@5": 93.440,
@@ -199,7 +199,7 @@ class RegNet_x_3_2gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 78.364,
             "acc@5": 93.992,
@@ -212,7 +212,7 @@ class RegNet_x_8gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 79.344,
             "acc@5": 94.686,
@@ -225,7 +225,7 @@ class RegNet_x_16gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 80.058,
             "acc@5": 94.944,
@@ -238,7 +238,7 @@ class RegNet_x_32gfWeights(Weights):
         url="https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "acc@1": 80.622,
             "acc@5": 95.248,

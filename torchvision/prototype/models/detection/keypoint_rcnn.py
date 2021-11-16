@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-_common_meta = {"categories": _COCO_PERSON_CATEGORIES, "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES}
+_COMMON_META = {"categories": _COCO_PERSON_CATEGORIES, "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES}
 
 
 class KeypointRCNNResNet50FPNWeights(Weights):
@@ -30,7 +30,7 @@ class KeypointRCNNResNet50FPNWeights(Weights):
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
         transforms=CocoEval,
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/1606",
             "box_map": 50.6,
             "kp_map": 61.1,
@@ -40,7 +40,7 @@ class KeypointRCNNResNet50FPNWeights(Weights):
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
         transforms=CocoEval,
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn",
             "box_map": 54.6,
             "kp_map": 65.0,

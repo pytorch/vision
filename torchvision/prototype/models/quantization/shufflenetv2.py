@@ -49,7 +49,7 @@ def _shufflenetv2(
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -64,7 +64,7 @@ class QuantizedShuffleNetV2_x0_5Weights(Weights):
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "unquantized": ShuffleNetV2_x0_5Weights.ImageNet1K_Community,
             "acc@1": 57.972,
             "acc@5": 79.780,
@@ -77,7 +77,7 @@ class QuantizedShuffleNetV2_x1_0Weights(Weights):
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "unquantized": ShuffleNetV2_x1_0Weights.ImageNet1K_Community,
             "acc@1": 68.360,
             "acc@5": 87.582,

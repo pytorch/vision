@@ -40,7 +40,7 @@ def _shufflenetv2(
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -53,7 +53,7 @@ class ShuffleNetV2_x0_5Weights(Weights):
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 69.362,
             "acc@5": 88.316,
         },
@@ -65,7 +65,7 @@ class ShuffleNetV2_x1_0Weights(Weights):
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 60.552,
             "acc@5": 81.746,
         },

@@ -37,7 +37,7 @@ def _mobilenet_v3(
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -50,7 +50,7 @@ class MobileNetV3LargeWeights(Weights):
         url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 74.042,
             "acc@5": 91.340,
         },
@@ -62,7 +62,7 @@ class MobileNetV3SmallWeights(Weights):
         url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 67.668,
             "acc@5": 87.402,
         },

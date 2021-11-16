@@ -40,7 +40,7 @@ def _vgg(cfg: str, batch_norm: bool, weights: Optional[Weights], progress: bool,
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -53,7 +53,7 @@ class VGG11Weights(Weights):
         url="https://download.pytorch.org/models/vgg11-8a719046.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 69.020,
             "acc@5": 88.628,
         },
@@ -65,7 +65,7 @@ class VGG11BNWeights(Weights):
         url="https://download.pytorch.org/models/vgg11_bn-6002323d.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 70.370,
             "acc@5": 89.810,
         },
@@ -77,7 +77,7 @@ class VGG13Weights(Weights):
         url="https://download.pytorch.org/models/vgg13-19584684.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 69.928,
             "acc@5": 89.246,
         },
@@ -89,7 +89,7 @@ class VGG13BNWeights(Weights):
         url="https://download.pytorch.org/models/vgg13_bn-abd245e5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 71.586,
             "acc@5": 90.374,
         },
@@ -101,7 +101,7 @@ class VGG16Weights(Weights):
         url="https://download.pytorch.org/models/vgg16-397923af.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 71.592,
             "acc@5": 90.382,
         },
@@ -130,7 +130,7 @@ class VGG16BNWeights(Weights):
         url="https://download.pytorch.org/models/vgg16_bn-6c64b313.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 73.360,
             "acc@5": 91.516,
         },
@@ -142,7 +142,7 @@ class VGG19Weights(Weights):
         url="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 72.376,
             "acc@5": 90.876,
         },
@@ -154,7 +154,7 @@ class VGG19BNWeights(Weights):
         url="https://download.pytorch.org/models/vgg19_bn-c79401a0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 74.218,
             "acc@5": 91.842,
         },

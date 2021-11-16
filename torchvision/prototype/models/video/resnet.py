@@ -51,7 +51,7 @@ def _video_resnet(
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (112, 112),
     "categories": _KINETICS400_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -64,7 +64,7 @@ class R3D_18Weights(Weights):
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
         transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 52.75,
             "acc@5": 75.45,
         },
@@ -76,7 +76,7 @@ class MC3_18Weights(Weights):
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
         transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 53.90,
             "acc@5": 76.29,
         },
@@ -88,7 +88,7 @@ class R2Plus1D_18Weights(Weights):
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
         transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 57.50,
             "acc@5": 78.81,
         },

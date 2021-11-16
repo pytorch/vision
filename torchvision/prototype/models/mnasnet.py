@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -36,7 +36,7 @@ class MNASNet0_5Weights(Weights):
         url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 67.734,
             "acc@5": 87.490,
         },
@@ -53,7 +53,7 @@ class MNASNet1_0Weights(Weights):
         url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 73.456,
             "acc@5": 91.510,
         },

@@ -63,7 +63,7 @@ def _densenet(
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -76,7 +76,7 @@ class DenseNet121Weights(Weights):
         url="https://download.pytorch.org/models/densenet121-a639ec97.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 74.434,
             "acc@5": 91.972,
         },
@@ -88,7 +88,7 @@ class DenseNet161Weights(Weights):
         url="https://download.pytorch.org/models/densenet161-8d451a50.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 77.138,
             "acc@5": 93.560,
         },
@@ -100,7 +100,7 @@ class DenseNet169Weights(Weights):
         url="https://download.pytorch.org/models/densenet169-b2777c0a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 75.600,
             "acc@5": 92.806,
         },
@@ -112,7 +112,7 @@ class DenseNet201Weights(Weights):
         url="https://download.pytorch.org/models/densenet201-c1103571.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 76.896,
             "acc@5": 93.370,
         },
