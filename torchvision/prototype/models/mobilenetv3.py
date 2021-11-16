@@ -60,7 +60,7 @@ class MobileNetV3LargeWeights(Weights):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995",
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
             "acc@1": 75.274,
             "acc@5": 92.566,
         },
