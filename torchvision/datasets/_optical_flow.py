@@ -19,6 +19,7 @@ __all__ = (
     "Sintel",
     "FlyingThings3D",
     "FlyingChairs",
+    "HD1K",
 )
 
 
@@ -103,7 +104,7 @@ class Sintel(FlowDataset):
     Args:
         root (string): Root directory of the Sintel Dataset.
         split (string, optional): The dataset split, either "train" (default) or "test"
-        pass_name (string, optional): The pass to use, either "clean" (default) or "final". See link above for
+        pass_name (string, optional): The pass to use, either "clean" (default), "final", or "both". See link above for
             details on the different passes.
         transforms (callable, optional): A function/transform that takes in
             ``img1, img2, flow, valid`` and returns a transformed version.
@@ -115,21 +116,22 @@ class Sintel(FlowDataset):
         super().__init__(root=root, transforms=transforms)
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
-        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final"))
+        verify_str_arg(pass_name, "pass_name", valid_values=("clean", "final", "both"))
+        passes = ["clean", "final"] if pass_name == "both" else [pass_name]
 
         root = Path(root) / "Sintel"
-
-        split_dir = "training" if split == "train" else split
-        image_root = root / split_dir / pass_name
         flow_root = root / "training" / "flow"
 
-        for scene in os.listdir(image_root):
-            image_list = sorted(glob(str(image_root / scene / "*.png")))
-            for i in range(len(image_list) - 1):
-                self._image_list += [[image_list[i], image_list[i + 1]]]
+        for pass_name in passes:
+            split_dir = "training" if split == "train" else split
+            image_root = root / split_dir / pass_name
+            for scene in os.listdir(image_root):
+                image_list = sorted(glob(str(image_root / scene / "*.png")))
+                for i in range(len(image_list) - 1):
+                    self._image_list += [[image_list[i], image_list[i + 1]]]
 
-            if split == "train":
-                self._flow_list += sorted(glob(str(flow_root / scene / "*.flo")))
+                if split == "train":
+                    self._flow_list += sorted(glob(str(flow_root / scene / "*.flo")))
 
     def __getitem__(self, index):
         """Return example at given index.
@@ -154,7 +156,7 @@ class KittiFlow(FlowDataset):
     The dataset is expected to have the following structure: ::
 
         root
-            Kitti
+            KittiFlow
                 testing
                     image_2
                 training
@@ -175,7 +177,7 @@ class KittiFlow(FlowDataset):
 
         verify_str_arg(split, "split", valid_values=("train", "test"))
 
-        root = Path(root) / "Kitti" / (split + "ing")
+        root = Path(root) / "KittiFlow" / (split + "ing")
         images1 = sorted(glob(str(root / "image_2" / "*_10.png")))
         images2 = sorted(glob(str(root / "image_2" / "*_11.png")))
 
@@ -360,6 +362,73 @@ class FlyingThings3D(FlowDataset):
 
     def _read_flow(self, file_name):
         return _read_pfm(file_name)
+
+
+class HD1K(FlowDataset):
+    """`HD1K <http://hci-benchmark.iwr.uni-heidelberg.de/>`__ dataset for optical flow.
+
+    The dataset is expected to have the following structure: ::
+
+        root
+            hd1k
+                hd1k_challenge
+                    image_2
+                hd1k_flow_gt
+                    flow_occ
+                hd1k_input
+                    image_2
+
+    Args:
+        root (string): Root directory of the HD1K Dataset.
+        split (string, optional): The dataset split, either "train" (default) or "test"
+        transforms (callable, optional): A function/transform that takes in
+            ``img1, img2, flow, valid`` and returns a transformed version.
+    """
+
+    _has_builtin_flow_mask = True
+
+    def __init__(self, root, split="train", transforms=None):
+        super().__init__(root=root, transforms=transforms)
+
+        verify_str_arg(split, "split", valid_values=("train", "test"))
+
+        root = Path(root) / "hd1k"
+        if split == "train":
+            # There are 36 "sequences" and we don't want seq i to overlap with seq i + 1, so we need this for loop
+            for seq_idx in range(36):
+                flows = sorted(glob(str(root / "hd1k_flow_gt" / "flow_occ" / f"{seq_idx:06d}_*.png")))
+                images = sorted(glob(str(root / "hd1k_input" / "image_2" / f"{seq_idx:06d}_*.png")))
+                for i in range(len(flows) - 1):
+                    self._flow_list += [flows[i]]
+                    self._image_list += [[images[i], images[i + 1]]]
+        else:
+            images1 = sorted(glob(str(root / "hd1k_challenge" / "image_2" / "*10.png")))
+            images2 = sorted(glob(str(root / "hd1k_challenge" / "image_2" / "*11.png")))
+            for image1, image2 in zip(images1, images2):
+                self._image_list += [[image1, image2]]
+
+        if not self._image_list:
+            raise FileNotFoundError(
+                "Could not find the HD1K images. Please make sure the directory structure is correct."
+            )
+
+    def _read_flow(self, file_name):
+        return _read_16bits_png_with_flow_and_valid_mask(file_name)
+
+    def __getitem__(self, index):
+        """Return example at given index.
+
+        Args:
+            index(int): The index of the example to retrieve
+
+        Returns:
+            tuple: If ``split="train"`` a 4-tuple with ``(img1, img2, flow,
+            valid)`` where ``valid`` is a numpy boolean mask of shape (H, W)
+            indicating which flow values are valid. The flow is a numpy array of
+            shape (2, H, W) and the images are PIL images. If `split="test"`, a
+            4-tuple with ``(img1, img2, None, None)`` is returned.
+        """
+        return super().__getitem__(index)
 
 
 def _read_flo(file_name):

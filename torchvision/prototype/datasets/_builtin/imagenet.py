@@ -4,7 +4,7 @@ import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, LineReader, KeyZipper, Mapper, TarArchiveReader, Filter, Shuffler
+from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, TarArchiveReader, Filter, Shuffler
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -20,8 +20,8 @@ from torchvision.prototype.datasets.utils._internal import (
     Enumerator,
     getitem,
     read_mat,
-    FrozenMapping,
 )
+from torchvision.prototype.utils._internal import FrozenMapping
 
 
 class ImageNet(Dataset):
@@ -144,7 +144,7 @@ class ImageNet(Dataset):
             devkit_dp = Enumerator(devkit_dp, 1)
             devkit_dp = Shuffler(devkit_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-            dp = KeyZipper(
+            dp = IterKeyZipper(
                 devkit_dp,
                 images_dp,
                 key_fn=getitem(0),
