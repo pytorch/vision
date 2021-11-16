@@ -57,13 +57,13 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
-            read = functools.partial(fromfile, file, byte_order="big", count=1)
+            read = functools.partial(fromfile, file, byte_order="big")
 
-            magic = int(read(dtype=torch.int32))
+            magic = int(read(dtype=torch.int32, count=1))
             dtype = self._DTYPE_MAP[magic // 256]
             ndim = magic % 256 - 1
 
-            num_samples = int(read(dtype=torch.int32))
+            num_samples = int(read(dtype=torch.int32, count=1))
             shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
             count = prod(shape) if shape else 1
 
