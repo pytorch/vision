@@ -67,8 +67,7 @@ def multiscale_roi_align(
     featmap_names: List[str],
     canonical_scale: int,
     canonical_level: int,
-    output_size: List[Union[Tuple[int, int], int]],
-    sampling_ratio: int,
+    output_size: List[int],
     scales: Optional[List[float]] = None,
 ) -> Tensor:
     """
@@ -83,7 +82,7 @@ def multiscale_roi_align(
             scale factor for each one of the levels to be pooled.
         canonical_scale (int): canonical_scale for LevelMapper
         canonical_level (int): canonical_level for LevelMapper
-        output_size (List[Union[Tuple[int, int], int]]): size of the output
+        output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
         scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
     Returns:
