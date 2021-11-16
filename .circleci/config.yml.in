@@ -29,7 +29,7 @@ commands:
 #         command: |
 #           set -ex
 #           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-#           if [[ "$BRANCH" != "master" ]]; then
+#           if [[ "$BRANCH" != "main" ]]; then
 #             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
 #             git checkout "merged/$CIRCLE_BRANCH"
 #           fi
@@ -45,14 +45,6 @@ commands:
               our_upload_channel=test
             fi
             echo "export UPLOAD_CHANNEL=${our_upload_channel}" >> ${BASH_ENV}
-  install_cuda_compatible_cmath:
-    description: "Install CUDA compatible cmath"
-    steps:
-      - run:
-          name: _HACK_ Install CUDA compatible cmath
-          no_output_timeout: 1m
-          command: |
-              powershell .circleci/scripts/vs_install_cmath.ps1
 
   brew_update:
     description: "Update Homebrew and install base formulae"
@@ -192,8 +184,13 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off flake8 typing
-            flake8 --config=setup.cfg .
+            pip install --user --progress-bar off pre-commit
+            pre-commit install-hooks
+      - run: pre-commit run --all-files
+      - run:
+          name: Required lint modifications
+          when: on_fail
+          command: git --no-pager diff
 
   python_type_check:
     docker:
@@ -207,7 +204,8 @@ jobs:
             pip install --user --progress-bar off mypy
             pip install --user --progress-bar off types-requests
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --user --progress-bar off --editable .
+            pip install --user --progress-bar off git+https://github.com/pytorch/data.git
+            pip install --user --progress-bar off --no-build-isolation --editable .
             mypy --config-file mypy.ini
 
   docstring_parameters_sync:
@@ -227,6 +225,8 @@ jobs:
       - checkout
       - run:
           command: |
+            sudo apt-get update -y
+            sudo apt install -y libtinfo5
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
@@ -241,7 +241,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off .
+            pip install --user --progress-bar off --no-build-isolation .
             pip install pytest
             python test/test_hub.py
 
@@ -254,11 +254,34 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off .
+            pip install --user --progress-bar off --no-build-isolation .
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
             python test/test_onnx.py
+
+  prototype_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - run:
+          name: Install torch
+          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+      - run:
+          name: Install prototype dependencies
+          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
+      - checkout
+      - run:
+          name: Install torchvision
+          command: pip install --user --progress-bar off --no-build-isolation .
+      - run:
+          name: Install test requirements
+          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
+      - run:
+          name: Run tests
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
+      - store_test_results:
+          path: test-results
 
   binary_linux_wheel:
     <<: *binary_common
@@ -300,7 +323,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Build conda packages
           no_output_timeout: 20m
@@ -332,7 +354,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Build wheel packages
           command: |
@@ -712,7 +733,6 @@ jobs:
     steps:
       - checkout
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -749,12 +769,11 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "10.2"
+      CUDA_VERSION: "11.1"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -774,6 +793,12 @@ jobs:
           paths:
             - conda
             - env
+      - run:
+          name: Install CUDA
+          command: packaging/windows/internal/cuda_install.bat
+      - run:
+          name: Update CUDA driver
+          command: packaging/windows/internal/driver_update.bat
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
@@ -846,7 +871,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-1604-cuda-10.2:202012-01
-    resource_class: gpu.small
+    resource_class: gpu.nvidia.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
       PYTORCH_VERSION: << parameters.pytorch_version >>
@@ -884,7 +909,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -898,7 +922,6 @@ jobs:
     steps:
       - checkout_merge
       - designate_upload_channel
-      - install_cuda_compatible_cmath
       - run:
           command: |
             set -ex
@@ -923,32 +946,18 @@ jobs:
           name: Install torchvision
           command: .circleci/unittest/linux/scripts/install.sh
       - run:
-          name: Generate cache key
-          # This will refresh cache on Sundays, nightly build should generate new cache.
-          command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-      - run:
           name: Build docs
           command: |
             set -ex
-            tag=${CIRCLE_TAG:1:5}
-            VERSION=${tag:-master}
+            # turn v1.12.0rc3 into 1.12.0
+            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9.]*\).*/\1/')
+            VERSION=${tag:-main}
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
             pushd docs
             pip install -r requirements.txt
             make html
             popd
-      - save_cache:
-          {% raw %}
-          key: sphinx-gallery-{{ checksum "./docs/source/conf.py" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
-          paths:
-            - ./docs/source/auto_examples
       - persist_to_workspace:
           root: ./
           paths:
@@ -982,7 +991,7 @@ jobs:
             # https://circleci.com/docs/2.0/configuration-reference/#checkout
             set -ex
             tag=${CIRCLE_TAG:1:5}
-            target=${tag:-master}
+            target=${tag:-main}
             ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
 
 
@@ -998,6 +1007,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       {{ ios_workflows() }}
       {{ android_workflows() }}
 
@@ -1019,6 +1029,7 @@ workflows:
       - clang_format
       - torchhub_test
       - torch_onnx_test
+      - prototype_test
       {{ ios_workflows(nightly=True) }}
       {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
@@ -1029,7 +1040,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
     jobs:
       - smoke_test_docker_image_build:
           context: org-member

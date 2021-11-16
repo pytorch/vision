@@ -8,7 +8,7 @@ Additional documentation can be found [here](https://pytorch.org/docs/stable/tor
 
 ### Kinetics400 dataset pretraining parameters
 
-See reference training script [here](https://github.com/pytorch/vision/blob/master/references/video_classification/train.py):
+See reference training script [here](https://github.com/pytorch/vision/blob/main/references/video_classification/train.py):
 
 - input size: [3, 16, 112, 112]
 - input space: RGB

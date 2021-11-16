@@ -1,5 +1,7 @@
 #include "stream.h"
 #include <c10/util/Logging.h>
+#include <stdio.h>
+#include <string.h>
 #include "util.h"
 
 namespace ffmpeg {
@@ -24,11 +26,16 @@ Stream::~Stream() {
   }
 }
 
+// look up the proper CODEC querying the function
 AVCodec* Stream::findCodec(AVCodecParameters* params) {
   return avcodec_find_decoder(params->codec_id);
 }
 
-int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
+// Allocate memory for the AVCodecContext, which will hold the context for
+// decode/encode process. Then fill this codec context with CODEC parameters
+// defined in stream parameters. Open the codec, and allocate the global frame
+// defined in the header file
+int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
   AVStream* steam = inputCtx_->streams[format_.stream];
 
   AVCodec* codec = findCodec(steam->codecpar);
@@ -43,6 +50,28 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
     LOG(ERROR) << "LoggingUuid #" << loggingUuid_
                << ", avcodec_alloc_context3 failed";
     return AVERROR(ENOMEM);
+  }
+  // multithreading heuristics
+  // if user defined,
+  if (num_threads > max_threads) {
+    num_threads = max_threads;
+  }
+
+  if (num_threads > 0) {
+    // if user defined, respect that
+    // note that default thread_type will be used
+    codecCtx_->thread_count = num_threads;
+  } else {
+    // otherwise set sensible defaults
+    // with the special case for the different MPEG4 codecs
+    // that don't have threading context functions
+    if (codecCtx_->codec->capabilities & AV_CODEC_CAP_INTRA_ONLY) {
+      codecCtx_->thread_type = FF_THREAD_FRAME;
+      codecCtx_->thread_count = 2;
+    } else {
+      codecCtx_->thread_count = 8;
+      codecCtx_->thread_type = FF_THREAD_SLICE;
+    }
   }
 
   int ret;
@@ -93,6 +122,9 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
   return ret;
 }
 
+// send the raw data packet (compressed frame) to the decoder, through the codec
+// context and receive the raw data frame (uncompressed frame) from the
+// decoder, through the same codec context
 int Stream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   int consumed = 0;
   int result = avcodec_send_packet(codecCtx_, packet);
@@ -134,6 +166,9 @@ int Stream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   return consumed;
 }
 
+// General decoding function:
+// given the packet, analyse the metadata, and write the
+// metadata and the buffer to the DecoderOutputImage.
 int Stream::decodePacket(
     const AVPacket* packet,
     DecoderOutputMessage* out,
@@ -167,6 +202,9 @@ int Stream::flush(DecoderOutputMessage* out, bool headerOnly) {
   return 1;
 }
 
+// Sets the header and payload via stream::setHeader and copyFrameBytes
+// functions that are defined in type stream subclass (VideoStream, AudioStream,
+// ...)
 int Stream::getMessage(DecoderOutputMessage* out, bool flush, bool headerOnly) {
   if (flush) {
     // only flush of audio frames makes sense
