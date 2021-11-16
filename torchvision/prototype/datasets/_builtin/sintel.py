@@ -79,7 +79,7 @@ class SINTEL(Dataset):
         # check if split is in the folder name
         return split in path.parents[2].name
 
-    def _filter_pass_name(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
+    def _filter_pass_name_and_flow(self, data: Tuple[str, Any], *, pass_name: str) -> bool:
         path = pathlib.Path(data[0])
         if pass_name == "both":
             matched = path.parents[1].name in ["clean", "final", "flow"]
@@ -157,7 +157,9 @@ class SINTEL(Dataset):
         archive_dp = ZipArchiveReader(dp)
 
         curr_split = Filter(archive_dp, self._filter_split, fn_kwargs=dict(split=config.split))
-        filtered_curr_split = Filter(curr_split, self._filter_pass_name, fn_kwargs=dict(pass_name=config.pass_name))
+        filtered_curr_split = Filter(
+            curr_split, self._filter_pass_name_and_flow, fn_kwargs=dict(pass_name=config.pass_name)
+        )
         if config.split == "train":
             flo_dp, pass_images_dp = Demultiplexer(
                 filtered_curr_split,
