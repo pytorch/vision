@@ -175,6 +175,15 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
     warnings.warn(msg + suggestion_msg)
 
 
+def _get_leaf_modules_for_ops():
+    members = inspect.getmembers(torchvision.ops)
+    result = []
+    for _, obj in members:
+        if inspect.isclass(obj) and issubclass(obj, torch.nn.Module):
+            result.append(obj)
+    return tuple(result)
+
+
 def get_graph_node_names(
     model: nn.Module,
     tracer_kwargs: Dict = {
@@ -182,11 +191,7 @@ def get_graph_node_names(
             math,
             torchvision.ops,
         ),
-        "leaf_modules": tuple(
-            obj
-            for _, obj in inspect.getmembers(torchvision.ops)
-            if inspect.isclass(obj) and issubclass(obj, torch.nn.Module)
-        ),
+        "leaf_modules": _get_leaf_modules_for_ops(),
     },
     suppress_diff_warning: bool = False,
 ) -> Tuple[List[str], List[str]]:
@@ -314,11 +319,7 @@ def create_feature_extractor(
             math,
             torchvision.ops,
         ),
-        "leaf_modules": tuple(
-            obj
-            for _, obj in inspect.getmembers(torchvision.ops)
-            if inspect.isclass(obj) and issubclass(obj, torch.nn.Module)
-        ),
+        "leaf_modules": _get_leaf_modules_for_ops(),
     },
     suppress_diff_warning: bool = False,
 ) -> fx.GraphModule:

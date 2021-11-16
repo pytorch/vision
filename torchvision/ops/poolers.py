@@ -96,6 +96,7 @@ def multiscale_roi_align(
             x_filtered.append(v)
     num_levels = len(x_filtered)
     rois = _convert_to_roi_format(boxes)
+    mapper = None
     if scales is None:
         scales, mapper = _setup_scales(x_filtered, image_shapes, canonical_scale, canonical_level)
 
