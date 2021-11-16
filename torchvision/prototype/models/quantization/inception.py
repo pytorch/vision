@@ -2,6 +2,7 @@ import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.inception import (
@@ -9,7 +10,6 @@ from ....models.quantization.inception import (
     _replace_relu,
     quantize_model,
 )
-from ...transforms.presets import ImageNetEval
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
 from ..inception import InceptionV3Weights

@@ -225,6 +225,8 @@ jobs:
       - checkout
       - run:
           command: |
+            sudo apt-get update -y
+            sudo apt install -y libtinfo5
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
