@@ -137,6 +137,9 @@ class SINTEL(Dataset):
         path1, buffer1 = img1
         path2, buffer2 = img2
 
+        # We return the scene dir name as the label
+        label = path1.split("/")[-2]
+
         return dict(
             image1=decoder(buffer1) if decoder else buffer1,
             image1_path=path1,
@@ -144,6 +147,7 @@ class SINTEL(Dataset):
             image2_path=path2,
             flow=flow_arr,
             flow_path=flo[0],
+            label=label,
         )
 
     def _make_datapipe(
