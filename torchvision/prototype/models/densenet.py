@@ -67,7 +67,7 @@ _COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
-    "recipe": None,  # TODO: add here a URL to documentation stating that the weights were ported from LuaTorch
+    "recipe": "https://github.com/pytorch/vision/pull/116",
 }
 
 
