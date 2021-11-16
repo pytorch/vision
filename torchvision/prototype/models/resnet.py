@@ -187,7 +187,7 @@ class ResNeXt101_32x8dWeights(Weights):
         url="https://download.pytorch.org/models/resnext101_32x8d-110c445d.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995",
             "acc@1": 82.834,
             "acc@5": 96.228,
