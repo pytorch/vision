@@ -236,7 +236,6 @@ def multiscale_roi_align(
     return result
 
 
-  
 class MultiScaleRoIAlign(nn.Module):
     """
     Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
@@ -296,7 +295,6 @@ class MultiScaleRoIAlign(nn.Module):
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
 
-
     def forward(
         self,
         x: Dict[str, Tensor],
@@ -326,8 +324,7 @@ class MultiScaleRoIAlign(nn.Module):
             self.output_size,
             self.sampling_ratio,
             self.scales,
-  
-       
+        )
 
     def __repr__(self) -> str:
         return (
