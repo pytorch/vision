@@ -1364,7 +1364,7 @@ def test_to_grayscale():
 @pytest.mark.parametrize("p", (0, 1))
 def test_random_apply(p, seed):
     torch.manual_seed(seed)
-    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((1, 45))], p=p)
+    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((45, 50))], p=p)
     img = transforms.ToPILImage()(torch.rand(3, 30, 40))
     out = random_apply_transform(img)
     if p == 0:
@@ -1384,7 +1384,7 @@ def test_random_choice(proba_passthrough, seed):
     random_choice_transform = transforms.RandomChoice(
         [
             lambda x: x,  # passthrough
-            transforms.RandomRotation((1, 45)),
+            transforms.RandomRotation((45, 50)),
         ],
         p=[proba_passthrough, 1 - proba_passthrough],
     )

@@ -127,8 +127,8 @@ These can be constructed by passing ``pretrained=True``:
     regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
-This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
-:func:`torch.utils.model_zoo.load_url` for details.
+This directory can be set using the `TORCH_HOME` environment variable. See
+:func:`torch.hub.load_state_dict_from_url` for details.
 
 Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
@@ -323,10 +323,6 @@ Inception v3
 
     inception_v3
 
-.. note ::
-    This requires `scipy` to be installed
-
-
 GoogLeNet
 ------------
 
@@ -335,10 +331,6 @@ GoogLeNet
     :template: function.rst
 
     googlenet
-
-.. note ::
-    This requires `scipy` to be installed
-
 
 ShuffleNet v2
 -------------
@@ -479,7 +471,8 @@ Model                             Acc@1          Acc@5
 ================================  =============  =============
 MobileNet V2                      71.658         90.150
 MobileNet V3 Large                73.004         90.858
-ShuffleNet V2                     68.360         87.582
+ShuffleNet V2 x1.0                68.360         87.582
+ShuffleNet V2 x0.5                57.972         79.780
 ResNet 18                         69.494         88.882
 ResNet 50                         75.920         92.814
 ResNext 101 32x8d                 78.986         94.480

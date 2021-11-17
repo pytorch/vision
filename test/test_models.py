@@ -1,7 +1,10 @@
+import contextlib
 import functools
 import io
 import operator
 import os
+import pkgutil
+import sys
 import traceback
 import warnings
 from collections import OrderedDict
@@ -14,13 +17,57 @@ from _utils_internal import get_relative_path
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from torchvision import models
 
-
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 
 def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
     return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+
+
+@pytest.fixture
+def disable_weight_loading(mocker):
+    """When testing models, the two slowest operations are the downloading of the weights to a file and loading them
+    into the model. Unless, you want to test against specific weights, these steps can be disabled without any
+    drawbacks.
+
+    Including this fixture into the signature of your test, i.e. `test_foo(disable_weight_loading)`, will recurse
+    through all models in `torchvision.models` and will patch all occurrences of the function
+    `download_state_dict_from_url` as well as the method `load_state_dict` on all subclasses of `nn.Module` to be
+    no-ops.
+
+    .. warning:
+
+        Loaded models are still executable as normal, but will always have random weights. Make sure to not use this
+        fixture if you want to compare the model output against reference values.
+
+    """
+    starting_point = models
+    function_name = "load_state_dict_from_url"
+    method_name = "load_state_dict"
+
+    module_names = {info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")}
+    targets = {f"torchvision._internally_replaced_utils.{function_name}", f"torch.nn.Module.{method_name}"}
+    for name in module_names:
+        module = sys.modules.get(name)
+        if not module:
+            continue
+
+        if function_name in module.__dict__:
+            targets.add(f"{module.__name__}.{function_name}")
+
+        targets.update(
+            {
+                f"{module.__name__}.{obj.__name__}.{method_name}"
+                for obj in module.__dict__.values()
+                if isinstance(obj, type) and issubclass(obj, nn.Module) and method_name in obj.__dict__
+            }
+        )
+
+    for target in targets:
+        # See https://github.com/pytorch/vision/pull/4867#discussion_r743677802 for details
+        with contextlib.suppress(AttributeError):
+            mocker.patch(target)
 
 
 def _get_expected_file(name=None):
@@ -762,7 +809,7 @@ def test_quantized_classification_model(model_fn):
 
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
-def test_detection_model_trainable_backbone_layers(model_fn):
+def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
     model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
