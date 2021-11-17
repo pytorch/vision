@@ -5,7 +5,7 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
-from typing import Dict, Callable, List, Union, Optional, Tuple
+from typing import Dict, Callable, List, Union, Optional, Tuple, Any
 
 import torch
 import torchvision
@@ -186,7 +186,7 @@ def _get_leaf_modules_for_ops():
 
 def get_graph_node_names(
     model: nn.Module,
-    tracer_kwargs: Optional[Dict] = None,
+    tracer_kwargs: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
 ) -> Tuple[List[str], List[str]]:
     """
@@ -317,7 +317,7 @@ def create_feature_extractor(
     return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-    tracer_kwargs: Optional[Dict] = None,
+    tracer_kwargs: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
 ) -> fx.GraphModule:
     """

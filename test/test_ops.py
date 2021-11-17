@@ -458,7 +458,9 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 class TestMultiScaleRoIAlign:
-    def make_obj(self, fmap_names=["0"], output_size=(7, 7), sampling_ratio=2, **kwargs):
+    def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, **kwargs):
+        if fmap_names is None:
+            fmap_names = ["0"]
         return ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
 
     def test_msroialign_repr(self):

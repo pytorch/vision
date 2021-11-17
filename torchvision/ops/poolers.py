@@ -134,7 +134,7 @@ def _setup_scales(
 
 
 @torch.fx.wrap
-def multiscale_roi_align(
+def _multiscale_roi_align(
     x: Dict[str, Tensor],
     boxes: List[Tensor],
     image_shapes: List[Tuple[int, int]],
@@ -314,7 +314,7 @@ class MultiScaleRoIAlign(nn.Module):
         Returns:
             result (Tensor)
         """
-        return multiscale_roi_align(
+        return _multiscale_roi_align(
             x,
             boxes,
             image_shapes,
