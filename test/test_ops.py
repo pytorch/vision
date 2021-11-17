@@ -458,7 +458,7 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 class TestMultiScaleRoIAlign:
-    def make_obj(fmap_names=["0"], output_size=(7, 7), sampling_ratio=2, **kwargs):
+    def make_obj(self, fmap_names=["0"], output_size=(7, 7), sampling_ratio=2, **kwargs):
         return ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
 
     def test_msroialign_repr(self):
@@ -466,7 +466,7 @@ class TestMultiScaleRoIAlign:
         output_size = (7, 7)
         sampling_ratio = 2
         # Pass mock feature map names
-        t = TestMultiScaleRoIAlign.make_obj(fmap_names, output_size, sampling_ratio)
+        t = self.make_obj(fmap_names, output_size, sampling_ratio)
 
         # Check integrity of object __repr__ attribute
         expected_string = (
@@ -477,7 +477,7 @@ class TestMultiScaleRoIAlign:
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_feature_extractor(self, device):
-        op_obj = TestMultiScaleRoIAlign.make_obj().to(device=device)
+        op_obj = self.make_obj().to(device=device)
         return_nodes = get_graph_node_names(op_obj)[1][-1:]
         create_feature_extractor(op_obj, return_nodes=return_nodes)
 
@@ -738,25 +738,16 @@ class TestDeformConv:
 
         return x, weight, offset, mask, bias, stride, pad, dilation
 
-    def make_obj(
-        self, device, contiguous, batch_sz, dtype, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2
-    ):
-        _, _, _, _, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
+    def make_obj(self, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2):
         layer = ops.DeformConv2d(
-            in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups
+            in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
         )
         return layer
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    @pytest.mark.parametrize("contiguous", (True, False))
-    @pytest.mark.parametrize("batch_sz", (0, 33))
-    def test_feature_extractor(
-        self, device, contiguous, batch_sz, dtype=None, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2
-    ):
+    def test_feature_extractor(self, device, dtype=None, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2):
         dtype = dtype or self.dtype
-        op_obj = self.make_obj(device, contiguous, batch_sz, dtype, in_channels, out_channels, kernel_size, groups).to(
-            device=device
-        )
+        op_obj = self.make_obj(in_channels, out_channels, kernel_size, groups).to(device=device)
         return_nodes = get_graph_node_names(op_obj,)[
             1
         ][-1:]
@@ -774,9 +765,7 @@ class TestDeformConv:
         groups = 2
         tol = 2e-3 if dtype is torch.half else 1e-5
 
-        layer = self.make_obj(device, contiguous, batch_sz, dtype, in_channels, out_channels, kernel_size, groups).to(
-            device=x.device, dtype=dtype
-        )
+        layer = self.make_obj(in_channels, out_channels, kernel_size, groups).to(device=x.device, dtype=dtype)
         res = layer(x, offset, mask)
 
         weight = layer.weight.data
