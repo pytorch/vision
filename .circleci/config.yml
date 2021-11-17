@@ -9,7 +9,7 @@ version: 2.1
 executors:
   windows-cpu:
     machine:
-      resource_class: windows.2xlarge
+      resource_class: windows.xlarge
       image: windows-server-2019-vs2019:stable
       shell: bash.exe
 
