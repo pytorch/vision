@@ -57,7 +57,7 @@ class EncoderBlock(nn.Module):
 
         # Attention block
         self.ln_1 = norm_layer(hidden_dim)
-        self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout)
+        self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout, batch_first=True)
         self.dropout = nn.Dropout(dropout)
 
         # MLP block
@@ -91,9 +91,9 @@ class Encoder(nn.Module):
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
-        # Note that batch_size is on the second dim because
-        # we have batch_first=False in nn.MultiAttention() by default
-        self.pos_embedding = nn.Parameter(torch.empty(seq_length, 1, hidden_dim).normal_(std=0.02))  # from BERT
+        # Note that batch_size is on the first dim because
+        # we have batch_first=True in nn.MultiAttention() by default
+        self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))  # from BERT
         self.dropout = nn.Dropout(dropout)
         layers: OrderedDict[str, nn.Module] = OrderedDict()
         for i in range(num_layers):
@@ -109,7 +109,7 @@ class Encoder(nn.Module):
         self.ln = norm_layer(hidden_dim)
 
     def forward(self, input: Tensor):
-        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         input = input + self.pos_embedding
         return self.ln(self.layers(self.dropout(input)))
 
@@ -127,21 +127,18 @@ class VisionTransformer(nn.Module):
         mlp_dim: int,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
-        classifier: str = "token",
         num_classes: int = 1000,
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
         torch._assert(image_size % patch_size == 0, "Input shape indivisible by patch size!")
-        torch._assert(classifier in ["token", "gap"], "Unexpected classifier mode!")
         self.image_size = image_size
         self.patch_size = patch_size
         self.hidden_dim = hidden_dim
         self.mlp_dim = mlp_dim
         self.attention_dropout = attention_dropout
         self.dropout = dropout
-        self.classifier = classifier
         self.num_classes = num_classes
         self.representation_size = representation_size
         self.norm_layer = norm_layer
@@ -153,10 +150,10 @@ class VisionTransformer(nn.Module):
         self.conv_proj = nn.Conv2d(input_channels, hidden_dim, kernel_size=patch_size, stride=patch_size)
 
         seq_length = (image_size // patch_size) ** 2
-        if self.classifier == "token":
-            # Add a class token
-            self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
-            seq_length += 1
+
+        # Add a class token
+        self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
+        seq_length += 1
 
         self.encoder = Encoder(
             seq_length,
@@ -207,27 +204,20 @@ class VisionTransformer(nn.Module):
         # (n, hidden_dim, n_h, n_w) -> (n, hidden_dim, (n_h * n_w))
         x = x.reshape(n, self.hidden_dim, n_h * n_w)
 
-        # (n, hidden_dim, (n_h * n_w)) -> ((n_h * n_w), n, hidden_dim)
-        # The self attention layer expects inputs in the format (S, N, E)
+        # (n, hidden_dim, (n_h * n_w)) -> (n, (n_h * n_w), hidden_dim)
+        # The self attention layer expects inputs in the format (N, S, E)
         # where S is the source sequence length, N is the batch size, E is the
         # embedding dimension
-        x = x.permute(2, 0, 1)
+        x = x.permute(0, 2, 1)
 
-        if self.classifier == "token":
-            # Expand the class token to the full batch.
-            batch_class_token = self.class_token.expand(-1, n, -1)
-            x = torch.cat([batch_class_token, x], dim=0)
+        # Expand the class token to the full batch.
+        batch_class_token = self.class_token.expand(n, -1, -1)
+        x = torch.cat([batch_class_token, x], dim=1)
 
         x = self.encoder(x)
 
-        if self.classifier == "token":
-            # Classifier as used by standard language architectures
-            x = x[0, :, :]
-        elif self.classifier == "gap":
-            # Classifier as used by standard vision architectures
-            x = x.mean(dim=0)
-        else:
-            raise ValueError(f"Invalid classifier={self.classifier}")
+        # Classifier "token" as used by standard language architectures
+        x = x[:, 0]
 
         x = self.heads(x)
 
