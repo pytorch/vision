@@ -3,6 +3,7 @@ import io
 
 import builtin_dataset_mocks
 import pytest
+from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
 from torchvision.prototype.utils._internal import sequence_to_str
@@ -75,6 +76,10 @@ class TestCommon:
                 f"The values of key(s) "
                 f"{sequence_to_str(sorted(undecoded_features), separate_last='and ')} were not decoded."
             )
+
+    @builtin_datasets
+    def test_traversable(self, dataset, mock_info):
+        traverse(dataset)
 
 
 class TestQMNIST:

@@ -99,17 +99,17 @@ class DatasetMocks:
         self._cache[(name, config)] = mock_resources, mock_info
         return mock_resources, mock_info
 
-    def _decoder(self, dataset_type):
-        def to_bytes(file):
-            try:
-                return file.read()
-            finally:
-                file.close()
+    def _to_bytes(self, file):
+        try:
+            return file.read()
+        finally:
+            file.close()
 
+    def _decoder(self, dataset_type):
         if dataset_type == datasets.utils.DatasetType.RAW:
             return datasets.decoder.raw
         else:
-            return to_bytes
+            return self._to_bytes
 
     def load(
         self, name: str, decoder=DEFAULT_TEST_DECODER, split="train", **options: Any
