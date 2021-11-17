@@ -47,7 +47,7 @@ def inception_v3(
     **kwargs: Any,
 ) -> QuantizableInception3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
                 QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
@@ -79,7 +79,7 @@ def inception_v3(
         if quantize and not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not quantize and not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None
