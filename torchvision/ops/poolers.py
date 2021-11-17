@@ -10,6 +10,40 @@ from ..utils import _log_api_usage_once
 from .roi_align import roi_align
 
 
+# copying result_idx_in_level to a specific index in result[]
+# is not supported by ONNX tracing yet.
+# _onnx_merge_levels() is an implementation supported by ONNX
+# that merges the levels to the right indices
+@torch.jit.unused
+def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
+    first_result = unmerged_results[0]
+    dtype, device = first_result.dtype, first_result.device
+    res = torch.zeros(
+        (levels.size(0), first_result.size(1), first_result.size(2), first_result.size(3)), dtype=dtype, device=device
+    )
+    for level in range(len(unmerged_results)):
+        index = torch.where(levels == level)[0].view(-1, 1, 1, 1)
+        index = index.expand(
+            index.size(0),
+            unmerged_results[level].size(1),
+            unmerged_results[level].size(2),
+            unmerged_results[level].size(3),
+        )
+        res = res.scatter(0, index, unmerged_results[level])
+    return res
+
+
+# TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
+def initLevelMapper(
+    k_min: int,
+    k_max: int,
+    canonical_scale: int = 224,
+    canonical_level: int = 4,
+    eps: float = 1e-6,
+):
+    return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
+
+
 class LevelMapper:
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
@@ -202,40 +236,7 @@ def multiscale_roi_align(
     return result
 
 
-# copying result_idx_in_level to a specific index in result[]
-# is not supported by ONNX tracing yet.
-# _onnx_merge_levels() is an implementation supported by ONNX
-# that merges the levels to the right indices
-@torch.jit.unused
-def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
-    first_result = unmerged_results[0]
-    dtype, device = first_result.dtype, first_result.device
-    res = torch.zeros(
-        (levels.size(0), first_result.size(1), first_result.size(2), first_result.size(3)), dtype=dtype, device=device
-    )
-    for level in range(len(unmerged_results)):
-        index = torch.where(levels == level)[0].view(-1, 1, 1, 1)
-        index = index.expand(
-            index.size(0),
-            unmerged_results[level].size(1),
-            unmerged_results[level].size(2),
-            unmerged_results[level].size(3),
-        )
-        res = res.scatter(0, index, unmerged_results[level])
-    return res
-
-
-# TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
-def initLevelMapper(
-    k_min: int,
-    k_max: int,
-    canonical_scale: int = 224,
-    canonical_level: int = 4,
-    eps: float = 1e-6,
-):
-    return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
-
-
+  
 class MultiScaleRoIAlign(nn.Module):
     """
     Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
@@ -295,12 +296,26 @@ class MultiScaleRoIAlign(nn.Module):
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
 
+
     def forward(
         self,
         x: Dict[str, Tensor],
         boxes: List[Tensor],
         image_shapes: List[Tuple[int, int]],
     ) -> Tensor:
+        """
+        Args:
+            x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
+                all the same number of channels, but they can have different sizes.
+            boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
+                (x1, y1, x2, y2) format and in the image reference size, not the feature map
+                reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+            image_shapes (List[Tuple[height, width]]): the sizes of each image before they
+                have been fed to a CNN to obtain feature maps. This allows us to infer the
+                scale factor for each one of the levels to be pooled.
+        Returns:
+            result (Tensor)
+        """
         return multiscale_roi_align(
             x,
             boxes,
@@ -311,7 +326,8 @@ class MultiScaleRoIAlign(nn.Module):
             self.output_size,
             self.sampling_ratio,
             self.scales,
-        )
+  
+       
 
     def __repr__(self) -> str:
         return (
