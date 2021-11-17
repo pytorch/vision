@@ -28,6 +28,7 @@ from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     path_comparator,
 )
+from torchvision.prototype.features import Label, Image
 
 __all__ = ["Cifar10", "Cifar100"]
 
@@ -65,17 +66,16 @@ class _CifarBase(Dataset):
     ) -> Dict[str, Any]:
         image_array, category_idx = data
 
-        category = self.categories[category_idx]
-        label = torch.tensor(category_idx)
-
-        image: Union[torch.Tensor, io.BytesIO]
+        image: Union[Image, io.BytesIO]
         if decoder is raw:
-            image = torch.from_numpy(image_array)
+            image = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer) if decoder else image_buffer
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        return dict(label=label, category=category, image=image)
+        label = Label(category_idx, category=self.categories[category_idx])
+
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
