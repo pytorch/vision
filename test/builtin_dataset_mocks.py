@@ -528,7 +528,6 @@ def sintel(info, root, config):
 
     flow_root = root / "training" / "flow"
     for scene_id in range(num_scenes):
-        # flow_root.mkdir(exist_ok=True)
         scene_dir = flow_root / f"scene_{scene_id}"
         scene_dir.mkdir(exist_ok=True, parents=True)
         for i in range(num_images_per_scene - 1):
