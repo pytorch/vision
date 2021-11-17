@@ -23,6 +23,7 @@ TMP = [
     "caltech256",
     "caltech101",
     "imagenet",
+    "sintel",
 ]
 for name in TMP:
     loader = functools.partial(builtin_dataset_mocks.load, name)
