@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 from torch import nn
+from torchvision.prototype.transforms import Kinect400Eval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.video.resnet import (
@@ -15,7 +16,6 @@ from ....models.video.resnet import (
     R2Plus1dStem,
     VideoResNet,
 )
-from ...transforms.presets import Kinect400Eval
 from .._api import Weights, WeightEntry
 from .._meta import _KINETICS400_CATEGORIES
 

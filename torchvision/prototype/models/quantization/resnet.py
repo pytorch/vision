@@ -2,6 +2,7 @@ import warnings
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.resnet import (
@@ -11,7 +12,6 @@ from ....models.quantization.resnet import (
     _replace_relu,
     quantize_model,
 )
-from ...transforms.presets import ImageNetEval
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
 from ..resnet import ResNet18Weights, ResNet50Weights, ResNeXt101_32x8dWeights
