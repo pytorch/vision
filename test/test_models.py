@@ -290,11 +290,6 @@ _model_params = {
         "rpn_pre_nms_top_n_test": 1000,
         "rpn_post_nms_top_n_test": 1000,
     },
-    "vit_h_14": {
-        "num_classes": 5,
-        "image_size": 28,
-        "input_shape": (1, 3, 28, 28),
-    },
 }
 
 

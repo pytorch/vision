@@ -319,25 +319,3 @@ def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         mlp_dim=4096,
         **kwargs,
     )
-
-
-def vit_h_14(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
-    """
-    Constructs a ViT_h_14 architecture from
-    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
-
-    Args:
-        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
-        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
-    """
-    return _vision_transformer(
-        arch="h_14",
-        pretrained=pretrained,
-        progress=progress,
-        patch_size=14,
-        num_layers=32,
-        num_heads=16,
-        hidden_dim=1280,
-        mlp_dim=5120,
-        **kwargs,
-    )
