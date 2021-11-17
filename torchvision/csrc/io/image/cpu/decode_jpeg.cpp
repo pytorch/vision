@@ -148,7 +148,7 @@ torch::Tensor decode_jpeg(const torch::Tensor& data, ImageReadMode mode) {
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  return tensor.permute({2, 0, 1}).contiguous();
+  return tensor.permute({2, 0, 1});
 }
 
 #endif
