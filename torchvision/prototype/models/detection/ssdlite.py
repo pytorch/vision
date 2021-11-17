@@ -50,16 +50,16 @@ def ssdlite320_mobilenet_v3_large(
     **kwargs: Any,
 ) -> SSD:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
     weights = SSDlite320MobileNetV3LargeFPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
+        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
         weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
 
     if weights is not None:
         weights_backbone = None
@@ -114,6 +114,6 @@ def ssdlite320_mobilenet_v3_large(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model

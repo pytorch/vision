@@ -46,12 +46,12 @@ def _video_resnet(
     model = VideoResNet(block, conv_makers, layers, stem, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (112, 112),
     "categories": _KINETICS400_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -62,9 +62,9 @@ _common_meta = {
 class R3D_18Weights(Weights):
     Kinetics400_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
-        transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
+        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 52.75,
             "acc@5": 75.45,
         },
@@ -74,9 +74,9 @@ class R3D_18Weights(Weights):
 class MC3_18Weights(Weights):
     Kinetics400_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
-        transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
+        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 53.90,
             "acc@5": 76.29,
         },
@@ -86,9 +86,9 @@ class MC3_18Weights(Weights):
 class R2Plus1D_18Weights(Weights):
     Kinetics400_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
-        transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
+        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 57.50,
             "acc@5": 78.81,
         },
@@ -97,7 +97,7 @@ class R2Plus1D_18Weights(Weights):
 
 def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = R3D_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
     weights = R3D_18Weights.verify(weights)
 
@@ -114,7 +114,7 @@ def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwa
 
 def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MC3_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
     weights = MC3_18Weights.verify(weights)
 
@@ -131,7 +131,7 @@ def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwa
 
 def r2plus1d_18(weights: Optional[R2Plus1D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = R2Plus1D_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
     weights = R2Plus1D_18Weights.verify(weights)
 
