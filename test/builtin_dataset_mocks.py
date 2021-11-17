@@ -100,10 +100,16 @@ class DatasetMocks:
         return mock_resources, mock_info
 
     def _decoder(self, dataset_type):
+        def to_bytes(file):
+            try:
+                return file.read()
+            finally:
+                file.close()
+
         if dataset_type == datasets.utils.DatasetType.RAW:
             return datasets.decoder.raw
         else:
-            return lambda file: file.close()
+            return to_bytes
 
     def load(
         self, name: str, decoder=DEFAULT_TEST_DECODER, split="train", **options: Any
