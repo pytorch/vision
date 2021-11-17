@@ -44,7 +44,7 @@ class VideoMetaData:
         "audio_duration": float,
         "audio_sample_rate": float,
     }
-    __slots__: List[str] = [
+    __slots__ = [
         "has_video",
         "video_timebase",
         "video_duration",
