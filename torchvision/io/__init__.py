@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import torch
 
@@ -132,7 +132,7 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self) -> "VideoReader":
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
         return self
 
     def seek(self, time_s: float, keyframes_only: bool = False) -> "VideoReader":
