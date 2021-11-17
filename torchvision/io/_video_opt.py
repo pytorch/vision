@@ -445,7 +445,7 @@ def _convert_to_sec(
 
 def _read_video(
     filename: str,
-    start_pts: int = 0,
+    start_pts: Union[float, Fraction] = 0,
     end_pts: Optional[Union[float, Fraction]] = None,
     pts_unit: str = "pts"
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
