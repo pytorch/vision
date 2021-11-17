@@ -52,8 +52,8 @@ def keypointrcnn_resnet50_fpn(
     weights: Optional[KeypointRCNNResNet50FPNWeights] = None,
     weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
-    num_classes: int = 2,
-    num_keypoints: int = 17,
+    num_classes: Optional[int] = None,
+    num_keypoints: Optional[int] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> KeypointRCNN:
@@ -76,6 +76,11 @@ def keypointrcnn_resnet50_fpn(
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
         num_keypoints = len(weights.meta["keypoint_names"])
+    else:
+        if num_classes is None:
+            num_classes = 2
+        if num_keypoints is None:
+            num_keypoints = 17
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3

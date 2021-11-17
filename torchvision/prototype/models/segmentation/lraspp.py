@@ -32,7 +32,7 @@ def lraspp_mobilenet_v3_large(
     weights: Optional[LRASPPMobileNetV3LargeWeights] = None,
     weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     **kwargs: Any,
 ) -> LRASPP:
     if kwargs.pop("aux_loss", False):
@@ -50,6 +50,8 @@ def lraspp_mobilenet_v3_large(
     if weights is not None:
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 21
 
     backbone = mobilenet_v3_large(weights=weights_backbone, dilated=True)
     model = _lraspp_mobilenetv3(backbone, num_classes)

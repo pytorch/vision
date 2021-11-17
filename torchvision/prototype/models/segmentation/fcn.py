@@ -50,7 +50,7 @@ def fcn_resnet50(
     weights: Optional[FCNResNet50Weights] = None,
     weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     **kwargs: Any,
 ) -> FCN:
@@ -67,6 +67,8 @@ def fcn_resnet50(
         aux_loss = True
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 21
 
     backbone = resnet50(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _fcn_resnet(backbone, num_classes, aux_loss)
@@ -81,7 +83,7 @@ def fcn_resnet101(
     weights: Optional[FCNResNet101Weights] = None,
     weights_backbone: Optional[ResNet101Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     **kwargs: Any,
 ) -> FCN:
@@ -98,6 +100,8 @@ def fcn_resnet101(
         aux_loss = True
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 21
 
     backbone = resnet101(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _fcn_resnet(backbone, num_classes, aux_loss)

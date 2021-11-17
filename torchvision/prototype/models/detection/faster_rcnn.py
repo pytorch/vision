@@ -76,7 +76,7 @@ def fasterrcnn_resnet50_fpn(
     weights: Optional[FasterRCNNResNet50FPNWeights] = None,
     weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
@@ -92,6 +92,8 @@ def fasterrcnn_resnet50_fpn(
     if weights is not None:
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
@@ -110,16 +112,18 @@ def fasterrcnn_resnet50_fpn(
 
 
 def _fasterrcnn_mobilenet_v3_large_fpn(
-    weights: Optional[Union[FasterRCNNMobileNetV3LargeFPNWeights, FasterRCNNMobileNetV3Large320FPNWeights]] = None,
-    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
-    progress: bool = True,
-    num_classes: int = 91,
-    trainable_backbone_layers: Optional[int] = None,
+    weights: Optional[Union[FasterRCNNMobileNetV3LargeFPNWeights, FasterRCNNMobileNetV3Large320FPNWeights]],
+    weights_backbone: Optional[MobileNetV3LargeWeights],
+    progress: bool,
+    num_classes: Optional[int],
+    trainable_backbone_layers: Optional[int],
     **kwargs: Any,
 ) -> FasterRCNN:
     if weights is not None:
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 3
@@ -151,7 +155,7 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     weights: Optional[FasterRCNNMobileNetV3LargeFPNWeights] = None,
     weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
@@ -183,7 +187,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     weights: Optional[FasterRCNNMobileNetV3Large320FPNWeights] = None,
     weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:

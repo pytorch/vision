@@ -44,7 +44,7 @@ def ssdlite320_mobilenet_v3_large(
     weights: Optional[SSDlite320MobileNetV3LargeFPNWeights] = None,
     weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
     trainable_backbone_layers: Optional[int] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
@@ -64,6 +64,8 @@ def ssdlite320_mobilenet_v3_large(
     if weights is not None:
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 6

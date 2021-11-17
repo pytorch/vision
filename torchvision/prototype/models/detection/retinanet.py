@@ -41,7 +41,7 @@ def retinanet_resnet50_fpn(
     weights: Optional[RetinaNetResNet50FPNWeights] = None,
     weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> RetinaNet:
@@ -57,6 +57,8 @@ def retinanet_resnet50_fpn(
     if weights is not None:
         weights_backbone = None
         num_classes = len(weights.meta["categories"])
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
