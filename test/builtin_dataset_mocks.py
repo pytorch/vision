@@ -540,6 +540,7 @@ class CocoMockData:
 
         num_anns_per_image = torch.randint(1, 5, (len(image_ids),))
         # Force one unannotated image
+        # TODO: make this variable so that different annotations might have different missing annotations
         num_anns_per_image[0] = 0
 
         num_anns_total = int(num_anns_per_image.sum())

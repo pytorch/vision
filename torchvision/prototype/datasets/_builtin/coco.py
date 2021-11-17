@@ -2,7 +2,7 @@ import functools
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast, Iterator
 
 import torch
 from torchdata.datapipes.iter import (
@@ -16,7 +16,6 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
     JsonParser,
     UnBatcher,
-    Concater,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -49,6 +48,65 @@ class CocoLabel(Label):
         super_category: Optional[str] = DEFAULT,  # type: ignore[assignment]
     ) -> Dict[str, Tuple[Any, Any]]:
         return dict(category=(category, None), super_category=(super_category, None))
+
+
+# TODO: this is in desperate need of comments. They will be added as soon as we are sure this is the way to go
+class CocoAnnotationsCollater(IterDataPipe[Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]]):
+    def __init__(self, partial_ann_dps: Dict[str, IterDataPipe[Tuple[List[Dict[str, Any]], Dict[str, Any]]]]) -> None:
+        self.partial_ann_dps = partial_ann_dps
+
+    def __iter__(self) -> Iterator[Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]]:
+        exhausted_ann_types = set(Coco._ANN_TYPES) - self.partial_ann_dps.keys()
+
+        if len(self.partial_ann_dps) == 1:
+            ann_type, dp = next(iter(self.partial_ann_dps.items()))
+            for ann, image_meta in dp:
+                anns = {ann_type: ann}
+                for exhausted_ann_type in exhausted_ann_types:
+                    anns[exhausted_ann_type] = []
+                yield image_meta, anns
+            return
+
+        dps = [(ann_type, iter(dp), dict()) for ann_type, dp in self.partial_ann_dps.items()]
+        while dps:
+            ref_ann_type, ref_dp, ref_buffer = dps[0]
+            try:
+                ref_anns, ref_image_meta = next(ref_dp)
+            except StopIteration:
+                if not ref_buffer:
+                    exhausted_ann_types.add(ref_ann_type)
+                    del dps[0]
+                    continue
+
+                ref_anns, ref_image_meta = ref_buffer.pop(next(iter(ref_buffer.keys())))
+
+            anns = {ref_ann_type: ref_anns}
+            ref_key = ref_image_meta["id"]
+
+            for idx, (other_ann_type, other_dp, buffer) in enumerate(dps[1:], 1):
+                if ref_key in buffer:
+                    other_anns, _ = buffer.pop(ref_key)
+                    anns[other_ann_type] = other_anns
+                    continue
+
+                for other_anns, other_image_meta in other_dp:
+                    other_key = other_image_meta["id"]
+                    if other_key == ref_key:
+                        anns[other_ann_type] = other_anns
+                        break
+
+                    buffer[other_key] = other_anns, other_image_meta
+                else:
+                    if buffer:
+                        anns[other_ann_type] = []
+                    else:
+                        exhausted_ann_types.add(other_ann_type)
+                        del dps[idx]
+
+            for exhausted_ann_type in exhausted_ann_types:
+                anns[exhausted_ann_type] = []
+
+            yield ref_image_meta, anns
 
 
 class Coco(Dataset):
@@ -187,20 +245,9 @@ class Coco(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-    def _precollate_anns(
-        self, data: List[Tuple[List[Dict[str, Any]], Dict[str, Any]]], *, types: List[str]
-    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
-        ann_data, (image_meta, *_) = zip(*data)
-        anns = dict(zip(types, ann_data))
-        for empty_ann_types in set(self._ANN_TYPES) - set(types):
-            anns[empty_ann_types] = []
-        return image_meta, anns
-
     def _make_anns_dp(
         self, meta_dp: IterDataPipe[Tuple[str, io.IOBase]], *, config: DatasetConfig
     ) -> IterDataPipe[Tuple[str, Dict[str, Dict[str, Any]]]]:
-        meta_dp = ZipArchiveReader(meta_dp)
-
         ann_types = [type for type in self._ANN_TYPES if config[type]]
         partial_anns_dps = Demultiplexer(
             meta_dp,
@@ -215,10 +262,7 @@ class Coco(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         partial_anns_dps = [self._make_partial_anns_dp(dp) for dp in partial_anns_dps]
-
-        anns_dp = Concater(*partial_anns_dps)
-        anns_dp = Grouper(anns_dp, group_key_fn=getitem(1, "id"), buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(anns_dp, self._precollate_anns, fn_kwargs=dict(types=ann_types))
+        return CocoAnnotationsCollater(dict(zip(ann_types, partial_anns_dps)))
 
     def _add_empty_anns(
         self, data: Tuple[str, io.IOBase]
@@ -254,6 +298,7 @@ class Coco(Dataset):
         images_dp = ZipArchiveReader(images_dp)
 
         if any(config[ann_type] for ann_type in self._ANN_TYPES):
+            meta_dp = ZipArchiveReader(meta_dp)
             anns_dp = self._make_anns_dp(meta_dp, config=config)
             anns_dp = Shuffler(anns_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
